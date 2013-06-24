@@ -1,0 +1,6 @@
+[submodule "third_party/libvpx"]
+	path = third_party/libvpx
+	url = https://github.com/openpeer/libvpx.git
+[submodule "third_party/libyuv"]
+	path = third_party/libyuv
+	url = https://github.com/openpeer/libyuv.git
