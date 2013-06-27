@@ -4,3 +4,9 @@
 [submodule "third_party/libyuv"]
 	path = third_party/libyuv
 	url = https://github.com/openpeer/libyuv.git
+[submodule "third_party/opus/src"]
+	path = third_party/opus/src
+	url = http://git.chromium.org/git/chromium/deps/opus.git
+[submodule "third_party/libjpeg_turbo"]
+	path = third_party/libjpeg_turbo
+	url = http://git.chromium.org/chromium/deps/libjpeg_turbo.git
