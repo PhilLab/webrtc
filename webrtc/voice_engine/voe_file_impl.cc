@@ -642,6 +642,118 @@ int VoEFileImpl::StopRecordingMicrophone()
     return err;
 }
 
+int VoEFileImpl::StartRecordingCall(
+    const char* fileNameUTF8, CodecInst* compression, int maxSizeBytes)
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "StartRecordingCall(fileNameUTF8=%s, compression, "
+                 "maxSizeBytes=%d)", fileNameUTF8, maxSizeBytes);
+    assert(1024 == FileWrapper::kMaxFileNameSize);
+    
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    if (_shared->transmit_mixer()->StartRecordingCall(fileNameUTF8,
+                                                      compression))
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_shared->instance_id(), -1),
+                     "StartRecordingCall() failed to start recording");
+        return -1;
+    }
+    if (_shared->audio_device()->Recording())
+    {
+        return 0;
+    }
+    if (!_shared->ext_recording())
+    {
+        if (_shared->audio_device()->InitRecording() != 0)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceVoice,
+                         VoEId(_shared->instance_id(), -1),
+                         "StartRecordingCall() failed to initialize recording");
+            return -1;
+        }
+        if (_shared->audio_device()->StartRecording() != 0)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceVoice,
+                         VoEId(_shared->instance_id(), -1),
+                         "StartRecordingCall() failed to start recording");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int VoEFileImpl::StartRecordingCall(
+    OutStream* stream, CodecInst* compression)
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "StartRecordingCall(stream, compression)");
+    
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    if (_shared->transmit_mixer()->StartRecordingCall(stream,
+                                                      compression) == -1)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_shared->instance_id(), -1),
+                     "StartRecordingCall() failed to start recording");
+        return -1;
+    }
+    if (_shared->audio_device()->Recording())
+    {
+        return 0;
+    }
+    if (!_shared->ext_recording())
+    {
+        if (_shared->audio_device()->InitRecording() != 0)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceVoice,
+                         VoEId(_shared->instance_id(), -1),
+                         "StartRecordingCall() failed to initialize recording");
+            return -1;
+        }
+        if (_shared->audio_device()->StartRecording() != 0)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceVoice,
+                         VoEId(_shared->instance_id(), -1),
+                         "StartRecordingCall() failed to start recording");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int VoEFileImpl::StopRecordingCall()
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "StopRecordingCall()");
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    if (_shared->NumOfSendingChannels() == 0 &&
+        _shared->audio_device()->Recording())
+    {
+        // Stop audio-device recording if no channel is recording
+        if (_shared->audio_device()->StopRecording() != 0)
+        {
+            _shared->SetLastError(VE_CANNOT_STOP_RECORDING, kTraceError,
+                                  "StopRecordingCall() failed to stop recording");
+            return -1;
+        }
+    }
+    return _shared->transmit_mixer()->StopRecordingCall();
+}
+
+
 // TODO(andrew): a cursory inspection suggests there's a large amount of
 // overlap in these convert functions which could be refactored to a helper.
 int VoEFileImpl::ConvertPCMToWAV(const char* fileNameInUTF8,

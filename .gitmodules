@@ -9,4 +9,7 @@
 	url = http://git.chromium.org/git/chromium/deps/opus.git
 [submodule "third_party/libjpeg_turbo"]
 	path = third_party/libjpeg_turbo
-	url = http://git.chromium.org/chromium/deps/libjpeg_turbo.git
+url=https://github.com/openpeer/libjpeg_turbo.git
+[submodule "build"]
+	path = build
+	url = http://git.chromium.org/chromium/src/build.git

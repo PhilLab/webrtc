@@ -345,6 +345,8 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
         return true;
       }
       break;
+    case kVideoCodecH264:
+      break;
     // Known codecs without payload-specifics
     case kVideoCodecI420:
     case kVideoCodecRED:

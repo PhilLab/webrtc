@@ -42,6 +42,7 @@ public:
 
     virtual void OnErrorIsReported(const ErrorCode error) = 0;
     virtual void OnWarningIsReported(const WarningCode warning) = 0;
+    virtual void OnOutputAudioRouteChanged(const OutputAudioRoute audioRoute) = 0;
 
 protected:
     virtual ~AudioDeviceObserver() {}

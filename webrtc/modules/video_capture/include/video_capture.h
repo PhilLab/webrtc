@@ -59,6 +59,21 @@ class VideoCaptureModule: public RefCountedModule {
     virtual int32_t GetOrientation(
         const char* deviceUniqueIdUTF8,
         VideoCaptureRotation& orientation) = 0;
+    // Sets default video orientation.
+      
+    virtual int32_t SetDefaultOrientation(
+         const char* deviceUniqueIdUTF8,
+         VideoCaptureOrientation orientation) = 0;
+    
+    // Sets video orientation when rotation is locked.
+    virtual int32_t SetLockedOrientation(
+          const char* deviceUniqueIdUTF8,
+          VideoCaptureOrientation orientation) = 0;
+    
+    // Sets default video orientation.
+    virtual int32_t EnableOrientationLock(
+           const char* deviceUniqueIdUTF8,
+           const bool enable) = 0;
 
     // Gets the capability that best matches the requested width, height and
     // frame rate.
@@ -139,6 +154,15 @@ class VideoCaptureModule: public RefCountedModule {
   // DeviceInfo::GetOrientation the captured frames are
   // displayed correctly if rendered.
   virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation) = 0;
+  // Set the default orientation of the captured frames.
+    
+  virtual int32_t SetDefaultCaptureOrientation(VideoCaptureOrientation orientation) = 0;
+  
+  // Sets video orientation when video rotation is locked.
+  virtual int32_t SetLockedCaptureOrientation(VideoCaptureOrientation orientation) = 0;
+  
+  // Sets enabled flag for video orientation lock.
+  virtual int32_t EnableCaptureOrientationLock(const bool enable) = 0;
 
   // Gets a pointer to an encode interface if the capture device supports the
   // requested type and size.  NULL otherwise.
@@ -147,6 +171,7 @@ class VideoCaptureModule: public RefCountedModule {
 
   virtual int32_t EnableFrameRateCallback(const bool enable) = 0;
   virtual int32_t EnableNoPictureAlarm(const bool enable) = 0;
+  virtual int32_t EnableFaceDetection(const bool enable) = 0;
 
 protected:
   virtual ~VideoCaptureModule() {};

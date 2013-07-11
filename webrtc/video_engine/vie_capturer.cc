@@ -55,7 +55,8 @@ ViECapturer::ViECapturer(int capture_id,
       reported_brightness_level_(Normal),
       denoising_enabled_(false),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      observer_(NULL) {
+      observer_(NULL),
+      file_recorder_(capture_id) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id, capture_id),
                "ViECapturer::ViECapturer(capture_id: %d, engine_id: %d)",
                capture_id, engine_id);
@@ -255,6 +256,10 @@ const char* ViECapturer::CurrentDeviceName() const {
   return capture_module_->CurrentDeviceName();
 }
 
+ViEFileRecorder& ViECapturer::GetCaptureFileRecorder() {
+  return file_recorder_;
+}
+  
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
   return capture_module_->SetCaptureDelay(delay_ms);
 }
@@ -277,6 +282,51 @@ int32_t ViECapturer::SetRotateCapturedFrames(
       break;
   }
   return capture_module_->SetCaptureRotation(converted_rotation);
+}
+
+int32_t ViECapturer::SetDefaultCapturedFramesOrientation(
+  const CapturedFrameOrientation rotation) {
+  VideoCaptureOrientation converted_orientation = kOrientationLandscapeLeft;
+  switch (rotation) {
+    case CapturedFrameOrientation_LandscapeLeft:
+      converted_orientation = kOrientationLandscapeLeft;
+      break;
+    case CapturedFrameOrientation_PortraitUpsideDown:
+      converted_orientation = kOrientationPortraitUpsideDown;
+      break;
+    case CapturedFrameOrientation_LandscapeRight:
+      converted_orientation = kOrientationLandscapeRight;
+      break;
+    case CapturedFrameOrientation_Portrait:
+      converted_orientation = kOrientationPortrait;
+      break;
+  }
+  return capture_module_->SetDefaultCaptureOrientation(converted_orientation);
+}
+  
+int32_t ViECapturer::SetCapturedFramesLockOrientation(
+    const CapturedFrameOrientation rotation) {
+    VideoCaptureOrientation converted_orientation = kOrientationLandscapeLeft;
+    switch (rotation) {
+      case CapturedFrameOrientation_LandscapeLeft:
+        converted_orientation = kOrientationLandscapeLeft;
+        break;
+      case CapturedFrameOrientation_PortraitUpsideDown:
+        converted_orientation = kOrientationPortraitUpsideDown;
+        break;
+      case CapturedFrameOrientation_LandscapeRight:
+        converted_orientation = kOrientationLandscapeRight;
+        break;
+      case CapturedFrameOrientation_Portrait:
+        converted_orientation = kOrientationPortrait;
+        break;
+    }
+    return capture_module_->SetLockedCaptureOrientation(converted_orientation);
+}
+  
+int32_t ViECapturer::EnableCapturedFrameOrientationLock(bool enable)
+{
+    return capture_module_->EnableCaptureOrientationLock(enable);
 }
 
 int ViECapturer::IncomingFrame(unsigned char* video_frame,
@@ -640,4 +690,11 @@ void ViECapturer::OnNoPictureAlarm(const int32_t id,
   observer_->NoPictureAlarm(id, vie_alarm);
 }
 
+void ViECapturer::OnFaceDetected(const int32_t id) {
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, capture_id_),
+               "OnFaceDetected");
+  
+  CriticalSectionScoped cs(observer_cs_.get());
+  observer_->FaceDetected(id);
+}
 }  // namespace webrtc

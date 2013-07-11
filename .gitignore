@@ -19,7 +19,7 @@
 *.vpw
 *.vpwhistu
 *.vtg
-*.xcodeproj
+xcuserdata
 *_proto.xml
 *_proto_cpp.xml
 *~

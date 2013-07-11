@@ -15,6 +15,9 @@
 #include "trace.h"
 #include "thread_wrapper.h"
 
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
 namespace webrtc {
 AudioDeviceIPhone::AudioDeviceIPhone(const int32_t id)
     :
@@ -43,11 +46,14 @@ AudioDeviceIPhone::AudioDeviceIPhone(const int32_t id)
     _recordingDelayMeasurementCounter(9999),
     _playWarning(0),
     _playError(0),
+    _playoutRouteChanged(false),
     _recWarning(0),
     _recError(0),
     _playoutBufferUsed(0),
     _recordingCurrentSeq(0),
-    _recordingBufferTotalSize(0) {
+    _recordingBufferTotalSize(0),
+    _outputAudioRoute(kOutputAudioRouteBuiltInSpeaker)
+{
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
 
@@ -127,8 +133,23 @@ int32_t AudioDeviceIPhone::Init() {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
                      _id, "Thread already created");
     }
+  
+    OSStatus result = AudioSessionInitialize(NULL, NULL, InterruptionListenerCallback, NULL);
+    if (0 != result) {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "Could not initialize audio session (result=%d)", result);
+    }
+  
+    result = AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange,
+                                             PropertyListenerCallback, this);
+    if (0 != result) {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "Could not set property listener (result=%d)", result);
+    }
+
     _playWarning = 0;
     _playError = 0;
+    _playoutRouteChanged = false;
     _recWarning = 0;
     _recError = 0;
 
@@ -711,44 +732,76 @@ int32_t
 
 int32_t AudioDeviceIPhone::SetLoudspeakerStatus(bool enable) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "AudioDeviceIPhone::SetLoudspeakerStatus(enable=%d)", enable);
-
-    UInt32 doChangeDefaultRoute = enable ? 1 : 0;
-    OSStatus err = AudioSessionSetProperty(
-        kAudioSessionProperty_OverrideCategoryDefaultToSpeaker,
-        sizeof(doChangeDefaultRoute), &doChangeDefaultRoute);
-
+                 "AudioDeviceIPhone::SetLoudspeakerStatus(enable=%u)", enable);
+  
+    UInt32 audioRouteOverride;
+    if (enable)
+        audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
+    else
+        audioRouteOverride = kAudioSessionOverrideAudioRoute_None;
+    OSStatus err = AudioSessionSetProperty(kAudioSessionProperty_OverrideAudioRoute,
+                                           sizeof(audioRouteOverride), &audioRouteOverride);
     if (err != noErr) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "Error changing default output route " \
-            "(only available on iOS 3.1 or later)");
+                     "Cannot override audio route");
         return -1;
     }
-
+  
     return 0;
 }
 
 int32_t AudioDeviceIPhone::GetLoudspeakerStatus(bool &enabled) const {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "AudioDeviceIPhone::SetLoudspeakerStatus(enabled=?)");
-
-    UInt32 route(0);
-    UInt32 size = sizeof(route);
-    OSStatus err = AudioSessionGetProperty(
-        kAudioSessionProperty_OverrideCategoryDefaultToSpeaker,
-        &size, &route);
-    if (err != noErr) {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "Error changing default output route " \
-            "(only available on iOS 3.1 or later)");
-        return -1;
+               "AudioDeviceIPhone::GetLoudspeakerStatus()");
+  
+    char osVersion[30];
+    [[[UIDevice currentDevice] systemVersion] getCString:osVersion maxLength:30 encoding:NSUTF8StringEncoding];
+  
+    if (strncmp(osVersion, "5.0", 3) >= 0) {
+        CFDictionaryRef audioRouteDescription;
+        UInt32 size = sizeof(audioRouteDescription);
+        OSStatus err = AudioSessionGetProperty(kAudioSessionProperty_AudioRouteDescription,
+                                               &size, &audioRouteDescription);
+        if (err != noErr)
+            return -1;
+        CFArrayRef audioRuteOutputs = (CFArrayRef)CFDictionaryGetValue(audioRouteDescription, CFSTR("RouteDetailedDescription_Outputs"));
+        enabled = false;
+        for (int i = 0; i < CFArrayGetCount(audioRuteOutputs); i++) {
+            CFDictionaryRef audioRouteOutput = (CFDictionaryRef)CFArrayGetValueAtIndex(audioRuteOutputs, i);
+            CFStringRef audioRoute = (CFStringRef)CFDictionaryGetValue(audioRouteOutput, CFSTR("RouteDetailedDescription_PortType"));
+            if (CFStringCompare(audioRoute, CFSTR("Speaker"), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
+                enabled = true;
+                break;
+            }
+        }
+    } else {
+        CFStringRef audioRoute;
+        UInt32 size = sizeof(audioRoute);
+        OSStatus err = AudioSessionGetProperty(kAudioSessionProperty_AudioRoute,
+                                               &size, &audioRoute);
+        if (err != noErr) {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                         "Cannot get audio route property");
+            return -1;
+        }
+    
+        if (CFStringCompare(audioRoute, CFSTR("SpeakerAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+            enabled = true;
+        else
+            enabled = false;
     }
-
-    enabled = route == 1 ? true: false;
-
+  
     return 0;
 }
-
+  
+int32_t AudioDeviceIPhone::GetOutputAudioRoute(OutputAudioRoute& route) const {
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                 "AudioDeviceIPhone::GetOutputAudioRoute()");
+    
+    route = _outputAudioRoute;
+    return 0;
+}
+  
 int32_t AudioDeviceIPhone::PlayoutIsAvailable(bool& available) {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
@@ -1003,6 +1056,7 @@ int32_t AudioDeviceIPhone::StartPlayout() {
     _playoutDelayMeasurementCounter = 9999;
     _playWarning = 0;
     _playError = 0;
+    _playoutRouteChanged = false;
 
     if (!_recording) {
         // Start Audio Unit
@@ -1150,7 +1204,11 @@ bool AudioDeviceIPhone::PlayoutWarning() const {
 bool AudioDeviceIPhone::PlayoutError() const {
     return (_playError > 0);
 }
-
+  
+bool AudioDeviceIPhone::PlayoutRouteChanged() const {
+    return _playoutRouteChanged;
+}
+  
 bool AudioDeviceIPhone::RecordingWarning() const {
     return (_recWarning > 0);
 }
@@ -1166,7 +1224,11 @@ void AudioDeviceIPhone::ClearPlayoutWarning() {
 void AudioDeviceIPhone::ClearPlayoutError() {
     _playError = 0;
 }
-
+  
+void AudioDeviceIPhone::ClearPlayoutRouteChanged() {
+    _playoutRouteChanged = false;
+}
+  
 void AudioDeviceIPhone::ClearRecordingWarning() {
     _recWarning = 0;
 }
@@ -1178,6 +1240,80 @@ void AudioDeviceIPhone::ClearRecordingError() {
 // ============================================================================
 //                                 Private Methods
 // ============================================================================
+  
+void AudioDeviceIPhone::InterruptionListenerCallback(void *inUserData, UInt32 interruptionState)
+{
+}
+  
+void AudioDeviceIPhone::PropertyListenerCallback(void *inClientData, AudioSessionPropertyID	inID,
+                                                 UInt32 inDataSize, const void* inData)
+{
+    AudioDeviceIPhone* ptrThis = (AudioDeviceIPhone*) inClientData;
+    
+    if (inID == kAudioSessionProperty_AudioRouteChange)
+    {
+        char osVersion[30];
+        [[[UIDevice currentDevice] systemVersion] getCString:osVersion maxLength:30 encoding:NSUTF8StringEncoding];
+      
+        if (strncmp(osVersion, "5.0", 3) >= 0)
+        {
+            CFDictionaryRef routeChangeDictionary = (CFDictionaryRef) inData;
+            CFDictionaryRef currentRouteDescription =
+            (CFDictionaryRef) CFDictionaryGetValue(
+                                                   routeChangeDictionary,
+                                                   CFSTR("ActiveAudioRouteDidChange_NewDetailedRoute"));
+            CFArrayRef audioRuteOutputs = (CFArrayRef)CFDictionaryGetValue(currentRouteDescription,  CFSTR("RouteDetailedDescription_Outputs"));
+            for (int i = 0; i < CFArrayGetCount(audioRuteOutputs); i++)
+            {
+                CFDictionaryRef audioRouteOutput = (CFDictionaryRef)CFArrayGetValueAtIndex(audioRuteOutputs, i);
+                CFStringRef audioRoute = (CFStringRef)CFDictionaryGetValue(audioRouteOutput, CFSTR("RouteDetailedDescription_PortType"));
+                if (CFStringCompare(audioRoute, CFSTR("Headphones"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+                {
+                    ptrThis->_outputAudioRoute = kOutputAudioRouteHeadphone;
+                    ptrThis->_playoutRouteChanged = true;
+                    break;
+                }
+                else if (CFStringCompare(audioRoute, CFSTR("Receiver"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+                {
+                    ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInReceiver;
+                    ptrThis->_playoutRouteChanged = true;
+                    break;
+                }
+                else if (CFStringCompare(audioRoute, CFSTR("Speaker"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+                {
+                    ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInSpeaker;
+                    ptrThis->_playoutRouteChanged = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            CFStringRef audioRoute;
+            UInt32 size = sizeof(audioRoute);
+            OSStatus err = AudioSessionGetProperty(kAudioSessionProperty_AudioRoute,
+                                                   &size, &audioRoute);
+            if (err != noErr)
+                return;
+        
+            if (CFStringCompare(audioRoute, CFSTR("HeadphonesAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+            {
+                ptrThis->_outputAudioRoute = kOutputAudioRouteHeadphone;
+                ptrThis->_playoutRouteChanged = true;
+            }
+            else if (CFStringCompare(audioRoute, CFSTR("ReceiverAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+            {
+                ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInReceiver;
+                ptrThis->_playoutRouteChanged = true;
+            }
+            else if (CFStringCompare(audioRoute, CFSTR("SpeakerAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+            {
+                ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInSpeaker;
+                ptrThis->_playoutRouteChanged = true;
+            }
+        }
+    }
+}
 
 int32_t AudioDeviceIPhone::InitPlayOrRecord() {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);

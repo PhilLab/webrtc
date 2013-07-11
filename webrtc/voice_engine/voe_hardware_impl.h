@@ -58,6 +58,8 @@ public:
     virtual int SetLoudspeakerStatus(bool enable);
 
     virtual int GetLoudspeakerStatus(bool& enabled);
+  
+    virtual int GetOutputAudioRoute(OutputAudioRoute& route);
 
     virtual int EnableBuiltInAEC(bool enable);
     virtual bool BuiltInAECIsEnabled() const;

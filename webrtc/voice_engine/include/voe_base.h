@@ -51,6 +51,7 @@ public:
     // code, or warning notification, when the observer interface has been
     // installed using VoEBase::RegisterVoiceEngineObserver().
     virtual void CallbackOnError(int channel, int errCode) = 0;
+    virtual void CallbackOnOutputAudioRouteChange(const OutputAudioRoute route) = 0;
 
 protected:
     virtual ~VoiceEngineObserver() {}

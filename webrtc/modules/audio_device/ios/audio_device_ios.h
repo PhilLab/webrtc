@@ -12,6 +12,7 @@
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IPHONE_H
 
 #include <AudioUnit/AudioUnit.h>
+#include <AudioToolbox/AudioServices.h>
 
 #include "audio_device_generic.h"
 #include "critical_section_wrapper.h"
@@ -152,10 +153,12 @@ public:
 public:
     virtual bool PlayoutWarning() const;
     virtual bool PlayoutError() const;
+    virtual bool PlayoutRouteChanged() const;
     virtual bool RecordingWarning() const;
     virtual bool RecordingError() const;
     virtual void ClearPlayoutWarning();
     virtual void ClearPlayoutError();
+    virtual void ClearPlayoutRouteChanged();
     virtual void ClearRecordingWarning();
     virtual void ClearRecordingError();
 
@@ -168,6 +171,7 @@ public:
     // enable or disable loud speaker (for iphone only)
     virtual int32_t SetLoudspeakerStatus(bool enable);
     virtual int32_t GetLoudspeakerStatus(bool& enabled) const;
+    virtual int32_t GetOutputAudioRoute(OutputAudioRoute& route) const;
 
 private:
     void Lock() {
@@ -181,6 +185,14 @@ private:
     int32_t Id() {
         return _id;
     }
+  
+    static void InterruptionListenerCallback(void *inUserData,
+                                             UInt32 interruptionState);
+  
+    static void PropertyListenerCallback(void *inClientData,
+                                         AudioSessionPropertyID	inID,
+                                         UInt32 inDataSize,
+                                         const void* inData);
 
     // Init and shutdown
     int32_t InitPlayOrRecord();
@@ -254,6 +266,7 @@ private:
     // Errors and warnings count
     uint16_t _playWarning;
     uint16_t _playError;
+    bool _playoutRouteChanged;
     uint16_t _recWarning;
     uint16_t _recError;
 
@@ -270,6 +283,8 @@ private:
 
     // Current total size all data in buffers, used for delay estimate
     uint32_t _recordingBufferTotalSize;
+  
+    OutputAudioRoute _outputAudioRoute;
 };
 
 }  // namespace webrtc

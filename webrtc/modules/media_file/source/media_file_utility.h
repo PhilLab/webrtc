@@ -19,6 +19,7 @@
 
 namespace webrtc {
 class AviFile;
+class MP4File;
 class InStream;
 class OutStream;
 
@@ -80,6 +81,39 @@ public:
 
     // Stop recording to file or stream.
     int32_t CloseAviFile();
+
+    // Open/create the file specified by fileName for writing audio/video data
+    // (relative path is allowed). codecInst specifies the encoding of the audio
+    // data. videoCodecInst specifies the encoding of the video data. Only video
+    // data will be recorded if videoOnly is true.
+    int32_t InitMP4Writing(const char* filename,
+                           const CodecInst& codecInst,
+                           const VideoCodec& videoCodecInst,
+                           const bool videoOnly,
+                           const bool saveVideoToLibrary = false);
+    
+    // Write one audio frame, i.e. the bufferLengthinBytes first bytes of
+    // audioBuffer, to file. The audio frame size is determined by the
+    // codecInst.pacsize parameter of the last sucessfull
+    // InitMP4Writing(..) call.
+    // Note: bufferLength must be exactly one frame.
+    int32_t WriteMP4AudioData(const int8_t* audioBuffer,
+                              uint32_t bufferLengthInBytes,
+                              uint32_t timeStamp);
+    
+    
+    // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
+    // to file.
+    // Note: videoBuffer can contain encoded data. The codec used must be the
+    // same as what was specified by videoCodecInst for the last successfull
+    // InitMP4Writing(..) call. The videoBuffer must contain exactly
+    // one video frame.
+    int32_t WriteMP4VideoData(const int8_t* videoBuffer,
+                              uint32_t bufferLengthInBytes,
+                              uint32_t timeStamp);
+
+    // Stop recording to file or stream.
+    int32_t CloseMP4File();
 
     int32_t VideoCodecInst(VideoCodec& codecInst);
 #endif // #ifdef WEBRTC_MODULE_UTILITY_VIDEO
@@ -340,6 +374,7 @@ private:
     AviFile* _aviAudioInFile;
     AviFile* _aviVideoInFile;
     AviFile* _aviOutFile;
+    MP4File* _mp4OutFile;
     VideoCodec _videoCodec;
 #endif
 };

@@ -123,6 +123,7 @@ enum FileFormats
     kFileFormatCompressedFile = 2,
     kFileFormatAviFile        = 3,
     kFileFormatPreencodedFile = 4,
+    kFileFormatMP4File        = 5,
     kFileFormatPcm16kHzFile   = 7,
     kFileFormatPcm8kHzFile    = 8,
     kFileFormatPcm32kHzFile   = 9
@@ -384,7 +385,14 @@ enum StereoChannel
     kStereoRight,
     kStereoBoth
 };
-
+  
+enum OutputAudioRoute
+{
+    kOutputAudioRouteHeadphone = 0,
+    kOutputAudioRouteBuiltInReceiver = 1,
+    kOutputAudioRouteBuiltInSpeaker = 2
+};
+  
 // Audio device layers
 enum AudioLayers
 {
@@ -504,6 +512,7 @@ struct VideoCodecGeneric
 enum VideoCodecType
 {
     kVideoCodecVP8,
+    kVideoCodecH264,
     kVideoCodecI420,
     kVideoCodecRED,
     kVideoCodecULPFEC,

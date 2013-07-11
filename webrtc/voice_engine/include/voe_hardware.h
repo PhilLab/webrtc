@@ -100,11 +100,11 @@ public:
     virtual int AudioDeviceControl(
         unsigned int par1, unsigned int par2, unsigned int par3) = 0;
 
-    // Not supported
     virtual int SetLoudspeakerStatus(bool enable) = 0;
 
-    // Not supported
     virtual int GetLoudspeakerStatus(bool& enabled) = 0;
+  
+    virtual int GetOutputAudioRoute(OutputAudioRoute& route) = 0;
 
     // Native sample rate controls (samples/sec)
     virtual int SetRecordingSampleRate(unsigned int samples_per_sec) = 0;

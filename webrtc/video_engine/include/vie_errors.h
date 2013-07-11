@@ -75,6 +75,7 @@ enum ViEErrors {
   kViEFileInvalidCapture,             // Can't use ViEPicture. Is the object correct?
   kViEFileSetRenderTimeoutError,      // SetRenderTimeoutImage- Please see log file.
   kViEFileSetStartImageError,         // SetRenderStartImage error. Please see log file.
+  kViEFileInvalidCaptureId,           // No capture device exist with the provided capture id.
   kViEFileUnknownError,               // An unknown error has occurred. Check the log file.
 
   // ViENetwork.

@@ -34,7 +34,15 @@ enum VideoCaptureRotation
     kCameraRotate180 = 10,
     kCameraRotate270 = 15
 };
-
+  
+enum VideoCaptureOrientation
+{
+    kOrientationLandscapeLeft,
+    kOrientationPortraitUpsideDown,
+    kOrientationLandscapeRight,
+    kOrientationPortrait
+};
+  
 struct VideoCaptureCapability
 {
     int32_t width;
@@ -44,6 +52,7 @@ struct VideoCaptureCapability
     RawVideoType rawType;
     VideoCodecType codecType;
     bool interlaced;
+    bool faceDetection;
 
     VideoCaptureCapability()
     {
@@ -54,6 +63,7 @@ struct VideoCaptureCapability
         rawType = kVideoUnknown;
         codecType = kVideoCodecUnknown;
         interlaced = false;
+        faceDetection = false;
     }
     ;
     bool operator!=(const VideoCaptureCapability &other) const
@@ -69,6 +79,8 @@ struct VideoCaptureCapability
         if (codecType != other.codecType)
             return true;
         if (interlaced != other.interlaced)
+            return true;
+        if (faceDetection != other.faceDetection)
             return true;
         return false;
     }
@@ -121,9 +133,11 @@ public:
     virtual int32_t IncomingFrame(uint8_t* videoFrame,
                                   int32_t videoFrameLength,
                                   const VideoCaptureCapability& frameInfo,
-                                  int64_t captureTime = 0) = 0;
+                                  int64_t captureTime = 0,
+                                  bool faceDetected = false) = 0;
     virtual int32_t IncomingFrameI420(const VideoFrameI420& video_frame,
-                                      int64_t captureTime = 0) = 0;
+                                      int64_t captureTime = 0,
+                                      bool faceDetected = false) = 0;
 protected:
     ~VideoCaptureExternal() {}
 };
@@ -147,6 +161,7 @@ public:
                                     const uint32_t frameRate) = 0;
     virtual void OnNoPictureAlarm(const int32_t id,
                                   const VideoCaptureAlarm alarm) = 0;
+    virtual void OnFaceDetected(const int32_t id) = 0;
 protected:
     virtual ~VideoCaptureFeedBack(){}
 };

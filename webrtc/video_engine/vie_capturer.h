@@ -24,6 +24,7 @@
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
+#include "webrtc/video_engine/vie_file_recorder.h"
 
 namespace webrtc {
 
@@ -86,6 +87,15 @@ class ViECapturer
   // Sets rotation of the incoming captured frame.
   int32_t SetRotateCapturedFrames(const RotateCapturedFrame rotation);
 
+  // Sets default orientation for incoming captured frames.
+  int32_t SetDefaultCapturedFramesOrientation(const CapturedFrameOrientation orientation);
+        
+  // Sets orientation for incoming captured frames when frame lock is enabled.
+  int32_t SetCapturedFramesLockOrientation(const CapturedFrameOrientation orientation);
+      
+  // Enables/disables video orientation lock.
+  int32_t EnableCapturedFrameOrientationLock(bool enable);
+
   // Effect filter.
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
   int32_t EnableDenoising(bool enable);
@@ -99,6 +109,9 @@ class ViECapturer
 
   // Information.
   const char* CurrentDeviceName() const;
+        
+  // Recording.
+  ViEFileRecorder& GetCaptureFileRecorder();
 
  protected:
   ViECapturer(int capture_id,
@@ -131,6 +144,7 @@ class ViECapturer
                                   const uint32_t frame_rate);
   virtual void OnNoPictureAlarm(const int32_t id,
                                 const VideoCaptureAlarm alarm);
+  virtual void OnFaceDetected(const int32_t id);
 
   // Thread functions for deliver captured frames to receivers.
   static bool ViECaptureThreadFunction(void* obj);
@@ -171,6 +185,8 @@ class ViECapturer
   ViECaptureObserver* observer_;
 
   CaptureCapability requested_capability_;
+        
+  ViEFileRecorder file_recorder_;
 
   I420VideoFrame capture_device_image_;
 };

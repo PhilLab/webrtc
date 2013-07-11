@@ -133,6 +133,15 @@ public:
         const int8_t*  audioBuffer,
         const uint32_t bufferLength) = 0;
 
+    // Write one audio frame, i.e. the bufferLength first bytes of audioBuffer,
+    // to file. The audio frame size is determined by the codecInst.pacsize
+    // parameter of the last sucessfull StartRecordingAudioFile(..) call.
+    // Note: bufferLength must be exactly one frame.
+    virtual int32_t IncomingMP4AudioData(
+        const int8_t*  audioBuffer,
+        const uint32_t bufferLength,
+        const uint32_t timeStamp) = 0;
+
     // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
     // to file.
     // Note: videoBuffer can contain encoded data. The codec used must be the
@@ -142,6 +151,18 @@ public:
     virtual int32_t IncomingAVIVideoData(
         const int8_t*  videoBuffer,
         const uint32_t bufferLength) = 0;
+
+    // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
+    // to file.
+    // Note: videoBuffer can contain encoded data. The codec used must be the
+    // same as what was specified by videoCodecInst for the last successfull
+    // StartRecordingVideoFile(..) call. The videoBuffer must contain exactly
+    // one video frame.
+    virtual int32_t IncomingMP4VideoData(
+        const int8_t*  videoBuffer,
+        const uint32_t bufferLength,
+        const uint32_t timeStamp) = 0;
+
 
     // Open/creates file specified by fileName for writing (relative path is
     // allowed). FileCallback::RecordNotification(..) will be called after
@@ -170,7 +191,8 @@ public:
         const FileFormats   format,
         const CodecInst&    codecInst,
         const VideoCodec&   videoCodecInst,
-        bool videoOnly = false) = 0;
+        bool videoOnly = false,
+        bool saveVideoToLibrary = false) = 0;
 
     // Prepare for recording audio to stream.
     // FileCallback::RecordNotification(..) will be called after

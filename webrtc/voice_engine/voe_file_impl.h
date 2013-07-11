@@ -90,6 +90,18 @@ public:
 
     virtual int StopRecordingMicrophone();
 
+    // Record call to file
+
+    virtual int StartRecordingCall(const char* fileNameUTF8,
+                                   CodecInst* compression = NULL,
+                                   int maxSizeBytes = -1);
+    
+    virtual int StartRecordingCall(OutStream* stream,
+                                   CodecInst* compression = NULL);
+    
+    virtual int StopRecordingCall();
+
+
     // Conversion between different file formats
 
     virtual int ConvertPCMToWAV(const char* fileNameInUTF8,

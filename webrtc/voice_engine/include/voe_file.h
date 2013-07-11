@@ -139,6 +139,18 @@ public:
 
     // Stops recording the microphone signal.
     virtual int StopRecordingMicrophone() = 0;
+  
+    // Starts recording the call to a file.
+    virtual int StartRecordingCall(const char* fileNameUTF8,
+                                   CodecInst* compression = NULL,
+                                   int maxSizeBytes = -1) = 0;
+    
+    // Starts recording the call to a stream.
+    virtual int StartRecordingCall(OutStream* stream,
+                                   CodecInst* compression = NULL) = 0;
+    
+    // Stops recording the call.
+    virtual int StopRecordingCall() = 0;
 
 
     // Gets the duration of a file.

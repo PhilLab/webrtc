@@ -47,6 +47,11 @@ FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
         assert(false);
         return NULL;
 #endif
+    case kFileFormatMP4File:
+        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
+                     "Invalid file format: %d", kFileFormatMP4File);
+        assert(false);
+        return NULL;
     }
     assert(false);
     return NULL;

@@ -87,6 +87,16 @@ int32_t VideoCaptureImpl::Process()
 
         }
     }
+    
+    // Handle Face detected
+    
+    if (_faceDetected)
+    {
+        if (_faceDetectionCallBack && _captureCallBack)
+        {
+            _captureCallBack->OnFaceDetected(_id);
+        }
+    }
 
     // Handle frame rate callback
     if ((now - _lastFrameRateCallbackTime).Milliseconds()
@@ -109,10 +119,14 @@ int32_t VideoCaptureImpl::Process()
 VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
     : _id(id), _deviceUniqueId(NULL), _apiCs(*CriticalSectionWrapper::CreateCriticalSection()),
       _captureDelay(0), _requestedCapability(),
+      _defaultFrameOrientation(kOrientationLandscapeLeft),
+      _lockedFrameOrientation(kOrientationLandscapeLeft),
+      _captureOrientationLock(false),
       _callBackCs(*CriticalSectionWrapper::CreateCriticalSection()),
       _lastProcessTime(TickTime::Now()),
       _lastFrameRateCallbackTime(TickTime::Now()), _frameRateCallBack(false),
-      _noPictureAlarmCallBack(false), _captureAlarm(Cleared), _setCaptureDelay(0),
+      _noPictureAlarmCallBack(false), _captureAlarm(Cleared),
+      _faceDetectionCallBack(false), _faceDetected(false), _setCaptureDelay(0),
       _dataCallBack(NULL), _captureCallBack(NULL),
       _lastProcessFrameCount(TickTime::Now()), _rotateFrame(kRotateNone),
       last_capture_time_(TickTime::MillisecondTimestamp())
@@ -229,7 +243,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
     uint8_t* videoFrame,
     int32_t videoFrameLength,
     const VideoCaptureCapability& frameInfo,
-    int64_t captureTime/*=0*/)
+    int64_t captureTime/*=0*/,
+    bool faceDetected/*=false*/)
 {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCapture, _id,
                "IncomingFrame width %d, height %d", (int) frameInfo.width,
@@ -243,6 +258,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
     const int32_t height = frameInfo.height;
 
     TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
+    
+    _faceDetected = faceDetected;
 
     if (frameInfo.codecType == kVideoCodecUnknown)
     {
@@ -318,7 +335,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
 }
 
 int32_t VideoCaptureImpl::IncomingFrameI420(
-    const VideoFrameI420& video_frame, int64_t captureTime) {
+    const VideoFrameI420& video_frame, int64_t captureTime, bool faceDetected) {
 
   CriticalSectionScoped cs(&_callBackCs);
   int size_y = video_frame.height * video_frame.y_pitch;
@@ -361,6 +378,30 @@ int32_t VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation) {
   }
   return 0;
 }
+  
+int32_t VideoCaptureImpl::SetDefaultCaptureOrientation(VideoCaptureOrientation orientation)
+{
+  CriticalSectionScoped cs(&_apiCs);
+  CriticalSectionScoped cs2(&_callBackCs);
+  _defaultFrameOrientation = orientation;
+  return 0;
+}
+  
+int32_t VideoCaptureImpl::SetLockedCaptureOrientation(VideoCaptureOrientation orientation)
+{
+  CriticalSectionScoped cs(&_apiCs);
+  CriticalSectionScoped cs2(&_callBackCs);
+  _lockedFrameOrientation = orientation;
+  return 0;
+}
+
+int32_t VideoCaptureImpl::EnableCaptureOrientationLock(const bool enable)
+{
+  CriticalSectionScoped cs(&_apiCs);
+  CriticalSectionScoped cs2(&_callBackCs);
+  _captureOrientationLock = enable;
+  return 0;
+}
 
 int32_t VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
 {
@@ -379,6 +420,14 @@ int32_t VideoCaptureImpl::EnableNoPictureAlarm(const bool enable)
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _noPictureAlarmCallBack = enable;
+    return 0;
+}
+    
+int32_t VideoCaptureImpl::EnableFaceDetection(const bool enable)
+{
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
+    _faceDetectionCallBack = enable;
     return 0;
 }
 

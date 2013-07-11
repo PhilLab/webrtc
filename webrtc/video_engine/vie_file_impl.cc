@@ -40,7 +40,7 @@ ViEFile* ViEFile::GetInterface(VideoEngine* video_engine) {
   if (!video_engine) {
     return NULL;
   }
-  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  VideoEngineImpl* vie_impl = static_cast<VideoEngineImpl*>(video_engine);
   ViEFileImpl* vie_file_impl = vie_impl;
   // Increase ref count.
   (*vie_file_impl)++;
@@ -86,14 +86,6 @@ int ViEFileImpl::StartPlayFile(const char* file_nameUTF8,
                                const FileFormats file_format) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s", __FUNCTION__);
-
-  if (!shared_data_->Initialized()) {
-    shared_data_->SetLastError(kViENotInitialized);
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),
-                 "%s - ViE instance %d not initialized", __FUNCTION__,
-                 shared_data_->instance_id());
-    return -1;
-  }
 
   VoiceEngine* voice = shared_data_->channel_manager()->GetVoiceEngine();
   const int32_t result = shared_data_->input_manager()->CreateFilePlayer(
@@ -345,6 +337,62 @@ int ViEFileImpl::StopPlayAudioLocally(const int file_id,
   }
   return 0;
 }
+  
+int ViEFileImpl::StartRecordCaptureVideo(const int capture_id,
+                                         const char* file_nameUTF8,
+                                         AudioSource audio_source,
+                                         const CodecInst& audio_codec,
+                                         const VideoCodec& video_codec,
+                                         const FileFormats file_format,
+                                         bool saveVideoToLibrary) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), capture_id),
+               "%s capture_id: %d)", __FUNCTION__, capture_id);
+  
+  ViEInputManagerScoped is(*(shared_data_->input_manager()));
+  ViECapturer* vie_capturer = is.Capture(capture_id);
+  if (!vie_capturer) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), capture_id),
+                 "%s: Capturer %d doesn't exist", __FUNCTION__, capture_id);
+    shared_data_->SetLastError(kViEFileInvalidCaptureId);
+    return -1;
+  }
+  ViEFileRecorder& file_recorder = vie_capturer->GetCaptureFileRecorder();
+  if (file_recorder.RecordingStarted()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), capture_id),
+                 "%s: Already recording video from capturer %d",
+                 __FUNCTION__, capture_id);
+    shared_data_->SetLastError(kViEFileAlreadyRecording);
+    return -1;
+  }
+  
+  VoiceEngine* ve_ptr = NULL;
+  if (audio_source != NO_AUDIO) {
+    ve_ptr = shared_data_->input_manager()->GetVoiceEngine();
+    if (!ve_ptr) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo,
+                   ViEId(shared_data_->instance_id(), capture_id),
+                   "%s: Can't access voice engine. Have SetVoiceEngine "
+                   "been called?", __FUNCTION__);
+      shared_data_->SetLastError(kViEFileVoENotSet);
+      return -1;
+    }
+  }
+  if (file_recorder.StartRecording(file_nameUTF8, video_codec, audio_source,
+                                   -1, audio_codec, ve_ptr,
+                                   file_format, saveVideoToLibrary) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), capture_id),
+                 "%s: Failed to start recording. Check arguments.",
+                 __FUNCTION__);
+    shared_data_->SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+  
+  return 0;
+}
 
 int ViEFileImpl::StartRecordOutgoingVideo(const int video_channel,
                                           const char* file_nameUTF8,
@@ -406,6 +454,40 @@ int ViEFileImpl::StartRecordOutgoingVideo(const int video_channel,
     return -1;
   }
 
+  return 0;
+}
+  
+int ViEFileImpl::StopRecordCaptureVideo(const int capture_id) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), capture_id),
+               "%s capture_id: %d)", __FUNCTION__, capture_id);
+  
+  ViEInputManagerScoped is(*(shared_data_->input_manager()));
+  ViECapturer* vie_capturer = is.Capture(capture_id);
+  if (!vie_capturer) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), capture_id),
+                 "%s: Capturer %d doesn't exist", __FUNCTION__, capture_id);
+    shared_data_->SetLastError(kViEFileInvalidCaptureId);
+    return -1;
+  }
+  ViEFileRecorder& file_recorder = vie_capturer->GetCaptureFileRecorder();
+  if (!file_recorder.RecordingStarted()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), capture_id),
+                 "%s: Capture %d is not recording.", __FUNCTION__,
+                 capture_id);
+    shared_data_->SetLastError(kViEFileNotRecording);
+    return -1;
+  }
+  if (file_recorder.StopRecording() != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), capture_id),
+                 "%s: Failed to stop recording of capture %d.", __FUNCTION__,
+                 capture_id);
+    shared_data_->SetLastError(kViEFileUnknownError);
+    return -1;
+  }
   return 0;
 }
 

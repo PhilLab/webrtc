@@ -76,7 +76,8 @@ public:
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
         ACMAMRPackingFormat amrFormat = AMRFileStorage,
-        bool videoOnly = false) = 0;
+        bool videoOnly = false,
+        bool saveVideoToLibrary = false) = 0;
 
     // Record the video frame in videoFrame to AVI file.
     virtual int32_t RecordVideoToFile(

@@ -220,6 +220,13 @@ int32_t MediaFileImpl::PlayoutData(int8_t* buffer, uint32_t& dataLengthInBytes,
                 break;
 #endif
             }
+            case kFileFormatMP4File:
+            {
+                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                             "Invalid file format: %d", kFileFormatMP4File);
+                assert(false);
+                break;
+            }
         }
 
         if( bytesRead > 0)
@@ -629,6 +636,13 @@ int32_t MediaFileImpl::StartPlayingStream(
             break;
 #endif
         }
+        case kFileFormatMP4File:
+        {
+            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                         "Invalid file format: %d", kFileFormatMP4File);
+            assert(false);
+            break;
+        }
     }
     if(_ptrFileUtilityObj->codec_info(codec_info_) == -1)
     {
@@ -700,19 +714,36 @@ int32_t MediaFileImpl::IncomingAudioData(
     const int8_t*  buffer,
     const uint32_t bufferLengthInBytes)
 {
-    return IncomingAudioVideoData( buffer, bufferLengthInBytes, false);
+    return IncomingAudioVideoData( buffer, bufferLengthInBytes, 0, false);
+}
+    
+int32_t MediaFileImpl::IncomingMP4AudioData(
+    const int8_t*  buffer,
+    const uint32_t bufferLengthInBytes,
+    const uint32_t timeStamp)
+{
+    return IncomingAudioVideoData( buffer, bufferLengthInBytes, timeStamp, false);
 }
 
 int32_t MediaFileImpl::IncomingAVIVideoData(
     const int8_t*  buffer,
     const uint32_t bufferLengthInBytes)
 {
-    return IncomingAudioVideoData( buffer, bufferLengthInBytes, true);
+    return IncomingAudioVideoData( buffer, bufferLengthInBytes, 0, true);
+}
+    
+int32_t MediaFileImpl::IncomingMP4VideoData(
+    const int8_t*  buffer,
+    const uint32_t bufferLengthInBytes,
+    const uint32_t timeStamp)
+{
+    return IncomingAudioVideoData( buffer, bufferLengthInBytes, timeStamp, true);
 }
 
 int32_t MediaFileImpl::IncomingAudioVideoData(
     const int8_t*  buffer,
     const uint32_t bufferLengthInBytes,
+    const uint32_t timeStamp,
     const bool video)
 {
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
@@ -803,6 +834,24 @@ int32_t MediaFileImpl::IncomingAudioVideoData(
                     assert(false);
                     break;
 #endif
+                case kFileFormatMP4File:
+#ifdef WEBRTC_MODULE_UTILITY_VIDEO
+                    if(video)
+                    {
+                        bytesWritten = _ptrFileUtilityObj->WriteMP4VideoData(
+                            buffer, bufferLengthInBytes, timeStamp);
+                    }else
+                    {
+                        bytesWritten = _ptrFileUtilityObj->WriteMP4AudioData(
+                            buffer, bufferLengthInBytes, timeStamp);
+                    }
+                    break;
+#else
+                    WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                                 "Invalid file format: %d", kFileFormatMP4File);
+                    assert(false);
+                    break;
+#endif
             }
         } else {
             // TODO (hellner): quick look at the code makes me think that this
@@ -874,13 +923,14 @@ int32_t MediaFileImpl::StartRecordingVideoFile(
     const FileFormats format,
     const CodecInst& codecInst,
     const VideoCodec& videoCodecInst,
-    bool videoOnly)
+    bool videoOnly,
+    bool saveVideoToLibrary)
 {
     const uint32_t notificationTimeMs = 0;
     const uint32_t maxSizeBytes       = 0;
 
     return StartRecordingFile(fileName, format, codecInst, videoCodecInst,
-                              notificationTimeMs, maxSizeBytes, videoOnly);
+                              notificationTimeMs, maxSizeBytes, videoOnly, saveVideoToLibrary);
 }
 
 int32_t MediaFileImpl::StartRecordingFile(
@@ -890,7 +940,8 @@ int32_t MediaFileImpl::StartRecordingFile(
     const VideoCodec& videoCodecInst,
     const uint32_t notificationTimeMs,
     const uint32_t maxSizeBytes,
-    bool videoOnly)
+    bool videoOnly,
+    bool saveVideoToLibrary)
 {
 
     if(!ValidFileName(fileName))
@@ -911,7 +962,7 @@ int32_t MediaFileImpl::StartRecordingFile(
     }
 
     // TODO (hellner): make all formats support writing to stream.
-    const bool useStream = ( format != kFileFormatAviFile);
+    const bool useStream = ( format != kFileFormatAviFile && format != kFileFormatMP4File);
     if( useStream)
     {
         if(outputStream->OpenFile(fileName, false) != 0)
@@ -930,7 +981,7 @@ int32_t MediaFileImpl::StartRecordingFile(
 
     if(StartRecordingStream(*outputStream, fileName, format, codecInst,
                             videoCodecInst, notificationTimeMs,
-                            videoOnly) == -1)
+                            videoOnly, saveVideoToLibrary) == -1)
     {
         if( useStream)
         {
@@ -965,7 +1016,8 @@ int32_t MediaFileImpl::StartRecordingStream(
     const CodecInst& codecInst,
     const VideoCodec& videoCodecInst,
     const uint32_t notificationTimeMs,
-    bool videoOnly)
+    bool videoOnly,
+    bool saveVideoToLibrary)
 {
 
     // Check codec info
@@ -1084,6 +1136,23 @@ int32_t MediaFileImpl::StartRecordingStream(
                 return -1;
             }
             _fileFormat = kFileFormatAviFile;
+            break;
+        }
+        case kFileFormatMP4File:
+        {
+            if( (_ptrFileUtilityObj->InitMP4Writing(
+                                                    fileName,
+                                                    codecInst,
+                                                    videoCodecInst,videoOnly,saveVideoToLibrary) == -1) ||
+               (_ptrFileUtilityObj->codec_info(tmpAudioCodec) != 0))
+            {
+                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                             "Failed to initialize MP4 file!");
+                delete _ptrFileUtilityObj;
+                _ptrFileUtilityObj = NULL;
+                return -1;
+            }
+            _fileFormat = kFileFormatMP4File;
             break;
         }
 #endif

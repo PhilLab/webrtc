@@ -63,9 +63,13 @@ public:
     virtual int32_t SetCaptureDelay(int32_t delayMS);
     virtual int32_t CaptureDelay();
     virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation);
+    virtual int32_t SetDefaultCaptureOrientation(VideoCaptureOrientation orientation);
+    virtual int32_t SetLockedCaptureOrientation(VideoCaptureOrientation orientation);
+    virtual int32_t EnableCaptureOrientationLock(const bool enable);
 
     virtual int32_t EnableFrameRateCallback(const bool enable);
     virtual int32_t EnableNoPictureAlarm(const bool enable);
+    virtual int32_t EnableFaceDetection(const bool enable);
 
     virtual const char* CurrentDeviceName() const;
 
@@ -78,10 +82,12 @@ public:
     virtual int32_t IncomingFrame(uint8_t* videoFrame,
                                   int32_t videoFrameLength,
                                   const VideoCaptureCapability& frameInfo,
-                                  int64_t captureTime = 0);
+                                  int64_t captureTime = 0,
+                                  bool faceDetected = false);
     virtual int32_t IncomingFrameI420(
         const VideoFrameI420& video_frame,
-        int64_t captureTime = 0);
+        int64_t captureTime = 0,
+        bool faceDetected = false);
 
     // Platform dependent
     virtual int32_t StartCapture(const VideoCaptureCapability& capability)
@@ -107,6 +113,9 @@ protected:
     CriticalSectionWrapper& _apiCs;
     int32_t _captureDelay; // Current capture delay. May be changed of platform dependent parts.
     VideoCaptureCapability _requestedCapability; // Should be set by platform dependent code in StartCapture.
+    VideoCaptureOrientation _defaultFrameOrientation;
+    VideoCaptureOrientation _lockedFrameOrientation;
+    bool _captureOrientationLock;
 private:
     void UpdateFrameCount();
     uint32_t CalculateFrameRate(const TickTime& now);
@@ -118,6 +127,8 @@ private:
     bool _frameRateCallBack; // true if EnableFrameRateCallback
     bool _noPictureAlarmCallBack; //true if EnableNoPictureAlarm
     VideoCaptureAlarm _captureAlarm; // current value of the noPictureAlarm
+    bool _faceDetectionCallBack; //true if EnableFaceDetection
+    bool _faceDetected; // current value of the faceDetected
 
     int32_t _setCaptureDelay; // The currently used capture delay
     VideoCaptureDataCallback* _dataCallBack;

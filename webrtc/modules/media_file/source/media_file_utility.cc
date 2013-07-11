@@ -423,6 +423,39 @@ int32_t ModuleFileUtility::ReadAviVideoData(
         return length;
     }
 }
+    
+int32_t ModuleFileUtility::InitMP4Writing(
+    const char* filename,
+    const CodecInst& audioCodecInst,
+    const VideoCodec& videoCodecInst,
+    const bool videoOnly /*= false*/,
+    const bool saveVideoToLibrary /*false*/)
+{
+    _writing = false;
+
+    return 0;
+}
+
+int32_t ModuleFileUtility::WriteMP4AudioData(
+   const int8_t* buffer,
+   uint32_t bufferLengthInBytes,
+   uint32_t timeStamp)
+{
+    return 0;
+}
+
+int32_t ModuleFileUtility::WriteMP4VideoData(
+   const int8_t* buffer,
+   uint32_t bufferLengthInBytes,
+   uint32_t timeStamp)
+{
+    return 0;
+}
+
+int32_t ModuleFileUtility::CloseMP4File( )
+{
+    return 0;
+}
 
 int32_t ModuleFileUtility::VideoCodecInst(VideoCodec& codecInst)
 {
@@ -1583,6 +1616,34 @@ int32_t ModuleFileUtility::InitCompressedReading(
         }
     }
 #endif
+#ifdef WEBRTC_CODEC_VORBIS
+    if(!strcmp("#!VORBIS\n", buf))
+    {
+        codec_info_.pltype = 109;
+        strcpy(codec_info_.plname, "vorbis");
+        codec_info_.plfreq   = 16000;
+        codec_info_.pacsize  = 480;
+        codec_info_.channels = 1;
+        codec_info_.rate     = 32000;
+        _codecId = kCodecVorbis;
+    
+        if(_startPointInMs > 0)
+        {
+            while (_playoutPositionMs <= _startPointInMs)
+            {
+                read_len = in.Read(buf, 38);
+                if(read_len == 38)
+                {
+                    _playoutPositionMs += 20;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+#endif
     if(_codecId == kCodecNoCodec)
     {
         return -1;
@@ -1775,6 +1836,41 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         }
     }
 #endif
+#ifdef WEBRTC_CODEC_VORBIS
+    if(_codecId == kCodecVorbis)
+    {
+        WebRtc_UWord32 byteSize = 0;
+        byteSize = 38;
+        if(bufferSize < byteSize)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                         "output buffer is too short to read VORBIS compressed\
+                         data.");
+            assert(false);
+            return -1;
+        }
+    
+        bytesRead = in.Read(outData, byteSize);
+        if(bytesRead != byteSize)
+        {
+            if(!in.Rewind())
+            {
+                InitCompressedReading(in, _startPointInMs, _stopPointInMs);
+                bytesRead = in.Read(outData, byteSize);
+                if(bytesRead != byteSize)
+                {
+                    _reading = false;
+                    return -1;
+                }
+            }
+            else
+            { 
+                _reading = false;
+                return -1;
+            }
+        }
+    }
+#endif
     if(bytesRead == 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceFile, _id,
@@ -1852,6 +1948,25 @@ int32_t ModuleFileUtility::InitCompressedWriting(
         {
           WEBRTC_TRACE(kTraceError, kTraceFile, _id,
                        "codecInst defines unsupported compression codec!");
+            return -1;
+        }
+        memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
+        _writing = true;
+        return 0;
+    }
+#endif
+#ifdef WEBRTC_CODEC_VORBIS
+    if(STR_CASE_CMP(codecInst.plname, "vorbis") == 0)
+    {
+        if(codecInst.pacsize == 480)
+        {
+          _codecId = kCodecVorbis;
+          //out.Write("#!VORBIS\n",9);
+        }
+        else
+        {
+            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                         "codecInst defines unsupported compression codec!");
             return -1;
         }
         memcpy(&codec_info_,&codecInst,sizeof(CodecInst));

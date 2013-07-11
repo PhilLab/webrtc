@@ -58,6 +58,12 @@ public:
                               const uint32_t bufferLength);
     int32_t IncomingAVIVideoData(const int8_t*  audioBuffer,
                                  const uint32_t bufferLength);
+    int32_t IncomingMP4AudioData(const int8_t*  buffer,
+                                 const uint32_t bufferLengthInBytes,
+                                 const uint32_t timeStamp);
+    int32_t IncomingMP4VideoData(const int8_t*  audioBuffer,
+                                 const uint32_t bufferLength,
+                                 const uint32_t timeStamp);
     int32_t StartRecordingAudioFile(
         const char*  fileName,
         const FileFormats    format,
@@ -69,7 +75,8 @@ public:
         const FileFormats   format,
         const CodecInst&    codecInst,
         const VideoCodec&   videoCodecInst,
-        bool                videoOnly = false);
+        bool                videoOnly = false,
+        bool                saveVideoToLibrary = false);
     int32_t StartRecordingAudioStream(
         OutStream&           stream,
         const FileFormats    format,
@@ -161,6 +168,7 @@ private:
     // audio frame.
     int32_t IncomingAudioVideoData(const int8_t*  buffer,
                                    const uint32_t bufferLength,
+                                   const uint32_t timeStamp,
                                    const bool video);
 
     // Open/creates file specified by fileName for writing (relative path is
@@ -183,7 +191,8 @@ private:
         const VideoCodec&    videoCodecInst,
         const uint32_t notificationTimeMs = 0,
         const uint32_t maxSizeBytes = 0,
-        bool                 videoOnly = false);
+        bool                 videoOnly = false,
+        bool                 saveVideoToLibrary = false);
 
     // Open/creates file specified by fileName for writing (relative path is
     // allowed). FileCallback::RecordNotification(..) will be called after
@@ -205,7 +214,8 @@ private:
         const CodecInst&     codecInst,
         const VideoCodec&    videoCodecInst,
         const uint32_t notificationTimeMs = 0,
-        const bool           videoOnly = false);
+        const bool           videoOnly = false,
+        bool                 saveVideoToLibrary = false);
 
     // Returns true if frequencyInHz is a supported frequency.
     static bool ValidFrequency(const uint32_t frequencyInHz);
