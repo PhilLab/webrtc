@@ -803,7 +803,7 @@ int32_t AviRecorder::WriteEncodedAudioData(
 }
 
   
-MP4Recorder::MP4Recorder(WebRtc_UWord32 instanceID, FileFormats fileFormat)
+MP4Recorder::MP4Recorder(uint32_t instanceID, FileFormats fileFormat)
 : FileRecorderImpl(instanceID, fileFormat),
     _videoOnly(false),
     _thread( 0),
@@ -913,7 +913,7 @@ int32_t MP4Recorder::RecordVideoToFile(const I420VideoFrame& videoFrame)
     
 //    printf("RecordVideoToFile - TS: %lld\n", videoFrame.RenderTimeMs());
     // The frame is written to file in MP4Recorder::Process().
-    WebRtc_Word32 retVal = _videoFramesQueue->AddFrame(videoFrame);
+    int32_t retVal = _videoFramesQueue->AddFrame(videoFrame);
     if(retVal != 0)
     {
         StopRecording();
@@ -976,9 +976,9 @@ int32_t MP4Recorder::ProcessAudio()
         {
             // Syncronize audio to the current frame to process by throwing away
             // audio samples with older timestamp than the video frame.
-            WebRtc_UWord32 numberOfAudioElements =
+            uint32_t numberOfAudioElements =
                 _audioFramesToWrite.GetSize();
-            for (WebRtc_UWord32 i = 0; i < numberOfAudioElements; ++i)
+            for (uint32_t i = 0; i < numberOfAudioElements; ++i)
             {
                 AudioFrameFileInfo* frameInfo =
                     (AudioFrameFileInfo*)_audioFramesToWrite.First()->GetItem();
@@ -999,9 +999,9 @@ int32_t MP4Recorder::ProcessAudio()
         }
     }
     // Write all audio up to current timestamp.
-    WebRtc_Word32 error = 0;
-    WebRtc_UWord32 numberOfAudioElements = _audioFramesToWrite.GetSize();
-    for (WebRtc_UWord32 i = 0; i < numberOfAudioElements; ++i)
+    int32_t error = 0;
+    uint32_t numberOfAudioElements = _audioFramesToWrite.GetSize();
+    for (uint32_t i = 0; i < numberOfAudioElements; ++i)
     {
         AudioFrameFileInfo* frameInfo =
             (AudioFrameFileInfo*)_audioFramesToWrite.First()->GetItem();
@@ -1055,7 +1055,7 @@ bool MP4Recorder::Process()
     {
         return true;
     }
-    WebRtc_Word32 error = 0;
+    int32_t error = 0;
     if(!_videoOnly)
     {
         if(!_firstAudioFrameReceived)
@@ -1075,7 +1075,7 @@ bool MP4Recorder::Process()
                              "MP4Recorder::Process() error writing to file.");
                 break;
             } else {
-                WebRtc_UWord32 frameLengthMS = 1000 / _videoCodecInst.maxFramerate;
+                uint32_t frameLengthMS = 1000 / _videoCodecInst.maxFramerate;
                 _writtenVideoFramesCounter++;
                 _writtenVideoMS += frameLengthMS;
                 // A full seconds worth of frames have been written.
@@ -1084,7 +1084,7 @@ bool MP4Recorder::Process()
                     // Frame rate is in frames per seconds. Frame length is
                     // calculated as an integer division which means it may
                     // be rounded down. Compensate for this every second.
-                    WebRtc_UWord32 rest = 1000 % frameLengthMS;
+                    uint32_t rest = 1000 % frameLengthMS;
                     _writtenVideoMS += rest;
                 }
             }
@@ -1095,9 +1095,9 @@ bool MP4Recorder::Process()
         // drift. Once a full frame worth of drift has happened, skip writing
         // one frame. Note that frame rate is in frames per second so the
         // drift is completely compensated for.
-        WebRtc_UWord32 frameLengthMS;
-        WebRtc_UWord32 restMS;
-        WebRtc_UWord32 frameSkip;
+        uint32_t frameLengthMS;
+        uint32_t restMS;
+        uint32_t frameSkip;
         frameLengthMS = 1000 / _videoCodecInst.maxFramerate;
         restMS = 1000 % frameLengthMS;
         frameSkip = (_videoCodecInst.maxFramerate *
@@ -1171,7 +1171,7 @@ int32_t MP4Recorder::EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame)
     if(_videoEncodedData.payloadSize > 0)
     {
         if(_moduleFile->IncomingMP4VideoData(
-                                             (WebRtc_Word8*)(_videoEncodedData.payloadData),
+                                             (int8_t*)(_videoEncodedData.payloadData),
                                              _videoEncodedData.payloadSize, videoFrame.render_time_ms()))
         {
             WEBRTC_TRACE(kTraceError, kTraceVideo, _instanceID,

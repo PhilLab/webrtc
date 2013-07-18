@@ -46,7 +46,7 @@ initSrc(j_decompress_ptr cinfo);
 // This is called whenever bytes_in_buffer has reached zero and more
 //  data is wanted.
 
-boolean
+int
 fillInputBuffer(j_decompress_ptr cinfo);
 
 // Skip input data

@@ -16,9 +16,9 @@ BUILDTYPE ?= Debug
 MY_LIBS_PATH := ../../../../../out/$(BUILDTYPE)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libvoice_engine
+LOCAL_MODULE := libvoice_engine_core
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libvoice_engine.a
+    $(MY_LIBS_PATH)/libvoice_engine_core.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -135,6 +135,24 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libvad
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/libvad.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libresampler
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/libresampler.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libsignal_processing
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/libsignal_processing.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libbitrate_controller
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libbitrate_controller.a
@@ -230,17 +248,17 @@ LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libjpeg_turbo.a
 include $(PREBUILT_STATIC_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := libaudioproc_debug_proto
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libaudioproc_debug_proto.a
-include $(PREBUILT_STATIC_LIBRARY)
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := libaudioproc_debug_proto
+#LOCAL_SRC_FILES := \
+#    $(MY_LIBS_PATH)/libaudioproc_debug_proto.a
+#include $(PREBUILT_STATIC_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := libprotobuf_lite
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libprotobuf_lite.a
-include $(PREBUILT_STATIC_LIBRARY)
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := libprotobuf_lite
+#LOCAL_SRC_FILES := \
+#    $(MY_LIBS_PATH)/libprotobuf_lite.a
+#include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvpx
@@ -311,10 +329,22 @@ else                    # arm Android specific
       $(MY_LIBS_PATH)/libisac_neon.a
   include $(PREBUILT_STATIC_LIBRARY)
 
+#  include $(CLEAR_VARS)
+#  LOCAL_MODULE := libcommon_audio_neon
+#  LOCAL_SRC_FILES := \
+#      $(MY_LIBS_PATH)/libcommon_audio_neon.a
+#  include $(PREBUILT_STATIC_LIBRARY)
+
   include $(CLEAR_VARS)
-  LOCAL_MODULE := libcommon_audio_neon
+  LOCAL_MODULE := libsignal_processing_neon
   LOCAL_SRC_FILES := \
-      $(MY_LIBS_PATH)/libcommon_audio_neon.a
+      $(MY_LIBS_PATH)/libsignal_processing_neon.a
+  include $(PREBUILT_STATIC_LIBRARY)
+
+  include $(CLEAR_VARS)
+  LOCAL_MODULE := libresampler_neon
+  LOCAL_SRC_FILES := \
+      $(MY_LIBS_PATH)/libresampler_neon.a
   include $(PREBUILT_STATIC_LIBRARY)
 
   # TODO(leozwang): Upstream required Android changes to libvpx.gyp to enable
@@ -328,7 +358,8 @@ else                    # arm Android specific
   LOCAL_PLATFORM_SPECIFIC_STATIC_LIBRARIES := \
       libaudio_processing_neon \
       libisac_neon \
-      libcommon_audio_neon \
+      libsignal_processing_neon \
+      libresampler_neon \
       libvpx_arm_neon
 endif
 
@@ -360,7 +391,7 @@ LOCAL_LDLIBS := \
 # LOCAL_STATIC_LIBRARIES after removing the circular dependencies between
 # libvpx.a and libvpx_intrinsics_[mmx,sse2,ssse3].a
 LOCAL_WHOLE_STATIC_LIBRARIES := \
-    libvoice_engine \
+    libvoice_engine_core \
     libvideo_engine_core \
     libvideo_processing \
     libwebrtc_video_coding \
@@ -379,6 +410,9 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_opus \
     libopus \
     libcommon_audio \
+    libvad \
+    libresampler \
+    libsignal_processing \
     libbitrate_controller \
     libcommon_video \
     libcpu_features_android \
@@ -396,8 +430,6 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libvideo_coding_utility \
     libsystem_wrappers \
     libjpeg_turbo \
-    libaudioproc_debug_proto \
-    libprotobuf_lite \
     libpaced_sender \
     libvpx \
     $(LOCAL_PLATFORM_SPECIFIC_STATIC_LIBRARIES) \

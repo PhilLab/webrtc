@@ -53,7 +53,7 @@ initSrc(j_decompress_ptr cinfo)
     src->mgr.bytes_in_buffer = src->bytes_in_buffer;
 }
 
-boolean
+int
 fillInputBuffer(j_decompress_ptr cinfo)
 {
     return false;

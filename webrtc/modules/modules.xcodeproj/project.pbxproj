@@ -395,6 +395,9 @@
 		E2104946178367D20038A071 /* video_capture_recursive_lock.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2104940178367D20038A071 /* video_capture_recursive_lock.mm */; };
 		E2104947178367D20038A071 /* video_capture_iphone.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2104941178367D20038A071 /* video_capture_iphone.mm */; };
 		E22089EC3C26BE20801C0C34 /* timestamp_scaler.cc in Sources */ = {isa = PBXBuildFile; fileRef = FB4ADB2F458D2C1F10940C43 /* timestamp_scaler.cc */; };
+		E23927AC1794C96F004ECC81 /* frame_scaler.cc in Sources */ = {isa = PBXBuildFile; fileRef = E23927A61794C96E004ECC81 /* frame_scaler.cc */; };
+		E23927AD1794C96F004ECC81 /* video_coder.cc in Sources */ = {isa = PBXBuildFile; fileRef = E23927A81794C96F004ECC81 /* video_coder.cc */; };
+		E23927AE1794C96F004ECC81 /* video_frames_queue.cc in Sources */ = {isa = PBXBuildFile; fileRef = E23927AA1794C96F004ECC81 /* video_frames_queue.cc */; };
 		E23DD37D177C835900341BBD /* video_render_iphone_impl.mm in Sources */ = {isa = PBXBuildFile; fileRef = E23DD37A177C835900341BBD /* video_render_iphone_impl.mm */; };
 		E23DD37E177C835900341BBD /* video_render_uiview.mm in Sources */ = {isa = PBXBuildFile; fileRef = E23DD37C177C835900341BBD /* video_render_uiview.mm */; };
 		E24D29C917859AA900CA17EB /* media_file_utility.mm in Sources */ = {isa = PBXBuildFile; fileRef = E24D29C417859AA800CA17EB /* media_file_utility.mm */; };
@@ -1472,6 +1475,12 @@
 		E210493F178367D20038A071 /* video_capture_recursive_lock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = video_capture_recursive_lock.h; sourceTree = "<group>"; };
 		E2104940178367D20038A071 /* video_capture_recursive_lock.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = video_capture_recursive_lock.mm; sourceTree = "<group>"; };
 		E2104941178367D20038A071 /* video_capture_iphone.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = video_capture_iphone.mm; sourceTree = "<group>"; };
+		E23927A61794C96E004ECC81 /* frame_scaler.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = frame_scaler.cc; sourceTree = "<group>"; };
+		E23927A71794C96F004ECC81 /* frame_scaler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = frame_scaler.h; sourceTree = "<group>"; };
+		E23927A81794C96F004ECC81 /* video_coder.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = video_coder.cc; sourceTree = "<group>"; };
+		E23927A91794C96F004ECC81 /* video_coder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = video_coder.h; sourceTree = "<group>"; };
+		E23927AA1794C96F004ECC81 /* video_frames_queue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = video_frames_queue.cc; sourceTree = "<group>"; };
+		E23927AB1794C96F004ECC81 /* video_frames_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = video_frames_queue.h; sourceTree = "<group>"; };
 		E23DD379177C835900341BBD /* video_render_iphone_impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = video_render_iphone_impl.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		E23DD37A177C835900341BBD /* video_render_iphone_impl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = video_render_iphone_impl.mm; sourceTree = "<group>"; };
 		E23DD37B177C835900341BBD /* video_render_uiview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = video_render_uiview.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
@@ -3303,6 +3312,12 @@
 		E1A2926F6C34FE353782ABD6 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				E23927A61794C96E004ECC81 /* frame_scaler.cc */,
+				E23927A71794C96F004ECC81 /* frame_scaler.h */,
+				E23927A81794C96F004ECC81 /* video_coder.cc */,
+				E23927A91794C96F004ECC81 /* video_coder.h */,
+				E23927AA1794C96F004ECC81 /* video_frames_queue.cc */,
+				E23927AB1794C96F004ECC81 /* video_frames_queue.h */,
 				931ECD2626FBE129834752C7 /* audio_frame_operations.cc */,
 				F1E22F2BE3FBEB73F6E6A7F0 /* coder.cc */,
 				D9824E7A787BDFD95CF746A6 /* coder.h */,
@@ -4371,6 +4386,9 @@
 				5EDE86A6D94998F577031607 /* file_recorder_impl.cc in Sources */,
 				FAA7EF077A10E4F13A9D3111 /* process_thread_impl.cc in Sources */,
 				194B34529391E6C09DF76055 /* rtp_dump_impl.cc in Sources */,
+				E23927AC1794C96F004ECC81 /* frame_scaler.cc in Sources */,
+				E23927AD1794C96F004ECC81 /* video_coder.cc in Sources */,
+				E23927AE1794C96F004ECC81 /* video_frames_queue.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7811,6 +7829,7 @@
 					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
 					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
 					"\"WEBRTC_LOGGING\"",
+					"\"WEBRTC_MODULE_UTILITY_VIDEO\"",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -7829,6 +7848,7 @@
 					../common_audio/signal_processing/include,
 					../common_audio/vad/include,
 					../system_wrappers/interface,
+					video_coding/main/interface,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
@@ -8337,6 +8357,7 @@
 					"\"_FORTIFY_SOURCE=2\"",
 					"\"NS_BLOCK_ASSERTIONS=1\"",
 					"\"WEBRTC_LOGGING\"",
+					"\"WEBRTC_MODULE_UTILITY_VIDEO\"",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -8355,6 +8376,7 @@
 					../common_audio/signal_processing/include,
 					../common_audio/vad/include,
 					../system_wrappers/interface,
+					video_coding/main/interface,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";

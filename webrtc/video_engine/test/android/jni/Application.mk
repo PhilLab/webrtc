@@ -7,5 +7,5 @@
 #  be found in the AUTHORS file in the root of the source tree.
 
 # Build both ARMv7-A and x86 machine code.
-APP_ABI := armeabi-v7a x86
+APP_ABI := armeabi-v7a
 APP_STL := stlport_static

@@ -731,7 +731,7 @@ struct jpeg_source_mgr {
   size_t bytes_in_buffer;	/* # of bytes remaining in buffer */
 
   JMETHOD(void, init_source, (j_decompress_ptr cinfo));
-  JMETHOD(boolean, fill_input_buffer, (j_decompress_ptr cinfo));
+  JMETHOD(int, fill_input_buffer, (j_decompress_ptr cinfo));
   JMETHOD(void, skip_input_data, (j_decompress_ptr cinfo, long num_bytes));
   JMETHOD(boolean, resync_to_restart, (j_decompress_ptr cinfo, int desired));
   JMETHOD(void, term_source, (j_decompress_ptr cinfo));
