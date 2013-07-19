@@ -9,7 +9,6 @@
 *.sdf
 *.sln
 *.suo
-*.target.mk
 *.targets
 *.user
 *.vcproj
