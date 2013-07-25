@@ -34,7 +34,6 @@ xcuserdata
 /chromium_deps
 /google_apis/build
 /gyp-mac-tool
-/Makefile
 /out
 /resources
 /testing
