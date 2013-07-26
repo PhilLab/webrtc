@@ -85,13 +85,13 @@ int ViECodecImpl::GetCodec(const unsigned char list_number,
                "%s(list_number: %d, codec_type: %d)", __FUNCTION__,
                list_number, video_codec.codecType);
   if (list_number == VideoCodingModule::NumberOfCodecs()) {
-    memset(&video_codec, 0, sizeof(VideoCodec));
-    strcpy(video_codec.plName, "red");
+    std::memset(&video_codec, 0, sizeof(VideoCodec));
+    std::strcpy(video_codec.plName, "red");
     video_codec.codecType = kVideoCodecRED;
     video_codec.plType = VCM_RED_PAYLOAD_TYPE;
   } else if (list_number == VideoCodingModule::NumberOfCodecs() + 1) {
-    memset(&video_codec, 0, sizeof(VideoCodec));
-    strcpy(video_codec.plName, "ulpfec");
+	std::memset(&video_codec, 0, sizeof(VideoCodec));
+	std::strcpy(video_codec.plName, "ulpfec");
     video_codec.codecType = kVideoCodecULPFEC;
     video_codec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
   } else if (VideoCodingModule::Codec(list_number, &video_codec) != VCM_OK) {
@@ -160,7 +160,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   }
   // Set a max_bitrate if the user hasn't set one.
   VideoCodec video_codec_internal;
-  memcpy(&video_codec_internal, &video_codec, sizeof(VideoCodec));
+  std::memcpy(&video_codec_internal, &video_codec, sizeof(VideoCodec));
   if (video_codec_internal.maxBitrate == 0) {
     // Max is one bit per pixel.
     video_codec_internal.maxBitrate = (video_codec_internal.width *
@@ -718,9 +718,9 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
                  "Codec type doesn't match pl_name", video_codec.plType);
     return false;
   } else if ((video_codec.codecType == kVideoCodecVP8 &&
-              strncmp(video_codec.plName, "VP8", 4) == 0) ||
+		  	  std::strncmp(video_codec.plName, "VP8", 4) == 0) ||
              (video_codec.codecType == kVideoCodecI420 &&
-              strncmp(video_codec.plName, "I420", 4) == 0)) {
+              std::strncmp(video_codec.plName, "I420", 4) == 0)) {
     // OK.
   } else if (video_codec.codecType != kVideoCodecGeneric) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,

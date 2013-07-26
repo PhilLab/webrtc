@@ -52,10 +52,10 @@ int32_t DeviceInfoImpl::NumberOfCapabilities(
 
     _apiLock.AcquireLockShared();
 
-    if (_lastUsedDeviceNameLength == strlen((char*) deviceUniqueIdUTF8))
+    if (_lastUsedDeviceNameLength == std::strlen((char*) deviceUniqueIdUTF8))
     {
         // Is it the same device that is asked for again.
-#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_QNX)
         if(strncasecmp((char*)_lastUsedDeviceName,
                        (char*) deviceUniqueIdUTF8,
                        _lastUsedDeviceNameLength)==0)
@@ -91,8 +91,8 @@ int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
     }
     ReadLockScoped cs(_apiLock);
 
-    if ((_lastUsedDeviceNameLength != strlen((char*) deviceUniqueIdUTF8))
-#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+    if ((_lastUsedDeviceNameLength != std::strlen((char*) deviceUniqueIdUTF8))
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_QNX)
         || (strncasecmp((char*)_lastUsedDeviceName,
                         (char*) deviceUniqueIdUTF8,
                         _lastUsedDeviceNameLength)!=0))
@@ -155,8 +155,8 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
         return -1;
 
     ReadLockScoped cs(_apiLock);
-    if ((_lastUsedDeviceNameLength != strlen((char*) deviceUniqueIdUTF8))
-#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+    if ((_lastUsedDeviceNameLength != std::strlen((char*) deviceUniqueIdUTF8))
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || defined(WEBRTC_QNX)
         || (strncasecmp((char*)_lastUsedDeviceName,
                         (char*) deviceUniqueIdUTF8,
                         _lastUsedDeviceNameLength)!=0))
@@ -323,9 +323,9 @@ int32_t DeviceInfoImpl::GetExpectedCaptureDelay(
 
     for (uint32_t device = 0; device < sizeOfDelayValues; ++device)
     {
-        if (delayValues[device].productId && strncmp((char*) productId,
-                                                     (char*) delayValues[device].productId,
-                                                     kVideoCaptureProductIdLength) == 0)
+        if (delayValues[device].productId && std::strncmp((char*) productId,
+        												  (char*) delayValues[device].productId,
+        												  kVideoCaptureProductIdLength) == 0)
         {
             // We have found the camera
 

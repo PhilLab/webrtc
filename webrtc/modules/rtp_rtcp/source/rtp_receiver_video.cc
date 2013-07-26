@@ -245,9 +245,9 @@ int32_t RTPReceiverVideo::ReceiveRecoveredPacketCallback(
   recovered_packet[rtp_header_length] = rtp_header->header.payloadType;
   // f-bit always 0
 
-  memcpy(recovered_packet + rtp_header_length + kREDForFECHeaderLength,
-         payload_data,
-         payload_data_length);
+  std::memcpy(recovered_packet + rtp_header_length + kREDForFECHeaderLength,
+		  	  payload_data,
+		  	  payload_data_length);
 
   // A recovered packet can be the first packet, but we lack the ability to
   // detect it at the moment since we do not store the history of recently

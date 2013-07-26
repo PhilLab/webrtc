@@ -166,7 +166,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
 
   // Prepare FEC packets by setting them to 0.
   for (int i = 0; i < num_fec_packets; ++i) {
-    memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
+	std::memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
     generated_fec_packets_[i].length = 0;  // Use this as a marker for untouched
                                            // packets.
     fec_packet_list->push_back(&generated_fec_packets_[i]);
@@ -177,7 +177,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
   // -- Generate packet masks --
   // Always allocate space for a large mask.
   uint8_t* packet_mask = new uint8_t[num_fec_packets * kMaskSizeLBitSet];
-  memset(packet_mask, 0, num_fec_packets * num_maskBytes);
+  std::memset(packet_mask, 0, num_fec_packets * num_maskBytes);
   internal::GeneratePacketMasks(num_media_packets, num_fec_packets,
                                 num_important_packets, use_unequal_protection,
                                 mask_table, packet_mask);
@@ -246,14 +246,14 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
         // On the first protected packet, we don't need to XOR.
         if (generated_fec_packets_[i].length == 0) {
           // Copy the first 2 bytes of the RTP header.
-          memcpy(generated_fec_packets_[i].data, media_packet->data, 2);
+          std::memcpy(generated_fec_packets_[i].data, media_packet->data, 2);
           // Copy the 5th to 8th bytes of the RTP header.
-          memcpy(&generated_fec_packets_[i].data[4], &media_packet->data[4], 4);
+          std::memcpy(&generated_fec_packets_[i].data[4], &media_packet->data[4], 4);
           // Copy network-ordered payload size.
-          memcpy(&generated_fec_packets_[i].data[8], media_payload_length, 2);
+          std::memcpy(&generated_fec_packets_[i].data[8], media_payload_length, 2);
 
           // Copy RTP payload, leaving room for the ULP header.
-          memcpy(
+          std::memcpy(
               &generated_fec_packets_[i].data[kFecHeaderSize + ulp_header_size],
               &media_packet->data[kRtpHeaderSize],
               media_packet->length - kRtpHeaderSize);
@@ -322,7 +322,7 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
     new_mask_bytes = kMaskSizeLBitSet;
   }
   new_mask = new uint8_t[num_fec_packets * kMaskSizeLBitSet];
-  memset(new_mask, 0, num_fec_packets * kMaskSizeLBitSet);
+  std::memset(new_mask, 0, num_fec_packets * kMaskSizeLBitSet);
 
   PacketList::const_iterator it = media_packets.begin();
   uint16_t prev_seq_num = first_seq_num;
@@ -361,7 +361,7 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
     }
   }
   // Replace the old mask with the new.
-  memcpy(packet_mask, new_mask, kMaskSizeLBitSet * num_fec_packets);
+  std::memcpy(packet_mask, new_mask, kMaskSizeLBitSet * num_fec_packets);
   delete[] new_mask;
   return new_bit_index;
 }
@@ -436,7 +436,7 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
     // Two byte sequence number from first RTP packet to SN base.
     // We use the same sequence number base for every FEC packet,
     // but that's not required in general.
-    memcpy(&generated_fec_packets_[i].data[2], &media_packet->data[2], 2);
+    std::memcpy(&generated_fec_packets_[i].data[2], &media_packet->data[2], 2);
 
     // -- ULP header --
     // Copy the payload size to the protection length field.
@@ -446,8 +446,8 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
         generated_fec_packets_[i].length - kFecHeaderSize - ulp_header_size);
 
     // Copy the packet mask.
-    memcpy(&generated_fec_packets_[i].data[12], &packet_mask[i * num_maskBytes],
-           num_maskBytes);
+    std::memcpy(&generated_fec_packets_[i].data[12], &packet_mask[i * num_maskBytes],
+                num_maskBytes);
   }
 }
 
@@ -635,22 +635,22 @@ void ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
       fec_packet->pkt->data[0] & 0x40 ? kUlpHeaderSizeLBitSet
                                       : kUlpHeaderSizeLBitClear;  // L bit set?
   recovered->pkt = new Packet;
-  memset(recovered->pkt->data, 0, IP_PACKET_SIZE);
+  std::memset(recovered->pkt->data, 0, IP_PACKET_SIZE);
   recovered->returned = false;
   recovered->was_recovered = true;
   uint8_t protection_length[2];
   // Copy the protection length from the ULP header.
-  memcpy(protection_length, &fec_packet->pkt->data[10], 2);
+  std::memcpy(protection_length, &fec_packet->pkt->data[10], 2);
   // Copy FEC payload, skipping the ULP header.
-  memcpy(&recovered->pkt->data[kRtpHeaderSize],
-         &fec_packet->pkt->data[kFecHeaderSize + ulp_header_size],
-         ModuleRTPUtility::BufferToUWord16(protection_length));
+  std::memcpy(&recovered->pkt->data[kRtpHeaderSize],
+		  	  &fec_packet->pkt->data[kFecHeaderSize + ulp_header_size],
+		  	  ModuleRTPUtility::BufferToUWord16(protection_length));
   // Copy the length recovery field.
-  memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
+  std::memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
   // Copy the first 2 bytes of the FEC header.
-  memcpy(recovered->pkt->data, fec_packet->pkt->data, 2);
+  std::memcpy(recovered->pkt->data, fec_packet->pkt->data, 2);
   // Copy the 5th to 8th bytes of the FEC header.
-  memcpy(&recovered->pkt->data[4], &fec_packet->pkt->data[4], 4);
+  std::memcpy(&recovered->pkt->data[4], &fec_packet->pkt->data[4], 4);
   // Set the SSRC field.
   ModuleRTPUtility::AssignUWord32ToBuffer(&recovered->pkt->data[8],
                                           fec_packet->ssrc);
@@ -799,8 +799,8 @@ int32_t ForwardErrorCorrection::DecodeFEC(
   // error?
   if (recovered_packet_list->size() == kMaxMediaPackets) {
     const unsigned int seq_num_diff =
-        abs(static_cast<int>(received_packet_list->front()->seq_num) -
-            static_cast<int>(recovered_packet_list->back()->seq_num));
+    	std::abs(static_cast<int>(received_packet_list->front()->seq_num) -
+    			 static_cast<int>(recovered_packet_list->back()->seq_num));
     if (seq_num_diff > kMaxMediaPackets) {
       // A big gap in sequence numbers. The old recovered packets
       // are now useless, so it's safe to do a reset.

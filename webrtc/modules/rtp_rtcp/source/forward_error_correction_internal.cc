@@ -40,7 +40,7 @@ enum ProtectionMode {
 void FitSubMask(int num_mask_bytes, int num_sub_mask_bytes, int num_rows,
                 const uint8_t* sub_mask, uint8_t* packet_mask) {
   if (num_mask_bytes == num_sub_mask_bytes) {
-    memcpy(packet_mask, sub_mask, num_rows * num_sub_mask_bytes);
+	std::memcpy(packet_mask, sub_mask, num_rows * num_sub_mask_bytes);
   } else {
     for (int i = 0; i < num_rows; ++i) {
       int pkt_mask_idx = i * num_mask_bytes;
@@ -361,7 +361,7 @@ void GeneratePacketMasks(int num_media_packets, int num_fec_packets,
     // Retrieve corresponding mask table directly:for equal-protection case.
     // Mask = (k,n-k), with protection factor = (n-k)/k,
     // where k = num_media_packets, n=total#packets, (n-k)=num_fec_packets.
-    memcpy(packet_mask, mask_table.fec_packet_mask_table()[
+	std::memcpy(packet_mask, mask_table.fec_packet_mask_table()[
                             num_media_packets - 1][num_fec_packets - 1],
            num_fec_packets * num_mask_bytes);
   } else  //UEP case

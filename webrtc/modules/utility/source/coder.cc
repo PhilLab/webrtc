@@ -55,7 +55,7 @@ int32_t AudioCoder::SetDecodeCodec(const CodecInst& codecInst,
     {
         return -1;
     }
-    memcpy(&_receiveCodec,&codecInst,sizeof(CodecInst));
+    std::memcpy(&_receiveCodec,&codecInst,sizeof(CodecInst));
     return 0;
 }
 
@@ -120,7 +120,7 @@ int32_t AudioCoder::SendData(
     uint16_t  payloadSize,
     const RTPFragmentationHeader* /* fragmentation*/)
 {
-    memcpy(_encodedData,payloadData,sizeof(uint8_t) * payloadSize);
+	std::memcpy(_encodedData,payloadData,sizeof(uint8_t) * payloadSize);
     _encodedLengthInBytes = payloadSize;
     return 0;
 }

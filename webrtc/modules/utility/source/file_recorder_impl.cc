@@ -185,7 +185,7 @@ int32_t FileRecorderImpl::StartRecordingAudioFile(
 
 int32_t FileRecorderImpl::StopRecording()
 {
-    memset(&codec_info_, 0, sizeof(CodecInst));
+    std::memset(&codec_info_, 0, sizeof(CodecInst));
     return _moduleFile->StopRecording();
 }
 

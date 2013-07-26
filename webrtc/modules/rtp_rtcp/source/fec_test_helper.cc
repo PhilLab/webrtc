@@ -24,12 +24,12 @@ void FrameGenerator::NewFrame(int num_packets) {
 
 uint16_t FrameGenerator::NextSeqNum() { return ++seq_num_; }
 
-RtpPacket* FrameGenerator::NextPacket(int offset, size_t length) {
+RtpPacket* FrameGenerator::NextPacket(int offset, std::size_t length) {
   RtpPacket* rtp_packet = new RtpPacket;
-  for (size_t i = 0; i < length; ++i)
+  for (std::size_t i = 0; i < length; ++i)
     rtp_packet->data[i + kRtpHeaderSize] = offset + i;
   rtp_packet->length = length + kRtpHeaderSize;
-  memset(&rtp_packet->header, 0, sizeof(WebRtcRTPHeader));
+  std::memset(&rtp_packet->header, 0, sizeof(WebRtcRTPHeader));
   rtp_packet->header.frameType = kVideoFrameDelta;
   rtp_packet->header.header.headerLength = kRtpHeaderSize;
   rtp_packet->header.header.markerBit = (num_packets_ == 1);
@@ -48,12 +48,12 @@ RtpPacket* FrameGenerator::BuildMediaRedPacket(const RtpPacket* packet) {
   RtpPacket* red_packet = new RtpPacket;
   red_packet->header = packet->header;
   red_packet->length = packet->length + 1;  // 1 byte RED header.
-  memset(red_packet->data, 0, red_packet->length);
+  std::memset(red_packet->data, 0, red_packet->length);
   // Copy RTP header.
-  memcpy(red_packet->data, packet->data, kHeaderLength);
+  std::memcpy(red_packet->data, packet->data, kHeaderLength);
   SetRedHeader(red_packet, red_packet->data[1] & 0x7f, kHeaderLength);
-  memcpy(red_packet->data + kHeaderLength + 1, packet->data + kHeaderLength,
-         packet->length - kHeaderLength);
+  std::memcpy(red_packet->data + kHeaderLength + 1, packet->data + kHeaderLength,
+		  	  packet->length - kHeaderLength);
   return red_packet;
 }
 
@@ -67,7 +67,7 @@ RtpPacket* FrameGenerator::BuildFecRedPacket(const Packet* packet) {
   red_packet->data[1] &= ~0x80;  // Clear marker bit.
   const int kHeaderLength = red_packet->header.header.headerLength;
   SetRedHeader(red_packet, kFecPayloadType, kHeaderLength);
-  memcpy(red_packet->data + kHeaderLength + 1, packet->data, packet->length);
+  std::memcpy(red_packet->data + kHeaderLength + 1, packet->data, packet->length);
   red_packet->length = kHeaderLength + 1 + packet->length;
   return red_packet;
 }

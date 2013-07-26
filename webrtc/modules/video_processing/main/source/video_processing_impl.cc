@@ -172,7 +172,7 @@ VideoProcessingModule::ClearFrameStats(FrameStats* stats)
     stats->numPixels = 0;
     stats->subSamplWidth = 0;
     stats->subSamplHeight = 0;
-    memset(stats->hist, 0, sizeof(stats->hist));
+    std::memset(stats->hist, 0, sizeof(stats->hist));
 }
 
 int32_t

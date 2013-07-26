@@ -322,9 +322,9 @@ int VoEExternalMediaImpl::ExternalPlayoutGetData(
     shared_->output_mixer()->GetMixedAudio(samplingFreqHz, 1, &audioFrame);
 
     // Deliver audio (PCM) samples to the external sink
-    memcpy(speechData10ms,
-           audioFrame.data_,
-           sizeof(int16_t)*(audioFrame.samples_per_channel_));
+    std::memcpy(speechData10ms,
+    			audioFrame.data_,
+    			sizeof(int16_t)*(audioFrame.samples_per_channel_));
     lengthSamples = audioFrame.samples_per_channel_;
 
     // Store current playout delay (to be used by ExternalRecordingInsertData).

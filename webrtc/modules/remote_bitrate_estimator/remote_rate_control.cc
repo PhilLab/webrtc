@@ -140,7 +140,7 @@ uint32_t RemoteRateControl::ChangeBitRate(uint32_t current_bit_rate,
   const float incoming_bit_rate_kbps = incoming_bit_rate / 1000.0f;
   // Calculate the max bit rate std dev given the normalized
   // variance and the current incoming bit rate.
-  const float std_max_bit_rate = sqrt(var_max_bit_rate_ * avg_max_bit_rate_);
+  const float std_max_bit_rate = std::sqrt(var_max_bit_rate_ * avg_max_bit_rate_);
   bool recovery = false;
   switch (rate_control_state_) {
     case kRcHold: {
@@ -241,7 +241,7 @@ double RemoteRateControl::RateIncreaseFactor(int64_t now_ms,
   const double c2 = 800.0;
   const double d = 0.85;
 
-  double alpha = 1.005 + B / (1 + exp( b * (d * reaction_time_ms -
+  double alpha = 1.005 + B / (1 + std::exp( b * (d * reaction_time_ms -
       (c1 * noise_var + c2))));
 
   if (alpha < 1.005) {
@@ -253,7 +253,7 @@ double RemoteRateControl::RateIncreaseFactor(int64_t now_ms,
   WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "BWE: alpha = %f", alpha);
 
   if (last_ms > -1) {
-    alpha = pow(alpha, (now_ms - last_ms) / 1000.0);
+    alpha = std::pow(alpha, (now_ms - last_ms) / 1000.0);
   }
 
   if (rate_control_region_ == kRcNearMax) {
@@ -353,13 +353,13 @@ void RemoteRateControl::ChangeState(RateControlState new_state) {
 void RemoteRateControl::StateStr(RateControlState state, char* str) {
   switch (state) {
     case kRcDecrease:
-      strncpy(str, "DECREASE", 9);
+      std::strncpy(str, "DECREASE", 9);
       break;
     case kRcHold:
-      strncpy(str, "HOLD", 5);
+      std::strncpy(str, "HOLD", 5);
       break;
     case kRcIncrease:
-      strncpy(str, "INCREASE", 9);
+      std::strncpy(str, "INCREASE", 9);
       break;
     default:
       assert(false);
@@ -369,13 +369,13 @@ void RemoteRateControl::StateStr(RateControlState state, char* str) {
 void RemoteRateControl::StateStr(BandwidthUsage state, char* str) {
   switch (state) {
     case kBwNormal:
-      strncpy(str, "NORMAL", 7);
+      std::strncpy(str, "NORMAL", 7);
       break;
     case kBwOverusing:
-      strncpy(str, "OVER USING", 11);
+      std::strncpy(str, "OVER USING", 11);
       break;
     case kBwUnderusing:
-      strncpy(str, "UNDER USING", 12);
+      std::strncpy(str, "UNDER USING", 12);
       break;
     default:
       assert(false);

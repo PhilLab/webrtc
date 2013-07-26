@@ -322,14 +322,14 @@ namespace RTCPUtility {
     {
     public:
         RTCPParserV2(const uint8_t* rtcpData,
-                     size_t rtcpDataLength,
+                     std::size_t rtcpDataLength,
                      bool rtcpReducedSizeEnable); // Set to true, to allow non-compound RTCP!
         ~RTCPParserV2();
 
         RTCPPacketTypes PacketType() const;
         const RTCPPacket& Packet() const;
         const RTCPRawPacket& RawPacket() const;
-        ptrdiff_t LengthLeft() const;
+        std::ptrdiff_t LengthLeft() const;
 
         bool IsValid() const;
 
@@ -426,7 +426,7 @@ namespace RTCPUtility {
     {
     public:
         RTCPPacketIterator(uint8_t* rtcpData,
-                            size_t rtcpDataLength);
+        				   std::size_t rtcpDataLength);
         ~RTCPPacketIterator();
 
         const RTCPCommonHeader* Begin();

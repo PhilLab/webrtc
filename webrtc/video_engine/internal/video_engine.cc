@@ -54,6 +54,6 @@ VideoEngine* VideoEngine::Create(const VideoEngineConfig& engine_config) {
   return new internal::VideoEngine(engine_config);
 }
 
-const char* Version() { return WEBRTC_SVNREVISION " (" BUILDINFO ")"; }
+const char* Version() { return "WEBRTC_SVNREVISION" " (" BUILDINFO ")"; }
 }  // newapi
 }  // webrtc

@@ -282,7 +282,7 @@ VCMNackStatus VCMReceiver::NackList(uint16_t* nack_list,
     return kNackNeedMoreMemory;
   }
   if (internal_nack_list != NULL && *nack_list_length > 0) {
-    memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
+	std::memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
   }
   if (request_key_frame) {
     return kNackKeyFrameRequest;

@@ -194,22 +194,22 @@ public:
             // copy values
             if(src.fragmentationOffset)
             {
-                memcpy(fragmentationOffset, src.fragmentationOffset,
+                std::memcpy(fragmentationOffset, src.fragmentationOffset,
                        src.fragmentationVectorSize * sizeof(uint32_t));
             }
             if(src.fragmentationLength)
             {
-                memcpy(fragmentationLength, src.fragmentationLength,
+            	std::memcpy(fragmentationLength, src.fragmentationLength,
                        src.fragmentationVectorSize * sizeof(uint32_t));
             }
             if(src.fragmentationTimeDiff)
             {
-                memcpy(fragmentationTimeDiff, src.fragmentationTimeDiff,
+            	std::memcpy(fragmentationTimeDiff, src.fragmentationTimeDiff,
                        src.fragmentationVectorSize * sizeof(uint16_t));
             }
             if(src.fragmentationPlType)
             {
-                memcpy(fragmentationPlType, src.fragmentationPlType,
+            	std::memcpy(fragmentationPlType, src.fragmentationPlType,
                        src.fragmentationVectorSize * sizeof(uint8_t));
             }
         }
@@ -224,19 +224,19 @@ public:
                 // offset
                 uint32_t* oldOffsets = fragmentationOffset;
                 fragmentationOffset = new uint32_t[size];
-                memset(fragmentationOffset+oldVectorSize, 0,
+                std::memset(fragmentationOffset+oldVectorSize, 0,
                        sizeof(uint32_t)*(size-oldVectorSize));
                 // copy old values
-                memcpy(fragmentationOffset,oldOffsets, sizeof(uint32_t) * oldVectorSize);
+                std::memcpy(fragmentationOffset,oldOffsets, sizeof(uint32_t) * oldVectorSize);
                 delete[] oldOffsets;
             }
             // length
             {
                 uint32_t* oldLengths = fragmentationLength;
                 fragmentationLength = new uint32_t[size];
-                memset(fragmentationLength+oldVectorSize, 0,
+                std::memset(fragmentationLength+oldVectorSize, 0,
                        sizeof(uint32_t) * (size- oldVectorSize));
-                memcpy(fragmentationLength, oldLengths,
+                std::memcpy(fragmentationLength, oldLengths,
                        sizeof(uint32_t) * oldVectorSize);
                 delete[] oldLengths;
             }
@@ -244,9 +244,9 @@ public:
             {
                 uint16_t* oldTimeDiffs = fragmentationTimeDiff;
                 fragmentationTimeDiff = new uint16_t[size];
-                memset(fragmentationTimeDiff+oldVectorSize, 0,
+                std::memset(fragmentationTimeDiff+oldVectorSize, 0,
                        sizeof(uint16_t) * (size- oldVectorSize));
-                memcpy(fragmentationTimeDiff, oldTimeDiffs,
+                std::memcpy(fragmentationTimeDiff, oldTimeDiffs,
                        sizeof(uint16_t) * oldVectorSize);
                 delete[] oldTimeDiffs;
             }
@@ -254,9 +254,9 @@ public:
             {
                 uint8_t* oldTimePlTypes = fragmentationPlType;
                 fragmentationPlType = new uint8_t[size];
-                memset(fragmentationPlType+oldVectorSize, 0,
+                std::memset(fragmentationPlType+oldVectorSize, 0,
                        sizeof(uint8_t) * (size- oldVectorSize));
-                memcpy(fragmentationPlType, oldTimePlTypes,
+                std::memcpy(fragmentationPlType, oldTimePlTypes,
                        sizeof(uint8_t) * oldVectorSize);
                 delete[] oldTimePlTypes;
             }
@@ -363,7 +363,7 @@ public:
         if (data.payloadSize > 0)
         {
             payloadData = new uint8_t[data.payloadSize];
-            memcpy(payloadData, data.payloadData, data.payloadSize);
+            std::memcpy(payloadData, data.payloadData, data.payloadSize);
         }
         else
         {
@@ -398,7 +398,7 @@ public:
         {
             delete [] payloadData;
             payloadData = new uint8_t[data.payloadSize];
-            memcpy(payloadData, data.payloadData, data.payloadSize);
+            std::memcpy(payloadData, data.payloadData, data.payloadSize);
             bufferSize = data.payloadSize;
         }
         return *this;
@@ -409,7 +409,7 @@ public:
         {
             uint8_t* oldPayload = payloadData;
             payloadData = new uint8_t[size];
-            memcpy(payloadData, oldPayload, sizeof(uint8_t) * payloadSize);
+            std::memcpy(payloadData, oldPayload, sizeof(uint8_t) * payloadSize);
 
             bufferSize = size;
             delete[] oldPayload;
@@ -603,12 +603,12 @@ VideoFrame::VerifyAndAllocate(const uint32_t minimumSize)
         if(_buffer)
         {
             // copy old data
-            memcpy(newBufferBuffer, _buffer, _bufferSize);
+        	std::memcpy(newBufferBuffer, _buffer, _bufferSize);
             delete [] _buffer;
         }
         else
         {
-            memset(newBufferBuffer, 0, minimumSize * sizeof(uint8_t));
+        	std::memset(newBufferBuffer, 0, minimumSize * sizeof(uint8_t));
         }
         _buffer = newBufferBuffer;
         _bufferSize = minimumSize;
@@ -678,7 +678,7 @@ VideoFrame::CopyFrame(uint32_t length, const uint8_t* sourceBuffer)
             return ret;
         }
     }
-     memcpy(_buffer, sourceBuffer, length);
+    std::memcpy(_buffer, sourceBuffer, length);
     _bufferLength = length;
     return 0;
 }
@@ -835,11 +835,11 @@ AudioFrame::UpdateFrame(
     assert(length <= kMaxDataSizeSamples && length >= 0);
     if(data != NULL)
     {
-        memcpy(data_, data, sizeof(int16_t) * length);
+    	std::memcpy(data_, data, sizeof(int16_t) * length);
     }
     else
     {
-        memset(data_, 0, sizeof(int16_t) * length);
+    	std::memset(data_, 0, sizeof(int16_t) * length);
     }
 }
 
@@ -860,14 +860,14 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src)
 
     const int length = samples_per_channel_ * num_channels_;
     assert(length <= kMaxDataSizeSamples && length >= 0);
-    memcpy(data_, src.data_, sizeof(int16_t) * length);
+    std::memcpy(data_, src.data_, sizeof(int16_t) * length);
 }
 
 inline
 void
 AudioFrame::Mute()
 {
-  memset(data_, 0, samples_per_channel_ * num_channels_ * sizeof(int16_t));
+  std::memset(data_, 0, samples_per_channel_ * num_channels_ * sizeof(int16_t));
 }
 
 inline
@@ -976,7 +976,7 @@ AudioFrame::operator+=(const AudioFrame& rhs)
 
     if(noPrevData)
     {
-        memcpy(data_, rhs.data_,
+    	std::memcpy(data_, rhs.data_,
           sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
     } else
     {

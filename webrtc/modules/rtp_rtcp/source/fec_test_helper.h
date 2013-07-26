@@ -43,7 +43,7 @@ class FrameGenerator {
 
   uint16_t NextSeqNum();
 
-  RtpPacket* NextPacket(int offset, size_t length);
+  RtpPacket* NextPacket(int offset, std::size_t length);
 
   // Creates a new RtpPacket with the RED header added to the packet.
   RtpPacket* BuildMediaRedPacket(const RtpPacket* packet);

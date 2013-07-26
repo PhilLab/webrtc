@@ -146,7 +146,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
     REDHeaderLength = 5;
 
     // copy the RTP header
-    memcpy(received_packet->pkt->data, incoming_rtp_packet,
+    std::memcpy(received_packet->pkt->data, incoming_rtp_packet,
            rtp_header->header.headerLength);
 
     // replace the RED payload type
@@ -155,7 +155,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
         payload_type;                       // set the media payload type
 
     // copy the payload data
-    memcpy(
+    std::memcpy(
         received_packet->pkt->data + rtp_header->header.headerLength,
         incoming_rtp_packet + rtp_header->header.headerLength + REDHeaderLength,
         blockLength);
@@ -169,7 +169,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
     second_received_packet->seq_num = rtp_header->header.sequenceNumber;
 
     // copy the FEC payload data
-    memcpy(second_received_packet->pkt->data,
+    std::memcpy(second_received_packet->pkt->data,
            incoming_rtp_packet + rtp_header->header.headerLength +
                REDHeaderLength + blockLength,
            payload_data_length - REDHeaderLength - blockLength);
@@ -179,7 +179,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 
   } else if (received_packet->is_fec) {
     // everything behind the RED header
-    memcpy(
+	std::memcpy(
         received_packet->pkt->data,
         incoming_rtp_packet + rtp_header->header.headerLength + REDHeaderLength,
         payload_data_length - REDHeaderLength);
@@ -189,8 +189,8 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 
   } else {
     // copy the RTP header
-    memcpy(received_packet->pkt->data, incoming_rtp_packet,
-           rtp_header->header.headerLength);
+	std::memcpy(received_packet->pkt->data, incoming_rtp_packet,
+				rtp_header->header.headerLength);
 
     // replace the RED payload type
     received_packet->pkt->data[1] &= 0x80;  // reset the payload
@@ -198,7 +198,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
         payload_type;                       // set the media payload type
 
     // copy the media payload data
-    memcpy(
+    std::memcpy(
         received_packet->pkt->data + rtp_header->header.headerLength,
         incoming_rtp_packet + rtp_header->header.headerLength + REDHeaderLength,
         payload_data_length - REDHeaderLength);
@@ -250,7 +250,7 @@ int32_t ReceiverFEC::ProcessReceivedFEC() {
 int ReceiverFEC::ParseAndReceivePacket(
     const ForwardErrorCorrection::Packet* packet) {
   WebRtcRTPHeader header;
-  memset(&header, 0, sizeof(header));
+  std::memset(&header, 0, sizeof(header));
   ModuleRTPUtility::RTPHeaderParser parser(packet->data, packet->length);
   if (!parser.Parse(header.header)) {
     return -1;

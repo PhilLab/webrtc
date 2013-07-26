@@ -32,7 +32,7 @@ int AudioFrameOperations::MonoToStereo(AudioFrame* frame) {
   }
 
   int16_t data_copy[AudioFrame::kMaxDataSizeSamples];
-  memcpy(data_copy, frame->data_,
+  std::memcpy(data_copy, frame->data_,
          sizeof(int16_t) * frame->samples_per_channel_);
   MonoToStereo(data_copy, frame->samples_per_channel_, frame->data_);
   frame->num_channels_ = 2;
@@ -70,7 +70,7 @@ void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
 }
 
 void AudioFrameOperations::Mute(AudioFrame& frame) {
-  memset(frame.data_, 0, sizeof(int16_t) *
+  std::memset(frame.data_, 0, sizeof(int16_t) *
       frame.samples_per_channel_ * frame.num_channels_);
   frame.energy_ = 0;
 }

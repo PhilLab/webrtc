@@ -229,14 +229,14 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
     }
 
     // Copy to vectors supplied by user
-    strncpy(strNameUTF8, name, strLen);
+    std::strncpy(strNameUTF8, name, strLen);
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
         VoEId(_shared->instance_id(), -1),
         "  Output: strNameUTF8=%s", strNameUTF8);
 
     if (strGuidUTF8 != NULL)
     {
-        strncpy(strGuidUTF8, guid, strLen);
+    	std::strncpy(strGuidUTF8, guid, strLen);
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
             VoEId(_shared->instance_id(), -1),
             "  Output: strGuidUTF8=%s", strGuidUTF8);
@@ -287,14 +287,14 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
     }
 
     // Copy to vectors supplied by user
-    strncpy(strNameUTF8, name, strLen);
+    std::strncpy(strNameUTF8, name, strLen);
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
         VoEId(_shared->instance_id(), -1),
         "  Output: strNameUTF8=%s", strNameUTF8);
 
     if (strGuidUTF8 != NULL)
     {
-        strncpy(strGuidUTF8, guid, strLen);
+    	std::strncpy(strGuidUTF8, guid, strLen);
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
             VoEId(_shared->instance_id(), -1),
             "  Output: strGuidUTF8=%s", strGuidUTF8);

@@ -126,10 +126,10 @@ int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
 
   const unsigned char startCode[] = {0, 0, 0, 1};
   if (packet.insertStartCode) {
-    memcpy(const_cast<uint8_t*>(packet.dataPtr), startCode,
+	std::memcpy(const_cast<uint8_t*>(packet.dataPtr), startCode,
            kH264StartCodeLengthBytes);
   }
-  memcpy(const_cast<uint8_t*>(packet.dataPtr
+  std::memcpy(const_cast<uint8_t*>(packet.dataPtr
       + (packet.insertStartCode ? kH264StartCodeLengthBytes : 0)),
       data,
       packet.sizeBytes);
@@ -150,7 +150,7 @@ void VCMSessionInfo::ShiftSubsequentPackets(PacketIterator it,
     if ((*it).dataPtr != NULL)
       (*it).dataPtr += steps_to_shift;
   }
-  memmove(first_packet_ptr + steps_to_shift, first_packet_ptr, shift_length);
+  std::memmove(first_packet_ptr + steps_to_shift, first_packet_ptr, shift_length);
 }
 
 void VCMSessionInfo::UpdateCompleteSession() {
@@ -236,7 +236,7 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
   // Allocate space for max number of partitions
   fragmentation->VerifyAndAllocateFragmentationHeader(kMaxVP8Partitions);
   fragmentation->fragmentationVectorSize = 0;
-  memset(fragmentation->fragmentationLength, 0,
+  std::memset(fragmentation->fragmentationLength, 0,
          kMaxVP8Partitions * sizeof(uint32_t));
   if (packets_.empty())
       return new_length;

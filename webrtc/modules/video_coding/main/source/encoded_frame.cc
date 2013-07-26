@@ -43,7 +43,7 @@ _fragmentation()
     if (rhs._buffer != NULL)
     {
         VerifyAndAllocate(rhs._length);
-        memcpy(_buffer, rhs._buffer, rhs._length);
+        std::memcpy(_buffer, rhs._buffer, rhs._length);
     }
 }
 
@@ -62,7 +62,7 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
   if (rhs._buffer != NULL)
   {
       VerifyAndAllocate(rhs._length);
-      memcpy(_buffer, rhs._buffer, rhs._length);
+      std::memcpy(_buffer, rhs._buffer, rhs._length);
       _length = rhs._length;
   }
   _fragmentation.CopyFrom(rhs._fragmentation);
@@ -157,7 +157,7 @@ VCMEncodedFrame::Store(VCMFrameStorageCallback& storeCallback) const
     if (_buffer != NULL)
     {
         frameToStore.VerifyAndAllocate(_length);
-        memcpy(frameToStore.payloadData, _buffer, _length);
+        std::memcpy(frameToStore.payloadData, _buffer, _length);
         frameToStore.payloadSize = _length;
     }
     frameToStore.completeFrame = _completeFrame;
@@ -186,7 +186,7 @@ VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
         if(_buffer)
         {
             // copy old data
-            memcpy(newBuffer, _buffer, _size);
+        	std::memcpy(newBuffer, _buffer, _size);
             delete [] _buffer;
         }
         _buffer = newBuffer;

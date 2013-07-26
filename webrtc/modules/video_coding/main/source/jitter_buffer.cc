@@ -164,8 +164,8 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       max_packet_age_to_nack_(0),
       max_incomplete_time_ms_(0),
       decode_with_errors_(false) {
-  memset(frame_buffers_, 0, sizeof(frame_buffers_));
-  memset(receive_statistics_, 0, sizeof(receive_statistics_));
+  std::memset(frame_buffers_, 0, sizeof(frame_buffers_));
+  std::memset(receive_statistics_, 0, sizeof(receive_statistics_));
 
   for (int i = 0; i < kStartNumberOfFrames; i++) {
     frame_buffers_[i] = new VCMFrameBuffer();
@@ -211,8 +211,8 @@ void VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs) {
     assert(max_nack_list_size_ == rhs.max_nack_list_size_);
     assert(max_packet_age_to_nack_ == rhs.max_packet_age_to_nack_);
     assert(max_incomplete_time_ms_ == rhs.max_incomplete_time_ms_);
-    memcpy(receive_statistics_, rhs.receive_statistics_,
-           sizeof(receive_statistics_));
+    std::memcpy(receive_statistics_, rhs.receive_statistics_,
+    			sizeof(receive_statistics_));
     nack_seq_nums_.resize(rhs.nack_seq_nums_.size());
     missing_sequence_numbers_ = rhs.missing_sequence_numbers_;
     latest_received_sequence_number_ = rhs.latest_received_sequence_number_;
@@ -250,7 +250,7 @@ void VCMJitterBuffer::Start() {
   incoming_bit_count_ = 0;
   incoming_bit_rate_ = 0;
   time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
-  memset(receive_statistics_, 0, sizeof(receive_statistics_));
+  std::memset(receive_statistics_, 0, sizeof(receive_statistics_));
 
   num_consecutive_old_frames_ = 0;
   num_consecutive_old_packets_ = 0;

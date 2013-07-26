@@ -19,7 +19,7 @@
 #if defined(_WIN32)
 #include <Windows.h>
 #include <mmsystem.h>
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC) || defined(WEBRTC_QNX)
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
@@ -237,7 +237,7 @@ inline uint32_t RtpDumpImpl::GetTimeInMS() const
 {
 #if defined(_WIN32)
     return timeGetTime();
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC) || defined(WEBRTC_QNX)
     struct timeval tv;
     struct timezone tz;
     unsigned long val;
@@ -246,7 +246,7 @@ inline uint32_t RtpDumpImpl::GetTimeInMS() const
     val = tv.tv_sec * 1000 + tv.tv_usec / 1000;
     return val;
 #else
-    #error Either _WIN32 or LINUX or WEBRTC_MAC has to be defined!
+    #error Either _WIN32 or LINUX or WEBRTC_MAC or WEBRTC_QNX has to be defined!
     assert(false);
     return 0;
 #endif

@@ -74,8 +74,8 @@ void RampOut(AudioFrame& audioFrame)
         audioFrame.data_[i] = static_cast<int16_t>(rampArray[rampPos] *
                                                    audioFrame.data_[i]);
     }
-    memset(&audioFrame.data_[rampSize], 0,
-           (audioFrame.samples_per_channel_ - rampSize) *
-           sizeof(audioFrame.data_[0]));
+    std::memset(&audioFrame.data_[rampSize], 0,
+    			(audioFrame.samples_per_channel_ - rampSize) *
+    			sizeof(audioFrame.data_[0]));
 }
 } // namespace webrtc

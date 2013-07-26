@@ -51,7 +51,7 @@ public:
             subSamplWidth(0),
             subSamplHeight(0)
         {
-            memset(hist, 0, sizeof(hist));
+        	std::memset(hist, 0, sizeof(hist));
         }
 
         uint32_t hist[256];      /**< Histogram of frame */

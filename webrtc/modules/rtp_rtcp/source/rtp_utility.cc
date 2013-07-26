@@ -256,7 +256,7 @@ bool RTPHeaderParser::RTCP() const {
   * FMT 15:    Application layer FB message
   */
 
-  const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
+  const std::ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
   if (length < kRtcpMinHeaderLength) {
     return false;
   }
@@ -293,7 +293,7 @@ bool RTPHeaderParser::RTCP() const {
 
 bool RTPHeaderParser::Parse(RTPHeader& header,
                             RtpHeaderExtensionMap* ptrExtensionMap) const {
-  const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
+  const std::ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
 
   if (length < 12) {
     return false;
@@ -370,7 +370,7 @@ bool RTPHeaderParser::Parse(RTPHeader& header,
     |                        header extension                       |
     |                             ....                              |
     */
-    const ptrdiff_t remain = _ptrRTPDataEnd - ptr;
+    const std::ptrdiff_t remain = _ptrRTPDataEnd - ptr;
     if (remain < 4) {
       return false;
     }

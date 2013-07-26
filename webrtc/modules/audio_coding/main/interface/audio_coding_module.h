@@ -986,7 +986,7 @@ class AudioCodingModule: public Module {
   // equal to |Nack::kNackListSizeLimit|. Otherwise, No change is applied and -1
   // is returned. 0 is returned at success.
   //
-  virtual int EnableNack(size_t max_nack_list_size) = 0;
+  virtual int EnableNack(std::size_t max_nack_list_size) = 0;
 
   // Disable NACK.
   virtual void DisableNack() = 0;

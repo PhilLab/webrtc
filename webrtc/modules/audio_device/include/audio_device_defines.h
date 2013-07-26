@@ -12,6 +12,7 @@
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_DEFINES_H
 
 #include "typedefs.h"
+#include "common_types.h"
 
 namespace webrtc {
 

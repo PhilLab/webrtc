@@ -98,7 +98,7 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
         break;
       }
       (*new_it)->payload = new uint8_t[payload_length];
-      memcpy((*new_it)->payload, payload_ptr, payload_length);
+      std::memcpy((*new_it)->payload, payload_ptr, payload_length);
       payload_ptr += payload_length;
     }
     // Reverse the order of the new packets, so that the primary payload is
@@ -312,7 +312,7 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
     timestamp += timestamps_per_chunk;
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[split_size_bytes];
-    memcpy(new_packet->payload, payload_ptr, split_size_bytes);
+    std::memcpy(new_packet->payload, payload_ptr, split_size_bytes);
     payload_ptr += split_size_bytes;
     new_packets->push_back(new_packet);
     len -= split_size_bytes;
@@ -325,7 +325,7 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
     new_packet->header.timestamp = timestamp;
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[len];
-    memcpy(new_packet->payload, payload_ptr, len);
+    std::memcpy(new_packet->payload, payload_ptr, len);
     payload_ptr += len;
     new_packets->push_back(new_packet);
   }
@@ -357,7 +357,7 @@ int PayloadSplitter::SplitByFrames(const Packet* packet,
     timestamp += timestamps_per_frame;
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[bytes_per_frame];
-    memcpy(new_packet->payload, payload_ptr, bytes_per_frame);
+    std::memcpy(new_packet->payload, payload_ptr, bytes_per_frame);
     payload_ptr += bytes_per_frame;
     new_packets->push_back(new_packet);
     len -= bytes_per_frame;

@@ -111,7 +111,7 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
 
   avg_diff_ms_ = ((kFilterLength - 1) * avg_diff_ms_ +
       current_diff_ms) / kFilterLength;
-  if (abs(avg_diff_ms_) < kMinDeltaMs) {
+  if (std::abs(avg_diff_ms_) < kMinDeltaMs) {
     // Don't adjust if the diff is within our margin.
     return false;
   }

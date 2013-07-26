@@ -161,13 +161,13 @@ void SincResampler::Initialize() {
   // r5_ size correct and at the end of the buffer.
   assert(r5_ + block_size_ == r1_ + buffer_size_);
 
-  memset(kernel_storage_.get(), 0,
+  std::memset(kernel_storage_.get(), 0,
          sizeof(*kernel_storage_.get()) * kKernelStorageSize);
-  memset(kernel_pre_sinc_storage_.get(), 0,
+  std::memset(kernel_pre_sinc_storage_.get(), 0,
          sizeof(*kernel_pre_sinc_storage_.get()) * kKernelStorageSize);
-  memset(kernel_window_storage_.get(), 0,
+  std::memset(kernel_window_storage_.get(), 0,
          sizeof(*kernel_window_storage_.get()) * kKernelStorageSize);
-  memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * buffer_size_);
+  std::memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * buffer_size_);
 }
 
 void SincResampler::InitializeKernel() {
@@ -191,8 +191,8 @@ void SincResampler::InitializeKernel() {
 
       // Compute Blackman window, matching the offset of the sinc().
       const float x = (i - subsample_offset) / kKernelSize;
-      const float window = kA0 - kA1 * cos(2.0 * M_PI * x) + kA2
-          * cos(4.0 * M_PI * x);
+      const float window = kA0 - kA1 * std::cos(2.0 * M_PI * x) + kA2
+          * std::cos(4.0 * M_PI * x);
       kernel_window_storage_.get()[idx] = window;
 
       // Compute the sinc with offset, then window the sinc() function and store
@@ -201,14 +201,14 @@ void SincResampler::InitializeKernel() {
         kernel_storage_.get()[idx] = sinc_scale_factor * window;
       } else {
         kernel_storage_.get()[idx] =
-            window * sin(sinc_scale_factor * pre_sinc) / pre_sinc;
+            window * std::sin(sinc_scale_factor * pre_sinc) / pre_sinc;
       }
     }
   }
 }
 
 void SincResampler::SetRatio(double io_sample_rate_ratio) {
-  if (fabs(io_sample_rate_ratio_ - io_sample_rate_ratio) <
+  if (std::fabs(io_sample_rate_ratio_ - io_sample_rate_ratio) <
       std::numeric_limits<double>::epsilon()) {
     return;
   }
@@ -228,7 +228,7 @@ void SincResampler::SetRatio(double io_sample_rate_ratio) {
         kernel_storage_.get()[idx] = sinc_scale_factor * window;
       } else {
         kernel_storage_.get()[idx] =
-            window * sin(sinc_scale_factor * pre_sinc) / pre_sinc;
+            window * std::sin(sinc_scale_factor * pre_sinc) / pre_sinc;
       }
     }
   }
@@ -305,8 +305,8 @@ void SincResampler::Resample(float* destination, int frames) {
 
     // Step (3) Copy r3_ to r1_ and r4_ to r2_.
     // This wraps the last input frames back to the start of the buffer.
-    memcpy(r1_, r3_, sizeof(*input_buffer_.get()) * (kKernelSize / 2));
-    memcpy(r2_, r4_, sizeof(*input_buffer_.get()) * (kKernelSize / 2));
+    std::memcpy(r1_, r3_, sizeof(*input_buffer_.get()) * (kKernelSize / 2));
+    std::memcpy(r2_, r4_, sizeof(*input_buffer_.get()) * (kKernelSize / 2));
 
     // Step (4)
     // Refresh the buffer with more input.
@@ -327,7 +327,7 @@ int SincResampler::BlockSize() {
 void SincResampler::Flush() {
   virtual_source_idx_ = 0;
   buffer_primed_ = false;
-  memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * buffer_size_);
+  std::memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * buffer_size_);
 }
 
 float SincResampler::Convolve_C(const float* input_ptr, const float* k1,

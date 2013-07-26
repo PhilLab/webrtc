@@ -163,8 +163,8 @@ Channel::SendPacket(int channel, const void *data, int len)
                 // Allocate memory for encryption buffer one time only
                 _encryptionRTPBufferPtr =
                     new uint8_t[kVoiceEngineMaxIpPacketSizeBytes];
-                memset(_encryptionRTPBufferPtr, 0,
-                       kVoiceEngineMaxIpPacketSizeBytes);
+                std::memset(_encryptionRTPBufferPtr, 0,
+                			kVoiceEngineMaxIpPacketSizeBytes);
             }
 
             // Perform encryption (SRTP or external)
@@ -457,7 +457,7 @@ Channel::OnInitializeDecoder(
     receiveCodec.plfreq = frequency;
     receiveCodec.channels = channels;
     receiveCodec.rate = rate;
-    strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    std::strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
 
     _audioCodingModule.Codec(payloadName, &dummyCodec, frequency, channels);
     receiveCodec.pacsize = dummyCodec.pacsize;
@@ -3203,7 +3203,7 @@ Channel::SetSendTelephoneEventPayloadType(unsigned char type)
     CodecInst codec;
     codec.plfreq = 8000;
     codec.pltype = type;
-    memcpy(codec.plname, "telephone-event", 16);
+    std::memcpy(codec.plname, "telephone-event", 16);
     if (_rtpRtcpModule->RegisterSendPayload(codec) != 0)
     {
         _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
@@ -3683,7 +3683,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
     CSRCs = _rtpRtcpModule->CSRCs(arrOfCSRC);
     if (CSRCs > 0)
     {
-        memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
+    	std::memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
         for (int i = 0; i < (int) CSRCs; i++)
         {
             WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
@@ -3817,7 +3817,7 @@ Channel::GetRemoteRTCP_CNAME(char cName[256])
             "GetRemoteRTCP_CNAME() failed to retrieve remote RTCP CNAME");
         return -1;
     }
-    strcpy(cName, cname);
+    std::strcpy(cName, cname);
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
                  "GetRemoteRTCP_CNAME() => cName=%s", cName);
@@ -4695,7 +4695,7 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
     ACMNetworkStatistics acm_stats;
     int return_value = _audioCodingModule.NetworkStatistics(&acm_stats);
     if (return_value >= 0) {
-      memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
+      std::memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
     }
     return return_value;
 }

@@ -1024,11 +1024,11 @@ int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
                __FUNCTION__);
 
   uint32_t arrayCSRC[kRtpCsrcSize];
-  memset(arrayCSRC, 0, sizeof(arrayCSRC));
+  std::memset(arrayCSRC, 0, sizeof(arrayCSRC));
 
   int num_csrcs = rtp_rtcp_->RemoteCSRCs(arrayCSRC);
   if (num_csrcs > 0) {
-    memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(uint32_t));
+	std::memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(uint32_t));
     for (int idx = 0; idx < num_csrcs; idx++) {
       WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "\tCSRC[%d] = %lu", idx, CSRCs[idx]);
@@ -1669,7 +1669,7 @@ int32_t ViEChannel::FrameToRender(
     // Trigger a callback to the user if the incoming codec has changed.
     if (codec_observer_) {
       VideoCodec decoder;
-      memset(&decoder, 0, sizeof(decoder));
+      std::memset(&decoder, 0, sizeof(decoder));
       if (vcm_.ReceiveCodec(&decoder) == VCM_OK) {
         // VCM::ReceiveCodec returns the codec set by
         // RegisterReceiveCodec, which might not be the size we're

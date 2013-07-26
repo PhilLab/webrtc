@@ -18,7 +18,7 @@ namespace webrtc {
 // RTCPParserV2 : currently read only
 
 RTCPUtility::RTCPParserV2::RTCPParserV2(const uint8_t* rtcpData,
-                                        size_t rtcpDataLength,
+										std::size_t rtcpDataLength,
                                         bool rtcpReducedSizeEnable)
     : _ptrRTCPDataBegin(rtcpData),
       _RTCPReducedSizeEnable(rtcpReducedSizeEnable),
@@ -35,7 +35,7 @@ RTCPUtility::RTCPParserV2::RTCPParserV2(const uint8_t* rtcpData,
 RTCPUtility::RTCPParserV2::~RTCPParserV2() {
 }
 
-ptrdiff_t
+std::ptrdiff_t
 RTCPUtility::RTCPParserV2::LengthLeft() const
 {
     return (_ptrRTCPDataEnd- _ptrRTCPData);
@@ -457,7 +457,7 @@ RTCPUtility::RTCPParseCommonHeader( const uint8_t* ptrDataBegin,
 bool
 RTCPUtility::RTCPParserV2::ParseRR()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 8)
     {
@@ -485,7 +485,7 @@ RTCPUtility::RTCPParserV2::ParseRR()
 bool
 RTCPUtility::RTCPParserV2::ParseSR()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 28)
     {
@@ -545,7 +545,7 @@ RTCPUtility::RTCPParserV2::ParseSR()
 bool
 RTCPUtility::RTCPParserV2::ParseReportBlockItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 24 || _numberOfBlocks <= 0)
     {
@@ -608,7 +608,7 @@ RTCPUtility::RTCPParserV2::ParseReportBlockItem()
 bool
 RTCPUtility::RTCPParserV2::ParseIJ()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4)
     {
@@ -627,7 +627,7 @@ RTCPUtility::RTCPParserV2::ParseIJ()
 bool
 RTCPUtility::RTCPParserV2::ParseIJItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4 || _numberOfBlocks <= 0)
     {
@@ -649,7 +649,7 @@ RTCPUtility::RTCPParserV2::ParseIJItem()
 bool
 RTCPUtility::RTCPParserV2::ParseSDES()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 8)
     {
@@ -680,7 +680,7 @@ RTCPUtility::RTCPParserV2::ParseSDESChunk()
     // Find CName item in a SDES chunk.
     while (_ptrRTCPData < _ptrRTCPBlockEnd)
     {
-        const ptrdiff_t dataLen = _ptrRTCPBlockEnd - _ptrRTCPData;
+        const std::ptrdiff_t dataLen = _ptrRTCPBlockEnd - _ptrRTCPData;
         if (dataLen < 4)
         {
             _state = State_TopLevel;
@@ -714,7 +714,7 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
     // Only the CNAME item is mandatory. RFC 3550 page 46
     bool foundCName = false;
 
-    size_t itemOctetsRead = 0;
+    std::size_t itemOctetsRead = 0;
     while (_ptrRTCPData < _ptrRTCPBlockEnd)
     {
         const uint8_t tag = *_ptrRTCPData++;
@@ -792,7 +792,7 @@ RTCPUtility::RTCPParserV2::ParseBYE()
 bool
 RTCPUtility::RTCPParserV2::ParseBYEItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length < 4 || _numberOfBlocks == 0)
     {
         _state = State_TopLevel;
@@ -832,7 +832,7 @@ RTCPUtility::RTCPParserV2::ParseBYEItem()
 */
 bool RTCPUtility::RTCPParserV2::ParseXR()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 8)
     {
@@ -862,7 +862,7 @@ bool RTCPUtility::RTCPParserV2::ParseXR()
 bool
 RTCPUtility::RTCPParserV2::ParseXRItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4) //
     {
@@ -916,7 +916,7 @@ RTCPUtility::RTCPParserV2::ParseXRItem()
 bool
 RTCPUtility::RTCPParserV2::ParseXRVOIPMetricItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 28)
     {
@@ -975,7 +975,7 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
 {
     assert((header.PT == PT_RTPFB) || (header.PT == PT_PSFB)); // Parser logic check
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 12) // 4 * 3, RFC4585 section 6.1
     {
@@ -1130,7 +1130,7 @@ RTCPUtility::RTCPParserV2::ParseRPSIItem()
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     */
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4)
     {
@@ -1152,7 +1152,7 @@ RTCPUtility::RTCPParserV2::ParseRPSIItem()
     uint8_t paddingBits = *_ptrRTCPData++;
     _packet.RPSI.PayloadType = *_ptrRTCPData++;
 
-    memcpy(_packet.RPSI.NativeBitString, _ptrRTCPData, length-2);
+    std::memcpy(_packet.RPSI.NativeBitString, _ptrRTCPData, length-2);
 
     _packet.RPSI.NumberOfValidBits = uint16_t(length-2)*8 - paddingBits;
     return true;
@@ -1163,7 +1163,7 @@ RTCPUtility::RTCPParserV2::ParseNACKItem()
 {
     // RFC 4585 6.2.1. Generic NACK
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4)
     {
@@ -1187,7 +1187,7 @@ RTCPUtility::RTCPParserV2::ParseNACKItem()
 bool
 RTCPUtility::RTCPParserV2::ParsePsfbAppItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4)
     {
@@ -1232,7 +1232,7 @@ RTCPUtility::RTCPParserV2::ParsePsfbAppItem()
 bool
 RTCPUtility::RTCPParserV2::ParsePsfbREMBItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4)
     {
@@ -1252,7 +1252,7 @@ RTCPUtility::RTCPParserV2::ParsePsfbREMBItem()
     _ptrRTCPData += 3; // Fwd read data
     _packet.REMBItem.BitRate = (brMantissa << brExp);
 
-    const ptrdiff_t length_ssrcs = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length_ssrcs = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length_ssrcs < 4 * _packet.REMBItem.NumberOfSSRCs)
     {
         _state = State_TopLevel;
@@ -1278,7 +1278,7 @@ RTCPUtility::RTCPParserV2::ParseTMMBRItem()
 {
     // RFC 5104 4.2.1. Temporary Maximum Media Stream Bit Rate Request (TMMBR)
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 8)
     {
@@ -1317,7 +1317,7 @@ RTCPUtility::RTCPParserV2::ParseTMMBNItem()
 {
     // RFC 5104 4.2.2. Temporary Maximum Media Stream Bit Rate Notification (TMMBN)
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 8)
     {
@@ -1363,7 +1363,7 @@ RTCPUtility::RTCPParserV2::ParseSLIItem()
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     */
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4)
     {
@@ -1392,7 +1392,7 @@ RTCPUtility::RTCPParserV2::ParseFIRItem()
 {
     // RFC 5104 4.3.1. Full Intra Request (FIR)
 
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 8)
     {
@@ -1417,7 +1417,7 @@ RTCPUtility::RTCPParserV2::ParseFIRItem()
 bool
 RTCPUtility::RTCPParserV2::ParseAPP( const RTCPCommonHeader& header)
 {
-    ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+	std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 12) // 4 * 3, RFC 3550 6.7 APP: Application-Defined RTCP Packet
     {
@@ -1451,7 +1451,7 @@ RTCPUtility::RTCPParserV2::ParseAPP( const RTCPCommonHeader& header)
 bool
 RTCPUtility::RTCPParserV2::ParseAPPItem()
 {
-    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+    const std::ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length < 4)
     {
         _state = State_TopLevel;
@@ -1463,12 +1463,12 @@ RTCPUtility::RTCPParserV2::ParseAPPItem()
 
     if(length > kRtcpAppCode_DATA_SIZE)
     {
-        memcpy(_packet.APP.Data, _ptrRTCPData, kRtcpAppCode_DATA_SIZE);
+    	std::memcpy(_packet.APP.Data, _ptrRTCPData, kRtcpAppCode_DATA_SIZE);
         _packet.APP.Size = kRtcpAppCode_DATA_SIZE;
         _ptrRTCPData += kRtcpAppCode_DATA_SIZE;
     }else
     {
-        memcpy(_packet.APP.Data, _ptrRTCPData, length);
+    	std::memcpy(_packet.APP.Data, _ptrRTCPData, length);
         _packet.APP.Size = (uint16_t)length;
         _ptrRTCPData += length;
     }
@@ -1476,11 +1476,11 @@ RTCPUtility::RTCPParserV2::ParseAPPItem()
 }
 
 RTCPUtility::RTCPPacketIterator::RTCPPacketIterator(uint8_t* rtcpData,
-                                                    size_t rtcpDataLength)
+													std::size_t rtcpDataLength)
     : _ptrBegin(rtcpData),
       _ptrEnd(rtcpData + rtcpDataLength),
       _ptrBlock(NULL) {
-  memset(&_header, 0, sizeof(_header));
+  std::memset(&_header, 0, sizeof(_header));
 }
 
 RTCPUtility::RTCPPacketIterator::~RTCPPacketIterator() {

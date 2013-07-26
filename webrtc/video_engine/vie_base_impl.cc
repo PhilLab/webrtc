@@ -319,7 +319,7 @@ int ViEBaseImpl::GetVersion(char version[1024]) {
   version_stream << "VideoEngine 3.33.0" << std::endl;
 
   // Add build info.
-  version_stream << "Build: svn:" << WEBRTC_SVNREVISION << " " << BUILDINFO
+  version_stream << "Build: svn:" << "WEBRTC_SVNREVISION" << " " << BUILDINFO
                  << std::endl;
 
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
@@ -327,7 +327,7 @@ int ViEBaseImpl::GetVersion(char version[1024]) {
 #endif
   int version_length = version_stream.tellp();
   assert(version_length < 1024);
-  memcpy(version, version_stream.str().c_str(), version_length);
+  std::memcpy(version, version_stream.str().c_str(), version_length);
   version[version_length] = '\0';
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVideo,

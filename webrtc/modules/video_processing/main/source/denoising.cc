@@ -111,13 +111,13 @@ VPMDenoising::ProcessFrame(I420VideoFrame* frame)
     if (!_moment1)
     {
         _moment1 = new uint32_t[ysize];
-        memset(_moment1, 0, sizeof(uint32_t)*ysize);
+        std::memset(_moment1, 0, sizeof(uint32_t)*ysize);
     }
     
     if (!_moment2)
     {
         _moment2 = new uint32_t[ysize];
-        memset(_moment2, 0, sizeof(uint32_t)*ysize);
+        std::memset(_moment2, 0, sizeof(uint32_t)*ysize);
     }
 
     /* Apply de-noising on each pixel, but update variance sub-sampled */

@@ -62,9 +62,9 @@ RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
       timestamp_(0), capture_time_ms_(0), last_packet_marker_bit_(false),
       num_csrcs_(0), csrcs_(), include_csrcs_(true),
       rtx_(kRtxOff), payload_type_rtx_(-1) {
-  memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
-  memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
-  memset(csrcs_, 0, sizeof(csrcs_));
+  std::memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
+  std::memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
+  std::memset(csrcs_, 0, sizeof(csrcs_));
   // We need to seed the random generator.
   srand(static_cast<uint32_t>(clock_->TimeInMilliseconds()));
   ssrc_ = ssrc_db_.CreateSSRC();  // Can't be 0.
@@ -1428,7 +1428,7 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
   rtp_parser.Parse(rtp_header);
 
   // Add original RTP header.
-  memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
+  std::memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
 
   // Replace payload type, if a specific type is set for RTX.
   if (payload_type_rtx_ != -1) {
@@ -1451,8 +1451,8 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
   ptr += 2;
 
   // Add original payload data.
-  memcpy(ptr, buffer + rtp_header.headerLength,
-         *length - rtp_header.headerLength);
+  std::memcpy(ptr, buffer + rtp_header.headerLength,
+		  	  *length - rtp_header.headerLength);
   *length += 2;
 }
 

@@ -137,7 +137,7 @@ VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
     _requestedCapability.maxFPS = 30;
     _requestedCapability.rawType = kVideoI420;
     _requestedCapability.codecType = kVideoCodecUnknown;
-    memset(_incomingFrameTimes, 0, sizeof(_incomingFrameTimes));
+    std::memset(_incomingFrameTimes, 0, sizeof(_incomingFrameTimes));
 }
 
 VideoCaptureImpl::~VideoCaptureImpl()

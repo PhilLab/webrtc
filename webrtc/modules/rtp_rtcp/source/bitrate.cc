@@ -22,9 +22,9 @@ Bitrate::Bitrate(Clock* clock)
       time_last_rate_update_(0),
       bytes_count_(0),
       packet_count_(0) {
-  memset(packet_rate_array_, 0, sizeof(packet_rate_array_));
-  memset(bitrate_diff_ms_, 0, sizeof(bitrate_diff_ms_));
-  memset(bitrate_array_, 0, sizeof(bitrate_array_));
+  std::memset(packet_rate_array_, 0, sizeof(packet_rate_array_));
+  std::memset(bitrate_diff_ms_, 0, sizeof(bitrate_diff_ms_));
+  std::memset(bitrate_array_, 0, sizeof(bitrate_array_));
 }
 
 void Bitrate::Update(const int32_t bytes) {

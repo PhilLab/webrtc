@@ -207,7 +207,7 @@ int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
   if (external_echo_path_ == NULL) {
     external_echo_path_ = new unsigned char[size_bytes];
   }
-  memcpy(external_echo_path_, echo_path, size_bytes);
+  std::memcpy(external_echo_path_, echo_path, size_bytes);
 
   return Initialize();
 }

@@ -479,7 +479,7 @@ int32_t MediaFileImpl::StartPlayingFile(
 
     CriticalSectionScoped lock(_crit);
     _openFile = true;
-    strncpy(_fileName, fileName, sizeof(_fileName));
+    std::strncpy(_fileName, fileName, sizeof(_fileName));
     _fileName[sizeof(_fileName) - 1] = '\0';
     return 0;
 }
@@ -993,7 +993,7 @@ int32_t MediaFileImpl::StartRecordingFile(
 
     CriticalSectionScoped lock(_crit);
     _openFile = true;
-    strncpy(_fileName, fileName, sizeof(_fileName));
+    std::strncpy(_fileName, fileName, sizeof(_fileName));
     _fileName[sizeof(_fileName) - 1] = '\0';
     return 0;
 }
@@ -1058,7 +1058,7 @@ int32_t MediaFileImpl::StartRecordingStream(
     }
 
     CodecInst tmpAudioCodec;
-    memcpy(&tmpAudioCodec, &codecInst, sizeof(CodecInst));
+    std::memcpy(&tmpAudioCodec, &codecInst, sizeof(CodecInst));
     switch(format)
     {
         case kFileFormatWavFile:
@@ -1188,7 +1188,7 @@ int32_t MediaFileImpl::StartRecordingStream(
             return -1;
         }
     }
-    memcpy(&codec_info_, &tmpAudioCodec, sizeof(CodecInst));
+    std::memcpy(&codec_info_, &tmpAudioCodec, sizeof(CodecInst));
     _recordingActive = true;
     _ptrOutStream = &stream;
     _notificationMs = notificationTimeMs;
@@ -1346,7 +1346,7 @@ int32_t MediaFileImpl::codec_info(CodecInst& codecInst) const
             _playingActive ? "Playback" : "Recording");
         return -1;
     }
-    memcpy(&codecInst,&codec_info_,sizeof(CodecInst));
+    std::memcpy(&codecInst,&codec_info_,sizeof(CodecInst));
     return 0;
 }
 

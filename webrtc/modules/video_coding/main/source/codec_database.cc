@@ -78,11 +78,11 @@ bool VCMCodecDataBase::Codec(int list_id,
   if (list_id >= VCM_NUM_VIDEO_CODECS_AVAILABLE) {
     return false;
   }
-  memset(settings, 0, sizeof(VideoCodec));
+  std::memset(settings, 0, sizeof(VideoCodec));
   switch (list_id) {
 #ifdef VIDEOCODEC_VP8
     case VCM_VP8_IDX: {
-      strncpy(settings->plName, "VP8", 4);
+      std::strncpy(settings->plName, "VP8", 4);
       settings->codecType = kVideoCodecVP8;
       // 96 to 127 dynamic payload types for video codecs.
       settings->plType = VCM_VP8_PAYLOAD_TYPE;
@@ -106,7 +106,7 @@ bool VCMCodecDataBase::Codec(int list_id,
 #endif
 #ifdef VIDEOCODEC_I420
     case VCM_I420_IDX: {
-      strncpy(settings->plName, "I420", 5);
+      std::strncpy(settings->plName, "I420", 5);
       settings->codecType = kVideoCodecI420;
       // 96 to 127 dynamic payload types for video codecs.
       settings->plType = VCM_I420_PAYLOAD_TYPE;
@@ -184,7 +184,7 @@ bool VCMCodecDataBase::SetSendCodec(
   }
 
   VideoCodec new_send_codec;
-  memcpy(&new_send_codec, send_codec, sizeof(new_send_codec));
+  std::memcpy(&new_send_codec, send_codec, sizeof(new_send_codec));
 
   if (new_send_codec.maxBitrate == 0) {
     // max is one bit per pixel
@@ -202,7 +202,7 @@ bool VCMCodecDataBase::SetSendCodec(
     reset_required = RequiresEncoderReset(new_send_codec);
   }
 
-  memcpy(&send_codec_, &new_send_codec, sizeof(send_codec_));
+  std::memcpy(&send_codec_, &new_send_codec, sizeof(send_codec_));
 
   if (!reset_required) {
     encoded_frame_callback->SetPayloadType(send_codec->plType);
@@ -262,7 +262,7 @@ bool VCMCodecDataBase::SendCodec(VideoCodec* current_send_codec) const {
   if (!ptr_encoder_) {
     return false;
   }
-  memcpy(current_send_codec, &send_codec_, sizeof(VideoCodec));
+  std::memcpy(current_send_codec, &send_codec_, sizeof(VideoCodec));
   return true;
 }
 
@@ -285,7 +285,7 @@ bool VCMCodecDataBase::DeregisterExternalEncoder(
   if (send_codec_.plType == payload_type) {
     // De-register as send codec if needed.
     DeleteEncoder();
-    memset(&send_codec_, 0, sizeof(VideoCodec));
+    std::memset(&send_codec_, 0, sizeof(VideoCodec));
     current_enc_is_external_ = false;
     *was_send_codec = true;
   }
@@ -314,7 +314,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
 
   // Does not check startBitrate or maxFramerate
   if (new_send_codec.codecType != send_codec_.codecType ||
-      strcmp(new_send_codec.plName, send_codec_.plName) != 0 ||
+	  std::strcmp(new_send_codec.plName, send_codec_.plName) != 0 ||
       new_send_codec.plType != send_codec_.plType ||
       new_send_codec.width != send_codec_.width ||
       new_send_codec.height != send_codec_.height ||
@@ -330,17 +330,17 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
 
   switch (new_send_codec.codecType) {
     case kVideoCodecVP8:
-      if (memcmp(&new_send_codec.codecSpecific.VP8,
-                 &send_codec_.codecSpecific.VP8,
-                 sizeof(new_send_codec.codecSpecific.VP8)) !=
+      if (std::memcmp(&new_send_codec.codecSpecific.VP8,
+    		  	  	  &send_codec_.codecSpecific.VP8,
+    		  	  	  sizeof(new_send_codec.codecSpecific.VP8)) !=
           0) {
         return true;
       }
       break;
     case kVideoCodecGeneric:
-      if (memcmp(&new_send_codec.codecSpecific.Generic,
-                 &send_codec_.codecSpecific.Generic,
-                 sizeof(new_send_codec.codecSpecific.Generic)) !=
+      if (std::memcmp(&new_send_codec.codecSpecific.Generic,
+    		  	  	  &send_codec_.codecSpecific.Generic,
+    		  	  	  sizeof(new_send_codec.codecSpecific.Generic)) !=
           0) {
         return true;
       }
@@ -360,9 +360,9 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
   if (new_send_codec.numberOfSimulcastStreams > 0) {
     for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams;
          ++i) {
-      if (memcmp(&new_send_codec.simulcastStream[i],
-                 &send_codec_.simulcastStream[i],
-                 sizeof(new_send_codec.simulcastStream[i])) !=
+      if (std::memcmp(&new_send_codec.simulcastStream[i],
+    		  	  	  &send_codec_.simulcastStream[i],
+    		  	  	  sizeof(new_send_codec.simulcastStream[i])) !=
           0) {
         return true;
       }
@@ -386,7 +386,7 @@ bool VCMCodecDataBase::SetPeriodicKeyFrames(bool enable) {
 void VCMCodecDataBase::ResetReceiver() {
   ReleaseDecoder(ptr_decoder_);
   ptr_decoder_ = NULL;
-  memset(&receive_codec_, 0, sizeof(VideoCodec));
+  std::memset(&receive_codec_, 0, sizeof(VideoCodec));
   while (!dec_map_.empty()) {
     DecoderMap::iterator it = dec_map_.begin();
     delete (*it).second;
@@ -474,7 +474,7 @@ bool VCMCodecDataBase::DeregisterReceiveCodec(
   dec_map_.erase(it);
   if (receive_codec_.plType == payload_type) {
     // This codec is currently in use.
-    memset(&receive_codec_, 0, sizeof(VideoCodec));
+	std::memset(&receive_codec_, 0, sizeof(VideoCodec));
     current_dec_is_external_ = false;
   }
   return true;
@@ -485,7 +485,7 @@ bool VCMCodecDataBase::ReceiveCodec(VideoCodec* current_receive_codec) const {
   if (!ptr_decoder_) {
     return false;
   }
-  memcpy(current_receive_codec, &receive_codec_, sizeof(VideoCodec));
+  std::memcpy(current_receive_codec, &receive_codec_, sizeof(VideoCodec));
   return true;
 }
 
@@ -505,7 +505,7 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
   if (ptr_decoder_) {
     ReleaseDecoder(ptr_decoder_);
     ptr_decoder_ = NULL;
-    memset(&receive_codec_, 0, sizeof(VideoCodec));
+    std::memset(&receive_codec_, 0, sizeof(VideoCodec));
   }
   ptr_decoder_ = CreateAndInitDecoder(payload_type, &receive_codec_,
                                       &current_dec_is_external_);
@@ -516,7 +516,7 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
       < 0) {
     ReleaseDecoder(ptr_decoder_);
     ptr_decoder_ = NULL;
-    memset(&receive_codec_, 0, sizeof(VideoCodec));
+    std::memset(&receive_codec_, 0, sizeof(VideoCodec));
     return NULL;
   }
   return ptr_decoder_;
@@ -602,7 +602,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     ReleaseDecoder(ptr_decoder);
     return NULL;
   }
-  memcpy(new_codec, decoder_item->settings.get(), sizeof(VideoCodec));
+  std::memcpy(new_codec, decoder_item->settings.get(), sizeof(VideoCodec));
   return ptr_decoder;
 }
 

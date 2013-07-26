@@ -36,7 +36,7 @@ class PacketBuffer {
   // Constructor creates a buffer which can hold a maximum of
   // |max_number_of_packets| packets and |max_payload_memory| bytes of payload,
   // excluding RTP headers.
-  PacketBuffer(size_t max_number_of_packets, size_t max_payload_memory);
+  PacketBuffer(std::size_t max_number_of_packets, std::size_t max_payload_memory);
 
   // Deletes all packets in the buffer before destroying the buffer.
   virtual ~PacketBuffer();
@@ -128,8 +128,8 @@ class PacketBuffer {
   static void DeleteAllPackets(PacketList* packet_list);
 
  private:
-  size_t max_number_of_packets_;
-  size_t max_memory_bytes_;
+  std::size_t max_number_of_packets_;
+  std::size_t max_memory_bytes_;
   int current_memory_bytes_;
   PacketList buffer_;
   DISALLOW_COPY_AND_ASSIGN(PacketBuffer);

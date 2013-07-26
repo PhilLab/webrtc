@@ -44,7 +44,7 @@ VPMVideoDecimator::Reset()
     _targetFrameRate = 30;
     _incomingFrameRate = 0.0f;
     _maxFrameRate = 30;
-    memset(_incomingFrameTimes, 0, sizeof(_incomingFrameTimes));
+    std::memset(_incomingFrameTimes, 0, sizeof(_incomingFrameTimes));
     _enableTemporalDecimation = true;
 }
 

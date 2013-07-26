@@ -63,7 +63,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
       break;
   }
 
-  size_t payload_name_length = strlen(payload_name);
+  size_t payload_name_length = std::strlen(payload_name);
 
   ModuleRTPUtility::PayloadTypeMap::iterator it =
     payload_type_map_.find(payload_type);
@@ -74,7 +74,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
 
     assert(payload);
 
-    size_t name_length = strlen(payload->name);
+    size_t name_length = std::strlen(payload->name);
 
     // Check if it's the same as we already have.
     // If same, ignore sending an error.
@@ -106,7 +106,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
     payload = new ModuleRTPUtility::Payload;
     payload->audio = false;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-    strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
+    std::strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
   } else {
     *created_new_payload = true;
     payload = rtp_payload_strategy_->CreatePayloadType(
@@ -141,7 +141,7 @@ int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
 // for audio codecs, but there can for video.
 void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const size_t payload_name_length,
+    const std::size_t payload_name_length,
     const uint32_t frequency,
     const uint8_t channels,
     const uint32_t rate) {
@@ -149,7 +149,7 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
       payload_type_map_.begin();
   for (; iterator != payload_type_map_.end(); ++iterator) {
     ModuleRTPUtility::Payload* payload = iterator->second;
-    size_t name_length = strlen(payload->name);
+    std::size_t name_length = std::strlen(payload->name);
 
     if (payload_name_length == name_length
         && ModuleRTPUtility::StringCompare(payload->name, payload_name,
@@ -184,7 +184,7 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
                  "%s invalid argument", __FUNCTION__);
     return -1;
   }
-  size_t payload_name_length = strlen(payload_name);
+  std::size_t payload_name_length = std::strlen(payload_name);
 
   ModuleRTPUtility::PayloadTypeMap::const_iterator it =
       payload_type_map_.begin();
@@ -193,7 +193,7 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
     ModuleRTPUtility::Payload* payload = it->second;
     assert(payload);
 
-    size_t name_length = strlen(payload->name);
+    std::size_t name_length = std::strlen(payload->name);
     if (payload_name_length == name_length &&
         ModuleRTPUtility::StringCompare(
             payload->name, payload_name, payload_name_length)) {
@@ -282,7 +282,7 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
       const uint32_t rate) const {
     ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    std::strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
     payload->typeSpecific.Audio.frequency = frequency;
     payload->typeSpecific.Audio.channels = channels;
     payload->typeSpecific.Audio.rate = rate;
@@ -328,7 +328,7 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
     ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
 
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    std::strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
     payload->typeSpecific.Video.videoCodecType = videoType;
     payload->typeSpecific.Video.maxRate = rate;
     payload->audio = false;

@@ -950,7 +950,7 @@ RTCPReceiver::HandleTMMBR(RTCPUtility::RTCPParserV2& rtcpParser,
 
     // Use packet length to calc max number of TMMBR blocks
     // each TMMBR block is 8 bytes
-    ptrdiff_t maxNumOfTMMBRBlocks = rtcpParser.LengthLeft() / 8;
+    std::ptrdiff_t maxNumOfTMMBRBlocks = rtcpParser.LengthLeft() / 8;
 
     // sanity
     if(maxNumOfTMMBRBlocks > 200) // we can't have more than what's in one packet
@@ -1001,7 +1001,7 @@ RTCPReceiver::HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser,
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTmmbn;
     // Use packet length to calc max number of TMMBN blocks
     // each TMMBN block is 8 bytes
-    ptrdiff_t maxNumOfTMMBNBlocks = rtcpParser.LengthLeft() / 8;
+    std::ptrdiff_t maxNumOfTMMBNBlocks = rtcpParser.LengthLeft() / 8;
 
     // sanity
     if(maxNumOfTMMBNBlocks > 200) // we cant have more than what's in one packet

@@ -58,8 +58,8 @@ ViEFilePlayer::ViEFilePlayer(int Id,
       decode_thread_(NULL),
       decode_event_(NULL),
       decoded_audio_length_(0) {
-  memset(file_name_, 0, FileWrapper::kMaxFileNameSize);
-  memset(decoded_audio_, 0, kMaxDecodedAudioLength);
+  std::memset(file_name_, 0, FileWrapper::kMaxFileNameSize);
+  std::memset(decoded_audio_, 0, kMaxDecodedAudioLength);
 }
 
 ViEFilePlayer::~ViEFilePlayer() {
@@ -94,12 +94,12 @@ int ViEFilePlayer::Init(const char* file_nameUTF8,
                  "ViEFilePlayer::StartPlay() failed to allocate event");
     return -1;
   }
-  if (strlen(file_nameUTF8) > FileWrapper::kMaxFileNameSize) {
+  if (std::strlen(file_nameUTF8) > FileWrapper::kMaxFileNameSize) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
                  "ViEFilePlayer::StartPlay() Too long filename");
     return -1;
   }
-  strncpy(file_name_, file_nameUTF8, strlen(file_nameUTF8) + 1);
+  std::strncpy(file_name_, file_nameUTF8, std::strlen(file_nameUTF8) + 1);
 
   file_player_ = FilePlayer::CreateFilePlayer(ViEId(engine_id_, id_),
                                               file_format);
@@ -307,7 +307,7 @@ int ViEFilePlayer::Read(void* buf, int len) {
     // not been played on this channel.
   }
   if (buf) {
-    memcpy(buf, decoded_audio_, decoded_audio_length_);
+	std::memcpy(buf, decoded_audio_, decoded_audio_length_);
   }
   return decoded_audio_length_;
 }
@@ -472,8 +472,8 @@ int ViEFilePlayer::GetFileInformation(int engine_id,
 
   bool video_only = false;
 
-  memset(&video_codec, 0, sizeof(video_codec));
-  memset(&audio_codec, 0, sizeof(audio_codec));
+  std::memset(&video_codec, 0, sizeof(video_codec));
+  std::memset(&audio_codec, 0, sizeof(audio_codec));
 
   if (file_player->StartPlayingVideoFile(file_name, false, false) != 0) {
     video_only = true;

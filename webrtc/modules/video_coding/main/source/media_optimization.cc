@@ -44,8 +44,8 @@ _lastQMUpdateTime(0),
 _lastChangeTime(0),
 _numLayers(0)
 {
-    memset(_sendStatistics, 0, sizeof(_sendStatistics));
-    memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
+	std::memset(_sendStatistics, 0, sizeof(_sendStatistics));
+	std::memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
 
     _frameDropper  = new FrameDropper;
     _lossProtLogic = new VCMLossProtectionLogic(_clock->TimeInMilliseconds());
@@ -65,7 +65,7 @@ VCMMediaOptimization::~VCMMediaOptimization(void)
 int32_t
 VCMMediaOptimization::Reset()
 {
-    memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
+	std::memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
     _incomingFrameRate = 0.0;
     _frameDropper->Reset();
     _lossProtLogic->Reset(_clock->TimeInMilliseconds());
@@ -592,7 +592,7 @@ bool VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm) {
   if (qm->change_resolution_temporal) {
     _incomingFrameRate = qm->frame_rate;
     // Reset frame rate estimate.
-    memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
+    std::memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
   }
 
   // Check for change in frame size.

@@ -83,7 +83,7 @@ VPMContentAnalysis::ComputeContentMetrics(const I420VideoFrame& inputFrame)
         ComputeMotionMetrics();
 
     // saving current frame as previous one: Y only
-    memcpy(_prevFrame, _origFrame, _width * _height);
+    std::memcpy(_prevFrame, _origFrame, _width * _height);
 
     _firstFrame =  false;
     _CAInit = true;

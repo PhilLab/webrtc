@@ -951,12 +951,12 @@ int VoEBaseImpl::GetVersion(char version[1024])
 
 int32_t VoEBaseImpl::AddBuildInfo(char* str) const
 {
-    return sprintf(str, "Build: svn:%s %s\n", WEBRTC_SVNREVISION, BUILDINFO);
+    return std::sprintf(str, "Build: svn:%s %s\n", "WEBRTC_SVNREVISION", BUILDINFO);
 }
 
 int32_t VoEBaseImpl::AddVoEVersion(char* str) const
 {
-    return sprintf(str, "VoiceEngine 4.1.0\n");
+    return std::sprintf(str, "VoiceEngine 4.1.0\n");
 }
 
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
@@ -969,7 +969,7 @@ int32_t VoEBaseImpl::AddExternalTransportBuild(char* str) const
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
 int32_t VoEBaseImpl::AddExternalRecAndPlayoutBuild(char* str) const
 {
-    return sprintf(str, "External recording and playout build\n");
+    return std::sprintf(str, "External recording and playout build\n");
 }
 #endif
 
