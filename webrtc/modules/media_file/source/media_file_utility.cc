@@ -78,7 +78,8 @@ ModuleFileUtility::ModuleFileUtility(const int32_t id)
       ,
       _aviAudioInFile(0),
       _aviVideoInFile(0),
-      _aviOutFile(0)
+      _aviOutFile(0),
+      _mp4OutFile(0)
 #endif
 {
     WEBRTC_TRACE(kTraceMemory, kTraceFile, _id,
@@ -87,6 +88,7 @@ ModuleFileUtility::ModuleFileUtility(const int32_t id)
     codec_info_.pltype = -1;
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
     memset(&_videoCodec,0,sizeof(_videoCodec));
+    _mp4OutFile = NULL;
 #endif
 }
 

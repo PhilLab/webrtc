@@ -64,7 +64,7 @@ using namespace webrtc;
     NSAlert* alert = [NSAlert alertWithMessageText:strTitle
                       defaultButton:strButton
                       alternateButton:nil otherButton:nil
-                      informativeTextWithFormat:strMessage];
+                      informativeTextWithFormat:@"%@", strMessage];
     [alert setAlertStyle:NSInformationalAlertStyle];
     [alert runModal];
     return [NSNumber numberWithInt:0];
