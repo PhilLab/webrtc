@@ -712,17 +712,17 @@
       int frameSize = 0;
       if (_captureWidth >> 1 == _frameWidth)
       {
-          frameSize = bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV >> 2;
+          frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 2;
           webrtc::ConvertNV12ToI420AndScaleFrameDouble(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
       }
       else if (_captureWidth >> 2 == _frameWidth)
       {
-          frameSize = bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV >> 4;
+          frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 4;
           webrtc::ConvertNV12ToI420AndScaleFrameQuad(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
       }
       else if (_captureWidth >> 3 == _frameWidth)
       {
-        frameSize = bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV >> 6;
+        frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 6;
         webrtc::ConvertNV12ToI420AndScaleFrameQuad(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
         webrtc::ScaleI420FrameDouble(planeWidthY >> 2, planeHeightY >> 2, (uint8_t*)baseAddressY);
       }
