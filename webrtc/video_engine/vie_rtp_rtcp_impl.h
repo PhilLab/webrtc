@@ -74,6 +74,7 @@ class ViERTP_RTCPImpl
                                        int target_delay_ms);
   virtual int SetKeyFrameRequestMethod(const int video_channel,
                                        const ViEKeyFrameRequestMethod method);
+  virtual int RequestKeyFrame(const int video_channel);
   virtual int SetTMMBRStatus(const int video_channel, const bool enable);
   virtual int SetRembStatus(int video_channel, bool sender, bool receiver);
   virtual int SetSendTimestampOffsetStatus(int video_channel,

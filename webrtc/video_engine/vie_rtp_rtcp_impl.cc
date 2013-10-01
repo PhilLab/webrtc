@@ -682,6 +682,34 @@ int ViERTP_RTCPImpl::SetKeyFrameRequestMethod(
   }
   return 0;
 }
+  
+int ViERTP_RTCPImpl::RequestKeyFrame(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)",
+               __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  if (!vie_channel->Sending()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Channel %d not sending", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViERtpRtcpNotSending);
+    return -1;
+  }
+  if (vie_channel->RequestKeyFrame() != 0) {
+    shared_data_->SetLastError(kViERtpRtcpUnknownError);
+    return -1;
+  }
+  return 0;
+}
 
 int ViERTP_RTCPImpl::SetTMMBRStatus(const int video_channel,
                                     const bool enable) {

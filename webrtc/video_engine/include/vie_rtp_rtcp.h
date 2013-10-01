@@ -221,6 +221,8 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetKeyFrameRequestMethod(
     const int video_channel, const ViEKeyFrameRequestMethod method) = 0;
 
+  virtual int RequestKeyFrame(const int video_channel) = 0;
+  
   // This function enables signaling of temporary bitrate constraints using
   // RTCP, implemented based on RFC4585.
   virtual int SetTMMBRStatus(const int video_channel, const bool enable) = 0;
