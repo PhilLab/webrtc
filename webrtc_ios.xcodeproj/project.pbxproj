@@ -1254,6 +1254,7 @@
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = All;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -1354,6 +1355,7 @@
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = All;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
