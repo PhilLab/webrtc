@@ -202,6 +202,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_coding_utility;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -271,6 +272,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_coding_utility;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",

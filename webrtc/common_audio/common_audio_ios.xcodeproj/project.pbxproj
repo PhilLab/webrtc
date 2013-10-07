@@ -550,6 +550,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = common_audio;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -597,6 +598,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = All;
+				SUPPORTED_PLATFORMS = iphoneos;
 			};
 			name = Release;
 		};
@@ -604,6 +606,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = All;
+				SUPPORTED_PLATFORMS = iphoneos;
 			};
 			name = Debug;
 		};
@@ -661,6 +664,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = common_audio_neon;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -729,6 +733,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = common_audio_neon;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -803,6 +808,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = common_audio;
+				SUPPORTED_PLATFORMS = iphoneos;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
