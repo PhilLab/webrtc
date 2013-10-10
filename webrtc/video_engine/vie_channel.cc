@@ -1968,6 +1968,12 @@ int32_t ViEChannel::OnInitializeDecoder(
   callback_cs_->Enter();
   decoder_reset_ = true;
   callback_cs_->Leave();
+  
+  if (rtp_rtcp_->RequestKeyFrame() != 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
+                 "%s:RequestKeyFrame failure", __FUNCTION__);
+  }
+  
   return 0;
 }
 
