@@ -231,50 +231,65 @@
   
     if (_index == FRONT_CAMERA_INDEX)
     {
-        if ([_machineName hasPrefix:@"iPod"])
+        if ([_machineName compare:@"iPod"] != NSOrderedAscending) // iPod
         {
             _captureWidth = 640;
             _captureHeight = 480;
         }
-        else if ([_machineName hasPrefix:@"iPhone5"])
+        else if ([_machineName compare:@"iPhone5"] != NSOrderedAscending) // iPhone 5
         {
             _captureWidth = 1280;
             _captureHeight = 720;
         }
-        else if ([_machineName hasPrefix:@"iPhone"])
+        else if ([_machineName compare:@"iPhone"] != NSOrderedAscending) // iPhone
         {
             _captureWidth = 640;
             _captureHeight = 480;
         }
-        else if ([_machineName hasPrefix:@"iPad"])
+        else if ([_machineName compare:@"iPad3,4"] != NSOrderedAscending) // iPad 4
+        {
+          _captureWidth = 1280;
+          _captureHeight = 720;
+        }
+        else if ([_machineName compare:@"iPad3"] != NSOrderedAscending) // iPad 3
         {
             _captureWidth = 640;
             _captureHeight = 480;
+        }
+        else if ([_machineName compare:@"iPad2,5"] != NSOrderedAscending) // iPad mini
+        {
+          _captureWidth = 1280;
+          _captureHeight = 720;
+        }
+        else if ([_machineName compare:@"iPad"] != NSOrderedAscending) // iPad
+        {
+          _captureWidth = 640;
+          _captureHeight = 480;
         }
     }
     else if (_index == BACK_CAMERA_INDEX)
     {
-        if ([_machineName hasPrefix:@"iPod"])
+        if ([_machineName compare:@"iPod"] != NSOrderedAscending) // iPod
         {
             _captureWidth = 1280;
             _captureHeight = 720;
         }
-        else if ([_machineName hasPrefix:@"iPhone5"])
+        else if ([_machineName compare:@"iPhone5"] != NSOrderedAscending) // iPhone 5
         {
             _captureWidth = 1920;
             _captureHeight = 1080;
         }
-        else if ([_machineName hasPrefix:@"iPhone"])
+        else if ([_machineName compare:@"iPhone"] != NSOrderedAscending) // iPhone
         {
             _captureWidth = 1280;
             _captureHeight = 720;
         }
-        else if ([_machineName hasPrefix:@"iPad3"])
+        else if ([_machineName compare:@"iPad2,5"] != NSOrderedAscending) // iPad mini
         {
             _captureWidth = 1920;
             _captureHeight = 1080;
         }
-        else if ([_machineName hasPrefix:@"iPad"])
+        else if ([_machineName compare:@"iPad"] != NSOrderedAscending) // iPad
         {
             _captureWidth = 1280;
             _captureHeight = 720;
