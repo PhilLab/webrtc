@@ -231,7 +231,12 @@
   
     if (_index == FRONT_CAMERA_INDEX)
     {
-        if ([_machineName compare:@"iPod"] != NSOrderedAscending) // iPod
+        if ([_machineName compare:@"iPod5,1"] != NSOrderedAscending) // iPod Touch 5G
+        {
+            _captureWidth = 1280;
+            _captureHeight = 720;
+        }
+        else if ([_machineName compare:@"iPod"] != NSOrderedAscending) // iPod Touch
         {
             _captureWidth = 640;
             _captureHeight = 480;
@@ -269,7 +274,7 @@
     }
     else if (_index == BACK_CAMERA_INDEX)
     {
-        if ([_machineName compare:@"iPod"] != NSOrderedAscending) // iPod
+        if ([_machineName compare:@"iPod"] != NSOrderedAscending) // iPod Touch
         {
             _captureWidth = 1280;
             _captureHeight = 720;
