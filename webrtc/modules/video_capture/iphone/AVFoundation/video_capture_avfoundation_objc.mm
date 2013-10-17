@@ -81,7 +81,9 @@
     if(!owner){
         return [NSNumber numberWithInt:-1];
     }
+    [_rLock lock];
     _owner = owner;
+    [_rLock unlock];
     return [NSNumber numberWithInt:0];
 }
 
@@ -213,21 +215,30 @@
     _frameRate = frameRate;
     _faceDetection = faceDetection;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     NSString* systemVersion = [[UIDevice currentDevice] systemVersion];
-    if ([systemVersion compare:@"5.0" options:NSNumericSearch] != NSOrderedAscending)
+    if ([systemVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending)
+    {
+        AVCaptureDevice* device = [_captureVideoDeviceInput device];
+        if ([device lockForConfiguration:NULL] == YES )
+        {
+            [device setActiveVideoMinFrameDuration:CMTimeMake(1, _frameRate)];
+            [device setActiveVideoMaxFrameDuration:CMTimeMake(1, 2)];
+            [device unlockForConfiguration];
+        }
+    }
+    else if ([systemVersion compare:@"5.0" options:NSNumericSearch] != NSOrderedAscending)
     {
         AVCaptureConnection* connection = [_captureDecompressedVideoOutput connectionWithMediaType:AVMediaTypeVideo];
         [connection setVideoMinFrameDuration:CMTimeMake(1, _frameRate)];
-        //[connection setVideoMaxFrameDuration:CMTimeMake(1, _frameRate)];
-        [connection setVideoMaxFrameDuration:CMTimeMake(1, 1)];
+        [connection setVideoMaxFrameDuration:CMTimeMake(1, 2)];
     }
     else 
     {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         [_captureDecompressedVideoOutput setMinFrameDuration:CMTimeMake(1, _frameRate)];
-#pragma clang diagnostic pop
     }
+#pragma clang diagnostic pop
   
     if (_index == FRONT_CAMERA_INDEX)
     {
@@ -714,8 +725,8 @@
         }
         else if (_captureWidth >> 3 == _frameWidth)
         {
-          tempCaptureCapability.width = _captureWidth >> 3;
-          tempCaptureCapability.height = _captureHeight >> 3;
+            tempCaptureCapability.width = _captureWidth >> 3;
+            tempCaptureCapability.height = _captureHeight >> 3;
         }
         tempCaptureCapability.maxFPS = _frameRate;
         tempCaptureCapability.rawType = webrtc::kVideoI420;
@@ -729,23 +740,23 @@
 #endif
       
 #ifdef YUV_CAPTURE
-      int frameSize = 0;
-      if (_captureWidth >> 1 == _frameWidth)
-      {
-          frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 2;
-          webrtc::ConvertNV12ToI420AndScaleFrameDouble(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
-      }
-      else if (_captureWidth >> 2 == _frameWidth)
-      {
-          frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 4;
-          webrtc::ConvertNV12ToI420AndScaleFrameQuad(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
-      }
-      else if (_captureWidth >> 3 == _frameWidth)
-      {
-        frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 6;
-        webrtc::ConvertNV12ToI420AndScaleFrameQuad(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
-        webrtc::ScaleI420FrameDouble(planeWidthY >> 2, planeHeightY >> 2, (uint8_t*)baseAddressY);
-      }
+        int frameSize = 0;
+        if (_captureWidth >> 1 == _frameWidth)
+        {
+            frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 2;
+            webrtc::ConvertNV12ToI420AndScaleFrameDouble(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
+        }
+        else if (_captureWidth >> 2 == _frameWidth)
+        {
+            frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 4;
+            webrtc::ConvertNV12ToI420AndScaleFrameQuad(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
+        }
+        else if (_captureWidth >> 3 == _frameWidth)
+        {
+            frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 6;
+            webrtc::ConvertNV12ToI420AndScaleFrameQuad(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
+            webrtc::ScaleI420FrameDouble(planeWidthY >> 2, planeHeightY >> 2, (uint8_t*)baseAddressY);
+        }
 #elif defined RGBA_CAPTURE
         int frameSize = bufferBytesPerRow*bufferHeight >> 2;
         webrtc::ScaleRGBAFrameDouble(bufferWidth, bufferHeight, (uint8_t*)baseAddressY);
