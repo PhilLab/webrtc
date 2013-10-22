@@ -718,23 +718,31 @@
         CVBufferRetain(imageBuffer);
         webrtc::VideoCaptureCapability tempCaptureCapability;
 #ifdef YUV_CAPTURE
-        if (_captureWidth >> 1 == _frameWidth)
+        if (_captureWidth == _frameWidth)
+        {
+            tempCaptureCapability.width = _captureWidth;
+            tempCaptureCapability.height = _captureHeight;
+            tempCaptureCapability.rawType = webrtc::kVideoNV12;
+        }
+        else if (_captureWidth >> 1 == _frameWidth)
         {
             tempCaptureCapability.width = _captureWidth >> 1;
             tempCaptureCapability.height = _captureHeight >> 1;
+            tempCaptureCapability.rawType = webrtc::kVideoI420;
         }
         else if (_captureWidth >> 2 == _frameWidth)
         {
             tempCaptureCapability.width = _captureWidth >> 2;
             tempCaptureCapability.height = _captureHeight >> 2;
+            tempCaptureCapability.rawType = webrtc::kVideoI420;
         }
         else if (_captureWidth >> 3 == _frameWidth)
         {
             tempCaptureCapability.width = _captureWidth >> 3;
             tempCaptureCapability.height = _captureHeight >> 3;
+            tempCaptureCapability.rawType = webrtc::kVideoI420;
         }
         tempCaptureCapability.maxFPS = _frameRate;
-        tempCaptureCapability.rawType = webrtc::kVideoI420;
         tempCaptureCapability.codecType = webrtc::kVideoCodecUnknown;
 #elif defined RGBA_CAPTURE
         tempCaptureCapability.width = _captureWidth >> 1;
@@ -746,7 +754,11 @@
       
 #ifdef YUV_CAPTURE
         int frameSize = 0;
-        if (_captureWidth >> 1 == _frameWidth)
+        if (_captureWidth == _frameWidth)
+        {
+            frameSize = bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV;
+        }
+        else if (_captureWidth >> 1 == _frameWidth)
         {
             frameSize = (bytesPerRowY*planeHeightY+bytesPerRowUV*planeHeightUV) >> 2;
             webrtc::ConvertNV12ToI420AndScaleFrameDouble(planeWidthY, planeHeightY, (uint8_t*)baseAddressY, (uint8_t*)baseAddressUV);
