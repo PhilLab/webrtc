@@ -349,8 +349,11 @@
         return [NSNumber numberWithInt:0];
     }
 
+    [_rLock lock];
+  
     if(YES == _capturing)
     {
+        [_rLock unlock];
         return [NSNumber numberWithInt:0];
     }
   
@@ -366,10 +369,13 @@
     [_captureSession startRunning];
 
     if (![_captureSession isRunning]){
-	    return [NSNumber numberWithInt:-1];
+        [_rLock unlock];
+        return [NSNumber numberWithInt:-1];
     }
 
     _capturing = YES;
+  
+    [_rLock unlock];
 
     return [NSNumber numberWithInt:0];
 }
@@ -381,18 +387,23 @@
     webrtc::Trace::Add(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
                  "%s:%d", __FUNCTION__, __LINE__);
 
+    [_rLock lock];
+  
     if(NO == _OSSupported)
     {
+        [_rLock unlock];
         return [NSNumber numberWithInt:0];
     }
 
     if(nil == _captureSession)
     {
+        [_rLock unlock];
         return [NSNumber numberWithInt:0];
     }
 
     if(NO == _capturing)
     {
+        [_rLock unlock];
         return [NSNumber numberWithInt:0];
     }
 
@@ -402,6 +413,9 @@
     }
 
     _capturing = NO;
+  
+    [_rLock unlock];
+
     return [NSNumber numberWithInt:0];
 }
 
@@ -682,7 +696,13 @@
         [_rLock unlock];
         return;
     }
-    
+  
+    if(NO == _capturing)
+    {
+        [_rLock unlock];
+        return;
+    }
+  
     if (!sampleBuffer)
     {
         [_rLock unlock];
