@@ -720,12 +720,15 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
 
   LOG(LS_INFO) << "Using GlBlit";
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   CGLPixelFormatAttribute attributes[] = {
     kCGLPFAFullScreen,
     kCGLPFADisplayMask,
     (CGLPixelFormatAttribute)CGDisplayIDToOpenGLDisplayMask(mainDevice),
     (CGLPixelFormatAttribute)0
   };
+#pragma clang diagnostic pop
   CGLPixelFormatObj pixel_format = NULL;
   GLint matching_pixel_format_count = 0;
   CGLError err = CGLChoosePixelFormat(attributes,
