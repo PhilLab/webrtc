@@ -11,8 +11,13 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IPHONE_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IPHONE_H
 
+//#define USE_AUDIO_SESSION_API
+
 #include <AudioUnit/AudioUnit.h>
+
+#ifdef USE_AUDIO_SESSION_API
 #include <AudioToolbox/AudioServices.h>
+#endif
 
 #include "audio_device_generic.h"
 #include "critical_section_wrapper.h"
@@ -186,6 +191,7 @@ private:
         return _id;
     }
   
+#ifdef USE_AUDIO_SESSION_API
     static void InterruptionListenerCallback(void *inUserData,
                                              UInt32 interruptionState);
   
@@ -193,7 +199,8 @@ private:
                                          AudioSessionPropertyID	inID,
                                          UInt32 inDataSize,
                                          const void* inData);
-
+#endif
+  
     // Init and shutdown
     int32_t InitPlayOrRecord();
     int32_t ShutdownPlayOrRecord();
@@ -238,6 +245,10 @@ private:
 
     AudioUnit _auVoiceProcessing;
 
+#ifndef USE_AUDIO_SESSION_API
+    void* _audioSession;
+#endif
+  
 private:
     bool _initialized;
     bool _isShutDown;

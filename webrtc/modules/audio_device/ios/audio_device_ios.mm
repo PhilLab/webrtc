@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <AudioToolbox/AudioServices.h>  // AudioSession
-
 #include "audio_device_ios.h"
 
 #include "trace.h"
@@ -18,7 +16,12 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+#ifndef USE_AUDIO_SESSION_API
+#include <AVFoundation/AVAudioSession.h>
+#endif
+
 namespace webrtc {
+    
 AudioDeviceIPhone::AudioDeviceIPhone(const int32_t id)
     :
     _ptrAudioBuffer(NULL),
@@ -134,6 +137,7 @@ int32_t AudioDeviceIPhone::Init() {
                      _id, "Thread already created");
     }
   
+#ifdef USE_AUDIO_SESSION_API
     OSStatus result = AudioSessionInitialize(NULL, NULL, InterruptionListenerCallback, NULL);
     if (0 != result) {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
@@ -146,7 +150,8 @@ int32_t AudioDeviceIPhone::Init() {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Could not set property listener (result=%d)", result);
     }
-
+#endif
+  
     _playWarning = 0;
     _playError = 0;
     _playoutRouteChanged = false;
@@ -241,6 +246,7 @@ int32_t AudioDeviceIPhone::MicrophoneIsAvailable(bool& available) {
 
     available = false;
 
+#ifdef USE_AUDIO_SESSION_API
     OSStatus result = -1;
     UInt32 channel = 0;
     UInt32 size = sizeof(channel);
@@ -255,7 +261,10 @@ int32_t AudioDeviceIPhone::MicrophoneIsAvailable(bool& available) {
     }
 
     available = (channel == 0) ? false : true;
-
+#else
+    available = true;
+#endif
+  
     return 0;
 }
 
@@ -734,6 +743,7 @@ int32_t AudioDeviceIPhone::SetLoudspeakerStatus(bool enable) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioDeviceIPhone::SetLoudspeakerStatus(enable=%u)", enable);
   
+#ifdef USE_AUDIO_SESSION_API
     UInt32 audioRouteOverride;
     if (enable)
         audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
@@ -746,6 +756,7 @@ int32_t AudioDeviceIPhone::SetLoudspeakerStatus(bool enable) {
                      "Cannot override audio route");
         return -1;
     }
+#endif
   
     return 0;
 }
@@ -754,6 +765,7 @@ int32_t AudioDeviceIPhone::GetLoudspeakerStatus(bool &enabled) const {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                "AudioDeviceIPhone::GetLoudspeakerStatus()");
   
+#ifdef USE_AUDIO_SESSION_API
     char osVersion[30];
     [[[UIDevice currentDevice] systemVersion] getCString:osVersion maxLength:30 encoding:NSUTF8StringEncoding];
   
@@ -790,6 +802,9 @@ int32_t AudioDeviceIPhone::GetLoudspeakerStatus(bool &enabled) const {
         else
             enabled = false;
     }
+#else
+    enabled = false;
+#endif
   
     return 0;
 }
@@ -983,6 +998,13 @@ int32_t AudioDeviceIPhone::StartRecording() {
     _recError = 0;
 
     if (!_playing) {
+#ifndef USE_AUDIO_SESSION_API
+        if ([(AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
+          WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                       "  Cannot set Audio Session to active state");
+          return -1;
+        }
+#endif
         // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                      "  Starting Audio Unit");
@@ -1059,6 +1081,13 @@ int32_t AudioDeviceIPhone::StartPlayout() {
     _playoutRouteChanged = false;
 
     if (!_recording) {
+#ifndef USE_AUDIO_SESSION_API
+      if ([(AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "  Cannot set Audio Session to active state");
+        return -1;
+      }
+#endif
         // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                      "  Starting Audio Unit");
@@ -1241,6 +1270,7 @@ void AudioDeviceIPhone::ClearRecordingError() {
 //                                 Private Methods
 // ============================================================================
   
+#ifdef USE_AUDIO_SESSION_API
 void AudioDeviceIPhone::InterruptionListenerCallback(void *inUserData, UInt32 interruptionState)
 {
 }
@@ -1314,6 +1344,7 @@ void AudioDeviceIPhone::PropertyListenerCallback(void *inClientData, AudioSessio
         }
     }
 }
+#endif
 
 int32_t AudioDeviceIPhone::InitPlayOrRecord() {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
@@ -1357,6 +1388,7 @@ int32_t AudioDeviceIPhone::InitPlayOrRecord() {
 
     // Set preferred hardware sample rate to 16 kHz
     Float64 sampleRate(16000.0);
+#ifdef USE_AUDIO_SESSION_API
     result = AudioSessionSetProperty(
                          kAudioSessionProperty_PreferredHardwareSampleRate,
                          sizeof(sampleRate), &sampleRate);
@@ -1368,7 +1400,17 @@ int32_t AudioDeviceIPhone::InitPlayOrRecord() {
     uint32_t voiceChat = kAudioSessionMode_VoiceChat;
     AudioSessionSetProperty(kAudioSessionProperty_Mode,
                             sizeof(voiceChat), &voiceChat);
-
+#endif
+  
+#ifndef USE_AUDIO_SESSION_API
+    _audioSession = [AVAudioSession sharedInstance];
+    if ([(AVAudioSession*)_audioSession setCategory:AVAudioSessionCategoryPlayAndRecord error:nil] != YES)
+    {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "  Could not set audio session category (result=%d)", result);
+    }
+#endif
+  
     //////////////////////
     // Setup Voice Processing Audio Unit
 
@@ -1560,6 +1602,7 @@ int32_t AudioDeviceIPhone::InitPlayOrRecord() {
                      "  Could not init Audio Unit (result=%d)", result);
     }
 
+#ifdef USE_AUDIO_SESSION_API
     // Get hardware sample rate for logging (see if we get what we asked for)
     Float64 hardwareSampleRate = 0.0;
     size = sizeof(hardwareSampleRate);
@@ -1573,13 +1616,21 @@ int32_t AudioDeviceIPhone::InitPlayOrRecord() {
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                  "  Current HW sample rate is %f, ADB sample rate is %d",
              hardwareSampleRate, _adbSampFreq);
-
+#endif
+  
     return 0;
 }
 
 int32_t AudioDeviceIPhone::ShutdownPlayOrRecord() {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
+#ifndef USE_AUDIO_SESSION_API
+    if ([(AVAudioSession*)_audioSession setActive:false error:nil] != YES) {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                 "  Cannot set Audio Session to inactive state");
+        return -1;
+    }
+#endif
     // Close and delete AU
     OSStatus result = -1;
     if (NULL != _auVoiceProcessing) {
@@ -1855,9 +1906,12 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
         _playoutDelay = 0;
 
         // HW output latency
+        OSStatus result;
+        UInt32 size;
+#ifdef USE_AUDIO_SESSION_API
         Float32 f32(0);
-        UInt32 size = sizeof(f32);
-        OSStatus result = AudioSessionGetProperty(
+        size = sizeof(f32);
+        result = AudioSessionGetProperty(
             kAudioSessionProperty_CurrentHardwareOutputLatency, &size, &f32);
         if (0 != result) {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1874,7 +1928,8 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
                          "error HW buffer duration (result=%d)", result);
         }
         _playoutDelay += static_cast<int>(f32 * 1000000);
-
+#endif
+      
         // AU latency
         Float64 f64(0);
         size = sizeof(f64);
@@ -1905,9 +1960,12 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
         _recordingDelayHWAndOS = 0;
 
         // HW input latency
+        OSStatus result;
+        UInt32 size;
+#ifdef USE_AUDIO_SESSION_API
         Float32 f32(0);
-        UInt32 size = sizeof(f32);
-        OSStatus result = AudioSessionGetProperty(
+        size = sizeof(f32);
+        result = AudioSessionGetProperty(
             kAudioSessionProperty_CurrentHardwareInputLatency, &size, &f32);
         if (0 != result) {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1924,7 +1982,8 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
                          "error HW buffer duration (result=%d)", result);
         }
         _recordingDelayHWAndOS += static_cast<int>(f32 * 1000000);
-
+#endif
+      
         // AU latency
         Float64 f64(0);
         size = sizeof(f64);
