@@ -314,6 +314,7 @@ _zOrderToChannel( ),
 _threadID (0),
 _renderingIsPaused (FALSE)
 {
+    [_windowRef retain];
     _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
     _screenUpdateEvent = EventWrapper::Create();
 }
@@ -322,8 +323,12 @@ int VideoRenderUIView::ChangeWindow(UIImageView* newWindowRef)
 {
 
     LockAGLCntx();
-
-    _windowRef = newWindowRef;
+  
+    if (_windowRef)
+    {
+        [_windowRef release];
+        _windowRef = [newWindowRef retain];
+    }
 
     if(CreateMixingContext() == -1)
     {
@@ -518,6 +523,8 @@ VideoRenderUIView::~VideoRenderUIView()
         zIt = _zOrderToChannel.begin();
     }
     _zOrderToChannel.clear();
+  
+    [_windowRef release];
 
 }
 
