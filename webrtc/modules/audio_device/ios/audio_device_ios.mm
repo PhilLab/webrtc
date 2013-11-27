@@ -1624,13 +1624,6 @@ int32_t AudioDeviceIPhone::InitPlayOrRecord() {
 int32_t AudioDeviceIPhone::ShutdownPlayOrRecord() {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
-#ifndef USE_AUDIO_SESSION_API
-    if ([(AVAudioSession*)_audioSession setActive:false error:nil] != YES) {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                 "  Cannot set Audio Session to inactive state");
-        return -1;
-    }
-#endif
     // Close and delete AU
     OSStatus result = -1;
     if (NULL != _auVoiceProcessing) {
@@ -1646,6 +1639,14 @@ int32_t AudioDeviceIPhone::ShutdownPlayOrRecord() {
         }
         _auVoiceProcessing = NULL;
     }
+  
+#ifndef USE_AUDIO_SESSION_API
+    if ([(AVAudioSession*)_audioSession setActive:false error:nil] != YES) {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "  Cannot set Audio Session to inactive state");
+        return -1;
+    }
+#endif
 
     return 0;
 }
