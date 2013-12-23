@@ -10,7 +10,7 @@ $(obj)/gen/audio_processing/asm_offsets/aecm_core_neon_offsets.h: webrtc/modules
 	$(call do_cmd,trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_0)
 
 all_deps += $(obj)/gen/audio_processing/asm_offsets/aecm_core_neon_offsets.h
-cmd_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_0 = LD_LIBRARY_PATH=$(builddir)/lib.host:$(builddir)/lib.target:$$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; cd webrtc/modules; mkdir -p $(obj)/gen/audio_processing/asm_offsets; python ../../webrtc/build/generate_asm_header.py "--compiler=$(ANDROID_NDK_PATH)/toolchains/arm-linux-androideabi-4.6/prebuilt/$(PLATFORM)/bin/arm-linux-androideabi-gcc" "--options=-I../../webrtc/.. -I$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm/usr/include -S" "--pattern=offset_" "--dir=$(obj)/gen/audio_processing/asm_offsets" "$(abspath $<)"
+cmd_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_0 = LD_LIBRARY_PATH=$(builddir)/lib.host:$(builddir)/lib.target:$$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; cd webrtc/modules; mkdir -p $(obj)/gen/audio_processing/asm_offsets; python ../../webrtc/build/generate_asm_header.py "--compiler=$(ANDROID_NDK_PATH)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(PLATFORM)/bin/arm-linux-androideabi-gcc" "--options=-I../../webrtc/.. -I$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm/usr/include -S" "--pattern=offset_" "--dir=$(obj)/gen/audio_processing/asm_offsets" "$(abspath $<)"
 quiet_cmd_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_0 = RULE trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_0 $@
 
 $(obj)/gen/audio_processing/asm_offsets/nsx_core_neon_offsets.h: obj := $(abs_obj)
@@ -20,7 +20,7 @@ $(obj)/gen/audio_processing/asm_offsets/nsx_core_neon_offsets.h: webrtc/modules/
 	$(call do_cmd,trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_1)
 
 all_deps += $(obj)/gen/audio_processing/asm_offsets/nsx_core_neon_offsets.h
-cmd_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_1 = LD_LIBRARY_PATH=$(builddir)/lib.host:$(builddir)/lib.target:$$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; cd webrtc/modules; mkdir -p $(obj)/gen/audio_processing/asm_offsets; python ../../webrtc/build/generate_asm_header.py "--compiler=$(ANDROID_NDK_PATH)/toolchains/arm-linux-androideabi-4.6/prebuilt/$(PLATFORM)/bin/arm-linux-androideabi-gcc" "--options=-I../../webrtc/.. -I$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm/usr/include -S" "--pattern=offset_" "--dir=$(obj)/gen/audio_processing/asm_offsets" "$(abspath $<)"
+cmd_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_1 = LD_LIBRARY_PATH=$(builddir)/lib.host:$(builddir)/lib.target:$$LD_LIBRARY_PATH; export LD_LIBRARY_PATH; cd webrtc/modules; mkdir -p $(obj)/gen/audio_processing/asm_offsets; python ../../webrtc/build/generate_asm_header.py "--compiler=$(ANDROID_NDK_PATH)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(PLATFORM)/bin/arm-linux-androideabi-gcc" "--options=-I../../webrtc/.. -I$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm/usr/include -S" "--pattern=offset_" "--dir=$(obj)/gen/audio_processing/asm_offsets" "$(abspath $<)"
 quiet_cmd_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_1 = RULE trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_1 $@
 
 rule_trunk_webrtc_modules_modules_gyp_audio_processing_offsets_target_generate_asm_header_outputs := \
@@ -67,7 +67,7 @@ DEFS_Debug := \
 	'-D_DEBUG'
 
 # Flags passed to all source files.
-CFLAGS_Debug := \
+CFLAGS_Debug := -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi/include \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-Werror \
@@ -103,8 +103,8 @@ CFLAGS_Debug := \
 	-finline-limit=64 \
 	-Wa,--noexecstack \
 	--sysroot=$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/stlport/stlport \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/include \
+	-I. \
+	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/include \
 	-Os \
 	-g \
 	-fomit-frame-pointer \
@@ -165,7 +165,7 @@ DEFS_Release := \
 	'-D_FORTIFY_SOURCE=2'
 
 # Flags passed to all source files.
-CFLAGS_Release := \
+CFLAGS_Release := -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi/include \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-Werror \
@@ -201,8 +201,8 @@ CFLAGS_Release := \
 	-finline-limit=64 \
 	-Wa,--noexecstack \
 	--sysroot=$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/stlport/stlport \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/include \
+	-I. \
+	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/include \
 	-Os \
 	-fno-ident \
 	-fdata-sections \
