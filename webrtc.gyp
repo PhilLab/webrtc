@@ -17,6 +17,7 @@
       'webrtc/video_engine/video_engine.gyp:*',
       'webrtc/voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
+      'webrtc/test/channel_transport.gyp:*',
     ],
   },
   'targets': [
@@ -36,12 +37,12 @@
             'tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],
-        ['OS=="android"', {
-          'dependencies': [
-            'tools/android/android_tools_precompiled.gyp:*',
-            'tools/android-dummy-test/android_dummy_test.gyp:*',
-          ],
-        }],
+        #['OS=="android"', {
+         # 'dependencies': [
+          #  'tools/android/android_tools_precompiled.gyp:*',
+           # 'tools/android-dummy-test/android_dummy_test.gyp:*',
+          #],
+        #}],
       ],
     },
   ],

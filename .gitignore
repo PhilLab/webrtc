@@ -62,7 +62,7 @@ xcuserdata
 /third_party/WebKit/Tools/Scripts
 /tools/android
 /tools/android-dummy-test
-/tools/clang
+#/tools/clang
 /tools/grit
 /tools/gritsettings
 /tools/gyp

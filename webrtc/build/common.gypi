@@ -64,7 +64,7 @@
     'enable_data_logging%': 0,
 
     # Enables the use of protocol buffers for debug recordings.
-    'enable_protobuf%': 1,
+    'enable_protobuf%': 0,
 
     # Disable these to not build components which can be externally provided.
     'build_libjpeg%': 1,
@@ -108,7 +108,7 @@
         'include_internal_video_capture%': 1,
         'include_internal_video_render%': 1,
         'enable_tracing%': 1,
-        'include_tests%': 1,
+        'include_tests%': 0,
 
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:

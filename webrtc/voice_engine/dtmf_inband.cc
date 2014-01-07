@@ -77,8 +77,14 @@ DtmfInband::DtmfInband(int32_t id) :
     _playing(false),
     _delaySinceLastToneMS(1000)
 {
+#ifndef ANDROID
     std::memset(_oldOutputLow, 0, sizeof(_oldOutputLow));
     std::memset(_oldOutputHigh, 0, sizeof(_oldOutputHigh));
+#else
+    memset(_oldOutputLow, 0, sizeof(_oldOutputLow));
+    memset(_oldOutputHigh, 0, sizeof(_oldOutputHigh));
+#endif
+
 }
 
 DtmfInband::~DtmfInband()

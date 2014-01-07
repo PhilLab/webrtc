@@ -11,6 +11,15 @@ else
 	echo "----------------- Exporting the android-ndk path ----------------"
 fi
 
+#depot-tools set
+if [ -d depot_tools ] ; then
+	export PATH=$PATH:`pwd`/depot_tools
+else
+	tar xvf depot_tools.tar.gz
+	export PATH=$PATH:`pwd`/depot_tools
+fi
+
+
 #Set path
 export PATH=$PATH:$Input:$Input/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin
 
@@ -27,11 +36,20 @@ export ANDROID_NDK_PATH=$Input
 cd ./../../
 rm -rf ./out
 
-make All BUILDTYPE=Release
-popd
+#Generaing the make files
+export GYP_GENERATORS=make
+
+GYP_DEFINES="host_os=linux OS=android target_arch=arm android_ndk_root=$Input" gclient runhooks
+
+make BUILDTYPE=Release ARFLAGS.target=crs
+
+cd ./out
 
 echo "-------- Installing webrtc libs -----"
-cp -r ./../../out/Release/lib* ./../../../build/android/webrtc/
+#cp -r ./../../out/Release/obj.target/*.a ./../../../build/android/webrtc/
+find -type f -iname '*.a' -exec cp {} ./../../build/android/webrtc/ \;
+
+popd
 
 #clean
 rm -rf ./../../out
