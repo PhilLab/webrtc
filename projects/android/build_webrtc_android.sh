@@ -13,6 +13,17 @@ else
         ARCHTYPE="x86_64"
 fi
 
+#Get the Host OS
+HOST_OS=`uname -s`
+case "$HOST_OS" in
+    Darwin)
+        HOST_OS=darwin
+        ;;
+    Linux)
+        HOST_OS=linux
+        ;;
+esac
+
 #NDK-path
 if [[ $1 == *ndk* ]]; then
 	echo "----------------- NDK Path is : $1 ----------------"
