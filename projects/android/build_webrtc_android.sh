@@ -45,11 +45,7 @@ fi
 
 #Set path
 echo "----------------- Exporting the android-ndk path ----------------"
-if [ "$ARCHTYPE" = "x86" ] ; then
-	export PATH=$PATH:$Input:$Input/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin
-else
-        export PATH=$PATH:$Input:$Input/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86_64/bin
-fi
+export PATH=$PATH:$Input:$Input/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$HOST_OS-$ARCHTYPE/bin
 
 #create install directories
 mkdir -p ./../../build
@@ -64,18 +60,25 @@ export ANDROID_NDK_PATH=$Input
 cd ./../../
 rm -rf ./out
 
-#Generaing the make files
-export GYP_GENERATORS=make
-
-GYP_DEFINES="host_os=linux android_host_arch=$ARCHTYPE OS=android target_arch=arm android_ndk_root=$Input" gclient runhooks
-
-make BUILDTYPE=Release ARFLAGS.target=crs
+#Avoid generation of make files on mac platform
+if [ "$HOST_OS" == "linux" ] ; then
+	#Generaing the make files
+	export GYP_GENERATORS=make
+	GYP_DEFINES="host_os=linux android_host_arch=$ARCHTYPE OS=android target_arch=arm android_ndk_root=$Input" gclient runhooks
+	make BUILDTYPE=Release PLATFORM=$HOST_OS-$ARCHTYPE ARFLAGS.target=crs
+elif [ "$HOST_OS" == "darwin" ] ; then
+	make BUILDTYPE=Release PLATFORM=$HOST_OS-$ARCHTYPE ARFLAGS.target=crs
+else
+	echo "------------------- Unsupported Platform ---------------"
+	exit 1
+fi
 
 cd ./out
 
 echo "-------- Installing webrtc libs -----"
 #cp -r ./../../out/Release/obj.target/*.a ./../../../build/android/webrtc/
-find -type f -iname '*.a' -exec cp {} ./../../build/android/webrtc/ \;
+#find -type f -iname '*.a' -exec cp {} ./../../build/android/webrtc/ \;
+find . -iname '*.a' -exec cp {} ./../../build/android/webrtc/ \;
 
 popd
 
