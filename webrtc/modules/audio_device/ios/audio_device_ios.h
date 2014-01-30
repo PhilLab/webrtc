@@ -178,6 +178,10 @@ public:
     virtual int32_t GetLoudspeakerStatus(bool& enabled) const;
     virtual int32_t GetOutputAudioRoute(OutputAudioRoute& route) const;
 
+public:
+    // Used by AudioDeviceIPhoneObjC only
+    virtual int32_t SetOutputAudioRoute(OutputAudioRoute route);
+  
 private:
     void Lock() {
         _critSect.Enter();
@@ -247,6 +251,7 @@ private:
 
 #ifndef USE_AUDIO_SESSION_API
     void* _audioSession;
+    void* _audioDevice;
 #endif
   
 private:
