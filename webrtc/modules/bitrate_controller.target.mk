@@ -38,7 +38,7 @@ DEFS_Debug := \
 	'-D_DEBUG'
 
 # Flags passed to all source files.
-CFLAGS_Debug := \
+CFLAGS_Debug := -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi/include \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-Werror \
@@ -74,8 +74,8 @@ CFLAGS_Debug := \
 	-finline-limit=64 \
 	-Wa,--noexecstack \
 	--sysroot=$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/stlport/stlport \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/include \
+	-I. \
+	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/include \
 	-Os \
 	-g \
 	-fomit-frame-pointer \
@@ -138,7 +138,7 @@ DEFS_Release := \
 	'-D_FORTIFY_SOURCE=2'
 
 # Flags passed to all source files.
-CFLAGS_Release := \
+CFLAGS_Release := -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi/include \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-Werror \
@@ -174,8 +174,8 @@ CFLAGS_Release := \
 	-finline-limit=64 \
 	-Wa,--noexecstack \
 	--sysroot=$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/stlport/stlport \
-	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/include \
+	-I. \
+	-I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/include \
 	-Os \
 	-fno-ident \
 	-fdata-sections \
@@ -242,8 +242,8 @@ LDFLAGS_Debug := \
 	-Wl,--exclude-libs=ALL \
 	--sysroot=$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm \
 	-Wl,--icf=safe \
-	-L$(ANDROID_NDK_PATH)/sources/cxx-stl/stlport/libs/armeabi-v7a \
-	-L$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/libs/armeabi-v7a \
+	-L. \
+	-L$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi \
 	-Wl,-O1 \
 	-Wl,--as-needed \
 	-Wl,--gc-sections
@@ -261,16 +261,16 @@ LDFLAGS_Release := \
 	-Wl,--exclude-libs=ALL \
 	--sysroot=$(ANDROID_NDK_PATH)/platforms/android-9/arch-arm \
 	-Wl,--icf=safe \
-	-L$(ANDROID_NDK_PATH)/sources/cxx-stl/stlport/libs/armeabi-v7a \
-	-L$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/libs/armeabi-v7a \
+	-L. \
+	-L$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.4.3/libs/armeabi \
 	-Wl,-O1 \
 	-Wl,--as-needed \
 	-Wl,--gc-sections
 
 LIBS := \
 	 \
-	-lstlport_static \
-	$(ANDROID_NDK_PATH)toolchains/arm-linux-androideabi-4.6/prebuilt/$(PLATFORM)/bin/../lib/gcc/arm-linux-androideabi/4.6/libgcc.a \
+	-lgnustl_static \
+	$(ANDROID_NDK_PATH)toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(PLATFORM)/bin/../lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a \
 	-lc \
 	-ldl \
 	-lstdc++ \

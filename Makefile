@@ -23,8 +23,9 @@ endif
 # Specify BUILDTYPE=Release on the command line for a release build.
 BUILDTYPE ?= Debug
 
-ANDROID_NDK_PATH = $(abspath ../../../../../../android-ndk)
-PLATFORM = darwin-x86
+#ANDROID_NDK_PATH = $(abspath ../../../../../../android-ndk)
+#PLATFORM = darwin-x86
+PLATFORM = linux-x86
 
 # Directory all our build output goes into.
 # Note that this must be two directories beneath src/ for unit tests to pass,
