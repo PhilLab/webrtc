@@ -94,6 +94,8 @@ public:
     virtual void OnErrorIsReported(ErrorCode error);
     virtual void OnWarningIsReported(WarningCode warning);
     virtual void OnOutputAudioRouteChanged(const OutputAudioRoute audioRoute);
+    virtual void OnAudioSessionInterruptionBegan();
+    virtual void OnAudioSessionInterruptionEnded();
 
 protected:
     VoEBaseImpl(voe::SharedData* shared);
