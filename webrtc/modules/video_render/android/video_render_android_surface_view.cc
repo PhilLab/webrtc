@@ -13,6 +13,7 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "tick_util.h"
 
+#define ANDROID_LOG
 #ifdef ANDROID_LOG
 #include <stdio.h>
 #include <android/log.h>
@@ -79,6 +80,9 @@ AndroidSurfaceViewRenderer::~AndroidSurfaceViewRenderer() {
 
 int32_t AndroidSurfaceViewRenderer::Init() {
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s", __FUNCTION__);
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 1");
+
   if (!g_jvm) {
     WEBRTC_TRACE(kTraceError,
                  kTraceVideoRenderer,
@@ -96,6 +100,8 @@ int32_t AndroidSurfaceViewRenderer::Init() {
     return -1;
   }
 
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 2");
   // get the JNI env for this thread
   bool isAttached = false;
   JNIEnv* env = NULL;
@@ -117,6 +123,8 @@ int32_t AndroidSurfaceViewRenderer::Init() {
     }
     isAttached = true;
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 3");
 
   // get the ViESurfaceRender class
   jclass javaRenderClassLocal =
@@ -142,6 +150,8 @@ int32_t AndroidSurfaceViewRenderer::Init() {
                  __FUNCTION__);
     return -1;
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 4");
 
   // Delete local class ref, we only use the global ref
   env->DeleteLocalRef(javaRenderClassLocal);
@@ -158,6 +168,8 @@ int32_t AndroidSurfaceViewRenderer::Init() {
                  __FUNCTION__);
     return -1; /* exception thrown */
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 5");
 
   // construct the object
   jobject javaRenderObjLocal = env->NewObject(_javaRenderClass,
@@ -183,6 +195,8 @@ int32_t AndroidSurfaceViewRenderer::Init() {
                  __FUNCTION__);
     return -1;
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 6");
 
   // Detach this thread if it was attached
   if (isAttached) {
@@ -194,6 +208,8 @@ int32_t AndroidSurfaceViewRenderer::Init() {
     }
   }
 
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "Init - 7");
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s done", __FUNCTION__);
   return 0;
 }
@@ -213,12 +229,18 @@ AndroidSurfaceViewRenderer::CreateAndroidRenderChannel(
                "%s: Id %d",
                __FUNCTION__,
                streamId);
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "CreateAndroidRenderChannel - 1");
   AndroidSurfaceViewChannel* stream =
       new AndroidSurfaceViewChannel(streamId, g_jvm, renderer, _javaRenderObj);
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "CreateAndroidRenderChannel - 2");
   if(stream && stream->Init(zOrder, left, top, right, bottom) == 0)
     return stream;
   else
     delete stream;
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidSurfaceViewRenderer",
+                      "CreateAndroidRenderChannel - 3");
   return NULL;
 }
 

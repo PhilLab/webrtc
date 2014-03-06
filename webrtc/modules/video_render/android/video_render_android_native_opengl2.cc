@@ -12,6 +12,7 @@
 #include "critical_section_wrapper.h"
 #include "tick_util.h"
 
+#define ANDROID_LOG
 #ifdef ANDROID_LOG
 #include <stdio.h>
 #include <android/log.h>
@@ -35,18 +36,27 @@ AndroidNativeOpenGl2Renderer::AndroidNativeOpenGl2Renderer(
 }
 
 bool AndroidNativeOpenGl2Renderer::UseOpenGL2(void* window) {
-  if (!g_jvm) {
+  if (!g_javaGLESClass) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
                  "RendererAndroid():UseOpenGL No JVM set.");
     return false;
   }
+  if (!g_javaGLESClass) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
+                 "RendererAndroid():UseOpenGL No GLES Class set.");
+    return false;
+  }
   bool isAttached = false;
   JNIEnv* env = NULL;
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                       "UseOpenGL2 - 1");
   if (g_jvm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
     // try to attach the thread and get the env
     // Attach this thread to JVM
     jint res = g_jvm->AttachCurrentThread(&env, NULL);
 
+    __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                         "UseOpenGL2 - 2");
     // Get the JNI env for this thread
     if ((res < 0) || !env) {
       WEBRTC_TRACE(
@@ -57,18 +67,22 @@ bool AndroidNativeOpenGl2Renderer::UseOpenGL2(void* window) {
           res, env);
       return false;
     }
+    __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                         "UseOpenGL2 - 3");
     isAttached = true;
   }
 
   // get the renderer class
-  jclass javaRenderClassLocal =
-      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+  jclass javaRenderClassLocal = g_javaGLESClass;
+//      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
   if (!javaRenderClassLocal) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
                  "%s: could not find ViEAndroidRenderer class",
                  __FUNCTION__);
     return false;
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                       "UseOpenGL2 - 4");
 
   // get the method ID for UseOpenGL
   jmethodID cidUseOpenGL = env->GetStaticMethodID(javaRenderClassLocal,
@@ -89,6 +103,8 @@ bool AndroidNativeOpenGl2Renderer::UseOpenGL2(void* window) {
                    "%s: Could not detach thread from JVM", __FUNCTION__);
     }
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                       "UseOpenGL2 - 5, %d", res);
   return res;
 }
 
@@ -161,8 +177,8 @@ int32_t AndroidNativeOpenGl2Renderer::Init() {
   }
 
   // get the ViEAndroidGLES20 class
-  jclass javaRenderClassLocal =
-      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+  jclass javaRenderClassLocal = g_javaGLESClass;
+//      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
   if (!javaRenderClassLocal) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                  "%s: could not find ViEAndroidGLES20", __FUNCTION__);
@@ -220,12 +236,18 @@ AndroidNativeOpenGl2Renderer::CreateAndroidRenderChannel(
     VideoRenderAndroid& renderer) {
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s: Id %d",
                __FUNCTION__, streamId);
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                      "CreateAndroidRenderChannel - 1");
   AndroidNativeOpenGl2Channel* stream =
       new AndroidNativeOpenGl2Channel(streamId, g_jvm, renderer,
                                       _javaRenderObj);
-  if (stream && stream->Init(zOrder, left, top, right, bottom) == 0)
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                      "CreateAndroidRenderChannel - 2");
+  if (stream && stream->Init(zOrder, left, top, right, bottom) == 0) {
+  __android_log_print(ANDROID_LOG_DEBUG, "AndroidNativeOpenGl2Renderer",
+                      "CreateAndroidRenderChannel - 3");
     return stream;
-  else {
+  } else {
     delete stream;
   }
   return NULL;

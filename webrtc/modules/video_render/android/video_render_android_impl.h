@@ -115,6 +115,7 @@ class VideoRenderAndroid: IVideoRender {
                             const float top, const float right,
                             const float bottom);
   static JavaVM* g_jvm;
+  static jclass g_javaGLESClass;
 
  protected:
   virtual AndroidStream* CreateAndroidRenderChannel(

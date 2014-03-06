@@ -28,11 +28,43 @@
 namespace webrtc {
 
 JavaVM* VideoRenderAndroid::g_jvm = NULL;
+jclass VideoRenderAndroid::g_javaGLESClass = NULL;
 
 #if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 int32_t SetRenderAndroidVM(void* javaVM) {
+	  __android_log_print(ANDROID_LOG_DEBUG, "VideoRenderAndroid",
+	                      "SetRenderAndroidVM");
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, -1, "%s", __FUNCTION__);
   VideoRenderAndroid::g_jvm = (JavaVM*)javaVM;
+  if (javaVM) {
+	JNIEnv* env = NULL;
+	if (VideoRenderAndroid::g_jvm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
+	  WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoRenderer, -1,
+                   "%s: could not get Java environment", __FUNCTION__);
+	  return -1;
+	}
+	// get java render class type (note path to class packet)
+	jclass javaGLESClassLocal = env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+	if (!javaGLESClassLocal) {
+	  WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoRenderer, -1,
+	               "%s: could not find java class", __FUNCTION__);
+	  return -1;
+	}
+    // create a global reference to the class
+    // (to tell JNI that we are referencing it
+    // after this function has returned)
+	VideoRenderAndroid::g_javaGLESClass = static_cast<jclass>
+        (env->NewGlobalRef(javaGLESClassLocal));
+    if (!VideoRenderAndroid::g_javaGLESClass) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoRenderer, -1,
+                   "%s: SetRenderAndroidVM(): could not create"
+                   " Java Renderer class reference",
+                   __FUNCTION__);
+      return -1;
+    }
+    // Delete local class ref, we only use the global ref
+    env->DeleteLocalRef(javaGLESClassLocal);
+  }
   return 0;
 }
 #endif
@@ -100,9 +132,14 @@ VideoRenderAndroid::AddIncomingRenderStream(const uint32_t streamId,
       return renderStream;
     }
   }
+  __android_log_print(ANDROID_LOG_DEBUG, "VideoRenderAndroid",
+                      "AddIncomingRenderStream - 1");
 
   renderStream = CreateAndroidRenderChannel(streamId, zOrder, left, top,
                                             right, bottom, *this);
+  __android_log_print(ANDROID_LOG_DEBUG, "VideoRenderAndroid",
+                      "AddIncomingRenderStream - 2");
+
   if (renderStream) {
     _streamsMap.Insert(streamId, renderStream);
   }
