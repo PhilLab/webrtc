@@ -37,6 +37,10 @@
         _audioSession = [AVAudioSession sharedInstance];
         NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
         [notificationCenter addObserver: self
+                               selector: @selector (interruptionHandler:)
+                                   name: AVAudioSessionInterruptionNotification
+                                 object: _audioSession];
+        [notificationCenter addObserver: self
                                selector: @selector (routeChangeHandler:)
                                    name: AVAudioSessionRouteChangeNotification
                                  object: _audioSession];
@@ -48,9 +52,23 @@
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:AVAudioSessionInterruptionNotification
+                                                  object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:AVAudioSessionRouteChangeNotification
                                                   object:nil];
     [super dealloc];
+}
+
+- (void)interruptionHandler:(NSNotification *)notification
+{
+  UInt8 typeValue = [[notification.userInfo valueForKey: AVAudioSessionInterruptionTypeKey] intValue];
+  
+  if (AVAudioSessionInterruptionTypeBegan == typeValue) {
+      _owner->SetInterruptionBegan();
+  } else if (AVAudioSessionInterruptionTypeEnded == typeValue) {
+      _owner->SetInterruptionEnded();
+  }
 }
 
 - (void)routeChangeHandler:(NSNotification *)notification
@@ -118,6 +136,8 @@ AudioDeviceIPhone::AudioDeviceIPhone(const int32_t id)
     _playoutRouteChanged(false),
     _recWarning(0),
     _recError(0),
+    _interruptionBegan(false),
+    _interruptionEnded(false),
     _playoutBufferUsed(0),
     _recordingCurrentSeq(0),
     _recordingBufferTotalSize(0),
@@ -239,6 +259,8 @@ int32_t AudioDeviceIPhone::Init() {
     _playoutRouteChanged = false;
     _recWarning = 0;
     _recError = 0;
+    _interruptionBegan = false;
+    _interruptionEnded = false;
 
     _initialized = true;
 
@@ -929,6 +951,16 @@ int32_t AudioDeviceIPhone::SetOutputAudioRoute(OutputAudioRoute route) {
     return 0;
 }
   
+int32_t AudioDeviceIPhone::SetInterruptionBegan() {
+    _interruptionBegan = true;
+    return 0;
+}
+
+int32_t AudioDeviceIPhone::SetInterruptionEnded() {
+    _interruptionEnded = true;
+    return 0;
+}
+  
 int32_t AudioDeviceIPhone::PlayoutIsAvailable(bool& available) {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
@@ -1110,6 +1142,8 @@ int32_t AudioDeviceIPhone::StartRecording() {
     _recError = 0;
 
     if (!_playing) {
+        _interruptionBegan = false;
+        _interruptionEnded = false;
 #ifndef USE_AUDIO_SESSION_API
         if ([(AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
           WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
@@ -1193,12 +1227,14 @@ int32_t AudioDeviceIPhone::StartPlayout() {
     _playoutRouteChanged = false;
 
     if (!_recording) {
+        _interruptionBegan = false;
+        _interruptionEnded = false;
 #ifndef USE_AUDIO_SESSION_API
-      if ([(AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  Cannot set Audio Session to active state");
-        return -1;
-      }
+        if ([(AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
+            WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                         "  Cannot set Audio Session to active state");
+            return -1;
+        }
 #endif
         // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
@@ -1357,6 +1393,14 @@ bool AudioDeviceIPhone::RecordingWarning() const {
 bool AudioDeviceIPhone::RecordingError() const {
     return (_recError > 0);
 }
+  
+bool AudioDeviceIPhone::InterruptionBegan() const {
+    return _interruptionBegan;
+}
+  
+bool AudioDeviceIPhone::InterruptionEnded() const {
+    return _interruptionEnded;
+}
 
 void AudioDeviceIPhone::ClearPlayoutWarning() {
     _playWarning = 0;
@@ -1376,6 +1420,14 @@ void AudioDeviceIPhone::ClearRecordingWarning() {
 
 void AudioDeviceIPhone::ClearRecordingError() {
     _recError = 0;
+}
+  
+void AudioDeviceIPhone::ClearInterruptionBegan() {
+    _interruptionBegan = false;
+}
+  
+void AudioDeviceIPhone::ClearInterruptionEnded() {
+    _interruptionEnded = false;
 }
 
 // ============================================================================

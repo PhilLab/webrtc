@@ -577,6 +577,26 @@ int32_t AudioDeviceModuleImpl::Process()
         }
         _ptrAudioDevice->ClearRecordingError();
     }
+  
+    if (_ptrAudioDevice->InterruptionBegan())
+    {
+        CriticalSectionScoped lock(&_critSectEventCb);
+        if (_ptrCbAudioDeviceObserver)
+        {
+            _ptrCbAudioDeviceObserver->OnAudioSessionInterruptionBegan();
+        }
+        _ptrAudioDevice->ClearInterruptionBegan();
+    }
+  
+    if (_ptrAudioDevice->InterruptionEnded())
+    {
+        CriticalSectionScoped lock(&_critSectEventCb);
+        if (_ptrCbAudioDeviceObserver)
+        {
+            _ptrCbAudioDeviceObserver->OnAudioSessionInterruptionEnded();
+        }
+        _ptrAudioDevice->ClearInterruptionEnded();
+    }
 
     return 0;
 }

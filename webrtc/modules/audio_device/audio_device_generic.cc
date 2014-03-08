@@ -86,10 +86,36 @@ bool AudioDeviceGeneric::PlayoutRouteChanged() const
     return -1;
 }
   
+bool AudioDeviceGeneric::InterruptionBegan() const
+{
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                 "Interruption Began event not supported on this platform");
+    return -1;
+}
+  
+bool AudioDeviceGeneric::InterruptionEnded() const
+{
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                 "Interruption Ended event not supported on this platform");
+    return -1;
+}
+  
 void AudioDeviceGeneric::ClearPlayoutRouteChanged()
 {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
                  "Playout Route Changed event not supported on this platform");
+}
+  
+void AudioDeviceGeneric::ClearInterruptionBegan()
+{
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                 "Interruption Began event not supported on this platform");
+}
+  
+void AudioDeviceGeneric::ClearInterruptionEnded()
+{
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                 "Interruption Ended event not supported on this platform");
 }
 
 }  // namespace webrtc

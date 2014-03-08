@@ -168,11 +168,15 @@ public:
     virtual bool PlayoutRouteChanged() const;
     virtual bool RecordingWarning() const = 0;
     virtual bool RecordingError() const = 0;
+    virtual bool InterruptionBegan() const;
+    virtual bool InterruptionEnded() const;
     virtual void ClearPlayoutWarning() = 0;
     virtual void ClearPlayoutError() = 0;
     virtual void ClearPlayoutRouteChanged();
     virtual void ClearRecordingWarning() = 0;
     virtual void ClearRecordingError() = 0;
+    virtual void ClearInterruptionBegan();
+    virtual void ClearInterruptionEnded();
 
 public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) = 0;

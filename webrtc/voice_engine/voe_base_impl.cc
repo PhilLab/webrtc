@@ -138,6 +138,36 @@ void VoEBaseImpl::OnOutputAudioRouteChanged(const OutputAudioRoute audioRoute)
         }
     }
 }
+  
+void VoEBaseImpl::OnAudioSessionInterruptionBegan()
+{
+    CriticalSectionScoped cs(&_callbackCritSect);
+    if (_voiceEngineObserver)
+    {
+        if (_voiceEngineObserverPtr)
+        {
+            WEBRTC_TRACE(kTraceInfo, kTraceVoice,
+                         VoEId(_shared->instance_id(), -1),
+                         "VoEBaseImpl::OnAudioSessionInterruptionBegan()");
+            _voiceEngineObserverPtr->CallbackOnAudioSessionInterruptionBegin();
+        }
+    }
+}
+  
+void VoEBaseImpl::OnAudioSessionInterruptionEnded()
+{
+    CriticalSectionScoped cs(&_callbackCritSect);
+    if (_voiceEngineObserver)
+    {
+        if (_voiceEngineObserverPtr)
+        {
+            WEBRTC_TRACE(kTraceInfo, kTraceVoice,
+                         VoEId(_shared->instance_id(), -1),
+                         "VoEBaseImpl::OnAudioSessionInterruptionEnded()");
+            _voiceEngineObserverPtr->CallbackOnAudioSessionInterruptionEnd();
+        }
+    }
+}
 
 int32_t VoEBaseImpl::RecordedDataIsAvailable(
         const void* audioSamples,

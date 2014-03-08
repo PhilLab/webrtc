@@ -161,11 +161,15 @@ public:
     virtual bool PlayoutRouteChanged() const;
     virtual bool RecordingWarning() const;
     virtual bool RecordingError() const;
+    virtual bool InterruptionBegan() const;
+    virtual bool InterruptionEnded() const;
     virtual void ClearPlayoutWarning();
     virtual void ClearPlayoutError();
     virtual void ClearPlayoutRouteChanged();
     virtual void ClearRecordingWarning();
     virtual void ClearRecordingError();
+    virtual void ClearInterruptionBegan();
+    virtual void ClearInterruptionEnded();
 
 public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
@@ -181,6 +185,8 @@ public:
 public:
     // Used by AudioDeviceIPhoneObjC only
     virtual int32_t SetOutputAudioRoute(OutputAudioRoute route);
+    virtual int32_t SetInterruptionBegan();
+    virtual int32_t SetInterruptionEnded();
   
 private:
     void Lock() {
@@ -285,6 +291,8 @@ private:
     bool _playoutRouteChanged;
     uint16_t _recWarning;
     uint16_t _recError;
+    bool _interruptionBegan;
+    bool _interruptionEnded;
 
     // Playout buffer, needed for 44.0 / 44.1 kHz mismatch
     int16_t _playoutBuffer[ENGINE_PLAY_BUF_SIZE_IN_SAMPLES];

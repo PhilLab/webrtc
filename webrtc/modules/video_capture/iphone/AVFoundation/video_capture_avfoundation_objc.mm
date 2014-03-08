@@ -453,6 +453,7 @@
     _captureDeviceName = [[NSString alloc] initWithFormat:@""];
     _rLock = [[VideoCaptureRecursiveLock alloc] init];
     _captureSession = [[AVCaptureSession alloc] init];
+    [_captureSession setUsesApplicationAudioSession:NO];
     _captureDecompressedVideoOutput = [[AVCaptureVideoDataOutput alloc]
                                         init];
     _index = -1;
