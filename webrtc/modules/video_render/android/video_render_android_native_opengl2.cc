@@ -197,7 +197,7 @@ int32_t AndroidNativeOpenGl2Renderer::Init() {
   }
 
   // Delete local class ref, we only use the global ref
-  env->DeleteLocalRef(javaRenderClassLocal);
+  //env->DeleteLocalRef(javaRenderClassLocal);
 
   // create a reference to the object (to tell JNI that we are referencing it
   // after this function has returned)
@@ -333,8 +333,8 @@ int32_t AndroidNativeOpenGl2Channel::Init(int32_t zOrder,
     isAttached = true;
   }
 
-  jclass javaRenderClass =
-      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+  jclass javaRenderClass = VideoRenderAndroid::g_javaGLESClass;
+//      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
   if (!javaRenderClass) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                  "%s: could not find ViESurfaceRenderer", __FUNCTION__);
