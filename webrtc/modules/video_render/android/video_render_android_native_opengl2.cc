@@ -12,6 +12,7 @@
 #include "critical_section_wrapper.h"
 #include "tick_util.h"
 
+//#define ANDROID_LOG
 #ifdef ANDROID_LOG
 #include <stdio.h>
 #include <android/log.h>
@@ -35,9 +36,14 @@ AndroidNativeOpenGl2Renderer::AndroidNativeOpenGl2Renderer(
 }
 
 bool AndroidNativeOpenGl2Renderer::UseOpenGL2(void* window) {
-  if (!g_jvm) {
+  if (!g_javaGLESClass) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
                  "RendererAndroid():UseOpenGL No JVM set.");
+    return false;
+  }
+  if (!g_javaGLESClass) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
+                 "RendererAndroid():UseOpenGL No GLES Class set.");
     return false;
   }
   bool isAttached = false;
@@ -61,8 +67,8 @@ bool AndroidNativeOpenGl2Renderer::UseOpenGL2(void* window) {
   }
 
   // get the renderer class
-  jclass javaRenderClassLocal =
-      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+  jclass javaRenderClassLocal = g_javaGLESClass;
+//      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
   if (!javaRenderClassLocal) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
                  "%s: could not find ViEAndroidRenderer class",
@@ -161,8 +167,8 @@ int32_t AndroidNativeOpenGl2Renderer::Init() {
   }
 
   // get the ViEAndroidGLES20 class
-  jclass javaRenderClassLocal =
-      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+  jclass javaRenderClassLocal = g_javaGLESClass;
+//      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
   if (!javaRenderClassLocal) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                  "%s: could not find ViEAndroidGLES20", __FUNCTION__);
@@ -181,7 +187,7 @@ int32_t AndroidNativeOpenGl2Renderer::Init() {
   }
 
   // Delete local class ref, we only use the global ref
-  env->DeleteLocalRef(javaRenderClassLocal);
+  //env->DeleteLocalRef(javaRenderClassLocal);
 
   // create a reference to the object (to tell JNI that we are referencing it
   // after this function has returned)
@@ -223,9 +229,9 @@ AndroidNativeOpenGl2Renderer::CreateAndroidRenderChannel(
   AndroidNativeOpenGl2Channel* stream =
       new AndroidNativeOpenGl2Channel(streamId, g_jvm, renderer,
                                       _javaRenderObj);
-  if (stream && stream->Init(zOrder, left, top, right, bottom) == 0)
+  if (stream && stream->Init(zOrder, left, top, right, bottom) == 0) {
     return stream;
-  else {
+  } else {
     delete stream;
   }
   return NULL;
@@ -311,8 +317,8 @@ int32_t AndroidNativeOpenGl2Channel::Init(int32_t zOrder,
     isAttached = true;
   }
 
-  jclass javaRenderClass =
-      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
+  jclass javaRenderClass = VideoRenderAndroid::g_javaGLESClass;
+//      env->FindClass("org/webrtc/videoengine/ViEAndroidGLES20");
   if (!javaRenderClass) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                  "%s: could not find ViESurfaceRenderer", __FUNCTION__);

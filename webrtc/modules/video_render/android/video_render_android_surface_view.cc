@@ -13,6 +13,7 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "tick_util.h"
 
+//#define ANDROID_LOG
 #ifdef ANDROID_LOG
 #include <stdio.h>
 #include <android/log.h>
