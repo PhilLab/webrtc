@@ -31,8 +31,6 @@ extern "C"
     { FILE _iob[3] = {   __iob_func()[0], __iob_func()[1], __iob_func()[2]}; }
 #endif
 
-#include <android/log.h>
-
 namespace webrtc
 {
 
@@ -351,9 +349,6 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
 int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
                       AudioProcessing* audioproc)
 {
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 0");
-  
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
         "Init(external_adm=0x%p)", external_adm);
     CriticalSectionScoped cs(_shared->crit_sec());
@@ -364,9 +359,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     {
         return 0;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 1");
 
     if (_shared->process_thread())
     {
@@ -377,9 +369,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
             return -1;
         }
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 2");
 
     // Create an internal ADM if the user has not added an external
     // ADM implementation as input to Init().
@@ -403,9 +392,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
         WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
             "An external ADM implementation will be used in VoiceEngine");
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 3");
 
     // Register the ADM to the process thread, which will drive the error
     // callback mechanism
@@ -418,9 +404,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     }
 
     bool available(false);
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 4");
 
     // --------------------
     // Reinitialize the ADM
@@ -436,9 +419,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
       _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
           "Init() failed to register audio callback for the ADM");
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 5");
 
     // ADM initialization
     if (_shared->audio_device()->Init() != 0)
@@ -447,9 +427,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
             "Init() failed to initialize the ADM");
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 6");
 
     // Initialize the default speaker
     if (_shared->audio_device()->SetPlayoutDevice(
@@ -475,9 +452,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
         _shared->SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
             "Init() failed to initialize the speaker");
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 7");
 
     // Initialize the default microphone
     if (_shared->audio_device()->SetRecordingDevice(
@@ -503,9 +477,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
         _shared->SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
             "Init() failed to initialize the microphone");
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 8");
 
     // Set number of channels
     if (_shared->audio_device()->StereoPlayoutIsAvailable(&available) != 0) {
@@ -531,9 +502,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
         _shared->SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
             "Init() failed to set mono/stereo recording mode");
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 9");
 
     if (!audioproc) {
       audioproc = AudioProcessing::Create(VoEId(_shared->instance_id(), -1));
@@ -565,9 +533,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
       LOG_FERR1(LS_ERROR, set_num_reverse_channels, 1);
       return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 10");
 
     // Configure AudioProcessing components. All are disabled by default.
     if (audioproc->high_pass_filter()->Enable(true) != 0) {
@@ -597,9 +562,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
       return -1;
     }
     _shared->SetLastError(0);  // Clear error state.
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 11");
 
 #ifdef WEBRTC_VOICE_ENGINE_AGC
     bool agc_enabled = agc->mode() == GainControl::kAdaptiveAnalog &&
@@ -611,9 +573,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
       // https://code.google.com/p/webrtc/issues/detail?id=1464
     }
 #endif
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "VoEBaseImpl",
-                      "Init - 12");
 
     return _shared->statistics().SetInitialized();
 }

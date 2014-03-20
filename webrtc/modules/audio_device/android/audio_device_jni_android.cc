@@ -216,9 +216,6 @@ int32_t AudioDeviceAndroidJni::ActiveAudioLayer(
 
 int32_t AudioDeviceAndroidJni::Init()
 {
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "Init - 1");
 
     CriticalSectionScoped lock(&_critSect);
 
@@ -241,9 +238,6 @@ int32_t AudioDeviceAndroidJni::Init()
                      "%s: Failed to init Java resources", __FUNCTION__);
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "Init - 2");
 
     // Check the sample rate to be used for playback and recording
     // and the max playout volume
@@ -264,9 +258,6 @@ int32_t AudioDeviceAndroidJni::Init()
                      "  failed to create the rec audio thread");
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "Init - 3");
 
     unsigned int threadID(0);
     if (!_ptrThreadRec->Start(threadID))
@@ -289,9 +280,6 @@ int32_t AudioDeviceAndroidJni::Init()
                      "  failed to create the play audio thread");
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "Init - 4");
 
     threadID = 0;
     if (!_ptrThreadPlay->Start(threadID))
@@ -305,9 +293,6 @@ int32_t AudioDeviceAndroidJni::Init()
     _playThreadID = threadID;
 
     _initialized = true;
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "Init - 5");
 
     return 0;
 }
@@ -2184,9 +2169,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
     // todo: Check if we already have created the java object
     _javaVM = globalJvm;
     _javaScClass = globalScClass;
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 1");
 
     // use the jvm that has been set
     if (!_javaVM)
@@ -2199,9 +2181,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
     // get the JNI env for this thread
     JNIEnv *env;
     bool isAttached = false;
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 2");
 
     // get the JNI env for this thread
     if (_javaVM->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK)
@@ -2221,9 +2200,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
 
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                  "get method id");
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 3");
 
     // get the method ID for the void(void) constructor
     jmethodID cid = env->GetMethodID(_javaScClass, "<init>", "()V");
@@ -2236,9 +2212,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
 
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                  "construct object", __FUNCTION__);
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 4");
 
     // construct the object
     jobject javaScObjLocal = env->NewObject(_javaScClass, cid);
@@ -2248,9 +2221,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
                      "%s: could not create Java sc object", __FUNCTION__);
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 5");
 
     // Create a reference to the object (to tell JNI that we are referencing it
     // after this function has returned).
@@ -2262,15 +2232,9 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
                      __FUNCTION__);
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 6");
 
     // Delete local object ref, we only use the global ref.
     env->DeleteLocalRef(javaScObjLocal);
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 7");
 
     //////////////////////
     // AUDIO MANAGEMENT
@@ -2300,9 +2264,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
                    "supported",
                    __FUNCTION__);
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 8");
 
     /////////////
     // PLAYOUT
@@ -2337,9 +2298,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
                      "%s: could not get play buffer reference", __FUNCTION__);
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 9");
 
     // Delete local object ref, we only use the global ref.
     env->DeleteLocalRef(javaPlayBufferLocal);
@@ -2361,9 +2319,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
                      "%s: could not get play audio mid", __FUNCTION__);
         return -1;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 10");
 
     //////////////
     // RECORDING
@@ -2400,9 +2355,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
 
     // Delete local object ref, we only use the global ref.
     env->DeleteLocalRef(javaRecBufferLocal);
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 11");
 
     // Get direct buffer.
     _javaDirectRecBuffer = env->GetDirectBufferAddress(_javaRecBuffer);
@@ -2431,9 +2383,6 @@ int32_t AudioDeviceAndroidJni::InitJavaResources()
                          "%s: Could not detach thread from JVM", __FUNCTION__);
         }
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitJavaResources - 12");
 
     return 0;
 }
@@ -2454,9 +2403,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
     // get the JNI env for this thread
     JNIEnv *env;
     bool isAttached = false;
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 1");
 
     // get the JNI env for this thread
     if (_javaVM->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK)
@@ -2473,9 +2419,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
         }
         isAttached = true;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 2");
 
     if (_samplingFreqIn > 0)
     {
@@ -2493,9 +2436,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
     // get the method ID
     jmethodID initRecordingID = env->GetMethodID(_javaScClass, "InitRecording",
                                                  "(II)I");
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 3");
 
     bool keepTrying = true;
     while (keepTrying)
@@ -2526,9 +2466,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
             keepTrying = false;
         }
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 4");
 
     // set the recording sample rate to use
     if (samplingFreq == 44100)
@@ -2546,9 +2483,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
     // get the method ID
     jmethodID stopRecordingID = env->GetMethodID(_javaScClass, "StopRecording",
                                                  "()I");
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 5");
 
     // Call java sc object method
     res = env->CallIntMethod(_javaScObj, stopRecordingID);
@@ -2561,9 +2495,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
     // get the method ID
     jmethodID initPlaybackID = env->GetMethodID(_javaScClass, "InitPlayback",
                                                 "(I)I");
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 6");
 
     if (_samplingFreqOut > 0)
     {
@@ -2587,9 +2518,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
         }
         // else use same as recording
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 7");
 
     keepTrying = true;
     while (keepTrying)
@@ -2637,9 +2565,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
     {
         _samplingFreqOut = samplingFreq / 1000;
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 8");
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
                  "Playback sample rate set to (%d)", _samplingFreqOut);
@@ -2655,9 +2580,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "StopPlayback failed (%d)", res);
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 9");
 
     // Detach this thread if it was attached
     if (isAttached)
@@ -2668,9 +2590,6 @@ int32_t AudioDeviceAndroidJni::InitSampleRate()
                          "%s: Could not detach thread from JVM", __FUNCTION__);
         }
     }
-  
-  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-                      "InitSampleRate - 10");
 
     return 0;
 }
@@ -2847,10 +2766,6 @@ bool AudioDeviceAndroidJni::PlayThreadProcess()
 
 bool AudioDeviceAndroidJni::RecThreadProcess()
 {
-  
-//  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-//                      "RecThreadProcess - 1");
-                      
     if (!_recThreadIsInitialized)
     {
         // Do once when thread is started
@@ -2869,9 +2784,6 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
 
         _recThreadIsInitialized = true;
     }
-  
-//  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-//                      "RecThreadProcess - 2");
 
     // just sleep if rec has not started
     if (!_recording)
@@ -2893,9 +2805,6 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
                 return true;
         }
     }
-  
-//  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-//                      "RecThreadProcess - 3");
 
     Lock();
 
@@ -2909,9 +2818,6 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
         _recError = 0;
         _recStartStopEvent.Set();
     }
-  
-//  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-//                      "RecThreadProcess - 4");
 
     if (_recording)
     {
@@ -2962,9 +2868,6 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
         }
 
     } // _recording
-  
-//  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-//                      "RecThreadProcess - 5");
 
     if (_shutdownRecThread)
     {
@@ -2990,9 +2893,6 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
                          "Sent signal rec");
         }
     }
-  
-//  __android_log_print(ANDROID_LOG_DEBUG, "AudioDeviceAndroidJni",
-//                      "RecThreadProcess - 6");
 
     UnLock();
     return true;

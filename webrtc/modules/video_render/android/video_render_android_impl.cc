@@ -32,8 +32,6 @@ jclass VideoRenderAndroid::g_javaGLESClass = NULL;
 
 #if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 int32_t SetRenderAndroidVM(void* javaVM) {
-	  __android_log_print(ANDROID_LOG_DEBUG, "VideoRenderAndroid",
-	                      "SetRenderAndroidVM");
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, -1, "%s", __FUNCTION__);
   VideoRenderAndroid::g_jvm = (JavaVM*)javaVM;
   if (javaVM) {
@@ -132,14 +130,9 @@ VideoRenderAndroid::AddIncomingRenderStream(const uint32_t streamId,
       return renderStream;
     }
   }
-  __android_log_print(ANDROID_LOG_DEBUG, "VideoRenderAndroid",
-                      "AddIncomingRenderStream - 1");
 
   renderStream = CreateAndroidRenderChannel(streamId, zOrder, left, top,
                                             right, bottom, *this);
-  __android_log_print(ANDROID_LOG_DEBUG, "VideoRenderAndroid",
-                      "AddIncomingRenderStream - 2");
-
   if (renderStream) {
     _streamsMap.Insert(streamId, renderStream);
   }
