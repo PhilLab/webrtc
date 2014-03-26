@@ -57,7 +57,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id_,
                  "Create %s", deviceUniqueIdUTF8);
 
-    if (CheckOSVersion == false)
+    if (CheckOSVersion() == false)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id_,
                      "OS version is too old. Could not create video capture "
@@ -106,7 +106,7 @@ VideoCaptureImpl::CreateDeviceInfo(const int32_t _id_)
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id_,
                  "Create %d", _id_);
 
-    if (CheckOSVersion == false)
+    if (CheckOSVersion() == false)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id_,
                      "OS version is too old. Could not create video capture "
