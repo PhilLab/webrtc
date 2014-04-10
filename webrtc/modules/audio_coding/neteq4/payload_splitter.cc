@@ -98,7 +98,7 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
         break;
       }
       (*new_it)->payload = new uint8_t[payload_length];
-      std::memcpy((*new_it)->payload, payload_ptr, payload_length);
+      memcpy((*new_it)->payload, payload_ptr, payload_length);
       payload_ptr += payload_length;
     }
     // Reverse the order of the new packets, so that the primary payload is
@@ -117,6 +117,64 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
     it = packet_list->erase(it);
   }
   return ret;
+}
+
+int PayloadSplitter::SplitFec(PacketList* packet_list,
+                              DecoderDatabase* decoder_database) {
+  PacketList::iterator it = packet_list->begin();
+  // Iterate through all packets in |packet_list|.
+  while (it != packet_list->end()) {
+    Packet* packet = (*it);  // Just to make the notation more intuitive.
+    // Get codec type for this payload.
+    uint8_t payload_type = packet->header.payloadType;
+    const DecoderDatabase::DecoderInfo* info =
+        decoder_database->GetDecoderInfo(payload_type);
+    if (!info) {
+      return kUnknownPayloadType;
+    }
+    // No splitting for a sync-packet.
+    if (packet->sync_packet) {
+      ++it;
+      continue;
+    }
+
+    // Not an FEC packet.
+    AudioDecoder* decoder = decoder_database->GetDecoder(payload_type);
+    // decoder should not return NULL.
+    assert(decoder != NULL);
+    if (!decoder ||
+        !decoder->PacketHasFec(packet->payload, packet->payload_length)) {
+      ++it;
+      continue;
+    }
+
+    switch (info->codec_type) {
+      case kDecoderOpus:
+      case kDecoderOpus_2ch: {
+        Packet* new_packet = new Packet;
+
+        new_packet->header = packet->header;
+        int duration = decoder->
+            PacketDurationRedundant(packet->payload, packet->payload_length);
+        new_packet->header.timestamp -= duration;
+        new_packet->payload = new uint8_t[packet->payload_length];
+        memcpy(new_packet->payload, packet->payload, packet->payload_length);
+        new_packet->payload_length = packet->payload_length;
+        new_packet->primary = false;
+        new_packet->waiting_time = packet->waiting_time;
+        new_packet->sync_packet = packet->sync_packet;
+
+        packet_list->insert(it, new_packet);
+        break;
+      }
+      default: {
+        return kFecSplitError;
+      }
+    }
+
+    ++it;
+  }
+  return kOK;
 }
 
 int PayloadSplitter::CheckRedPayloads(PacketList* packet_list,
@@ -162,6 +220,11 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
         decoder_database.GetDecoderInfo(packet->header.payloadType);
     if (!info) {
       return kUnknownPayloadType;
+    }
+    // No splitting for a sync-packet.
+    if (packet->sync_packet) {
+      ++it;
+      continue;
     }
     PacketList new_packets;
     switch (info->codec_type) {
@@ -278,7 +341,7 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
     // increment it manually.
     it = packet_list->erase(it);
   }
-  return 0;
+  return kOK;
 }
 
 void PayloadSplitter::SplitBySamples(const Packet* packet,
@@ -312,7 +375,7 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
     timestamp += timestamps_per_chunk;
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[split_size_bytes];
-    std::memcpy(new_packet->payload, payload_ptr, split_size_bytes);
+    memcpy(new_packet->payload, payload_ptr, split_size_bytes);
     payload_ptr += split_size_bytes;
     new_packets->push_back(new_packet);
     len -= split_size_bytes;
@@ -325,8 +388,7 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
     new_packet->header.timestamp = timestamp;
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[len];
-    std::memcpy(new_packet->payload, payload_ptr, len);
-    payload_ptr += len;
+    memcpy(new_packet->payload, payload_ptr, len);
     new_packets->push_back(new_packet);
   }
 }
@@ -357,7 +419,7 @@ int PayloadSplitter::SplitByFrames(const Packet* packet,
     timestamp += timestamps_per_frame;
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[bytes_per_frame];
-    std::memcpy(new_packet->payload, payload_ptr, bytes_per_frame);
+    memcpy(new_packet->payload, payload_ptr, bytes_per_frame);
     payload_ptr += bytes_per_frame;
     new_packets->push_back(new_packet);
     len -= bytes_per_frame;

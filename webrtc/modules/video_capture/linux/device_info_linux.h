@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_DEVICE_INFO_LINUX_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_DEVICE_INFO_LINUX_H_
 
-#include "../video_capture_impl.h"
-#include "../device_info_impl.h"
+#include "webrtc/modules/video_capture/device_info_impl.h"
+#include "webrtc/modules/video_capture/video_capture_impl.h"
 
 namespace webrtc
 {
@@ -42,12 +42,12 @@ public:
         void* /*parentWindow*/,
         uint32_t /*positionX*/,
         uint32_t /*positionY*/) { return -1;}
-    int32_t FillCapabilityMap(int fd);
+    int32_t FillCapabilities(int fd);
     int32_t Init();
 private:
 
     bool IsDeviceNameMatches(const char* name, const char* deviceUniqueIdUTF8);
 };
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_DEVICE_INFO_LINUX_H_

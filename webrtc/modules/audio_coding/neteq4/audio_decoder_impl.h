@@ -212,6 +212,23 @@ class AudioDecoderG722Stereo : public AudioDecoderG722 {
 };
 #endif
 
+#ifdef WEBRTC_CODEC_CELT
+class AudioDecoderCelt : public AudioDecoder {
+ public:
+  explicit AudioDecoderCelt(enum NetEqDecoder type);
+  virtual ~AudioDecoderCelt();
+
+  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
+                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Init();
+  virtual bool HasDecodePlc() const;
+  virtual int DecodePlc(int num_frames, int16_t* decoded);
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(AudioDecoderCelt);
+};
+#endif
+
 #ifdef WEBRTC_CODEC_OPUS
 class AudioDecoderOpus : public AudioDecoder {
  public:
@@ -219,8 +236,13 @@ class AudioDecoderOpus : public AudioDecoder {
   virtual ~AudioDecoderOpus();
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
+  virtual int DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
+                              int16_t* decoded, SpeechType* speech_type);
   virtual int Init();
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDurationRedundant(const uint8_t* encoded,
+                                      size_t encoded_len) const;
+  virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);

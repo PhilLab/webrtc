@@ -11,9 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_BACKGROUND_NOISE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_BACKGROUND_NOISE_H_
 
-#include <cstring>  // size_t
+#include <string.h>  // size_t
 
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
+#include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
@@ -26,31 +27,18 @@ class PostDecodeVad;
 // This class handles estimation of background noise parameters.
 class BackgroundNoise {
  public:
-  enum BackgroundNoiseMode {
-      kBgnOn,    // Default behavior with eternal noise.
-      kBgnFade,  // Noise fades to zero after some time.
-      kBgnOff    // Background noise is always zero.
-  };
-
   // TODO(hlundin): For 48 kHz support, increase kMaxLpcOrder to 10.
   // Will work anyway, but probably sound a little worse.
   static const int kMaxLpcOrder = 8;  // 32000 / 8000 + 4.
 
-  explicit BackgroundNoise(size_t num_channels)
-      : num_channels_(num_channels),
-        channel_parameters_(new ChannelParameters[num_channels_]),
-        mode_(kBgnOn) {
-    Reset();
-  }
-
-  virtual ~BackgroundNoise() {
-  }
+  explicit BackgroundNoise(size_t num_channels);
+  virtual ~BackgroundNoise();
 
   void Reset();
 
   // Updates the parameter estimates based on the signal currently in the
   // |sync_buffer|, and on the latest decision in |vad| if it is running.
-  void Update(const AudioMultiVector<int16_t>& sync_buffer,
+  void Update(const AudioMultiVector& sync_buffer,
               const PostDecodeVad& vad);
 
   // Returns |energy_| for |channel|.
@@ -80,7 +68,11 @@ class BackgroundNoise {
 
   // Accessors.
   bool initialized() const { return initialized_; }
-  BackgroundNoiseMode mode() const { return mode_; }
+  NetEqBackgroundNoiseMode mode() const { return mode_; }
+
+  // Sets the mode of the background noise playout for cases when there is long
+  // duration of packet loss.
+  void set_mode(NetEqBackgroundNoiseMode mode) { mode_ = mode; }
 
  private:
   static const int kThresholdIncrement = 229;  // 0.0035 in Q16.
@@ -120,7 +112,7 @@ class BackgroundNoise {
   };
 
   int32_t CalculateAutoCorrelation(const int16_t* signal,
-                                   size_t length,
+                                   int length,
                                    int32_t* auto_correlation) const;
 
   // Increments the energy threshold by a factor 1 + |kThresholdIncrement|.
@@ -136,7 +128,7 @@ class BackgroundNoise {
   size_t num_channels_;
   scoped_array<ChannelParameters> channel_parameters_;
   bool initialized_;
-  BackgroundNoiseMode mode_;
+  NetEqBackgroundNoiseMode mode_;
 
   DISALLOW_COPY_AND_ASSIGN(BackgroundNoise);
 };

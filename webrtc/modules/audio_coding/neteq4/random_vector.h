@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_RANDOM_VECTOR_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_RANDOM_VECTOR_H_
 
-#include <cstring>  // size_t
+#include <string.h>  // size_t
 
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
@@ -31,7 +31,7 @@ class RandomVector {
 
   void Reset();
 
-  void Generate(std::size_t length, int16_t* output);
+  void Generate(size_t length, int16_t* output);
 
   void IncreaseSeedIncrement(int16_t increase_by);
 

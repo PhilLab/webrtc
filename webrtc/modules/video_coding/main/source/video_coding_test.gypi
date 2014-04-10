@@ -16,17 +16,10 @@
          'webrtc_video_coding',
          'webrtc_utility',
          '<(DEPTH)/testing/gtest.gyp:gtest',
-         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
          '<(webrtc_root)/test/test.gyp:test_support',
          '<(webrtc_root)/test/metrics.gyp:metrics',
          '<(webrtc_root)/common_video/common_video.gyp:common_video',
-      ],
-      'include_dirs': [
-         '../../../interface',
-         '../../codecs/vp8/include',
-         '../../../../system_wrappers/interface',
-          '../../../../common_video/interface',
-         '../source',
       ],
       'sources': [
         # headers
@@ -49,7 +42,6 @@
 
         # sources
         '../test/codec_database_test.cc',
-        '../test/decode_from_storage_test.cc',
         '../test/generic_codec_test.cc',
         '../test/media_opt_test.cc',
         '../test/mt_test_common.cc',

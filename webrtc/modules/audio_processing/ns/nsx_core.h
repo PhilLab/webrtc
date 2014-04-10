@@ -201,18 +201,22 @@ typedef void (*AnalysisUpdate)(NsxInst_t* inst,
                                int16_t* new_speech);
 extern AnalysisUpdate WebRtcNsx_AnalysisUpdate;
 
-// Denormalize the input buffer.
-typedef void (*Denormalize)(NsxInst_t* inst,
-                            int16_t* in,
-                            int factor);
+// Denormalize the real-valued signal |in|, the output from inverse FFT.
+typedef void (*Denormalize) (NsxInst_t* inst, int16_t* in, int factor);
 extern Denormalize WebRtcNsx_Denormalize;
 
-// Create a complex number buffer, as the intput interleaved with zeros,
-// and normalize it.
-typedef void (*CreateComplexBuffer)(NsxInst_t* inst,
-                                    int16_t* in,
-                                    int16_t* out);
-extern CreateComplexBuffer WebRtcNsx_CreateComplexBuffer;
+// Normalize the real-valued signal |in|, the input to forward FFT.
+typedef void (*NormalizeRealBuffer) (NsxInst_t* inst,
+                                     const int16_t* in,
+                                     int16_t* out);
+extern NormalizeRealBuffer WebRtcNsx_NormalizeRealBuffer;
+
+// Compute speech/noise probability.
+// Intended to be private.
+void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
+                               uint16_t* nonSpeechProbFinal,
+                               uint32_t* priorLocSnr,
+                               uint32_t* postLocSnr);
 
 #if (defined WEBRTC_DETECT_ARM_NEON) || defined (WEBRTC_ARCH_ARM_NEON)
 // For the above function pointers, functions for generic platforms are declared
@@ -222,17 +226,33 @@ void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
                                    uint16_t* magn,
                                    uint32_t* noise,
                                    int16_t* q_noise);
-void WebRtcNsx_CreateComplexBufferNeon(NsxInst_t* inst,
-                                       int16_t* in,
-                                       int16_t* out);
 void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
                                    int16_t* out_frame,
                                    int16_t gain_factor);
 void WebRtcNsx_AnalysisUpdateNeon(NsxInst_t* inst,
                                   int16_t* out,
                                   int16_t* new_speech);
-void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor);
 void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buff);
+#endif
+
+#if defined(MIPS32_LE)
+// For the above function pointers, functions for generic platforms are declared
+// and defined as static in file nsx_core.c, while those for MIPS platforms
+// are declared below and defined in file nsx_core_mips.c.
+void WebRtcNsx_SynthesisUpdate_mips(NsxInst_t* inst,
+                                    int16_t* out_frame,
+                                    int16_t gain_factor);
+void WebRtcNsx_AnalysisUpdate_mips(NsxInst_t* inst,
+                                   int16_t* out,
+                                   int16_t* new_speech);
+void WebRtcNsx_PrepareSpectrum_mips(NsxInst_t* inst, int16_t* freq_buff);
+void WebRtcNsx_NormalizeRealBuffer_mips(NsxInst_t* inst,
+                                        const int16_t* in,
+                                        int16_t* out);
+#if defined(MIPS_DSP_R1_LE)
+void WebRtcNsx_Denormalize_mips(NsxInst_t* inst, int16_t* in, int factor);
+#endif
+
 #endif
 
 #ifdef __cplusplus

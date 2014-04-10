@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/video_coding/main/test/quality_modes_test.h"
 
-#include <time.h>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
+#include <time.h>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
@@ -249,7 +249,7 @@ QualityModesTest::Perform(const CmdArgs& args)
 
   VideoContentMetrics* contentMetrics = NULL;
   // setting user frame rate
-  _vpm->SetMaxFrameRate((uint32_t)(_nativeFrameRate+ 0.5f));
+  _vpm->SetMaxFramerate((uint32_t)(_nativeFrameRate+ 0.5f));
   // for starters: keeping native values:
   _vpm->SetTargetResolution(_width, _height,
                             (uint32_t)(_frameRate+ 0.5f));

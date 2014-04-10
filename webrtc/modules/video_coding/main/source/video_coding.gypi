@@ -18,18 +18,6 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_vp8_dir)/vp8.gyp:webrtc_vp8',
       ],
-      'include_dirs': [
-        '../interface',
-        '../../../interface',
-        '../../codecs/interface',
-        '../../../../common_video/interface',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../interface',
-          '../../codecs/interface',
-        ],
-      },
       'sources': [
         # interfaces
         '../interface/video_coding.h',
@@ -88,6 +76,8 @@
         'timestamp_map.cc',
         'timing.cc',
         'video_coding_impl.cc',
+        'video_sender.cc',
+        'video_receiver.cc',
       ], # source
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],

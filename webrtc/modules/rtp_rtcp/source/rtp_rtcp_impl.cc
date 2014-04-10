@@ -10,12 +10,10 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
-#include <cassert>
+#include <assert.h>
 #include <string.h>
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -24,13 +22,6 @@
 extern MatlabEngine eng;  // Global variable defined elsewhere.
 #endif
 
-// Local for this file.
-namespace {
-
-const float kFracMs = 4.294967296E6f;
-
-}  // namespace
-
 #ifdef _WIN32
 // Disable warning C4355: 'this' : used in base member initializer list.
 #pragma warning(disable : 4355)
@@ -38,33 +29,17 @@ const float kFracMs = 4.294967296E6f;
 
 namespace webrtc {
 
-static RtpData* NullObjectRtpData() {
-  static NullRtpData null_rtp_data;
-  return &null_rtp_data;
-}
-
-static RtpFeedback* NullObjectRtpFeedback() {
-  static NullRtpFeedback null_rtp_feedback;
-  return &null_rtp_feedback;
-}
-
-static RtpAudioFeedback* NullObjectRtpAudioFeedback() {
-  static NullRtpAudioFeedback null_rtp_audio_feedback;
-  return &null_rtp_audio_feedback;
-}
-
 RtpRtcp::Configuration::Configuration()
     : id(-1),
       audio(false),
       clock(NULL),
       default_module(NULL),
-      incoming_data(NullObjectRtpData()),
-      incoming_messages(NullObjectRtpFeedback()),
+      receive_statistics(NullObjectReceiveStatistics()),
       outgoing_transport(NULL),
       rtcp_feedback(NULL),
       intra_frame_callback(NULL),
       bandwidth_callback(NULL),
-      rtt_observer(NULL),
+      rtt_stats(NULL),
       audio_messages(NullObjectRtpAudioFeedback()),
       remote_bitrate_estimator(NULL),
       paced_sender(NULL) {
@@ -85,27 +60,21 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
-    : rtp_payload_registry_(
-          configuration.id,
-          RTPPayloadStrategy::CreateStrategy(configuration.audio)),
-      rtp_sender_(configuration.id,
+    : rtp_sender_(configuration.id,
                   configuration.audio,
                   configuration.clock,
                   configuration.outgoing_transport,
                   configuration.audio_messages,
                   configuration.paced_sender),
       rtcp_sender_(configuration.id, configuration.audio, configuration.clock,
-                   this),
+                   configuration.receive_statistics),
       rtcp_receiver_(configuration.id, configuration.clock, this),
       clock_(configuration.clock),
-      rtp_telephone_event_handler_(NULL),
       id_(configuration.id),
       audio_(configuration.audio),
       collision_detected_(false),
       last_process_time_(configuration.clock->TimeInMilliseconds()),
       last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
-      last_packet_timeout_process_time_(
-          configuration.clock->TimeInMilliseconds()),
       last_rtt_process_time_(configuration.clock->TimeInMilliseconds()),
       packet_overhead_(28),  // IPV4 UDP.
       critical_section_module_ptrs_(
@@ -114,9 +83,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
           CriticalSectionWrapper::CreateCriticalSection()),
       default_module_(
           static_cast<ModuleRtpRtcpImpl*>(configuration.default_module)),
-      dead_or_alive_active_(false),
-      dead_or_alive_timeout_ms_(0),
-      dead_or_alive_last_timer_(0),
       nack_method_(kNackOff),
       nack_last_time_sent_full_(0),
       nack_last_seq_number_sent_(0),
@@ -126,27 +92,9 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
 #ifdef MATLAB
       , plot1_(NULL),
 #endif
-      rtt_observer_(configuration.rtt_observer) {
-  RTPReceiverStrategy* rtp_receiver_strategy;
-  if (configuration.audio) {
-    // If audio, we need to be able to handle telephone events too, so stash
-    // away the audio receiver for those situations.
-    rtp_telephone_event_handler_ =
-        new RTPReceiverAudio(configuration.id, configuration.incoming_data,
-                             configuration.audio_messages);
-    rtp_receiver_strategy = rtp_telephone_event_handler_;
-  } else {
-    rtp_receiver_strategy =
-        new RTPReceiverVideo(configuration.id, &rtp_payload_registry_,
-                             configuration.incoming_data);
-  }
-  rtp_receiver_.reset(new RTPReceiver(
-      configuration.id, configuration.clock, this,
-      configuration.audio_messages, configuration.incoming_data,
-      configuration.incoming_messages, rtp_receiver_strategy,
-      &rtp_payload_registry_));
-
-
+      rtt_stats_(configuration.rtt_stats),
+      critical_section_rtt_(CriticalSectionWrapper::CreateCriticalSection()),
+      rtt_ms_(0) {
   send_video_codec_.codecType = kVideoCodecUnknown;
 
   if (default_module_) {
@@ -158,10 +106,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                                        configuration.rtcp_feedback);
   rtcp_sender_.RegisterSendTransport(configuration.outgoing_transport);
 
-  // Make sure that RTCP objects are aware of our SSRC
+  // Make sure that RTCP objects are aware of our SSRC.
   uint32_t SSRC = rtp_sender_.SSRC();
   rtcp_sender_.SetSSRC(SSRC);
-  rtcp_receiver_.SetSSRC(SSRC);
+  SetRtcpReceiverSsrcs(SSRC);
 
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id_, "%s created", __FUNCTION__);
 }
@@ -235,33 +183,21 @@ int32_t ModuleRtpRtcpImpl::TimeUntilNextProcess() {
 
 // Process any pending tasks such as timeouts (non time critical events).
 int32_t ModuleRtpRtcpImpl::Process() {
-    const int64_t now = clock_->TimeInMilliseconds();
+  const int64_t now = clock_->TimeInMilliseconds();
   last_process_time_ = now;
-
-  if (now >=
-      last_packet_timeout_process_time_ + kRtpRtcpPacketTimeoutProcessTimeMs) {
-    rtp_receiver_->PacketTimeout();
-    rtcp_receiver_.PacketTimeout();
-    last_packet_timeout_process_time_ = now;
-  }
 
   if (now >= last_bitrate_process_time_ + kRtpRtcpBitrateProcessTimeMs) {
     rtp_sender_.ProcessBitrate();
-    rtp_receiver_->ProcessBitrate();
     last_bitrate_process_time_ = now;
   }
 
-  ProcessDeadOrAliveTimer();
-
-  const bool default_instance(child_modules_.empty() ? false : true);
-  if (!default_instance) {
+  if (!IsDefaultModule()) {
+    bool process_rtt = now >= last_rtt_process_time_ + kRtpRtcpRttProcessTimeMs;
     if (rtcp_sender_.Sending()) {
       // Process RTT if we have received a receiver report and we haven't
       // processed RTT for at least |kRtpRtcpRttProcessTimeMs| milliseconds.
       if (rtcp_receiver_.LastReceivedReceiverReport() >
-          last_rtt_process_time_ && now >= last_rtt_process_time_ +
-          kRtpRtcpRttProcessTimeMs) {
-        last_rtt_process_time_ = now;
+          last_rtt_process_time_ && process_rtt) {
         std::vector<RTCPReportBlock> receive_blocks;
         rtcp_receiver_.StatisticsReceived(&receive_blocks);
         uint16_t max_rtt = 0;
@@ -272,8 +208,8 @@ int32_t ModuleRtpRtcpImpl::Process() {
           max_rtt = (rtt > max_rtt) ? rtt : max_rtt;
         }
         // Report the rtt.
-        if (rtt_observer_ && max_rtt != 0)
-          rtt_observer_->OnRttUpdate(max_rtt);
+        if (rtt_stats_ && max_rtt != 0)
+          rtt_stats_->OnRttUpdate(max_rtt);
       }
 
       // Verify receiver reports are delivered and the reported sequence number
@@ -286,7 +222,7 @@ int32_t ModuleRtpRtcpImpl::Process() {
             "Timeout: No increase in RTCP RR extended highest sequence number.";
       }
 
-      if (remote_bitrate_ && TMMBR()) {
+      if (remote_bitrate_ && rtcp_sender_.TMMBR()) {
         unsigned int target_bitrate = 0;
         std::vector<unsigned int> ssrcs;
         if (remote_bitrate_->LatestEstimate(&ssrcs, &target_bitrate)) {
@@ -296,9 +232,28 @@ int32_t ModuleRtpRtcpImpl::Process() {
           rtcp_sender_.SetTargetBitrate(target_bitrate);
         }
       }
+    } else {
+      // Report rtt from receiver.
+      if (process_rtt) {
+         uint16_t rtt_ms;
+         if (rtt_stats_ && rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms)) {
+           rtt_stats_->OnRttUpdate(rtt_ms);
+         }
+      }
     }
-    if (rtcp_sender_.TimeToSendRTCPReport())
-      rtcp_sender_.SendRTCP(kRtcpReport);
+
+    // Get processed rtt.
+    if (process_rtt) {
+      last_rtt_process_time_ = now;
+      if (rtt_stats_) {
+        set_rtt_ms(rtt_stats_->LastProcessedRtt());
+      }
+    }
+
+    if (rtcp_sender_.TimeToSendRTCPReport()) {
+      RTCPSender::FeedbackState feedback_state(this);
+      rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
+    }
   }
 
   if (UpdateRTCPReceiveInformationTimers()) {
@@ -308,276 +263,20 @@ int32_t ModuleRtpRtcpImpl::Process() {
   return 0;
 }
 
-void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
-  bool RTCPalive = false;
-  int64_t now = 0;
-  bool do_callback = false;
-
-  // Do operations on members under lock but avoid making the
-  // ProcessDeadOrAlive() callback under the same lock.
-  {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    if (dead_or_alive_active_) {
-      now = clock_->TimeInMilliseconds();
-      if (now > dead_or_alive_timeout_ms_ + dead_or_alive_last_timer_) {
-        // RTCP is alive if we have received a report the last 12 seconds.
-        dead_or_alive_last_timer_ += dead_or_alive_timeout_ms_;
-
-        if (rtcp_receiver_.LastReceived() + 12000 > now)
-          RTCPalive = true;
-
-        do_callback = true;
-      }
-    }
-  }
-
-  if (do_callback)
-    rtp_receiver_->ProcessDeadOrAlive(RTCPalive, now);
-}
-
-int32_t ModuleRtpRtcpImpl::SetPeriodicDeadOrAliveStatus(
-    const bool enable,
-    const uint8_t sample_time_seconds) {
-  if (enable) {
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 id_,
-                 "SetPeriodicDeadOrAliveStatus(enable, %d)",
-                 sample_time_seconds);
-  } else {
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 id_,
-                 "SetPeriodicDeadOrAliveStatus(disable)");
-  }
-  if (sample_time_seconds == 0) {
-    return -1;
-  }
-  {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    dead_or_alive_active_ = enable;
-    dead_or_alive_timeout_ms_ = sample_time_seconds * 1000;
-    // Trigger the first after one period.
-    dead_or_alive_last_timer_ = clock_->TimeInMilliseconds();
-  }
-  return 0;
-}
-
-int32_t ModuleRtpRtcpImpl::PeriodicDeadOrAliveStatus(
-    bool& enable,
-    uint8_t& sample_time_seconds) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "PeriodicDeadOrAliveStatus()");
-
-  enable = dead_or_alive_active_;
-  sample_time_seconds =
-      static_cast<uint8_t>(dead_or_alive_timeout_ms_ / 1000);
-  return 0;
-}
-
-int32_t ModuleRtpRtcpImpl::SetPacketTimeout(
-    const uint32_t rtp_timeout_ms,
-    const uint32_t rtcp_timeout_ms) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "SetPacketTimeout(%u,%u)",
-               rtp_timeout_ms,
-               rtcp_timeout_ms);
-
-  if (rtp_receiver_->SetPacketTimeout(rtp_timeout_ms) == 0) {
-    return rtcp_receiver_.SetPacketTimeout(rtcp_timeout_ms);
-  }
-  return -1;
-}
-
-int32_t ModuleRtpRtcpImpl::RegisterReceivePayload(
-    const CodecInst& voice_codec) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "RegisterReceivePayload(voice_codec)");
-
-  return rtp_receiver_->RegisterReceivePayload(
-      voice_codec.plname,
-      voice_codec.pltype,
-      voice_codec.plfreq,
-      voice_codec.channels,
-      (voice_codec.rate < 0) ? 0 : voice_codec.rate);
-}
-
-int32_t ModuleRtpRtcpImpl::RegisterReceivePayload(
-    const VideoCodec& video_codec) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "RegisterReceivePayload(video_codec)");
-
-  return rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                               video_codec.plType,
-                                               90000,
-                                               0,
-                                               video_codec.maxBitrate);
-}
-
-int32_t ModuleRtpRtcpImpl::ReceivePayloadType(
-    const CodecInst& voice_codec,
-  int8_t* pl_type) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "ReceivePayloadType(voice_codec)");
-
-  return rtp_receiver_->ReceivePayloadType(
-           voice_codec.plname,
-           voice_codec.plfreq,
-           voice_codec.channels,
-           (voice_codec.rate < 0) ? 0 : voice_codec.rate,
-           pl_type);
-}
-
-int32_t ModuleRtpRtcpImpl::ReceivePayloadType(
-    const VideoCodec& video_codec,
-  int8_t* pl_type) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "ReceivePayloadType(video_codec)");
-
-  return rtp_receiver_->ReceivePayloadType(video_codec.plName,
-                                           90000,
-                                           0,
-                                           video_codec.maxBitrate,
-                                           pl_type);
-}
-
-int32_t ModuleRtpRtcpImpl::DeRegisterReceivePayload(
-    const int8_t payload_type) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "DeRegisterReceivePayload(%d)",
-               payload_type);
-
-  return rtp_receiver_->DeRegisterReceivePayload(payload_type);
-}
-
-// Get the currently configured SSRC filter.
-int32_t ModuleRtpRtcpImpl::SSRCFilter(
-    uint32_t& allowed_ssrc) const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SSRCFilter()");
-
-  return rtp_receiver_->SSRCFilter(allowed_ssrc);
-}
-
-// Set a SSRC to be used as a filter for incoming RTP streams.
-int32_t ModuleRtpRtcpImpl::SetSSRCFilter(
-    const bool enable,
-    const uint32_t allowed_ssrc) {
-  if (enable) {
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 id_,
-                 "SetSSRCFilter(enable, 0x%x)",
-                 allowed_ssrc);
-  } else {
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 id_,
-                 "SetSSRCFilter(disable)");
-  }
-
-  return rtp_receiver_->SetSSRCFilter(enable, allowed_ssrc);
-}
-
-// Get last received remote timestamp.
-uint32_t ModuleRtpRtcpImpl::RemoteTimestamp() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteTimestamp()");
-
-  return rtp_receiver_->TimeStamp();
-}
-
-int64_t ModuleRtpRtcpImpl::LocalTimeOfRemoteTimeStamp() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "LocalTimeOfRemoteTimeStamp()");
-
-  return rtp_receiver_->LastReceivedTimeMs();
-}
-
-// Get the current estimated remote timestamp.
-int32_t ModuleRtpRtcpImpl::EstimatedRemoteTimeStamp(
-    uint32_t& timestamp) const {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "EstimatedRemoteTimeStamp()");
-
-  return rtp_receiver_->EstimatedRemoteTimeStamp(timestamp);
-}
-
-// Get incoming SSRC.
-uint32_t ModuleRtpRtcpImpl::RemoteSSRC() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteSSRC()");
-
-  return rtp_receiver_->SSRC();
-}
-
-// Get remote CSRC
-int32_t ModuleRtpRtcpImpl::RemoteCSRCs(
-    uint32_t arr_of_csrc[kRtpCsrcSize]) const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteCSRCs()");
-
-  return rtp_receiver_->CSRCs(arr_of_csrc);
-}
-
-int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(RtxMode mode, bool set_ssrc,
+int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(int mode, bool set_ssrc,
                                             uint32_t ssrc) {
   rtp_sender_.SetRTXStatus(mode, set_ssrc, ssrc);
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
+int32_t ModuleRtpRtcpImpl::RTXSendStatus(int* mode, uint32_t* ssrc,
                                          int* payload_type) const {
   rtp_sender_.RTXStatus(mode, ssrc, payload_type);
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTXReceiveStatus(bool enable,
-                                               uint32_t ssrc) {
-  rtp_receiver_->SetRTXStatus(enable, ssrc);
-  return 0;
-}
-
-int32_t ModuleRtpRtcpImpl::RTXReceiveStatus(bool* enable, uint32_t* ssrc,
-                                            int* payload_type) const {
-  rtp_receiver_->RTXStatus(enable, ssrc, payload_type);
-  return 0;
-}
-
 void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
   rtp_sender_.SetRtxPayloadType(payload_type);
-}
-
-void ModuleRtpRtcpImpl::SetRtxReceivePayloadType(int payload_type) {
-  rtp_receiver_->SetRtxPayloadType(payload_type);
-}
-
-// Called by the network module when we receive a packet.
-int32_t ModuleRtpRtcpImpl::IncomingRtpPacket(
-    const uint8_t* incoming_packet,
-    const uint16_t incoming_packet_length,
-    const RTPHeader& parsed_rtp_header) {
-  WEBRTC_TRACE(kTraceStream,
-               kTraceRtpRtcp,
-               id_,
-               "IncomingRtpPacket(packet_length:%u)",
-               incoming_packet_length);
-  RTPHeader rtp_header_copy = parsed_rtp_header;
-  return rtp_receiver_->IncomingRTPPacket(&rtp_header_copy,
-                                          incoming_packet,
-                                          incoming_packet_length);
 }
 
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
@@ -645,7 +344,12 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
                video_codec.plType);
 
   send_video_codec_ = video_codec;
-  simulcast_ = (video_codec.numberOfSimulcastStreams > 1) ? true : false;
+  {
+    // simulcast_ is accessed when accessing child_modules_, so this write needs
+    // to be protected by the same lock.
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    simulcast_ = video_codec.numberOfSimulcastStreams > 1;
+  }
   return rtp_sender_.RegisterPayload(video_codec.plName,
                                      video_codec.plType,
                                      90000,
@@ -716,8 +420,9 @@ int32_t ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetSSRC(%d)", ssrc);
 
   rtp_sender_.SetSSRC(ssrc);
-  rtcp_receiver_.SetSSRC(ssrc);
   rtcp_sender_.SetSSRC(ssrc);
+  SetRtcpReceiverSsrcs(ssrc);
+
   return 0;  // TODO(pwestin): change to void.
 }
 
@@ -743,9 +448,7 @@ int32_t ModuleRtpRtcpImpl::SetCSRCs(
                "SetCSRCs(arr_length:%d)",
                arr_length);
 
-  const bool default_instance(child_modules_.empty() ? false : true);
-
-  if (default_instance) {
+  if (IsDefaultModule()) {
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
 
@@ -770,20 +473,17 @@ int32_t ModuleRtpRtcpImpl::SetCSRCs(
 
 uint32_t ModuleRtpRtcpImpl::PacketCountSent() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "PacketCountSent()");
-
   return rtp_sender_.Packets();
 }
 
 uint32_t ModuleRtpRtcpImpl::ByteCountSent() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "ByteCountSent()");
-
   return rtp_sender_.Bytes();
 }
 
 int ModuleRtpRtcpImpl::CurrentSendFrequencyHz() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
                "CurrentSendFrequencyHz()");
-
   return rtp_sender_.SendPayloadFrequency();
 }
 
@@ -797,7 +497,8 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
   }
   if (rtcp_sender_.Sending() != sending) {
     // Sends RTCP BYE when going from true to false
-    if (rtcp_sender_.SetSendingStatus(sending) != 0) {
+    RTCPSender::FeedbackState feedback_state(this);
+    if (rtcp_sender_.SetSendingStatus(feedback_state, sending) != 0) {
       WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
                    "Failed to send RTCP BYE");
     }
@@ -815,8 +516,9 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
     // Make sure that RTCP objects are aware of our SSRC (it could have changed
     // Due to collision)
     uint32_t SSRC = rtp_sender_.SSRC();
-    rtcp_receiver_.SetSSRC(SSRC);
     rtcp_sender_.SetSSRC(SSRC);
+    SetRtcpReceiverSsrcs(SSRC);
+
     return 0;
   }
   return 0;
@@ -824,7 +526,6 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
 
 bool ModuleRtpRtcpImpl::Sending() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "Sending()");
-
   return rtcp_sender_.Sending();
 }
 
@@ -843,8 +544,7 @@ int32_t ModuleRtpRtcpImpl::SetSendingMediaStatus(const bool sending) {
 bool ModuleRtpRtcpImpl::SendingMedia() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "Sending()");
 
-  const bool have_child_modules(child_modules_.empty() ? false : true);
-  if (!have_child_modules) {
+  if (!IsDefaultModule()) {
     return rtp_sender_.SendingMedia();
   }
 
@@ -878,11 +578,11 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
 
   rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
 
-  const bool have_child_modules(child_modules_.empty() ? false : true);
-  if (!have_child_modules) {
+  if (!IsDefaultModule()) {
     // Don't send RTCP from default module.
     if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
-      rtcp_sender_.SendRTCP(kRtcpReport);
+      RTCPSender::FeedbackState feedback_state(this);
+      rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
     }
     return rtp_sender_.SendOutgoingData(frame_type,
                                         payload_type,
@@ -895,12 +595,12 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
                                         &(rtp_video_hdr->codecHeader));
   }
   int32_t ret_val = -1;
+  CriticalSectionScoped lock(critical_section_module_ptrs_.get());
   if (simulcast_) {
     if (rtp_video_hdr == NULL) {
       return -1;
     }
     int idx = 0;
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     for (; idx < rtp_video_hdr->simulcastIdx; ++it) {
       if (it == child_modules_.end()) {
@@ -933,23 +633,8 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
                                    fragmentation,
                                    rtp_video_hdr);
   } else {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    if (it != child_modules_.end()) {
-      if ((*it)->SendingMedia()) {
-        ret_val = (*it)->SendOutgoingData(frame_type,
-                                          payload_type,
-                                          time_stamp,
-                                          capture_time_ms,
-                                          payload_data,
-                                          payload_size,
-                                          fragmentation,
-                                          rtp_video_hdr);
-      }
-      it++;
-    }
-    // Send to all remaining "child" modules
+    // Send to all "child" modules
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia()) {
         ret_val = (*it)->SendOutgoingData(frame_type,
@@ -969,7 +654,8 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          uint16_t sequence_number,
-                                         int64_t capture_time_ms) {
+                                         int64_t capture_time_ms,
+                                         bool retransmission) {
   WEBRTC_TRACE(
     kTraceStream,
     kTraceRtpRtcp,
@@ -977,15 +663,11 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
     "TimeToSendPacket(ssrc:0x%x sequence_number:%u capture_time_ms:%ll)",
     ssrc, sequence_number, capture_time_ms);
 
-  bool no_child_modules = false;
-  {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    no_child_modules = child_modules_.empty();
-  }
-  if (no_child_modules) {
+  if (!IsDefaultModule()) {
     // Don't send from default module.
     if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-      return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
+      return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms,
+                                          retransmission);
     }
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
@@ -993,7 +675,8 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia() && ssrc == (*it)->rtp_sender_.SSRC()) {
         return (*it)->rtp_sender_.TimeToSendPacket(sequence_number,
-                                                   capture_time_ms);
+                                                   capture_time_ms,
+                                                   retransmission);
       }
       ++it;
     }
@@ -1006,12 +689,7 @@ int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
   WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_, "TimeToSendPadding(bytes: %d)",
                bytes);
 
-  bool no_child_modules = false;
-  {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    no_child_modules = child_modules_.empty();
-  }
-  if (no_child_modules) {
+  if (!IsDefaultModule()) {
     // Don't send from default module.
     if (SendingMedia()) {
       return rtp_sender_.TimeToSendPadding(bytes);
@@ -1030,9 +708,20 @@ int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
   return 0;
 }
 
+bool ModuleRtpRtcpImpl::GetSendSideDelay(int* avg_send_delay_ms,
+                                         int* max_send_delay_ms) const {
+  assert(avg_send_delay_ms);
+  assert(max_send_delay_ms);
+
+  if (IsDefaultModule()) {
+    // This API is only supported for child modules.
+    return false;
+  }
+  return rtp_sender_.GetSendSideDelay(avg_send_delay_ms, max_send_delay_ms);
+}
+
 uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "MaxPayloadLength()");
-
   return rtp_sender_.MaxPayloadLength();
 }
 
@@ -1045,8 +734,7 @@ uint16_t ModuleRtpRtcpImpl::MaxDataPayloadLength() const {
   // Assuming IP/UDP.
   uint16_t min_data_payload_length = IP_PACKET_SIZE - 28;
 
-  const bool default_instance(child_modules_.empty() ? false : true);
-  if (default_instance) {
+  if (IsDefaultModule()) {
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::const_iterator it =
@@ -1115,7 +803,6 @@ int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
 int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetMaxTransferUnit(%u)",
                mtu);
-
   if (mtu > IP_PACKET_SIZE) {
     WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
                  "Invalid in argument to SetMaxTransferUnit(%u)", mtu);
@@ -1127,7 +814,6 @@ int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
 
 RTCPMethod ModuleRtpRtcpImpl::RTCP() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RTCP()");
-
   if (rtcp_sender_.Status() != kRtcpOff) {
     return rtcp_receiver_.Status();
   }
@@ -1138,7 +824,6 @@ RTCPMethod ModuleRtpRtcpImpl::RTCP() const {
 int32_t ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetRTCPStatus(%d)",
                method);
-
   if (rtcp_sender_.SetRTCPStatus(method) == 0) {
     return rtcp_receiver_.SetRTCPStatus(method);
   }
@@ -1166,7 +851,6 @@ int32_t ModuleRtpRtcpImpl::AddMixedCNAME(
   const char c_name[RTCP_CNAME_SIZE]) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
                "AddMixedCNAME(SSRC:%u)", ssrc);
-
   return rtcp_sender_.AddMixedCNAME(ssrc, c_name);
 }
 
@@ -1181,14 +865,7 @@ int32_t ModuleRtpRtcpImpl::RemoteCNAME(
     char c_name[RTCP_CNAME_SIZE]) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
                "RemoteCNAME(SSRC:%u)", remote_ssrc);
-
   return rtcp_receiver_.CNAME(remote_ssrc, c_name);
-}
-
-uint16_t ModuleRtpRtcpImpl::RemoteSequenceNumber() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteSequenceNumber()");
-
-  return rtp_receiver_->SequenceNumber();
 }
 
 int32_t ModuleRtpRtcpImpl::RemoteNTP(
@@ -1198,7 +875,6 @@ int32_t ModuleRtpRtcpImpl::RemoteNTP(
     uint32_t* rtcp_arrival_time_frac,
     uint32_t* rtcp_timestamp) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteNTP()");
-
   return rtcp_receiver_.NTP(received_ntpsecs,
                             received_ntpfrac,
                             rtcp_arrival_time_secs,
@@ -1213,7 +889,6 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
                                uint16_t* min_rtt,
                                uint16_t* max_rtt) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RTT()");
-
   return rtcp_receiver_.RTT(remote_ssrc, rtt, avg_rtt, min_rtt, max_rtt);
 }
 
@@ -1221,35 +896,13 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
 int32_t ModuleRtpRtcpImpl::ResetRTT(const uint32_t remote_ssrc) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "ResetRTT(SSRC:%u)",
                remote_ssrc);
-
   return rtcp_receiver_.ResetRTT(remote_ssrc);
-}
-
-void ModuleRtpRtcpImpl:: SetRtt(uint32_t rtt) {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetRtt(rtt: %u)", rtt);
-  rtcp_receiver_.SetRTT(static_cast<uint16_t>(rtt));
-}
-
-// Reset RTP statistics.
-int32_t ModuleRtpRtcpImpl::ResetStatisticsRTP() {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "ResetStatisticsRTP()");
-
-  return rtp_receiver_->ResetStatistics();
-}
-
-// Reset RTP data counters for the receiving side.
-int32_t ModuleRtpRtcpImpl::ResetReceiveDataCountersRTP() {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "ResetReceiveDataCountersRTP()");
-
-  return rtp_receiver_->ResetDataCounters();
 }
 
 // Reset RTP data counters for the sending side.
 int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
                "ResetSendDataCountersRTP()");
-
   rtp_sender_.ResetDataCounters();
   return 0;  // TODO(pwestin): change to void.
 }
@@ -1259,8 +912,8 @@ int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
 int32_t ModuleRtpRtcpImpl::SendRTCP(uint32_t rtcp_packet_type) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SendRTCP(0x%x)",
                rtcp_packet_type);
-
-  return  rtcp_sender_.SendRTCP(rtcp_packet_type);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(feedback_state, rtcp_packet_type);
 }
 
 int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
@@ -1271,7 +924,6 @@ int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
                "SetRTCPApplicationSpecificData(sub_type:%d name:0x%x)",
                sub_type, name);
-
   return  rtcp_sender_.SetApplicationSpecificData(sub_type, name, data, length);
 }
 
@@ -1283,75 +935,31 @@ int32_t ModuleRtpRtcpImpl::SetRTCPVoIPMetrics(
   return  rtcp_sender_.SetRTCPVoIPMetrics(voip_metric);
 }
 
-// Our locally created statistics of the received RTP stream.
-int32_t ModuleRtpRtcpImpl::StatisticsRTP(
-    uint8_t*  fraction_lost,
-    uint32_t* cum_lost,
-    uint32_t* ext_max,
-    uint32_t* jitter,
-    uint32_t* max_jitter) const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "StatisticsRTP()");
+void ModuleRtpRtcpImpl::SetRtcpXrRrtrStatus(bool enable) {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
+               "SetRtcpXrRrtrStatus(%s)", enable ? "true" : "false");
+  return rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);
+}
 
-  uint32_t jitter_transmission_time_offset = 0;
-
-  int32_t ret_val = rtp_receiver_->Statistics(
-      fraction_lost, cum_lost, ext_max, jitter, max_jitter,
-      &jitter_transmission_time_offset, (rtcp_sender_.Status() == kRtcpOff));
-  if (ret_val == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
-                 "StatisticsRTP() no statistics available");
-  }
-  return ret_val;
+bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
+  return rtcp_sender_.RtcpXrReceiverReferenceTime();
 }
 
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
     uint32_t* bytes_sent,
-    uint32_t* packets_sent,
-    uint32_t* bytes_received,
-    uint32_t* packets_received) const {
+    uint32_t* packets_sent) const {
   WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_, "DataCountersRTP()");
-
   if (bytes_sent) {
     *bytes_sent = rtp_sender_.Bytes();
   }
   if (packets_sent) {
     *packets_sent = rtp_sender_.Packets();
   }
-  return rtp_receiver_->DataCounters(bytes_received, packets_received);
-}
-
-int32_t ModuleRtpRtcpImpl::ReportBlockStatistics(
-    uint8_t* fraction_lost,
-    uint32_t* cum_lost,
-    uint32_t* ext_max,
-    uint32_t* jitter,
-    uint32_t* jitter_transmission_time_offset) {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "ReportBlockStatistics()");
-  int32_t missing = 0;
-  int32_t ret = rtp_receiver_->Statistics(fraction_lost,
-                                          cum_lost,
-                                          ext_max,
-                                          jitter,
-                                          NULL,
-                                          jitter_transmission_time_offset,
-                                          &missing,
-                                                true);
-
-#ifdef MATLAB
-  if (plot1_ == NULL) {
-    plot1_ = eng.NewPlot(new MatlabPlot());
-    plot1_->AddTimeLine(30, "b", "lost", clock_->TimeInMilliseconds());
-  }
-  plot1_->Append("lost", missing);
-  plot1_->Plot();
-#endif
-
-  return ret;
+  return 0;
 }
 
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteRTCPStat()");
-
   return rtcp_receiver_.SenderInfoReceived(sender_info);
 }
 
@@ -1359,7 +967,6 @@ int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(
     std::vector<RTCPReportBlock>* receive_blocks) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoteRTCPStat()");
-
   return rtcp_receiver_.StatisticsReceived(receive_blocks);
 }
 
@@ -1367,21 +974,25 @@ int32_t ModuleRtpRtcpImpl::AddRTCPReportBlock(
     const uint32_t ssrc,
     const RTCPReportBlock* report_block) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "AddRTCPReportBlock()");
-
-  return rtcp_sender_.AddReportBlock(ssrc, report_block);
+  return rtcp_sender_.AddExternalReportBlock(ssrc, report_block);
 }
 
 int32_t ModuleRtpRtcpImpl::RemoveRTCPReportBlock(
   const uint32_t ssrc) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "RemoveRTCPReportBlock()");
+  return rtcp_sender_.RemoveExternalReportBlock(ssrc);
+}
 
-  return rtcp_sender_.RemoveReportBlock(ssrc);
+void ModuleRtpRtcpImpl::GetRtcpPacketTypeCounters(
+    RtcpPacketTypeCounter* packets_sent,
+    RtcpPacketTypeCounter* packets_received) const {
+  rtcp_sender_.GetPacketTypeCounter(packets_sent);
+  rtcp_receiver_.GetPacketTypeCounter(packets_received);
 }
 
 // (REMB) Receiver Estimated Max Bitrate.
 bool ModuleRtpRtcpImpl::REMB() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "REMB()");
-
   return rtcp_sender_.REMB();
 }
 
@@ -1411,7 +1022,6 @@ int32_t ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
 // (IJ) Extended jitter report.
 bool ModuleRtpRtcpImpl::IJ() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "IJ()");
-
   return rtcp_sender_.IJ();
 }
 
@@ -1420,7 +1030,6 @@ int32_t ModuleRtpRtcpImpl::SetIJStatus(const bool enable) {
                kTraceRtpRtcp,
                id_,
                "SetIJStatus(%s)", enable ? "true" : "false");
-
   return rtcp_sender_.SetIJStatus(enable);
 }
 
@@ -1438,7 +1047,6 @@ int32_t ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(
 // (TMMBR) Temporary Max Media Bit Rate.
 bool ModuleRtpRtcpImpl::TMMBR() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "TMMBR()");
-
   return rtcp_sender_.TMMBR();
 }
 
@@ -1455,56 +1063,9 @@ int32_t ModuleRtpRtcpImpl::SetTMMBRStatus(const bool enable) {
 
 int32_t ModuleRtpRtcpImpl::SetTMMBN(const TMMBRSet* bounding_set) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetTMMBN()");
-
   uint32_t max_bitrate_kbit =
       rtp_sender_.MaxConfiguredBitrateVideo() / 1000;
   return rtcp_sender_.SetTMMBN(bounding_set, max_bitrate_kbit);
-}
-
-// (NACK) Negative acknowledgment.
-
-// Is Negative acknowledgment requests on/off?
-NACKMethod ModuleRtpRtcpImpl::NACK() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "NACK()");
-
-  NACKMethod child_method = kNackOff;
-  const bool default_instance(child_modules_.empty() ? false : true);
-  if (default_instance) {
-    // For default we need to check all child modules too.
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::list<ModuleRtpRtcpImpl*>::const_iterator it =
-      child_modules_.begin();
-    while (it != child_modules_.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        NACKMethod nackMethod = module->NACK();
-        if (nackMethod != kNackOff) {
-          child_method = nackMethod;
-          break;
-        }
-      }
-      it++;
-    }
-  }
-
-  NACKMethod method = nack_method_;
-  if (child_method != kNackOff) {
-    method = child_method;
-  }
-  return method;
-}
-
-// Turn negative acknowledgment requests on/off.
-int32_t ModuleRtpRtcpImpl::SetNACKStatus(
-    NACKMethod method, int max_reordering_threshold) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "SetNACKStatus(%u)", method);
-
-  nack_method_ = method;
-  rtp_receiver_->SetNACKStatus(method, max_reordering_threshold);
-  return 0;
 }
 
 // Returns the currently configured retransmission mode.
@@ -1535,10 +1096,13 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                id_,
                "SendNACK(size:%u)", size);
 
-  uint16_t avg_rtt = 0;
-  rtcp_receiver_.RTT(rtp_receiver_->SSRC(), NULL, &avg_rtt, NULL, NULL);
+  // Use RTT from RtcpRttStats class if provided.
+  uint16_t rtt = rtt_ms();
+  if (rtt == 0) {
+    rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
+  }
 
-  int64_t wait_time = 5 + ((avg_rtt * 3) >> 1);  // 5 + RTT * 1.5.
+  int64_t wait_time = 5 + ((rtt * 3) >> 1);  // 5 + RTT * 1.5.
   if (wait_time == 5) {
     wait_time = 100;  // During startup we don't have an RTT.
   }
@@ -1575,13 +1139,9 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
   }
   nack_last_seq_number_sent_ = nack_list[start_id + nackLength - 1];
 
-  switch (nack_method_) {
-    case kNackRtcp:
-      return rtcp_sender_.SendRTCP(kRtcpNack, nackLength, &nack_list[start_id]);
-    case kNackOff:
-      return -1;
-  };
-  return -1;
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(
+      feedback_state, kRtcpNack, nackLength, &nack_list[start_id]);
 }
 
 // Store the sent packets, needed to answer to a Negative acknowledgment
@@ -1601,27 +1161,18 @@ int32_t ModuleRtpRtcpImpl::SetStorePacketsStatus(
   return 0;  // TODO(pwestin): change to void.
 }
 
-// Forward DTMFs to decoder for playout.
-int ModuleRtpRtcpImpl::SetTelephoneEventForwardToDecoder(
-    bool forward_to_decoder) {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "SetTelephoneEventForwardToDecoder(forward_to_decoder:%d)",
-               forward_to_decoder);
-
-  assert(audio_);
-  assert(rtp_telephone_event_handler_);
-  return rtp_telephone_event_handler_->SetTelephoneEventForwardToDecoder(
-      forward_to_decoder);
+bool ModuleRtpRtcpImpl::StorePackets() const {
+  return rtp_sender_.StorePackets();
 }
 
-// Is forwarding of out-band telephone events turned on/off?
-bool ModuleRtpRtcpImpl::TelephoneEventForwardToDecoder() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "TelephoneEventForwardToDecoder()");
+void ModuleRtpRtcpImpl::RegisterSendChannelRtcpStatisticsCallback(
+    RtcpStatisticsCallback* callback) {
+  rtcp_receiver_.RegisterRtcpStatisticsCallback(callback);
+}
 
-  assert(audio_);
-  assert(rtp_telephone_event_handler_);
-  return rtp_telephone_event_handler_->TelephoneEventForwardToDecoder();
+RtcpStatisticsCallback* ModuleRtpRtcpImpl::
+        GetSendChannelRtcpStatisticsCallback() {
+  return rtcp_receiver_.GetRtcpStatisticsCallback();
 }
 
 // Send a TelephoneEvent tone using RFC 2833 (4733).
@@ -1632,7 +1183,6 @@ int32_t ModuleRtpRtcpImpl::SendTelephoneEventOutband(
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
                "SendTelephoneEventOutband(key:%u, time_ms:%u, level:%u)", key,
                time_ms, level);
-
   return rtp_sender_.SendTelephoneEvent(key, time_ms, level);
 }
 
@@ -1643,7 +1193,6 @@ bool ModuleRtpRtcpImpl::SendTelephoneEventActive(
                kTraceRtpRtcp,
                id_,
                "SendTelephoneEventActive()");
-
   return rtp_sender_.SendTelephoneEventActive(&telephone_event);
 }
 
@@ -1657,33 +1206,7 @@ int32_t ModuleRtpRtcpImpl::SetAudioPacketSize(
                id_,
                "SetAudioPacketSize(%u)",
                packet_size_samples);
-
   return rtp_sender_.SetAudioPacketSize(packet_size_samples);
-}
-
-int32_t ModuleRtpRtcpImpl::SetRTPAudioLevelIndicationStatus(
-    const bool enable,
-    const uint8_t id) {
-
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "SetRTPAudioLevelIndicationStatus(enable=%d, ID=%u)",
-               enable,
-               id);
-
-  return rtp_sender_.SetAudioLevelIndicationStatus(enable, id);
-}
-
-int32_t ModuleRtpRtcpImpl::GetRTPAudioLevelIndicationStatus(
-    bool& enable,
-    uint8_t& id) const {
-
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "GetRTPAudioLevelIndicationStatus()");
-  return rtp_sender_.AudioLevelIndicationStatus(&enable, &id);
 }
 
 int32_t ModuleRtpRtcpImpl::SetAudioLevel(
@@ -1704,7 +1227,6 @@ int32_t ModuleRtpRtcpImpl::SetSendREDPayloadType(
                id_,
                "SetSendREDPayloadType(%d)",
                payload_type);
-
   return rtp_sender_.SetRED(payload_type);
 }
 
@@ -1712,54 +1234,42 @@ int32_t ModuleRtpRtcpImpl::SetSendREDPayloadType(
 int32_t ModuleRtpRtcpImpl::SendREDPayloadType(
     int8_t& payload_type) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SendREDPayloadType()");
-
   return rtp_sender_.RED(&payload_type);
-}
-
-RtpVideoCodecTypes ModuleRtpRtcpImpl::ReceivedVideoCodec() const {
-  return rtp_receiver_->VideoCodecType();
 }
 
 RtpVideoCodecTypes ModuleRtpRtcpImpl::SendVideoCodec() const {
   return rtp_sender_.VideoCodecType();
 }
 
-void ModuleRtpRtcpImpl::SetTargetSendBitrate(const uint32_t bitrate) {
+void ModuleRtpRtcpImpl::SetTargetSendBitrate(
+    const std::vector<uint32_t>& stream_bitrates) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "SetTargetSendBitrate: %ubit", bitrate);
-
-  const bool have_child_modules(child_modules_.empty() ? false : true);
-  if (have_child_modules) {
+               "SetTargetSendBitrate: %ld streams", stream_bitrates.size());
+  if (IsDefaultModule()) {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     if (simulcast_) {
-      uint32_t bitrate_remainder = bitrate;
       std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-      for (int i = 0; it != child_modules_.end() &&
-           i < send_video_codec_.numberOfSimulcastStreams; ++it) {
+      for (size_t i = 0;
+           it != child_modules_.end() && i < stream_bitrates.size(); ++it) {
         if ((*it)->SendingMedia()) {
           RTPSender& rtp_sender = (*it)->rtp_sender_;
-          if (send_video_codec_.simulcastStream[i].maxBitrate * 1000 >
-              bitrate_remainder) {
-            rtp_sender.SetTargetSendBitrate(bitrate_remainder);
-            bitrate_remainder = 0;
-          } else {
-            rtp_sender.SetTargetSendBitrate(
-              send_video_codec_.simulcastStream[i].maxBitrate * 1000);
-            bitrate_remainder -=
-              send_video_codec_.simulcastStream[i].maxBitrate * 1000;
-          }
+          rtp_sender.SetTargetSendBitrate(stream_bitrates[i]);
           ++i;
         }
       }
     } else {
+      if (stream_bitrates.size() > 1)
+        return;
       std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
       for (; it != child_modules_.end(); ++it) {
         RTPSender& rtp_sender = (*it)->rtp_sender_;
-        rtp_sender.SetTargetSendBitrate(bitrate);
+        rtp_sender.SetTargetSendBitrate(stream_bitrates[0]);
       }
     }
   } else {
-    rtp_sender_.SetTargetSendBitrate(bitrate);
+    if (stream_bitrates.size() > 1)
+      return;
+    rtp_sender_.SetTargetSendBitrate(stream_bitrates[0]);
   }
 }
 
@@ -1770,7 +1280,6 @@ int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(
                id_,
                "SetKeyFrameRequestMethod(method:%u)",
                method);
-
   key_frame_req_method_ = method;
   return 0;
 }
@@ -1780,14 +1289,13 @@ int32_t ModuleRtpRtcpImpl::RequestKeyFrame() {
                kTraceRtpRtcp,
                id_,
                "RequestKeyFrame");
-
   switch (key_frame_req_method_) {
     case kKeyFrameReqFirRtp:
       return rtp_sender_.SendRTPIntraRequest();
     case kKeyFrameReqPliRtcp:
-      return rtcp_sender_.SendRTCP(kRtcpPli);
+      return SendRTCP(kRtcpPli);
     case kKeyFrameReqFirRtcp:
-      return rtcp_sender_.SendRTCP(kRtcpFir);
+      return SendRTCP(kRtcpFir);
   }
   return -1;
 }
@@ -1799,7 +1307,9 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
                id_,
                "SendRTCPSliceLossIndication (picture_id:%d)",
                picture_id);
-  return rtcp_sender_.SendRTCP(kRtcpSli, 0, 0, false, picture_id);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(
+      feedback_state, kRtcpSli, 0, 0, false, picture_id);
 }
 
 int32_t ModuleRtpRtcpImpl::SetCameraDelay(const int32_t delay_ms) {
@@ -1808,11 +1318,8 @@ int32_t ModuleRtpRtcpImpl::SetCameraDelay(const int32_t delay_ms) {
                id_,
                "SetCameraDelay(%d)",
                delay_ms);
-  const bool default_instance(child_modules_.empty() ? false : true);
-
-  if (default_instance) {
+  if (IsDefaultModule()) {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
@@ -1851,12 +1358,10 @@ int32_t ModuleRtpRtcpImpl::GenericFECStatus(
     bool& enable,
     uint8_t& payload_type_red,
     uint8_t& payload_type_fec) {
-
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "GenericFECStatus()");
 
   bool child_enabled = false;
-  const bool default_instance(child_modules_.empty() ? false : true);
-  if (default_instance) {
+  if (IsDefaultModule()) {
     // For default we need to check all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
@@ -1889,8 +1394,7 @@ int32_t ModuleRtpRtcpImpl::GenericFECStatus(
 int32_t ModuleRtpRtcpImpl::SetFecParameters(
     const FecProtectionParams* delta_params,
     const FecProtectionParams* key_params) {
-  const bool default_instance(child_modules_.empty() ? false : true);
-  if (default_instance)  {
+  if (IsDefaultModule())  {
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
 
@@ -1923,25 +1427,19 @@ void ModuleRtpRtcpImpl::SetRemoteSSRC(const uint32_t ssrc) {
     }
     if (kRtcpOff != rtcp_sender_.Status()) {
       // Send RTCP bye on the current SSRC.
-      rtcp_sender_.SendRTCP(kRtcpBye);
+      SendRTCP(kRtcpBye);
     }
     // Change local SSRC and inform all objects about the new SSRC.
     rtcp_sender_.SetSSRC(new_ssrc);
-    rtcp_receiver_.SetSSRC(new_ssrc);
+    SetRtcpReceiverSsrcs(new_ssrc);
   }
-}
-
-uint32_t ModuleRtpRtcpImpl::BitrateReceivedNow() const {
-  return rtp_receiver_->BitrateNow();
 }
 
 void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
                                     uint32_t* video_rate,
                                     uint32_t* fec_rate,
                                     uint32_t* nack_rate) const {
-  const bool default_instance(child_modules_.empty() ? false : true);
-
-  if (default_instance) {
+  if (IsDefaultModule()) {
     // For default we need to update the send bitrate.
     CriticalSectionScoped lock(critical_section_module_ptrs_feedback_.get());
 
@@ -1981,7 +1479,7 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
     return;
   }
   if (total_rate != NULL)
-    *total_rate = rtp_sender_.BitrateLast();
+    *total_rate = rtp_sender_.BitrateSent();
   if (video_rate != NULL)
     *video_rate = rtp_sender_.VideoBitrateSent();
   if (fec_rate != NULL)
@@ -1990,23 +1488,39 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
     *nack_rate = rtp_sender_.NackOverheadRate();
 }
 
-// Bad state of RTP receiver request a keyframe.
+void ModuleRtpRtcpImpl::RegisterVideoBitrateObserver(
+    BitrateStatisticsObserver* observer) {
+  assert(!IsDefaultModule());
+  rtp_sender_.RegisterBitrateObserver(observer);
+}
+
+BitrateStatisticsObserver* ModuleRtpRtcpImpl::GetVideoBitrateObserver() const {
+  return rtp_sender_.GetBitrateObserver();
+}
+
 void ModuleRtpRtcpImpl::OnRequestIntraFrame() {
   RequestKeyFrame();
 }
 
 void ModuleRtpRtcpImpl::OnRequestSendReport() {
-  rtcp_sender_.SendRTCP(kRtcpSr);
+  SendRTCP(kRtcpSr);
 }
 
 int32_t ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
     const uint64_t picture_id) {
-  return rtcp_sender_.SendRTCP(kRtcpRpsi, 0, 0, false, picture_id);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(
+      feedback_state, kRtcpRpsi, 0, 0, false, picture_id);
 }
 
 uint32_t ModuleRtpRtcpImpl::SendTimeOfSendReport(
     const uint32_t send_report) {
   return rtcp_sender_.SendTimeOfSendReport(send_report);
+}
+
+bool ModuleRtpRtcpImpl::SendTimeOfXrRrReport(
+    uint32_t mid_ntp, int64_t* time_ms) const {
+  return rtcp_sender_.SendTimeOfXrRrReport(mid_ntp, time_ms);
 }
 
 void ModuleRtpRtcpImpl::OnReceivedNACK(
@@ -2015,9 +1529,12 @@ void ModuleRtpRtcpImpl::OnReceivedNACK(
       nack_sequence_numbers.size() == 0) {
     return;
   }
-  uint16_t avg_rtt = 0;
-  rtcp_receiver_.RTT(rtp_receiver_->SSRC(), NULL, &avg_rtt, NULL, NULL);
-  rtp_sender_.OnReceivedNACK(nack_sequence_numbers, avg_rtt);
+  // Use RTT from RtcpRttStats class if provided.
+  uint16_t rtt = rtt_ms();
+  if (rtt == 0) {
+    rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
+  }
+  rtp_sender_.OnReceivedNACK(nack_sequence_numbers, rtt);
 }
 
 int32_t ModuleRtpRtcpImpl::LastReceivedNTP(
@@ -2039,6 +1556,11 @@ int32_t ModuleRtpRtcpImpl::LastReceivedNTP(
   return 0;
 }
 
+bool ModuleRtpRtcpImpl::LastReceivedXrReferenceTimeInfo(
+    RtcpReceiveTimeInfo* info) const {
+  return rtcp_receiver_.LastReceivedXrReferenceTimeInfo(info);
+}
+
 bool ModuleRtpRtcpImpl::UpdateRTCPReceiveInformationTimers() {
   // If this returns true this channel has timed out.
   // Periodically check if this is true and if so call UpdateTMMBR.
@@ -2057,4 +1579,51 @@ int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
   else
     return RTCP_INTERVAL_VIDEO_MS;
 }
+
+void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(main_ssrc);
+  int rtx_mode = kRtxOff;
+  uint32_t rtx_ssrc = 0;
+  int rtx_payload_type = 0;
+  rtp_sender_.RTXStatus(&rtx_mode, &rtx_ssrc, &rtx_payload_type);
+  if (rtx_mode != kRtxOff)
+    ssrcs.insert(rtx_ssrc);
+  rtcp_receiver_.SetSsrcs(main_ssrc, ssrcs);
+}
+
+void ModuleRtpRtcpImpl::set_rtt_ms(uint32_t rtt_ms) {
+  CriticalSectionScoped cs(critical_section_rtt_.get());
+  rtt_ms_ = rtt_ms;
+}
+
+uint32_t ModuleRtpRtcpImpl::rtt_ms() const {
+  CriticalSectionScoped cs(critical_section_rtt_.get());
+  return rtt_ms_;
+}
+
+void ModuleRtpRtcpImpl::RegisterSendChannelRtpStatisticsCallback(
+    StreamDataCountersCallback* callback) {
+  rtp_sender_.RegisterRtpStatisticsCallback(callback);
+}
+
+StreamDataCountersCallback*
+    ModuleRtpRtcpImpl::GetSendChannelRtpStatisticsCallback() const {
+  return rtp_sender_.GetRtpStatisticsCallback();
+}
+
+void ModuleRtpRtcpImpl::RegisterSendFrameCountObserver(
+    FrameCountObserver* observer) {
+  rtp_sender_.RegisterFrameCountObserver(observer);
+}
+
+FrameCountObserver* ModuleRtpRtcpImpl::GetSendFrameCountObserver() const {
+  return rtp_sender_.GetFrameCountObserver();
+}
+
+bool ModuleRtpRtcpImpl::IsDefaultModule() const {
+  CriticalSectionScoped cs(critical_section_module_ptrs_.get());
+  return !child_modules_.empty();
+}
+
 }  // Namespace webrtc

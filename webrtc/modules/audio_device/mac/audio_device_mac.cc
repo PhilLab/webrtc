@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "audio_device_utility.h"
-#include "audio_device_mac.h"
-#include "audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
+#include "webrtc/modules/audio_device/mac/audio_device_mac.h"
 
-#include "event_wrapper.h"
-#include "portaudio/pa_ringbuffer.h"
-#include "trace.h"
-#include "thread_wrapper.h"
+#include "webrtc/modules/audio_device/mac/portaudio/pa_ringbuffer.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #include <ApplicationServices/ApplicationServices.h>
-#include <cassert>
+#include <assert.h>
 #include <libkern/OSAtomic.h>   // OSAtomicCompareAndSwap()
 #include <mach/mach.h>          // mach_task_self()
 #include <sys/sysctl.h>         // sysctlbyname()
@@ -55,6 +55,8 @@ namespace webrtc
                 "Error in " #expr, (const char *)&err);                 \
         }                                                               \
     } while(0)
+
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 
 enum
 {
@@ -95,7 +97,7 @@ void AudioDeviceMac::logCAMsg(const TraceLevel level,
     assert(msg != NULL);
     assert(err != NULL);
 
-#ifdef WEBRTC_BIG_ENDIAN
+#ifdef WEBRTC_ARCH_BIG_ENDIAN
     WEBRTC_TRACE(level, module, id, "%s: %.4s", msg, err);
 #else
     // We need to flip the characters in this case.
@@ -153,7 +155,8 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     _paCaptureBuffer(NULL),
     _paRenderBuffer(NULL),
     _captureBufSizeSamples(0),
-    _renderBufSizeSamples(0)
+    _renderBufSizeSamples(0),
+    prev_key_state_()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
@@ -567,7 +570,6 @@ int32_t AudioDeviceMac::MicrophoneIsAvailable(bool& available)
 
     return 0;
 }
-
 
 int32_t AudioDeviceMac::InitMicrophone()
 {
@@ -1454,7 +1456,7 @@ int32_t AudioDeviceMac::InitPlayout()
 
     _outDesiredFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger
         | kLinearPCMFormatFlagIsPacked;
-#ifdef WEBRTC_BIG_ENDIAN
+#ifdef WEBRTC_ARCH_BIG_ENDIAN
     _outDesiredFormat.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
 #endif
     _outDesiredFormat.mFormatID = kAudioFormatLinearPCM;
@@ -1678,7 +1680,7 @@ int32_t AudioDeviceMac::InitRecording()
 
     _inDesiredFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger
         | kLinearPCMFormatFlagIsPacked;
-#ifdef WEBRTC_BIG_ENDIAN
+#ifdef WEBRTC_ARCH_BIG_ENDIAN
     _inDesiredFormat.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
 #endif
     _inDesiredFormat.mFormatID = kAudioFormatLinearPCM;
@@ -2271,7 +2273,7 @@ AudioDeviceMac::GetNumberDevices(const AudioObjectPropertyScope scope,
 
             free(bufferList);
             bufferList = NULL;
-        } // for
+        }  // for
     }
 
     if (!listOK)
@@ -3259,14 +3261,20 @@ bool AudioDeviceMac::CaptureWorkerThread()
     return true;
 }
 
-bool AudioDeviceMac::KeyPressed() const{
-
+bool AudioDeviceMac::KeyPressed() {
   bool key_down = false;
-  // loop through all Mac virtual key constant values
-  for (int key_index = 0; key_index <= 0x5C; key_index++) {
-    key_down |= CGEventSourceKeyState(kCGEventSourceStateHIDSystemState,
-                                      key_index);
+  // Loop through all Mac virtual key constant values.
+  for (unsigned int key_index = 0;
+                    key_index < ARRAY_SIZE(prev_key_state_);
+                    ++key_index) {
+    bool keyState = CGEventSourceKeyState(
+                             kCGEventSourceStateHIDSystemState,
+                             key_index);
+    // A false -> true change in keymap means a key is pressed.
+    key_down |= (keyState && !prev_key_state_[key_index]);
+    // Save current state.
+    prev_key_state_[key_index] = keyState;
   }
-  return(key_down);
+  return key_down;
 }
-} //  namespace webrtc
+}  // namespace webrtc

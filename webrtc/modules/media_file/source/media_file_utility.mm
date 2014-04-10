@@ -8,28 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/media_file/source/media_file_utility.h"
+
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "common_types.h"
-#include "engine_configurations.h"
-#include "file_wrapper.h"
-#include "media_file_utility.h"
-#include "module_common_types.h"
-#include "trace.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
     #include "avi_file.h"
     #import "mp4_file.h"
-#endif
-
-#if (defined(WIN32) || defined(WINCE))
-    #define STR_CASE_CMP _stricmp
-    #define STR_NCASE_CMP _strnicmp
-#else
-    #define STR_CASE_CMP strcasecmp
-    #define STR_NCASE_CMP strncasecmp
 #endif
 
 namespace {
@@ -56,7 +49,7 @@ struct WAVE_CHUNK_header
    int8_t  fmt_ckID[4];
    int32_t fmt_ckSize;
 };
-} // unnamed namespace
+}  // unnamed namespace
 
 namespace webrtc {
 ModuleFileUtility::ModuleFileUtility(const int32_t id)
@@ -1679,6 +1672,34 @@ int32_t ModuleFileUtility::InitCompressedReading(
         }
     }
 #endif
+#ifdef WEBRTC_CODEC_VORBIS
+    if(!strcmp("#!VORBIS\n", buf))
+    {
+        codec_info_.pltype = 109;
+        strcpy(codec_info_.plname, "vorbis");
+        codec_info_.plfreq   = 16000;
+        codec_info_.pacsize  = 480;
+        codec_info_.channels = 1;
+        codec_info_.rate     = 32000;
+        _codecId = kCodecVorbis;
+    
+        if(_startPointInMs > 0)
+        {
+            while (_playoutPositionMs <= _startPointInMs)
+            {
+                read_len = in.Read(buf, 38);
+                if(read_len == 38)
+                {
+                    _playoutPositionMs += 20;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+#endif
     if(_codecId == kCodecNoCodec)
     {
         return -1;
@@ -1871,6 +1892,41 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         }
     }
 #endif
+#ifdef WEBRTC_CODEC_VORBIS
+    if(_codecId == kCodecVorbis)
+    {
+        WebRtc_UWord32 byteSize = 0;
+        byteSize = 38;
+        if(bufferSize < byteSize)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                         "output buffer is too short to read VORBIS compressed\
+                         data.");
+            assert(false);
+            return -1;
+        }
+    
+        bytesRead = in.Read(outData, byteSize);
+        if(bytesRead != byteSize)
+        {
+            if(!in.Rewind())
+            {
+                InitCompressedReading(in, _startPointInMs, _stopPointInMs);
+                bytesRead = in.Read(outData, byteSize);
+                if(bytesRead != byteSize)
+                {
+                    _reading = false;
+                    return -1;
+                }
+            }
+            else
+            { 
+                _reading = false;
+                return -1;
+            }
+        }
+    }
+#endif
     if(bytesRead == 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceFile, _id,
@@ -1948,6 +2004,25 @@ int32_t ModuleFileUtility::InitCompressedWriting(
         {
           WEBRTC_TRACE(kTraceError, kTraceFile, _id,
                        "codecInst defines unsupported compression codec!");
+            return -1;
+        }
+        memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
+        _writing = true;
+        return 0;
+    }
+#endif
+#ifdef WEBRTC_CODEC_VORBIS
+    if(STR_CASE_CMP(codecInst.plname, "vorbis") == 0)
+    {
+        if(codecInst.pacsize == 480)
+        {
+          _codecId = kCodecVorbis;
+          //out.Write("#!VORBIS\n",9);
+        }
+        else
+        {
+            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                         "codecInst defines unsupported compression codec!");
             return -1;
         }
         memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
@@ -2655,4 +2730,4 @@ uint32_t ModuleFileUtility::PlayoutPositionMs()
         return 0;
     }
 }
-} // namespace webrtc
+}  // namespace webrtc

@@ -20,9 +20,8 @@ namespace webrtc {
 
 Atomic32::Atomic32(int32_t initial_value)
     : value_(initial_value) {
-  // Make sure that the counter variable we're using is of the same size
-  // as what the API expects.
-  COMPILE_ASSERT(sizeof(value_) == sizeof(LONG));
+  COMPILE_ASSERT(sizeof(value_) == sizeof(LONG),
+                 counter_variable_is_the_expected_size);
   assert(Is32bitAligned());
 }
 
@@ -57,10 +56,6 @@ bool Atomic32::CompareExchange(int32_t new_value, int32_t compare_value) {
 
   // If the old value and the compare value is the same an exchange happened.
   return (old_value == compare_value);
-}
-
-int32_t Atomic32::Value() const {
-  return value_;
 }
 
 }  // namespace webrtc

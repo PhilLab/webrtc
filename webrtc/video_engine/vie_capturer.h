@@ -20,7 +20,9 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
@@ -31,6 +33,8 @@ namespace webrtc {
 class Config;
 class CriticalSectionWrapper;
 class EventWrapper;
+class CpuOveruseObserver;
+class OveruseFrameDetector;
 class ProcessThread;
 class ThreadWrapper;
 class ViEEffectFilter;
@@ -75,6 +79,8 @@ class ViECapturer
   virtual int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                 unsigned long long capture_time = 0);  // NOLINT
 
+  virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
+
   // Start/Stop.
   int32_t Start(
       const CaptureCapability& capture_capability = CaptureCapability());
@@ -112,6 +118,14 @@ class ViECapturer
         
   // Recording.
   ViEFileRecorder& GetCaptureFileRecorder();
+
+  void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
+  void SetCpuOveruseOptions(const CpuOveruseOptions& options);
+
+  void CpuOveruseMeasures(int* capture_jitter_ms,
+                          int* avg_encode_time_ms,
+                          int* encode_usage_percent,
+                          int* capture_queue_delay_ms_per_s) const;
 
  protected:
   ViECapturer(int capture_id,
@@ -154,6 +168,8 @@ class ViECapturer
   void DeliverCodedFrame(VideoFrame* video_frame);
 
  private:
+  bool SwapCapturedAndDeliverFrameIfAvailable();
+
   // Never take capture_cs_ before deliver_cs_!
   scoped_ptr<CriticalSectionWrapper> capture_cs_;
   scoped_ptr<CriticalSectionWrapper> deliver_cs_;
@@ -161,6 +177,10 @@ class ViECapturer
   VideoCaptureExternal* external_capture_module_;
   ProcessThread& module_process_thread_;
   const int capture_id_;
+
+  // Frame used in IncomingFrameI420.
+  scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
+  I420VideoFrame incoming_frame_;
 
   // Capture thread.
   ThreadWrapper& capture_thread_;
@@ -182,13 +202,13 @@ class ViECapturer
 
   // Statistics observer.
   scoped_ptr<CriticalSectionWrapper> observer_cs_;
-  ViECaptureObserver* observer_;
+  ViECaptureObserver* observer_ GUARDED_BY(observer_cs_.get());
 
   CaptureCapability requested_capability_;
         
   ViEFileRecorder file_recorder_;
 
-  I420VideoFrame capture_device_image_;
+  scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 
 }  // namespace webrtc

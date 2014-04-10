@@ -10,17 +10,12 @@
 
 #include "webrtc/system_wrappers/source/trace_posix.h"
 
-#include <cassert>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#ifdef WEBRTC_ANDROID
-#include <pthread.h>
-#else
-#include <iostream>
-#endif
 
 #if defined(_DEBUG)
 #define BUILDMODE "d"

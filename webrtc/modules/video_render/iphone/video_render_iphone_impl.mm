@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "engine_configurations.h"
+#include "webrtc/engine_configurations.h"
 
 #include "video_render_iphone_impl.h"
 #include "critical_section_wrapper.h"

@@ -42,10 +42,10 @@ void RandomVector::Reset() {
   seed_increment_ = 1;
 }
 
-void RandomVector::Generate(std::size_t length, int16_t* output) {
-  for (std::size_t i = 0; i < length; i++) {
+void RandomVector::Generate(size_t length, int16_t* output) {
+  for (size_t i = 0; i < length; i++) {
     seed_ += seed_increment_;
-    std::size_t position = seed_ & (kRandomTableSize - 1);
+    size_t position = seed_ & (kRandomTableSize - 1);
     output[i] = kRandomTable[position];
   }
 }
@@ -54,4 +54,4 @@ void RandomVector::IncreaseSeedIncrement(int16_t increase_by) {
   seed_increment_+= increase_by;
   seed_increment_ &= kRandomTableSize - 1;
 }
-}
+}  // namespace webrtc

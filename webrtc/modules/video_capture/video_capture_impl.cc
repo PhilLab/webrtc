@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_capture_impl.h"
-
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "critical_section_wrapper.h"
-#include "module_common_types.h"
-#include "ref_count.h"
-#include "tick_util.h"
-#include "trace.h"
-#include "trace_event.h"
-#include "video_capture_config.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/modules/video_capture/video_capture_impl.h"
 
 #include <stdlib.h>
+
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc
 {
@@ -39,6 +39,47 @@ VideoCaptureModule* VideoCaptureImpl::Create(
 const char* VideoCaptureImpl::CurrentDeviceName() const
 {
     return _deviceUniqueId;
+}
+
+// static
+int32_t VideoCaptureImpl::RotationFromDegrees(int degrees,
+                                              VideoCaptureRotation* rotation) {
+  switch (degrees) {
+    case 0:
+      *rotation = kCameraRotate0;
+      return 0;
+    case 90:
+      *rotation = kCameraRotate90;
+      return 0;
+    case 180:
+      *rotation = kCameraRotate180;
+      return 0;
+    case 270:
+      *rotation = kCameraRotate270;
+      return 0;
+    default:
+      return -1;;
+  }
+}
+
+// static
+int32_t VideoCaptureImpl::RotationInDegrees(VideoCaptureRotation rotation,
+                                            int* degrees) {
+  switch (rotation) {
+    case kCameraRotate0:
+      *degrees = 0;
+      return 0;
+    case kCameraRotate90:
+      *degrees = 90;
+      return 0;
+    case kCameraRotate180:
+      *degrees = 180;
+      return 0;
+    case kCameraRotate270:
+      *degrees = 270;
+      return 0;
+  }
+  return -1;
 }
 
 int32_t VideoCaptureImpl::ChangeUniqueId(const int32_t id)
@@ -117,21 +158,31 @@ int32_t VideoCaptureImpl::Process()
 }
 
 VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
-    : _id(id), _deviceUniqueId(NULL), _apiCs(*CriticalSectionWrapper::CreateCriticalSection()),
-      _captureDelay(0), _requestedCapability(),
+    : _id(id),
+      _deviceUniqueId(NULL),
+      _apiCs(*CriticalSectionWrapper::CreateCriticalSection()),
+      _captureDelay(0),
+      _requestedCapability(),
       _defaultFrameOrientation(kOrientationLandscapeLeft),
       _lockedFrameOrientation(kOrientationLandscapeLeft),
       _captureOrientationLock(false),
       _callBackCs(*CriticalSectionWrapper::CreateCriticalSection()),
       _lastProcessTime(TickTime::Now()),
-      _lastFrameRateCallbackTime(TickTime::Now()), _frameRateCallBack(false),
-      _noPictureAlarmCallBack(false), _captureAlarm(Cleared),
-      _faceDetectionCallBack(false), _faceDetected(false), _setCaptureDelay(0),
-      _dataCallBack(NULL), _captureCallBack(NULL),
-      _lastProcessFrameCount(TickTime::Now()), _rotateFrame(kRotateNone),
-      last_capture_time_(TickTime::MillisecondTimestamp())
-
-{
+      _lastFrameRateCallbackTime(TickTime::Now()),
+      _frameRateCallBack(false),
+      _noPictureAlarmCallBack(false),
+      _captureAlarm(Cleared),
+      _faceDetectionCallBack(false),
+      _faceDetected(false),
+      _setCaptureDelay(0),
+      _dataCallBack(NULL),
+      _captureCallBack(NULL),
+      _lastProcessFrameCount(TickTime::Now()),
+      _rotateFrame(kRotateNone),
+      last_capture_time_(0),
+      delta_ntp_internal_ms_(
+          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
+          TickTime::MillisecondTimestamp()) {
     _requestedCapability.width = kDefaultWidth;
     _requestedCapability.height = kDefaultHeight;
     _requestedCapability.maxFPS = 30;
@@ -151,45 +202,33 @@ VideoCaptureImpl::~VideoCaptureImpl()
         delete[] _deviceUniqueId;
 }
 
-int32_t VideoCaptureImpl::RegisterCaptureDataCallback(
-                                        VideoCaptureDataCallback& dataCallBack)
-{
+void VideoCaptureImpl::RegisterCaptureDataCallback(
+    VideoCaptureDataCallback& dataCallBack) {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = &dataCallBack;
-
-    return 0;
 }
 
-int32_t VideoCaptureImpl::DeRegisterCaptureDataCallback()
-{
+void VideoCaptureImpl::DeRegisterCaptureDataCallback() {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = NULL;
-    return 0;
 }
-int32_t VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack)
-{
+void VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack) {
 
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = &callBack;
-    return 0;
 }
-int32_t VideoCaptureImpl::DeRegisterCaptureCallback()
-{
+void VideoCaptureImpl::DeRegisterCaptureCallback() {
 
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = NULL;
-    return 0;
-
 }
-int32_t VideoCaptureImpl::SetCaptureDelay(int32_t delayMS)
-{
+void VideoCaptureImpl::SetCaptureDelay(int32_t delayMS) {
     CriticalSectionScoped cs(&_apiCs);
     _captureDelay = delayMS;
-    return 0;
 }
 int32_t VideoCaptureImpl::CaptureDelay()
 {
@@ -208,20 +247,11 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
   }
 
   // Set the capture time
-  const int64_t ntp_time_ms =
-      Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
-  int64_t internal_capture_time = TickTime::MillisecondTimestamp();
   if (capture_time != 0) {
-      int64_t time_since_capture = ntp_time_ms - capture_time;
-      internal_capture_time -= time_since_capture;
-      captureFrame.set_render_time_ms(internal_capture_time);
+    captureFrame.set_render_time_ms(capture_time - delta_ntp_internal_ms_);
+  } else {
+    captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
   }
-  else {
-      captureFrame.set_render_time_ms(internal_capture_time);
-  }
-
-  TRACE_EVENT1("webrtc", "VC::DeliverCapturedFrame",
-               "capture_time", capture_time);
 
   if (captureFrame.render_time_ms() == last_capture_time_) {
     // We don't allow the same capture time for two frames, drop this one.
@@ -249,8 +279,6 @@ int32_t VideoCaptureImpl::IncomingFrame(
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCapture, _id,
                "IncomingFrame width %d, height %d", (int) frameInfo.width,
                (int) frameInfo.height);
-
-    TickTime startProcessTime = TickTime::Now();
 
     CriticalSectionScoped cs(&_callBackCs);
 
@@ -322,39 +350,14 @@ int32_t VideoCaptureImpl::IncomingFrame(
         return -1;
     }
 
-    const uint32_t processTime =
-        (uint32_t)(TickTime::Now() - startProcessTime).Milliseconds();
-    if (processTime > 10) // If the process time is too long MJPG will not work well.
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCapture, _id,
-                   "Too long processing time of Incoming frame: %ums",
-                   (unsigned int) processTime);
-    }
-
     return 0;
 }
 
-int32_t VideoCaptureImpl::IncomingFrameI420(
-    const VideoFrameI420& video_frame, int64_t captureTime, bool faceDetected) {
+int32_t VideoCaptureImpl::IncomingI420VideoFrame(I420VideoFrame* video_frame,
+                                                 int64_t captureTime, bool faceDetected) {
 
   CriticalSectionScoped cs(&_callBackCs);
-  int size_y = video_frame.height * video_frame.y_pitch;
-  int size_u = video_frame.u_pitch * ((video_frame.height + 1) / 2);
-  int size_v =  video_frame.v_pitch * ((video_frame.height + 1) / 2);
-  // TODO(mikhal): Can we use Swap here? This will do a memcpy.
-  int ret = _captureFrame.CreateFrame(size_y, video_frame.y_plane,
-                                      size_u, video_frame.u_plane,
-                                      size_v, video_frame.v_plane,
-                                      video_frame.width, video_frame.height,
-                                      video_frame.y_pitch, video_frame.u_pitch,
-                                      video_frame.v_pitch);
-  if (ret < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                 "Failed to create I420VideoFrame");
-    return -1;
-  }
-
-  DeliverCapturedFrame(_captureFrame, captureTime);
+  DeliverCapturedFrame(*video_frame, captureTime);
 
   return 0;
 }
@@ -375,6 +378,8 @@ int32_t VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation) {
     case kCameraRotate270:
       _rotateFrame = kRotate270;
       break;
+    default:
+      return -1;
   }
   return 0;
 }
@@ -395,15 +400,14 @@ int32_t VideoCaptureImpl::SetLockedCaptureOrientation(VideoCaptureOrientation or
   return 0;
 }
 
-int32_t VideoCaptureImpl::EnableCaptureOrientationLock(const bool enable)
+void VideoCaptureImpl::EnableCaptureOrientationLock(const bool enable)
 {
   CriticalSectionScoped cs(&_apiCs);
   CriticalSectionScoped cs2(&_callBackCs);
   _captureOrientationLock = enable;
-  return 0;
 }
 
-int32_t VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
+void VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
 {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
@@ -412,23 +416,19 @@ int32_t VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
     {
         _lastFrameRateCallbackTime = TickTime::Now();
     }
-    return 0;
 }
 
-int32_t VideoCaptureImpl::EnableNoPictureAlarm(const bool enable)
-{
+void VideoCaptureImpl::EnableNoPictureAlarm(const bool enable) {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _noPictureAlarmCallBack = enable;
-    return 0;
 }
     
-int32_t VideoCaptureImpl::EnableFaceDetection(const bool enable)
+void VideoCaptureImpl::EnableFaceDetection(const bool enable)
 {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _faceDetectionCallBack = enable;
-    return 0;
 }
 
 void VideoCaptureImpl::UpdateFrameCount()
@@ -475,5 +475,5 @@ uint32_t VideoCaptureImpl::CalculateFrameRate(const TickTime& now)
 
     return nrOfFrames;
 }
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

@@ -27,8 +27,9 @@
 
 namespace webrtc {
 
-// TODO(ajm): There's not really a reason for this limitation. Remove it.
-enum { kVoiceEngineMaxNumChannels = 100 };
+// Internal buffer size required for mono audio, based on the highest sample
+// rate voice engine supports (10 ms of audio at 192 kHz).
+static const int kMaxMonoDataSizeSamples = 1920;
 
 // VolumeControl
 enum { kMinVolumeLevel = 0 };
@@ -74,6 +75,7 @@ const bool kDefaultAgcState =
 #else
   true;
 #endif
+const GainControl::Mode kDefaultRxAgcMode = GainControl::kAdaptiveDigital;
 
 // Codec
 // Min init target rate for iSAC-wb
@@ -123,27 +125,7 @@ enum { kVoiceEngineMinRtpExtensionId = 1 };
 // Max 4-bit ID for RTP extension
 enum { kVoiceEngineMaxRtpExtensionId = 14 };
 
-} // namespace webrtc
-
-// TODO(ajm): we shouldn't be using the precompiler for this.
-// Use enums or bools as appropriate.
-#define WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_STATE false
-    // AudioProcessing RX AGC off
-#define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_STATE false
-    // AudioProcessing RX NS off
-#define WEBRTC_VOICE_ENGINE_RX_HP_DEFAULT_STATE false
-    // AudioProcessing RX High Pass Filter off
-
-#define WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_MODE GainControl::kAdaptiveDigital
-    // AudioProcessing AGC mode
-#define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE NoiseSuppression::kModerate
-    // AudioProcessing RX NS mode
-
-// Macros
-// Comparison of two strings without regard to case
-#define STR_CASE_CMP(x,y) ::_stricmp(x,y)
-// Compares characters of two strings without regard to case
-#define STR_NCASE_CMP(x,y,n) ::_strnicmp(x,y,n)
+}  // namespace webrtc
 
 // ----------------------------------------------------------------------------
 //  Build information macros
@@ -218,7 +200,7 @@ inline int VoEChannelId(int moduleId)
     return (int) (moduleId & 0xffff);
 }
 
-} // namespace webrtc
+}  // namespace webrtc
 
 // ----------------------------------------------------------------------------
 //  Platform settings
@@ -227,6 +209,8 @@ inline int VoEChannelId(int moduleId)
 // *** WINDOWS ***
 
 #if defined(_WIN32)
+
+  #include <windows.h>
 
   #pragma comment( lib, "winmm.lib" )
 
@@ -237,13 +221,6 @@ inline int VoEChannelId(int moduleId)
 // ----------------------------------------------------------------------------
 //  Defines
 // ----------------------------------------------------------------------------
-
-  #include <windows.h>
-
-  // Comparison of two strings without regard to case
-  #define STR_CASE_CMP(x,y) ::_stricmp(x,y)
-  // Compares characters of two strings without regard to case
-  #define STR_NCASE_CMP(x,y,n) ::_strnicmp(x,y,n)
 
 // Default device for Windows PC
   #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE \
@@ -306,30 +283,6 @@ inline int VoEChannelId(int moduleId)
 // Default device for Linux and Android
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
 
-#ifdef ANDROID
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  // Always excluded for Android builds
-  #undef WEBRTC_CODEC_ISAC
-  #undef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-
-  #define ANDROID_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
-
-#else // LINUX PC
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  #define ANDROID_NOT_SUPPORTED(stat)
-
-#endif // ANDROID - LINUX PC
-
-#else
-#define ANDROID_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_LINUX
 
 // *** WEBRTC_MAC ***
@@ -386,35 +339,6 @@ inline int VoEChannelId(int moduleId)
 
 // Default device for Mac and iPhone
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
-
-// iPhone specific
-#if defined(WEBRTC_IOS)
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  // Always excluded for iPhone builds
-  #undef WEBRTC_CODEC_ISAC
-  #undef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-
-  #define IPHONE_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
-
-#else // Non-iPhone
-
-// ----------------------------------------------------------------------------
-//  Enumerators
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  #define IPHONE_NOT_SUPPORTED(stat)
-#endif
-
-#else
-#define IPHONE_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_MAC
 
 #endif // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H

@@ -17,15 +17,19 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class Clock;
+class CriticalSectionWrapper;
 
 class Bitrate {
  public:
-  explicit Bitrate(Clock* clock);
+  class Observer;
+  Bitrate(Clock* clock, Observer* observer);
+  virtual ~Bitrate();
 
   // Calculates rates.
   void Process();
@@ -42,10 +46,21 @@ class Bitrate {
   // Bitrate last second, updated now.
   uint32_t BitrateNow() const;
 
+  int64_t time_last_rate_update() const;
+
+  class Observer {
+   public:
+    Observer() {}
+    virtual ~Observer() {}
+
+    virtual void BitrateUpdated(const BitrateStatistics& stats) = 0;
+  };
+
  protected:
   Clock* clock_;
 
  private:
+  scoped_ptr<CriticalSectionWrapper> crit_;
   uint32_t packet_rate_;
   uint32_t bitrate_;
   uint8_t bitrate_next_idx_;
@@ -55,6 +70,7 @@ class Bitrate {
   int64_t time_last_rate_update_;
   uint32_t bytes_count_;
   uint32_t packet_count_;
+  Observer* const observer_;
 };
 
 }  // namespace webrtc

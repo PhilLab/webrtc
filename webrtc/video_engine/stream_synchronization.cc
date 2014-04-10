@@ -10,9 +10,11 @@
 
 #include "webrtc/video_engine/stream_synchronization.h"
 
-#include <algorithm>
 #include <assert.h>
-#include <cmath>
+#include <math.h>
+#include <stdlib.h>
+
+#include <algorithm>
 
 #include "webrtc/system_wrappers/interface/trace.h"
 

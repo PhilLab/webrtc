@@ -11,11 +11,9 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H
 
-#include "typedefs.h"
-#include "common_audio/resampler/include/resampler.h"
-#include "file_wrapper.h"
-#include "audio_device.h"
-#include "list_wrapper.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -29,19 +27,22 @@ class MediaFile;
 class AudioDeviceBuffer
 {
 public:
+    AudioDeviceBuffer();
+    virtual ~AudioDeviceBuffer();
+
     void SetId(uint32_t id);
     int32_t RegisterAudioCallback(AudioTransport* audioCallback);
 
     int32_t InitPlayout();
     int32_t InitRecording();
 
-    int32_t SetRecordingSampleRate(uint32_t fsHz);
-    int32_t SetPlayoutSampleRate(uint32_t fsHz);
+    virtual int32_t SetRecordingSampleRate(uint32_t fsHz);
+    virtual int32_t SetPlayoutSampleRate(uint32_t fsHz);
     int32_t RecordingSampleRate() const;
     int32_t PlayoutSampleRate() const;
 
-    int32_t SetRecordingChannels(uint8_t channels);
-    int32_t SetPlayoutChannels(uint8_t channels);
+    virtual int32_t SetRecordingChannels(uint8_t channels);
+    virtual int32_t SetPlayoutChannels(uint8_t channels);
     uint8_t RecordingChannels() const;
     uint8_t PlayoutChannels() const;
     int32_t SetRecordingChannel(
@@ -49,16 +50,17 @@ public:
     int32_t RecordingChannel(
         AudioDeviceModule::ChannelType& channel) const;
 
-    int32_t SetRecordedBuffer(const void* audioBuffer, uint32_t nSamples);
+    virtual int32_t SetRecordedBuffer(const void* audioBuffer,
+                                      uint32_t nSamples);
     int32_t SetCurrentMicLevel(uint32_t level);
-    int32_t SetVQEData(uint32_t playDelayMS,
-                       uint32_t recDelayMS,
-                       int32_t clockDrift);
-    int32_t DeliverRecordedData();
+    virtual void SetVQEData(int playDelayMS,
+                            int recDelayMS,
+                            int clockDrift);
+    virtual int32_t DeliverRecordedData();
     uint32_t NewMicLevel() const;
 
-    int32_t RequestPlayoutData(uint32_t nSamples);
-    int32_t GetPlayoutData(void* audioBuffer);
+    virtual int32_t RequestPlayoutData(uint32_t nSamples);
+    virtual int32_t GetPlayoutData(void* audioBuffer);
 
     int32_t StartInputFileRecording(
         const char fileName[kAdmMaxFileNameSize]);
@@ -68,9 +70,6 @@ public:
     int32_t StopOutputFileRecording();
 
     int32_t SetTypingStatus(bool typingStatus);
-
-    AudioDeviceBuffer();
-    ~AudioDeviceBuffer();
 
 private:
     int32_t                   _id;
@@ -114,10 +113,10 @@ private:
 
     bool                      _typingStatus;
 
-    uint32_t                  _playDelayMS;
-    uint32_t                  _recDelayMS;
-
-    int32_t                   _clockDrift;
+    int _playDelayMS;
+    int _recDelayMS;
+    int _clockDrift;
+    int high_delay_counter_;
 };
 
 }  // namespace webrtc

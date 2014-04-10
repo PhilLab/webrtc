@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "process_thread_impl.h"
-#include "module.h"
-#include "trace.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/utility/source/process_thread_impl.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 ProcessThread::~ProcessThread()
@@ -87,25 +87,23 @@ int32_t ProcessThreadImpl::Stop()
     return 0;
 }
 
-int32_t ProcessThreadImpl::RegisterModule(const Module* module)
+int32_t ProcessThreadImpl::RegisterModule(Module* module)
 {
     CriticalSectionScoped lock(_critSectModules);
 
     // Only allow module to be registered once.
-    ListItem* item = _modules.First();
-    for(uint32_t i = 0; i < _modules.GetSize() && item; i++)
-    {
-        if(module == item->GetItem())
+    for (ModuleList::iterator iter = _modules.begin();
+         iter != _modules.end(); ++iter) {
+        if(module == *iter)
         {
             return -1;
         }
-        item = _modules.Next(item);
     }
 
-    _modules.PushFront(module);
+    _modules.push_front(module);
     WEBRTC_TRACE(kTraceInfo, kTraceUtility, -1,
                  "number of registered modules has increased to %d",
-                 _modules.GetSize());
+                 _modules.size());
     // Wake the thread calling ProcessThreadImpl::Process() to update the
     // waiting time. The waiting time for the just registered module may be
     // shorter than all other registered modules.
@@ -116,19 +114,16 @@ int32_t ProcessThreadImpl::RegisterModule(const Module* module)
 int32_t ProcessThreadImpl::DeRegisterModule(const Module* module)
 {
     CriticalSectionScoped lock(_critSectModules);
-
-    ListItem* item = _modules.First();
-    for(uint32_t i = 0; i < _modules.GetSize() && item; i++)
-    {
-        if(module == item->GetItem())
+    for (ModuleList::iterator iter = _modules.begin();
+         iter != _modules.end(); ++iter) {
+        if(module == *iter)
         {
-            int res = _modules.Erase(item);
+            _modules.erase(iter);
             WEBRTC_TRACE(kTraceInfo, kTraceUtility, -1,
                          "number of registered modules has decreased to %d",
-                         _modules.GetSize());
-            return res;
+                         _modules.size());
+            return 0;
         }
-        item = _modules.Next(item);
     }
     return -1;
 }
@@ -145,16 +140,13 @@ bool ProcessThreadImpl::Process()
     int32_t minTimeToNext = 100;
     {
         CriticalSectionScoped lock(_critSectModules);
-        ListItem* item = _modules.First();
-        for(uint32_t i = 0; i < _modules.GetSize() && item; i++)
-        {
-            int32_t timeToNext =
-                static_cast<Module*>(item->GetItem())->TimeUntilNextProcess();
+        for (ModuleList::iterator iter = _modules.begin();
+             iter != _modules.end(); ++iter) {
+          int32_t timeToNext = (*iter)->TimeUntilNextProcess();
             if(minTimeToNext > timeToNext)
             {
                 minTimeToNext = timeToNext;
             }
-            item = _modules.Next(item);
         }
     }
 
@@ -172,18 +164,15 @@ bool ProcessThreadImpl::Process()
     }
     {
         CriticalSectionScoped lock(_critSectModules);
-        ListItem* item = _modules.First();
-        for(uint32_t i = 0; i < _modules.GetSize() && item; i++)
-        {
-            int32_t timeToNext =
-                static_cast<Module*>(item->GetItem())->TimeUntilNextProcess();
+        for (ModuleList::iterator iter = _modules.begin();
+             iter != _modules.end(); ++iter) {
+          int32_t timeToNext = (*iter)->TimeUntilNextProcess();
             if(timeToNext < 1)
             {
-                static_cast<Module*>(item->GetItem())->Process();
+                (*iter)->Process();
             }
-            item = _modules.Next(item);
         }
     }
     return true;
 }
-} // namespace webrtc
+}  // namespace webrtc

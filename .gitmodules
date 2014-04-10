@@ -6,16 +6,13 @@
 	url = https://github.com/openpeer/libyuv.git
 [submodule "third_party/opus/src"]
 	path = third_party/opus/src
-url=https://chromium.googlesource.com/chromium/deps/opus
-[submodule "third_party/libjpeg_turbo"]
-	path = third_party/libjpeg_turbo
-url=https://github.com/openpeer/libjpeg_turbo.git
+	url=https://chromium.googlesource.com/chromium/deps/opus
 [submodule "build"]
 	path = build
 	url = https://github.com/openpeer/webrtc-build.git
 [submodule "third_party/yasm/source/patched-yasm"]
 	path = third_party/yasm/source/patched-yasm
-url=https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm
+	url=https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm
 [submodule "third_party/libsrtp"]
 	path = third_party/libsrtp
 	url = https://github.com/openpeer/libsrtp.git

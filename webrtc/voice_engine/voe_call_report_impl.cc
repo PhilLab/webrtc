@@ -56,14 +56,13 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "ResetCallReportStatistics(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
+
     assert(_shared->audio_processing() != NULL);
 
     bool echoMode =
@@ -87,8 +86,8 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
     // Reset channel dependent statistics
     if (channel != -1)
     {
-        voe::ScopedChannel sc(_shared->channel_manager(), channel);
-        voe::Channel* channelPtr = sc.ChannelPtr();
+        voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+        voe::Channel* channelPtr = ch.channel();
         if (channelPtr == NULL)
         {
             _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -97,28 +96,13 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
         }
         channelPtr->ResetDeadOrAliveCounters();
         channelPtr->ResetRTCPStatistics();
-    }
-    else
-    {
-        int32_t numOfChannels =
-            _shared->channel_manager().NumOfChannels();
-        if (numOfChannels <= 0)
-        {
-            return 0;
-        }
-        int32_t* channelsArray = new int32_t[numOfChannels];
-        _shared->channel_manager().GetChannelIds(channelsArray, numOfChannels);
-        for (int i = 0; i < numOfChannels; i++)
-        {
-            voe::ScopedChannel sc(_shared->channel_manager(), channelsArray[i]);
-            voe::Channel* channelPtr = sc.ChannelPtr();
-            if (channelPtr)
-            {
-                channelPtr->ResetDeadOrAliveCounters();
-                channelPtr->ResetRTCPStatistics();
-            }
-        }
-        delete[] channelsArray;
+    } else {
+      for (voe::ChannelManager::Iterator it(&_shared->channel_manager());
+           it.IsValid();
+           it.Increment()) {
+        it.GetChannel()->ResetDeadOrAliveCounters();
+        it.GetChannel()->ResetRTCPStatistics();
+      }
     }
 
     return 0;
@@ -128,8 +112,6 @@ int VoECallReportImpl::GetEchoMetricSummary(EchoStatistics& stats)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetEchoMetricSummary()");
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -229,16 +211,14 @@ int VoECallReportImpl::GetRoundTripTimeSummary(int channel, StatVal& delaysMs)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetRoundTripTimeSummary()");
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -255,8 +235,6 @@ int VoECallReportImpl::GetDeadOrAliveSummary(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetDeadOrAliveSummary(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -280,8 +258,8 @@ int VoECallReportImpl::GetDeadOrAliveSummaryInternal(int channel,
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -297,8 +275,6 @@ int VoECallReportImpl::WriteReportToFile(const char* fileNameUTF8)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "WriteReportToFile(fileNameUTF8=%s)", fileNameUTF8);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -333,47 +309,33 @@ int VoECallReportImpl::WriteReportToFile(const char* fileNameUTF8)
     _file.WriteText("\nNetwork Packet Round Trip Time (RTT)\n");
     _file.WriteText("------------------------------------\n\n");
 
-    int32_t numOfChannels = _shared->channel_manager().NumOfChannels();
-    if (numOfChannels <= 0)
-    {
-        return 0;
-    }
-    int32_t* channelsArray = new int32_t[numOfChannels];
-    _shared->channel_manager().GetChannelIds(channelsArray, numOfChannels);
-    for (int ch = 0; ch < numOfChannels; ch++)
-    {
-        voe::ScopedChannel sc(_shared->channel_manager(), channelsArray[ch]);
-        voe::Channel* channelPtr = sc.ChannelPtr();
-        if (channelPtr)
-        {
-            StatVal delaysMs;
-            _file.WriteText("channel %d:\n", ch);
-            channelPtr->GetRoundTripTimeSummary(delaysMs);
-            _file.WriteText("  min:%5d [ms]\n", delaysMs.min);
-            _file.WriteText("  max:%5d [ms]\n", delaysMs.max);
-            _file.WriteText("  avg:%5d [ms]\n", delaysMs.average);
-        }
+    if (_shared->channel_manager().NumOfChannels() == 0)
+      return 0;
+
+    for (voe::ChannelManager::Iterator it(&_shared->channel_manager());
+         it.IsValid();
+         it.Increment()) {
+      StatVal delaysMs;
+      _file.WriteText("channel %d:\n", it.GetChannel()->ChannelId());
+      it.GetChannel()->GetRoundTripTimeSummary(delaysMs);
+      _file.WriteText("  min:%5d [ms]\n", delaysMs.min);
+      _file.WriteText("  max:%5d [ms]\n", delaysMs.max);
+      _file.WriteText("  avg:%5d [ms]\n", delaysMs.average);
     }
 
     _file.WriteText("\nDead-or-Alive Connection Detections\n");
     _file.WriteText("------------------------------------\n\n");
 
-    for (int ch = 0; ch < numOfChannels; ch++)
-    {
-        voe::ScopedChannel sc(_shared->channel_manager(), channelsArray[ch]);
-        voe::Channel* channelPtr = sc.ChannelPtr();
-        if (channelPtr)
-        {
-            int nDead(0);
-            int nAlive(0);
-            _file.WriteText("channel %d:\n", ch);
-            GetDeadOrAliveSummary(ch, nDead, nAlive);
-            _file.WriteText("  #dead :%6d\n", nDead);
-            _file.WriteText("  #alive:%6d\n", nAlive);
-        }
+    for (voe::ChannelManager::Iterator it(&_shared->channel_manager());
+         it.IsValid();
+         it.Increment()) {
+      int dead = 0;
+      int alive = 0;
+      _file.WriteText("channel %d:\n", it.GetChannel()->ChannelId());
+      GetDeadOrAliveSummary(it.GetChannel()->ChannelId(), dead, alive);
+      _file.WriteText("  #dead :%6d\n", dead);
+      _file.WriteText("  #alive:%6d\n", alive);
     }
-
-    delete[] channelsArray;
 
     EchoStatistics echo;
     GetEchoMetricSummary(echo);
@@ -408,4 +370,4 @@ int VoECallReportImpl::WriteReportToFile(const char* fileNameUTF8)
 
 #endif  // WEBRTC_VOICE_ENGINE_CALL_REPORT_API
 
-} // namespace webrtc
+}  // namespace webrtc

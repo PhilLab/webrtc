@@ -11,9 +11,8 @@
 #ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
-#include "common_types.h"
-#include "modules/audio_device/include/audio_device_defines.h"
-#include "modules/interface/module.h"
+#include "webrtc/modules/audio_device/include/audio_device_defines.h"
+#include "webrtc/modules/interface/module.h"
 
 namespace webrtc {
 
@@ -108,10 +107,8 @@ class AudioDeviceModule : public RefCountedModule {
                                 uint16_t* volumeRight) const = 0;
 
   // Audio mixer initialization
-  virtual int32_t SpeakerIsAvailable(bool* available) = 0;
   virtual int32_t InitSpeaker() = 0;
   virtual bool SpeakerIsInitialized() const = 0;
-  virtual int32_t MicrophoneIsAvailable(bool* available) = 0;
   virtual int32_t InitMicrophone() = 0;
   virtual bool MicrophoneIsInitialized() const = 0;
 

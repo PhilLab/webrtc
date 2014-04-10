@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_NORMAL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_NORMAL_H_
 
-#include <cstring>  // Access to size_t.
+#include <string.h>  // Access to size_t.
+
 #include <vector>
 
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
@@ -52,7 +53,7 @@ class Normal {
   int Process(const int16_t* input, std::size_t length,
               Modes last_mode,
               int16_t* external_mute_factor_array,
-              AudioMultiVector<int16_t>* output);
+              AudioMultiVector* output);
 
  private:
   int fs_hz_;
@@ -64,4 +65,4 @@ class Normal {
 };
 
 }  // namespace webrtc
-#endif  // SRC_MODULES_AUDIO_CODING_NETEQ4_NORMAL_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ4_NORMAL_H_

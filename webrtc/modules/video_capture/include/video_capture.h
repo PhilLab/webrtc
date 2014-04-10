@@ -14,10 +14,14 @@
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/video_capture/include/video_capture_defines.h"
 
+#ifdef ANDROID
+#include <jni.h>
+#endif
+
 namespace webrtc {
 
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-int32_t SetCaptureAndroidVM(void* javaVM, void* javaContext);
+#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
+int32_t SetCaptureAndroidVM(JavaVM* javaVM);
 #endif
 
 class VideoCaptureModule: public RefCountedModule {
@@ -116,18 +120,17 @@ class VideoCaptureModule: public RefCountedModule {
   };
 
   //   Register capture data callback
-  virtual int32_t RegisterCaptureDataCallback(
+  virtual void RegisterCaptureDataCallback(
       VideoCaptureDataCallback& dataCallback) = 0;
 
   //  Remove capture data callback
-  virtual int32_t DeRegisterCaptureDataCallback() = 0;
+  virtual void DeRegisterCaptureDataCallback() = 0;
 
   // Register capture callback.
-  virtual int32_t RegisterCaptureCallback(
-      VideoCaptureFeedBack& callBack) = 0;
+  virtual void RegisterCaptureCallback(VideoCaptureFeedBack& callBack) = 0;
 
   //  Remove capture callback.
-  virtual int32_t DeRegisterCaptureCallback() = 0;
+  virtual void DeRegisterCaptureCallback() = 0;
 
   // Start capture device
   virtual int32_t StartCapture(
@@ -144,7 +147,7 @@ class VideoCaptureModule: public RefCountedModule {
   // Gets the current configuration.
   virtual int32_t CaptureSettings(VideoCaptureCapability& settings) = 0;
 
-  virtual int32_t SetCaptureDelay(int32_t delayMS) = 0;
+  virtual void SetCaptureDelay(int32_t delayMS) = 0;
 
   // Returns the current CaptureDelay. Only valid when the camera is running.
   virtual int32_t CaptureDelay() = 0;
@@ -154,28 +157,26 @@ class VideoCaptureModule: public RefCountedModule {
   // DeviceInfo::GetOrientation the captured frames are
   // displayed correctly if rendered.
   virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation) = 0;
+  
   // Set the default orientation of the captured frames.
-    
   virtual int32_t SetDefaultCaptureOrientation(VideoCaptureOrientation orientation) = 0;
   
   // Sets video orientation when video rotation is locked.
   virtual int32_t SetLockedCaptureOrientation(VideoCaptureOrientation orientation) = 0;
   
-  // Sets enabled flag for video orientation lock.
-  virtual int32_t EnableCaptureOrientationLock(const bool enable) = 0;
-
   // Gets a pointer to an encode interface if the capture device supports the
   // requested type and size.  NULL otherwise.
   virtual VideoCaptureEncodeInterface* GetEncodeInterface(
       const VideoCodec& codec) = 0;
 
-  virtual int32_t EnableFrameRateCallback(const bool enable) = 0;
-  virtual int32_t EnableNoPictureAlarm(const bool enable) = 0;
-  virtual int32_t EnableFaceDetection(const bool enable) = 0;
+  virtual void EnableCaptureOrientationLock(const bool enable) = 0;
+  virtual void EnableFrameRateCallback(const bool enable) = 0;
+  virtual void EnableNoPictureAlarm(const bool enable) = 0;
+  virtual void EnableFaceDetection(const bool enable) = 0;
 
 protected:
   virtual ~VideoCaptureModule() {};
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_H_

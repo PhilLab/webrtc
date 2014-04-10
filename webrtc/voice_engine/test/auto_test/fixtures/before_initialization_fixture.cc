@@ -10,10 +10,19 @@
 
 #include "webrtc/voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
 
+#include "gflags/gflags.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 
-BeforeInitializationFixture::BeforeInitializationFixture()
-    : voice_engine_(webrtc::VoiceEngine::Create()) {
+DECLARE_bool(use_acm_version_2);
+
+BeforeInitializationFixture::BeforeInitializationFixture() {
+  // TODO(minyue): Remove when the old ACM is removed (latest 2014-04-01).
+  config_.Set<webrtc::AudioCodingModuleFactory>(FLAGS_use_acm_version_2 ?
+      new webrtc::NewAudioCodingModuleFactory() :
+      new webrtc::AudioCodingModuleFactory());
+  voice_engine_ = webrtc::VoiceEngine::Create(config_);
+
   EXPECT_TRUE(voice_engine_ != NULL);
 
   voe_base_ = webrtc::VoEBase::GetInterface(voice_engine_);
@@ -25,7 +34,6 @@ BeforeInitializationFixture::BeforeInitializationFixture()
   voe_network_ = webrtc::VoENetwork::GetInterface(voice_engine_);
   voe_file_ = webrtc::VoEFile::GetInterface(voice_engine_);
   voe_vsync_ = webrtc::VoEVideoSync::GetInterface(voice_engine_);
-  voe_encrypt_ = webrtc::VoEEncryption::GetInterface(voice_engine_);
   voe_hardware_ = webrtc::VoEHardware::GetInterface(voice_engine_);
   voe_xmedia_ = webrtc::VoEExternalMedia::GetInterface(voice_engine_);
   voe_call_report_ = webrtc::VoECallReport::GetInterface(voice_engine_);
@@ -42,7 +50,6 @@ BeforeInitializationFixture::~BeforeInitializationFixture() {
   voe_network_->Release();
   voe_file_->Release();
   voe_vsync_->Release();
-  voe_encrypt_->Release();
   voe_hardware_->Release();
   voe_xmedia_->Release();
   voe_call_report_->Release();

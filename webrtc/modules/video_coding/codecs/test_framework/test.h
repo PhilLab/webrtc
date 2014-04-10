@@ -11,11 +11,13 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_FRAWEWORK_TEST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_FRAWEWORK_TEST_H_
 
-#include "modules/interface/module_common_types.h"
-#include "video_codec_interface.h"
-#include <string>
+#include <stdlib.h>
+
 #include <fstream>
-#include <cstdlib>
+#include <string>
+
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 
 class CodecTest
 {
@@ -39,7 +41,7 @@ protected:
     virtual void Teardown();
     double ActualBitRate(int nFrames);
     virtual bool PacketLoss(double lossRate, int /*thrown*/);
-    static double RandUniform() { return (std::rand() + 1.0)/(RAND_MAX + 1.0); }
+    static double RandUniform() { return (rand() + 1.0)/(RAND_MAX + 1.0); }
     static void VideoEncodedBufferToEncodedImage(
         webrtc::VideoFrame& videoBuffer,
         webrtc::EncodedImage &image);

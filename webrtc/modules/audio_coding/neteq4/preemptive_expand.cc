@@ -20,7 +20,7 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::Process(
     const int16_t* input,
     int input_length,
     int old_data_length,
-    AudioMultiVector<int16_t>* output,
+    AudioMultiVector* output,
     int16_t* length_change_samples) {
   old_data_length_per_channel_ = old_data_length;
   // Input length must be (almost) 30 ms.
@@ -38,7 +38,7 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::Process(
                               length_change_samples);
 }
 
-void PreemptiveExpand::SetParametersForPassiveSpeech(int len,
+void PreemptiveExpand::SetParametersForPassiveSpeech(size_t len,
                                                      int16_t* best_correlation,
                                                      int* peak_index) const {
   // When the signal does not contain any active speech, the correlation does
@@ -49,13 +49,14 @@ void PreemptiveExpand::SetParametersForPassiveSpeech(int len,
   // but we must ensure that best_correlation is not larger than the length of
   // the new data.
   // but we must ensure that best_correlation is not larger than the new data.
-  *peak_index = std::min(*peak_index, len - old_data_length_per_channel_);
+  *peak_index = std::min(*peak_index,
+                         static_cast<int>(len - old_data_length_per_channel_));
 }
 
 PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
-    const int16_t *input, int input_length, size_t peak_index,
+    const int16_t *input, size_t input_length, size_t peak_index,
     int16_t best_correlation, bool active_speech,
-    AudioMultiVector<int16_t>* output) const {
+    AudioMultiVector* output) const {
   // Pre-calculate common multiplication with |fs_mult_|.
   // 120 corresponds to 15 ms.
   int fs_mult_120 = fs_mult_ * 120;
@@ -74,7 +75,7 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
     output->PushBackInterleaved(
         input, (unmodified_length + peak_index) * num_channels_);
     // Copy the last |peak_index| samples up to 15 ms to |temp_vector|.
-    AudioMultiVector<int16_t> temp_vector(num_channels_);
+    AudioMultiVector temp_vector(num_channels_);
     temp_vector.PushBackInterleaved(
         &input[(unmodified_length - peak_index) * num_channels_],
         peak_index * num_channels_);
@@ -95,6 +96,13 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
     output->PushBackInterleaved(input, input_length);
     return kNoStretch;
   }
+}
+
+PreemptiveExpand* PreemptiveExpandFactory::Create(
+    int sample_rate_hz,
+    size_t num_channels,
+    const BackgroundNoise& background_noise) const {
+  return new PreemptiveExpand(sample_rate_hz, num_channels, background_noise);
 }
 
 }  // namespace webrtc

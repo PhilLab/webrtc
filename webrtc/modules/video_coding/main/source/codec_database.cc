@@ -160,7 +160,7 @@ bool VCMCodecDataBase::SetSendCodec(
   if (max_payload_size <= 0) {
     max_payload_size = kDefaultPayloadSize;
   }
-  if (number_of_cores <= 0 || number_of_cores > 32) {
+  if (number_of_cores <= 0) {
     return false;
   }
   if (send_codec->plType <= 0) {
@@ -338,12 +338,6 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
       }
       break;
     case kVideoCodecGeneric:
-      if (std::memcmp(&new_send_codec.codecSpecific.Generic,
-    		  	  	  &send_codec_.codecSpecific.Generic,
-    		  	  	  sizeof(new_send_codec.codecSpecific.Generic)) !=
-          0) {
-        return true;
-      }
       break;
     case kVideoCodecH264:
       break;
@@ -512,6 +506,8 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
   if (!ptr_decoder_) {
     return NULL;
   }
+  VCMReceiveCallback* callback = decoded_frame_callback->UserReceiveCallback();
+  if (callback) callback->IncomingCodecChanged(receive_codec_);
   if (ptr_decoder_->RegisterDecodeCompleteCallback(decoded_frame_callback)
       < 0) {
     ReleaseDecoder(ptr_decoder_);
@@ -597,8 +593,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   }
 
   if (ptr_decoder->InitDecode(decoder_item->settings.get(),
-                              decoder_item->number_of_cores,
-                              decoder_item->require_key_frame) < 0) {
+                              decoder_item->number_of_cores) < 0) {
     ReleaseDecoder(ptr_decoder);
     return NULL;
   }

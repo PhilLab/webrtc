@@ -52,14 +52,6 @@ namespace webrtc {
     }                                                                          \
   } while(0)
 
-#define DESTROY_ACM(acm)                                                       \
-  do {                                                                         \
-    if (acm != NULL) {                                                         \
-      AudioCodingModule::Destroy(acm);                                         \
-      acm = NULL;                                                              \
-    }                                                                          \
-  } while(0)
-
 #define DELETE_POINTER(p)                                                      \
   do {                                                                         \
     if (p != NULL) {                                                           \
@@ -150,6 +142,10 @@ class VADCallback : public ACMVADCallback {
  private:
   uint32_t _numFrameTypes[6];
 };
+
+void UseLegacyAcm(webrtc::Config* config);
+
+void UseNewAcm(webrtc::Config* config);
 
 }  // namespace webrtc
 

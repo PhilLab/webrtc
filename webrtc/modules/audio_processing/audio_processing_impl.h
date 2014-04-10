@@ -41,56 +41,84 @@ class Event;
 
 class AudioProcessingImpl : public AudioProcessing {
  public:
-  enum {
-    kSampleRate8kHz = 8000,
-    kSampleRate16kHz = 16000,
-    kSampleRate32kHz = 32000
-  };
-
-  explicit AudioProcessingImpl(int id);
+  explicit AudioProcessingImpl(const Config& config);
   virtual ~AudioProcessingImpl();
 
-  CriticalSectionWrapper* crit() const;
-
-  int split_sample_rate_hz() const;
-  bool was_stream_delay_set() const;
-
   // AudioProcessing methods.
-  virtual int Initialize();
-  virtual int InitializeLocked();
-  virtual int set_sample_rate_hz(int rate);
-  virtual int sample_rate_hz() const;
-  virtual int set_num_channels(int input_channels, int output_channels);
-  virtual int num_input_channels() const;
-  virtual int num_output_channels() const;
-  virtual int set_num_reverse_channels(int channels);
-  virtual int num_reverse_channels() const;
-  virtual int ProcessStream(AudioFrame* frame);
-  virtual int AnalyzeReverseStream(AudioFrame* frame);
-  virtual int set_stream_delay_ms(int delay);
-  virtual int stream_delay_ms() const;
-  virtual void set_delay_offset_ms(int offset);
-  virtual int delay_offset_ms() const;
-  virtual int StartDebugRecording(const char filename[kMaxFilenameSize]);
-  virtual int StopDebugRecording();
-  virtual EchoCancellation* echo_cancellation() const;
-  virtual EchoControlMobile* echo_control_mobile() const;
-  virtual GainControl* gain_control() const;
-  virtual HighPassFilter* high_pass_filter() const;
-  virtual LevelEstimator* level_estimator() const;
-  virtual NoiseSuppression* noise_suppression() const;
-  virtual VoiceDetection* voice_detection() const;
+  virtual int Initialize() OVERRIDE;
+  virtual int Initialize(int sample_rate_hz,
+                         int reverse_sample_rate_hz,
+                         int num_input_channels,
+                         int num_output_channels,
+                         int num_reverse_channels) OVERRIDE;
+  virtual void SetExtraOptions(const Config& config) OVERRIDE;
+  virtual int EnableExperimentalNs(bool enable) OVERRIDE;
+  virtual bool experimental_ns_enabled() const OVERRIDE {
+    return false;
+  }
+  virtual int set_sample_rate_hz(int rate) OVERRIDE;
+  virtual int sample_rate_hz() const OVERRIDE;
+  virtual int split_sample_rate_hz() const OVERRIDE;
+  virtual int set_num_channels(int input_channels,
+                               int output_channels) OVERRIDE;
+  virtual int num_input_channels() const OVERRIDE;
+  virtual int num_output_channels() const OVERRIDE;
+  virtual int set_num_reverse_channels(int channels) OVERRIDE;
+  virtual int num_reverse_channels() const OVERRIDE;
+  virtual void set_output_will_be_muted(bool muted) OVERRIDE;
+  virtual bool output_will_be_muted() const OVERRIDE;
+  virtual int ProcessStream(AudioFrame* frame) OVERRIDE;
+  virtual int ProcessStream(float* const* data,
+                            int samples_per_channel,
+                            int sample_rate_hz,
+                            ChannelLayout input_layout,
+                            ChannelLayout output_layout) OVERRIDE;
+  virtual int AnalyzeReverseStream(AudioFrame* frame) OVERRIDE;
+  virtual int AnalyzeReverseStream(const float* const* data,
+                                   int samples_per_channel,
+                                   int sample_rate_hz,
+                                   ChannelLayout layout) OVERRIDE;
+  virtual int set_stream_delay_ms(int delay) OVERRIDE;
+  virtual int stream_delay_ms() const OVERRIDE;
+  virtual bool was_stream_delay_set() const OVERRIDE;
+  virtual void set_delay_offset_ms(int offset) OVERRIDE;
+  virtual int delay_offset_ms() const OVERRIDE;
+  virtual void set_stream_key_pressed(bool key_pressed) OVERRIDE;
+  virtual bool stream_key_pressed() const OVERRIDE;
+  virtual int StartDebugRecording(
+      const char filename[kMaxFilenameSize]) OVERRIDE;
+  virtual int StartDebugRecording(FILE* handle) OVERRIDE;
+  virtual int StopDebugRecording() OVERRIDE;
+  virtual EchoCancellation* echo_cancellation() const OVERRIDE;
+  virtual EchoControlMobile* echo_control_mobile() const OVERRIDE;
+  virtual GainControl* gain_control() const OVERRIDE;
+  virtual HighPassFilter* high_pass_filter() const OVERRIDE;
+  virtual LevelEstimator* level_estimator() const OVERRIDE;
+  virtual NoiseSuppression* noise_suppression() const OVERRIDE;
+  virtual VoiceDetection* voice_detection() const OVERRIDE;
 
-  // Module methods.
-  virtual int32_t ChangeUniqueId(const int32_t id);
+ protected:
+  // Overridden in a mock.
+  virtual int InitializeLocked();
 
  private:
+  int InitializeLocked(int sample_rate_hz,
+                       int reverse_sample_rate_hz,
+                       int num_input_channels,
+                       int num_output_channels,
+                       int num_reverse_channels);
+  int MaybeInitializeLocked(int sample_rate_hz,
+                            int reverse_sample_rate_hz,
+                            int num_input_channels,
+                            int num_output_channels,
+                            int num_reverse_channels);
+  int ProcessStreamLocked();
+  int AnalyzeReverseStreamLocked();
+
   bool is_data_processed() const;
-  bool interleave_needed(bool is_data_processed) const;
+  bool output_copy_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
-
-  int id_;
 
   EchoCancellationImpl* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
@@ -110,13 +138,15 @@ class AudioProcessingImpl : public AudioProcessing {
   int WriteMessageToDebugFile();
   int WriteInitMessage();
   scoped_ptr<FileWrapper> debug_file_;
-  scoped_ptr<audioproc::Event> event_msg_; // Protobuf message.
-  std::string event_str_; // Memory for protobuf serialization.
+  scoped_ptr<audioproc::Event> event_msg_;  // Protobuf message.
+  std::string event_str_;  // Memory for protobuf serialization.
 #endif
 
   int sample_rate_hz_;
+  int reverse_sample_rate_hz_;
   int split_sample_rate_hz_;
   int samples_per_channel_;
+  int reverse_samples_per_channel_;
   int stream_delay_ms_;
   int delay_offset_ms_;
   bool was_stream_delay_set_;
@@ -124,6 +154,9 @@ class AudioProcessingImpl : public AudioProcessing {
   int num_reverse_channels_;
   int num_input_channels_;
   int num_output_channels_;
+  bool output_will_be_muted_;
+
+  bool key_pressed_;
 };
 }  // namespace webrtc
 

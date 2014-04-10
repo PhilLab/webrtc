@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cmath>
+#include <math.h>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -33,14 +35,90 @@ class PushSincResamplerTest
   virtual ~PushSincResamplerTest() {}
 
  protected:
+  void ResampleBenchmarkTest(bool int_format);
+  void ResampleTest(bool int_format);
+
   int input_rate_;
   int output_rate_;
   double rms_error_;
   double low_freq_error_;
 };
 
+class ZeroSource : public SincResamplerCallback {
+ public:
+  void Run(int frames, float* destination) {
+    memset(destination, 0, sizeof(float) * frames);
+  }
+};
+
+void PushSincResamplerTest::ResampleBenchmarkTest(bool int_format) {
+  const int input_samples = input_rate_ / 100;
+  const int output_samples = output_rate_ / 100;
+  const int kResampleIterations = 500000;
+
+  // Source for data to be resampled.
+  ZeroSource resampler_source;
+
+  scoped_ptr<float[]> resampled_destination(new float[output_samples]);
+  scoped_ptr<float[]> source(new float[input_samples]);
+  scoped_ptr<int16_t[]> source_int(new int16_t[input_samples]);
+  scoped_ptr<int16_t[]> destination_int(new int16_t[output_samples]);
+
+  resampler_source.Run(input_samples, source.get());
+  for (int i = 0; i < input_samples; ++i) {
+    source_int[i] = static_cast<int16_t>(floor(32767 * source[i] + 0.5));
+  }
+
+  printf("Benchmarking %d iterations of %d Hz -> %d Hz:\n",
+         kResampleIterations, input_rate_, output_rate_);
+  const double io_ratio = input_rate_ / static_cast<double>(output_rate_);
+  SincResampler sinc_resampler(io_ratio, SincResampler::kDefaultRequestSize,
+                               &resampler_source);
+  TickTime start = TickTime::Now();
+  for (int i = 0; i < kResampleIterations; ++i) {
+    sinc_resampler.Resample(output_samples, resampled_destination.get());
+  }
+  double total_time_sinc_us = (TickTime::Now() - start).Microseconds();
+  printf("SincResampler took %.2f us per frame.\n",
+         total_time_sinc_us / kResampleIterations);
+
+  PushSincResampler resampler(input_samples, output_samples);
+  start = TickTime::Now();
+  if (int_format) {
+    for (int i = 0; i < kResampleIterations; ++i) {
+      EXPECT_EQ(output_samples,
+                resampler.Resample(source_int.get(),
+                                   input_samples,
+                                   destination_int.get(),
+                                   output_samples));
+    }
+  } else {
+    for (int i = 0; i < kResampleIterations; ++i) {
+      EXPECT_EQ(output_samples,
+                resampler.Resample(source.get(),
+                                   input_samples,
+                                   resampled_destination.get(),
+                                   output_samples));
+    }
+  }
+  double total_time_us = (TickTime::Now() - start).Microseconds();
+  printf("PushSincResampler took %.2f us per frame; which is a %.1f%% overhead "
+         "on SincResampler.\n\n", total_time_us / kResampleIterations,
+         (total_time_us - total_time_sinc_us) / total_time_sinc_us * 100);
+}
+
+// Disabled because it takes too long to run routinely. Use for performance
+// benchmarking when needed.
+TEST_P(PushSincResamplerTest, DISABLED_BenchmarkInt) {
+  ResampleBenchmarkTest(true);
+}
+
+TEST_P(PushSincResamplerTest, DISABLED_BenchmarkFloat) {
+  ResampleBenchmarkTest(false);
+}
+
 // Tests resampling using a given input and output sample rate.
-TEST_P(PushSincResamplerTest, Resample) {
+void PushSincResamplerTest::ResampleTest(bool int_format) {
   // Make comparisons using one second of data.
   static const double kTestDurationSecs = 1;
   // 10 ms blocks.
@@ -61,42 +139,53 @@ TEST_P(PushSincResamplerTest, Resample) {
 
   // TODO(dalecurtis): If we switch to AVX/SSE optimization, we'll need to
   // allocate these on 32-byte boundaries and ensure they're sized % 32 bytes.
-  scoped_array<float> resampled_destination(new float[output_samples]);
-  scoped_array<float> pure_destination(new float[output_samples]);
-  scoped_array<float> source(new float[input_samples]);
-  scoped_array<int16_t> source_int(new int16_t[input_block_size]);
-  scoped_array<int16_t> destination_int(new int16_t[output_block_size]);
+  scoped_ptr<float[]> resampled_destination(new float[output_samples]);
+  scoped_ptr<float[]> pure_destination(new float[output_samples]);
+  scoped_ptr<float[]> source(new float[input_samples]);
+  scoped_ptr<int16_t[]> source_int(new int16_t[input_block_size]);
+  scoped_ptr<int16_t[]> destination_int(new int16_t[output_block_size]);
+
+  // The sinc resampler has an implicit delay of approximately half the kernel
+  // size at the input sample rate. By moving to a push model, this delay
+  // becomes explicit and is managed by zero-stuffing in PushSincResampler. We
+  // deal with it in the test by delaying the "pure" source to match. It must be
+  // checked before the first call to Resample(), because ChunkSize() will
+  // change afterwards.
+  const int output_delay_samples = output_block_size -
+      resampler.get_resampler_for_testing()->ChunkSize();
 
   // Generate resampled signal.
   // With the PushSincResampler, we produce the signal block-by-10ms-block
   // rather than in a single pass, to exercise how it will be used in WebRTC.
-  resampler_source.Run(source.get(), input_samples);
-  for (int i = 0; i < kNumBlocks; ++i) {
-    for (int j = 0; j < input_block_size; ++j) {
-      source_int[j] = static_cast<int16_t>(std::floor(32767 *
-          source[i * input_block_size + j] + 0.5));
+  resampler_source.Run(input_samples, source.get());
+  if (int_format) {
+    for (int i = 0; i < kNumBlocks; ++i) {
+      ScaleAndRoundToInt16(
+          &source[i * input_block_size], input_block_size, source_int.get());
+      EXPECT_EQ(output_block_size,
+                resampler.Resample(source_int.get(),
+                                   input_block_size,
+                                   destination_int.get(),
+                                   output_block_size));
+      ScaleToFloat(destination_int.get(),
+                   output_block_size,
+                   &resampled_destination[i * output_block_size]);
     }
-    EXPECT_EQ(output_block_size,
-              resampler.Resample(source_int.get(), input_block_size,
-                                 destination_int.get(), output_block_size));
-    for (int j = 0; j < output_block_size; ++j) {
-      resampled_destination[i * output_block_size + j] =
-          static_cast<float>(destination_int[j]) / 32767;
+  } else {
+    for (int i = 0; i < kNumBlocks; ++i) {
+      EXPECT_EQ(
+          output_block_size,
+          resampler.Resample(&source[i * input_block_size],
+                             input_block_size,
+                             &resampled_destination[i * output_block_size],
+                             output_block_size));
     }
   }
 
   // Generate pure signal.
-  // The sinc resampler has an implicit delay of half the kernel size (32) at
-  // the input sample rate. By moving to a push model, this delay becomes
-  // explicit and is managed by zero-stuffing in PushSincResampler. This delay
-  // can be a fractional sample amount, so we deal with it in the test by
-  // delaying the "pure" source to match.
-  static const int kInputKernelDelaySamples = 16;
-  double output_delay_samples = static_cast<double>(output_rate_)
-      / input_rate_ * kInputKernelDelaySamples;
   SinusoidalLinearChirpSource pure_source(
       output_rate_, output_samples, input_nyquist_freq, output_delay_samples);
-  pure_source.Run(pure_destination.get(), output_samples);
+  pure_source.Run(output_samples, pure_destination.get());
 
   // Range of the Nyquist frequency (0.5 * min(input rate, output_rate)) which
   // we refer to as low and high.
@@ -149,13 +238,19 @@ TEST_P(PushSincResamplerTest, Resample) {
   EXPECT_LE(high_freq_max_error, kHighFrequencyMaxError);
 }
 
+TEST_P(PushSincResamplerTest, ResampleInt) { ResampleTest(true); }
+
+TEST_P(PushSincResamplerTest, ResampleFloat) { ResampleTest(false); }
+
 // Almost all conversions have an RMS error of around -14 dbFS.
 static const double kResamplingRMSError = -14.42;
 
 // Thresholds chosen arbitrarily based on what each resampling reported during
 // testing.  All thresholds are in dbFS, http://en.wikipedia.org/wiki/DBFS.
 INSTANTIATE_TEST_CASE_P(
-    PushSincResamplerTest, PushSincResamplerTest, testing::Values(
+    PushSincResamplerTest,
+    PushSincResamplerTest,
+    testing::Values(
         // First run through the rates tested in SincResamplerTest. The
         // thresholds are identical.
         //
@@ -206,7 +301,7 @@ INSTANTIATE_TEST_CASE_P(
         // practice anyway.
 
         // To 8 kHz
-        std::tr1::make_tuple(8000, 8000, kResamplingRMSError, -75.51),
+        std::tr1::make_tuple(8000, 8000, kResamplingRMSError, -75.50),
         std::tr1::make_tuple(16000, 8000, -18.56, -28.79),
         std::tr1::make_tuple(32000, 8000, -20.36, -14.13),
         std::tr1::make_tuple(44100, 8000, -21.00, -11.39),
@@ -216,17 +311,17 @@ INSTANTIATE_TEST_CASE_P(
         std::tr1::make_tuple(8000, 16000, kResamplingRMSError, -70.30),
         std::tr1::make_tuple(16000, 16000, kResamplingRMSError, -75.51),
         std::tr1::make_tuple(32000, 16000, -18.48, -28.59),
-        std::tr1::make_tuple(44100, 16000, -19.59, -19.77),
-        std::tr1::make_tuple(48000, 16000, -20.01, -18.11),
-        std::tr1::make_tuple(96000, 16000, -20.95, -10.99),
+        std::tr1::make_tuple(44100, 16000, -19.30, -19.67),
+        std::tr1::make_tuple(48000, 16000, -19.81, -18.11),
+        std::tr1::make_tuple(96000, 16000, -20.95, -10.96),
 
         // To 32 kHz
         std::tr1::make_tuple(8000, 32000, kResamplingRMSError, -70.30),
         std::tr1::make_tuple(16000, 32000, kResamplingRMSError, -75.51),
-        std::tr1::make_tuple(32000, 32000, kResamplingRMSError, -75.56),
-        std::tr1::make_tuple(44100, 32000, -16.52, -51.10),
-        std::tr1::make_tuple(48000, 32000, -16.90, -44.17),
-        std::tr1::make_tuple(96000, 32000, -19.80, -18.05),
+        std::tr1::make_tuple(32000, 32000, kResamplingRMSError, -75.51),
+        std::tr1::make_tuple(44100, 32000, -16.44, -51.10),
+        std::tr1::make_tuple(48000, 32000, -16.90, -44.03),
+        std::tr1::make_tuple(96000, 32000, -19.61, -18.04),
         std::tr1::make_tuple(192000, 32000, -21.02, -10.94)));
 
 }  // namespace webrtc

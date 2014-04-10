@@ -40,6 +40,8 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class AudioProcessing;
+class AudioTransport;
+class Config;
 
 const int kVoEDefault = -1;
 
@@ -66,6 +68,7 @@ public:
     // Creates a VoiceEngine object, which can then be used to acquire
     // sub-APIs. Returns NULL on failure.
     static VoiceEngine* Create();
+    static VoiceEngine* Create(const Config& config);
 
     // Deletes a created VoiceEngine object and releases the utilized resources.
     // Note that if there are outstanding references held via other interfaces,
@@ -133,11 +136,11 @@ public:
     // Terminates all VoiceEngine functions and releses allocated resources.
     virtual int Terminate() = 0;
 
-    // Retrieves the maximum number of channels that can be created.
-    virtual int MaxNumOfChannels() = 0;
-
     // Creates a new channel and allocates the required resources for it.
+    // One can use |config| to configure the channel. Currently that is used for
+    // choosing between ACM1 and ACM2, when creating Audio Coding Module.
     virtual int CreateChannel() = 0;
+    virtual int CreateChannel(const Config& config) = 0;
 
     // Deletes an existing channel and releases the utilized resources.
     virtual int DeleteChannel(int channel) = 0;
@@ -184,11 +187,15 @@ public:
     // Gets the NetEQ playout mode for a specified |channel| number.
     virtual int GetNetEQPlayoutMode(int channel, NetEqModes& mode) = 0;
 
+    // TODO(xians): Make the interface pure virtual after libjingle
+    // implements the interface in its FakeWebRtcVoiceEngine.
+    virtual AudioTransport* audio_transport() { return NULL; }
+
 protected:
     VoEBase() {}
     virtual ~VoEBase() {}
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  //  WEBRTC_VOICE_ENGINE_VOE_BASE_H

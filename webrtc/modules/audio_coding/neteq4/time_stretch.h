@@ -12,8 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TIME_STRETCH_H_
 
 #include <assert.h>
-
-#include <cstring>  // memset, size_t
+#include <string.h>  // memset, size_t
 
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
@@ -36,11 +35,11 @@ class TimeStretch {
     kError = -1
   };
 
-  TimeStretch(int sample_rate_hz, std::size_t num_channels,
+  TimeStretch(int sample_rate_hz, size_t num_channels,
               const BackgroundNoise& background_noise)
       : sample_rate_hz_(sample_rate_hz),
         fs_mult_(sample_rate_hz / 8000),
-        num_channels_(num_channels),
+        num_channels_(static_cast<int>(num_channels)),
         master_channel_(0),  // First channel is master.
         background_noise_(background_noise),
         max_input_value_(0) {
@@ -50,7 +49,7 @@ class TimeStretch {
            sample_rate_hz_ == 48000);
     assert(num_channels_ > 0);
     assert(static_cast<int>(master_channel_) < num_channels_);
-    std::memset(auto_correlation_, 0, sizeof(auto_correlation_));
+    memset(auto_correlation_, 0, sizeof(auto_correlation_));
   }
 
   virtual ~TimeStretch() {}
@@ -58,15 +57,15 @@ class TimeStretch {
   // This method performs the processing common to both Accelerate and
   // PreemptiveExpand.
   ReturnCodes Process(const int16_t* input,
-		  	  	  	  std::size_t input_len,
-                      AudioMultiVector<int16_t>* output,
+                      size_t input_len,
+                      AudioMultiVector* output,
                       int16_t* length_change_samples);
 
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech. This method must be
   // implemented by the sub-classes.
-  virtual void SetParametersForPassiveSpeech(int input_length,
+  virtual void SetParametersForPassiveSpeech(size_t input_length,
                                              int16_t* best_correlation,
                                              int* peak_index) const = 0;
 
@@ -74,9 +73,9 @@ class TimeStretch {
   // if possible, performs the time-stretching. This method must be implemented
   // by the sub-classes.
   virtual ReturnCodes CheckCriteriaAndStretch(
-      const int16_t* input, int input_length, std::size_t peak_index,
+      const int16_t* input, size_t input_length, size_t peak_index,
       int16_t best_correlation, bool active_speech,
-      AudioMultiVector<int16_t>* output) const = 0;
+      AudioMultiVector* output) const = 0;
 
   static const int kCorrelationLen = 50;
   static const int kLogCorrelationLen = 6;  // >= log2(kCorrelationLen).
@@ -88,7 +87,7 @@ class TimeStretch {
   const int sample_rate_hz_;
   const int fs_mult_;  // Sample rate multiplier = sample_rate_hz_ / 8000.
   const int num_channels_;
-  const std::size_t master_channel_;
+  const size_t master_channel_;
   const BackgroundNoise& background_noise_;
   int16_t max_input_value_;
   int16_t downsampled_input_[kDownsampledLen];

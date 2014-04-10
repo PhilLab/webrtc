@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TOOLS_INPUT_AUDIO_FILE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TOOLS_INPUT_AUDIO_FILE_H_
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <string>
 
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
@@ -23,29 +24,25 @@ namespace test {
 // Class for handling a looping input audio file.
 class InputAudioFile {
  public:
-  explicit InputAudioFile(const std::string file_name) {
-    fp_ = std::fopen(file_name.c_str(), "rb");
-  }
+  explicit InputAudioFile(const std::string file_name);
 
-  virtual ~InputAudioFile() {
-	std::fclose(fp_);
-  }
+  virtual ~InputAudioFile();
 
   // Reads |samples| elements from source file to |destination|. Returns true
   // if the read was successful, otherwise false. If the file end is reached,
   // the file is rewound and reading continues from the beginning.
   // The output |destination| must have the capacity to hold |samples| elements.
-  bool Read(std::size_t samples, int16_t* destination);
+  bool Read(size_t samples, int16_t* destination);
 
   // Creates a multi-channel signal from a mono signal. Each sample is repeated
   // |channels| times to create an interleaved multi-channel signal where all
   // channels are identical. The output |destination| must have the capacity to
   // hold samples * channels elements.
-  static void DuplicateInterleaved(const int16_t* source, std::size_t samples,
-		  	  	  	  	  	  	   std::size_t channels, int16_t* destination);
+  static void DuplicateInterleaved(const int16_t* source, size_t samples,
+                                   size_t channels, int16_t* destination);
 
  private:
-  std::FILE* fp_;
+  FILE* fp_;
   DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
 };
 

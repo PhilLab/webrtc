@@ -29,7 +29,7 @@ class BackgroundNoise;
 // Accelerate are implemented.
 class Accelerate : public TimeStretch {
  public:
-  Accelerate(int sample_rate_hz, std::size_t num_channels,
+  Accelerate(int sample_rate_hz, size_t num_channels,
              const BackgroundNoise& background_noise)
       : TimeStretch(sample_rate_hz, num_channels, background_noise) {
   }
@@ -42,26 +42,35 @@ class Accelerate : public TimeStretch {
   // is provided in the output |length_change_samples|. The method returns
   // the outcome of the operation as an enumerator value.
   ReturnCodes Process(const int16_t* input,
-                      int input_length,
-                      AudioMultiVector<int16_t>* output,
+                      size_t input_length,
+                      AudioMultiVector* output,
                       int16_t* length_change_samples);
 
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech.
-  virtual void SetParametersForPassiveSpeech(int len,
+  virtual void SetParametersForPassiveSpeech(size_t len,
                                              int16_t* best_correlation,
-                                             int* peak_index) const;
+                                             int* peak_index) const OVERRIDE;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
   virtual ReturnCodes CheckCriteriaAndStretch(
-      const int16_t* input, int input_length, std::size_t peak_index,
+      const int16_t* input, size_t input_length, size_t peak_index,
       int16_t best_correlation, bool active_speech,
-      AudioMultiVector<int16_t>* output) const;
+      AudioMultiVector* output) const OVERRIDE;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Accelerate);
+};
+
+struct AccelerateFactory {
+  AccelerateFactory() {}
+  virtual ~AccelerateFactory() {}
+
+  virtual Accelerate* Create(int sample_rate_hz,
+                             size_t num_channels,
+                             const BackgroundNoise& background_noise) const;
 };
 
 }  // namespace webrtc

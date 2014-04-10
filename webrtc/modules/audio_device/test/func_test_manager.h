@@ -11,16 +11,16 @@
 #ifndef WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 #define WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 
-#include "modules/audio_device/audio_device_utility.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
 
+#include <list>
 #include <string>
 
-#include "typedefs.h"
-#include "audio_device.h"
-#include "audio_device_test_defines.h"
-#include "file_wrapper.h"
-#include "list_wrapper.h"
-#include "resampler.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
+#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_IOS) || defined(ANDROID)
 #define USE_SLEEP_AS_PAUSE
@@ -58,6 +58,15 @@ enum TestType
     TTDeviceRemoval = 13,
     TTMobileAPI = 14,
     TTTest = 66,
+};
+
+struct AudioPacket
+{
+    uint8_t dataBuffer[4 * 960];
+    uint16_t nSamples;
+    uint16_t nBytesPerSample;
+    uint8_t nChannels;
+    uint32_t samplesPerSec;
 };
 
 class ProcessThread;
@@ -111,6 +120,22 @@ public:
                                      void* audioSamples,
                                      uint32_t& nSamplesOut);
 
+    virtual int OnDataAvailable(const int voe_channels[],
+                                int number_of_voe_channels,
+                                const int16_t* audio_data,
+                                int sample_rate,
+                                int number_of_channels,
+                                int number_of_frames,
+                                int audio_delay_milliseconds,
+                                int current_volume,
+                                bool key_pressed,
+                                bool need_audio_processing);
+
+    virtual void OnData(int voe_channel, const void* audio_data,
+                        int bits_per_sample, int sample_rate,
+                        int number_of_channels,
+                        int number_of_frames);
+
     AudioTransportImpl(AudioDeviceModule* audioDevice);
     ~AudioTransportImpl();
 
@@ -154,6 +179,7 @@ public:
     ;
 
 private:
+    typedef std::list<AudioPacket*> AudioPacketList;
     AudioDeviceModule* _audioDevice;
 
     bool _playFromFile;
@@ -170,8 +196,7 @@ private:
 
     uint32_t _recCount;
     uint32_t _playCount;
-
-    ListWrapper _audioList;
+    AudioPacketList _audioList;
 
     Resampler _resampler;
 };
@@ -218,6 +243,6 @@ private:
     AudioTransportImpl* _audioTransport;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // #ifndef WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H

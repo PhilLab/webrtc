@@ -30,6 +30,10 @@
       },
       'sources': [
         'audio_util.cc',
+        'fir_filter.cc',
+        'fir_filter.h',
+        'fir_filter_neon.h',
+        'fir_filter_sse.h',
         'include/audio_util.h',
         'resampler/include/push_resampler.h',
         'resampler/include/resampler.h',
@@ -93,7 +97,7 @@
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': ['common_audio_sse2',],
         }],
-        ['target_arch=="arm"', {
+        ['target_arch=="arm" or target_arch=="armv7"', {
           'sources': [
             'signal_processing/complex_bit_reverse_arm.S',
             'signal_processing/spl_sqrt_floor_arm.S',
@@ -103,7 +107,7 @@
             'signal_processing/spl_sqrt_floor.c',
           ],
           'conditions': [
-            ['armv7==1', {
+            ['arm_version==7', {
               'dependencies': ['common_audio_neon',],
               'sources': [
                 'signal_processing/filter_ar_fast_q12_armv7.S',
@@ -116,17 +120,28 @@
         }],
         ['target_arch=="mipsel"', {
           'sources': [
+            'signal_processing/include/spl_inl_mips.h',
             'signal_processing/complex_bit_reverse_mips.c',
             'signal_processing/complex_fft_mips.c',
+            'signal_processing/cross_correlation_mips.c',
             'signal_processing/downsample_fast_mips.c',
             'signal_processing/filter_ar_fast_q12_mips.c',
             'signal_processing/min_max_operations_mips.c',
             'signal_processing/resample_by_2_mips.c',
+            'signal_processing/spl_sqrt_floor_mips.c',
           ],
           'sources!': [
             'signal_processing/complex_bit_reverse.c',
             'signal_processing/complex_fft.c',
             'signal_processing/filter_ar_fast_q12.c',
+            'signal_processing/spl_sqrt_floor.c',
+          ],
+          'conditions': [
+            ['mips_dsp_rev>0', {
+              'sources': [
+                'signal_processing/vector_scaling_operations_mips.c',
+              ],
+            }],
           ],
         }],
       ],  # conditions
@@ -141,6 +156,7 @@
           'target_name': 'common_audio_sse2',
           'type': 'static_library',
           'sources': [
+            'fir_filter_sse.cc',
             'resampler/sinc_resampler_sse.cc',
           ],
           'cflags': ['-msse2',],
@@ -150,13 +166,14 @@
         },
       ],  # targets
     }],
-    ['target_arch=="arm" and armv7==1', {
+    ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7"', {
       'targets': [
         {
           'target_name': 'common_audio_neon',
           'type': 'static_library',
           'includes': ['../build/arm_neon.gypi',],
           'sources': [
+            'fir_filter_neon.cc',
             'resampler/sinc_resampler_neon.cc',
             'signal_processing/cross_correlation_neon.S',
             'signal_processing/downsample_fast_neon.S',
@@ -170,7 +187,7 @@
       'targets' : [
         {
           'target_name': 'common_audio_unittests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             'common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
@@ -179,6 +196,7 @@
           ],
           'sources': [
             'audio_util_unittest.cc',
+            'fir_filter_unittest.cc',
             'resampler/resampler_unittest.cc',
             'resampler/push_resampler_unittest.cc',
             'resampler/push_sinc_resampler_unittest.cc',
@@ -194,8 +212,50 @@
             'vad/vad_unittest.cc',
             'vad/vad_unittest.h',
           ],
+          'conditions': [
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
+          ],
         },
       ],  # targets
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'targets': [
+            {
+              'target_name': 'common_audio_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):common_audio_unittests_apk',
+              ],
+            },
+          ],
+        }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'common_audio_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'common_audio_unittests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+                'common_audio_unittests.isolate',
+              ],
+              'sources': [
+                'common_audio_unittests.isolate',
+              ],
+            },
+          ],
+        }],
+      ],
     }],
   ],  # conditions
 }

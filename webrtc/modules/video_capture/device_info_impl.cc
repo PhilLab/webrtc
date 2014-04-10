@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "device_info_impl.h"
-#include "video_capture_config.h"
-#include "trace.h"
 #include <stdlib.h>
+
+#include "webrtc/modules/video_capture/device_info_impl.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifndef abs
 #define abs(a) (a>=0?a:-a)
@@ -31,13 +32,6 @@ DeviceInfoImpl::DeviceInfoImpl(const int32_t id)
 DeviceInfoImpl::~DeviceInfoImpl(void)
 {
     _apiLock.AcquireLockExclusive();
-    // Reset old capability list
-    MapItem* item = NULL;
-    while ((item = _captureCapabilities.Last()))
-    {
-        delete (VideoCaptureCapability*) item->GetItem();
-        _captureCapabilities.Erase(item);
-    }
     free(_lastUsedDeviceName);
     _apiLock.ReleaseLockExclusive();
 
@@ -67,7 +61,7 @@ int32_t DeviceInfoImpl::NumberOfCapabilities(
         {
             //yes
             _apiLock.ReleaseLockShared();
-            return _captureCapabilities.Size();
+            return static_cast<int32_t>(_captureCapabilities.size());
         }
     }
     // Need to get exclusive rights to create the new capability map.
@@ -116,7 +110,7 @@ int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
     }
 
     // Make sure the number is valid
-    if (deviceCapabilityNumber >= (unsigned int) _captureCapabilities.Size())
+    if (deviceCapabilityNumber >= (unsigned int) _captureCapabilities.size())
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                    "deviceCapabilityNumber %d is invalid in call to GetCapability",
@@ -124,23 +118,7 @@ int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
         return -1;
     }
 
-    MapItem* item = _captureCapabilities.Find(deviceCapabilityNumber);
-    if (!item)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                   "Failed to find capability number %d of %d possible",
-                   deviceCapabilityNumber, _captureCapabilities.Size());
-        return -1;
-    }
-
-    VideoCaptureCapability* capPointer =  static_cast<VideoCaptureCapability*>
-                                          (item->GetItem());
-    if (!capPointer)
-    {
-        return -1;
-    }
-
-    capability = *capPointer;
+    capability = _captureCapabilities[deviceCapabilityNumber];
     return 0;
 }
 
@@ -183,16 +161,12 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
     RawVideoType bestRawType = kVideoUnknown;
     webrtc::VideoCodecType bestCodecType = webrtc::kVideoCodecUnknown;
 
-    const int32_t numberOfCapabilies = _captureCapabilities.Size();
+    const int32_t numberOfCapabilies =
+        static_cast<int32_t>(_captureCapabilities.size());
 
     for (int32_t tmp = 0; tmp < numberOfCapabilies; ++tmp) // Loop through all capabilities
     {
-        MapItem* item = _captureCapabilities.Find(tmp);
-        if (!item)
-            return -1;
-
-        VideoCaptureCapability& capability = *static_cast<VideoCaptureCapability*>
-                                              (item->GetItem());
+        VideoCaptureCapability& capability = _captureCapabilities[tmp];
 
         const int32_t diffWidth = capability.width - requested.width;
         const int32_t diffHeight = capability.height - requested.height;
@@ -298,16 +272,9 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
                bestWidth, bestHeight, bestFrameRate, bestRawType);
 
     // Copy the capability
-    MapItem* item = _captureCapabilities.Find(bestformatIndex);
-    if (!item)
+    if (bestformatIndex < 0)
         return -1;
-    VideoCaptureCapability* capPointer =
-        static_cast<VideoCaptureCapability*> (item->GetItem());
-    if (!capPointer)
-        return -1;
-
-    resulting = *capPointer;
-
+    resulting = _captureCapabilities[bestformatIndex];
     return bestformatIndex;
 }
 
@@ -419,5 +386,3 @@ int32_t DeviceInfoImpl::EnableOrientationLock(const char* deviceUniqueIdUTF8,
 
 } //namespace videocapturemodule
 } // namespace webrtc
-
-

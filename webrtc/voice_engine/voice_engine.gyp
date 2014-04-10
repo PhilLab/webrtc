@@ -25,15 +25,6 @@
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        'include',
-        '<(webrtc_root)/modules/audio_device',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-        ],
-      },
       'sources': [
         '../common_types.h',
         '../engine_configurations.h',
@@ -43,7 +34,6 @@
         'include/voe_call_report.h',
         'include/voe_codec.h',
         'include/voe_dtmf.h',
-        'include/voe_encryption.h',
         'include/voe_errors.h',
         'include/voe_external_media.h',
         'include/voe_file.h',
@@ -57,8 +47,6 @@
         'channel.h',
         'channel_manager.cc',
         'channel_manager.h',
-        'channel_manager_base.cc',
-        'channel_manager_base.h',
         'dtmf_inband.cc',
         'dtmf_inband.h',
         'dtmf_inband_queue.cc',
@@ -69,8 +57,6 @@
         'monitor_module.h',
         'output_mixer.cc',
         'output_mixer.h',
-        'output_mixer_internal.cc',
-        'output_mixer_internal.h',
         'shared_data.cc',
         'shared_data.h',
         'statistics.cc',
@@ -89,8 +75,6 @@
         'voe_codec_impl.h',
         'voe_dtmf_impl.cc',
         'voe_dtmf_impl.h',
-        'voe_encryption_impl.cc',
-        'voe_encryption_impl.h',
         'voe_external_media_impl.cc',
         'voe_external_media_impl.h',
         'voe_file_impl.cc',
@@ -121,7 +105,7 @@
       'targets': [
         {
           'target_name': 'voice_engine_unittests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             'voice_engine',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -138,9 +122,6 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
-          'include_dirs': [
-            'include',
-          ],
           'sources': [
             'channel_unittest.cc',
             'output_mixer_unittest.cc',
@@ -148,6 +129,16 @@
             'voe_audio_processing_unittest.cc',
             'voe_base_unittest.cc',
             'voe_codec_unittest.cc',
+            'voe_neteq_stats_unittest.cc',
+          ],
+          'conditions': [
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
           ],
         },
         {
@@ -157,21 +148,11 @@
             'voice_engine',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/test/test.gyp:test_support',
            ],
-          'include_dirs': [
-            'auto_test',
-            'auto_test/fixtures',
-            '<(webrtc_root)/modules/interface',
-            # TODO(phoglund): We only depend on voice_engine_defines.h here -
-            # move that file to interface and then remove this dependency.
-            '<(webrtc_root)/voice_engine',
-            '<(webrtc_root)/modules/audio_device/main/interface',
-          ],
           'sources': [
             'test/auto_test/automated_mode.cc',
             'test/auto_test/extended/agc_config_test.cc',
@@ -184,13 +165,11 @@
             'test/auto_test/fixtures/after_streaming_fixture.h',
             'test/auto_test/fixtures/before_initialization_fixture.cc',
             'test/auto_test/fixtures/before_initialization_fixture.h',
-            'test/auto_test/fuzz/rtp_fuzz_test.cc',
             'test/auto_test/standard/audio_processing_test.cc',
             'test/auto_test/standard/call_report_test.cc',
             'test/auto_test/standard/codec_before_streaming_test.cc',
             'test/auto_test/standard/codec_test.cc',
             'test/auto_test/standard/dtmf_test.cc',
-            'test/auto_test/standard/encryption_test.cc',
             'test/auto_test/standard/external_media_test.cc',
             'test/auto_test/standard/file_before_streaming_test.cc',
             'test/auto_test/standard/file_test.cc',
@@ -203,6 +182,7 @@
             'test/auto_test/standard/neteq_test.cc',
             'test/auto_test/standard/network_test.cc',
             'test/auto_test/standard/rtp_rtcp_before_streaming_test.cc',
+            'test/auto_test/standard/rtp_rtcp_extensions.cc',
             'test/auto_test/standard/rtp_rtcp_test.cc',
             'test/auto_test/standard/voe_base_misc_test.cc',
             'test/auto_test/standard/video_sync_test.cc',
@@ -210,16 +190,12 @@
             'test/auto_test/resource_manager.cc',
             'test/auto_test/voe_cpu_test.cc',
             'test/auto_test/voe_cpu_test.h',
-            'test/auto_test/voe_extended_test.cc',
-            'test/auto_test/voe_extended_test.h',
             'test/auto_test/voe_standard_test.cc',
             'test/auto_test/voe_standard_test.h',
             'test/auto_test/voe_stress_test.cc',
             'test/auto_test/voe_stress_test.h',
             'test/auto_test/voe_test_defines.h',
             'test/auto_test/voe_test_interface.h',
-            'test/auto_test/voe_unit_test.cc',
-            'test/auto_test/voe_unit_test.h',
           ],
           'conditions': [
             ['OS=="android"', {
@@ -241,6 +217,7 @@
           'dependencies': [
             'voice_engine',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/test/test.gyp:test_support',
@@ -263,9 +240,6 @@
                 'voice_engine',
                 '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
                 '<(webrtc_root)/test/test.gyp:test_support',
-              ],
-              'include_dirs': [
-                'win_test',
               ],
               'sources': [
                 'test/win_test/Resource.h',
@@ -299,6 +273,51 @@
               },
             },
           ],  # targets
+        }],
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'targets': [
+            {
+              'target_name': 'voice_engine_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):voice_engine_unittests_apk',
+              ],
+            },
+          ],
+        }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'voice_engine_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'voice_engine_unittests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+                'voice_engine_unittests.isolate',
+              ],
+              'sources': [
+                'voice_engine_unittests.isolate',
+              ],
+            },
+            {
+              'target_name': 'voe_auto_test_run',
+              'type': 'none',
+              'dependencies': [
+                'voe_auto_test',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+                'voe_auto_test.isolate',
+              ],
+              'sources': [
+                'voe_auto_test.isolate',
+              ],
+            },
+          ],
         }],
       ],  # conditions
     }], # include_tests

@@ -10,7 +10,8 @@
 
 #include "webrtc/video_engine/test/libvietest/include/tb_external_transport.h"
 
-#include <cassert>
+#include <assert.h>
+
 #include <math.h>
 #include <stdio.h> // printf
 #include <stdlib.h> // rand
@@ -19,7 +20,7 @@
 #include <string.h>
 #endif
 #if defined(WEBRTC_MAC)
-#include <cstring>
+#include <string.h>
 #endif
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -403,7 +404,6 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             {
                 waitTime = (unsigned int) timeToReceive;
             }
-            _crit.Leave();
             break;
         }
         _rtpPackets.pop_front();
@@ -457,7 +457,8 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             }
             _vieNetwork.ReceivedRTPPacket(destination_channel,
                                           packet->packetBuffer,
-                                          packet->length);
+                                          packet->length,
+                                          webrtc::PacketTime());
             delete packet;
             packet = NULL;
         }
@@ -486,7 +487,6 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             {
                 waitTime = (unsigned int) timeToReceive;
             }
-            _crit.Leave();
             break;
         }
         _rtcpPackets.pop_front();

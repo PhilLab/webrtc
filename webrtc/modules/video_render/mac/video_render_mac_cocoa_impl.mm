@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "engine_configurations.h"
+#include "webrtc/engine_configurations.h"
 #if defined(COCOA_RENDERING)
 
 #import "cocoa_render_view.h"
@@ -264,6 +264,6 @@ int32_t VideoRenderMacCocoaImpl::FullScreenRender(void* window, const bool enabl
     return -1;
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif // COCOA_RENDERING

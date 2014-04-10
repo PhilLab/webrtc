@@ -21,6 +21,7 @@ namespace webrtc
 {
 
 class Clock;
+class EncodedImageCallback;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
@@ -41,6 +42,19 @@ class EventFactoryImpl : public EventFactory {
   }
 };
 
+// Used to indicate which decode with errors mode should be used.
+enum VCMDecodeErrorMode {
+  kNoErrors,                // Never decode with errors. Video will freeze
+                            // if nack is disabled.
+  kSelectiveErrors,         // Frames that are determined decodable in
+                            // VCMSessionInfo may be decoded with missing
+                            // packets. As not all incomplete frames will be
+                            // decodable, video will freeze if nack is disabled.
+  kWithErrors               // Release frames as needed. Errors may be
+                            // introduced as some encoded frames may not be
+                            // complete.
+};
+
 class VideoCodingModule : public Module
 {
 public:
@@ -56,11 +70,6 @@ public:
         kSoftNack,
         kDualDecoder,
         kReferenceSelection
-    };
-
-    enum DecodeErrors {
-        kNoDecodeErrors,
-        kAllowDecodeErrors
     };
 
     static VideoCodingModule* Create(const int32_t id);
@@ -257,7 +266,7 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t SetVideoProtection(VCMVideoProtection videoProtection,
-                                             bool enable) = 0;
+                                       bool enable) = 0;
 
     // Add one raw video frame to the encoder. This function does all the necessary
     // processing, then decides what frame type to encode, or if the frame should be
@@ -324,8 +333,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                                               int32_t numberOfCores,
-                                               bool requireKeyFrame = false) = 0;
+                                         int32_t numberOfCores,
+                                         bool requireKeyFrame = false) = 0;
 
     // Register an externally defined decoder/renderer object. Can be a decoder only or a
     // decoder coupled with a renderer. Note that RegisterReceiveCodec must be called to
@@ -368,6 +377,18 @@ public:
     virtual int32_t RegisterReceiveStatisticsCallback(
                                VCMReceiveStatisticsCallback* receiveStats) = 0;
 
+    // Register a decoder timing callback which will be called to deliver
+    // information about the timing of the decoder in the receiving side of the
+    // VCM, for instance the current and maximum frame decode latency.
+    //
+    // Input:
+    //      - decoderTiming  : The callback object to register.
+    //
+    // Return value      : VCM_OK, on success.
+    //                     < 0,         on error.
+    virtual int32_t RegisterDecoderTimingCallback(
+        VCMDecoderTimingCallback* decoderTiming) = 0;
+
     // Register a frame type request callback. This callback will be called when the
     // module needs to request specific frame types from the send side.
     //
@@ -380,18 +401,6 @@ public:
     //                     < 0,         on error.
     virtual int32_t RegisterFrameTypeCallback(
                                   VCMFrameTypeCallback* frameTypeCallback) = 0;
-
-    // Register a frame storage callback. This callback will be called right before an
-    // encoded frame is given to the decoder. Useful for recording the incoming video sequence.
-    //
-    // Input:
-    //      - frameStorageCallback    : The callback object used by the module
-    //                                  to store a received encoded frame.
-    //
-    // Return value     : VCM_OK, on success.
-    //                    < 0,         on error.
-    virtual int32_t RegisterFrameStorageCallback(
-                             VCMFrameStorageCallback* frameStorageCallback) = 0;
 
     // Registers a callback which is called whenever the receive side of the VCM
     // encounters holes in the packet sequence and needs packets to be retransmitted.
@@ -426,17 +435,6 @@ public:
     //                     0,           if no frame was decoded
     //                     < 0,         on error.
     virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs = 200) = 0;
-
-    // Decodes a frame and sets an appropriate render time in ms relative to the system time.
-    // Should be used in conjunction with VCMFrameStorageCallback.
-    //
-    // Input:
-    //      - frameFromStorage      : Encoded frame read from file or received through
-    //                                the VCMFrameStorageCallback callback.
-    //
-    // Return value:        : VCM_OK, on success
-    //                        < 0,         on error
-    virtual int32_t DecodeFromStorage(const EncodedVideoData& frameFromStorage) = 0;
 
     // Reset the decoder state to the initial state.
     //
@@ -566,7 +564,14 @@ public:
     // Return value      : VCM_OK, on success;
     //                     < 0, on error.
     virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
-                                          DecodeErrors errorMode) = 0;
+                                          VCMDecodeErrorMode errorMode) = 0;
+
+    // Set the decode error mode. The mode decides which errors (if any) are
+    // allowed in decodable frames. Note that setting decode_error_mode to
+    // anything other than kWithErrors without enabling nack will cause
+    // long-term freezes (resulting from frequent key frame requests) if
+    // packet loss occurs.
+    virtual void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) = 0;
 
     // Sets the maximum number of sequence numbers that we are allowed to NACK
     // and the oldest sequence number that we will consider to NACK. If a
@@ -587,8 +592,22 @@ public:
 
     // Disables recording of debugging information.
     virtual int StopDebugRecording() = 0;
+
+    // Lets the sender suspend video when the rate drops below
+    // |threshold_bps|, and turns back on when the rate goes back up above
+    // |threshold_bps| + |window_bps|.
+    virtual void SuspendBelowMinBitrate() = 0;
+
+    // Returns true if SuspendBelowMinBitrate is engaged and the video has been
+    // suspended due to bandwidth limitations; otherwise false.
+    virtual bool VideoSuspended() const = 0;
+
+    virtual void RegisterPreDecodeImageCallback(
+        EncodedImageCallback* observer) = 0;
+    virtual void RegisterPostEncodeImageCallback(
+        EncodedImageCallback* post_encode_callback) = 0;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_

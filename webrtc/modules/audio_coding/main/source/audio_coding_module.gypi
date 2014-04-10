@@ -37,15 +37,18 @@
       ],
       'dependencies': [
         '<@(audio_coding_dependencies)',
+        'acm2',
       ],
       'include_dirs': [
         '../interface',
         '../../../interface',
+        '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
           '../../../interface',
+          '<(webrtc_root)',
         ],
       },
       'sources': [
@@ -100,11 +103,8 @@
         'acm_red.h',
         'acm_resampler.cc',
         'acm_resampler.h',
-        'audio_coding_module.cc',
         'audio_coding_module_impl.cc',
         'audio_coding_module_impl.h',
-        'nack.cc',
-        'nack.h',
       ],
     },
   ],
@@ -117,14 +117,15 @@
           'dependencies': [
             'audio_coding_module',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
              '../test/delay_test.cc',
              '../test/Channel.cc',
              '../test/PCMFile.cc',
+             '../test/utility.cc',
            ],
         }, # delay_test
         {
@@ -133,9 +134,9 @@
           'dependencies': [
             'audio_coding_module',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
              '../test/insert_packet_with_timing.cc',
@@ -145,5 +146,8 @@
         }, # delay_test
       ],
     }],
+  ],
+  'includes': [
+    '../acm2/audio_coding_module.gypi',
   ],
 }

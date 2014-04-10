@@ -8,33 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TWO_WAY_COMMUNICATION_H
-#define TWO_WAY_COMMUNICATION_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TWOWAYCOMMUNICATION_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TWOWAYCOMMUNICATION_H_
 
-#include "ACMTest.h"
-#include "Channel.h"
-#include "PCMFile.h"
-#include "audio_coding_module.h"
-#include "utility.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/test/ACMTest.h"
+#include "webrtc/modules/audio_coding/main/test/Channel.h"
+#include "webrtc/modules/audio_coding/main/test/PCMFile.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
+class Config;
+
 class TwoWayCommunication : public ACMTest {
  public:
-  TwoWayCommunication(int testMode = 1);
+  TwoWayCommunication(int testMode, const Config& config);
   ~TwoWayCommunication();
 
   void Perform();
  private:
-  uint8_t ChooseCodec(uint8_t* codecID_A, uint8_t* codecID_B);
-  int16_t SetUp();
-  int16_t SetUpAutotest();
+  void ChooseCodec(uint8_t* codecID_A, uint8_t* codecID_B);
+  void SetUp();
+  void SetUpAutotest();
 
-  AudioCodingModule* _acmA;
-  AudioCodingModule* _acmB;
+  scoped_ptr<AudioCodingModule> _acmA;
+  scoped_ptr<AudioCodingModule> _acmB;
 
-  AudioCodingModule* _acmRefA;
-  AudioCodingModule* _acmRefB;
+  scoped_ptr<AudioCodingModule> _acmRefA;
+  scoped_ptr<AudioCodingModule> _acmRefB;
 
   Channel* _channel_A2B;
   Channel* _channel_B2A;
@@ -56,4 +59,4 @@ class TwoWayCommunication : public ACMTest {
 
 }  // namespace webrtc
 
-#endif
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TWOWAYCOMMUNICATION_H_

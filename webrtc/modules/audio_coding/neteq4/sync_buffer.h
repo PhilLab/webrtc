@@ -17,10 +17,10 @@
 
 namespace webrtc {
 
-class SyncBuffer : public AudioMultiVector<int16_t> {
+class SyncBuffer : public AudioMultiVector {
  public:
-  SyncBuffer(std::size_t channels, std::size_t length)
-      : AudioMultiVector<int16_t>(channels, length),
+  SyncBuffer(size_t channels, size_t length)
+      : AudioMultiVector(channels, length),
         next_index_(length),
         end_timestamp_(0),
         dtmf_index_(0) {}
@@ -28,13 +28,13 @@ class SyncBuffer : public AudioMultiVector<int16_t> {
   virtual ~SyncBuffer() {}
 
   // Returns the number of samples yet to play out form the buffer.
-  std::size_t FutureLength() const;
+  size_t FutureLength() const;
 
   // Adds the contents of |append_this| to the back of the SyncBuffer. Removes
   // the same number of samples from the beginning of the SyncBuffer, to
   // maintain a constant buffer size. The |next_index_| is updated to reflect
   // the move of the beginning of "future" data.
-  void PushBack(const AudioMultiVector<int16_t>& append_this);
+  void PushBack(const AudioMultiVector& append_this);
 
   // Adds |length| zeros to the beginning of each channel. Removes
   // the same number of samples from the end of the SyncBuffer, to
@@ -42,12 +42,12 @@ class SyncBuffer : public AudioMultiVector<int16_t> {
   // the move of the beginning of "future" data.
   // Note that this operation may delete future samples that are waiting to
   // be played.
-  void PushFrontZeros(std::size_t length);
+  void PushFrontZeros(size_t length);
 
   // Inserts |length| zeros into each channel at index |position|. The size of
   // the SyncBuffer is kept constant, which means that the last |length|
   // elements in each channel will be purged.
-  virtual void InsertZerosAtIndex(std::size_t length, std::size_t position);
+  virtual void InsertZerosAtIndex(size_t length, size_t position);
 
   // Overwrites each channel in this SyncBuffer with values taken from
   // |insert_this|. The values are taken from the beginning of |insert_this| and
@@ -56,19 +56,19 @@ class SyncBuffer : public AudioMultiVector<int16_t> {
   // and |position| are selected such that the new data would extend beyond the
   // end of the current SyncBuffer, the buffer is not extended.
   // The |next_index_| is not updated.
-  virtual void ReplaceAtIndex(const AudioMultiVector<int16_t>& insert_this,
-		  	  	  	  	  	  std::size_t length,
-		  	  	  	  	  	  std::size_t position);
+  virtual void ReplaceAtIndex(const AudioMultiVector& insert_this,
+                              size_t length,
+                              size_t position);
 
   // Same as the above method, but where all of |insert_this| is written (with
   // the same constraints as above, that the SyncBuffer is not extended).
-  virtual void ReplaceAtIndex(const AudioMultiVector<int16_t>& insert_this,
-		  	  	  	  	  	  std::size_t position);
+  virtual void ReplaceAtIndex(const AudioMultiVector& insert_this,
+                              size_t position);
 
   // Reads |requested_len| samples from each channel and writes them interleaved
   // into |output|. The |next_index_| is updated to point to the sample to read
   // next time.
-  std::size_t GetNextAudioInterleaved(std::size_t requested_len, int16_t* output);
+  size_t GetNextAudioInterleaved(size_t requested_len, int16_t* output);
 
   // Adds |increment| to |end_timestamp_|.
   void IncreaseEndTimestamp(uint32_t increment);
@@ -78,20 +78,20 @@ class SyncBuffer : public AudioMultiVector<int16_t> {
   // created.
   void Flush();
 
-  const AudioVector<int16_t>& Channel(std::size_t n) { return *channels_[n]; }
+  const AudioVector& Channel(size_t n) { return *channels_[n]; }
 
   // Accessors and mutators.
-  std::size_t next_index() const { return next_index_; }
-  void set_next_index(std::size_t value);
+  size_t next_index() const { return next_index_; }
+  void set_next_index(size_t value);
   uint32_t end_timestamp() const { return end_timestamp_; }
   void set_end_timestamp(uint32_t value) { end_timestamp_ = value; }
-  std::size_t dtmf_index() const { return dtmf_index_; }
-  void set_dtmf_index(std::size_t value);
+  size_t dtmf_index() const { return dtmf_index_; }
+  void set_dtmf_index(size_t value);
 
  private:
-  std::size_t next_index_;
+  size_t next_index_;
   uint32_t end_timestamp_;  // The timestamp of the last sample in the buffer.
-  std::size_t dtmf_index_;  // Index to the first non-DTMF sample in the buffer.
+  size_t dtmf_index_;  // Index to the first non-DTMF sample in the buffer.
 
   DISALLOW_COPY_AND_ASSIGN(SyncBuffer);
 };

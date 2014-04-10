@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cassert>
+#include <assert.h>
 
-#include "audio_device_utility.h"
-#include "audio_device_alsa_linux.h"
-#include "audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
+#include "webrtc/modules/audio_device/linux/audio_device_alsa_linux.h"
 
-#include "event_wrapper.h"
-#include "system_wrappers/interface/sleep.h"
-#include "trace.h"
-#include "thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 webrtc_adm_linux_alsa::AlsaSymbolTable AlsaSymbolTable;
 
@@ -55,7 +55,6 @@ static const unsigned int ALSA_PLAYOUT_LATENCY = 40*1000; // in us
 static const unsigned int ALSA_CAPTURE_FREQ = 48000;
 static const unsigned int ALSA_CAPTURE_CH = 2;
 static const unsigned int ALSA_CAPTURE_LATENCY = 40*1000; // in us
-static const unsigned int ALSA_PLAYOUT_WAIT_TIMEOUT = 5; // in ms
 static const unsigned int ALSA_CAPTURE_WAIT_TIMEOUT = 5; // in ms
 
 #define FUNC_GET_NUM_OF_DEVICE 0
@@ -122,7 +121,7 @@ AudioDeviceLinuxALSA::~AudioDeviceLinuxALSA()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s destroyed", __FUNCTION__);
-    
+
     Terminate();
 
     // Clean up the recording buffer and playout buffer.
@@ -181,7 +180,7 @@ int32_t AudioDeviceLinuxALSA::Init()
     {
         return 0;
     }
-
+#if defined(USE_X11)
     //Get X display handle for typing detection
     _XDisplay = XOpenDisplay(NULL);
     if (!_XDisplay)
@@ -189,7 +188,7 @@ int32_t AudioDeviceLinuxALSA::Init()
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
           "  failed to open X display, typing detection will not work");
     }
-
+#endif
     _playWarning = 0;
     _playError = 0;
     _recWarning = 0;
@@ -255,13 +254,13 @@ int32_t AudioDeviceLinuxALSA::Terminate()
 
         _critSect.Enter();
     }
-
+#if defined(USE_X11)
     if (_XDisplay)
     {
       XCloseDisplay(_XDisplay);
       _XDisplay = NULL;
     }
-
+#endif
     _initialized = false;
     _outputDeviceIsSpecified = false;
     _inputDeviceIsSpecified = false;
@@ -272,34 +271,6 @@ int32_t AudioDeviceLinuxALSA::Terminate()
 bool AudioDeviceLinuxALSA::Initialized() const
 {
     return (_initialized);
-}
-
-int32_t AudioDeviceLinuxALSA::SpeakerIsAvailable(bool& available)
-{
-
-    bool wasInitialized = _mixerManager.SpeakerIsInitialized();
-
-    // Make an attempt to open up the
-    // output mixer corresponding to the currently selected output device.
-    //
-    if (!wasInitialized && InitSpeaker() == -1)
-    {
-        available = false;
-        return 0;
-    }
-
-    // Given that InitSpeaker was successful, we know that a valid speaker
-    // exists
-    available = true;
-
-    // Close the initialized output mixer
-    //
-    if (!wasInitialized)
-    {
-        _mixerManager.CloseSpeaker();
-    }
-
-    return 0;
 }
 
 int32_t AudioDeviceLinuxALSA::InitSpeaker()
@@ -315,34 +286,6 @@ int32_t AudioDeviceLinuxALSA::InitSpeaker()
     char devName[kAdmMaxDeviceNameSize] = {0};
     GetDevicesInfo(2, true, _outputDeviceIndex, devName, kAdmMaxDeviceNameSize);
     return _mixerManager.OpenSpeaker(devName);
-}
-
-int32_t AudioDeviceLinuxALSA::MicrophoneIsAvailable(bool& available)
-{
-
-    bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
-
-    // Make an attempt to open up the
-    // input mixer corresponding to the currently selected output device.
-    //
-    if (!wasInitialized && InitMicrophone() == -1)
-    {
-        available = false;
-        return 0;
-    }
-
-    // Given that InitMicrophone was successful, we know that a valid
-    // microphone exists
-    available = true;
-
-    // Close the initialized input mixer
-    //
-    if (!wasInitialized)
-    {
-        _mixerManager.CloseMicrophone();
-    }
-
-    return 0;
 }
 
 int32_t AudioDeviceLinuxALSA::InitMicrophone()
@@ -415,7 +358,7 @@ int32_t AudioDeviceLinuxALSA::SpeakerVolume(uint32_t& volume) const
     }
 
     volume = level;
-    
+
     return 0;
 }
 
@@ -451,7 +394,7 @@ int32_t AudioDeviceLinuxALSA::MaxSpeakerVolume(
     }
 
     maxVolume = maxVol;
-    
+
     return 0;
 }
 
@@ -467,7 +410,7 @@ int32_t AudioDeviceLinuxALSA::MinSpeakerVolume(
     }
 
     minVolume = minVol;
-    
+
     return 0;
 }
 
@@ -475,8 +418,8 @@ int32_t AudioDeviceLinuxALSA::SpeakerVolumeStepSize(
     uint16_t& stepSize) const
 {
 
-    uint16_t delta(0); 
-     
+    uint16_t delta(0);
+
     if (_mixerManager.SpeakerVolumeStepSize(delta) == -1)
     {
         return -1;
@@ -527,15 +470,15 @@ int32_t AudioDeviceLinuxALSA::SetSpeakerMute(bool enable)
 int32_t AudioDeviceLinuxALSA::SpeakerMute(bool& enabled) const
 {
 
-    bool muted(0); 
-        
+    bool muted(0);
+
     if (_mixerManager.SpeakerMute(muted) == -1)
     {
         return -1;
     }
 
     enabled = muted;
-    
+
     return 0;
 }
 
@@ -584,8 +527,8 @@ int32_t AudioDeviceLinuxALSA::SetMicrophoneMute(bool enable)
 int32_t AudioDeviceLinuxALSA::MicrophoneMute(bool& enabled) const
 {
 
-    bool muted(0); 
-        
+    bool muted(0);
+
     if (_mixerManager.MicrophoneMute(muted) == -1)
     {
         return -1;
@@ -597,7 +540,7 @@ int32_t AudioDeviceLinuxALSA::MicrophoneMute(bool& enabled) const
 
 int32_t AudioDeviceLinuxALSA::MicrophoneBoostIsAvailable(bool& available)
 {
-    
+
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -635,15 +578,15 @@ int32_t AudioDeviceLinuxALSA::SetMicrophoneBoost(bool enable)
 int32_t AudioDeviceLinuxALSA::MicrophoneBoost(bool& enabled) const
 {
 
-    bool onOff(0); 
-        
+    bool onOff(0);
+
     if (_mixerManager.MicrophoneBoost(onOff) == -1)
     {
         return -1;
     }
 
     enabled = onOff;
-    
+
     return 0;
 }
 
@@ -665,7 +608,7 @@ int32_t AudioDeviceLinuxALSA::StereoRecordingIsAvailable(bool& available)
     int recChannels = _recChannels;
 
     available = false;
-    
+
     // Stop/uninitialize recording if initialized (and possibly started)
     if (_recIsInitialized)
     {
@@ -736,7 +679,7 @@ int32_t AudioDeviceLinuxALSA::StereoPlayoutIsAvailable(bool& available)
     int playChannels = _playChannels;
 
     available = false;
-    
+
     // Stop/uninitialize recording if initialized (and possibly started)
     if (_playIsInitialized)
     {
@@ -835,7 +778,7 @@ int32_t AudioDeviceLinuxALSA::SetMicrophoneVolume(uint32_t volume)
 {
 
     return (_mixerManager.SetMicrophoneVolume(volume));
- 
+
     return 0;
 }
 
@@ -852,7 +795,7 @@ int32_t AudioDeviceLinuxALSA::MicrophoneVolume(uint32_t& volume) const
     }
 
     volume = level;
-    
+
     return 0;
 }
 
@@ -892,8 +835,8 @@ int32_t AudioDeviceLinuxALSA::MicrophoneVolumeStepSize(
     uint16_t& stepSize) const
 {
 
-    uint16_t delta(0); 
-        
+    uint16_t delta(0);
+
     if (_mixerManager.MicrophoneVolumeStepSize(delta) == -1)
     {
         return -1;
@@ -985,7 +928,7 @@ int32_t AudioDeviceLinuxALSA::RecordingDeviceName(
     {
         memset(guid, 0, kAdmMaxGuidSize);
     }
-    
+
     return GetDevicesInfo(1, false, index, name, kAdmMaxDeviceNameSize);
 }
 
@@ -1034,7 +977,7 @@ int32_t AudioDeviceLinuxALSA::SetRecordingDevice(
 
 int32_t AudioDeviceLinuxALSA::PlayoutIsAvailable(bool& available)
 {
-    
+
     available = false;
 
     // Try to initialize the playout side with mono
@@ -1059,13 +1002,13 @@ int32_t AudioDeviceLinuxALSA::PlayoutIsAvailable(bool& available)
             _playChannels = 2;
         }
     }
-    
+
     return res;
 }
 
 int32_t AudioDeviceLinuxALSA::RecordingIsAvailable(bool& available)
 {
-    
+
     available = false;
 
     // Try to initialize the recording side with mono
@@ -1090,7 +1033,7 @@ int32_t AudioDeviceLinuxALSA::RecordingIsAvailable(bool& available)
             _recChannels = 2;
         }
     }
-    
+
     return res;
 }
 
@@ -1178,7 +1121,7 @@ int32_t AudioDeviceLinuxALSA::InitPlayout()
 
     _playoutFramesIn10MS = _playoutFreq/100;
     if ((errVal = LATE(snd_pcm_set_params)( _handlePlayout,
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
         SND_PCM_FORMAT_S16_BE,
 #else
         SND_PCM_FORMAT_S16_LE, //format
@@ -1334,7 +1277,7 @@ int32_t AudioDeviceLinuxALSA::InitRecording()
 
     _recordingFramesIn10MS = _recordingFreq/100;
     if ((errVal = LATE(snd_pcm_set_params)(_handleRecord,
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
         SND_PCM_FORMAT_S16_BE, //format
 #else
         SND_PCM_FORMAT_S16_LE, //format
@@ -1353,7 +1296,7 @@ int32_t AudioDeviceLinuxALSA::InitRecording()
            _recChannels = 1;
 
          if ((errVal = LATE(snd_pcm_set_params)(_handleRecord,
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
              SND_PCM_FORMAT_S16_BE, //format
 #else
              SND_PCM_FORMAT_S16_LE, //format
@@ -1762,11 +1705,11 @@ int32_t AudioDeviceLinuxALSA::PlayoutBuffer(
     type = _playBufType;
     if (type == AudioDeviceModule::kFixedBufferSize)
     {
-        sizeMS = _playBufDelayFixed; 
+        sizeMS = _playBufDelayFixed;
     }
     else
     {
-        sizeMS = _playBufDelay; 
+        sizeMS = _playBufDelay;
     }
 
     return 0;
@@ -1782,41 +1725,49 @@ int32_t AudioDeviceLinuxALSA::CPULoad(uint16_t& load) const
 
 bool AudioDeviceLinuxALSA::PlayoutWarning() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_playWarning > 0);
 }
 
 bool AudioDeviceLinuxALSA::PlayoutError() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_playError > 0);
 }
 
 bool AudioDeviceLinuxALSA::RecordingWarning() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_recWarning > 0);
 }
 
 bool AudioDeviceLinuxALSA::RecordingError() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_recError > 0);
 }
 
 void AudioDeviceLinuxALSA::ClearPlayoutWarning()
 {
+    CriticalSectionScoped lock(&_critSect);
     _playWarning = 0;
 }
 
 void AudioDeviceLinuxALSA::ClearPlayoutError()
 {
+    CriticalSectionScoped lock(&_critSect);
     _playError = 0;
 }
 
 void AudioDeviceLinuxALSA::ClearRecordingWarning()
 {
+    CriticalSectionScoped lock(&_critSect);
     _recWarning = 0;
 }
 
 void AudioDeviceLinuxALSA::ClearRecordingError()
 {
+    CriticalSectionScoped lock(&_critSect);
     _recError = 0;
 }
 
@@ -1831,7 +1782,7 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(
     char* enumDeviceName,
     const int32_t ednLen) const
 {
-    
+
     // Device enumeration based on libjingle implementation
     // by Tristan Schmelcher at Google Inc.
 
@@ -2335,7 +2286,7 @@ bool AudioDeviceLinuxALSA::RecThreadProcess()
 
 
 bool AudioDeviceLinuxALSA::KeyPressed() const{
-
+#if defined(USE_X11)
   char szKey[32];
   unsigned int i = 0;
   char state = 0;
@@ -2353,5 +2304,8 @@ bool AudioDeviceLinuxALSA::KeyPressed() const{
   // Save old state
   memcpy((char*)_oldKeyState, (char*)szKey, sizeof(_oldKeyState));
   return (state != 0);
+#else
+  return false;
+#endif
 }
 }  // namespace webrtc

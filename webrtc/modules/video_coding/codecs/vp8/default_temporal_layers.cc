@@ -9,9 +9,9 @@
 
 #include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cassert>
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
@@ -35,6 +35,13 @@ DefaultTemporalLayers::DefaultTemporalLayers(int numberOfTemporalLayers,
   memset(temporal_ids_, 0, sizeof(temporal_ids_));
   memset(temporal_pattern_, 0, sizeof(temporal_pattern_));
 }
+
+int DefaultTemporalLayers::CurrentLayerId() const {
+  assert(temporal_ids_length_ > 0);
+  int index = pattern_idx_ % temporal_ids_length_;
+  assert(index >= 0);
+  return temporal_ids_[index];
+ }
 
 bool DefaultTemporalLayers::ConfigureBitrates(int bitrateKbit,
                                               int max_bitrate_kbit,
@@ -247,8 +254,7 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
     vp8_info->temporalIdx = 0;
     vp8_info->layerSync = true;
     } else {
-      vp8_info->temporalIdx = temporal_ids_
-          [pattern_idx_ % temporal_ids_length_];
+      vp8_info->temporalIdx = CurrentLayerId();
       TemporalReferences temporal_reference =
           temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
 
@@ -277,5 +283,10 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
     vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
 }
-}  // namespace webrtc
 
+TemporalLayers* TemporalLayers::Factory::Create(
+    int temporal_layers,
+    uint8_t initial_tl0_pic_idx) const {
+  return new DefaultTemporalLayers(temporal_layers, initial_tl0_pic_idx);
+}
+}  // namespace webrtc

@@ -13,6 +13,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
@@ -101,14 +102,16 @@ class VoECodecTest : public ::testing::Test {
 };
 
 
-TEST_F(VoECodecTest, DualStreamSetSecondaryBeforePrimaryFails) {
+TEST_F(VoECodecTest,
+       DISABLED_ON_ANDROID(DualStreamSetSecondaryBeforePrimaryFails)) {
   // Setting secondary before a primary is registered should fail.
   EXPECT_EQ(-1, voe_codec_->SetSecondarySendCodec(channel_, valid_secondary_,
                                                   red_payload_type_));
   red_payload_type_ = 1;
 }
 
-TEST_F(VoECodecTest, DualStreamRegisterWithWrongInputsFails) {
+TEST_F(VoECodecTest,
+       DISABLED_ON_ANDROID(DualStreamRegisterWithWrongInputsFails)) {
   // Register primary codec.
   EXPECT_EQ(0, voe_codec_->SetSendCodec(channel_, primary_));
 
@@ -125,7 +128,7 @@ TEST_F(VoECodecTest, DualStreamRegisterWithWrongInputsFails) {
                                                   red_payload_type_));
 }
 
-TEST_F(VoECodecTest, DualStreamGetSecodaryEncoder) {
+TEST_F(VoECodecTest, DISABLED_ON_ANDROID(DualStreamGetSecodaryEncoder)) {
   // Register primary codec.
   EXPECT_EQ(0, voe_codec_->SetSendCodec(channel_, primary_));
 
@@ -149,7 +152,7 @@ TEST_F(VoECodecTest, DualStreamGetSecodaryEncoder) {
   EXPECT_EQ(0, STR_CASE_CMP(valid_secondary_.plname, my_codec.plname));
 }
 
-TEST_F(VoECodecTest, DualStreamRemoveSecondaryCodec) {
+TEST_F(VoECodecTest, DISABLED_ON_ANDROID(DualStreamRemoveSecondaryCodec)) {
   // Register primary codec.
   EXPECT_EQ(0, voe_codec_->SetSendCodec(channel_, primary_));
 
@@ -164,6 +167,56 @@ TEST_F(VoECodecTest, DualStreamRemoveSecondaryCodec) {
 
   // Get should fail, if secondary is removed.
   EXPECT_EQ(-1, voe_codec_->GetSecondarySendCodec(channel_, my_codec));
+}
+
+TEST(VoECodecInst, TestCompareCodecInstances) {
+  CodecInst codec1, codec2;
+  memset(&codec1, 0, sizeof(CodecInst));
+  memset(&codec2, 0, sizeof(CodecInst));
+
+  codec1.pltype = 101;
+  strncpy(codec1.plname, "isac", 4);
+  codec1.plfreq = 8000;
+  codec1.pacsize = 110;
+  codec1.channels = 1;
+  codec1.rate = 8000;
+  memcpy(&codec2, &codec1, sizeof(CodecInst));
+  // Compare two codecs now.
+  EXPECT_TRUE(codec1 == codec2);
+  EXPECT_FALSE(codec1 != codec2);
+
+  // Changing pltype.
+  codec2.pltype = 102;
+  EXPECT_FALSE(codec1 == codec2);
+  EXPECT_TRUE(codec1 != codec2);
+
+  // Reset to codec2 to codec1 state.
+  memcpy(&codec2, &codec1, sizeof(CodecInst));
+  // payload name should be case insensitive.
+  strncpy(codec2.plname, "ISAC", 4);
+  EXPECT_TRUE(codec1 == codec2);
+
+  // Test modifying the |plfreq|
+  codec2.plfreq = 16000;
+  EXPECT_FALSE(codec1 == codec2);
+
+  // Reset to codec2 to codec1 state.
+  memcpy(&codec2, &codec1, sizeof(CodecInst));
+  // Test modifying the |pacsize|.
+  codec2.pacsize = 440;
+  EXPECT_FALSE(codec1 == codec2);
+
+  // Reset to codec2 to codec1 state.
+  memcpy(&codec2, &codec1, sizeof(CodecInst));
+  // Test modifying the |channels|.
+  codec2.channels = 2;
+  EXPECT_FALSE(codec1 == codec2);
+
+  // Reset to codec2 to codec1 state.
+  memcpy(&codec2, &codec1, sizeof(CodecInst));
+  // Test modifying the |rate|.
+  codec2.rate = 0;
+  EXPECT_FALSE(codec1 == codec2);
 }
 
 }  // namespace

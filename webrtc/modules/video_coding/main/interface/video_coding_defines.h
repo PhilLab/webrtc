@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_
 
-#include "typedefs.h"
-#include "common_video/interface/i420_video_frame.h"
-#include "modules/interface/module_common_types.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -80,17 +80,6 @@ class VCMPacketizationCallback {
 };
 
 // Callback class used for passing decoded frames which are ready to be rendered.
-class VCMFrameStorageCallback {
- public:
-  virtual int32_t StoreReceivedFrame(
-      const EncodedVideoData& frameToStore) = 0;
-
- protected:
-  virtual ~VCMFrameStorageCallback() {
-  }
-};
-
-// Callback class used for passing decoded frames which are ready to be rendered.
 class VCMReceiveCallback {
  public:
   virtual int32_t FrameToRender(I420VideoFrame& videoFrame) = 0;
@@ -98,6 +87,8 @@ class VCMReceiveCallback {
       const uint64_t pictureId) {
     return -1;
   }
+  // Called when the current receive codec changes.
+  virtual void IncomingCodecChanged(const VideoCodec& codec) {}
 
  protected:
   virtual ~VCMReceiveCallback() {
@@ -119,12 +110,27 @@ class VCMSendStatisticsCallback {
 // Callback class used for informing the user of the incoming bit rate and frame rate.
 class VCMReceiveStatisticsCallback {
  public:
-  virtual int32_t ReceiveStatistics(const uint32_t bitRate,
-                                          const uint32_t frameRate) = 0;
+  virtual int32_t OnReceiveStatisticsUpdate(const uint32_t bitRate,
+                                            const uint32_t frameRate) = 0;
 
  protected:
   virtual ~VCMReceiveStatisticsCallback() {
   }
+};
+
+// Callback class used for informing the user of decode timing info.
+class VCMDecoderTimingCallback {
+ public:
+  virtual void OnDecoderTiming(int decode_ms,
+                               int max_decode_ms,
+                               int current_delay_ms,
+                               int target_delay_ms,
+                               int jitter_buffer_ms,
+                               int min_playout_delay_ms,
+                               int render_delay_ms) = 0;
+
+ protected:
+  virtual ~VCMDecoderTimingCallback() {}
 };
 
 // Callback class used for telling the user about how to configure the FEC,

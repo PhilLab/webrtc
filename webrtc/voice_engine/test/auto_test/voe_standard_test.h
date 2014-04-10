@@ -15,6 +15,7 @@
 #include <string>
 
 #include "gflags/gflags.h"
+#include "webrtc/common.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
@@ -29,9 +30,6 @@
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
 #include "webrtc/voice_engine/include/voe_codec.h"
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-#include "webrtc/voice_engine/include/voe_encryption.h"
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 #include "webrtc/voice_engine/include/voe_external_media.h"
@@ -70,7 +68,6 @@ class SubAPIManager {
       _callReport(false),
       _codec(false),
       _dtmf(false),
-      _encryption(false),
       _externalMedia(false),
       _file(false),
       _hardware(false),
@@ -79,8 +76,7 @@ class SubAPIManager {
       _rtp_rtcp(false),
       _videoSync(false),
       _volumeControl(false),
-      _apm(false),
-      _xsel(XSEL_Invalid) {
+      _apm(false) {
 #ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
       _callReport = true;
 #endif
@@ -89,9 +85,6 @@ class SubAPIManager {
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
       _dtmf = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-      _encryption = true;
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
       _externalMedia = true;
@@ -121,13 +114,11 @@ class SubAPIManager {
   }
 
   void DisplayStatus() const;
-  bool GetExtendedMenuSelection(ExtendedSelection& sel);
 
  private:
-  bool _base, _callReport, _codec, _dtmf, _encryption;
+  bool _base, _callReport, _codec, _dtmf;
   bool _externalMedia, _file, _hardware;
   bool _netEqStats, _network, _rtp_rtcp, _videoSync, _volumeControl, _apm;
-  ExtendedSelection _xsel;
 };
 
 class VoETestManager {
@@ -187,10 +178,6 @@ class VoETestManager {
     return voe_vsync_;
   }
 
-  VoEEncryption* EncryptionPtr() const {
-    return voe_encrypt_;
-  }
-
   VoEExternalMedia* ExternalMediaPtr() const {
     return voe_xmedia_;
   }
@@ -213,7 +200,6 @@ class VoETestManager {
   VoECallReport*         voe_call_report_;
   VoECodec*              voe_codec_;
   VoEDtmf*               voe_dtmf_;
-  VoEEncryption*         voe_encrypt_;
   VoEExternalMedia*      voe_xmedia_;
   VoEFile*               voe_file_;
   VoEHardware*           voe_hardware_;
@@ -227,8 +213,10 @@ class VoETestManager {
   VoEAudioProcessing*    voe_apm_;
 
   ResourceManager        resource_manager_;
+
+  Config                 config_;
 };
 
-} // namespace voetest
+}  // namespace voetest
 
 #endif // WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H

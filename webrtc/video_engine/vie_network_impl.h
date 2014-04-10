@@ -32,21 +32,18 @@ class ViENetworkImpl
   virtual int DeregisterSendTransport(const int video_channel);
   virtual int ReceivedRTPPacket(const int video_channel,
                                 const void* data,
-                                const int length);
+                                const int length,
+                                const PacketTime& packet_time);
   virtual int ReceivedRTCPPacket(const int video_channel,
                                  const void* data,
                                  const int length);
   virtual int SetMTU(int video_channel, unsigned int mtu);
-  virtual int SetPacketTimeoutNotification(const int video_channel,
-                                           bool enable,
-                                           int timeout_seconds);
-  virtual int RegisterObserver(const int video_channel,
-                               ViENetworkObserver& observer);
-  virtual int DeregisterObserver(const int video_channel);
-  virtual int SetPeriodicDeadOrAliveStatus(
-      const int video_channel,
-      const bool enable,
-      const unsigned int sample_time_seconds);
+
+  virtual int ReceivedBWEPacket(const int video_channel,
+      int64_t arrival_time_ms, int payload_size, const RTPHeader& header);
+
+  virtual bool SetBandwidthEstimationConfig(int video_channel,
+                                            const webrtc::Config& config);
 
  protected:
   explicit ViENetworkImpl(ViESharedData* shared_data);

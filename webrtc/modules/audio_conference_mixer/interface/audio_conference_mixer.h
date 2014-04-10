@@ -57,7 +57,7 @@ public:
 
     // Add/remove participants as candidates for mixing.
     virtual int32_t SetMixabilityStatus(MixerParticipant& participant,
-                                        const bool mixable) = 0;
+                                        bool mixable) = 0;
     // mixable is set to true if a participant is a candidate for mixing.
     virtual int32_t MixabilityStatus(MixerParticipant& participant,
                                      bool& mixable) = 0;
@@ -80,6 +80,6 @@ public:
 protected:
     AudioConferenceMixer() {}
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INTERFACE_AUDIO_CONFERENCE_MIXER_H_

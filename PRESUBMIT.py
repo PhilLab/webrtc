@@ -6,26 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-def _LicenseHeader(input_api):
-  """Returns the license header regexp."""
-  # Accept any year number from 2011 to the current year
-  current_year = int(input_api.time.strftime('%Y'))
-  allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
-  years_re = '(' + '|'.join(allowed_years) + ')'
-  license_header = (
-      r'.*? Copyright \(c\) %(year)s The WebRTC project authors\. '
-        r'All Rights Reserved\.\n'
-      r'.*?\n'
-      r'.*? Use of this source code is governed by a BSD-style license\n'
-      r'.*? that can be found in the LICENSE file in the root of the source\n'
-      r'.*? tree\. An additional intellectual property rights grant can be '
-        r'found\n'
-      r'.*? in the file PATENTS\.  All contributing project authors may\n'
-      r'.*? be found in the AUTHORS file in the root of the source tree\.\n'
-  ) % {
-      'year': years_re,
-  }
-  return license_header
+import re
+
 
 def _CheckNoIOStreamInHeaders(input_api, output_api):
   """Checks to make sure no .h files include <iostream>."""
@@ -111,6 +93,23 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   return result
 
+def _CheckTalkOrWebrtcOnly(input_api, output_api):
+  base_folders = set(["webrtc", "talk"])
+  base_folders_in_cl = set()
+
+  for f in input_api.AffectedFiles():
+    full_path = f.LocalPath()
+    base_folders_in_cl.add(full_path[:full_path.find('/')])
+
+  results = []
+  if base_folders.issubset(base_folders_in_cl):
+    error_type = output_api.PresubmitError
+    results.append(error_type(
+        'It is not allowed to check in files to ' + ', '.join(base_folders) +
+        ' in the same cl',
+        []))
+  return results
+
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   # TODO(kjellander): Use presubmit_canned_checks.PanProjectChecks too.
@@ -118,21 +117,25 @@ def _CommonChecks(input_api, output_api):
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
       black_list=(r'^.*gviz_api\.py$',
                   r'^.*gaeunit\.py$',
+                  # Embedded shell-script fakes out pylint.
+                  r'^talk/site_scons/site_tools/talk_linux.py$',
                   r'^third_party/.*\.py$',
                   r'^testing/.*\.py$',
+                  r'^tools/clang/.*\.py$',
                   r'^tools/gyp/.*\.py$',
                   r'^tools/perf_expectations/.*\.py$',
                   r'^tools/protoc_wrapper/.*\.py$',
                   r'^tools/python/.*\.py$',
                   r'^tools/python_charts/data/.*\.py$',
-                  r'^tools/refactoring.*\.py$',
+                  r'^tools/refactoring/.*\.py$',
+                  r'^tools/swarming_client/.*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^tools/valgrind-webrtc/.*\.py$',
                   r'^tools/valgrind/.*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^webrtc/build/.*\.py$',
                   r'^build/.*\.py$',
-                  r'^out/.*\.py$',),
+                  r'^out.*/.*\.py$',),
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x
                          'W0232',  # Class has no __init__ method
@@ -146,10 +149,9 @@ def _CommonChecks(input_api, output_api):
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api))
   results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
-  results.extend(input_api.canned_checks.CheckLicense(
-      input_api, output_api, _LicenseHeader(input_api)))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
+  results.extend(_CheckTalkOrWebrtcOnly(input_api, output_api))
   return results
 
 def CheckChangeOnUpload(input_api, output_api):
@@ -169,5 +171,68 @@ def CheckChangeOnCommit(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasTestField(
       input_api, output_api))
+  results.extend(input_api.canned_checks.CheckTreeIsOpen(
+      input_api, output_api,
+      json_url='http://webrtc-status.appspot.com/current?format=json'))
   return results
 
+def GetDefaultTryConfigs(bots=None):
+  """Returns a list of ('bot', set(['tests']), optionally filtered by [bots].
+
+  For WebRTC purposes, we always return an empty list of tests, since we want
+  to run all tests by default on all our trybots.
+  """
+  return { 'tryserver.webrtc': dict((bot, []) for bot in bots)}
+
+# pylint: disable=W0613
+def GetPreferredTryMasters(project, change):
+  files = change.LocalPaths()
+
+  android_bots = [
+      'android',
+      'android_apk',
+      'android_apk_rel',
+      'android_rel',
+      'android_clang',
+  ]
+  ios_bots = [
+      'ios',
+      'ios_rel',
+  ]
+  linux_bots = [
+      'linux',
+      'linux_asan',
+      'linux_baremetal',
+      'linux_memcheck',
+      'linux_rel',
+      'linux_tsan',
+      'linux_tsan2',
+  ]
+  mac_bots = [
+      'mac',
+      'mac_asan',
+      'mac_baremetal',
+      'mac_rel',
+      'mac_x64_rel',
+  ]
+  win_bots = [
+      'win',
+      'win_asan',
+      'win_baremetal',
+      'win_rel',
+      'win_x64_rel',
+  ]
+  if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
+    return {}
+
+  if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
+    return GetDefaultTryConfigs(mac_bots)
+  if all(re.search('(^|[/_])win[/_.]', f) for f in files):
+    return GetDefaultTryConfigs(win_bots)
+  if all(re.search('(^|[/_])android[/_.]', f) for f in files):
+    return GetDefaultTryConfigs(android_bots)
+  if all(re.search('[/_]ios[/_.]', f) for f in files):
+    return GetDefaultTryConfigs(ios_bots)
+
+  return GetDefaultTryConfigs(android_bots + ios_bots + linux_bots + mac_bots +
+                              win_bots)

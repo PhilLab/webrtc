@@ -35,6 +35,8 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_H
 #define WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_H
 
+#include <stdio.h>
+
 #include "webrtc/common_types.h"
 
 namespace webrtc {
@@ -191,6 +193,10 @@ public:
     // The file can later be used for off-line analysis of the AP performance.
     virtual int StartDebugRecording(const char* fileNameUTF8) = 0;
 
+    // Same as above but sets and uses an existing file handle. Takes ownership
+    // of |file_handle| and passes it on to the audio processing module.
+    virtual int StartDebugRecording(FILE* file_handle) = 0;
+
     // Disables recording of AP debugging information.
     virtual int StopDebugRecording() = 0;
 
@@ -232,6 +238,6 @@ protected:
     virtual ~VoEAudioProcessing() {}
 };
 
-}  //  namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_H

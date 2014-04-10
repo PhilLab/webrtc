@@ -12,7 +12,7 @@
 #include "../../video_capture_config.h"
 #include "video_capture_avfoundation_info_objc.h"
 
-#include "video_capture.h"
+#include "../../include/video_capture.h"
 
 namespace webrtc
 {

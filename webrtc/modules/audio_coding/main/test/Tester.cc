@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/test/APITest.h"
 #include "webrtc/modules/audio_coding/main/test/EncodeDecodeTest.h"
@@ -23,128 +24,208 @@
 #include "webrtc/modules/audio_coding/main/test/TestStereo.h"
 #include "webrtc/modules/audio_coding/main/test/TestVADDTX.h"
 #include "webrtc/modules/audio_coding/main/test/TwoWayCommunication.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
-using webrtc::AudioCodingModule;
 using webrtc::Trace;
 
 // This parameter is used to describe how to run the tests. It is normally
-// set to 1, but in auto test all printing is turned off, and the parameter is
-// set to 0.
-#define ACM_TEST_MODE 1
-
-// TODO(tlegrand): Add all tests as individual gtests, like already done for
-// TestAllCodecs (ACM_TEST_ALL_ENC_DEC).
-
-// Choose what tests to run by defining one or more of the following:
-//
-// ACM_AUTO_TEST - Most common codecs and settings will be tested. All the
-//                 other tests will be activated.
-// ACM_TEST_ENC_DEC - You decide what to test in run time. Used for debugging
-//                    and for testing while implementing.
-// ACM_TEST_TWO_WAY - Mainly for debugging.
-// ACM_TEST_ALL_CODECS - Loop through all defined codecs and settings.
-// ACM_TEST_STEREO - Run stereo and spatial audio tests.
-// ACM_TEST_VAD_DTX - Run all VAD/DTX tests.
-// ACM_TEST_FEC - Test FEC (also called RED).
-// ACM_TEST_CODEC_SPEC_API - Test the iSAC has codec specfic APIs.
-// ACM_TEST_FULL_API - Test all APIs with threads (long test).
-
-#define ACM_AUTO_TEST
-//#define ACM_TEST_ENC_DEC
-//#define ACM_TEST_TWO_WAY
-//#define ACM_TEST_ALL_CODECS
-//#define ACM_TEST_STEREO
-//#define ACM_TEST_VAD_DTX
-//#define ACM_TEST_FEC
-//#define ACM_TEST_CODEC_SPEC_API
-//#define ACM_TEST_FULL_API
-
-// If Auto test is active, we activate all tests.
-#ifdef ACM_AUTO_TEST
-#undef ACM_TEST_MODE
+// set to 0, and all tests are run in quite mode.
 #define ACM_TEST_MODE 0
-#ifndef ACM_TEST_ALL_CODECS
-#define ACM_TEST_ALL_CODECS
-#endif
-#endif
 
-void PopulateTests(std::vector<ACMTest*>* tests) {
-  Trace::CreateTrace();
-  Trace::SetTraceFile((webrtc::test::OutputPath() + "acm_trace.txt").c_str());
-
-  printf("The following tests will be executed:\n");
-#ifdef ACM_AUTO_TEST
-  printf("  ACM auto test\n");
-  tests->push_back(new webrtc::EncodeDecodeTest(0));
-  tests->push_back(new webrtc::TwoWayCommunication(0));
-  tests->push_back(new webrtc::TestStereo(0));
-  tests->push_back(new webrtc::TestVADDTX(0));
-  tests->push_back(new webrtc::TestFEC(0));
-  tests->push_back(new webrtc::ISACTest(0));
-#endif
-#ifdef ACM_TEST_ENC_DEC
-  printf("  ACM encode-decode test\n");
-  tests->push_back(new webrtc::EncodeDecodeTest(2));
-#endif
-#ifdef ACM_TEST_TWO_WAY
-  printf("  ACM two-way communication test\n");
-  tests->push_back(new webrtc::TwoWayCommunication(1));
-#endif
-#ifdef ACM_TEST_STEREO
-  printf("  ACM stereo test\n");
-  tests->push_back(new webrtc::TestStereo(1));
-#endif
-#ifdef ACM_TEST_VAD_DTX
-  printf("  ACM VAD-DTX test\n");
-  tests->push_back(new webrtc::TestVADDTX(1));
-#endif
-#ifdef ACM_TEST_FEC
-  printf("  ACM FEC test\n");
-  tests->push_back(new webrtc::TestFEC(1));
-#endif
-#ifdef ACM_TEST_CODEC_SPEC_API
-  printf("  ACM codec API test\n");
-  tests->push_back(new webrtc::ISACTest(1));
-#endif
-#ifdef ACM_TEST_FULL_API
-  printf("  ACM full API test\n");
-  tests->push_back(new webrtc::APITest());
-#endif
-  printf("\n");
-}
-
-// TODO(kjellander): Make this a proper gtest instead of using this single test
-// to run all the tests.
-
-#ifdef ACM_TEST_ALL_CODECS
 TEST(AudioCodingModuleTest, TestAllCodecs) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
           "acm_allcodecs_trace.txt").c_str());
-  webrtc::TestAllCodecs(ACM_TEST_MODE).Perform();
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::TestAllCodecs(ACM_TEST_MODE, config).Perform();
   Trace::ReturnTrace();
 }
-#endif
+
+TEST(AudioCodingModuleTest, TestAllCodecsNewACM) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+          "acm_allcodecs_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::TestAllCodecs(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestEncodeDecode)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_encodedecode_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::EncodeDecodeTest(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestEncodeDecodeNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_encodedecode_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::EncodeDecodeTest(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestFEC)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_fec_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::TestFEC(config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestFECNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_fec_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::TestFEC(config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestIsac)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_isac_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::ISACTest(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestIsacNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_isac_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::ISACTest(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TwoWayCommunication)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_twowaycom_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::TwoWayCommunication(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TwoWayCommunicationNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_twowaycom_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::TwoWayCommunication(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestStereo)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_stereo_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::TestStereo(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestStereoNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_stereo_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::TestStereo(ACM_TEST_MODE, config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestVADDTX)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_vaddtx_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::TestVADDTX(config).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestVADDTXNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_vaddtx_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::TestVADDTX(config).Perform();
+  Trace::ReturnTrace();
+}
 
 TEST(AudioCodingModuleTest, TestOpus) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
-          "acm_opus_trace.txt").c_str());
-  webrtc::OpusTest().Perform();
+      "acm_opus_trace.txt").c_str());
+  webrtc::Config config;
+
+  UseLegacyAcm(&config);
+  webrtc::OpusTest(config).Perform();
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, RunAllTests) {
-  std::vector<ACMTest*> tests;
-  PopulateTests(&tests);
-  std::vector<ACMTest*>::iterator it;
-  for (it = tests.begin(); it < tests.end(); it++) {
-    (*it)->Perform();
-    delete (*it);
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestOpusNewACM)) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_opus_trace_new.txt").c_str());
+  webrtc::Config config;
+
+  UseNewAcm(&config);
+  webrtc::OpusTest(config).Perform();
+  Trace::ReturnTrace();
+}
+
+// The full API test is too long to run automatically on bots, but can be used
+// for offline testing. User interaction is needed.
+#ifdef ACM_TEST_FULL_API
+  TEST(AudioCodingModuleTest, TestAPI) {
+    Trace::CreateTrace();
+    Trace::SetTraceFile((webrtc::test::OutputPath() +
+        "acm_apitest_trace.txt").c_str());
+    webrtc::Config config;
+
+    UseLegacyAcm(&config);
+    webrtc::APITest(config).Perform();
+
+    UseNewAcm(&config);
+    webrtc::APITest(config).Perform();
+
+    Trace::ReturnTrace();
   }
-
-  Trace::ReturnTrace();
-  printf("ACM test completed\n");
-}
+#endif

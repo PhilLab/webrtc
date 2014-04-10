@@ -11,14 +11,14 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
 
-#include "typedefs.h"
-#include "module_common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {
 
 // MAX_HISTORY_SIZE * SHORT_FILTER_MS defines the window size in milliseconds
-#define MAX_HISTORY_SIZE 20
+#define MAX_HISTORY_SIZE 10
 #define SHORT_FILTER_MS 1000
 
 class VCMShortMaxSample
@@ -50,12 +50,13 @@ private:
     void ProcessHistory(int64_t nowMs);
 
     int32_t                     _filteredMax;
-    bool                              _firstDecodeTime;
+    // The number of samples ignored so far.
+    int32_t                     _ignoredSampleCount;
     int32_t                     _shortMax;
-    VCMShortMaxSample                 _history[MAX_HISTORY_SIZE];
+    VCMShortMaxSample           _history[MAX_HISTORY_SIZE];
 
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_

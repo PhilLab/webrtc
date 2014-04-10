@@ -16,6 +16,7 @@
       'iSAC',
       'iSACFix',
       'CNG',
+      '<(DEPTH)/third_party/opus/opus.gyp:opus',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],
@@ -38,18 +39,27 @@
         '<@(neteq_defines)',
       ],
       'include_dirs': [
-        'interface',
+        # Need Opus header files for the audio classifier.
+        '<(DEPTH)/third_party/opus/src/celt',
+        '<(DEPTH)/third_party/opus/src/src',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          # Need Opus header files for the audio classifier.
+          '<(DEPTH)/third_party/opus/src/celt',
+          '<(DEPTH)/third_party/opus/src/src',
         ],
       },
+      'export_dependent_settings': [
+        '<(DEPTH)/third_party/opus/opus.gyp:opus',
+      ],
       'sources': [
         'interface/audio_decoder.h',
         'interface/neteq.h',
         'accelerate.cc',
         'accelerate.h',
+        'audio_classifier.cc',
+        'audio_classifier.h',
         'audio_decoder_impl.cc',
         'audio_decoder_impl.h',
         'audio_decoder.cc',
@@ -112,10 +122,6 @@
         'time_stretch.cc',
         'time_stretch.h',
       ],
-      # Disable warnings to enable Win64 build, issue 1323.
-      'msvs_disabled_warnings': [
-        4267,  # size_t to int truncation.
-      ],
     },
   ], # targets
   'conditions': [
@@ -124,7 +130,7 @@
       'targets': [
         {
           'target_name': 'audio_decoder_unittests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             '<@(neteq_dependencies)',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -147,9 +153,14 @@
             'audio_decoder.cc',
             'interface/audio_decoder.h',
           ],
-          # Disable warnings to enable Win64 build, issue 1323.
-          'msvs_disabled_warnings': [
-            4267,  # size_t to int truncation.
+          'conditions': [
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
           ],
         }, # audio_decoder_unittests
 
@@ -159,7 +170,7 @@
           'dependencies': [
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            'PCM16B',  # Needed by neteq_performance_test.
           ],
           'direct_dependent_settings': {
             'include_dirs': [
@@ -170,17 +181,52 @@
             'tools',
           ],
           'sources': [
+            'tools/audio_loop.cc',
+            'tools/audio_loop.h',
             'tools/input_audio_file.cc',
             'tools/input_audio_file.h',
+            'tools/neteq_performance_test.cc',
+            'tools/neteq_performance_test.h',
             'tools/rtp_generator.cc',
             'tools/rtp_generator.h',
-          ],
-          # Disable warnings to enable Win64 build, issue 1323.
-          'msvs_disabled_warnings': [
-            4267,  # size_t to int truncation.
+            'tools/neteq_quality_test.cc',
+            'tools/neteq_quality_test.h',
           ],
         }, # neteq_unittest_tools
       ], # targets
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'targets': [
+            {
+              'target_name': 'audio_decoder_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):audio_decoder_unittests_apk',
+              ],
+            },
+          ],
+        }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'audio_decoder_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'audio_decoder_unittests',
+              ],
+              'includes': [
+                '../../../build/isolate.gypi',
+                'audio_decoder_unittests.isolate',
+              ],
+              'sources': [
+                'audio_decoder_unittests.isolate',
+              ],
+            },
+          ],
+        }],
+      ],
     }], # include_tests
   ], # conditions
 }

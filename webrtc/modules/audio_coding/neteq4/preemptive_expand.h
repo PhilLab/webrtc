@@ -29,7 +29,7 @@ class BackgroundNoise;
 // PreemptiveExpand are implemented.
 class PreemptiveExpand : public TimeStretch {
  public:
-  PreemptiveExpand(int sample_rate_hz, std::size_t num_channels,
+  PreemptiveExpand(int sample_rate_hz, size_t num_channels,
                    const BackgroundNoise& background_noise)
       : TimeStretch(sample_rate_hz, num_channels, background_noise),
         old_data_length_per_channel_(-1),
@@ -45,29 +45,39 @@ class PreemptiveExpand : public TimeStretch {
   // the outcome of the operation as an enumerator value.
   ReturnCodes Process(const int16_t *pw16_decoded,
                       int len,
-                      int oldDataLen,
-                      AudioMultiVector<int16_t>* output,
+                      int old_data_len,
+                      AudioMultiVector* output,
                       int16_t* length_change_samples);
 
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech.
-  virtual void SetParametersForPassiveSpeech(int len,
+  virtual void SetParametersForPassiveSpeech(size_t len,
                                              int16_t* w16_bestCorr,
                                              int* w16_bestIndex) const;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
   virtual ReturnCodes CheckCriteriaAndStretch(
-      const int16_t *pw16_decoded, int len, std::size_t w16_bestIndex,
+      const int16_t *pw16_decoded, size_t len, size_t w16_bestIndex,
       int16_t w16_bestCorr, bool w16_VAD,
-      AudioMultiVector<int16_t>* output) const;
+      AudioMultiVector* output) const;
 
  private:
   int old_data_length_per_channel_;
   int overlap_samples_;
 
   DISALLOW_COPY_AND_ASSIGN(PreemptiveExpand);
+};
+
+struct PreemptiveExpandFactory {
+  PreemptiveExpandFactory() {}
+  virtual ~PreemptiveExpandFactory() {}
+
+  virtual PreemptiveExpand* Create(
+      int sample_rate_hz,
+      size_t num_channels,
+      const BackgroundNoise& background_noise) const;
 };
 
 }  // namespace webrtc

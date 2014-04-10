@@ -34,7 +34,7 @@
 
 #include <stdio.h>
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 #include "mp4_file_objc.h"
 
 namespace webrtc {

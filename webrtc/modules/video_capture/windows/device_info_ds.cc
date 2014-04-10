@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "device_info_ds.h"
+#include "webrtc/modules/video_capture/windows/device_info_ds.h"
 
-#include "../video_capture_config.h"
-#include "../video_capture_delay.h"
-#include "help_functions_ds.h"
-#include "ref_count.h"
-#include "trace.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/modules/video_capture/video_capture_delay.h"
+#include "webrtc/modules/video_capture/windows/help_functions_ds.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
-#include <Streams.h>
 #include <Dvdmedia.h>
+#include <Streams.h>
 
 namespace webrtc
 {
@@ -367,23 +367,17 @@ IBaseFilter * DeviceInfoDS::GetDeviceFilter(
 }
 
 int32_t DeviceInfoDS::GetWindowsCapability(
-                              const int32_t capabilityIndex,
-                              VideoCaptureCapabilityWindows& windowsCapability)
+    const int32_t capabilityIndex,
+    VideoCaptureCapabilityWindows& windowsCapability) {
+  ReadLockScoped cs(_apiLock);
 
-{
-    ReadLockScoped cs(_apiLock);
-    // Make sure the number is valid
-    if (capabilityIndex >= _captureCapabilities.Size() || capabilityIndex < 0)
-        return -1;
+  if (capabilityIndex < 0 || static_cast<size_t>(capabilityIndex) >=
+                                 _captureCapabilitiesWindows.size()) {
+    return -1;
+  }
 
-    MapItem* item = _captureCapabilities.Find(capabilityIndex);
-    if (!item)
-        return -1;
-
-    VideoCaptureCapabilityWindows* capPointer =
-                static_cast<VideoCaptureCapabilityWindows*> (item->GetItem());
-    windowsCapability = *capPointer;
-    return 0;
+  windowsCapability = _captureCapabilitiesWindows[capabilityIndex];
+  return 0;
 }
 
 int32_t DeviceInfoDS::CreateCapabilityMap(
@@ -391,14 +385,7 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
 
 {
     // Reset old capability list
-    MapItem* item = NULL;
-    while (item = _captureCapabilities.Last())
-    {
-        VideoCaptureCapabilityWindows* cap =
-            static_cast<VideoCaptureCapabilityWindows*> (item->GetItem());
-        delete cap;
-        _captureCapabilities.Erase(item);
-    }
+    _captureCapabilities.clear();
 
     const int32_t deviceUniqueIdUTF8Length =
         (int32_t) strlen((char*) deviceUniqueIdUTF8);
@@ -473,7 +460,6 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
         return -1;
     }
 
-    int32_t index = 0; // Index in created _capabilities map
     // Check if the device support formattype == FORMAT_VideoInfo2 and FORMAT_VideoInfo.
     // Prefer FORMAT_VideoInfo since some cameras (ZureCam) has been seen having problem with MJPEG and FORMAT_VideoInfo2
     // Interlace flag is only supported in FORMAT_VideoInfo2
@@ -540,8 +526,7 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
             && pmt->formattype == preferedVideoFormat)
         {
 
-            VideoCaptureCapabilityWindows* capability =
-                                        new VideoCaptureCapabilityWindows();
+            VideoCaptureCapabilityWindows capability;
             int64_t avgTimePerFrame = 0;
 
             if (pmt->formattype == FORMAT_VideoInfo)
@@ -549,9 +534,9 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                 VIDEOINFOHEADER* h =
                     reinterpret_cast<VIDEOINFOHEADER*> (pmt->pbFormat);
                 assert(h);
-                capability->directShowCapabilityIndex = tmp;
-                capability->width = h->bmiHeader.biWidth;
-                capability->height = h->bmiHeader.biHeight;
+                capability.directShowCapabilityIndex = tmp;
+                capability.width = h->bmiHeader.biWidth;
+                capability.height = h->bmiHeader.biHeight;
                 avgTimePerFrame = h->AvgTimePerFrame;
             }
             if (pmt->formattype == FORMAT_VideoInfo2)
@@ -559,10 +544,10 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                 VIDEOINFOHEADER2* h =
                     reinterpret_cast<VIDEOINFOHEADER2*> (pmt->pbFormat);
                 assert(h);
-                capability->directShowCapabilityIndex = tmp;
-                capability->width = h->bmiHeader.biWidth;
-                capability->height = h->bmiHeader.biHeight;
-                capability->interlaced = h->dwInterlaceFlags
+                capability.directShowCapabilityIndex = tmp;
+                capability.width = h->bmiHeader.biWidth;
+                capability.height = h->bmiHeader.biHeight;
+                capability.interlaced = h->dwInterlaceFlags
                                         & (AMINTERLACE_IsInterlaced
                                            | AMINTERLACE_DisplayModeBobOnly);
                 avgTimePerFrame = h->AvgTimePerFrame;
@@ -571,11 +556,11 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
             if (hrVC == S_OK)
             {
                 LONGLONG *frameDurationList;
-                LONGLONG maxFPS; 
+                LONGLONG maxFPS;
                 long listSize;
                 SIZE size;
-                size.cx = capability->width;
-                size.cy = capability->height;
+                size.cx = capability.width;
+                size.cy = capability.height;
 
                 // GetMaxAvailableFrameRate doesn't return max frame rate always
                 // eg: Logitech Notebook. This may be due to a bug in that API
@@ -590,12 +575,12 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                 // On some odd cameras, you may get a 0 for duration.
                 // GetMaxOfFrameArray returns the lowest duration (highest FPS)
                 if (hrVC == S_OK && listSize > 0 &&
-                    0 != (maxFPS = GetMaxOfFrameArray(frameDurationList, 
+                    0 != (maxFPS = GetMaxOfFrameArray(frameDurationList,
                                                       listSize)))
                 {
-                    capability->maxFPS = static_cast<int> (10000000
+                    capability.maxFPS = static_cast<int> (10000000
                                                            / maxFPS);
-                    capability->supportFrameRateControl = true;
+                    capability.supportFrameRateControl = true;
                 }
                 else // use existing method
                 {
@@ -603,61 +588,61 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                                  _id,
                                  "GetMaxAvailableFrameRate NOT SUPPORTED");
                     if (avgTimePerFrame > 0)
-                        capability->maxFPS = static_cast<int> (10000000
+                        capability.maxFPS = static_cast<int> (10000000
                                                                / avgTimePerFrame);
                     else
-                        capability->maxFPS = 0;
+                        capability.maxFPS = 0;
                 }
             }
             else // use existing method in case IAMVideoControl is not supported
             {
                 if (avgTimePerFrame > 0)
-                    capability->maxFPS = static_cast<int> (10000000
+                    capability.maxFPS = static_cast<int> (10000000
                                                            / avgTimePerFrame);
                 else
-                    capability->maxFPS = 0;
+                    capability.maxFPS = 0;
             }
 
             // can't switch MEDIATYPE :~(
             if (pmt->subtype == MEDIASUBTYPE_I420)
             {
-                capability->rawType = kVideoI420;
+                capability.rawType = kVideoI420;
             }
             else if (pmt->subtype == MEDIASUBTYPE_IYUV)
             {
-                capability->rawType = kVideoIYUV;
+                capability.rawType = kVideoIYUV;
             }
             else if (pmt->subtype == MEDIASUBTYPE_RGB24)
             {
-                capability->rawType = kVideoRGB24;
+                capability.rawType = kVideoRGB24;
             }
             else if (pmt->subtype == MEDIASUBTYPE_YUY2)
             {
-                capability->rawType = kVideoYUY2;
+                capability.rawType = kVideoYUY2;
             }
             else if (pmt->subtype == MEDIASUBTYPE_RGB565)
             {
-                capability->rawType = kVideoRGB565;
+                capability.rawType = kVideoRGB565;
             }
             else if (pmt->subtype == MEDIASUBTYPE_MJPG)
             {
-                capability->rawType = kVideoMJPEG;
+                capability.rawType = kVideoMJPEG;
             }
             else if (pmt->subtype == MEDIASUBTYPE_dvsl
                     || pmt->subtype == MEDIASUBTYPE_dvsd
                     || pmt->subtype == MEDIASUBTYPE_dvhd) // If this is an external DV camera
             {
-                capability->rawType = kVideoYUY2;// MS DV filter seems to create this type
+                capability.rawType = kVideoYUY2;// MS DV filter seems to create this type
             }
             else if (pmt->subtype == MEDIASUBTYPE_UYVY) // Seen used by Declink capture cards
             {
-                capability->rawType = kVideoUYVY;
+                capability.rawType = kVideoUYVY;
             }
             else if (pmt->subtype == MEDIASUBTYPE_HDYC) // Seen used by Declink capture cards. Uses BT. 709 color. Not entiry correct to use UYVY. http://en.wikipedia.org/wiki/YCbCr
             {
                 WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCapture, _id,
                              "Device support HDYC.");
-                capability->rawType = kVideoUYVY;
+                capability.rawType = kVideoUYVY;
             }
             else
             {
@@ -667,22 +652,22 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                              webrtc::kTraceVideoCapture, _id,
                              "Device support unknown media type %ls, width %d, height %d",
                              strGuid);
-                delete capability;
                 continue;
             }
 
             // Get the expected capture delay from the static list
-            capability->expectedCaptureDelay
+            capability.expectedCaptureDelay
                             = GetExpectedCaptureDelay(WindowsCaptureDelays,
                                                       NoWindowsCaptureDelays,
                                                       productId,
-                                                      capability->width,
-                                                      capability->height);
-            _captureCapabilities.Insert(index++, capability);
+                                                      capability.width,
+                                                      capability.height);
+            _captureCapabilities.push_back(capability);
+            _captureCapabilitiesWindows.push_back(capability);
             WEBRTC_TRACE( webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                          "Camera capability, width:%d height:%d type:%d fps:%d",
-                         capability->width, capability->height,
-                         capability->rawType, capability->maxFPS);
+                         capability.width, capability.height,
+                         capability.rawType, capability.maxFPS);
         }
         DeleteMediaType(pmt);
         pmt = NULL;
@@ -699,9 +684,9 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                                                        + 1);
     memcpy(_lastUsedDeviceName, deviceUniqueIdUTF8, _lastUsedDeviceNameLength+ 1);
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
-                 "CreateCapabilityMap %d", _captureCapabilities.Size());
+                 "CreateCapabilityMap %d", _captureCapabilities.size());
 
-    return _captureCapabilities.Size();
+    return static_cast<int32_t>(_captureCapabilities.size());
 }
 
 /* Constructs a product ID from the Windows DevicePath. on a USB device the devicePath contains product id and vendor id.
@@ -809,5 +794,5 @@ int32_t DeviceInfoDS::DisplayCaptureSettingsDialogBox(
     filter->Release();
     return 0;
 }
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

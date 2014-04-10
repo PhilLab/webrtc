@@ -7,18 +7,48 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'includes': [
+    '../../build/common.gypi',
+  ],
   'targets': [
     {
       'target_name': 'remote_bitrate_estimator',
       'type': 'static_library',
       'dependencies': [
-        # system_wrappers
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(rbe_components_path)/remote_bitrate_estimator_components.gyp:rbe_components',
       ],
-      'include_dirs': [
-        'include',
-        '../rtp_rtcp/interface',
-        '../interface',
+      'sources': [
+        'include/bwe_defines.h',
+        'include/remote_bitrate_estimator.h',
+        'include/rtp_to_ntp.h',
+        'rate_statistics.cc',
+        'rate_statistics.h',
+        'rtp_to_ntp.cc',
+      ], # source
+    },
+    {
+      'target_name': 'bwe_tools_util',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        'rtp_rtcp',
+      ],
+      'sources': [
+        'tools/bwe_rtp.cc',
+        'tools/bwe_rtp.h',
+      ],
+    },
+    {
+      'target_name': 'bwe_rtp_to_text',
+      'type': 'executable',
+      'includes': [
+        '../rtp_rtcp/source/rtp_rtcp.gypi',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        'bwe_tools_util',
+        'rtp_rtcp',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -26,21 +56,31 @@
         ],
       },
       'sources': [
-        # interface
-        'include/bwe_defines.h',
-        'include/remote_bitrate_estimator.h',
-        'include/rtp_to_ntp.h',
-
-        # source
-        'bitrate_estimator.cc',
-        'bitrate_estimator.h',
-        'overuse_detector.cc',
-        'overuse_detector.h',
-        'remote_bitrate_estimator_multi_stream.cc',
-        'remote_bitrate_estimator_single_stream.cc',
-        'remote_rate_control.cc',
-        'remote_rate_control.h',
-        'rtp_to_ntp.cc',
+        'tools/rtp_to_text.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.h',
+      ], # source
+    },
+    {
+      'target_name': 'bwe_rtp_play',
+      'type': 'executable',
+      'includes': [
+        '../rtp_rtcp/source/rtp_rtcp.gypi',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        'bwe_tools_util',
+        'rtp_rtcp',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          'include',
+        ],
+      },
+      'sources': [
+        'tools/bwe_rtp_play.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.h',
       ], # source
     },
   ], # targets

@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_H264_H264_INFORMATION_H_
 
 #include "VideoCodecInformation.h"
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 enum
@@ -165,6 +165,6 @@ private:
     uint32_t          _remLength;
     H264Info          _info;
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_H264_H264_INFORMATION_H_

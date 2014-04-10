@@ -8,32 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "normal_async_test.h"
+#include "webrtc/modules/video_coding/codecs/test_framework/normal_async_test.h"
 
 #include <assert.h>
-#include <string.h>
 #include <queue>
 #include <sstream>
+#include <string.h>
 #include <vector>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "gtest/gtest.h"
-#include "tick_util.h"
-#include "testsupport/fileutils.h"
-#include "typedefs.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/typedefs.h"
 
 using namespace webrtc;
 
 NormalAsyncTest::NormalAsyncTest()
 :
-NormalTest("Async Normal Test 1", "A test of normal execution of the codec",
-           _testNo),
+NormalTest("Async Normal Test 1", "A test of normal execution of the codec", 1),
 _decodeCompleteTime(0),
 _encodeCompleteTime(0),
 _encFrameCnt(0),
 _decFrameCnt(0),
 _requestKeyFrame(false),
-_testNo(1),
 _appendNext(false),
 _missingFrames(false),
 _rttFrames(0),
@@ -47,13 +45,13 @@ _waitForKey(false)
 NormalAsyncTest::NormalAsyncTest(uint32_t bitRate)
 :
 NormalTest("Async Normal Test 1", "A test of normal execution of the codec",
-           bitRate, _testNo),
+           bitRate,
+           1),
 _decodeCompleteTime(0),
 _encodeCompleteTime(0),
 _encFrameCnt(0),
 _decFrameCnt(0),
 _requestKeyFrame(false),
-_testNo(1),
 _appendNext(false),
 _missingFrames(false),
 _rttFrames(0),
@@ -67,13 +65,12 @@ _waitForKey(false)
 NormalAsyncTest::NormalAsyncTest(std::string name, std::string description,
                                  unsigned int testNo)
 :
-NormalTest(name, description, _testNo),
+NormalTest(name, description, testNo),
 _decodeCompleteTime(0),
 _encodeCompleteTime(0),
 _encFrameCnt(0),
 _decFrameCnt(0),
 _requestKeyFrame(false),
-_testNo(testNo),
 _lengthEncFrame(0),
 _appendNext(false),
 _missingFrames(false),
@@ -88,13 +85,12 @@ _waitForKey(false)
 NormalAsyncTest::NormalAsyncTest(std::string name, std::string description,
                                  uint32_t bitRate, unsigned int testNo)
 :
-NormalTest(name, description, bitRate, _testNo),
+NormalTest(name, description, bitRate, testNo),
 _decodeCompleteTime(0),
 _encodeCompleteTime(0),
 _encFrameCnt(0),
 _decFrameCnt(0),
 _requestKeyFrame(false),
-_testNo(testNo),
 _lengthEncFrame(0),
 _appendNext(false),
 _missingFrames(false),
@@ -110,13 +106,12 @@ NormalAsyncTest::NormalAsyncTest(std::string name, std::string description,
                                  uint32_t bitRate, unsigned int testNo,
                                  unsigned int rttFrames)
 :
-NormalTest(name, description, bitRate, _testNo),
+NormalTest(name, description, bitRate, testNo),
 _decodeCompleteTime(0),
 _encodeCompleteTime(0),
 _encFrameCnt(0),
 _decFrameCnt(0),
 _requestKeyFrame(false),
-_testNo(testNo),
 _lengthEncFrame(0),
 _appendNext(false),
 _missingFrames(false),

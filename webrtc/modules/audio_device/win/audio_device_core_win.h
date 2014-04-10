@@ -13,19 +13,19 @@
 
 #if (_MSC_VER >= 1400)  // only include for VS 2005 and higher
 
-#include "audio_device_generic.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
 
 #include <wmcodecdsp.h>      // CLSID_CWMAudioAEC
                              // (must be before audioclient.h)
 #include <Audioclient.h>     // WASAPI
 #include <Audiopolicy.h>
+#include <Mmdeviceapi.h>     // MMDevice
 #include <avrt.h>            // Avrt
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
-#include <Mmdeviceapi.h>     // MMDevice
 
-#include "critical_section_wrapper.h"
-#include "scoped_refptr.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment( lib, "avrt.lib" )
@@ -138,10 +138,8 @@ public:
     virtual int32_t WaveOutVolume(uint16_t& volumeLeft, uint16_t& volumeRight) const;
 
     // Audio mixer initialization
-    virtual int32_t SpeakerIsAvailable(bool& available);
     virtual int32_t InitSpeaker();
     virtual bool SpeakerIsInitialized() const;
-    virtual int32_t MicrophoneIsAvailable(bool& available);
     virtual int32_t InitMicrophone();
     virtual bool MicrophoneIsInitialized() const;
 

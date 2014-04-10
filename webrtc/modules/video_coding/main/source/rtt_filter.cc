@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace.h"
-#include "internal_defines.h"
-#include "rtt_filter.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/source/rtt_filter.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
-#include <cmath>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -114,7 +114,7 @@ bool
 VCMRttFilter::JumpDetection(uint32_t rttMs)
 {
     double diffFromAvg = _avgRtt - rttMs;
-    if (std::abs(diffFromAvg) > _jumpStdDevs * std::sqrt(_varRtt))
+    if (fabs(diffFromAvg) > _jumpStdDevs * sqrt(_varRtt))
     {
         int diffSign = (diffFromAvg >= 0) ? 1 : -1;
         int jumpCountSign = (_jumpCount >= 0) ? 1 : -1;
@@ -159,7 +159,7 @@ VCMRttFilter::JumpDetection(uint32_t rttMs)
 bool
 VCMRttFilter::DriftDetection(uint32_t rttMs)
 {
-    if (_maxRtt - _avgRtt > _driftStdDevs * std::sqrt(_varRtt))
+    if (_maxRtt - _avgRtt > _driftStdDevs * sqrt(_varRtt))
     {
         if (_driftCount < kMaxDriftJumpCount)
         {

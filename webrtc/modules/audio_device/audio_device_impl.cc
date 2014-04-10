@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "audio_device_impl.h"
-#include "audio_device_config.h"
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "system_wrappers/interface/ref_count.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_impl.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
 
 #include <assert.h>
 #include <string.h>
@@ -22,14 +22,14 @@
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_core_win.h"
  #endif
-#elif defined(WEBRTC_ANDROID_OPENSLES)
-    #include <stdlib.h>
-    #include "audio_device_utility_android.h"
-    #include "audio_device_opensles_android.h"
 #elif defined(WEBRTC_ANDROID)
     #include <stdlib.h>
     #include "audio_device_utility_android.h"
-    #include "audio_device_jni_android.h"
+    #include "webrtc/modules/audio_device/android/audio_device_template.h"
+    #include "webrtc/modules/audio_device/android/audio_record_jni.h"
+    #include "webrtc/modules/audio_device/android/audio_track_jni.h"
+    #include "webrtc/modules/audio_device/android/opensles_input.h"
+    #include "webrtc/modules/audio_device/android/opensles_output.h"
 #elif defined(WEBRTC_LINUX)
     #include "audio_device_utility_linux.h"
  #if defined(LINUX_ALSA)
@@ -48,10 +48,10 @@
     #include "audio_device_utility_bb.h"
     #include "audio_device_bb.h"
 #endif
-#include "audio_device_dummy.h"
-#include "audio_device_utility_dummy.h"
-#include "critical_section_wrapper.h"
-#include "trace.h"
+#include "webrtc/modules/audio_device/dummy/audio_device_dummy.h"
+#include "webrtc/modules/audio_device/dummy/audio_device_utility_dummy.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #define CHECK_INITIALIZED()         \
 {                                   \
@@ -264,30 +264,17 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 
     // Create the *Android OpenSLES* implementation of the Audio Device
     //
-#if defined(WEBRTC_ANDROID_OPENSLES)
+#if defined(WEBRTC_ANDROID)
     if (audioLayer == kPlatformDefaultAudio)
     {
-        // Create *Android OpenELSE Audio* implementation
-        ptrAudioDevice = new AudioDeviceAndroidOpenSLES(Id());
+        // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
+#if defined(WEBRTC_ANDROID_OPENSLES)
+        ptrAudioDevice = new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
+#else
+        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
+#endif
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Android OpenSLES Audio APIs will be utilized");
-    }
-
-    if (ptrAudioDevice != NULL)
-    {
-        // Create the Android implementation of the Device Utility.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
-    }
-    // END #if defined(WEBRTC_ANDROID_OPENSLES)
-
-    // Create the *Android Java* implementation of the Audio Device
-    //
-#elif defined(WEBRTC_ANDROID)
-    if (audioLayer == kPlatformDefaultAudio)
-    {
-        // Create *Android JNI Audio* implementation
-        ptrAudioDevice = new AudioDeviceAndroidJni(Id());
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Android JNI Audio APIs will be utilized");
     }
 
     if (ptrAudioDevice != NULL)
@@ -305,14 +292,16 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 #if defined(LINUX_PULSE)
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "attempting to use the Linux PulseAudio APIs...");
 
-        if (AudioDeviceLinuxPulse::PulseAudioIsSupported())
+        // create *Linux PulseAudio* implementation
+        AudioDeviceLinuxPulse* pulseDevice = new AudioDeviceLinuxPulse(Id());
+        if (pulseDevice->Init() != -1)
         {
-            // create *Linux PulseAudio* implementation
-            ptrAudioDevice = new AudioDeviceLinuxPulse(Id());
+            ptrAudioDevice = pulseDevice;
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Linux PulseAudio APIs will be utilized");
         }
         else
         {
+            delete pulseDevice;
 #endif
 #if defined(LINUX_ALSA)
             // create *Linux ALSA Audio* implementation
@@ -708,27 +697,6 @@ bool AudioDeviceModuleImpl::Initialized() const
 }
 
 // ----------------------------------------------------------------------------
-//  SpeakerIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::SpeakerIsAvailable(bool* available)
-{
-    CHECK_INITIALIZED();
-
-    bool isAvailable(0);
-
-    if (_ptrAudioDevice->SpeakerIsAvailable(isAvailable) == -1)
-    {
-        return -1;
-    }
-
-    *available = isAvailable;
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: available=%d", available);
-    return (0);
-}
-
-// ----------------------------------------------------------------------------
 //  InitSpeaker
 // ----------------------------------------------------------------------------
 
@@ -736,27 +704,6 @@ int32_t AudioDeviceModuleImpl::InitSpeaker()
 {
     CHECK_INITIALIZED();
     return (_ptrAudioDevice->InitSpeaker());
-}
-
-// ----------------------------------------------------------------------------
-//  MicrophoneIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::MicrophoneIsAvailable(bool* available)
-{
-    CHECK_INITIALIZED();
-
-    bool isAvailable(0);
-
-    if (_ptrAudioDevice->MicrophoneIsAvailable(isAvailable) == -1)
-    {
-        return -1;
-    }
-
-    *available = isAvailable;
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: available=%d", *available);
-    return (0);
 }
 
 // ----------------------------------------------------------------------------
@@ -1817,8 +1764,6 @@ int32_t AudioDeviceModuleImpl::StopRawOutputFileRecording()
     CHECK_INITIALIZED();
 
     return (_audioDeviceBuffer.StopOutputFileRecording());
-
-    return 0;
 }
 
 // ----------------------------------------------------------------------------

@@ -79,6 +79,7 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
   virtual int GetEcDelayMetrics(int& delay_median, int& delay_std);
 
   virtual int StartDebugRecording(const char* fileNameUTF8);
+  virtual int StartDebugRecording(FILE* file_handle);
 
   virtual int StopDebugRecording();
 
@@ -107,6 +108,6 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
   voe::SharedData* _shared;
 };
 
-}  //  namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_IMPL_H

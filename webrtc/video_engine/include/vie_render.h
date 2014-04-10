@@ -22,10 +22,11 @@ namespace webrtc {
 
 class VideoEngine;
 class VideoRender;
+class VideoRenderCallback;
 
 // This class declares an abstract interface to be used for external renderers.
 // The user implemented derived class is registered using AddRenderer().
-class WEBRTC_DLLEXPORT ExternalRenderer {
+class ExternalRenderer {
  public:
   // This method will be called when the stream to be rendered changes in
   // resolution or number of streams mixed in the image.
@@ -39,13 +40,19 @@ class WEBRTC_DLLEXPORT ExternalRenderer {
                            // RTP timestamp in 90kHz.
                            uint32_t time_stamp,
                            // Wallclock render time in miliseconds
-                           int64_t render_time) = 0;
+                           int64_t render_time,
+                           // Handle of the underlying video frame,
+                           void* handle) = 0;
+
+  // Returns true if the renderer supports textures. DeliverFrame can be called
+  // with NULL |buffer| and non-NULL |handle|.
+  virtual bool IsTextureSupported() = 0;
 
  protected:
   virtual ~ExternalRenderer() {}
 };
 
-class WEBRTC_DLLEXPORT ViERender {
+class ViERender {
  public:
   // Factory for the ViERender sub‐API and increases an internal reference
   // counter if successful. Returns NULL if the API is not supported or if
@@ -104,6 +111,13 @@ class WEBRTC_DLLEXPORT ViERender {
   virtual int AddRenderer(const int render_id,
                           RawVideoType video_input_format,
                           ExternalRenderer* renderer) = 0;
+
+  // Propagating VideoRenderCallback down to the VideoRender module for new API.
+  // Contains default-implementation not to break code mocking this interface.
+  // (Ugly, but temporary.)
+  virtual int AddRenderCallback(int render_id, VideoRenderCallback* callback) {
+    return 0;
+  }
 
  protected:
   ViERender() {}

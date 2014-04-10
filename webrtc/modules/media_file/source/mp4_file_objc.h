@@ -34,7 +34,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CMBufferQueue.h>
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 @interface MP4FileObjC : NSObject
 {

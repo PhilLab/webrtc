@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
 
-#include "webrtc/typedefs.h"
-#include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {
@@ -96,33 +96,6 @@ enum VideoCaptureAlarm
     Cleared = 1
 };
 
-// VideoFrameI420 doesn't take the ownership of the buffer.
-// It's mostly used to group the parameters for external capture.
-struct VideoFrameI420
-{
-  VideoFrameI420() {
-    y_plane = NULL;
-    u_plane = NULL;
-    v_plane = NULL;
-    y_pitch = 0;
-    u_pitch = 0;
-    v_pitch = 0;
-    width = 0;
-    height = 0;
-  }
-
-  unsigned char* y_plane;
-  unsigned char* u_plane;
-  unsigned char* v_plane;
-
-  int y_pitch;
-  int u_pitch;
-  int v_pitch;
-
-  unsigned short width;
-  unsigned short height;
-};
-
 /* External Capture interface. Returned by Create
  and implemented by the capture module.
  */
@@ -135,9 +108,10 @@ public:
                                   const VideoCaptureCapability& frameInfo,
                                   int64_t captureTime = 0,
                                   bool faceDetected = false) = 0;
-    virtual int32_t IncomingFrameI420(const VideoFrameI420& video_frame,
-                                      int64_t captureTime = 0,
-                                      bool faceDetected = false) = 0;
+    virtual int32_t IncomingI420VideoFrame(I420VideoFrame* video_frame,
+                                           int64_t captureTime = 0,
+                                           bool faceDetected = false) = 0;
+
 protected:
     ~VideoCaptureExternal() {}
 };

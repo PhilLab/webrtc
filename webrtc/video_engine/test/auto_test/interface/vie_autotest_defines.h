@@ -16,9 +16,10 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_DEFINES_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_DEFINES_H_
 
-#include <cassert>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -48,9 +49,8 @@
 #undef RGB
 #define RGB(r,g,b) r|g<<8|b<<16
 
-enum {
-  kAutoTestSleepTimeMs = 5000
-};
+enum { kAutoTestSleepTimeMs = 5000 };
+enum { kAutoTestFullStackSleepTimeMs = 20000 };
 
 struct AutoTestSize {
   unsigned int width;

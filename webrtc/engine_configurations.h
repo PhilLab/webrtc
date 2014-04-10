@@ -34,12 +34,14 @@
 // (which are mandatory and don't have any defines).
 #define WEBRTC_CODEC_AVT
 
-// iLBC, G.722, PCM16B and Redundancy coding are excluded from Chromium and
-// Mozilla builds.
+// PCM16 is useful for testing and incurs only a small binary size cost.
+#define WEBRTC_CODEC_PCM16
+
+// iLBC, G.722, and Redundancy coding are excluded from Chromium and Mozilla
+// builds to reduce binary size.
 #if !defined(WEBRTC_CHROMIUM_BUILD) && !defined(WEBRTC_MOZILLA_BUILD)
 #define WEBRTC_CODEC_ILBC
 #define WEBRTC_CODEC_G722
-#define WEBRTC_CODEC_PCM16
 #define WEBRTC_CODEC_RED
 #endif  // !WEBRTC_CHROMIUM_BUILD && !WEBRTC_MOZILLA_BUILD
 
@@ -63,8 +65,7 @@
 #define WEBRTC_VOICE_ENGINE_NR                  // Near-end NS
 #define WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && \
-    !defined(WEBRTC_CHROMIUM_BUILD)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 #define WEBRTC_VOICE_ENGINE_TYPING_DETECTION    // Typing detection
 #endif
 
@@ -85,7 +86,6 @@
 
 #ifndef WEBRTC_CHROMIUM_BUILD
 #define WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-#define WEBRTC_VOICE_ENGINE_ENCRYPTION_API
 #endif
 
 // ============================================================================
@@ -101,7 +101,6 @@
 
 #define WEBRTC_VIDEO_ENGINE_CAPTURE_API
 #define WEBRTC_VIDEO_ENGINE_CODEC_API
-#define WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
 #define WEBRTC_VIDEO_ENGINE_IMAGE_PROCESS_API
 #define WEBRTC_VIDEO_ENGINE_RENDER_API
 #define WEBRTC_VIDEO_ENGINE_RTP_RTCP_API

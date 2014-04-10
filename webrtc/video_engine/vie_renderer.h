@@ -12,7 +12,6 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 
 #include "webrtc/modules/video_render/include/video_render_defines.h"
-#include "webrtc/system_wrappers/interface/map_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
@@ -36,6 +35,8 @@ class ViEExternalRendererImpl : public VideoRenderCallback {
                               I420VideoFrame& video_frame);
 
  private:
+  void NotifyFrameSizeChange(const uint32_t stream_id,
+                             I420VideoFrame& video_frame);
   ExternalRenderer* external_renderer_;
   RawVideoType external_renderer_format_;
   int external_renderer_width_;
@@ -84,6 +85,9 @@ class ViERenderer: public ViEFrameCallback {
   int32_t SetExternalRenderer(const int32_t render_id,
                               RawVideoType video_input_format,
                               ExternalRenderer* external_renderer);
+
+  int32_t SetVideoRenderCallback(const int32_t render_id,
+                                 VideoRenderCallback* callback);
 
  private:
   ViERenderer(const int32_t render_id, const int32_t engine_id,

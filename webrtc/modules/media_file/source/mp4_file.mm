@@ -36,7 +36,6 @@
 
 #include "critical_section_wrapper.h"
 #include "file_wrapper.h"
-#include "list_wrapper.h"
 #include "trace.h"
 
 namespace webrtc {

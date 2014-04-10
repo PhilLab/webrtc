@@ -38,9 +38,8 @@ public:
 
     virtual int Terminate();
 
-    virtual int MaxNumOfChannels();
-
     virtual int CreateChannel();
+    virtual int CreateChannel(const Config& config);
 
     virtual int DeleteChannel(int channel);
 
@@ -70,6 +69,8 @@ public:
 
     virtual int LastError();
 
+    virtual AudioTransport* audio_transport() { return this; }
+
     // AudioTransport
     virtual int32_t
         RecordedDataIsAvailable(const void* audioSamples,
@@ -79,7 +80,7 @@ public:
                                 uint32_t samplesPerSec,
                                 uint32_t totalDelayMS,
                                 int32_t clockDrift,
-                                uint32_t currentMicLevel,
+                                uint32_t micLevel,
                                 bool keyPressed,
                                 uint32_t& newMicLevel);
 
@@ -89,6 +90,21 @@ public:
                                      uint32_t samplesPerSec,
                                      void* audioSamples,
                                      uint32_t& nSamplesOut);
+
+    virtual int OnDataAvailable(const int voe_channels[],
+                                int number_of_voe_channels,
+                                const int16_t* audio_data,
+                                int sample_rate,
+                                int number_of_channels,
+                                int number_of_frames,
+                                int audio_delay_milliseconds,
+                                int volume,
+                                bool key_pressed,
+                                bool need_audio_processing);
+
+    virtual void OnData(int voe_channel, const void* audio_data,
+                        int bits_per_sample, int sample_rate,
+                        int number_of_channels, int number_of_frames);
 
     // AudioDeviceObserver
     virtual void OnErrorIsReported(ErrorCode error);
@@ -108,8 +124,29 @@ private:
     int32_t StopSend();
     int32_t TerminateInternal();
 
+    // Helper function to process the recorded data with AudioProcessing Module,
+    // demultiplex the data to specific voe channels, encode and send to the
+    // network. When |number_of_VoE_channels| is 0, it will demultiplex the
+    // data to all the existing VoE channels.
+    // It returns new AGC microphone volume or 0 if no volume changes
+    // should be done.
+    int ProcessRecordedDataWithAPM(const int voe_channels[],
+                                   int number_of_voe_channels,
+                                   const void* audio_data,
+                                   uint32_t sample_rate,
+                                   uint8_t number_of_channels,
+                                   uint32_t number_of_frames,
+                                   uint32_t audio_delay_milliseconds,
+                                   int32_t clock_drift,
+                                   uint32_t volume,
+                                   bool key_pressed);
+
     int32_t AddBuildInfo(char* str) const;
     int32_t AddVoEVersion(char* str) const;
+
+    // Initialize channel by setting Engine Information then initializing
+    // channel.
+    int InitializeChannel(voe::ChannelOwner* channel_owner);
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
     int32_t AddExternalTransportBuild(char* str) const;
 #endif
@@ -120,13 +157,10 @@ private:
     CriticalSectionWrapper& _callbackCritSect;
 
     bool _voiceEngineObserver;
-    uint32_t _oldVoEMicLevel;
-    uint32_t _oldMicLevel;
     AudioFrame _audioFrame;
     voe::SharedData* _shared;
-
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H

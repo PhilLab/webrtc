@@ -13,6 +13,7 @@
 
 #include <map>
 #include <vector>
+#include <set>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
@@ -39,9 +40,11 @@ public:
     int64_t LastReceived();
     int64_t LastReceivedReceiverReport() const;
 
-    void SetSSRC( const uint32_t ssrc);
+    void SetSsrcs(uint32_t main_ssrc,
+                  const std::set<uint32_t>& registered_ssrcs);
     void SetRelaySSRC( const uint32_t ssrc);
     int32_t SetRemoteSSRC( const uint32_t ssrc);
+    uint32_t RemoteSSRC() const;
 
     uint32_t RelaySSRC() const;
 
@@ -66,24 +69,26 @@ public:
                 uint32_t *RTCPArrivalTimeFrac,
                 uint32_t *rtcp_timestamp) const;
 
+   bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
+
     // get rtt
-    int32_t RTT(const uint32_t remoteSSRC,
+    int32_t RTT(uint32_t remoteSSRC,
                 uint16_t* RTT,
                 uint16_t* avgRTT,
                 uint16_t* minRTT,
                 uint16_t* maxRTT) const;
 
-    uint16_t RTT() const;
-
-    int SetRTT(uint16_t rtt);
-
     int32_t ResetRTT(const uint32_t remoteSSRC);
 
     int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
+    bool GetAndResetXrRrRtt(uint16_t* rtt_ms);
+
     // get statistics
     int32_t StatisticsReceived(
         std::vector<RTCPReportBlock>* receiveBlocks) const;
+
+    void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
 
     // Returns true if we haven't received an RTCP RR for several RTCP
     // intervals, but only triggers true once.
@@ -106,8 +111,8 @@ public:
 
     int32_t UpdateTMMBR();
 
-    int32_t SetPacketTimeout(const uint32_t timeoutMS);
-    void PacketTimeout();
+    void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
+    RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
 protected:
     RTCPHelp::RTCPReportBlockInformation* CreateReportBlockInformation(const uint32_t remoteSSRC);
@@ -132,6 +137,21 @@ protected:
     void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser);
 
     void HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser);
+
+    void HandleXrHeader(RTCPUtility::RTCPParserV2& parser,
+                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleXrReceiveReferenceTime(
+        RTCPUtility::RTCPParserV2& parser,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleXrDlrrReportBlock(
+        RTCPUtility::RTCPParserV2& parser,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleXrDlrrReportBlockItem(
+        const RTCPUtility::RTCPPacket& packet,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     void HandleXRVOIPMetric(RTCPUtility::RTCPParserV2& rtcpParser,
                             RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
@@ -213,14 +233,23 @@ protected:
   RtcpIntraFrameObserver* _cbRtcpIntraFrameObserver;
 
   CriticalSectionWrapper* _criticalSectionRTCPReceiver;
-  uint32_t          _SSRC;
+  uint32_t          main_ssrc_;
   uint32_t          _remoteSSRC;
+  std::set<uint32_t> registered_ssrcs_;
 
   // Received send report
   RTCPSenderInfo _remoteSenderInfo;
   // when did we receive the last send report
   uint32_t _lastReceivedSRNTPsecs;
   uint32_t _lastReceivedSRNTPfrac;
+
+  // Received XR receive time report.
+  RtcpReceiveTimeInfo _remoteXRReceiveTimeInfo;
+  // Time when the report was received.
+  uint32_t _lastReceivedXRNTPsecs;
+  uint32_t _lastReceivedXRNTPfrac;
+  // Estimated rtt, zero when there is no valid estimate.
+  uint16_t xr_rr_rtt_ms_;
 
   // Received report blocks.
   std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>
@@ -238,10 +267,9 @@ protected:
   // delivered RTP packet to the remote side.
   int64_t _lastIncreasedSequenceNumberMs;
 
-  // Externally set RTT. This value can only be used if there are no valid
-  // RTT estimates.
-  uint16_t _rtt;
+  RtcpStatisticsCallback* stats_callback_;
 
+  RtcpPacketTypeCounter packet_type_counter_;
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

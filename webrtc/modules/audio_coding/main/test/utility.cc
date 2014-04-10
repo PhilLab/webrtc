@@ -15,9 +15,10 @@
 #include <stdlib.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 
 #define NUM_CODECS_WITH_FIXED_PAYLOAD_TYPE 13
 
@@ -327,6 +328,16 @@ void VADCallback::PrintFrameTypes() {
 int32_t VADCallback::InFrameType(int16_t frameType) {
   _numFrameTypes[frameType]++;
   return 0;
+}
+
+void UseLegacyAcm(webrtc::Config* config) {
+  config->Set<webrtc::AudioCodingModuleFactory>(
+      new webrtc::AudioCodingModuleFactory());
+}
+
+void UseNewAcm(webrtc::Config* config) {
+  config->Set<webrtc::AudioCodingModuleFactory>(
+      new webrtc::NewAudioCodingModuleFactory());
 }
 
 }  // namespace webrtc

@@ -13,7 +13,7 @@
 
 #include <Streams.h> // Include base DS filter header files
 
-#include "video_capture_defines.h"
+#include "webrtc/modules/video_capture/include/video_capture_defines.h"
 
 namespace webrtc
 {
@@ -95,6 +95,6 @@ private:
     VideoCaptureExternal& _captureObserver;
     int32_t _moduleId;
 };
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_

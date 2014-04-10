@@ -42,26 +42,41 @@
       ],
     },
     {
+      'target_name': 'frame_generator',
+      'type': 'static_library',
+      'sources': [
+        'frame_generator.cc',
+        'frame_generator.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common_video/common_video.gyp:common_video',
+      ],
+    },
+    {
+      'target_name': 'rtcp_packet_parser',
+      'type': 'static_library',
+      'sources': [
+        'rtcp_packet_parser.cc',
+        'rtcp_packet_parser.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+      ],
+    },
+    {
       'target_name': 'test_support',
       'type': 'static_library',
-      'include_dirs': [
-        # TODO(kjellander): Remove this by making all includes use full paths.
-        '.',
-      ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'all_dependent_settings': {
-        'include_dirs': [
-          # TODO(kjellander): Remove this by making all includes use full paths.
-          '.',
-        ],
-      },
       'sources': [
         'test_suite.cc',
         'test_suite.h',
+        'testsupport/android/root_path_android.cc',
+        'testsupport/android/root_path_android_chromium.cc',
         'testsupport/fileutils.cc',
         'testsupport/fileutils.h',
         'testsupport/frame_reader.cc',
@@ -78,6 +93,22 @@
         'testsupport/perf_test.h',
         'testsupport/trace_to_stderr.cc',
         'testsupport/trace_to_stderr.h',
+      ],
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'dependencies': [
+            '<(DEPTH)/base/base.gyp:base',
+          ],
+          'sources!': [
+            'testsupport/android/root_path_android.cc',
+          ],
+        }, {
+          'sources!': [
+            'testsupport/android/root_path_android_chromium.cc',
+          ],
+        }],
       ],
     },
     {
@@ -111,7 +142,7 @@
     },
     {
       'target_name': 'test_support_unittests',
-      'type': 'executable',
+      'type': '<(gtest_target_type)',
       'dependencies': [
         'channel_transport',
         'test_support_main',
@@ -133,26 +164,72 @@
       'msvs_disabled_warnings': [
         4267,  # size_t to int truncation.
       ],
-    },
-    {
-      'target_name': 'buildbot_tests_scripts',
-      'type': 'none',
-      'copies': [
-        {
-          'destination': '<(PRODUCT_DIR)',
-          'files': [
-            'buildbot_tests.py',
-            '<(DEPTH)/tools/e2e_quality/audio/run_audio_test.py',
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are
+        # using Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'dependencies': [
+            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
-        },
+        }],
+      ],
+    },
+  ],
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
         {
-          'destination': '<(PRODUCT_DIR)/perf',
-          'files': [
-            '<(DEPTH)/tools/perf/__init__.py',
-            '<(DEPTH)/tools/perf/perf_utils.py',
+          'target_name': 'buildbot_tests_scripts',
+          'type': 'none',
+          'copies': [
+            {
+              'destination': '<(PRODUCT_DIR)',
+              'files': [
+                'buildbot_tests.py',
+                '<(webrtc_root)/tools/e2e_quality/audio/run_audio_test.py',
+              ],
+            },
+            {
+              'destination': '<(PRODUCT_DIR)/perf',
+              'files': [
+                '<(DEPTH)/tools/perf/__init__.py',
+                '<(DEPTH)/tools/perf/perf_utils.py',
+              ],
+            },
+          ],
+        },  # target buildbot_tests_scripts
+      ],
+    }],
+    # TODO(henrike): remove build_with_chromium==1 when the bots are using
+    # Chromium's buildbots.
+    ['include_tests==1 and build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+      'targets': [
+        {
+          'target_name': 'test_support_unittests_apk_target',
+          'type': 'none',
+          'dependencies': [
+            '<(apk_tests_path):test_support_unittests_apk',
           ],
         },
       ],
-    },  # target buildbot_tests_scripts
+    }],
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'test_support_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'test_support_unittests',
+          ],
+          'includes': [
+            '../build/isolate.gypi',
+            'test_support_unittests.isolate',
+          ],
+          'sources': [
+            'test_support_unittests.isolate',
+          ],
+        },
+      ],
+    }],
   ],
 }

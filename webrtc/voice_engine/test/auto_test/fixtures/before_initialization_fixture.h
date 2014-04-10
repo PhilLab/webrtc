@@ -13,6 +13,7 @@
 
 #include <assert.h>
 
+#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -21,7 +22,6 @@
 #include "webrtc/voice_engine/include/voe_call_report.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
-#include "webrtc/voice_engine/include/voe_encryption.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -66,11 +66,11 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoENetwork*         voe_network_;
   webrtc::VoEFile*            voe_file_;
   webrtc::VoEVideoSync*       voe_vsync_;
-  webrtc::VoEEncryption*      voe_encrypt_;
   webrtc::VoEHardware*        voe_hardware_;
   webrtc::VoEExternalMedia*   voe_xmedia_;
   webrtc::VoECallReport*      voe_call_report_;
   webrtc::VoENetEqStats*      voe_neteq_stats_;
+  webrtc::Config              config_;
 };
 
 #endif  // SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_

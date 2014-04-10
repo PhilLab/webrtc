@@ -9,11 +9,16 @@
 
 import optparse
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Chrome browsertests will throw away stderr; avoid that output gets lost.
+sys.stderr = sys.stdout
 
 
 def _ParseArgs():
@@ -21,13 +26,28 @@ def _ParseArgs():
   usage = 'usage: %prog [options]'
   parser = optparse.OptionParser(usage=usage)
 
+  parser.add_option('--label', type='string', default='MY_TEST',
+                    help=('Label of the test, used to identify different '
+                          'tests. Default: %default'))
   parser.add_option('--ref_video', type='string',
                     help='Reference video to compare with (YUV).')
   parser.add_option('--test_video', type='string',
-                    help=('Test video to be comared with the reference '
+                    help=('Test video to be compared with the reference '
                           'video (YUV).'))
   parser.add_option('--frame_analyzer', type='string',
                     help='Path to the frame analyzer executable.')
+  parser.add_option('--barcode_decoder', type='string',
+                    help=('Path to the barcode decoder script. By default, we '
+                          'will assume we can find it in barcode_tools/'
+                          'relative to this directory.'))
+  parser.add_option('--ffmpeg_path', type='string',
+                    help=('The path to where the ffmpeg executable is located. '
+                          'If omitted, it will be assumed to be present in the '
+                          'PATH with the name ffmpeg[.exe].'))
+  parser.add_option('--zxing_path', type='string',
+                    help=('The path to where the zxing executable is located. '
+                          'If omitted, it will be assumed to be present in the '
+                          'PATH with the name zxing[.exe].'))
   parser.add_option('--stats_file', type='string', default='stats.txt',
                     help=('Path to the temporary stats file to be created and '
                           'used. Default: %default'))
@@ -71,9 +91,18 @@ def main():
   """
   options = _ParseArgs()
 
+  if options.barcode_decoder:
+    path_to_decoder = options.barcode_decoder
+  else:
+    path_to_decoder = os.path.join(SCRIPT_DIR, 'barcode_tools',
+                                   'barcode_decoder.py')
+
+  # On Windows, sometimes the inherited stdin handle from the parent process
+  # fails. Work around this by passing null to stdin to the subprocesses.
+  null_filehandle = open(os.devnull, 'r')
+
   # Run barcode decoder on the test video to identify frame numbers.
-  path_to_decoder = os.path.join(SCRIPT_DIR, 'barcode_tools',
-                                 'barcode_decoder.py')
+  png_working_directory = tempfile.mkdtemp()
   cmd = [
     sys.executable,
     path_to_decoder,
@@ -81,26 +110,36 @@ def main():
     '--yuv_frame_width=%d' % options.yuv_frame_width,
     '--yuv_frame_height=%d' % options.yuv_frame_height,
     '--stats_file=%s' % options.stats_file,
+    '--png_working_dir=%s' % png_working_directory,
   ]
-  barcode_decoder = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+  if options.zxing_path:
+    cmd.append('--zxing_path=%s' % options.zxing_path)
+  if options.ffmpeg_path:
+    cmd.append('--ffmpeg_path=%s' % options.ffmpeg_path)
+  barcode_decoder = subprocess.Popen(cmd, stdin=null_filehandle,
+                                     stdout=sys.stdout, stderr=sys.stderr)
   barcode_decoder.wait()
+
+  shutil.rmtree(png_working_directory)
   if barcode_decoder.returncode != 0:
-    print >> sys.stderr, 'Failed to run barcode decoder script.'
+    print 'Failed to run barcode decoder script.'
     return 1
 
   # Run frame analyzer to compare the videos and print output.
   cmd = [
     options.frame_analyzer,
+    '--label=%s' % options.label,
     '--reference_file=%s' % options.ref_video,
-    '--test_file=%s' % options.ref_video,
+    '--test_file=%s' % options.test_video,
     '--stats_file=%s' % options.stats_file,
     '--width=%d' % options.yuv_frame_width,
     '--height=%d' % options.yuv_frame_height,
   ]
-  frame_analyzer = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+  frame_analyzer = subprocess.Popen(cmd, stdin=null_filehandle,
+                                    stdout=sys.stdout, stderr=sys.stderr)
   frame_analyzer.wait()
   if frame_analyzer.returncode != 0:
-    print >> sys.stderr, 'Failed to run frame analyzer.'
+    print 'Failed to run frame analyzer.'
     return 1
 
   return 0

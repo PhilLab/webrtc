@@ -359,4 +359,4 @@ void ThreadPosix::Run() {
   }
 }
 
-} // namespace webrtc
+}  // namespace webrtc

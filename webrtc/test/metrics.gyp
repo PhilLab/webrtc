@@ -23,25 +23,10 @@
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        '.',
-      ],
       'sources': [
         'testsupport/metrics/video_metrics.h',
         'testsupport/metrics/video_metrics.cc',
       ],
     },
-    {
-      'target_name': 'metrics_unittests',
-      'type': 'executable',
-      'dependencies': [
-        'metrics',
-        '<(webrtc_root)/test/test.gyp:test_support_main',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-      ],
-      'sources': [
-        'testsupport/metrics/video_metrics_unittest.cc',
-      ],
-    },
-  ],
+  ], # targets
 }

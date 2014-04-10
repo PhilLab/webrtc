@@ -19,8 +19,8 @@
 #include <AudioToolbox/AudioServices.h>
 #endif
 
-#include "audio_device_generic.h"
-#include "critical_section_wrapper.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
 class ThreadWrapper;
@@ -96,10 +96,8 @@ public:
                                   uint16_t& volumeRight) const;
 
     // Audio mixer initialization
-    virtual int32_t SpeakerIsAvailable(bool& available);
     virtual int32_t InitSpeaker();
     virtual bool SpeakerIsInitialized() const;
-    virtual int32_t MicrophoneIsAvailable(bool& available);
     virtual int32_t InitMicrophone();
     virtual bool MicrophoneIsInitialized() const;
 

@@ -17,9 +17,7 @@ LOCAL_MODULE := libwebrtc_system_wrappers
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
-    android/cpu-features.c \
     cpu_features_android.c \
-    map.cc \
     sort.cc \
     aligned_malloc.cc \
     atomic32_posix.cc \
@@ -56,6 +54,8 @@ LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libstlport
+
+LOCAL_STATIC_LIBRARIES := cpufeatures
 
 ifndef NDK_ROOT
 include external/stlport/libstlport.mk

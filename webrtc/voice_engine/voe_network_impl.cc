@@ -54,8 +54,8 @@ int VoENetworkImpl::RegisterExternalTransport(int channel,
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -71,11 +71,12 @@ int VoENetworkImpl::DeRegisterExternalTransport(int channel)
                  "DeRegisterExternalTransport(channel=%d)", channel);
     if (!_shared->statistics().Initialized())
     {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_shared->instance_id(), -1),
+                     "DeRegisterExternalTransport() - invalid state");
     }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -87,7 +88,14 @@ int VoENetworkImpl::DeRegisterExternalTransport(int channel)
 
 int VoENetworkImpl::ReceivedRTPPacket(int channel,
                                       const void* data,
-                                      unsigned int length)
+                                      unsigned int length) {
+  return ReceivedRTPPacket(channel, data, length, webrtc::PacketTime());
+}
+
+int VoENetworkImpl::ReceivedRTPPacket(int channel,
+                                      const void* data,
+                                      unsigned int length,
+                                      const PacketTime& packet_time)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "ReceivedRTPPacket(channel=%d, length=%u)", channel, length);
@@ -109,8 +117,8 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
             "ReceivedRTPPacket() invalid data vector");
         return -1;
     }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -124,7 +132,8 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
             "ReceivedRTPPacket() external transport is not enabled");
         return -1;
     }
-    return channelPtr->ReceivedRTPPacket((const int8_t*) data, length);
+    return channelPtr->ReceivedRTPPacket((const int8_t*) data, length,
+                                         packet_time);
 }
 
 int VoENetworkImpl::ReceivedRTCPPacket(int channel, const void* data,
@@ -149,8 +158,8 @@ int VoENetworkImpl::ReceivedRTCPPacket(int channel, const void* data,
             "ReceivedRTCPPacket() invalid data vector");
         return -1;
     }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
@@ -165,158 +174,4 @@ int VoENetworkImpl::ReceivedRTCPPacket(int channel, const void* data,
     }
     return channelPtr->ReceivedRTCPPacket((const int8_t*) data, length);
 }
-
-int VoENetworkImpl::SetPacketTimeoutNotification(int channel,
-                                                 bool enable,
-                                                 int timeoutSeconds)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SetPacketTimeoutNotification(channel=%d, enable=%d, "
-                 "timeoutSeconds=%d)",
-                 channel, (int) enable, timeoutSeconds);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    if (enable &&
-        ((timeoutSeconds < kVoiceEngineMinPacketTimeoutSec) ||
-        (timeoutSeconds > kVoiceEngineMaxPacketTimeoutSec)))
-    {
-        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-            "SetPacketTimeoutNotification() invalid timeout size");
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetPacketTimeoutNotification() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->SetPacketTimeoutNotification(enable, timeoutSeconds);
-}
-
-int VoENetworkImpl::GetPacketTimeoutNotification(int channel,
-                                                 bool& enabled,
-                                                 int& timeoutSeconds)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetPacketTimeoutNotification(channel=%d, enabled=?,"
-                 " timeoutSeconds=?)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetPacketTimeoutNotification() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetPacketTimeoutNotification(enabled, timeoutSeconds);
-}
-
-int VoENetworkImpl::RegisterDeadOrAliveObserver(int channel,
-                                                VoEConnectionObserver&
-                                                observer)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "RegisterDeadOrAliveObserver(channel=%d, observer=0x%x)",
-                 channel, &observer);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "RegisterDeadOrAliveObserver() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->RegisterDeadOrAliveObserver(observer);
-}
-
-int VoENetworkImpl::DeRegisterDeadOrAliveObserver(int channel)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "DeRegisterDeadOrAliveObserver(channel=%d)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "DeRegisterDeadOrAliveObserver() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->DeRegisterDeadOrAliveObserver();
-}
-
-int VoENetworkImpl::SetPeriodicDeadOrAliveStatus(int channel, bool enable,
-                                                 int sampleTimeSeconds)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SetPeriodicDeadOrAliveStatus(channel=%d, enable=%d,"
-                 " sampleTimeSeconds=%d)",
-                 channel, enable, sampleTimeSeconds);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    if (enable &&
-        ((sampleTimeSeconds < kVoiceEngineMinSampleTimeSec) ||
-        (sampleTimeSeconds > kVoiceEngineMaxSampleTimeSec)))
-    {
-        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-            "SetPeriodicDeadOrAliveStatus() invalid sample time");
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetPeriodicDeadOrAliveStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->SetPeriodicDeadOrAliveStatus(enable, sampleTimeSeconds);
-}
-
-int VoENetworkImpl::GetPeriodicDeadOrAliveStatus(int channel,
-                                                 bool& enabled,
-                                                 int& sampleTimeSeconds)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetPeriodicDeadOrAliveStatus(channel=%d, enabled=?,"
-                 " sampleTimeSeconds=?)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetPeriodicDeadOrAliveStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetPeriodicDeadOrAliveStatus(enabled,
-                                                    sampleTimeSeconds);
-}
-
-} // namespace webrtc
+}  // namespace webrtc

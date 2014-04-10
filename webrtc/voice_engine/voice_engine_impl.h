@@ -27,9 +27,6 @@
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
 #include "webrtc/voice_engine/voe_dtmf_impl.h"
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-#include "webrtc/voice_engine/voe_encryption_impl.h"
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 #include "webrtc/voice_engine/voe_external_media_impl.h"
 #endif
@@ -70,9 +67,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
                         public VoEDtmfImpl,
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-                        public VoEEncryptionImpl,
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
                         public VoEExternalMediaImpl,
 #endif
@@ -98,7 +92,8 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoEBaseImpl
 {
 public:
-    VoiceEngineImpl() : 
+    VoiceEngineImpl(const Config* config, bool owns_config) :
+        SharedData(*config),
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
         VoEAudioProcessingImpl(this),
 #endif
@@ -110,9 +105,6 @@ public:
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
         VoEDtmfImpl(this),
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-        VoEEncryptionImpl(this),
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
         VoEExternalMediaImpl(this),
@@ -137,7 +129,8 @@ public:
         VoEVolumeControlImpl(this),
 #endif
         VoEBaseImpl(this),
-        _ref_count(0)
+        _ref_count(0),
+        own_config_(owns_config ? config : NULL)
     {
     }
     virtual ~VoiceEngineImpl()
@@ -152,8 +145,9 @@ public:
 
 private:
     Atomic32 _ref_count;
+    scoped_ptr<const Config> own_config_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H

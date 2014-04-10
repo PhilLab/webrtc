@@ -11,8 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
 
-#include "audio_device.h"
-#include "audio_device_buffer.h"
+#include "webrtc/modules/audio_device/audio_device_buffer.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
 
 namespace webrtc {
 
@@ -76,10 +76,8 @@ class AudioDeviceGeneric
                                   uint16_t& volumeRight) const = 0;
 
 	// Audio mixer initialization
-	virtual int32_t SpeakerIsAvailable(bool& available) = 0;
     virtual int32_t InitSpeaker() = 0;
     virtual bool SpeakerIsInitialized() const = 0;
-	virtual int32_t MicrophoneIsAvailable(bool& available) = 0;
     virtual int32_t InitMicrophone() = 0;
     virtual bool MicrophoneIsInitialized() const = 0;
 
@@ -137,7 +135,7 @@ class AudioDeviceGeneric
 
     // CPU load
     virtual int32_t CPULoad(uint16_t& load) const = 0;
-    
+
     // Native sample rate controls (samples/sec)
 	virtual int32_t SetRecordingSampleRate(
         const uint32_t samplesPerSec);
@@ -187,4 +185,3 @@ public:
 }  // namespace webrtc
 
 #endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_GENERIC_H
-

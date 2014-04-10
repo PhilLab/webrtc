@@ -11,12 +11,13 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_PCMFILE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_PCMFILE_H_
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <string>
 
-#include "module_common_types.h"
-#include "typedefs.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -47,7 +48,6 @@ class PCMFile {
   void Rewind();
   static int16_t ChooseFile(std::string* file_name, int16_t max_len,
                             uint16_t* frequency_hz);
-  static int16_t ChooseFile(std::string* file_name, int16_t max_len);
   bool Rewinded();
   void SaveStereo(bool is_stereo = true);
   void ReadStereo(bool is_stereo = true);

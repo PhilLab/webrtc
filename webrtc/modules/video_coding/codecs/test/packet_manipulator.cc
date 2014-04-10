@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/packet_manipulator.h"
+#include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 
-#include <cassert>
-#include <cstdio>
+#include <assert.h>
+#include <stdio.h>
 
 namespace webrtc {
 namespace test {
@@ -90,7 +90,7 @@ inline double PacketManipulatorImpl::RandomUniform() {
   // get the same behavior as long as we're using a fixed initial seed.
   critsect_->Enter();
   srand(random_seed_);
-  random_seed_ = std::rand();
+  random_seed_ = rand();
   critsect_->Leave();
   return (random_seed_ + 1.0)/(RAND_MAX + 1.0);
 }

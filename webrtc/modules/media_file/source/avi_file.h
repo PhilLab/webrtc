@@ -14,12 +14,12 @@
 #define WEBRTC_MODULES_MEDIA_FILE_SOURCE_AVI_FILE_H_
 
 #include <stdio.h>
+#include <list>
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
-class ListWrapper;
 
 struct AVISTREAMHEADER
 {
@@ -194,6 +194,7 @@ private:
     void WriteIndex();
 
 private:
+    typedef std::list<AVIINDEXENTRY*> IndexList;
     struct AVIMAINHEADER
     {
         AVIMAINHEADER();
@@ -269,8 +270,8 @@ private:
     uint32_t _audioStreamDataChunkPrefix;
     bool _created;
 
-    ListWrapper* _indexList; // Elements are of type AVIINDEXENTRY.
+    IndexList _indexList;
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_MEDIA_FILE_SOURCE_AVI_FILE_H_

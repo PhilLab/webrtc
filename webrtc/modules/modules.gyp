@@ -43,6 +43,7 @@
       'includes': [
         'audio_coding/codecs/isac/isac_test.gypi',
         'audio_coding/codecs/isac/isacfix_test.gypi',
+        'audio_coding/codecs/tools/audio_codec_speed_tests.gypi',
         'audio_processing/audio_processing_tests.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',
         'video_coding/main/source/video_coding_test.gypi',
@@ -50,7 +51,7 @@
         'video_coding/codecs/test_framework/test_framework.gypi',
         'video_coding/codecs/tools/video_codecs_tools.gypi',
       ], # includes
-     'variables': {
+      'variables': {
         'conditions': [
           # Desktop capturer is supported only on Windows, OSX and Linux.
           ['OS=="win" or OS=="mac" or OS=="linux"', {
@@ -63,11 +64,13 @@
       'targets': [
         {
           'target_name': 'modules_unittests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
+          'defines': [
+            '<@(audio_coding_defines)',
+          ],
           'dependencies': [
             'audio_coding_module',
             'audio_processing',
-            'audioproc_unittest_proto',
             'bitrate_controller',
             'CNG',
             'desktop_capture',
@@ -87,16 +90,23 @@
             'webrtc_utility',
             'webrtc_video_coding',
             '<@(neteq_dependencies)',
+            '<(rbe_components_path)/remote_bitrate_estimator_components.gyp:rbe_components',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/test.gyp:frame_generator',
+            '<(webrtc_root)/test/test.gyp:rtcp_packet_parser',
           ],
           'sources': [
+            'audio_coding/main/acm2/acm_receiver_unittest.cc',
+            'audio_coding/main/acm2/call_statistics_unittest.cc',
+            'audio_coding/main/acm2/initial_delay_manager_unittest.cc',
+            'audio_coding/main/acm2/nack_unittest.cc',
             'audio_coding/main/source/acm_neteq_unittest.cc',
-            'audio_coding/main/source/nack_unittest.cc',
             'audio_coding/codecs/cng/cng_unittest.cc',
             'audio_coding/codecs/isac/fix/source/filters_unittest.cc',
             'audio_coding/codecs/isac/fix/source/filterbanks_unittest.cc',
@@ -104,6 +114,7 @@
             'audio_coding/codecs/isac/fix/source/transform_unittest.cc',
             'audio_coding/codecs/isac/main/source/isac_unittest.cc',
             'audio_coding/codecs/opus/opus_unittest.cc',
+            'audio_coding/neteq4/audio_classifier_unittest.cc',
             'audio_coding/neteq4/audio_multi_vector_unittest.cc',
             'audio_coding/neteq4/audio_vector_unittest.cc',
             'audio_coding/neteq4/background_noise_unittest.cc',
@@ -143,47 +154,64 @@
             'audio_coding/neteq4/mock/mock_payload_splitter.h',
             'audio_processing/aec/system_delay_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
-            'audio_processing/test/unit_test.cc',
+            'audio_processing/echo_cancellation_impl_unittest.cc',
             'audio_processing/utility/delay_estimator_unittest.cc',
             'audio_processing/utility/ring_buffer_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
+            'desktop_capture/desktop_and_cursor_composer_unittest.cc',
             'desktop_capture/desktop_region_unittest.cc',
             'desktop_capture/differ_block_unittest.cc',
             'desktop_capture/differ_unittest.cc',
+            'desktop_capture/mouse_cursor_monitor_unittest.cc',
             'desktop_capture/screen_capturer_helper_unittest.cc',
             'desktop_capture/screen_capturer_mac_unittest.cc',
             'desktop_capture/screen_capturer_mock_objects.h',
             'desktop_capture/screen_capturer_unittest.cc',
             'desktop_capture/window_capturer_unittest.cc',
-            "desktop_capture/win/cursor_unittest.cc",
-            "desktop_capture/win/cursor_unittest_resources.h",
-            "desktop_capture/win/cursor_unittest_resources.rc",
+            'desktop_capture/win/cursor_unittest.cc',
+            'desktop_capture/win/cursor_unittest_resources.h',
+            'desktop_capture/win/cursor_unittest_resources.rc',
             'media_file/source/media_file_unittest.cc',
             'module_common_types_unittest.cc',
             'pacing/paced_sender_unittest.cc',
+            'remote_bitrate_estimator/bwe_simulations.cc',
             'remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h',
-            'remote_bitrate_estimator/bitrate_estimator_unittest.cc',
-            'remote_bitrate_estimator/remote_bitrate_estimator_multi_stream_unittest.cc',
+            'remote_bitrate_estimator/rate_statistics_unittest.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_single_stream_unittest.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h',
+            'remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
             'remote_bitrate_estimator/rtp_to_ntp_unittest.cc',
+            'remote_bitrate_estimator/test/bwe_test_baselinefile.cc',
+            'remote_bitrate_estimator/test/bwe_test_baselinefile.h',
+            'remote_bitrate_estimator/test/bwe_test_fileutils.cc',
+            'remote_bitrate_estimator/test/bwe_test_fileutils.h',
+            'remote_bitrate_estimator/test/bwe_test_framework.cc',
+            'remote_bitrate_estimator/test/bwe_test_framework.h',
+            'remote_bitrate_estimator/test/bwe_test_framework_unittest.cc',
+            'remote_bitrate_estimator/test/bwe_test_logging.cc',
+            'remote_bitrate_estimator/test/bwe_test_logging.h',
+            'remote_bitrate_estimator/test/bwe_test.cc',
+            'remote_bitrate_estimator/test/bwe_test.h',
             'rtp_rtcp/source/mock/mock_rtp_payload_strategy.h',
-            'rtp_rtcp/source/mock/mock_rtp_receiver_video.h',
+            'rtp_rtcp/source/byte_io_unittest.cc',
+            'rtp_rtcp/source/fec_receiver_unittest.cc',
             'rtp_rtcp/source/fec_test_helper.cc',
             'rtp_rtcp/source/fec_test_helper.h',
             'rtp_rtcp/source/nack_rtx_unittest.cc',
             'rtp_rtcp/source/producer_fec_unittest.cc',
-            'rtp_rtcp/source/receiver_fec_unittest.cc',
+            'rtp_rtcp/source/receive_statistics_unittest.cc',
             'rtp_rtcp/source/rtcp_format_remb_unittest.cc',
-            'rtp_rtcp/source/rtcp_sender_unittest.cc',
+            'rtp_rtcp/source/rtcp_packet_unittest.cc',
             'rtp_rtcp/source/rtcp_receiver_unittest.cc',
+            'rtp_rtcp/source/rtcp_sender_unittest.cc',
             'rtp_rtcp/source/rtp_fec_unittest.cc',
             'rtp_rtcp/source/rtp_format_vp8_unittest.cc',
             'rtp_rtcp/source/rtp_format_vp8_test_helper.cc',
             'rtp_rtcp/source/rtp_format_vp8_test_helper.h',
             'rtp_rtcp/source/rtp_packet_history_unittest.cc',
             'rtp_rtcp/source/rtp_payload_registry_unittest.cc',
+            'rtp_rtcp/source/rtp_rtcp_impl_unittest.cc',
             'rtp_rtcp/source/rtp_utility_unittest.cc',
             'rtp_rtcp/source/rtp_header_extension_unittest.cc',
             'rtp_rtcp/source/rtp_sender_unittest.cc',
@@ -202,14 +230,16 @@
             'video_coding/main/interface/mock/mock_vcm_callbacks.h',
             'video_coding/main/source/decoding_state_unittest.cc',
             'video_coding/main/source/jitter_buffer_unittest.cc',
+            'video_coding/main/source/media_optimization_unittest.cc',
             'video_coding/main/source/receiver_unittest.cc',
             'video_coding/main/source/session_info_unittest.cc',
-            'video_coding/main/source/stream_generator.cc',
-            'video_coding/main/source/stream_generator.h',
             'video_coding/main/source/timing_unittest.cc',
             'video_coding/main/source/video_coding_robustness_unittest.cc',
-            'video_coding/main/source/video_coding_impl_unittest.cc',
+            'video_coding/main/source/video_receiver_unittest.cc',
+            'video_coding/main/source/video_sender_unittest.cc',
             'video_coding/main/source/qm_select_unittest.cc',
+            'video_coding/main/source/test/stream_generator.cc',
+            'video_coding/main/source/test/stream_generator.h',
             'video_coding/main/test/pcap_file_reader.cc',
             'video_coding/main/test/pcap_file_reader_unittest.cc',
             'video_coding/main/test/rtp_file_reader.cc',
@@ -219,14 +249,24 @@
             'video_processing/main/test/unit_test/content_metrics_test.cc',
             'video_processing/main/test/unit_test/deflickering_test.cc',
             'video_processing/main/test/unit_test/denoising_test.cc',
-            'video_processing/main/test/unit_test/unit_test.cc',
-            'video_processing/main/test/unit_test/unit_test.h',
+            'video_processing/main/test/unit_test/video_processing_unittest.cc',
+            'video_processing/main/test/unit_test/video_processing_unittest.h',
           ],
           'conditions': [
+            ['enable_bwe_test_logging==1', {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
+            }, {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
+              'sources!': [
+                'remote_bitrate_estimator/test/bwe_test_logging.cc'
+              ],
+            }],
             # Run screen/window capturer tests only on platforms where they are
             # supported.
             ['desktop_capture_supported==0', {
               'sources!': [
+                'desktop_capture/desktop_and_cursor_composer_unittest.cc',
+                'desktop_capture/mouse_cursor_monitor_unittest.cc',
                 'desktop_capture/screen_capturer_helper_unittest.cc',
                 'desktop_capture/screen_capturer_mac_unittest.cc',
                 'desktop_capture/screen_capturer_mock_objects.h',
@@ -241,10 +281,25 @@
             }],
             ['enable_protobuf==1', {
               'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],
+              'dependencies': [
+                'audioproc_unittest_proto',
+              ],
+              'sources': [
+                'audio_processing/audio_processing_impl_unittest.cc',
+                'audio_processing/test/audio_processing_unittest.cc',
+                'audio_processing/test/test_utils.h',
+              ],
             }],
             ['build_libvpx==1', {
               'dependencies': [
                 '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
+              ],
+            }],
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
             }],
           ],
@@ -254,8 +309,8 @@
           ],
         },
         {
-          'target_name': 'modules_integrationtests',
-          'type': 'executable',
+          'target_name': 'modules_tests',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             'audio_coding_module',
             'rtp_rtcp',
@@ -299,7 +354,70 @@
             'video_coding/codecs/test/videoprocessor_integrationtest.cc',
             'video_coding/codecs/vp8/test/vp8_impl_unittest.cc',
           ],
+          'conditions': [
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
+          ],
         },
+      ],
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'targets': [
+            {
+              'target_name': 'modules_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):modules_unittests_apk',
+              ],
+            },
+            {
+              'target_name': 'modules_tests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):modules_tests_apk',
+              ],
+            },
+          ],
+        }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'modules_tests_run',
+              'type': 'none',
+              'dependencies': [
+                'modules_tests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+                'modules_tests.isolate',
+              ],
+              'sources': [
+                'modules_tests.isolate',
+              ],
+            },
+            {
+              'target_name': 'modules_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'modules_unittests',
+              ],
+              'includes': [
+                '../build/isolate.gypi',
+                'modules_unittests.isolate',
+              ],
+              'sources': [
+                'modules_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

@@ -8,23 +8,34 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "../source/acm_common_defs.h"
 #include "gtest/gtest.h"
-#include "audio_coding_module.h"
-#include "PCMFile.h"
-#include "module_common_types.h"
-#include "scoped_ptr.h"
-#include "testsupport/fileutils.h"
-#include "typedefs.h"
+#include "webrtc/common.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/test/PCMFile.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-class DualStreamTest :
-    public AudioPacketizationCallback,
-    public ::testing::Test {
- protected:
-  DualStreamTest();
+class DualStreamTest : public AudioPacketizationCallback {
+ public:
+  explicit DualStreamTest(const Config& config);
   ~DualStreamTest();
+
+  void RunTest(int frame_size_primary_samples,
+               int num_channels_primary,
+               int sampling_rate,
+               bool start_in_sync,
+               int num_channels_input);
+
+  void ApiTest();
+
+ protected:
 
   int32_t SendData(FrameType frameType, uint8_t payload_type,
                    uint32_t timestamp, const uint8_t* payload_data,
@@ -52,9 +63,9 @@ class DualStreamTest :
     kMaxNumStreams
   };
 
-  AudioCodingModule* acm_dual_stream_;
-  AudioCodingModule* acm_ref_primary_;
-  AudioCodingModule* acm_ref_secondary_;
+  scoped_ptr<AudioCodingModule> acm_dual_stream_;
+  scoped_ptr<AudioCodingModule> acm_ref_primary_;
+  scoped_ptr<AudioCodingModule> acm_ref_secondary_;
 
   CodecInst primary_encoder_;
   CodecInst secondary_encoder_;
@@ -82,10 +93,10 @@ class DualStreamTest :
   bool received_payload_[kMaxNumStreams];
 };
 
-DualStreamTest::DualStreamTest()
-    : acm_dual_stream_(AudioCodingModule::Create(0)),
-      acm_ref_primary_(AudioCodingModule::Create(1)),
-      acm_ref_secondary_(AudioCodingModule::Create(2)),
+DualStreamTest::DualStreamTest(const Config& config)
+    : acm_dual_stream_(config.Get<AudioCodingModuleFactory>().Create(0)),
+      acm_ref_primary_(config.Get<AudioCodingModuleFactory>().Create(1)),
+      acm_ref_secondary_(config.Get<AudioCodingModuleFactory>().Create(2)),
       payload_ref_is_stored_(),
       payload_dual_is_stored_(),
       timestamp_ref_(),
@@ -93,14 +104,9 @@ DualStreamTest::DualStreamTest()
       num_received_payloads_ref_(),
       num_compared_payloads_(),
       last_timestamp_(),
-      received_payload_() {
-}
+      received_payload_() {}
 
-DualStreamTest::~DualStreamTest() {
-  AudioCodingModule::Destroy(acm_dual_stream_);
-  AudioCodingModule::Destroy(acm_ref_primary_);
-  AudioCodingModule::Destroy(acm_ref_secondary_);
-}
+DualStreamTest::~DualStreamTest() {}
 
 void DualStreamTest::PopulateCodecInstances(int frame_size_primary_ms,
                                             int num_channels_primary,
@@ -137,9 +143,9 @@ void DualStreamTest::PopulateCodecInstances(int frame_size_primary_ms,
 void DualStreamTest::InitializeSender(int frame_size_primary_samples,
                                       int num_channels_primary,
                                       int sampling_rate) {
-  ASSERT_TRUE(acm_dual_stream_ != NULL);
-  ASSERT_TRUE(acm_ref_primary_ != NULL);
-  ASSERT_TRUE(acm_ref_secondary_ != NULL);
+  ASSERT_TRUE(acm_dual_stream_.get() != NULL);
+  ASSERT_TRUE(acm_ref_primary_.get() != NULL);
+  ASSERT_TRUE(acm_ref_secondary_.get() != NULL);
 
   ASSERT_EQ(0, acm_dual_stream_->InitializeSender());
   ASSERT_EQ(0, acm_ref_primary_->InitializeSender());
@@ -382,92 +388,17 @@ int32_t DualStreamTest::SendData(FrameType frameType, uint8_t payload_type,
   return 0;
 }
 
-// Mono input, mono primary WB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncMonoInputMonoPrimaryWb20Ms) {
-  InitializeSender(20, 1, 16000);
-  Perform(true, 1);
-}
+void DualStreamTest::RunTest(int frame_size_primary_samples,
+                             int num_channels_primary,
+                             int sampling_rate,
+                             bool start_in_sync,
+                             int num_channels_input) {
+  InitializeSender(
+      frame_size_primary_samples, num_channels_primary, sampling_rate);
+  Perform(start_in_sync, num_channels_input);
+};
 
-// Mono input, stereo primary WB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncMonoInput_StereoPrimaryWb20Ms) {
-  InitializeSender(20, 2, 16000);
-  Perform(true, 1);
-}
-
-// Mono input, mono primary SWB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncMonoInputMonoPrimarySwb20Ms) {
-  InitializeSender(20, 1, 32000);
-  Perform(true, 1);
-}
-
-// Mono input, stereo primary SWB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncMonoInputStereoPrimarySwb20Ms) {
-  InitializeSender(20, 2, 32000);
-  Perform(true, 1);
-}
-
-// Mono input, mono primary WB 40 ms frame.
-TEST_F(DualStreamTest, BitExactSyncMonoInputMonoPrimaryWb40Ms) {
-  InitializeSender(40, 1, 16000);
-  Perform(true, 1);
-}
-
-// Mono input, stereo primary WB 40 ms frame
-TEST_F(DualStreamTest, BitExactSyncMonoInputStereoPrimaryWb40Ms) {
-  InitializeSender(40, 2, 16000);
-  Perform(true, 1);
-}
-
-// Stereo input, mono primary WB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncStereoInputMonoPrimaryWb20Ms) {
-  InitializeSender(20, 1, 16000);
-  Perform(true, 2);
-}
-
-// Stereo input, stereo primary WB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncStereoInputStereoPrimaryWb20Ms) {
-  InitializeSender(20, 2, 16000);
-  Perform(true, 2);
-}
-
-// Stereo input, mono primary SWB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncStereoInputMonoPrimarySwb20Ms) {
-  InitializeSender(20, 1, 32000);
-  Perform(true, 2);
-}
-
-// Stereo input, stereo primary SWB 20 ms frame.
-TEST_F(DualStreamTest, BitExactSyncStereoInputStereoPrimarySwb20Ms) {
-  InitializeSender(20, 2, 32000);
-  Perform(true, 2);
-}
-
-// Stereo input, mono primary WB 40 ms frame.
-TEST_F(DualStreamTest, BitExactSyncStereoInputMonoPrimaryWb40Ms) {
-  InitializeSender(40, 1, 16000);
-  Perform(true, 2);
-}
-
-// Stereo input, stereo primary WB 40 ms frame.
-TEST_F(DualStreamTest, BitExactSyncStereoInputStereoPrimaryWb40Ms) {
-  InitializeSender(40, 2, 16000);
-  Perform(true, 2);
-}
-
-// Asynchronous test, ACM is fed with data then secondary coder is registered.
-// Mono input, mono primary WB 20 ms frame.
-TEST_F(DualStreamTest, BitExactAsyncMonoInputMonoPrimaryWb20Ms) {
-  InitializeSender(20, 1, 16000);
-  Perform(false, 1);
-}
-
-// Mono input, mono primary WB 20 ms frame.
-TEST_F(DualStreamTest, BitExactAsyncMonoInputMonoPrimaryWb40Ms) {
-  InitializeSender(40, 1, 16000);
-  Perform(false, 1);
-}
-
-TEST_F(DualStreamTest, Api) {
+void DualStreamTest::ApiTest() {
   PopulateCodecInstances(20, 1, 16000);
   CodecInst my_codec;
   ASSERT_EQ(0, acm_dual_stream_->InitializeSender());
@@ -518,5 +449,171 @@ TEST_F(DualStreamTest, Api) {
   EXPECT_EQ(VADVeryAggr, vad_mode);
 }
 
+namespace {
+
+DualStreamTest* CreateLegacy() {
+  Config config;
+  UseLegacyAcm(&config);
+  DualStreamTest* test = new DualStreamTest(config);
+  return test;
 }
-  // namespace webrtc
+
+DualStreamTest* CreateNew() {
+  Config config;
+  UseNewAcm(&config);
+  DualStreamTest* test = new DualStreamTest(config);
+  return test;
+}
+
+}  // namespace
+
+// Mono input, mono primary WB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncMonoInputMonoPrimaryWb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 1, 16000, true, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 1, 16000, true, 1);
+}
+
+// Mono input, stereo primary WB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncMonoInput_StereoPrimaryWb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 2, 16000, true, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 2, 16000, true, 1);
+}
+
+// Mono input, mono primary SWB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncMonoInputMonoPrimarySwb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 1, 32000, true, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 1, 32000, true, 1);
+}
+
+// Mono input, stereo primary SWB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncMonoInputStereoPrimarySwb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 2, 32000, true, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 2, 32000, true, 1);
+}
+
+// Mono input, mono primary WB 40 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncMonoInputMonoPrimaryWb40Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateNew());
+  test->RunTest(40, 1, 16000, true, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(40, 1, 16000, true, 1);
+}
+
+// Mono input, stereo primary WB 40 ms frame
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncMonoInputStereoPrimaryWb40Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateNew());
+  test->RunTest(40, 2, 16000, true, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(40, 2, 16000, true, 1);
+}
+
+// Stereo input, mono primary WB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncStereoInputMonoPrimaryWb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 1, 16000, true, 2);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 1, 16000, true, 2);
+}
+
+// Stereo input, stereo primary WB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncStereoInputStereoPrimaryWb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 2, 16000, true, 2);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 2, 16000, true, 2);
+}
+
+// Stereo input, mono primary SWB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncStereoInputMonoPrimarySwb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 1, 32000, true, 2);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 1, 32000, true, 2);
+}
+
+// Stereo input, stereo primary SWB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncStereoInputStereoPrimarySwb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 2, 32000, true, 2);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 2, 32000, true, 2);
+}
+
+// Stereo input, mono primary WB 40 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncStereoInputMonoPrimaryWb40Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(40, 1, 16000, true, 2);
+
+  test.reset(CreateNew());
+  test->RunTest(40, 1, 16000, true, 2);
+}
+
+// Stereo input, stereo primary WB 40 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactSyncStereoInputStereoPrimaryWb40Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(40, 2, 16000, true, 2);
+
+  test.reset(CreateNew());
+  test->RunTest(40, 2, 16000, true, 2);
+}
+
+// Asynchronous test, ACM is fed with data then secondary coder is registered.
+// Mono input, mono primary WB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactAsyncMonoInputMonoPrimaryWb20Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(20, 1, 16000, false, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(20, 1, 16000, false, 1);
+}
+
+// Mono input, mono primary WB 20 ms frame.
+TEST(DualStreamTest,
+     DISABLED_ON_ANDROID(BitExactAsyncMonoInputMonoPrimaryWb40Ms)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->RunTest(40, 1, 16000, false, 1);
+
+  test.reset(CreateNew());
+  test->RunTest(40, 1, 16000, false, 1);
+}
+
+TEST(DualStreamTest, DISABLED_ON_ANDROID(ApiTest)) {
+  scoped_ptr<DualStreamTest> test(CreateLegacy());
+  test->ApiTest();
+
+  test.reset(CreateNew());
+  test->ApiTest();
+}
+
+}  // namespace webrtc
