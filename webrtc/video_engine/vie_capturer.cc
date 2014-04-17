@@ -58,7 +58,6 @@ ViECapturer::ViECapturer(int capture_id,
       denoising_enabled_(false),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       observer_(NULL),
-      file_recorder_(capture_id),
       overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock())) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id, capture_id),
                "ViECapturer::ViECapturer(capture_id: %d, engine_id: %d)",
@@ -261,10 +260,6 @@ const char* ViECapturer::CurrentDeviceName() const {
   return capture_module_->CurrentDeviceName();
 }
 
-ViEFileRecorder& ViECapturer::GetCaptureFileRecorder() {
-  return file_recorder_;
-}
-  
 void ViECapturer::RegisterCpuOveruseObserver(CpuOveruseObserver* observer) {
   overuse_detector_->SetObserver(observer);
 }

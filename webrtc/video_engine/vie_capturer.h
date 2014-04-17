@@ -26,7 +26,6 @@
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
-#include "webrtc/video_engine/vie_file_recorder.h"
 
 namespace webrtc {
 
@@ -116,9 +115,6 @@ class ViECapturer
   // Information.
   const char* CurrentDeviceName() const;
         
-  // Recording.
-  ViEFileRecorder& GetCaptureFileRecorder();
-
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
   void SetCpuOveruseOptions(const CpuOveruseOptions& options);
 
@@ -206,8 +202,6 @@ class ViECapturer
 
   CaptureCapability requested_capability_;
         
-  ViEFileRecorder file_recorder_;
-
   scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 
