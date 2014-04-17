@@ -7,29 +7,31 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AE9E8420CD6D0FC9FB8EB3CC /* frame_dropper.cc in Sources */ = {isa = PBXBuildFile; fileRef = F1E265C7D891F48D3E33304D /* frame_dropper.cc */; };
-		C814EC61FD7A861BA0C0DFFE /* exp_filter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7BF1688D75F503966053A3D8 /* exp_filter.cc */; };
+		96A8DFB41314904E2C1A6CA3 /* remote_rate_control.cc in Sources */ = {isa = PBXBuildFile; fileRef = 277D83E3E8EC3CC890794EED /* remote_rate_control.cc */; };
+		CFABCAE7BF3E54F05CCE714B /* overuse_detector.cc in Sources */ = {isa = PBXBuildFile; fileRef = F83EBDF166C02010B8929E0A /* overuse_detector.cc */; };
+		F10C9C0FEDEEA724A7AD041D /* remote_bitrate_estimator_single_stream.cc in Sources */ = {isa = PBXBuildFile; fileRef = 8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0741BDFC92129D62574DEB69 /* frame_dropper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame_dropper.h; sourceTree = "<group>"; };
-		0E8D781F3192DA238532DB30 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../build/common.gypi; sourceTree = "<group>"; };
-		187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libvideo_coding_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		28EC6EBF0F16C3F9AB3596FF /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
-		7123743720D8A249D9A85CAA /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../../supplement.gypi; sourceTree = "<group>"; };
-		7B3FABA06CC8853E5AAFC597 /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
-		7BF1688D75F503966053A3D8 /* exp_filter.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = exp_filter.cc; sourceTree = "<group>"; };
-		8821849D80A268CC5DCB7DEB /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
-		890D6BFA4D2F16896DCE0310 /* video_coding_utility.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = video_coding_utility.gyp; sourceTree = "<group>"; };
-		ACACCA575EC4E80A766707CE /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../../build/filename_rules.gypi; sourceTree = "<group>"; };
-		B15668BB22DB775984984708 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../../build/common.gypi; sourceTree = "<group>"; };
-		EF975FE4193C98AC860BAF88 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../../build/release.gypi; sourceTree = "<group>"; };
-		F1E265C7D891F48D3E33304D /* frame_dropper.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = frame_dropper.cc; sourceTree = "<group>"; };
-		FB93168AD65F8207CAD9DE26 /* exp_filter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = exp_filter.h; sourceTree = "<group>"; };
+		007389F677D23C4BFE42E40A /* remote_rate_control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = remote_rate_control.h; sourceTree = "<group>"; };
+		06B7B46284CA49A484CF342A /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
+		070D4CAFB5A4E22E865C9964 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../build/release.gypi; sourceTree = "<group>"; };
+		277D83E3E8EC3CC890794EED /* remote_rate_control.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = remote_rate_control.cc; sourceTree = "<group>"; };
+		2DBC903AC2FF10B98B596C54 /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
+		590DE45068C85D2A3A354F8F /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../build/common.gypi; sourceTree = "<group>"; };
+		61DD25121769ED88899CEBA5 /* librbe_components.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librbe_components.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = remote_bitrate_estimator_single_stream.cc; sourceTree = "<group>"; };
+		96B4067F93C2961BEF2DD454 /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
+		A3771D0E78D6EE39C99E4B72 /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
+		AAA79554DEC4643028D54602 /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../supplement.gypi; sourceTree = "<group>"; };
+		B64D0345667FD5F2FCB8E915 /* overuse_detector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = overuse_detector.h; sourceTree = "<group>"; };
+		DABA9C5903B3AFCDB6470088 /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../build/filename_rules.gypi; sourceTree = "<group>"; };
+		EE47E46780AB10EA7BD8A5FE /* remote_bitrate_estimator_components.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = remote_bitrate_estimator_components.gyp; sourceTree = "<group>"; };
+		F83EBDF166C02010B8929E0A /* overuse_detector.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = overuse_detector.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		CD21734765E2F7954BB1A4B0 /* Frameworks */ = {
+		85C488FB31A7C5FD961306F8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -39,116 +41,133 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2C58C6B8E21E26712EA21F57 /* Products */ = {
+		2C70F4C72807C36DB570833D /* Build */ = {
 			isa = PBXGroup;
 			children = (
-				187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */,
+				590DE45068C85D2A3A354F8F /* common.gypi */,
+				06B7B46284CA49A484CF342A /* common.gypi */,
+				DABA9C5903B3AFCDB6470088 /* filename_rules.gypi */,
+				070D4CAFB5A4E22E865C9964 /* release.gypi */,
+				A3771D0E78D6EE39C99E4B72 /* release_defaults.gypi */,
+				2DBC903AC2FF10B98B596C54 /* release_impl.gypi */,
+				96B4067F93C2961BEF2DD454 /* release_impl_official.gypi */,
+				EE47E46780AB10EA7BD8A5FE /* remote_bitrate_estimator_components.gyp */,
+				AAA79554DEC4643028D54602 /* supplement.gypi */,
+			);
+			name = Build;
+			sourceTree = "<group>";
+		};
+		6B22BAFA506203BB0925CE30 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				61DD25121769ED88899CEBA5 /* librbe_components.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		3CE9BCD1AFB93371F6DF9A22 = {
+		85663115967F96ED5219A0E2 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				A518E72C9084FC992409BA15 /* Source */,
-				2C58C6B8E21E26712EA21F57 /* Products */,
-				F3416F5D89807C8D50F240C7 /* Build */,
-			);
-			sourceTree = "<group>";
-		};
-		59FBE37824AF726F956B4FF8 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				FB93168AD65F8207CAD9DE26 /* exp_filter.h */,
-				0741BDFC92129D62574DEB69 /* frame_dropper.h */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-		A518E72C9084FC992409BA15 /* Source */ = {
-			isa = PBXGroup;
-			children = (
-				59FBE37824AF726F956B4FF8 /* include */,
-				7BF1688D75F503966053A3D8 /* exp_filter.cc */,
-				F1E265C7D891F48D3E33304D /* frame_dropper.cc */,
+				F83EBDF166C02010B8929E0A /* overuse_detector.cc */,
+				B64D0345667FD5F2FCB8E915 /* overuse_detector.h */,
+				8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */,
+				277D83E3E8EC3CC890794EED /* remote_rate_control.cc */,
+				007389F677D23C4BFE42E40A /* remote_rate_control.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";
 		};
-		F3416F5D89807C8D50F240C7 /* Build */ = {
+		A48DC4CE92B7BABA5B9F902D = {
 			isa = PBXGroup;
 			children = (
-				B15668BB22DB775984984708 /* common.gypi */,
-				0E8D781F3192DA238532DB30 /* common.gypi */,
-				ACACCA575EC4E80A766707CE /* filename_rules.gypi */,
-				EF975FE4193C98AC860BAF88 /* release.gypi */,
-				28EC6EBF0F16C3F9AB3596FF /* release_defaults.gypi */,
-				7B3FABA06CC8853E5AAFC597 /* release_impl.gypi */,
-				8821849D80A268CC5DCB7DEB /* release_impl_official.gypi */,
-				7123743720D8A249D9A85CAA /* supplement.gypi */,
-				890D6BFA4D2F16896DCE0310 /* video_coding_utility.gyp */,
+				85663115967F96ED5219A0E2 /* Source */,
+				6B22BAFA506203BB0925CE30 /* Products */,
+				2C70F4C72807C36DB570833D /* Build */,
 			);
-			name = Build;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D91A4F6F28D55902144D60E1 /* video_coding_utility */ = {
+		2BA81E870F086FBC199E2414 /* rbe_components */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3ED3CF94D05106BCF0A1BB5A /* Build configuration list for PBXNativeTarget "video_coding_utility" */;
+			buildConfigurationList = 4983F5DDC6CA91B9C280C097 /* Build configuration list for PBXNativeTarget "rbe_components" */;
 			buildPhases = (
-				7031FAC3F54304277753F917 /* Sources */,
-				CD21734765E2F7954BB1A4B0 /* Frameworks */,
+				935714BDFD7D2E5FAC1717D2 /* Sources */,
+				85C488FB31A7C5FD961306F8 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = video_coding_utility;
-			productName = video_coding_utility;
-			productReference = 187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */;
+			name = rbe_components;
+			productName = rbe_components;
+			productReference = 61DD25121769ED88899CEBA5 /* librbe_components.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		7293F4698F6120A9ED2BC812 /* Project object */ = {
+		CA1E9CA9EEF69A4E73F7E4E1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 0510;
 			};
-			buildConfigurationList = 16E5F530D748663FBEE3D7EE /* Build configuration list for PBXProject "video_coding_utility_ios" */;
+			buildConfigurationList = 785188A61FCAE25327BF045F /* Build configuration list for PBXProject "remote_bitrate_estimator_components_ios" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
 			);
-			mainGroup = 3CE9BCD1AFB93371F6DF9A22;
+			mainGroup = A48DC4CE92B7BABA5B9F902D;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D91A4F6F28D55902144D60E1 /* video_coding_utility */,
+				2BA81E870F086FBC199E2414 /* rbe_components */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		7031FAC3F54304277753F917 /* Sources */ = {
+		935714BDFD7D2E5FAC1717D2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C814EC61FD7A861BA0C0DFFE /* exp_filter.cc in Sources */,
-				AE9E8420CD6D0FC9FB8EB3CC /* frame_dropper.cc in Sources */,
+				CFABCAE7BF3E54F05CCE714B /* overuse_detector.cc in Sources */,
+				F10C9C0FEDEEA724A7AD041D /* remote_bitrate_estimator_single_stream.cc in Sources */,
+				96A8DFB41314904E2C1A6CA3 /* remote_rate_control.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		33B27C18E68E9FA6BEACE077 /* Release */ = {
+		24B597DB2970EAE86D7FFB3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SYMROOT = ../../../xcodebuild;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3F80A8842ED068DABEEA5E6C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = iphoneos;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SYMROOT = ../../../xcodebuild;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		83878E0216998044FDC1C29F /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -202,13 +221,12 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../../../..,
-					../../../..,
-					../../../system_wrappers/interface,
+					../../..,
+					../../..,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "";
-				PRODUCT_NAME = video_coding_utility;
+				PRODUCT_NAME = rbe_components;
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "armv7 armv7s i386";
 				WARNING_CFLAGS = (
@@ -228,20 +246,9 @@
 					"-Wno-unknown-warning-option",
 				);
 			};
-			name = Release;
-		};
-		3A12637F3377EF332587AB78 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = iphoneos;
-				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
 			name = Profile;
 		};
-		4DA38C90510291E8DE48D3D3 /* Debug */ = {
+		98BC3BE84E328FE68BA1DA7A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -291,13 +298,12 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../../../..,
-					../../../..,
-					../../../system_wrappers/interface,
+					../../..,
+					../../..,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "-fstack-protector-all";
-				PRODUCT_NAME = video_coding_utility;
+				PRODUCT_NAME = rbe_components;
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "armv7 armv7s i386";
 				WARNING_CFLAGS = (
@@ -319,18 +325,7 @@
 			};
 			name = Debug;
 		};
-		8716591FE216FDF787D10CAE /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = iphoneos;
-				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		E1E794FBD70180DDA3C0E8F5 /* Profile */ = {
+		A4700E85B36295CD2E9A9AB6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -384,13 +379,12 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../../../..,
-					../../../..,
-					../../../system_wrappers/interface,
+					../../..,
+					../../..,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "";
-				PRODUCT_NAME = video_coding_utility;
+				PRODUCT_NAME = rbe_components;
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "armv7 armv7s i386";
 				WARNING_CFLAGS = (
@@ -410,44 +404,43 @@
 					"-Wno-unknown-warning-option",
 				);
 			};
-			name = Profile;
+			name = Release;
 		};
-		EF8C251A11309778C12A19F0 /* Debug */ = {
+		C4419A556D2E019EED6D71C9 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../xcodebuild;
+				SYMROOT = ../../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Debug;
+			name = Profile;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		16E5F530D748663FBEE3D7EE /* Build configuration list for PBXProject "video_coding_utility_ios" */ = {
+		4983F5DDC6CA91B9C280C097 /* Build configuration list for PBXNativeTarget "rbe_components" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				EF8C251A11309778C12A19F0 /* Debug */,
-				3A12637F3377EF332587AB78 /* Profile */,
-				8716591FE216FDF787D10CAE /* Release */,
+				98BC3BE84E328FE68BA1DA7A /* Debug */,
+				83878E0216998044FDC1C29F /* Profile */,
+				A4700E85B36295CD2E9A9AB6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;
 		};
-		3ED3CF94D05106BCF0A1BB5A /* Build configuration list for PBXNativeTarget "video_coding_utility" */ = {
+		785188A61FCAE25327BF045F /* Build configuration list for PBXProject "remote_bitrate_estimator_components_ios" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				4DA38C90510291E8DE48D3D3 /* Debug */,
-				E1E794FBD70180DDA3C0E8F5 /* Profile */,
-				33B27C18E68E9FA6BEACE077 /* Release */,
+				24B597DB2970EAE86D7FFB3B /* Debug */,
+				C4419A556D2E019EED6D71C9 /* Profile */,
+				3F80A8842ED068DABEEA5E6C /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 7293F4698F6120A9ED2BC812 /* Project object */;
+	rootObject = CA1E9CA9EEF69A4E73F7E4E1 /* Project object */;
 }

@@ -28,7 +28,8 @@
 // gets defined if WEBRTC_IOS is defined
 #elif defined(WEBRTC_IOS)
 #define STANDARD_RENDERING kRenderiOS
-#include "ios/video_render_ios_impl.h"
+//#include "ios/video_render_ios_impl.h"
+#include "iphone/video_render_iphone_impl.h"
 #elif defined(WEBRTC_MAC)
 #if defined(COCOA_RENDERING)
 #define STANDARD_RENDERING kRenderCocoa
@@ -113,9 +114,19 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         break;
 
 #elif defined(WEBRTC_IOS)
+#if 0
         case kRenderiOS:
         {
             VideoRenderIosImpl* ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
+            if(ptrRenderer)
+            {
+                _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
+            }
+        }
+#endif
+        case kRenderiOS:
+        {
+            VideoRenderIPhoneImpl* ptrRenderer = new VideoRenderIPhoneImpl(_id, kRenderiOS, window, _fullScreen);
             if(ptrRenderer)
             {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
@@ -249,11 +260,19 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             }
             break;
 #elif defined(WEBRTC_IOS)
+#if 0
             case kRenderiOS:
             {
               VideoRenderIosImpl* ptrRenderer = reinterpret_cast<VideoRenderIosImpl*> (_ptrRenderer);
               _ptrRenderer = NULL;
               delete ptrRenderer;
+            }
+#endif
+            case kRenderiOS:
+            {
+                VideoRenderIPhoneImpl* ptrRenderer = reinterpret_cast<VideoRenderIPhoneImpl*> (_ptrRenderer);
+                _ptrRenderer = NULL;
+                delete ptrRenderer;
             }
             break;
 #elif defined(WEBRTC_MAC)
@@ -349,9 +368,12 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
 #if defined(WEBRTC_IOS) // WEBRTC_IOS must go before WEBRTC_MAC
     _ptrRenderer = NULL;
     delete _ptrRenderer;
-
+#if 0
     VideoRenderIosImpl* ptrRenderer;
     ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
+#endif
+    VideoRenderIPhoneImpl* ptrRenderer;
+    ptrRenderer = new VideoRenderIPhoneImpl(_id, kRenderiOS, window, _fullScreen);
     if (!ptrRenderer)
     {
         return -1;

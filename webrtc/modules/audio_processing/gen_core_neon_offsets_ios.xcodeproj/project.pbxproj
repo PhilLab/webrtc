@@ -1,0 +1,1318 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		65D899436ABF6EB6A016F6A1 /* gen_nsx_core_neon_offsets_h */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 0B29CE7DA41546F1192E2136 /* Build configuration list for PBXAggregateTarget "gen_nsx_core_neon_offsets_h" */;
+			buildPhases = (
+				CBA1AA6C2759B821DB7881B2 /* Action "unpack_lib_posix" */,
+				CF6494D19BB0133589A6ABC2 /* Rule "obj_int_extract" */,
+			);
+			dependencies = (
+				E2F6777818FFFD070028F02B /* PBXTargetDependency */,
+				C14B24F4F3EB354ACD733553 /* PBXTargetDependency */,
+			);
+			name = gen_nsx_core_neon_offsets_h;
+			productName = gen_nsx_core_neon_offsets_h;
+		};
+		6A86A7D5C74E88F7760581E7 /* All */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = A96398B6F08BFA169A6A8DC4 /* Build configuration list for PBXAggregateTarget "All" */;
+			buildPhases = (
+			);
+			dependencies = (
+				F1249CA04BDDFB72ADEC7626 /* PBXTargetDependency */,
+				0350522866F2A093462C86A8 /* PBXTargetDependency */,
+				510338190B65DD8EC4FB775A /* PBXTargetDependency */,
+			);
+			name = All;
+			productName = All;
+		};
+		CC8294D0A664BAC6A7009F25 /* gen_aecm_core_neon_offsets_h */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5F1A6A3599E571EA4B4E9FEB /* Build configuration list for PBXAggregateTarget "gen_aecm_core_neon_offsets_h" */;
+			buildPhases = (
+				9CCE4DBDB79F1068B08B858B /* Action "unpack_lib_posix" */,
+				6ADD0EA99BA8A562933E5DCF /* Rule "obj_int_extract" */,
+			);
+			dependencies = (
+				E2F6777A18FFFD0C0028F02B /* PBXTargetDependency */,
+				0E9B2E2D393010DFEC85053E /* PBXTargetDependency */,
+			);
+			name = gen_aecm_core_neon_offsets_h;
+			productName = gen_aecm_core_neon_offsets_h;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		0FDA18C3BB7133038A424C01 /* aecm_core_neon_offsets.c in Sources */ = {isa = PBXBuildFile; fileRef = 99292C82E428B478BD5F5209 /* aecm_core_neon_offsets.c */; };
+		FAA187DE78433181A49BADA8 /* nsx_core_neon_offsets.c in Sources */ = {isa = PBXBuildFile; fileRef = FE98F4A77B32ED17AD1F7AD4 /* nsx_core_neon_offsets.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		01EC69CA99DE11A1D22FEEFA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07C8331EE1490E0DD66ECD3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 65D899436ABF6EB6A016F6A1;
+			remoteInfo = gen_nsx_core_neon_offsets_h;
+		};
+		29DE19AD1BCEF1CD7EDF3088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07C8331EE1490E0DD66ECD3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E74B6EC0F7D20B891BC9CFA5;
+			remoteInfo = lib_core_neon_offsets;
+		};
+		3929E0F16B8E8746794984B0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07C8331EE1490E0DD66ECD3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CC8294D0A664BAC6A7009F25;
+			remoteInfo = gen_aecm_core_neon_offsets_h;
+		};
+		67B05E65BCF3D92BD2BE3809 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07C8331EE1490E0DD66ECD3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E74B6EC0F7D20B891BC9CFA5;
+			remoteInfo = lib_core_neon_offsets;
+		};
+		6CC777B4C3E4E8D3C0F09764 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07C8331EE1490E0DD66ECD3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E74B6EC0F7D20B891BC9CFA5;
+			remoteInfo = lib_core_neon_offsets;
+		};
+		E2F6776F18FFFCCF0028F02B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A270F55489D4E3801CFE5F4C;
+			remoteInfo = libvpx_obj_int_extract;
+		};
+		E2F6777118FFFCCF0028F02B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6682003ED0888DD9295361CD;
+			remoteInfo = libvpx_asm_offsets_vp8;
+		};
+		E2F6777318FFFCCF0028F02B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6502D155EC33DD3FF7912AB1;
+			remoteInfo = libvpx_asm_offsets_vpx_scale;
+		};
+		E2F6777518FFFCCF0028F02B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 98E87CAEFCF9A906003B5768;
+			remoteInfo = libvpx;
+		};
+		E2F6777718FFFD070028F02B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E57AC0A04AE09D3ACFC2CAB;
+			remoteInfo = libvpx_obj_int_extract;
+		};
+		E2F6777918FFFD0C0028F02B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3E57AC0A04AE09D3ACFC2CAB;
+			remoteInfo = libvpx_obj_int_extract;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		001B21E237E20A013A926679 /* obj_int_extract.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = obj_int_extract.gypi; path = ../../../third_party/libvpx/obj_int_extract.gypi; sourceTree = "<group>"; };
+		0B04CD1C748CA2552CFBAAE7 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../build/common.gypi; sourceTree = "<group>"; };
+		29B516AFB511FE56FE770D26 /* lib_core_neon_offsets.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = lib_core_neon_offsets.gypi; sourceTree = "<group>"; };
+		345BAA1D1701C8A391D64ED8 /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../build/filename_rules.gypi; sourceTree = "<group>"; };
+		3AC30283066197A2925130A7 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../build/release.gypi; sourceTree = "<group>"; };
+		3FB409150CCE6B4326952016 /* aecm_core_neon_offsets.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aecm_core_neon_offsets.h; sourceTree = "<group>"; };
+		55B849BC155E5DA1D96EBAEC /* lib_core_neon_offsets.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib_core_neon_offsets.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		826473E0395AA5E7633D7D78 /* aecm_core_neon_offsets.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = aecm_core_neon_offsets.o; sourceTree = "<group>"; };
+		83560CCD64635CF89705ACE4 /* obj_int_extract.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = obj_int_extract.py; sourceTree = "<group>"; };
+		864970109EF4C43EB25A2346 /* nsx_core_neon_offsets.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nsx_core_neon_offsets.h; sourceTree = "<group>"; };
+		921B5E745BA62B28A3F0584B /* libvpx_obj_int_extract */ = {isa = PBXFileReference; lastKnownFileType = text; path = libvpx_obj_int_extract; sourceTree = "<group>"; };
+		99292C82E428B478BD5F5209 /* aecm_core_neon_offsets.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = aecm_core_neon_offsets.c; sourceTree = "<group>"; };
+		AF1D1D7D8EB258E6C876C70D /* nsx_core_neon_offsets.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = nsx_core_neon_offsets.o; sourceTree = "<group>"; };
+		B0F7B8B21B3A71AF67E32793 /* unpack_lib_posix.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = unpack_lib_posix.gypi; path = ../../../third_party/libvpx/unpack_lib_posix.gypi; sourceTree = "<group>"; };
+		B2ECA7D580F68FF5D7B921C7 /* unpack_lib_posix.sh */ = {isa = PBXFileReference; lastKnownFileType = text; path = unpack_lib_posix.sh; sourceTree = "<group>"; };
+		BCDEE3BFDBB4E2A605282D28 /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../supplement.gypi; sourceTree = "<group>"; };
+		C920463E18B6B05977CD0158 /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
+		CF30D339393AB083548B608C /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
+		D8159C6F6922288FCA0D1438 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
+		D8AC58F69E72637ACAC0B919 /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
+		E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libvpx_ios.xcodeproj; path = ../../../third_party/libvpx/libvpx_ios.xcodeproj; sourceTree = "<group>"; };
+		E735EFC479BDFE4569F262AE /* gen_core_neon_offsets.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = gen_core_neon_offsets.gyp; sourceTree = "<group>"; };
+		FE98F4A77B32ED17AD1F7AD4 /* nsx_core_neon_offsets.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = nsx_core_neon_offsets.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9E287CED76C448C2139BE566 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2694910BD7EA12FB52A888CE /* BUILT_PRODUCTS_DIR */ = {
+			isa = PBXGroup;
+			children = (
+				921B5E745BA62B28A3F0584B /* libvpx_obj_int_extract */,
+			);
+			name = BUILT_PRODUCTS_DIR;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		35DE4998BA975513CC249C07 = {
+			isa = PBXGroup;
+			children = (
+				F235EAE3F81240C675E69FB7 /* Source */,
+				ADB2EC71E4BD960C7130F381 /* Intermediates */,
+				EFA4AA3A8807687B07A00550 /* Projects */,
+				D3B880686E259CFC83F48EB6 /* Products */,
+				36A899C9300DE210317E3DE5 /* Build */,
+			);
+			sourceTree = "<group>";
+		};
+		36A899C9300DE210317E3DE5 /* Build */ = {
+			isa = PBXGroup;
+			children = (
+				0B04CD1C748CA2552CFBAAE7 /* common.gypi */,
+				D8159C6F6922288FCA0D1438 /* common.gypi */,
+				345BAA1D1701C8A391D64ED8 /* filename_rules.gypi */,
+				E735EFC479BDFE4569F262AE /* gen_core_neon_offsets.gyp */,
+				29B516AFB511FE56FE770D26 /* lib_core_neon_offsets.gypi */,
+				001B21E237E20A013A926679 /* obj_int_extract.gypi */,
+				3AC30283066197A2925130A7 /* release.gypi */,
+				D8AC58F69E72637ACAC0B919 /* release_defaults.gypi */,
+				CF30D339393AB083548B608C /* release_impl.gypi */,
+				C920463E18B6B05977CD0158 /* release_impl_official.gypi */,
+				BCDEE3BFDBB4E2A605282D28 /* supplement.gypi */,
+				B0F7B8B21B3A71AF67E32793 /* unpack_lib_posix.gypi */,
+			);
+			name = Build;
+			sourceTree = "<group>";
+		};
+		560B8881E6431A39B9017C0D /* aecm */ = {
+			isa = PBXGroup;
+			children = (
+				99292C82E428B478BD5F5209 /* aecm_core_neon_offsets.c */,
+			);
+			path = aecm;
+			sourceTree = "<group>";
+		};
+		ADB2EC71E4BD960C7130F381 /* Intermediates */ = {
+			isa = PBXGroup;
+			children = (
+				3FB409150CCE6B4326952016 /* aecm_core_neon_offsets.h */,
+				826473E0395AA5E7633D7D78 /* aecm_core_neon_offsets.o */,
+				864970109EF4C43EB25A2346 /* nsx_core_neon_offsets.h */,
+				AF1D1D7D8EB258E6C876C70D /* nsx_core_neon_offsets.o */,
+			);
+			name = Intermediates;
+			path = audio_processing/asm_offsets;
+			sourceTree = SHARED_INTERMEDIATE_DIR;
+		};
+		B3708BA45B9BFBB22CAA2364 /* ns */ = {
+			isa = PBXGroup;
+			children = (
+				FE98F4A77B32ED17AD1F7AD4 /* nsx_core_neon_offsets.c */,
+			);
+			path = ns;
+			sourceTree = "<group>";
+		};
+		D3B880686E259CFC83F48EB6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				55B849BC155E5DA1D96EBAEC /* lib_core_neon_offsets.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E2F6776518FFFCCF0028F02B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2F6777018FFFCCF0028F02B /* libvpx_obj_int_extract */,
+				E2F6777218FFFCCF0028F02B /* libvpx_asm_offsets_vp8.a */,
+				E2F6777418FFFCCF0028F02B /* libvpx_asm_offsets_vpx_scale.a */,
+				E2F6777618FFFCCF0028F02B /* libvpx.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EFA4AA3A8807687B07A00550 /* Projects */ = {
+			isa = PBXGroup;
+			children = (
+				E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */,
+			);
+			name = Projects;
+			sourceTree = "<group>";
+		};
+		F235EAE3F81240C675E69FB7 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				F6416158F5828DA1E38A03FB /* ../../../third_party/libvpx */,
+				2694910BD7EA12FB52A888CE /* BUILT_PRODUCTS_DIR */,
+				560B8881E6431A39B9017C0D /* aecm */,
+				B3708BA45B9BFBB22CAA2364 /* ns */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		F6416158F5828DA1E38A03FB /* ../../../third_party/libvpx */ = {
+			isa = PBXGroup;
+			children = (
+				83560CCD64635CF89705ACE4 /* obj_int_extract.py */,
+				B2ECA7D580F68FF5D7B921C7 /* unpack_lib_posix.sh */,
+			);
+			path = ../../../third_party/libvpx;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E74B6EC0F7D20B891BC9CFA5 /* lib_core_neon_offsets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 84EC5931E1C30238EDD48A2F /* Build configuration list for PBXNativeTarget "lib_core_neon_offsets" */;
+			buildPhases = (
+				7994345425C262A4A13BF2E1 /* Sources */,
+				9E287CED76C448C2139BE566 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = lib_core_neon_offsets;
+			productName = _core_neon_offsets;
+			productReference = 55B849BC155E5DA1D96EBAEC /* lib_core_neon_offsets.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		07C8331EE1490E0DD66ECD3E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 0510;
+			};
+			buildConfigurationList = 296A7C8B277B02BB1D8D264C /* Build configuration list for PBXProject "gen_core_neon_offsets_ios" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 35DE4998BA975513CC249C07;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = E2F6776518FFFCCF0028F02B /* Products */;
+					ProjectRef = E2F6776418FFFCCF0028F02B /* libvpx_ios.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				6A86A7D5C74E88F7760581E7 /* All */,
+				65D899436ABF6EB6A016F6A1 /* gen_nsx_core_neon_offsets_h */,
+				CC8294D0A664BAC6A7009F25 /* gen_aecm_core_neon_offsets_h */,
+				E74B6EC0F7D20B891BC9CFA5 /* lib_core_neon_offsets */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		E2F6777018FFFCCF0028F02B /* libvpx_obj_int_extract */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = libvpx_obj_int_extract;
+			remoteRef = E2F6776F18FFFCCF0028F02B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2F6777218FFFCCF0028F02B /* libvpx_asm_offsets_vp8.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvpx_asm_offsets_vp8.a;
+			remoteRef = E2F6777118FFFCCF0028F02B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2F6777418FFFCCF0028F02B /* libvpx_asm_offsets_vpx_scale.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvpx_asm_offsets_vpx_scale.a;
+			remoteRef = E2F6777318FFFCCF0028F02B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2F6777618FFFCCF0028F02B /* libvpx.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvpx.a;
+			remoteRef = E2F6777518FFFCCF0028F02B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		6ADD0EA99BA8A562933E5DCF /* Rule "obj_int_extract" */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Rule \"obj_int_extract\"";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec xcrun make -f \"${PROJECT_FILE_PATH}/gen_aecm_core_neon_offsets_h_obj_int_extract.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
+			showEnvVarsInLog = 0;
+		};
+		9CCE4DBDB79F1068B08B858B /* Action "unpack_lib_posix" */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				../../../third_party/libvpx/unpack_lib_posix.sh,
+			);
+			name = "Action \"unpack_lib_posix\"";
+			outputPaths = (
+				"$(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets/aecm_core_neon_offsets.o",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec ../../../third_party/libvpx/unpack_lib_posix.sh -d \"${SHARED_INTERMEDIATE_DIR}/audio_processing/asm_offsets\" -f aecm_core_neon_offsets.o -a \"${BUILT_PRODUCTS_DIR}/lib_core_neon_offsets.a\" -a \"${BUILT_PRODUCTS_DIR}/webrtc/modules/audio_processing/lib_core_neon_offsets.a\" -a \"${BUILT_PRODUCTS_DIR}/third_party/webrtc/modules/audio_processing/lib_core_neon_offsets.a\" -a \"\"\nexit 1\n";
+			showEnvVarsInLog = 0;
+		};
+		CBA1AA6C2759B821DB7881B2 /* Action "unpack_lib_posix" */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				../../../third_party/libvpx/unpack_lib_posix.sh,
+			);
+			name = "Action \"unpack_lib_posix\"";
+			outputPaths = (
+				"$(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets/nsx_core_neon_offsets.o",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec ../../../third_party/libvpx/unpack_lib_posix.sh -d \"${SHARED_INTERMEDIATE_DIR}/audio_processing/asm_offsets\" -f nsx_core_neon_offsets.o -a \"${BUILT_PRODUCTS_DIR}/lib_core_neon_offsets.a\" -a \"${BUILT_PRODUCTS_DIR}/webrtc/modules/audio_processing/lib_core_neon_offsets.a\" -a \"${BUILT_PRODUCTS_DIR}/third_party/webrtc/modules/audio_processing/lib_core_neon_offsets.a\" -a \"\"\nexit 1\n";
+			showEnvVarsInLog = 0;
+		};
+		CF6494D19BB0133589A6ABC2 /* Rule "obj_int_extract" */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Rule \"obj_int_extract\"";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec xcrun make -f \"${PROJECT_FILE_PATH}/gen_nsx_core_neon_offsets_h_obj_int_extract.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7994345425C262A4A13BF2E1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAA187DE78433181A49BADA8 /* nsx_core_neon_offsets.c in Sources */,
+				0FDA18C3BB7133038A424C01 /* aecm_core_neon_offsets.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0350522866F2A093462C86A8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CC8294D0A664BAC6A7009F25 /* gen_aecm_core_neon_offsets_h */;
+			targetProxy = 3929E0F16B8E8746794984B0 /* PBXContainerItemProxy */;
+		};
+		0E9B2E2D393010DFEC85053E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E74B6EC0F7D20B891BC9CFA5 /* lib_core_neon_offsets */;
+			targetProxy = 6CC777B4C3E4E8D3C0F09764 /* PBXContainerItemProxy */;
+		};
+		510338190B65DD8EC4FB775A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E74B6EC0F7D20B891BC9CFA5 /* lib_core_neon_offsets */;
+			targetProxy = 67B05E65BCF3D92BD2BE3809 /* PBXContainerItemProxy */;
+		};
+		C14B24F4F3EB354ACD733553 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E74B6EC0F7D20B891BC9CFA5 /* lib_core_neon_offsets */;
+			targetProxy = 29DE19AD1BCEF1CD7EDF3088 /* PBXContainerItemProxy */;
+		};
+		E2F6777818FFFD070028F02B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = libvpx_obj_int_extract;
+			targetProxy = E2F6777718FFFD070028F02B /* PBXContainerItemProxy */;
+		};
+		E2F6777A18FFFD0C0028F02B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = libvpx_obj_int_extract;
+			targetProxy = E2F6777918FFFD0C0028F02B /* PBXContainerItemProxy */;
+		};
+		F1249CA04BDDFB72ADEC7626 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 65D899436ABF6EB6A016F6A1 /* gen_nsx_core_neon_offsets_h */;
+			targetProxy = 01EC69CA99DE11A1D22FEEFA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		04B3072F290A83CD35913B8B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "-fstack-protector-all";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				PRODUCT_NAME = gen_aecm_core_neon_offsets_h;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Debug;
+		};
+		25D5A6F3D559355205D2B2D0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SYMROOT = ../../../xcodebuild;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		343424C3991D71AB795ABBC8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "-fstack-protector-all";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				PRODUCT_NAME = gen_nsx_core_neon_offsets_h;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Debug;
+		};
+		3920F100780BCF6B3971325C /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				PRODUCT_NAME = gen_nsx_core_neon_offsets_h;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Profile;
+		};
+		3A140E55382D1BD03D4CF84B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				PRODUCT_NAME = gen_nsx_core_neon_offsets_h;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Release;
+		};
+		3D49194FF245D457EF259DD3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "";
+				PRODUCT_NAME = _core_neon_offsets;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Release;
+		};
+		6CD056E429A5CE0DC183CA9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = iphoneos;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SYMROOT = ../../../xcodebuild;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		756F49837779AF59AFF1F168 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = iphoneos;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SYMROOT = ../../../xcodebuild;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
+		};
+		8243F65F947C475BB70C0DC5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = All;
+			};
+			name = Debug;
+		};
+		9A21B2C7A9521DC9706BD5BB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "-fstack-protector-all";
+				PRODUCT_NAME = _core_neon_offsets;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Debug;
+		};
+		9C56B840F2BE70F71B0516A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = All;
+			};
+			name = Release;
+		};
+		B82E5FD19C22BAD8326F5DE9 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = All;
+			};
+			name = Profile;
+		};
+		BD28BB19FAD3D4B6872EF6E4 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				PRODUCT_NAME = gen_aecm_core_neon_offsets_h;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Profile;
+		};
+		D7021564B2BAA2BA2797AE12 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "";
+				PRODUCT_NAME = _core_neon_offsets;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Profile;
+		};
+		F4AD54075094F2EDE134ACB0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_CW_ASM_SYNTAX = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_PASCAL_STRINGS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OBJC_CALL_CXX_CDTORS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"CLD_VERSION=1",
+					"ENABLE_SPELLCHECK=1",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM_V7,
+					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../..,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				PRODUCT_NAME = gen_aecm_core_neon_offsets_h;
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "armv7 i386";
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wendif-labels",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
+					"-Wheader-hygiene",
+					"-Wno-c++11-narrowing",
+					"-Wno-char-subscripts",
+					"-Wno-unneeded-internal-declaration",
+					"-Wno-covered-switch-default",
+					"-Wstring-conversion",
+					"-Wno-deprecated-register",
+					"-Wno-absolute-value",
+					"-Wno-unknown-warning-option",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0B29CE7DA41546F1192E2136 /* Build configuration list for PBXAggregateTarget "gen_nsx_core_neon_offsets_h" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				343424C3991D71AB795ABBC8 /* Debug */,
+				3920F100780BCF6B3971325C /* Profile */,
+				3A140E55382D1BD03D4CF84B /* Release */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Debug;
+		};
+		296A7C8B277B02BB1D8D264C /* Build configuration list for PBXProject "gen_core_neon_offsets_ios" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				25D5A6F3D559355205D2B2D0 /* Debug */,
+				756F49837779AF59AFF1F168 /* Profile */,
+				6CD056E429A5CE0DC183CA9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Debug;
+		};
+		5F1A6A3599E571EA4B4E9FEB /* Build configuration list for PBXAggregateTarget "gen_aecm_core_neon_offsets_h" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				04B3072F290A83CD35913B8B /* Debug */,
+				BD28BB19FAD3D4B6872EF6E4 /* Profile */,
+				F4AD54075094F2EDE134ACB0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Debug;
+		};
+		84EC5931E1C30238EDD48A2F /* Build configuration list for PBXNativeTarget "lib_core_neon_offsets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9A21B2C7A9521DC9706BD5BB /* Debug */,
+				D7021564B2BAA2BA2797AE12 /* Profile */,
+				3D49194FF245D457EF259DD3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Debug;
+		};
+		A96398B6F08BFA169A6A8DC4 /* Build configuration list for PBXAggregateTarget "All" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8243F65F947C475BB70C0DC5 /* Debug */,
+				B82E5FD19C22BAD8326F5DE9 /* Profile */,
+				9C56B840F2BE70F71B0516A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 07C8331EE1490E0DD66ECD3E /* Project object */;
+}
