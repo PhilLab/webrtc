@@ -709,7 +709,7 @@ int ViEEncoder::GetPreferedFrameSettings(int* width,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
 
   webrtc::VideoCodec video_codec;
-  std::memset(&video_codec, 0, sizeof(video_codec));
+  memset(&video_codec, 0, sizeof(video_codec));
   if (vcm_.SendCodec(&video_codec) != VCM_OK) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),

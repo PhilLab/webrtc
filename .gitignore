@@ -2,7 +2,9 @@
 *.Makefile
 *.host.mk
 *.ncb
-*.ninja
+*.o
+*.a
+*.stamp
 *.props
 *.pyc
 *.rules
@@ -43,6 +45,11 @@ xcshareddata
 /gyp-mac-tool
 /net
 /out
+/projects/android/ninja/gen
+/projects/android/ninja/.ninja_deps
+/projects/android/ninja/.ninja_log
+/projects/android/ninja/libvpx_obj_int_extract
+/projects/android/ninja/obj/third_party/opus/opus.gen
 /resources/*.*
 /resources/*/*.*
 /talk/examples/android/bin

@@ -302,8 +302,8 @@ int ViEInputManager::CreateCaptureDevice(
 
     // TODO(mflodman) Can we change input to avoid this cast?
     const char* cast_id = reinterpret_cast<const char*>(device_unique_idUTF8);
-    if (std::strncmp(cast_id, reinterpret_cast<const char*>(found_unique_name),
-    			std::strlen(cast_id)) == 0) {
+    if (strncmp(cast_id, reinterpret_cast<const char*>(found_unique_name),
+    			strlen(cast_id)) == 0) {
       WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, ViEId(engine_id_),
                    "%s:%d Capture device was found by unique ID: %s. Returning",
                    __FUNCTION__, __LINE__, device_unique_idUTF8);

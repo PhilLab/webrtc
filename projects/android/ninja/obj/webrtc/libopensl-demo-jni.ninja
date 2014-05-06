@@ -1,0 +1,126 @@
+build obj/webrtc/libopensl-demo-jni.actions_depends.stamp: stamp $
+    obj/webrtc/modules/libaudio_device.a $
+    obj/webrtc/modules/libwebrtc_utility.a $
+    obj/webrtc/modules/libaudio_coding_module.a obj/webrtc/modules/libCNG.a $
+    obj/webrtc/common_audio/libcommon_audio.a $
+    obj/webrtc/system_wrappers/source/libsystem_wrappers.a $
+    obj/webrtc/system_wrappers/source/libcpu_features_android.a $
+    obj/third_party/android_tools/ndk/libcpu_features.a $
+    obj/webrtc/common_audio/libcommon_audio_neon.a $
+    obj/webrtc/modules/libG711.a obj/webrtc/modules/libG722.a $
+    obj/webrtc/modules/libiLBC.a obj/webrtc/modules/libiSAC.a $
+    obj/webrtc/modules/libiSACFix.a obj/webrtc/modules/libisac_neon.a $
+    obj/webrtc/modules/libPCM16B.a obj/webrtc/modules/libNetEq.a $
+    obj/webrtc/modules/libwebrtc_opus.a obj/third_party/opus/libopus.a $
+    obj/webrtc/modules/libacm2.a obj/webrtc/modules/libNetEq4.a $
+    obj/webrtc/modules/libmedia_file.a $
+    obj/webrtc/modules/libwebrtc_video_coding.a $
+    obj/webrtc/modules/libwebrtc_i420.a $
+    obj/webrtc/common_video/libcommon_video.a libyuv.a $
+    obj/third_party/libjpeg_turbo/libjpeg_turbo.a libyuv_neon.a $
+    obj/webrtc/modules/video_coding/utility/libvideo_coding_utility.a $
+    obj/webrtc/modules/video_coding/codecs/vp8/libwebrtc_vp8.a $
+    obj/third_party/libvpx/libvpx.a $
+    obj/third_party/libvpx/gen_asm_offsets_vp8.actions_rules_copies.stamp $
+    obj/third_party/libvpx/libvpx_asm_offsets_vp8.a $
+    obj/third_party/libvpx/gen_asm_offsets_vpx_scale.actions_rules_copies.stamp $
+    obj/third_party/libvpx/libvpx_asm_offsets_vpx_scale.a $
+    obj/third_party/libvpx/libvpx_intrinsics_neon.a
+
+build obj/webrtc/libopensl-demo-jni.compile_depends.stamp: stamp $
+    obj/third_party/opus/opus.gen/celt_pitch_xcorr_arm_gnu.S $
+    obj/third_party/libvpx/libvpx.actions_rules_copies.stamp $
+    obj/third_party/libvpx/gen_asm_offsets_vp8.actions_rules_copies.stamp $
+    obj/third_party/libvpx/gen_asm_offsets_vpx_scale.actions_rules_copies.stamp
+
+defines = -DV8_DEPRECATION_WARNINGS -DBLINK_SCALE_FILTERS_AT_RECORD_TIME $
+    -D_FILE_OFFSET_BITS=64 -DNO_TCMALLOC -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_WEBRTC=1 -DUSE_PROPRIETARY_CODECS $
+    -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DENABLE_EGLIMAGE=1 $
+    -DENABLE_AUTOFILL_DIALOG=1 -DCLD_VERSION=1 -DENABLE_PRINTING=1 $
+    -DENABLE_MANAGED_USERS=1 -DWEBRTC_MODULE_UTILITY_VIDEO $
+    -DWEBRTC_ARCH_ARM -DWEBRTC_ARCH_ARM_V7 -DWEBRTC_DETECT_ARM_NEON $
+    -DWEBRTC_POSIX -DWEBRTC_LINUX -DWEBRTC_ANDROID $
+    -DWEBRTC_ANDROID_OPENSLES -DUSE_OPENSSL=1 -DUSE_OPENSSL_CERTS=1 $
+    -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -DANDROID $
+    -D__GNU_SOURCE=1 -DUSE_STLPORT=1 -D_STLP_USE_PTR_SPECIALIZATIONS=1 $
+    '-DCHROME_BUILD_ID=""' -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND $
+    -DDYNAMIC_ANNOTATIONS_ENABLED=0 -D_FORTIFY_SOURCE=2
+includes = -I../../.. -I../../.. -I../../../webrtc/modules/interface $
+    -I../../../webrtc/modules/audio_device/include
+cflags = -fstack-protector --param=ssp-buffer-size=4 -Werror $
+    -fno-exceptions -fno-strict-aliasing -Wall -Wno-unused-parameter $
+    -Wno-missing-field-initializers -fvisibility=hidden -pipe -fPIC -Wextra $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -Wno-strict-overflow -fno-builtin-cos -fno-builtin-sin $
+    -fno-builtin-cosf -fno-builtin-sinf -march=armv7-a -mfpu=vfpv3-d16 $
+    -mfloat-abi=softfp -mthumb -fno-tree-sra -fuse-ld=gold -Wno-psabi $
+    -mthumb-interwork -ffunction-sections -funwind-tables -g $
+    -fstack-protector -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
+    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
+    -I$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.6/include $
+    -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
+    -funwind-tables
+cflags_c = 
+cflags_cc = -fno-rtti -fno-threadsafe-statics -fvisibility-inlines-hidden $
+    -Wsign-compare -Wnon-virtual-dtor -Woverloaded-virtual -Wno-abi
+
+build $
+    obj/webrtc/examples/android/opensl_loopback/jni/libopensl-demo-jni.opensl_runner.o: $
+    cxx $
+    ../../../webrtc/examples/android/opensl_loopback/jni/opensl_runner.cc $
+    || obj/webrtc/libopensl-demo-jni.compile_depends.stamp
+build $
+    obj/webrtc/examples/android/opensl_loopback/libopensl-demo-jni.fake_audio_device_buffer.o: $
+    cxx $
+    ../../../webrtc/examples/android/opensl_loopback/fake_audio_device_buffer.cc $
+    || obj/webrtc/libopensl-demo-jni.compile_depends.stamp
+
+ldflags = -Wl,--fatal-warnings -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack $
+    -fPIC -fuse-ld=gold -nostdlib -Wl,--no-undefined -Wl,--exclude-libs=ALL $
+    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
+    -Wl,--icf=safe $
+    -L$android_ndk_path/sources/cxx-stl/stlport/libs/armeabi-v7a $
+    -Wl,-shared,-Bsymbolic $
+    $android_ndk_path/platforms/android-14/arch-arm/usr/lib/crtbegin_so.o $
+    -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections -Wl,--warn-shared-textrel
+libs =  -llog -lOpenSLES -lstlport_static $
+    $android_ndk_pathtoolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/../lib/gcc/arm-linux-androideabi/4.6/libgcc.a $
+    -lc -ldl -lm $
+    $android_ndk_path/platforms/android-14/arch-arm/usr/lib/crtend_so.o
+build libopensl-demo-jni.so libopensl-demo-jni.so.TOC: solink_module $
+    obj/webrtc/examples/android/opensl_loopback/jni/libopensl-demo-jni.opensl_runner.o $
+    obj/webrtc/examples/android/opensl_loopback/libopensl-demo-jni.fake_audio_device_buffer.o $
+    obj/webrtc/modules/libaudio_device.a $
+    obj/webrtc/modules/libwebrtc_utility.a $
+    obj/webrtc/modules/libaudio_coding_module.a obj/webrtc/modules/libCNG.a $
+    obj/webrtc/common_audio/libcommon_audio.a $
+    obj/webrtc/system_wrappers/source/libsystem_wrappers.a $
+    obj/webrtc/system_wrappers/source/libcpu_features_android.a $
+    obj/third_party/android_tools/ndk/libcpu_features.a $
+    obj/webrtc/common_audio/libcommon_audio_neon.a $
+    obj/webrtc/modules/libG711.a obj/webrtc/modules/libG722.a $
+    obj/webrtc/modules/libiLBC.a obj/webrtc/modules/libiSAC.a $
+    obj/webrtc/modules/libiSACFix.a obj/webrtc/modules/libisac_neon.a $
+    obj/webrtc/modules/libPCM16B.a obj/webrtc/modules/libNetEq.a $
+    obj/webrtc/modules/libwebrtc_opus.a obj/third_party/opus/libopus.a $
+    obj/webrtc/modules/libacm2.a obj/webrtc/modules/libNetEq4.a $
+    obj/webrtc/modules/libmedia_file.a $
+    obj/webrtc/modules/libwebrtc_video_coding.a $
+    obj/webrtc/modules/libwebrtc_i420.a $
+    obj/webrtc/common_video/libcommon_video.a libyuv.a $
+    obj/third_party/libjpeg_turbo/libjpeg_turbo.a libyuv_neon.a $
+    obj/webrtc/modules/video_coding/utility/libvideo_coding_utility.a $
+    obj/webrtc/modules/video_coding/codecs/vp8/libwebrtc_vp8.a $
+    obj/third_party/libvpx/libvpx.a $
+    obj/third_party/libvpx/libvpx_asm_offsets_vp8.a $
+    obj/third_party/libvpx/libvpx_asm_offsets_vpx_scale.a $
+    obj/third_party/libvpx/libvpx_intrinsics_neon.a | $
+    obj/third_party/libvpx/gen_asm_offsets_vpx_scale.actions_rules_copies.stamp $
+    obj/third_party/libvpx/gen_asm_offsets_vp8.actions_rules_copies.stamp
+  ld = $ldxx
+  soname = libopensl-demo-jni.so
+  lib = libopensl-demo-jni.so
+  link_file_list = libopensl-demo-jni.so.rsp

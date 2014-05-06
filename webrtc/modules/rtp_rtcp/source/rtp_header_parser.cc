@@ -50,7 +50,7 @@ bool RtpHeaderParser::IsRtcp(const uint8_t* packet, int length) {
 bool RtpHeaderParserImpl::Parse(const uint8_t* packet, int length,
                             RTPHeader* header) const {
   ModuleRTPUtility::RTPHeaderParser rtp_parser(packet, length);
-  std::memset(header, 0, sizeof(*header));
+  memset(header, 0, sizeof(*header));
 
   RtpHeaderExtensionMap map;
   {

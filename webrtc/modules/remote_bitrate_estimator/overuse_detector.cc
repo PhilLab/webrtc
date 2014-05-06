@@ -49,8 +49,8 @@ OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
       , plots_()
 #endif
       {
-  std::memcpy(E_, options_.initial_e, sizeof(E_));
-  std::memcpy(process_noise_, options_.initial_process_noise,
+  memcpy(E_, options_.initial_e, sizeof(E_));
+  memcpy(process_noise_, options_.initial_process_noise,
 		  	  sizeof(process_noise_));
 }
 

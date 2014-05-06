@@ -641,7 +641,7 @@ OutputMixer::InsertInbandDtmfTone()
     if (_audioFrame.num_channels_ == 1)
     {
         // mono
-    	std::memcpy(_audioFrame.data_, toneBuffer, sizeof(int16_t)
+    	memcpy(_audioFrame.data_, toneBuffer, sizeof(int16_t)
     		        * toneSamples);
     } else
     {

@@ -324,7 +324,7 @@ int VoEExternalMediaImpl::ExternalPlayoutGetData(
     shared_->output_mixer()->GetMixedAudio(samplingFreqHz, 1, &audioFrame);
 
     // Deliver audio (PCM) samples to the external sink
-    std::memcpy(speechData10ms,
+    memcpy(speechData10ms,
     			audioFrame.data_,
     			sizeof(int16_t)*(audioFrame.samples_per_channel_));
     lengthSamples = audioFrame.samples_per_channel_;

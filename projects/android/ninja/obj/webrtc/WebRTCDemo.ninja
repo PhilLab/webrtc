@@ -1,0 +1,77 @@
+build obj/webrtc/WebRTCDemo.actions_depends.stamp: stamp $
+    libwebrtcdemo-jni.so.TOC $
+    obj/webrtc/modules/audio_device_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_capture_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_render_module_java.actions_rules_copies.stamp
+
+build obj/webrtc/WebRTCDemo.compile_depends.stamp: stamp $
+    obj/webrtc/libwebrtcdemo-jni.compile_depends.stamp $
+    obj/webrtc/modules/audio_device_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_capture_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_render_module_java.actions_rules_copies.stamp
+
+rule WebRTCDemo_target_build_webrtcdemo_apk_25611c43d5b945c97d35b8a32b778127
+  command = cd ../../../webrtc; bash -ec "rm -fr $
+      \"../projects/android/ninja/WebRTCDemo-debug.apk\" $
+      ../webrtc/examples/android/media_demo/{bin,libs} && mkdir -p $
+      ../projects/android/ninja/obj/webrtc/WebRTCDemo.gen && mkdir -p $
+      ../webrtc/examples/android/media_demo/libs/armeabi-v7a && cp $
+      ../projects/android/ninja/lib.java/audio_device_module_java.jar $
+      ../webrtc/examples/android/media_demo/libs/ &&cp $
+      ../projects/android/ninja/lib.java/video_capture_module_java.jar $
+      ../webrtc/examples/android/media_demo/libs/ &&cp $
+      ../projects/android/ninja/lib.java/video_render_module_java.jar $
+      ../webrtc/examples/android/media_demo/libs/ $
+      &&$android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip $
+      -o $
+      ../webrtc/examples/android/media_demo/libs/armeabi-v7a/libwebrtcdemo-jni.so $
+      ../projects/android/ninja/libwebrtcdemo-jni.so && cd $
+      ../webrtc/examples/android/media_demo && { ant debug > $
+      ../../../../projects/android/ninja/obj/webrtc/WebRTCDemo.gen/ant.log $
+      2>&1 ||   { cat $
+      ../../../../projects/android/ninja/obj/webrtc/WebRTCDemo.gen/ant.log $
+      ; exit 1; } } && cd - > /dev/null && cp $
+      ../webrtc/examples/android/media_demo/bin/WebRTCDemo-debug.apk $
+      \"../projects/android/ninja/WebRTCDemo-debug.apk\""
+  description = ACTION WebRTCDemo: $
+      build_webrtcdemo_apk_25611c43d5b945c97d35b8a32b778127
+  restat = 1
+
+build WebRTCDemo-debug.apk: $
+    WebRTCDemo_target_build_webrtcdemo_apk_25611c43d5b945c97d35b8a32b778127 $
+    lib.java/audio_device_module_java.jar $
+    lib.java/video_capture_module_java.jar $
+    lib.java/video_render_module_java.jar libwebrtcdemo-jni.so $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/VideoEngine.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/MainMenuFragment.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/MediaCodecVideoDecoder.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/WebRTCDemo.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/VideoCodecInst.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/CameraDesc.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/NativeWebRtcContextRegistry.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/RtcpStatistics.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/AudioMenuFragment.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/MediaEngineObserver.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/MediaEngine.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/CodecInst.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/MenuStateProvider.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/VideoDecodeEncodeObserver.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/VideoMenuFragment.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/SettingsMenuFragment.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/VoiceEngine.java $
+    ../../../webrtc/examples/android/media_demo/src/org/webrtc/webrtcdemo/SpinnerAdapter.java $
+    ../../../webrtc/examples/android/media_demo/res/values/strings.xml $
+    ../../../webrtc/examples/android/media_demo/res/values/integers.xml $
+    ../../../webrtc/examples/android/media_demo/res/values/bools.xml $
+    ../../../webrtc/examples/android/media_demo/res/layout/audiomenu.xml $
+    ../../../webrtc/examples/android/media_demo/res/layout/dropdownitems.xml $
+    ../../../webrtc/examples/android/media_demo/res/layout/settingsmenu.xml $
+    ../../../webrtc/examples/android/media_demo/res/layout/videomenu.xml $
+    ../../../webrtc/examples/android/media_demo/res/layout/mainmenu.xml $
+    ../../../webrtc/examples/android/media_demo/res/drawable/logo.png $
+    ../../../webrtc/examples/android/media_demo/res/menu/main_activity_actions.xml $
+    ../../../webrtc/examples/android/media_demo/AndroidManifest.xml $
+    ../../../webrtc/examples/android/media_demo/build.xml $
+    ../../../webrtc/examples/android/media_demo/project.properties || $
+    obj/webrtc/WebRTCDemo.actions_depends.stamp
+

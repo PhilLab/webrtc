@@ -783,7 +783,7 @@ int VoEFileImpl::ConvertPCMToWAV(const char* fileNameInUTF8,
         -1, kFileFormatWavFile));
 
     CodecInst codecInst;
-    std::strncpy(codecInst.plname,"L16",32);
+    strncpy(codecInst.plname,"L16",32);
                  codecInst.channels = 1;
                  codecInst.rate     = 256000;
                  codecInst.plfreq   = 16000;
@@ -867,7 +867,7 @@ int VoEFileImpl::ConvertPCMToWAV(InStream* streamIn, OutStream* streamOut)
     FileRecorder& recObj(*FileRecorder::CreateFileRecorder(-1,
         kFileFormatWavFile));
     CodecInst codecInst;
-    std::strncpy(codecInst.plname, "L16", 32);
+    strncpy(codecInst.plname, "L16", 32);
                  codecInst.channels = 1;
                  codecInst.rate     = 256000;
                  codecInst.plfreq   = 16000;
@@ -946,7 +946,7 @@ int VoEFileImpl::ConvertWAVToPCM(const char* fileNameInUTF8,
         -1, kFileFormatPcm16kHzFile));
 
     CodecInst codecInst;
-    std::strncpy(codecInst.plname,"L16",32);
+    strncpy(codecInst.plname,"L16",32);
                  codecInst.channels = 1;
                  codecInst.rate     = 256000;
                  codecInst.plfreq   = 16000;
@@ -1031,7 +1031,7 @@ int VoEFileImpl::ConvertWAVToPCM(InStream* streamIn, OutStream* streamOut)
         -1, kFileFormatPcm16kHzFile));
 
     CodecInst codecInst;
-    std::strncpy(codecInst.plname,"L16",32);
+    strncpy(codecInst.plname,"L16",32);
                  codecInst.channels = 1;
                  codecInst.rate     = 256000;
                  codecInst.plfreq   = 16000;
@@ -1276,7 +1276,7 @@ int VoEFileImpl::ConvertCompressedToPCM(const char* fileNameInUTF8,
         -1, kFileFormatPcm16kHzFile));
 
     CodecInst codecInst;
-    std::strncpy(codecInst.plname,"L16",32);
+    strncpy(codecInst.plname,"L16",32);
                  codecInst.channels = 1;
                  codecInst.rate     = 256000;
                  codecInst.plfreq   = 16000;
@@ -1365,7 +1365,7 @@ int VoEFileImpl::ConvertCompressedToPCM(InStream* streamIn,
         -1, kFileFormatPcm16kHzFile));
 
     CodecInst codecInst;
-    std::strncpy(codecInst.plname,"L16",32);
+    strncpy(codecInst.plname,"L16",32);
                  codecInst.channels = 1;
                  codecInst.rate     = 256000;
                  codecInst.plfreq   = 16000;

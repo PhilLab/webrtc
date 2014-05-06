@@ -1,0 +1,47 @@
+defines = -DV8_DEPRECATION_WARNINGS -DBLINK_SCALE_FILTERS_AT_RECORD_TIME $
+    -D_FILE_OFFSET_BITS=64 -DNO_TCMALLOC -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_WEBRTC=1 -DUSE_PROPRIETARY_CODECS $
+    -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DENABLE_EGLIMAGE=1 $
+    -DENABLE_AUTOFILL_DIALOG=1 -DCLD_VERSION=1 -DENABLE_PRINTING=1 $
+    -DENABLE_MANAGED_USERS=1 -DUSE_OPENSSL=1 -DUSE_OPENSSL_CERTS=1 $
+    -DANDROID -D__GNU_SOURCE=1 -DUSE_STLPORT=1 $
+    -D_STLP_USE_PTR_SPECIALIZATIONS=1 '-DCHROME_BUILD_ID=""' $
+    -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
+includes = -I../../../third_party/opus/src/celt $
+    -I../../../third_party/opus/src/silk $
+    -I../../../third_party/opus/src/include
+cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-exceptions $
+    -fno-strict-aliasing -Wno-unused-parameter $
+    -Wno-missing-field-initializers -fvisibility=hidden -pipe -fPIC $
+    -Wno-format -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb $
+    -fno-tree-sra -fuse-ld=gold -Wno-psabi -mthumb-interwork $
+    -ffunction-sections -funwind-tables -g -fstack-protector $
+    -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
+    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
+    -I$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.6/include $
+    -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
+    -funwind-tables
+cflags_c = 
+cflags_cc = -fno-rtti -fno-threadsafe-statics -fvisibility-inlines-hidden $
+    -Wno-deprecated -Wno-abi
+
+build obj/third_party/opus/src/src/opus_demo.opus_demo.o: cc $
+    ../../../third_party/opus/src/src/opus_demo.c || $
+    obj/third_party/opus/opus.gen/celt_pitch_xcorr_arm_gnu.S
+
+ldflags = -Wl,--fatal-warnings -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack $
+    -fPIC -fuse-ld=gold -nostdlib -Wl,--no-undefined -Wl,--exclude-libs=ALL $
+    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
+    -Wl,--icf=safe $
+    -L$android_ndk_path/sources/cxx-stl/stlport/libs/armeabi-v7a $
+    -Bdynamic -Wl,--gc-sections -Wl,-z,nocopyreloc $
+    $android_ndk_path/platforms/android-14/arch-arm/usr/lib/crtbegin_dynamic.o $
+    -Wl,-O1 -Wl,--as-needed -Wl,--warn-shared-textrel
+libs =  -llog -lstlport_static $
+    $android_ndk_pathtoolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/../lib/gcc/arm-linux-androideabi/4.6/libgcc.a $
+    -lc -ldl -lm $
+    $android_ndk_path/platforms/android-14/arch-arm/usr/lib/crtend_android.o
+build opus_demo: link obj/third_party/opus/src/src/opus_demo.opus_demo.o $
+    obj/third_party/opus/libopus.a

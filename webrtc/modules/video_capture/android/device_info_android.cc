@@ -14,8 +14,8 @@
 #include <sstream>
 #include <vector>
 
-#include "json/json.h"
-#include "third_party/icu/source/common/unicode/unistr.h"
+//#include "json/json.h"
+//#include "third_party/icu/source/common/unicode/unistr.h"
 #include "webrtc/modules/video_capture/android/video_capture_android.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
@@ -27,16 +27,16 @@ namespace webrtc
 namespace videocapturemodule
 {
 
-static std::string ResolutionsToString(
-    const std::vector<std::pair<int, int> >& pairs) {
-  std::stringstream stream;
-  for (size_t i = 0; i < pairs.size(); ++i) {
-    if (i > 0)
-      stream << ", ";
-    stream << "(" << pairs[i].first << "x" << pairs[i].second << ")";
-  }
-  return stream.str();
-}
+//static std::string ResolutionsToString(
+//    const std::vector<std::pair<int, int> >& pairs) {
+//  std::stringstream stream;
+//  for (size_t i = 0; i < pairs.size(); ++i) {
+//    if (i > 0)
+//      stream << ", ";
+//    stream << "(" << pairs[i].first << "x" << pairs[i].second << ")";
+//  }
+//  return stream.str();
+//}
 
 struct AndroidCameraInfo {
   std::string name;
@@ -47,10 +47,10 @@ struct AndroidCameraInfo {
 
   std::string ToString() {
     std::stringstream stream;
-    stream << "Name: [" << name << "], mfps: [" << min_mfps << ":" << max_mfps
-           << "], front_facing: " << front_facing
-           << ", orientation: " << orientation << ", resolutions: ["
-           << ResolutionsToString(resolutions) << "]";
+//    stream << "Name: [" << name << "], mfps: [" << min_mfps << ":" << max_mfps
+//           << "], front_facing: " << front_facing
+//           << ", orientation: " << orientation << ", resolutions: ["
+//           << ResolutionsToString(resolutions) << "]";
     return stream.str();
   }
 };
@@ -92,46 +92,46 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
     return;
 
   g_camera_info = new std::vector<AndroidCameraInfo>();
-  jclass j_info_class =
-      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid");
-  assert(j_info_class);
-  jmethodID j_initialize = jni->GetStaticMethodID(
-      j_info_class, "getDeviceInfo", "()Ljava/lang/String;");
-  jstring j_json_info = static_cast<jstring>(
-      jni->CallStaticObjectMethod(j_info_class, j_initialize));
+//  jclass j_info_class =
+//      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid");
+//  assert(j_info_class);
+//  jmethodID j_initialize = jni->GetStaticMethodID(
+//      j_info_class, "getDeviceInfo", "()Ljava/lang/String;");
+//  jstring j_json_info = static_cast<jstring>(
+//      jni->CallStaticObjectMethod(j_info_class, j_initialize));
 
-  const jchar* jchars = jni->GetStringChars(j_json_info, NULL);
-  icu::UnicodeString ustr(jchars, jni->GetStringLength(j_json_info));
-  jni->ReleaseStringChars(j_json_info, jchars);
-  std::string json_info;
-  ustr.toUTF8String(json_info);
+//  const jchar* jchars = jni->GetStringChars(j_json_info, NULL);
+//  icu::UnicodeString ustr(jchars, jni->GetStringLength(j_json_info));
+//  jni->ReleaseStringChars(j_json_info, jchars);
+//  std::string json_info;
+//  ustr.toUTF8String(json_info);
 
-  Json::Value cameras;
-  Json::Reader reader(Json::Features::strictMode());
-  bool parsed = reader.parse(json_info, cameras);
-  if (!parsed) {
-    std::stringstream stream;
-    stream << "Failed to parse configuration:\n"
-           << reader.getFormattedErrorMessages();
-    assert(false);
-    return;
-  }
-  for (Json::ArrayIndex i = 0; i < cameras.size(); ++i) {
-    const Json::Value& camera = cameras[i];
-    AndroidCameraInfo info;
-    info.name = camera["name"].asString();
-    info.min_mfps = camera["min_mfps"].asInt();
-    info.max_mfps = camera["max_mfps"].asInt();
-    info.front_facing = camera["front_facing"].asBool();
-    info.orientation = camera["orientation"].asInt();
-    Json::Value sizes = camera["sizes"];
-    for (Json::ArrayIndex j = 0; j < sizes.size(); ++j) {
-      const Json::Value& size = sizes[j];
-      info.resolutions.push_back(std::make_pair(
-          size["width"].asInt(), size["height"].asInt()));
-    }
-    g_camera_info->push_back(info);
-  }
+//  Json::Value cameras;
+//  Json::Reader reader(Json::Features::strictMode());
+//  bool parsed = reader.parse(json_info, cameras);
+//  if (!parsed) {
+//    std::stringstream stream;
+//    stream << "Failed to parse configuration:\n"
+//           << reader.getFormattedErrorMessages();
+//    assert(false);
+//    return;
+//  }
+//  for (Json::ArrayIndex i = 0; i < cameras.size(); ++i) {
+//    const Json::Value& camera = cameras[i];
+//    AndroidCameraInfo info;
+//    info.name = camera["name"].asString();
+//    info.min_mfps = camera["min_mfps"].asInt();
+//    info.max_mfps = camera["max_mfps"].asInt();
+//    info.front_facing = camera["front_facing"].asBool();
+//    info.orientation = camera["orientation"].asInt();
+//    Json::Value sizes = camera["sizes"];
+//    for (Json::ArrayIndex j = 0; j < sizes.size(); ++j) {
+//      const Json::Value& size = sizes[j];
+//      info.resolutions.push_back(std::make_pair(
+//          size["width"].asInt(), size["height"].asInt()));
+//    }
+//    g_camera_info->push_back(info);
+//  }
 }
 
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(

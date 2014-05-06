@@ -354,13 +354,13 @@ void RemoteRateControl::ChangeState(RateControlState new_state) {
 void RemoteRateControl::StateStr(RateControlState state, char* str) {
   switch (state) {
     case kRcDecrease:
-      std::strncpy(str, "DECREASE", 9);
+      strncpy(str, "DECREASE", 9);
       break;
     case kRcHold:
-      std::strncpy(str, "HOLD", 5);
+      strncpy(str, "HOLD", 5);
       break;
     case kRcIncrease:
-      std::strncpy(str, "INCREASE", 9);
+      strncpy(str, "INCREASE", 9);
       break;
     default:
       assert(false);
@@ -370,13 +370,13 @@ void RemoteRateControl::StateStr(RateControlState state, char* str) {
 void RemoteRateControl::StateStr(BandwidthUsage state, char* str) {
   switch (state) {
     case kBwNormal:
-      std::strncpy(str, "NORMAL", 7);
+      strncpy(str, "NORMAL", 7);
       break;
     case kBwOverusing:
-      std::strncpy(str, "OVER USING", 11);
+      strncpy(str, "OVER USING", 11);
       break;
     case kBwUnderusing:
-      std::strncpy(str, "UNDER USING", 12);
+      strncpy(str, "UNDER USING", 12);
       break;
     default:
       assert(false);

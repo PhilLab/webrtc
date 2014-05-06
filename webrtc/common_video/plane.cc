@@ -44,7 +44,7 @@ int Plane::MaybeResize(int new_size) {
   scoped_ptr<uint8_t, AlignedFreeDeleter> new_buffer(static_cast<uint8_t*>(
       AlignedMalloc(new_size, kBufferAlignment)));
   if (buffer_.get()) {
-    std::memcpy(new_buffer.get(), buffer_.get(), plane_size_);
+    memcpy(new_buffer.get(), buffer_.get(), plane_size_);
   }
   buffer_.reset(new_buffer.release());
   allocated_size_ = new_size;
@@ -55,7 +55,7 @@ int Plane::Copy(const Plane& plane) {
   if (MaybeResize(plane.allocated_size_) < 0)
     return -1;
   if (plane.buffer_.get())
-	std::memcpy(buffer_.get(), plane.buffer_.get(), plane.plane_size_);
+	memcpy(buffer_.get(), plane.buffer_.get(), plane.plane_size_);
   stride_ = plane.stride_;
   plane_size_ = plane.plane_size_;
   return 0;
@@ -64,7 +64,7 @@ int Plane::Copy(const Plane& plane) {
 int Plane::Copy(int size, int stride, const uint8_t* buffer) {
   if (MaybeResize(size) < 0)
     return -1;
-  std::memcpy(buffer_.get(), buffer, size);
+  memcpy(buffer_.get(), buffer, size);
   plane_size_ = size;
   stride_ = stride;
   return 0;

@@ -182,7 +182,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
 
   // Prepare FEC packets by setting them to 0.
   for (int i = 0; i < num_fec_packets; ++i) {
-	std::memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
+	memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
     generated_fec_packets_[i].length = 0;  // Use this as a marker for untouched
                                            // packets.
     fec_packet_list->push_back(&generated_fec_packets_[i]);
@@ -193,7 +193,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
   // -- Generate packet masks --
   // Always allocate space for a large mask.
   uint8_t* packet_mask = new uint8_t[num_fec_packets * kMaskSizeLBitSet];
-  std::memset(packet_mask, 0, num_fec_packets * num_maskBytes);
+  memset(packet_mask, 0, num_fec_packets * num_maskBytes);
   internal::GeneratePacketMasks(num_media_packets, num_fec_packets,
                                 num_important_packets, use_unequal_protection,
                                 mask_table, packet_mask);
@@ -262,14 +262,14 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
         // On the first protected packet, we don't need to XOR.
         if (generated_fec_packets_[i].length == 0) {
           // Copy the first 2 bytes of the RTP header.
-          std::memcpy(generated_fec_packets_[i].data, media_packet->data, 2);
+          memcpy(generated_fec_packets_[i].data, media_packet->data, 2);
           // Copy the 5th to 8th bytes of the RTP header.
-          std::memcpy(&generated_fec_packets_[i].data[4], &media_packet->data[4], 4);
+          memcpy(&generated_fec_packets_[i].data[4], &media_packet->data[4], 4);
           // Copy network-ordered payload size.
-          std::memcpy(&generated_fec_packets_[i].data[8], media_payload_length, 2);
+          memcpy(&generated_fec_packets_[i].data[8], media_payload_length, 2);
 
           // Copy RTP payload, leaving room for the ULP header.
-          std::memcpy(
+          memcpy(
               &generated_fec_packets_[i].data[kFecHeaderSize + ulp_header_size],
               &media_packet->data[kRtpHeaderSize],
               media_packet->length - kRtpHeaderSize);
@@ -338,7 +338,7 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
     new_mask_bytes = kMaskSizeLBitSet;
   }
   new_mask = new uint8_t[num_fec_packets * kMaskSizeLBitSet];
-  std::memset(new_mask, 0, num_fec_packets * kMaskSizeLBitSet);
+  memset(new_mask, 0, num_fec_packets * kMaskSizeLBitSet);
 
   PacketList::const_iterator it = media_packets.begin();
   uint16_t prev_seq_num = first_seq_num;
@@ -377,7 +377,7 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
     }
   }
   // Replace the old mask with the new.
-  std::memcpy(packet_mask, new_mask, kMaskSizeLBitSet * num_fec_packets);
+  memcpy(packet_mask, new_mask, kMaskSizeLBitSet * num_fec_packets);
   delete[] new_mask;
   return new_bit_index;
 }
@@ -452,7 +452,7 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
     // Two byte sequence number from first RTP packet to SN base.
     // We use the same sequence number base for every FEC packet,
     // but that's not required in general.
-    std::memcpy(&generated_fec_packets_[i].data[2], &media_packet->data[2], 2);
+    memcpy(&generated_fec_packets_[i].data[2], &media_packet->data[2], 2);
 
     // -- ULP header --
     // Copy the payload size to the protection length field.
@@ -462,7 +462,7 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
         generated_fec_packets_[i].length - kFecHeaderSize - ulp_header_size);
 
     // Copy the packet mask.
-    std::memcpy(&generated_fec_packets_[i].data[12], &packet_mask[i * num_maskBytes],
+    memcpy(&generated_fec_packets_[i].data[12], &packet_mask[i * num_maskBytes],
                 num_maskBytes);
   }
 }
@@ -530,7 +530,7 @@ void ForwardErrorCorrection::UpdateCoveringFECPackets(RecoveredPacket* packet) {
   for (FecPacketList::iterator it = fec_packet_list_.begin();
        it != fec_packet_list_.end(); ++it) {
     // Is this FEC packet protecting the media packet |packet|?
-    ProtectedPacketList::iterator protected_it = std::lower_bound(
+    ProtectedPacketList::iterator protected_it = lower_bound(
         (*it)->protected_pkt_list.begin(), (*it)->protected_pkt_list.end(),
         packet, SortablePacket::LessThan);
     if (protected_it != (*it)->protected_pkt_list.end() &&
@@ -606,10 +606,10 @@ void ForwardErrorCorrection::AssignRecoveredPackets(
   // another FEC packet.
   ProtectedPacketList* not_recovered = &fec_packet->protected_pkt_list;
   RecoveredPacketList already_recovered;
-  std::set_intersection(
+  set_intersection(
       recovered_packets->begin(), recovered_packets->end(),
       not_recovered->begin(), not_recovered->end(),
-      std::inserter(already_recovered, already_recovered.end()),
+      inserter(already_recovered, already_recovered.end()),
       SortablePacket::LessThan);
   // Set the FEC pointers to all recovered packets so that we don't have to
   // search for them when we are doing recovery.
@@ -651,22 +651,22 @@ void ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
       fec_packet->pkt->data[0] & 0x40 ? kUlpHeaderSizeLBitSet
                                       : kUlpHeaderSizeLBitClear;  // L bit set?
   recovered->pkt = new Packet;
-  std::memset(recovered->pkt->data, 0, IP_PACKET_SIZE);
+  memset(recovered->pkt->data, 0, IP_PACKET_SIZE);
   recovered->returned = false;
   recovered->was_recovered = true;
   uint8_t protection_length[2];
   // Copy the protection length from the ULP header.
-  std::memcpy(protection_length, &fec_packet->pkt->data[10], 2);
+  memcpy(protection_length, &fec_packet->pkt->data[10], 2);
   // Copy FEC payload, skipping the ULP header.
-  std::memcpy(&recovered->pkt->data[kRtpHeaderSize],
+  memcpy(&recovered->pkt->data[kRtpHeaderSize],
 		  	  &fec_packet->pkt->data[kFecHeaderSize + ulp_header_size],
 		  	  ModuleRTPUtility::BufferToUWord16(protection_length));
   // Copy the length recovery field.
-  std::memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
+  memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
   // Copy the first 2 bytes of the FEC header.
-  std::memcpy(recovered->pkt->data, fec_packet->pkt->data, 2);
+  memcpy(recovered->pkt->data, fec_packet->pkt->data, 2);
   // Copy the 5th to 8th bytes of the FEC header.
-  std::memcpy(&recovered->pkt->data[4], &fec_packet->pkt->data[4], 4);
+  memcpy(&recovered->pkt->data[4], &fec_packet->pkt->data[4], 4);
   // Set the SSRC field.
   ModuleRTPUtility::AssignUWord32ToBuffer(&recovered->pkt->data[8],
                                           fec_packet->ssrc);
@@ -815,7 +815,7 @@ int32_t ForwardErrorCorrection::DecodeFEC(
   // error?
   if (recovered_packet_list->size() == kMaxMediaPackets) {
     const unsigned int seq_num_diff =
-    	std::abs(static_cast<int>(received_packet_list->front()->seq_num) -
+    	abs(static_cast<int>(received_packet_list->front()->seq_num) -
     			 static_cast<int>(recovered_packet_list->back()->seq_num));
     if (seq_num_diff > kMaxMediaPackets) {
       // A big gap in sequence numbers. The old recovered packets

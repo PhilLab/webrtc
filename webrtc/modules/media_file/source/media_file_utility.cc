@@ -77,7 +77,7 @@ ModuleFileUtility::ModuleFileUtility(const int32_t id)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceFile, _id,
                  "ModuleFileUtility::ModuleFileUtility()");
-    std::memset(&codec_info_,0,sizeof(CodecInst));
+    memset(&codec_info_,0,sizeof(CodecInst));
     codec_info_.pltype = -1;
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
     memset(&_videoCodec,0,sizeof(_videoCodec));
@@ -494,7 +494,7 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav)
     {
         tmpStr[i] = RIFFheaderObj.ckID[i];
     }
-    if(std::strcmp(tmpStr, "RIFF") != 0)
+    if(strcmp(tmpStr, "RIFF") != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceFile, _id,
                      "Not a wave file (does not have RIFF)");
@@ -504,7 +504,7 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav)
     {
         tmpStr[i] = RIFFheaderObj.wave_ckID[i];
     }
-    if(std::strcmp(tmpStr, "WAVE") != 0)
+    if(strcmp(tmpStr, "WAVE") != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceFile, _id,
                      "Not a wave file (does not have WAVE)");
@@ -517,46 +517,46 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav)
     // data can be read on big endian as well.
     // TODO (hellner): little endian to system byte order should be done in
     //                 in a subroutine.
-    std::memcpy(tmpStr2, &CHUNKheaderObj.fmt_ckSize, 4);
+    memcpy(tmpStr2, &CHUNKheaderObj.fmt_ckSize, 4);
     CHUNKheaderObj.fmt_ckSize =
         (int32_t) ((uint32_t) tmpStr2[0] +
                          (((uint32_t)tmpStr2[1])<<8) +
                          (((uint32_t)tmpStr2[2])<<16) +
                          (((uint32_t)tmpStr2[3])<<24));
 
-    std::memcpy(tmpStr, CHUNKheaderObj.fmt_ckID, 4);
+    memcpy(tmpStr, CHUNKheaderObj.fmt_ckID, 4);
 
     while ((len == sizeof(WAVE_CHUNK_header)) && (!fmtFound || !dataFound))
     {
-        if(std::strcmp(tmpStr, "fmt ") == 0)
+        if(strcmp(tmpStr, "fmt ") == 0)
         {
             len = wav.Read(&_wavFormatObj, sizeof(WAVE_FMTINFO_header));
 
-            std::memcpy(tmpStr2, &_wavFormatObj.formatTag, 2);
+            memcpy(tmpStr2, &_wavFormatObj.formatTag, 2);
             _wavFormatObj.formatTag =
                 (WaveFormats) ((uint32_t)tmpStr2[0] +
                                (((uint32_t)tmpStr2[1])<<8));
-            std::memcpy(tmpStr2, &_wavFormatObj.nChannels, 2);
+            memcpy(tmpStr2, &_wavFormatObj.nChannels, 2);
             _wavFormatObj.nChannels =
                 (int16_t) ((uint32_t)tmpStr2[0] +
                                  (((uint32_t)tmpStr2[1])<<8));
-            std::memcpy(tmpStr2, &_wavFormatObj.nSamplesPerSec, 4);
+            memcpy(tmpStr2, &_wavFormatObj.nSamplesPerSec, 4);
             _wavFormatObj.nSamplesPerSec =
                 (int32_t) ((uint32_t)tmpStr2[0] +
                                  (((uint32_t)tmpStr2[1])<<8) +
                                  (((uint32_t)tmpStr2[2])<<16) +
                                  (((uint32_t)tmpStr2[3])<<24));
-            std::memcpy(tmpStr2, &_wavFormatObj.nAvgBytesPerSec, 4);
+            memcpy(tmpStr2, &_wavFormatObj.nAvgBytesPerSec, 4);
             _wavFormatObj.nAvgBytesPerSec =
                 (int32_t) ((uint32_t)tmpStr2[0] +
                                  (((uint32_t)tmpStr2[1])<<8) +
                                  (((uint32_t)tmpStr2[2])<<16) +
                                  (((uint32_t)tmpStr2[3])<<24));
-            std::memcpy(tmpStr2, &_wavFormatObj.nBlockAlign, 2);
+            memcpy(tmpStr2, &_wavFormatObj.nBlockAlign, 2);
             _wavFormatObj.nBlockAlign =
                 (int16_t) ((uint32_t)tmpStr2[0] +
                                  (((uint32_t)tmpStr2[1])<<8));
-            std::memcpy(tmpStr2, &_wavFormatObj.nBitsPerSample, 2);
+            memcpy(tmpStr2, &_wavFormatObj.nBitsPerSample, 2);
             _wavFormatObj.nBitsPerSample =
                 (int16_t) ((uint32_t)tmpStr2[0] +
                                  (((uint32_t)tmpStr2[1])<<8));
@@ -576,7 +576,7 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav)
             }
             fmtFound = true;
         }
-        else if(std::strcmp(tmpStr, "data") == 0)
+        else if(strcmp(tmpStr, "data") == 0)
         {
             _dataSize = CHUNKheaderObj.fmt_ckSize;
             dataFound = true;
@@ -598,14 +598,14 @@ int32_t ModuleFileUtility::ReadWavHeader(InStream& wav)
 
         len = wav.Read(&CHUNKheaderObj, sizeof(WAVE_CHUNK_header));
 
-        std::memcpy(tmpStr2, &CHUNKheaderObj.fmt_ckSize, 4);
+        memcpy(tmpStr2, &CHUNKheaderObj.fmt_ckSize, 4);
         CHUNKheaderObj.fmt_ckSize =
             (int32_t) ((uint32_t)tmpStr2[0] +
                              (((uint32_t)tmpStr2[1])<<8) +
                              (((uint32_t)tmpStr2[2])<<16) +
                              (((uint32_t)tmpStr2[3])<<24));
 
-        std::memcpy(tmpStr, CHUNKheaderObj.fmt_ckID, 4);
+        memcpy(tmpStr, CHUNKheaderObj.fmt_ckID, 4);
     }
 
     // Either a proper format chunk has been read or a data chunk was come
@@ -679,13 +679,13 @@ int32_t ModuleFileUtility::InitWavCodec(uint32_t samplesPerSec,
     switch(formatTag)
     {
     case kWaveFormatALaw:
-    	std::strcpy(codec_info_.plname, "PCMA");
+    	strcpy(codec_info_.plname, "PCMA");
         _codecId = kCodecPcma;
         codec_info_.pltype = 8;
         codec_info_.pacsize  = codec_info_.plfreq / 100;
         break;
     case kWaveFormatMuLaw:
-    	std::strcpy(codec_info_.plname, "PCMU");
+    	strcpy(codec_info_.plname, "PCMU");
         _codecId = kCodecPcmu;
         codec_info_.pltype = 0;
         codec_info_.pacsize  = codec_info_.plfreq / 100;
@@ -694,45 +694,45 @@ int32_t ModuleFileUtility::InitWavCodec(uint32_t samplesPerSec,
         codec_info_.pacsize  = (bitsPerSample * (codec_info_.plfreq / 100)) / 8;
         if(samplesPerSec == 8000)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_8Khz;
         }
         else if(samplesPerSec == 16000)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_16kHz;
         }
         else if(samplesPerSec == 32000)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_32Khz;
         }
         // Set the packet size for "odd" sampling frequencies so that it
         // properly corresponds to _readSizeBytes.
         else if(samplesPerSec == 11025)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_16kHz;
             codec_info_.pacsize = 110;
             codec_info_.plfreq = 11000;
         }
         else if(samplesPerSec == 22050)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_16kHz;
             codec_info_.pacsize = 220;
             codec_info_.plfreq = 22000;
         }
         else if(samplesPerSec == 44100)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_16kHz;
             codec_info_.pacsize = 440;
             codec_info_.plfreq = 44000;
         }
         else if(samplesPerSec == 48000)
         {
-        	std::strcpy(codec_info_.plname, "L16");
+        	strcpy(codec_info_.plname, "L16");
             _codecId = kCodecL16_16kHz;
             codec_info_.pacsize = 480;
             codec_info_.plfreq = 48000;
@@ -885,7 +885,7 @@ int32_t ModuleFileUtility::ReadWavDataAsMono(
                                   1) >> 1);
             }
         }
-        std::memcpy(outData, _tempData, bytesRequested);
+        memcpy(outData, _tempData, bytesRequested);
     }
     return bytesRequested;
 }
@@ -1173,7 +1173,7 @@ int32_t ModuleFileUtility::WriteWavHeader(
     int8_t tmpChar;
     uint32_t tmpLong;
 
-    std::memcpy(tmpStr, "RIFF", 4);
+    memcpy(tmpStr, "RIFF", 4);
     wav.Write(tmpStr, 4);
 
     tmpLong = dataLengthInBytes + 36;
@@ -1186,10 +1186,10 @@ int32_t ModuleFileUtility::WriteWavHeader(
     tmpChar = (int8_t)(tmpLong >> 24);
     wav.Write(&tmpChar, 1);
 
-    std::memcpy(tmpStr, "WAVE", 4);
+    memcpy(tmpStr, "WAVE", 4);
     wav.Write(tmpStr, 4);
 
-    std::memcpy(tmpStr, "fmt ", 4);
+    memcpy(tmpStr, "fmt ", 4);
     wav.Write(tmpStr, 4);
 
     tmpChar = 16;
@@ -1243,7 +1243,7 @@ int32_t ModuleFileUtility::WriteWavHeader(
     tmpChar = 0;
     wav.Write(&tmpChar, 1);
 
-    std::memcpy(tmpStr, "data", 4);
+    memcpy(tmpStr, "data", 4);
     wav.Write(tmpStr, 4);
 
     tmpLong = dataLengthInBytes;
@@ -1310,7 +1310,7 @@ int32_t ModuleFileUtility::InitPreEncodedReading(InStream& in,
                      "Pre-encoded file format codec mismatch!");
         return -1;
     }
-    std::memcpy(&codec_info_,&cinst,sizeof(CodecInst));
+    memcpy(&codec_info_,&cinst,sizeof(CodecInst));
     _reading = true;
     return 0;
 }
@@ -1557,10 +1557,10 @@ int32_t ModuleFileUtility::InitCompressedReading(
     }
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-    if(!std::strcmp("#!iLBC20\n", buf))
+    if(!strcmp("#!iLBC20\n", buf))
     {
         codec_info_.pltype = 102;
-        std::strcpy(codec_info_.plname, "ilbc");
+        strcpy(codec_info_.plname, "ilbc");
         codec_info_.plfreq   = 8000;
         codec_info_.pacsize  = 160;
         codec_info_.channels = 1;
@@ -1584,10 +1584,10 @@ int32_t ModuleFileUtility::InitCompressedReading(
         }
     }
 
-    if(!std::strcmp("#!iLBC30\n", buf))
+    if(!strcmp("#!iLBC30\n", buf))
     {
         codec_info_.pltype = 102;
-        std::strcpy(codec_info_.plname, "ilbc");
+        strcpy(codec_info_.plname, "ilbc");
         codec_info_.plfreq   = 8000;
         codec_info_.pacsize  = 240;
         codec_info_.channels = 1;
@@ -1945,7 +1945,7 @@ int32_t ModuleFileUtility::InitCompressedWriting(
                        "codecInst defines unsupported compression codec!");
             return -1;
         }
-        std::memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
+        memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
         _writing = true;
         return 0;
     }
@@ -2028,7 +2028,7 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
 
     if(freq == 8000)
     {
-    	std::strcpy(codec_info_.plname, "L16");
+    	strcpy(codec_info_.plname, "L16");
         codec_info_.pltype   = -1;
         codec_info_.plfreq   = 8000;
         codec_info_.pacsize  = 160;
@@ -2038,7 +2038,7 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
     }
     else if(freq == 16000)
     {
-    	std::strcpy(codec_info_.plname, "L16");
+    	strcpy(codec_info_.plname, "L16");
         codec_info_.pltype   = -1;
         codec_info_.plfreq   = 16000;
         codec_info_.pacsize  = 320;
@@ -2048,7 +2048,7 @@ int32_t ModuleFileUtility::InitPCMReading(InStream& pcm,
     }
     else if(freq == 32000)
     {
-    	std::strcpy(codec_info_.plname, "L16");
+    	strcpy(codec_info_.plname, "L16");
         codec_info_.pltype   = -1;
         codec_info_.plfreq   = 32000;
         codec_info_.pacsize  = 320;
@@ -2168,7 +2168,7 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq)
 
     if(freq == 8000)
     {
-    	std::strcpy(codec_info_.plname, "L16");
+    	strcpy(codec_info_.plname, "L16");
         codec_info_.pltype   = -1;
         codec_info_.plfreq   = 8000;
         codec_info_.pacsize  = 160;
@@ -2179,7 +2179,7 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq)
     }
     else if(freq == 16000)
     {
-    	std::strcpy(codec_info_.plname, "L16");
+    	strcpy(codec_info_.plname, "L16");
         codec_info_.pltype   = -1;
         codec_info_.plfreq   = 16000;
         codec_info_.pacsize  = 320;
@@ -2190,7 +2190,7 @@ int32_t ModuleFileUtility::InitPCMWriting(OutStream& out, uint32_t freq)
     }
     else if(freq == 32000)
     {
-    	std::strcpy(codec_info_.plname, "L16");
+    	strcpy(codec_info_.plname, "L16");
         codec_info_.pltype   = -1;
         codec_info_.plfreq   = 32000;
         codec_info_.pacsize  = 320;
@@ -2250,7 +2250,7 @@ int32_t ModuleFileUtility::codec_info(CodecInst& codecInst)
                      "CodecInst: not currently reading audio file!");
         return -1;
     }
-    std::memcpy(&codecInst,&codec_info_,sizeof(CodecInst));
+    memcpy(&codecInst,&codec_info_,sizeof(CodecInst));
     return 0;
 }
 
@@ -2415,7 +2415,7 @@ int32_t ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
     {
         return -1;
     }
-    std::memcpy(&codec_info_, &codecInst, sizeof(CodecInst));
+    memcpy(&codec_info_, &codecInst, sizeof(CodecInst));
     return 0;
 }
 
@@ -2622,13 +2622,13 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
             }
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-            if(!std::strcmp("#!iLBC20\n", buf))
+            if(!strcmp("#!iLBC20\n", buf))
             {
                 // 20 ms is 304 bits
                 time_in_ms = ((file_size.st_size)*160)/304;
                 break;
             }
-            if(!std::strcmp("#!iLBC30\n", buf))
+            if(!strcmp("#!iLBC30\n", buf))
             {
                 // 30 ms takes 400 bits.
                 // file size in bytes * 8 / 400 is the number of

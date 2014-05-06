@@ -158,12 +158,12 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   // Assume that render timing errors are due to changes in the video stream.
   if (next_render_time_ms < 0) {
     timing_error = true;
-  } else if (std::abs(next_render_time_ms - now_ms) > max_video_delay_ms_) {
+  } else if (abs(next_render_time_ms - now_ms) > max_video_delay_ms_) {
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
                  VCMId(vcm_id_, receiver_id_),
                  "This frame is out of our delay bounds, resetting jitter "
                  "buffer: %d > %d",
-                 static_cast<int>(std::abs(next_render_time_ms - now_ms)),
+                 static_cast<int>(abs(next_render_time_ms - now_ms)),
                  max_video_delay_ms_);
     timing_error = true;
   } else if (static_cast<int>(timing_->TargetVideoDelay()) >
@@ -285,7 +285,7 @@ VCMNackStatus VCMReceiver::NackList(uint16_t* nack_list,
     return kNackNeedMoreMemory;
   }
   if (internal_nack_list != NULL && *nack_list_length > 0) {
-	std::memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
+	memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
   }
   if (request_key_frame) {
     return kNackKeyFrameRequest;

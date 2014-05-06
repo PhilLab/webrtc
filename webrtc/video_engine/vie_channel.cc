@@ -1046,11 +1046,11 @@ int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
                __FUNCTION__);
 
   uint32_t arrayCSRC[kRtpCsrcSize];
-  std::memset(arrayCSRC, 0, sizeof(arrayCSRC));
+  memset(arrayCSRC, 0, sizeof(arrayCSRC));
 
   int num_csrcs = vie_receiver_.GetCsrcs(arrayCSRC);
   if (num_csrcs > 0) {
-	std::memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(uint32_t));
+	memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(uint32_t));
     for (int idx = 0; idx < num_csrcs; idx++) {
       WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "\tCSRC[%d] = %lu", idx, CSRCs[idx]);

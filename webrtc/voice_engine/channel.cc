@@ -384,7 +384,7 @@ Channel::OnInitializeDecoder(
     receiveCodec.plfreq = frequency;
     receiveCodec.channels = channels;
     receiveCodec.rate = rate;
-    std::strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
 
     audio_coding_->Codec(payloadName, &dummyCodec, frequency, channels);
     receiveCodec.pacsize = dummyCodec.pacsize;
@@ -3016,7 +3016,7 @@ Channel::SetSendTelephoneEventPayloadType(unsigned char type)
     CodecInst codec = {};
     codec.plfreq = 8000;
     codec.pltype = type;
-    std::memcpy(codec.plname, "telephone-event", 16);
+    memcpy(codec.plname, "telephone-event", 16);
     if (_rtpRtcpModule->RegisterSendPayload(codec) != 0)
     {
         _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
@@ -3492,7 +3492,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
     CSRCs = rtp_receiver_->CSRCs(arrOfCSRC);
     if (CSRCs > 0)
     {
-    	std::memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
+    	memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
         for (int i = 0; i < (int) CSRCs; i++)
         {
             WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
@@ -3617,7 +3617,7 @@ Channel::GetRemoteRTCP_CNAME(char cName[256])
             "GetRemoteRTCP_CNAME() failed to retrieve remote RTCP CNAME");
         return -1;
     }
-    std::strcpy(cName, cname);
+    strcpy(cName, cname);
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
                  "GetRemoteRTCP_CNAME() => cName=%s", cName);
@@ -4424,7 +4424,7 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
     ACMNetworkStatistics acm_stats;
     int return_value = audio_coding_->NetworkStatistics(&acm_stats);
     if (return_value >= 0) {
-      std::memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
+      memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
     }
     return return_value;
 }

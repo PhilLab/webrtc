@@ -185,7 +185,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
 
         // New sampling frequency. Update state.
         outLen = frequencyInHz / 100;
-        std::memset(outBuffer, 0, outLen * sizeof(int16_t));
+        memset(outBuffer, 0, outLen * sizeof(int16_t));
         return 0;
     }
     _resampler.Push(unresampledAudioFrame.data_,
@@ -237,7 +237,7 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
         _fileFormat == kFileFormatPcm32kHzFile )
     {
         CodecInst codecInstL16;
-        std::strncpy(codecInstL16.plname,"L16",32);
+        strncpy(codecInstL16.plname,"L16",32);
         codecInstL16.pltype   = 93;
         codecInstL16.channels = 1;
 
@@ -332,7 +332,7 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
         _fileFormat == kFileFormatPcm8kHzFile)
     {
         CodecInst codecInstL16;
-        std::strncpy(codecInstL16.plname,"L16",32);
+        strncpy(codecInstL16.plname,"L16",32);
         codecInstL16.pltype   = 93;
         codecInstL16.channels = 1;
 
@@ -415,7 +415,7 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
 
 int32_t FilePlayerImpl::StopPlayingFile()
 {
-	std::memset(&_codec, 0, sizeof(CodecInst));
+    memset(&_codec, 0, sizeof(CodecInst));
     _numberOf10MsPerFrame  = 0;
     _numberOf10MsInDecoder = 0;
     return _fileModule.StopPlaying();

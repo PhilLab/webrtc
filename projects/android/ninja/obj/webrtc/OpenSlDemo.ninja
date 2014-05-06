@@ -1,0 +1,47 @@
+build obj/webrtc/OpenSlDemo.actions_depends.stamp: stamp $
+    libopensl-demo-jni.so.TOC $
+    obj/webrtc/modules/audio_device_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_capture_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_render_module_java.actions_rules_copies.stamp
+
+build obj/webrtc/OpenSlDemo.compile_depends.stamp: stamp $
+    obj/webrtc/libopensl-demo-jni.compile_depends.stamp $
+    obj/webrtc/modules/audio_device_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_capture_module_java.actions_rules_copies.stamp $
+    obj/webrtc/modules/video_render_module_java.actions_rules_copies.stamp
+
+rule OpenSlDemo_target_build_opensldemo_apk_75fdce7afa3b3cc9e4fcb0b6d6b154b5
+  command = cd ../../../webrtc; bash -ec "rm -f $
+      \"../projects/android/ninja/OpenSlDemo-debug.apk\" && mkdir -p $
+      ../webrtc/examples/android/opensl_loopback/libs/armeabi-v7a && mkdir $
+      -p ../projects/android/ninja/obj/webrtc/OpenSlDemo.gen && $
+      $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip $
+      -o $
+      ../webrtc/examples/android/opensl_loopback/libs/armeabi-v7a/libopensl-demo-jni.so $
+      ../projects/android/ninja/libopensl-demo-jni.so && cp $
+      ../projects/android/ninja/lib.java/audio_device_module_java.jar $
+      ../webrtc/examples/android/opensl_loopback/libs/ &&cd $
+      ../webrtc/examples/android/opensl_loopback && { ant debug > $
+      ../../../../projects/android/ninja/obj/webrtc/OpenSlDemo.gen/ant.log $
+      2>&1 ||   { cat $
+      ../../../../projects/android/ninja/obj/webrtc/OpenSlDemo.gen/ant.log $
+      ; exit 1; } } && cd - > /dev/null && cp $
+      ../webrtc/examples/android/opensl_loopback/bin/OpenSlDemo-debug.apk $
+      \"../projects/android/ninja/OpenSlDemo-debug.apk\""
+  description = ACTION OpenSlDemo: $
+      build_opensldemo_apk_75fdce7afa3b3cc9e4fcb0b6d6b154b5
+  restat = 1
+
+build OpenSlDemo-debug.apk: $
+    OpenSlDemo_target_build_opensldemo_apk_75fdce7afa3b3cc9e4fcb0b6d6b154b5 $
+    lib.java/audio_device_module_java.jar libopensl-demo-jni.so $
+    ../../../webrtc/examples/android/opensl_loopback/src/org/webrtc/app/OpenSlDemo.java $
+    ../../../webrtc/examples/android/opensl_loopback/src/org/webrtc/app/OpenSlRunner.java $
+    ../../../webrtc/examples/android/opensl_loopback/res/values/strings.xml $
+    ../../../webrtc/examples/android/opensl_loopback/res/layout/open_sl_demo.xml $
+    ../../../webrtc/examples/android/opensl_loopback/res/drawable/logo.png $
+    ../../../webrtc/examples/android/opensl_loopback/AndroidManifest.xml $
+    ../../../webrtc/examples/android/opensl_loopback/build.xml $
+    ../../../webrtc/examples/android/opensl_loopback/project.properties || $
+    obj/webrtc/OpenSlDemo.actions_depends.stamp
+

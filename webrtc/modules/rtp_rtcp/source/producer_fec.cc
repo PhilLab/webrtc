@@ -49,7 +49,7 @@ RedPacket::~RedPacket() {
 void RedPacket::CreateHeader(const uint8_t* rtp_header, int header_length,
                              int red_pl_type, int pl_type) {
   assert(header_length + kREDForFECHeaderLength <= length_);
-  std::memcpy(data_, rtp_header, header_length);
+  memcpy(data_, rtp_header, header_length);
   // Replace payload type.
   data_[1] &= 0x80;
   data_[1] += red_pl_type;
@@ -66,7 +66,7 @@ void RedPacket::SetSeqNum(int seq_num) {
 
 void RedPacket::AssignPayload(const uint8_t* payload, int length) {
   assert(header_length_ + length <= length_);
-  std::memcpy(data_ + header_length_, payload, length);
+  memcpy(data_ + header_length_, payload, length);
 }
 
 void RedPacket::ClearMarkerBit() {
@@ -91,8 +91,8 @@ ProducerFec::ProducerFec(ForwardErrorCorrection* fec)
       minimum_media_packets_fec_(1),
       params_(),
       new_params_() {
-  std::memset(&params_, 0, sizeof(params_));
-  std::memset(&new_params_, 0, sizeof(new_params_));
+  memset(&params_, 0, sizeof(params_));
+  memset(&new_params_, 0, sizeof(new_params_));
 }
 
 ProducerFec::~ProducerFec() {
@@ -146,7 +146,7 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
     // Generic FEC can only protect up to kMaxMediaPackets packets.
     ForwardErrorCorrection::Packet* packet = new ForwardErrorCorrection::Packet;
     packet->length = payload_length + rtp_header_length;
-    std::memcpy(packet->data, data_buffer, packet->length);
+    memcpy(packet->data, data_buffer, packet->length);
     media_packets_fec_.push_back(packet);
   }
   if (marker_bit) {
