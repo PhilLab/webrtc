@@ -30,6 +30,20 @@ import org.json.JSONObject;
 
 public class VideoCaptureDeviceInfoAndroid {
   private final static String TAG = "WEBRTC-JC";
+  
+  private static class FrameSize {
+	  int width;
+	  int height;
+  }
+  
+  private static class DeviceInfo {
+	  String name;
+	  boolean frontFacing;
+	  int orientation;
+	  FrameSize[] sizes = new FrameSize[10];
+	  int minMfps;
+	  int maxMfps;
+  }
 
   private static boolean isFrontFacing(CameraInfo info) {
     return info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT;
@@ -91,5 +105,43 @@ public class VideoCaptureDeviceInfoAndroid {
     } catch (JSONException e) {
       throw new RuntimeException(e);
     }
+  }
+  
+  private static DeviceInfo[] getDeviceInfoArray() {
+    DeviceInfo[] deviceInfoArray = new DeviceInfo[4];
+    for (int i = 0; i < Camera.getNumberOfCameras() && i < 4; ++i) {
+      DeviceInfo deviceInfo = new DeviceInfo();
+      CameraInfo info = new CameraInfo();
+      Camera.getCameraInfo(i, info);
+      String uniqueName = deviceUniqueName(i, info);
+      List<Size> supportedSizes;
+      List<int[]> supportedFpsRanges;
+      try {
+        Camera camera = Camera.open(i);
+        Parameters parameters = camera.getParameters();
+        supportedSizes = parameters.getSupportedPreviewSizes();
+        supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
+        camera.release();
+        Log.d(TAG, uniqueName);
+      } catch (RuntimeException e) {
+        Log.e(TAG, "Failed to open " + uniqueName + ", skipping");
+        continue;
+      }
+      int[] mfps = supportedFpsRanges.get(supportedFpsRanges.size() - 1);
+      deviceInfo.name = uniqueName;
+      deviceInfo.frontFacing = isFrontFacing(info);
+      deviceInfo.orientation = info.orientation;
+      deviceInfo.minMfps = mfps[Parameters.PREVIEW_FPS_MIN_INDEX];
+      deviceInfo.maxMfps = mfps[Parameters.PREVIEW_FPS_MAX_INDEX];
+      for (int j = 0; j < supportedSizes.size() && j < 10; ++j) {
+        Size supportedSize = supportedSizes.get(j);
+        FrameSize frameSize = new FrameSize();
+        frameSize.width = supportedSize.width;
+        frameSize.height = supportedSize.height;
+        deviceInfo.sizes[j] = frameSize;
+      }
+      deviceInfoArray[i] = deviceInfo;
+    }
+    return deviceInfoArray;
   }
 }

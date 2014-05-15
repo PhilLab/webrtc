@@ -5,8 +5,8 @@ cxx = $
     $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-g++
 ld = $cc
 ldxx = $cxx
-ar = ar
-ar_host = ar
+ar = $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-ar
+ar_host = /usr/bin/ar
 cc_host = /usr/bin/gcc
 cxx_host = /usr/bin/g++
 ld_host = $cc_host
@@ -32,7 +32,7 @@ rule alink
   command = rm -f $out && $ar rcs $out $in
   description = AR $out
 rule alink_thin
-  command = rm -f $out && $ar rcsT $out $in
+  command = rm -f $out && $ar rcs $out $in
   description = AR $out
 rule solink
   command = if [ ! -e $lib -o ! -e $lib.TOC ]; then $ld -shared $ldflags -o $lib -Wl,-soname=$soname @$link_file_list $

@@ -355,6 +355,10 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   bool PlayoutError() const {
     return output_.PlayoutError();
   }
+  
+  bool PlayoutRouteChanged() const {
+    return 0;
+  }
 
   bool RecordingWarning() const {
     return input_.RecordingWarning();
@@ -362,6 +366,14 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   bool RecordingError() const {
     return input_.RecordingError();
+  }
+  
+  bool InterruptionBegan() const {
+    return 0;
+  }
+  
+  bool InterruptionEnded() const {
+    return 0;
   }
 
   void ClearPlayoutWarning() {

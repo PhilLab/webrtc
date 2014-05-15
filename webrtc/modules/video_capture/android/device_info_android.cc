@@ -14,8 +14,6 @@
 #include <sstream>
 #include <vector>
 
-//#include "json/json.h"
-//#include "third_party/icu/source/common/unicode/unistr.h"
 #include "webrtc/modules/video_capture/android/video_capture_android.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
@@ -27,16 +25,16 @@ namespace webrtc
 namespace videocapturemodule
 {
 
-//static std::string ResolutionsToString(
-//    const std::vector<std::pair<int, int> >& pairs) {
-//  std::stringstream stream;
-//  for (size_t i = 0; i < pairs.size(); ++i) {
-//    if (i > 0)
-//      stream << ", ";
-//    stream << "(" << pairs[i].first << "x" << pairs[i].second << ")";
-//  }
-//  return stream.str();
-//}
+static std::string ResolutionsToString(
+    const std::vector<std::pair<int, int> >& pairs) {
+  std::stringstream stream;
+  for (size_t i = 0; i < pairs.size(); ++i) {
+    if (i > 0)
+      stream << ", ";
+    stream << "(" << pairs[i].first << "x" << pairs[i].second << ")";
+  }
+  return stream.str();
+}
 
 struct AndroidCameraInfo {
   std::string name;
@@ -47,10 +45,10 @@ struct AndroidCameraInfo {
 
   std::string ToString() {
     std::stringstream stream;
-//    stream << "Name: [" << name << "], mfps: [" << min_mfps << ":" << max_mfps
-//           << "], front_facing: " << front_facing
-//           << ", orientation: " << orientation << ", resolutions: ["
-//           << ResolutionsToString(resolutions) << "]";
+    stream << "Name: [" << name << "], mfps: [" << min_mfps << ":" << max_mfps
+           << "], front_facing: " << front_facing
+           << ", orientation: " << orientation << ", resolutions: ["
+           << ResolutionsToString(resolutions) << "]";
     return stream.str();
   }
 };
@@ -92,46 +90,59 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
     return;
 
   g_camera_info = new std::vector<AndroidCameraInfo>();
-//  jclass j_info_class =
-//      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid");
-//  assert(j_info_class);
-//  jmethodID j_initialize = jni->GetStaticMethodID(
-//      j_info_class, "getDeviceInfo", "()Ljava/lang/String;");
-//  jstring j_json_info = static_cast<jstring>(
-//      jni->CallStaticObjectMethod(j_info_class, j_initialize));
-
-//  const jchar* jchars = jni->GetStringChars(j_json_info, NULL);
-//  icu::UnicodeString ustr(jchars, jni->GetStringLength(j_json_info));
-//  jni->ReleaseStringChars(j_json_info, jchars);
-//  std::string json_info;
-//  ustr.toUTF8String(json_info);
-
-//  Json::Value cameras;
-//  Json::Reader reader(Json::Features::strictMode());
-//  bool parsed = reader.parse(json_info, cameras);
-//  if (!parsed) {
-//    std::stringstream stream;
-//    stream << "Failed to parse configuration:\n"
-//           << reader.getFormattedErrorMessages();
-//    assert(false);
-//    return;
-//  }
-//  for (Json::ArrayIndex i = 0; i < cameras.size(); ++i) {
-//    const Json::Value& camera = cameras[i];
-//    AndroidCameraInfo info;
-//    info.name = camera["name"].asString();
-//    info.min_mfps = camera["min_mfps"].asInt();
-//    info.max_mfps = camera["max_mfps"].asInt();
-//    info.front_facing = camera["front_facing"].asBool();
-//    info.orientation = camera["orientation"].asInt();
-//    Json::Value sizes = camera["sizes"];
-//    for (Json::ArrayIndex j = 0; j < sizes.size(); ++j) {
-//      const Json::Value& size = sizes[j];
-//      info.resolutions.push_back(std::make_pair(
-//          size["width"].asInt(), size["height"].asInt()));
-//    }
-//    g_camera_info->push_back(info);
-//  }
+  jclass j_info_class =
+      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid");
+  jclass j_device_info_class =
+      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$DeviceInfo");
+  jclass j_size_class =
+      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$FrameSize");
+  assert(j_info_class);
+  assert(j_device_info_class);
+  assert(j_size_class);
+  jmethodID j_device_info_array_method = jni->GetStaticMethodID(
+      j_info_class, "getDeviceInfoArray", "()[Lorg/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$DeviceInfo;");
+  
+  jobjectArray j_device_info_array = static_cast<jobjectArray>(
+        jni->CallStaticObjectMethod(j_info_class, j_device_info_array_method));
+  
+  int device_info_count = jni->GetArrayLength(j_device_info_array);
+  for (int i = 0; i < device_info_count; i++) {
+    jobject j_device_info = jni->GetObjectArrayElement(j_device_info_array, i);
+    if (j_device_info == NULL)
+      break;
+    jfieldID j_name_fieldID = jni->GetFieldID(j_device_info_class, "name", "Ljava/lang/String;");
+    jstring j_name_field = static_cast<jstring>(jni->GetObjectField(j_device_info, j_name_fieldID));
+    const char* name_field = jni->GetStringUTFChars(j_name_field, 0);
+    jfieldID j_frontFacing_fieldID = jni->GetFieldID(j_device_info_class, "frontFacing", "Z");
+    jboolean j_frontFacing_field = jni->GetBooleanField(j_device_info, j_frontFacing_fieldID);
+    jfieldID j_orientation_fieldID = jni->GetFieldID(j_device_info_class, "orientation", "I");
+    jint j_orientation_field = jni->GetIntField(j_device_info, j_orientation_fieldID);
+    jfieldID j_sizes_fieldID = jni->GetFieldID(j_device_info_class, "sizes", "[Lorg/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$FrameSize;");
+    jobjectArray j_sizes_field = static_cast<jobjectArray>(jni->GetObjectField(j_device_info, j_sizes_fieldID));
+    jfieldID j_minMfps_fieldID = jni->GetFieldID(j_device_info_class, "minMfps", "I");
+    jint j_minMfps_field = jni->GetIntField(j_device_info, j_minMfps_fieldID);
+    jfieldID j_maxMfps_fieldID = jni->GetFieldID(j_device_info_class, "maxMfps", "I");
+    jint j_maxMfps_field = jni->GetIntField(j_device_info, j_maxMfps_fieldID);
+    AndroidCameraInfo info;
+    info.name = name_field;
+    info.min_mfps = j_minMfps_field;
+    info.max_mfps = j_maxMfps_field;
+    info.front_facing = j_frontFacing_field;
+    info.orientation = j_orientation_field;
+    int size_count = jni->GetArrayLength(j_sizes_field);
+    for (int j = 0; j < size_count; j++) {
+      jobject j_size = jni->GetObjectArrayElement(j_sizes_field, j);
+      if (j_size == NULL)
+        break;
+      jfieldID j_width_fieldID = jni->GetFieldID(j_size_class, "width", "I");
+      jint j_width_field = jni->GetIntField(j_size, j_width_fieldID);
+      jfieldID j_height_fieldID = jni->GetFieldID(j_size_class, "height", "I");
+      jint j_height_field = jni->GetIntField(j_size, j_height_fieldID);
+      info.resolutions.push_back(std::make_pair(j_width_field, j_height_field));
+    }
+    jni->ReleaseStringUTFChars(j_name_field, name_field);
+    g_camera_info->push_back(info);
+  }
 }
 
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
