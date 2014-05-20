@@ -6,7 +6,7 @@ defines = -DV8_DEPRECATION_WARNINGS -DBLINK_SCALE_FILTERS_AT_RECORD_TIME $
     -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DENABLE_EGLIMAGE=1 $
     -DENABLE_AUTOFILL_DIALOG=1 -DCLD_VERSION=1 -DENABLE_PRINTING=1 $
     -DENABLE_MANAGED_USERS=1 -DUSE_OPENSSL=1 -DUSE_OPENSSL_CERTS=1 $
-    -DANDROID -D__GNU_SOURCE=1 -DUSE_STLPORT=1 $
+    -DANDROID -D__GNU_SOURCE=1 $
     -D_STLP_USE_PTR_SPECIALIZATIONS=1 '-DCHROME_BUILD_ID=""' $
     -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
 includes = $
@@ -21,7 +21,7 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-exceptions $
     -ffunction-sections -funwind-tables -g -fstack-protector $
     -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.6/include $
+    -I$android_ndk_path/sources/cxx-stl/gnu-libstdc++/$toolchain_version/include $
     -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
     -funwind-tables
 cflags_c = 

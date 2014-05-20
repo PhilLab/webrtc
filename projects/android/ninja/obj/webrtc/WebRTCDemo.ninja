@@ -22,7 +22,7 @@ rule WebRTCDemo_target_build_webrtcdemo_apk_25611c43d5b945c97d35b8a32b778127
       ../webrtc/examples/android/media_demo/libs/ &&cp $
       ../projects/android/ninja/lib.java/video_render_module_java.jar $
       ../webrtc/examples/android/media_demo/libs/ $
-      &&$android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip $
+      &&$android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-strip $
       -o $
       ../webrtc/examples/android/media_demo/libs/armeabi-v7a/libwebrtcdemo-jni.so $
       ../projects/android/ninja/libwebrtcdemo-jni.so && cd $

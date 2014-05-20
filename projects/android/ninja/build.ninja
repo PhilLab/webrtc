@@ -1,11 +1,11 @@
-android_ndk_path = /Users/morosev/android-ndk-r8e-x86_64
+include conf.ninja
 cc = $
-    $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-gcc
+    $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-gcc
 cxx = $
-    $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-g++
+    $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-g++
 ld = $cc
 ldxx = $cxx
-ar = $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-ar
+ar = $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-ar
 ar_host = /usr/bin/ar
 cc_host = /usr/bin/gcc
 cxx_host = /usr/bin/g++

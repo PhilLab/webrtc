@@ -15,7 +15,7 @@ rule OpenSlDemo_target_build_opensldemo_apk_75fdce7afa3b3cc9e4fcb0b6d6b154b5
       \"../projects/android/ninja/OpenSlDemo-debug.apk\" && mkdir -p $
       ../webrtc/examples/android/opensl_loopback/libs/armeabi-v7a && mkdir $
       -p ../projects/android/ninja/obj/webrtc/OpenSlDemo.gen && $
-      $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip $
+      $android_ndk_path/toolchains/arm-linux-androideabi-4.6/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-strip $
       -o $
       ../webrtc/examples/android/opensl_loopback/libs/armeabi-v7a/libopensl-demo-jni.so $
       ../projects/android/ninja/libopensl-demo-jni.so && cp $

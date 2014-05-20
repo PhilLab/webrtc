@@ -49,6 +49,7 @@ xcshareddata
 /projects/android/ninja/.ninja_deps
 /projects/android/ninja/.ninja_log
 /projects/android/ninja/libvpx_obj_int_extract
+/projects/android/ninja/conf.ninja
 /projects/android/ninja/obj/third_party/opus/opus.gen
 /resources/*.*
 /resources/*/*.*
