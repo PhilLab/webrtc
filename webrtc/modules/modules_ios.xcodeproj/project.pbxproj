@@ -32,7 +32,6 @@
 				C8463B125ED0DADDA402F6FC /* PBXTargetDependency */,
 				EC23E16E4D710DC12B7791D9 /* PBXTargetDependency */,
 				EED66F8528742CF29B07B6A4 /* PBXTargetDependency */,
-				51DD24F855467186F75A686F /* PBXTargetDependency */,
 				4D85F947BD7AB29F6097760A /* PBXTargetDependency */,
 				64ED09B1C3D61259F8B705EA /* PBXTargetDependency */,
 				D1AAB093924BF67C080814D9 /* PBXTargetDependency */,
@@ -206,7 +205,6 @@
 		6ADC713EAFEE0C855859B6BD /* lpc_shape_swb12_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = AF5409A56843B0D4FD18064E /* lpc_shape_swb12_tables.c */; };
 		6B0B8E3E3EC91B71AB380191 /* isacfix.c in Sources */ = {isa = PBXBuildFile; fileRef = 90996131A8508146CDC8E746 /* isacfix.c */; };
 		6B84DA62204DCCDB0325FB7A /* screen_capturer_helper.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4FA4692737061980E7756400 /* screen_capturer_helper.cc */; };
-		6C2ACF84C5E7BB48DF22DBB5 /* bwe_rtp.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6B55BE91C2490D37EF88B489 /* bwe_rtp.cc */; };
 		6D093F221316C22E2217E5DA /* encode.c in Sources */ = {isa = PBXBuildFile; fileRef = 831AC41C2C68E963D49E2EAF /* encode.c */; };
 		6E0FFDC0611E9E66668552F7 /* acm_receiver.cc in Sources */ = {isa = PBXBuildFile; fileRef = F961AC03EAED50BD87FEEC40 /* acm_receiver.cc */; };
 		6F369586FF9C0394EDAFFBB4 /* acm_isac.cc in Sources */ = {isa = PBXBuildFile; fileRef = FC1E674ACFCE33A9C1DA464D /* acm_isac.cc */; };
@@ -481,13 +479,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 197D848EEA906BE7BF22A5BA;
 			remoteInfo = NetEq4;
-		};
-		15415C8FDDD67C2C3F4615F2 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A926A29A142E3114C95309AE /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 88C5707174F22613EB28400F;
-			remoteInfo = bwe_tools_util;
 		};
 		176FE2DAB736598BA4BA016D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -771,7 +762,6 @@
 		0C87B85434B095FBBC5EFB2F /* deflickering_test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = deflickering_test.cc; sourceTree = "<group>"; };
 		0C94DBCDE551B8BEB0502610 /* rtp_receiver_video.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = rtp_receiver_video.cc; sourceTree = "<group>"; };
 		0CC408541565EFB2B0C14CCE /* audio_device_utility_android.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = audio_device_utility_android.h; sourceTree = "<group>"; };
-		0D5143151CD77491FA614024 /* libbwe_tools_util.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libbwe_tools_util.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D5A454CABADFDE1D425CF9E /* audio_decoder_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = audio_decoder_unittest.cc; sourceTree = "<group>"; };
 		0D6DD75F341CB84DF114048E /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
 		0D6F5E36E9C460DEB2A92604 /* audio_decoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = audio_decoder.h; sourceTree = "<group>"; };
@@ -2230,13 +2220,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BE2FF028026FC280176D4007 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		CAE66CC366ADA967F9DCB8D7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3092,7 +3075,6 @@
 				9FC0F861FCF3ACAC90725286 /* libmedia_file.a */,
 				6FAE20AEC3454EC74EA3CCD1 /* libpaced_sender.a */,
 				DA21714B451B32D9B212B273 /* libremote_bitrate_estimator.a */,
-				0D5143151CD77491FA614024 /* libbwe_tools_util.a */,
 				1BC8E08AECE6DF6122DEEEFA /* librtp_rtcp.a */,
 				6F8D7F2A08F00320E314D630 /* libwebrtc_utility.a */,
 				A6DDAF6B13B48AA44178EDCA /* libwebrtc_i420.a */,
@@ -4980,22 +4962,6 @@
 			productReference = 9FC0F861FCF3ACAC90725286 /* libmedia_file.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-		88C5707174F22613EB28400F /* bwe_tools_util */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BF50325EE32259F32FC95614 /* Build configuration list for PBXNativeTarget "bwe_tools_util" */;
-			buildPhases = (
-				CCB4674CB8A61FE8480953DD /* Sources */,
-				BE2FF028026FC280176D4007 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = bwe_tools_util;
-			productName = bwe_tools_util;
-			productReference = 0D5143151CD77491FA614024 /* libbwe_tools_util.a */;
-			productType = "com.apple.product-type.library.static";
-		};
 		8AB18584C9C4BA6FAE738E6E /* acm2 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F472271D086F12CDA6105F34 /* Build configuration list for PBXNativeTarget "acm2" */;
@@ -5298,7 +5264,6 @@
 				7FE828FDC4766075645F7183 /* media_file */,
 				F969376579EA69A4B00A9F13 /* paced_sender */,
 				0F2C22351C44CB4C0E7E56EE /* remote_bitrate_estimator */,
-				88C5707174F22613EB28400F /* bwe_tools_util */,
 				99657D96FF89F0429787625E /* rtp_rtcp */,
 				B2AE8A56386E1BDDB42075C3 /* webrtc_utility */,
 				BE3E9A686019AA1AD7E8DF1F /* webrtc_i420 */,
@@ -5780,14 +5745,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CCB4674CB8A61FE8480953DD /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				6C2ACF84C5E7BB48DF22DBB5 /* bwe_rtp.cc in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D2559E31E1DD7391658C0CC4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -5996,11 +5953,6 @@
 			isa = PBXTargetDependency;
 			target = 99657D96FF89F0429787625E /* rtp_rtcp */;
 			targetProxy = 5A0AF12439B78B5363472DC5 /* PBXContainerItemProxy */;
-		};
-		51DD24F855467186F75A686F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 88C5707174F22613EB28400F /* bwe_tools_util */;
-			targetProxy = 15415C8FDDD67C2C3F4615F2 /* PBXContainerItemProxy */;
 		};
 		5D065566BC5853AB26F613F9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -9387,84 +9339,6 @@
 			};
 			name = Release;
 		};
-		7D1E7873C9DD4E34BDD04828 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
-				COPY_PHASE_STRIP = NO;
-				EXECUTABLE_PREFIX = lib;
-				GCC_CW_ASM_SYNTAX = NO;
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
-				GCC_ENABLE_PASCAL_STRINGS = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
-				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
-					DISABLE_NACL,
-					CHROMIUM_BUILD,
-					"USE_LIBJPEG_TURBO=1",
-					ENABLE_CONFIGURATION_POLICY,
-					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
-					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
-					"DISABLE_FTP_SUPPORT=1",
-					WEBRTC_RESTRICT_LOGGING,
-					WEBRTC_MODULE_UTILITY_VIDEO,
-					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
-					WEBRTC_POSIX,
-					WEBRTC_MAC,
-					WEBRTC_IOS,
-					__STDC_CONSTANT_MACROS,
-					__STDC_FORMAT_MACROS,
-					"DYNAMIC_ANNOTATIONS_ENABLED=1",
-					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
-				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				GCC_THREADSAFE_STATICS = NO;
-				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
-				HEADER_SEARCH_PATHS = (
-					../..,
-					../..,
-					../system_wrappers/interface,
-				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "-fstack-protector-all";
-				PRODUCT_NAME = bwe_tools_util;
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
-				WARNING_CFLAGS = (
-					"-Wall",
-					"-Wendif-labels",
-					"-Wextra",
-					"-Wno-unused-parameter",
-					"-Wno-missing-field-initializers",
-					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
-					"-Wno-char-subscripts",
-					"-Wno-unneeded-internal-declaration",
-					"-Wno-covered-switch-default",
-					"-Wstring-conversion",
-					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
-				);
-			};
-			name = Debug;
-		};
 		882282728A68BA84896849EC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -11409,88 +11283,6 @@
 			};
 			name = Release;
 		};
-		C382F75A71A642EC56B91C44 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
-				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_CW_ASM_SYNTAX = NO;
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
-				GCC_ENABLE_PASCAL_STRINGS = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
-				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = s;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
-					DISABLE_NACL,
-					CHROMIUM_BUILD,
-					"USE_LIBJPEG_TURBO=1",
-					ENABLE_CONFIGURATION_POLICY,
-					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
-					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
-					"DISABLE_FTP_SUPPORT=1",
-					WEBRTC_RESTRICT_LOGGING,
-					WEBRTC_MODULE_UTILITY_VIDEO,
-					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
-					WEBRTC_POSIX,
-					WEBRTC_MAC,
-					WEBRTC_IOS,
-					__STDC_CONSTANT_MACROS,
-					__STDC_FORMAT_MACROS,
-					NDEBUG,
-					NVALGRIND,
-					"DYNAMIC_ANNOTATIONS_ENABLED=0",
-					"NS_BLOCK_ASSERTIONS=1",
-					"_FORTIFY_SOURCE=2",
-				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				GCC_THREADSAFE_STATICS = NO;
-				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
-				HEADER_SEARCH_PATHS = (
-					../..,
-					../..,
-					../system_wrappers/interface,
-				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "";
-				PRODUCT_NAME = bwe_tools_util;
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
-				WARNING_CFLAGS = (
-					"-Wall",
-					"-Wendif-labels",
-					"-Wextra",
-					"-Wno-unused-parameter",
-					"-Wno-missing-field-initializers",
-					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
-					"-Wno-char-subscripts",
-					"-Wno-unneeded-internal-declaration",
-					"-Wno-covered-switch-default",
-					"-Wstring-conversion",
-					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
-				);
-			};
-			name = Release;
-		};
 		C5936948A4FD4859AD39F94C /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -11558,88 +11350,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iSACFix;
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
-				WARNING_CFLAGS = (
-					"-Wall",
-					"-Wendif-labels",
-					"-Wextra",
-					"-Wno-unused-parameter",
-					"-Wno-missing-field-initializers",
-					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
-					"-Wno-char-subscripts",
-					"-Wno-unneeded-internal-declaration",
-					"-Wno-covered-switch-default",
-					"-Wstring-conversion",
-					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
-				);
-			};
-			name = Profile;
-		};
-		C5A47405D0BDBA4B804E9765 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
-				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_CW_ASM_SYNTAX = NO;
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
-				GCC_ENABLE_PASCAL_STRINGS = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
-				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = s;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
-					DISABLE_NACL,
-					CHROMIUM_BUILD,
-					"USE_LIBJPEG_TURBO=1",
-					ENABLE_CONFIGURATION_POLICY,
-					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
-					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
-					"DISABLE_FTP_SUPPORT=1",
-					WEBRTC_RESTRICT_LOGGING,
-					WEBRTC_MODULE_UTILITY_VIDEO,
-					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
-					WEBRTC_POSIX,
-					WEBRTC_MAC,
-					WEBRTC_IOS,
-					__STDC_CONSTANT_MACROS,
-					__STDC_FORMAT_MACROS,
-					NDEBUG,
-					NVALGRIND,
-					"DYNAMIC_ANNOTATIONS_ENABLED=0",
-					"NS_BLOCK_ASSERTIONS=1",
-					"_FORTIFY_SOURCE=2",
-				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				GCC_THREADSAFE_STATICS = NO;
-				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
-				HEADER_SEARCH_PATHS = (
-					../..,
-					../..,
-					../system_wrappers/interface,
-				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "";
-				PRODUCT_NAME = bwe_tools_util;
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "armv7 armv7s i386";
 				WARNING_CFLAGS = (
@@ -14004,16 +13714,6 @@
 				57EF68451FD428089E098C72 /* Debug */,
 				C20E006A29EF4A6E4EAAD80C /* Profile */,
 				96B2244078BDCF230E153D5C /* Release */,
-			);
-			defaultConfigurationIsVisible = 1;
-			defaultConfigurationName = Debug;
-		};
-		BF50325EE32259F32FC95614 /* Build configuration list for PBXNativeTarget "bwe_tools_util" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				7D1E7873C9DD4E34BDD04828 /* Debug */,
-				C5A47405D0BDBA4B804E9765 /* Profile */,
-				C382F75A71A642EC56B91C44 /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;

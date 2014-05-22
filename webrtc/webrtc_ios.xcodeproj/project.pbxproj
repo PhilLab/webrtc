@@ -34,6 +34,9 @@
 				E2F6774F18FFFAE90028F02B /* PBXTargetDependency */,
 				E2F6775118FFFAE90028F02B /* PBXTargetDependency */,
 				E2F6775318FFFAE90028F02B /* PBXTargetDependency */,
+				E2E460BC192C004A005BAED9 /* PBXTargetDependency */,
+				E2E460BE192C004A005BAED9 /* PBXTargetDependency */,
+				E2E460C0192C004A005BAED9 /* PBXTargetDependency */,
 				A935E142D0217088CABE8A19 /* PBXTargetDependency */,
 			);
 			name = webrtc_all;
@@ -192,13 +195,6 @@
 			remoteGlobalIDString = DA21714B451B32D9B212B273;
 			remoteInfo = remote_bitrate_estimator;
 		};
-		E294ECC518FEA46900319F19 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 89D53D4FAA8C44D1B15586F2 /* modules_ios.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 0D5143151CD77491FA614024;
-			remoteInfo = bwe_tools_util;
-		};
 		E294ECC718FEA46900319F19 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 89D53D4FAA8C44D1B15586F2 /* modules_ios.xcodeproj */;
@@ -339,6 +335,76 @@
 			remoteGlobalIDString = C4AE7B44035281F971C20881;
 			remoteInfo = common_audio_neon;
 		};
+		E2E46081192BFFC7005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A270F55489D4E3801CFE5F4C;
+			remoteInfo = libvpx_obj_int_extract;
+		};
+		E2E46083192BFFC7005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6682003ED0888DD9295361CD;
+			remoteInfo = libvpx_asm_offsets_vp8;
+		};
+		E2E46085192BFFC7005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6502D155EC33DD3FF7912AB1;
+			remoteInfo = libvpx_asm_offsets_vpx_scale;
+		};
+		E2E46087192BFFC7005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 98E87CAEFCF9A906003B5768;
+			remoteInfo = libvpx;
+		};
+		E2E460B0192BFFDE005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E460AA192BFFDE005BAED9 /* libyuv_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 568E3016DD2F308A82671925;
+			remoteInfo = libyuv;
+		};
+		E2E460B2192BFFDE005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E460AA192BFFDE005BAED9 /* libyuv_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 94274D863A645939B9ED45B7;
+			remoteInfo = libyuv_neon;
+		};
+		E2E460B9192BFFFC005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E460B4192BFFFC005BAED9 /* opus_ios.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 60561485D25DA098AD994844;
+			remoteInfo = opus;
+		};
+		E2E460BB192C004A005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E460B4192BFFFC005BAED9 /* opus_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 343C989E9B7FEAC47C6AF974;
+			remoteInfo = All;
+		};
+		E2E460BD192C004A005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E460AA192BFFDE005BAED9 /* libyuv_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = E9C6D9B46956383542EC65F6;
+			remoteInfo = All;
+		};
+		E2E460BF192C004A005BAED9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A1090C66B6349F31686A64B;
+			remoteInfo = All;
+		};
 		E2F6774018FFFAE90028F02B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 86168C8227755F7703AAD32B /* common_audio_ios.xcodeproj */;
@@ -470,6 +536,9 @@
 		D9C9E305A35BB6ABAF37BE8E /* loopback.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = loopback.cc; sourceTree = "<group>"; };
 		D9F32959024A3DE38441E273 /* libwebrtc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libwebrtc.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E20F2EA718F83854007DB4D5 /* vp8_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = vp8_ios.xcodeproj; path = modules/video_coding/codecs/vp8/vp8_ios.xcodeproj; sourceTree = "<group>"; };
+		E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libvpx_ios.xcodeproj; path = ../third_party/libvpx/libvpx_ios.xcodeproj; sourceTree = "<group>"; };
+		E2E460AA192BFFDE005BAED9 /* libyuv_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = libyuv_ios.xcodeproj; path = ../third_party/libyuv/libyuv_ios.xcodeproj; sourceTree = "<group>"; };
+		E2E460B4192BFFFC005BAED9 /* opus_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = opus_ios.xcodeproj; path = ../third_party/opus/opus_ios.xcodeproj; sourceTree = "<group>"; };
 		E2E6849118FDBB6C0026DF7B /* video_coding_utility_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = video_coding_utility_ios.xcodeproj; path = modules/video_coding/utility/video_coding_utility_ios.xcodeproj; sourceTree = "<group>"; };
 		E2E684A118FDBD210026DF7B /* remote_bitrate_estimator_components_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = remote_bitrate_estimator_components_ios.xcodeproj; path = modules/remote_bitrate_estimator/remote_bitrate_estimator_components_ios.xcodeproj; sourceTree = "<group>"; };
 		E8C30A0E099D4216454E7743 /* webrtc_video.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = webrtc_video.gypi; path = video/webrtc_video.gypi; sourceTree = "<group>"; };
@@ -505,6 +574,9 @@
 				E20F2EA718F83854007DB4D5 /* vp8_ios.xcodeproj */,
 				E2E6849118FDBB6C0026DF7B /* video_coding_utility_ios.xcodeproj */,
 				E2E684A118FDBD210026DF7B /* remote_bitrate_estimator_components_ios.xcodeproj */,
+				E2E460B4192BFFFC005BAED9 /* opus_ios.xcodeproj */,
+				E2E460AA192BFFDE005BAED9 /* libyuv_ios.xcodeproj */,
+				E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */,
 			);
 			name = Projects;
 			sourceTree = "<group>";
@@ -640,7 +712,6 @@
 				E294ECC018FEA46900319F19 /* libmedia_file.a */,
 				E294ECC218FEA46900319F19 /* libpaced_sender.a */,
 				E294ECC418FEA46900319F19 /* libremote_bitrate_estimator.a */,
-				E294ECC618FEA46900319F19 /* libbwe_tools_util.a */,
 				E294ECC818FEA46900319F19 /* librtp_rtcp.a */,
 				E294ECCA18FEA46900319F19 /* libwebrtc_utility.a */,
 				E294ECCC18FEA46900319F19 /* libwebrtc_i420.a */,
@@ -720,6 +791,34 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		E2E46075192BFFC7005BAED9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2E46082192BFFC7005BAED9 /* libvpx_obj_int_extract */,
+				E2E46084192BFFC7005BAED9 /* libvpx_asm_offsets_vp8.a */,
+				E2E46086192BFFC7005BAED9 /* libvpx_asm_offsets_vpx_scale.a */,
+				E2E46088192BFFC7005BAED9 /* libvpx.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E2E460AB192BFFDE005BAED9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2E460B1192BFFDE005BAED9 /* libyuv.a */,
+				E2E460B3192BFFDE005BAED9 /* libyuv_neon.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E2E460B5192BFFFC005BAED9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2E460BA192BFFFC005BAED9 /* libopus.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F2179B1DC4A238EA62024FB0 = {
 			isa = PBXGroup;
 			children = (
@@ -787,8 +886,20 @@
 					ProjectRef = B5E346C8E76EC21E2CFCAC61 /* common_video_ios.xcodeproj */;
 				},
 				{
+					ProductGroup = E2E46075192BFFC7005BAED9 /* Products */;
+					ProjectRef = E2E46074192BFFC7005BAED9 /* libvpx_ios.xcodeproj */;
+				},
+				{
+					ProductGroup = E2E460AB192BFFDE005BAED9 /* Products */;
+					ProjectRef = E2E460AA192BFFDE005BAED9 /* libyuv_ios.xcodeproj */;
+				},
+				{
 					ProductGroup = E294EC7E18FEA46900319F19 /* Products */;
 					ProjectRef = 89D53D4FAA8C44D1B15586F2 /* modules_ios.xcodeproj */;
+				},
+				{
+					ProductGroup = E2E460B5192BFFFC005BAED9 /* Products */;
+					ProjectRef = E2E460B4192BFFFC005BAED9 /* opus_ios.xcodeproj */;
 				},
 				{
 					ProductGroup = E294ECE118FEA46B00319F19 /* Products */;
@@ -962,13 +1073,6 @@
 			remoteRef = E294ECC318FEA46900319F19 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		E294ECC618FEA46900319F19 /* libbwe_tools_util.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libbwe_tools_util.a;
-			remoteRef = E294ECC518FEA46900319F19 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		E294ECC818FEA46900319F19 /* librtp_rtcp.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -1109,6 +1213,55 @@
 			remoteRef = E294ED2218FEA47500319F19 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		E2E46082192BFFC7005BAED9 /* libvpx_obj_int_extract */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = libvpx_obj_int_extract;
+			remoteRef = E2E46081192BFFC7005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2E46084192BFFC7005BAED9 /* libvpx_asm_offsets_vp8.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvpx_asm_offsets_vp8.a;
+			remoteRef = E2E46083192BFFC7005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2E46086192BFFC7005BAED9 /* libvpx_asm_offsets_vpx_scale.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvpx_asm_offsets_vpx_scale.a;
+			remoteRef = E2E46085192BFFC7005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2E46088192BFFC7005BAED9 /* libvpx.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvpx.a;
+			remoteRef = E2E46087192BFFC7005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2E460B1192BFFDE005BAED9 /* libyuv.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libyuv.a;
+			remoteRef = E2E460B0192BFFDE005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2E460B3192BFFDE005BAED9 /* libyuv_neon.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libyuv_neon.a;
+			remoteRef = E2E460B2192BFFDE005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E2E460BA192BFFFC005BAED9 /* libopus.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libopus.a;
+			remoteRef = E2E460B9192BFFFC005BAED9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -1138,6 +1291,21 @@
 			isa = PBXTargetDependency;
 			target = E7D076A489DB88E65EA89828 /* webrtc_all */;
 			targetProxy = 54F7CDB319B73B1613128107 /* PBXContainerItemProxy */;
+		};
+		E2E460BC192C004A005BAED9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = All;
+			targetProxy = E2E460BB192C004A005BAED9 /* PBXContainerItemProxy */;
+		};
+		E2E460BE192C004A005BAED9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = All;
+			targetProxy = E2E460BD192C004A005BAED9 /* PBXContainerItemProxy */;
+		};
+		E2E460C0192C004A005BAED9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = All;
+			targetProxy = E2E460BF192C004A005BAED9 /* PBXContainerItemProxy */;
 		};
 		E2F6774118FFFAE90028F02B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

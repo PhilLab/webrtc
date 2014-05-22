@@ -451,7 +451,7 @@
 		19FC5DDBA87B5064601ECBE9 /* x86insn_nasm.gperf */ = {isa = PBXFileReference; lastKnownFileType = text; path = x86insn_nasm.gperf; sourceTree = "<group>"; };
 		1CD3105B0CC6850951ACB14C /* yasm */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = yasm; sourceTree = BUILT_PRODUCTS_DIR; };
 		20246648AD6CDCE2A691C3E2 /* win64-nasm.mac */ = {isa = PBXFileReference; lastKnownFileType = text; path = "win64-nasm.mac"; sourceTree = "<group>"; };
-		259EE8265A8CB99C2C20A544 /* release_impl_official.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = release_impl_official.gypi; path = ../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
+		259EE8265A8CB99C2C20A544 /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
 		25E57CC4D5BABE6C12981F8D /* md5.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = md5.c; sourceTree = "<group>"; };
 		263711E0187CD487DCC8D2F1 /* cv-symline.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "cv-symline.c"; sourceTree = "<group>"; };
 		2DB63686FCE0090876F6CE7C /* nasm-token.re */ = {isa = PBXFileReference; lastKnownFileType = text; path = "nasm-token.re"; sourceTree = "<group>"; };
@@ -461,7 +461,7 @@
 		340AF07FD7EA39C339885800 /* elf-x86-amd64.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "elf-x86-amd64.c"; sourceTree = "<group>"; };
 		3438F7BD430BF21F79B535BA /* expr.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = expr.c; sourceTree = "<group>"; };
 		35C9F50D28D191616BA320F4 /* file.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = file.c; sourceTree = "<group>"; };
-		387DF109F572F92ECA1EF42B /* release_defaults.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = release_defaults.gypi; path = ../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
+		387DF109F572F92ECA1EF42B /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
 		3C4916FA42C619E1E9AFF2F5 /* x86bc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = x86bc.c; sourceTree = "<group>"; };
 		3F1D83DCD0615E92B310E42E /* hamt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hamt.c; sourceTree = "<group>"; };
 		409E99D7C44751B2B82733E8 /* libgenperf_libs.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgenperf_libs.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -471,7 +471,7 @@
 		43B09CEFF6E6BCCFA32534F7 /* coff-objfmt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "coff-objfmt.c"; sourceTree = "<group>"; };
 		440F8CE2FF0449367615DF01 /* gas-token.re */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gas-token.re"; sourceTree = "<group>"; };
 		45037C7D0B6645F0D073D998 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		4529943D6B71E123C0C5625D /* common.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
+		4529943D6B71E123C0C5625D /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
 		452E45B8F0A71F4CF58DA32A /* nasm-preproc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "nasm-preproc.c"; sourceTree = "<group>"; };
 		4A4D6EC6C3080076AAE55428 /* bc-org.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "bc-org.c"; sourceTree = "<group>"; };
 		4A63C6BFF3A194EE86CBD8A7 /* phash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = phash.c; sourceTree = "<group>"; };
@@ -499,7 +499,7 @@
 		6EB59E2B6F4400708320676D /* bytecode.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = bytecode.c; sourceTree = "<group>"; };
 		7230E4AB1E9C9AB68AEA82F4 /* dwarf2-info.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "dwarf2-info.c"; sourceTree = "<group>"; };
 		73705F5003D3FFF2573126AC /* license.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = license.c; sourceTree = "<group>"; };
-		73EE245097C46BD10B71B614 /* supplement.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = supplement.gypi; path = ../../webrtc/supplement.gypi; sourceTree = "<group>"; };
+		73EE245097C46BD10B71B614 /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../webrtc/supplement.gypi; sourceTree = "<group>"; };
 		751C3DDF4C497BC103D9D208 /* substr.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = substr.c; sourceTree = "<group>"; };
 		786F34EA687342F63850182C /* x86regtmod.gperf */ = {isa = PBXFileReference; lastKnownFileType = text; path = x86regtmod.gperf; sourceTree = "<group>"; };
 		7D0DE83895BFC87EB9B7F872 /* xmalloc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = xmalloc.c; sourceTree = "<group>"; };
@@ -507,11 +507,11 @@
 		81B018F26106BD9C53A5E4CB /* module.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = module.c; sourceTree = "<group>"; };
 		84B826DD7CB72D13A1DFB44E /* intnum.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = intnum.c; sourceTree = "<group>"; };
 		852DB5FD8C1228617BFE101F /* rdf-objfmt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "rdf-objfmt.c"; sourceTree = "<group>"; };
-		85BBB38F8C9EA7D6E106EBC0 /* filename_rules.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = filename_rules.gypi; path = ../../build/filename_rules.gypi; sourceTree = "<group>"; };
+		85BBB38F8C9EA7D6E106EBC0 /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../build/filename_rules.gypi; sourceTree = "<group>"; };
 		8634C5281DBB30AE533BB800 /* section.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = section.c; sourceTree = "<group>"; };
 		875C178B7EB6FE5DFFBB607F /* dwarf2-line.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "dwarf2-line.c"; sourceTree = "<group>"; };
 		8AFA641173D2EA31C74F8920 /* dbg-objfmt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "dbg-objfmt.c"; sourceTree = "<group>"; };
-		915804D39D9CA64DFDA3D3B2 /* yasm.gyp */ = {isa = PBXFileReference; lastKnownFileType = text; path = yasm.gyp; sourceTree = "<group>"; };
+		915804D39D9CA64DFDA3D3B2 /* yasm.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = yasm.gyp; sourceTree = "<group>"; };
 		9216367E35688238D5A44621 /* genmacro.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = genmacro.c; sourceTree = "<group>"; };
 		92A9FAD2C6B68CD859E0839A /* bitvect.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = bitvect.c; sourceTree = "<group>"; };
 		92EE4883450FBD5D92AD24DD /* x86cpu.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = x86cpu.c; sourceTree = "<group>"; };
@@ -528,7 +528,7 @@
 		A4351EAD8F173D68AB436F91 /* inttree.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = inttree.c; sourceTree = "<group>"; };
 		A6B2F0EBBAB76B935137ABA5 /* assocdat.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = assocdat.c; sourceTree = "<group>"; };
 		A6C4B17B0008FA61FA9D1253 /* nasmlib.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = nasmlib.c; sourceTree = "<group>"; };
-		AB128738A2A3A4DA21F8D557 /* release_impl.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = release_impl.gypi; path = ../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
+		AB128738A2A3A4DA21F8D557 /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
 		AB9614A8582481B81D7DCB52 /* cpp-preproc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "cpp-preproc.c"; sourceTree = "<group>"; };
 		ADE64189B30660C41E148D27 /* x86insn_gas.gperf */ = {isa = PBXFileReference; lastKnownFileType = text; path = x86insn_gas.gperf; sourceTree = "<group>"; };
 		AFE6F19D7EE83E3C3B923C78 /* gas-parse.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "gas-parse.c"; sourceTree = "<group>"; };
@@ -550,7 +550,7 @@
 		D925CE06FB00341D320E3094 /* libyasm-stdint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "libyasm-stdint.h"; sourceTree = "<group>"; };
 		D9809C13F983B694951943A9 /* xstrdup.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = xstrdup.c; sourceTree = "<group>"; };
 		D9C8E5E371995765847937B5 /* x86expr.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = x86expr.c; sourceTree = "<group>"; };
-		DCFF2C8286DA15D138489DB5 /* release.gypi */ = {isa = PBXFileReference; lastKnownFileType = text; name = release.gypi; path = ../../build/release.gypi; sourceTree = "<group>"; };
+		DCFF2C8286DA15D138489DB5 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../build/release.gypi; sourceTree = "<group>"; };
 		DD43915617050B59FADEF84C /* x86insn_nasm.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = x86insn_nasm.c; sourceTree = "<group>"; };
 		E0C031DF96B3DCD738ACF0DD /* null-dbgfmt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "null-dbgfmt.c"; sourceTree = "<group>"; };
 		E3F00D6C4EF12076D47C1906 /* mbo_getopt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mbo_getopt.c; sourceTree = "<group>"; };
@@ -1113,7 +1113,6 @@
 				B8FECEEDE3EC6160C264ECD5 /* Sources */,
 				1D8E53D01E3A64315A411803 /* Frameworks */,
 				CF996DEE93549490A49AE90E /* Postbuild "Change Mach-O Flags" */,
-				86C7D43B641DD7FA312A063A /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1149,7 +1148,6 @@
 				B8F495D21D7831CB5C750CC7 /* Sources */,
 				5B681437594E3038D04CF2AF /* Frameworks */,
 				9732AF170E9EF6B3624A0864 /* Postbuild "Change Mach-O Flags" */,
-				1D9F9DCA8B66106271900FD2 /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1169,7 +1167,6 @@
 				281CDCDC6FE8449E49D3D7F6 /* Sources */,
 				A5F5D0D7459D59C487BCA1CA /* Frameworks */,
 				2E264C455AB662B833E78595 /* Postbuild "Change Mach-O Flags" */,
-				4C7889A20E677CE959D733D8 /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1188,7 +1185,6 @@
 				7D06C110AD35C0D6307D4D37 /* Sources */,
 				AB267364CE5F58B1B2789FB3 /* Frameworks */,
 				5075DE603FA2341B7262CFC8 /* Postbuild "Change Mach-O Flags" */,
-				553C58D6C5752DBCAC66E158 /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1215,7 +1211,6 @@
 				F0451D00A455B9864E5CDCE8 /* Sources */,
 				3CFBC20291D81E0ABB0B1367 /* Frameworks */,
 				0CF8E0BCFB936C8E7D570FE3 /* Postbuild "Change Mach-O Flags" */,
-				80CBF3376FF074DC264D0801 /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1234,7 +1229,6 @@
 				477B4420ED180EB0898D5C3E /* Sources */,
 				5EF86741E69F431C3FA0ECAC /* Frameworks */,
 				D181A5B1A98B7915A06A6D0A /* Postbuild "Change Mach-O Flags" */,
-				4889D2DFD6E02E6FD4E5DD23 /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1253,7 +1247,6 @@
 				B557E14197B0A2B0A2EB6375 /* Sources */,
 				08B3557695E707FD0ACF19F5 /* Frameworks */,
 				A64C14CB11C99DEB0C5FF2D7 /* Postbuild "Change Mach-O Flags" */,
-				8C8DB269C91395EE620901FA /* Postbuild "Strip If Needed" */,
 			);
 			buildRules = (
 			);
@@ -1273,7 +1266,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 			};
-			buildConfigurationList = EAC22B3DD329FEF5BE0796A2 /* Build configuration list for PBXProject "yasm" */;
+			buildConfigurationList = EAC22B3DD329FEF5BE0796A2 /* Build configuration list for PBXProject "yasm_osx" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
@@ -1313,7 +1306,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec \"${DEVELOPER_BIN_DIR}/make\" -f \"${PROJECT_FILE_PATH}/yasm_generate_gperf.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
+			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec xcrun make -f \"${PROJECT_FILE_PATH}/yasm_generate_gperf.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		0CF8E0BCFB936C8E7D570FE3 /* Postbuild "Change Mach-O Flags" */ = {
@@ -1344,7 +1337,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec \"${DEVELOPER_BIN_DIR}/make\" -f \"${PROJECT_FILE_PATH}/generate_files_generate_gperf.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
+			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec xcrun make -f \"${PROJECT_FILE_PATH}/generate_files_generate_gperf.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		1BDA5811EB173CB3D84BB9EF /* Action "generate_version" */ = {
@@ -1361,23 +1354,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"Generating yasm version file: ${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac.\"\nexec \"${BUILT_PRODUCTS_DIR}/genversion\" \"${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac\"\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
-		1D9F9DCA8B66106271900FD2 /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
+			shellScript = "echo note: \"Generating yasm version file: ${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac\"\nexec \"${BUILT_PRODUCTS_DIR}/genversion\" \"${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		2A19B1011740A2642F60EA3E /* Action "generate_win64_nasm" */ = {
@@ -1395,7 +1372,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"yasm genmacro for source/patched-yasm/modules/objfmts/coff/win64-nasm.mac.\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/win64-nasm.c\" win64_nasm_stdmac source/patched-yasm/modules/objfmts/coff/win64-nasm.mac\nexit 1\n";
+			shellScript = "echo note: \"yasm genmacro for source/patched-yasm/modules/objfmts/coff/win64-nasm.mac\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/win64-nasm.c\" win64_nasm_stdmac source/patched-yasm/modules/objfmts/coff/win64-nasm.mac\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		2E264C455AB662B833E78595 /* Postbuild "Change Mach-O Flags" */ = {
@@ -1429,23 +1406,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"yasm genmacro for ${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac.\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/nasm-version.c\" nasm_version_mac \"${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac\"\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
-		4889D2DFD6E02E6FD4E5DD23 /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
+			shellScript = "echo note: \"yasm genmacro for ${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/nasm-version.c\" nasm_version_mac \"${SHARED_INTERMEDIATE_DIR}/third_party/yasm/version.mac\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		4A871E15A1D6E4BDBBE87924 /* Action "generate_win64_gas" */ = {
@@ -1463,23 +1424,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"yasm genmacro for source/patched-yasm/modules/objfmts/coff/win64-gas.mac.\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/win64-gas.c\" win64_gas_stdmac source/patched-yasm/modules/objfmts/coff/win64-gas.mac\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
-		4C7889A20E677CE959D733D8 /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
+			shellScript = "echo note: \"yasm genmacro for source/patched-yasm/modules/objfmts/coff/win64-gas.mac\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/win64-gas.c\" win64_gas_stdmac source/patched-yasm/modules/objfmts/coff/win64-gas.mac\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		5075DE603FA2341B7262CFC8 /* Postbuild "Change Mach-O Flags" */ = {
@@ -1498,22 +1443,6 @@
 			shellScript = "exec ../../build/mac/change_mach_o_flags_from_xcode.sh\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
-		553C58D6C5752DBCAC66E158 /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
 		78F98A3A8E7B6F2F3A9E27E4 /* Rule "generate_re2c" */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1526,55 +1455,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec \"${DEVELOPER_BIN_DIR}/make\" -f \"${PROJECT_FILE_PATH}/yasm_generate_re2c.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
-		80CBF3376FF074DC264D0801 /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
-		86C7D43B641DD7FA312A063A /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
-			showEnvVarsInLog = 0;
-		};
-		8C8DB269C91395EE620901FA /* Postbuild "Strip If Needed" */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(EXECUTABLE_PATH)",
-			);
-			name = "Postbuild \"Strip If Needed\"";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "exec ../../build/mac/strip_from_xcode\nexit 1\n";
+			shellScript = "JOB_COUNT=\"$(/usr/sbin/sysctl -n hw.ncpu)\"\nif [ \"${JOB_COUNT}\" -gt 4 ]; then\n  JOB_COUNT=4\nfi\nexec xcrun make -f \"${PROJECT_FILE_PATH}/yasm_generate_re2c.make\" -j \"${JOB_COUNT}\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		9591A6291CDB08B09D4F194B /* Action "generate_x86_insn" */ = {
@@ -1593,7 +1474,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"Running source/patched-yasm/modules/arch/x86/gen_x86_insn.py.\"\nexec python source/patched-yasm/modules/arch/x86/gen_x86_insn.py \"${SHARED_INTERMEDIATE_DIR}/third_party/yasm\"\nexit 1\n";
+			shellScript = "echo note: \"Running source/patched-yasm/modules/arch/x86/gen_x86_insn.py\"\nexec python source/patched-yasm/modules/arch/x86/gen_x86_insn.py \"${SHARED_INTERMEDIATE_DIR}/third_party/yasm\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		9732AF170E9EF6B3624A0864 /* Postbuild "Change Mach-O Flags" */ = {
@@ -1627,7 +1508,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"yasm genmacro for source/patched-yasm/modules/parsers/nasm/nasm-std.mac.\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/nasm-macros.c\" nasm_standard_mac source/patched-yasm/modules/parsers/nasm/nasm-std.mac\nexit 1\n";
+			shellScript = "echo note: \"yasm genmacro for source/patched-yasm/modules/parsers/nasm/nasm-std.mac\"\nexec \"${BUILT_PRODUCTS_DIR}/genmacro\" \"${INTERMEDIATE_DIR}/third_party/yasm/nasm-macros.c\" nasm_standard_mac source/patched-yasm/modules/parsers/nasm/nasm-std.mac\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		A64C14CB11C99DEB0C5FF2D7 /* Postbuild "Change Mach-O Flags" */ = {
@@ -1662,7 +1543,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"Generating yasm module information.\"\nexec \"${BUILT_PRODUCTS_DIR}/genmodule\" source/patched-yasm/libyasm/module.in source/config/mac/Makefile \"${INTERMEDIATE_DIR}/third_party/yasm/module.c\"\nexit 1\n";
+			shellScript = "echo note: \"Generating yasm module information\"\nexec \"${BUILT_PRODUCTS_DIR}/genmodule\" source/patched-yasm/libyasm/module.in source/config/mac/Makefile \"${INTERMEDIATE_DIR}/third_party/yasm/module.c\"\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		CF996DEE93549490A49AE90E /* Postbuild "Change Mach-O Flags" */ = {
@@ -1712,7 +1593,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"Generating yasm tokens for lc3b.\"\nexec \"${BUILT_PRODUCTS_DIR}/re2c\" -s -o \"${INTERMEDIATE_DIR}/third_party/yasm/lc3bid.c\" source/patched-yasm/modules/arch/lc3b/lc3bid.re\nexit 1\n";
+			shellScript = "echo note: \"Generating yasm tokens for lc3b\"\nexec \"${BUILT_PRODUCTS_DIR}/re2c\" -s -o \"${INTERMEDIATE_DIR}/third_party/yasm/lc3bid.c\" source/patched-yasm/modules/arch/lc3b/lc3bid.re\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 		EA7C9BA8C1F7FF267024E4E8 /* Action "generate_license" */ = {
@@ -1730,7 +1611,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo note: \"Generating yasm embeddable license.\"\nexec \"${BUILT_PRODUCTS_DIR}/genstring\" license_msg \"${INTERMEDIATE_DIR}/third_party/yasm/license.c\" source/patched-yasm/COPYING\nexit 1\n";
+			shellScript = "echo note: \"Generating yasm embeddable license\"\nexec \"${BUILT_PRODUCTS_DIR}/genstring\" license_msg \"${INTERMEDIATE_DIR}/third_party/yasm/license.c\" source/patched-yasm/COPYING\nexit 1\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -2076,8 +1957,9 @@
 		17F1786ACA7B8A7C0C64B5F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = i386;
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = macosx;
+				SDKROOT = macosx10.8;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
 			};
@@ -2087,8 +1969,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -2103,35 +1985,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2146,10 +2035,6 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2164,11 +2049,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2178,8 +2063,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -2194,35 +2079,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2237,10 +2129,6 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2255,11 +2143,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 					"-Wno-switch",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2270,9 +2158,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -2286,36 +2175,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2328,10 +2224,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -2345,11 +2237,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2359,8 +2251,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_CW_ASM_SYNTAX = NO;
@@ -2374,35 +2266,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2414,10 +2313,6 @@
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
 				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = generate_files;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -2428,11 +2323,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2442,9 +2337,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -2458,36 +2354,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2500,10 +2403,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -2517,11 +2416,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2531,9 +2430,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -2547,36 +2447,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2589,10 +2496,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -2606,11 +2509,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2627,9 +2530,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				GCC_CW_ASM_SYNTAX = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -2642,36 +2546,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2680,10 +2591,6 @@
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = generate_files;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -2694,11 +2601,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2708,9 +2615,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -2724,36 +2632,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2766,10 +2681,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -2783,11 +2694,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2797,8 +2708,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -2813,35 +2724,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2856,10 +2774,6 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2874,11 +2788,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2888,8 +2802,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -2904,35 +2818,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -2948,10 +2869,6 @@
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
 				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -2965,11 +2882,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -2979,9 +2896,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -2995,36 +2913,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3037,10 +2962,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -3054,11 +2975,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 					"-Wno-switch",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3068,8 +2989,9 @@
 		9E2731C6702DEA1C35BDA141 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = i386;
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = macosx;
+				SDKROOT = macosx10.8;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
 			};
@@ -3086,9 +3008,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -3102,37 +3025,44 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"HAVE_CONFIG_H\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					HAVE_CONFIG_H,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3147,10 +3077,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -3164,11 +3090,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 					"-Wno-incompatible-pointer-types",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3186,9 +3112,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = lib;
 				GCC_CW_ASM_SYNTAX = NO;
@@ -3202,37 +3129,44 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"HAVE_CONFIG_H\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					HAVE_CONFIG_H,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3244,14 +3178,7 @@
 					"source/patched-yasm",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				OTHER_CFLAGS = (
-					"find-bad-constructs",
-					"-fno-strict-aliasing",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
+				OTHER_CFLAGS = "-fno-strict-aliasing";
 				PRODUCT_NAME = genperf_libs;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
 				USE_HEADERMAP = NO;
@@ -3261,11 +3188,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3275,8 +3202,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -3291,35 +3218,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3334,10 +3268,6 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -3352,11 +3282,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3366,8 +3296,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -3382,35 +3312,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3426,10 +3363,6 @@
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
 				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -3443,11 +3376,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3457,9 +3390,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				GCC_CW_ASM_SYNTAX = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
@@ -3472,36 +3406,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3510,10 +3451,6 @@
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = config_sources;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -3524,11 +3461,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3538,9 +3475,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
+				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				EXECUTABLE_PREFIX = "";
 				GCC_CW_ASM_SYNTAX = NO;
@@ -3554,36 +3492,43 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"NDEBUG\"",
-					"\"NVALGRIND\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=0\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3596,10 +3541,6 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -3613,11 +3554,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3627,8 +3568,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_CW_ASM_SYNTAX = NO;
@@ -3642,35 +3583,42 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3682,10 +3630,6 @@
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
 				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = config_sources;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -3696,11 +3640,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3710,8 +3654,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = "";
@@ -3726,36 +3670,43 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"HAVE_CONFIG_H\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					HAVE_CONFIG_H,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3773,10 +3724,6 @@
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
 				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
 					"-Wl,-pie",
@@ -3790,11 +3737,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 					"-Wno-incompatible-pointer-types",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3805,8 +3752,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_CXX0X_EXTENSIONS = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = lib;
@@ -3821,36 +3768,43 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"\"CHROMIUM_BUILD\"",
-					"\"USE_LIBJPEG_TURBO=1\"",
-					"\"ENABLE_ONE_CLICK_SIGNIN\"",
-					"\"ENABLE_REMOTING=1\"",
-					"\"ENABLE_WEBRTC=1\"",
-					"\"ENABLE_PEPPER_CDMS\"",
-					"\"ENABLE_CONFIGURATION_POLICY\"",
-					"\"ENABLE_INPUT_SPEECH\"",
-					"\"ENABLE_NOTIFICATIONS\"",
-					"\"ENABLE_HIDPI=1\"",
-					"\"ENABLE_GPU=1\"",
-					"\"ENABLE_EGLIMAGE=1\"",
-					"\"ENABLE_TASK_MANAGER=1\"",
-					"\"ENABLE_EXTENSIONS=1\"",
-					"\"ENABLE_PLUGIN_INSTALLATION=1\"",
-					"\"ENABLE_PLUGINS=1\"",
-					"\"ENABLE_SESSION_SERVICE=1\"",
-					"\"ENABLE_THEMES=1\"",
-					"\"ENABLE_AUTOFILL_DIALOG=1\"",
-					"\"ENABLE_BACKGROUND=1\"",
-					"\"ENABLE_AUTOMATION=1\"",
-					"\"ENABLE_GOOGLE_NOW=1\"",
-					"\"ENABLE_LANGUAGE_DETECTION=1\"",
-					"\"ENABLE_PRINTING=1\"",
-					"\"ENABLE_CAPTIVE_PORTAL_DETECTION=1\"",
-					"\"ENABLE_APP_LIST=1\"",
-					"\"ENABLE_MANAGED_USERS=1\"",
-					"\"HAVE_CONFIG_H\"",
-					"\"DYNAMIC_ANNOTATIONS_ENABLED=1\"",
-					"\"WTF_USE_DYNAMIC_ANNOTATIONS=1\"",
+					V8_DEPRECATION_WARNINGS,
+					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
+					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_INPUT_SPEECH,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					"ENABLE_EGLIMAGE=1",
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_AUTOMATION=1",
+					"ENABLE_GOOGLE_NOW=1",
+					"CLD_VERSION=2",
+					"ENABLE_FULL_PRINTING=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					HAVE_CONFIG_H,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -3866,10 +3820,6 @@
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
 				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(inherited)",
-					"-std=gnu++11",
-				);
 				PRODUCT_NAME = genperf_libs;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
 				USE_HEADERMAP = NO;
@@ -3879,11 +3829,11 @@
 					"-Wno-missing-field-initializers",
 					"-Wheader-hygiene",
 					"-Wno-c++11-narrowing",
-					"-Wno-reserved-user-defined-literal",
 					"-Wno-char-subscripts",
-					"-Wno-unused-function",
+					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
 			};
@@ -3998,7 +3948,7 @@
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;
 		};
-		EAC22B3DD329FEF5BE0796A2 /* Build configuration list for PBXProject "yasm" */ = {
+		EAC22B3DD329FEF5BE0796A2 /* Build configuration list for PBXProject "yasm_osx" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9E2731C6702DEA1C35BDA141 /* Debug */,
