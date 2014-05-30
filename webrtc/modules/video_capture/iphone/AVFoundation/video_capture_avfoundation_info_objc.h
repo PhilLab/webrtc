@@ -22,18 +22,13 @@
 #include "video_capture_avfoundation_utility.h"
 #include "video_capture_avfoundation_info.h"
 
-#ifndef BACK_CAMERA_INDEX
-#define BACK_CAMERA_INDEX               0
-#endif
-#ifndef FRONT_CAMERA_INDEX
-#define FRONT_CAMERA_INDEX              1
-#endif
-
 @interface VideoCaptureIPhoneAVFoundationInfoObjC : NSObject{
     bool                                _OSSupportedInfo;
     NSArray*                            _captureDevicesInfo;
     NSAutoreleasePool*                    _poolInfo;
     int                                    _captureDeviceCountInfo;
+    int                                    _frontCameraIndex;
+    int                                    _backCameraIndex;
 
 }
 
@@ -73,6 +68,8 @@
 - (UIDeviceOrientation)getDeviceOrientation;
 
 - (NSNumber*)getCaptureDeviceIndex:(const char*)deviceUniqueIdUTF8;
+- (NSNumber*)getFrontCameraIndex;
+- (NSNumber*)getBackCameraIndex;
 
 @end
 

@@ -147,6 +147,8 @@
 
     _poolInfo = [[NSAutoreleasePool alloc]init];
     _captureDeviceCountInfo = 0;
+    _frontCameraIndex = -1;
+    _backCameraIndex = -1;
     [self getCaptureDevices];
 
     return [NSNumber numberWithInt:0];
@@ -192,6 +194,18 @@
     if(_captureDeviceCountInfo < 1){
         return [NSNumber numberWithInt:0];
     }
+  
+    if (_captureDeviceCountInfo == 1)
+    {
+        _frontCameraIndex = 0;
+        _backCameraIndex = -1;
+    }
+    else if (_captureDeviceCountInfo >= 2)
+    {
+        _frontCameraIndex = 1;
+        _backCameraIndex = 0;
+    }
+  
     return [NSNumber numberWithInt:0];
 }
 
@@ -229,6 +243,16 @@
         }
     }
     return [NSNumber numberWithInt:-1];
+}
+
+- (NSNumber*)getFrontCameraIndex
+{
+    return [NSNumber numberWithInt:_frontCameraIndex];
+}
+
+- (NSNumber*)getBackCameraIndex
+{
+    return [NSNumber numberWithInt:_backCameraIndex];
 }
 
 @end

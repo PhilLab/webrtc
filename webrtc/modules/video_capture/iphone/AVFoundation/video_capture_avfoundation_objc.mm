@@ -240,7 +240,7 @@
     }
 #pragma clang diagnostic pop
   
-    if (_index == FRONT_CAMERA_INDEX)
+    if (_index == _frontCameraIndex)
     {
         if ([_machineName compare:@"iPod5,1"] != NSOrderedAscending) // iPod Touch 5G
         {
@@ -283,7 +283,7 @@
           _captureHeight = 480;
         }
     }
-    else if (_index == BACK_CAMERA_INDEX)
+    else if (_index == _backCameraIndex)
     {
         if ([_machineName compare:@"iPod5,1"] != NSOrderedAscending) // iPod Touch 5G
         {
@@ -440,6 +440,8 @@
     _framesDelivered = 0;
     _framesRendered = 0;
     _captureDeviceCount = 0;
+    _frontCameraIndex = -1;
+    _backCameraIndex = -1;
     _lastFramerateReportTime = webrtc::TickTime::Now();
     _lastFramerateReportFramesDelivered = 0;
     _capturing = NO;
@@ -513,6 +515,18 @@
     {
         return [NSNumber numberWithInt:0];
     }
+  
+    if (_captureDeviceCount == 1)
+    {
+        _frontCameraIndex = 0;
+        _backCameraIndex = -1;
+    }
+    else if (_captureDeviceCount >= 2)
+    {
+        _frontCameraIndex = 1;
+        _backCameraIndex = 0;
+    }
+
     return [NSNumber numberWithInt:0];
 }
 
@@ -602,13 +616,13 @@
 			exifOrientation = PHOTOS_EXIF_0ROW_LEFT_0COL_BOTTOM;
 			break;
 		case UIDeviceOrientationLandscapeLeft:       // Device oriented horizontally, home button on the right
-            if (_index == FRONT_CAMERA_INDEX)
+            if (_index == _frontCameraIndex)
                 exifOrientation = PHOTOS_EXIF_0ROW_BOTTOM_0COL_RIGHT;
 			else
                 exifOrientation = PHOTOS_EXIF_0ROW_TOP_0COL_LEFT;
 			break;
 		case UIDeviceOrientationLandscapeRight:      // Device oriented horizontally, home button on the left
-            if (_index == FRONT_CAMERA_INDEX)
+            if (_index == _frontCameraIndex)
                 exifOrientation = PHOTOS_EXIF_0ROW_TOP_0COL_LEFT;
 			else
                 exifOrientation = PHOTOS_EXIF_0ROW_BOTTOM_0COL_RIGHT;

@@ -201,7 +201,7 @@ int32_t VideoCaptureIPhoneAVFoundation::StartCapture(
         {
             NSInteger captureIndex = [_captureDevice getCaptureDeviceIndex];
             UIDeviceOrientation deviceOrientation = [_captureInfo getDeviceOrientation];
-            if (captureIndex == FRONT_CAMERA_INDEX)
+            if (captureIndex == [[_captureInfo getFrontCameraIndex] intValue])
             {
                 if (deviceOrientation == UIDeviceOrientationLandscapeLeft)
                 {
@@ -233,7 +233,7 @@ int32_t VideoCaptureIPhoneAVFoundation::StartCapture(
                         rotation = kCameraRotate180;
                 }
             }
-            else if (captureIndex == BACK_CAMERA_INDEX)
+            else if (captureIndex == [[_captureInfo getBackCameraIndex] intValue])
             {
                 if (deviceOrientation == UIDeviceOrientationLandscapeLeft)
                 {
@@ -273,7 +273,7 @@ int32_t VideoCaptureIPhoneAVFoundation::StartCapture(
         else
         {
             NSInteger captureIndex = [_captureDevice getCaptureDeviceIndex];
-            if (captureIndex == FRONT_CAMERA_INDEX)
+            if (captureIndex == [[_captureInfo getFrontCameraIndex] intValue])
             {
                 if (_lockedFrameOrientation == kOrientationLandscapeLeft)
                     rotation = kCameraRotate180;
@@ -286,7 +286,7 @@ int32_t VideoCaptureIPhoneAVFoundation::StartCapture(
                 else
                     rotation = kCameraRotate180;
             }
-            else if (captureIndex == BACK_CAMERA_INDEX)
+            else if (captureIndex == [[_captureInfo getBackCameraIndex] intValue])
             {
                 if (_lockedFrameOrientation == kOrientationLandscapeLeft)
                     rotation = kCameraRotate0;
