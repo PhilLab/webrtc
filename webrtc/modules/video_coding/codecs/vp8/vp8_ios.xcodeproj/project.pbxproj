@@ -314,7 +314,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_vp8;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -395,7 +395,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = webrtc_vp8;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -426,7 +426,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../../../../xcodebuild;
@@ -499,7 +498,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_vp8;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",

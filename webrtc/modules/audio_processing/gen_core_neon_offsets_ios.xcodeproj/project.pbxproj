@@ -568,7 +568,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../../xcodebuild;
@@ -876,7 +875,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = _core_neon_offsets;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 i386";
+				VALID_ARCHS = armv7;
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -982,7 +981,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = _core_neon_offsets;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 i386";
+				VALID_ARCHS = armv7;
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1158,7 +1157,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = _core_neon_offsets;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 i386";
+				VALID_ARCHS = armv7;
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",

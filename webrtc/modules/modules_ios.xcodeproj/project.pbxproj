@@ -6125,7 +6125,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = G711;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6207,7 +6207,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_i420;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6292,7 +6292,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = NetEq;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6370,7 +6370,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = remote_bitrate_estimator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6449,7 +6449,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = webrtc_opus;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6535,7 +6535,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iSAC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6620,7 +6620,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = isac_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6713,7 +6713,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = audio_coding_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6801,7 +6801,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iSACFix;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6884,7 +6884,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_opus;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6980,7 +6980,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = acm2;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7004,7 +7004,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
@@ -7078,7 +7077,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iSAC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7164,7 +7163,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iLBC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7250,7 +7249,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_render_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7350,7 +7349,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = acm2;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7435,7 +7434,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_capture_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7514,7 +7513,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = G711;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7596,7 +7595,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = remote_bitrate_estimator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7693,7 +7692,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = NetEq4;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7783,7 +7782,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = G722;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7863,7 +7862,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = audio_conference_mixer;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7941,7 +7940,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = desktop_capture;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8027,7 +8026,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = CNG;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8109,7 +8108,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = remote_bitrate_estimator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8188,7 +8187,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = PCM16B;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8272,7 +8271,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_conference_mixer;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8361,7 +8360,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_utility;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8443,7 +8442,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = rtp_rtcp;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8527,7 +8526,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = media_file;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8605,7 +8604,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = bitrate_controller;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8689,7 +8688,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_conference_mixer;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8797,7 +8796,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_coding_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8890,7 +8889,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = NetEq4;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8973,7 +8972,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = G722;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9058,7 +9057,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = isac_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9140,7 +9139,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = CNG;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9222,7 +9221,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = desktop_capture;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9319,7 +9318,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_coding_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9403,7 +9402,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = iSACFix;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9489,7 +9488,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iLBC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9574,7 +9573,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_processing_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9656,7 +9655,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = paced_sender;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9736,7 +9735,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = webrtc_video_coding;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9825,7 +9824,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = NetEq;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9908,7 +9907,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = PCM16B;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10005,7 +10004,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = NetEq4;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10090,7 +10089,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = webrtc_i420;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10168,7 +10167,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = paced_sender;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10250,7 +10249,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = audio_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10336,7 +10335,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = audio_device;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10419,7 +10418,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = video_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10500,7 +10499,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = audio_processing_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10582,7 +10581,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = video_render_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10668,7 +10667,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = CNG;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10755,7 +10754,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10845,7 +10844,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_device;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10929,7 +10928,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_video_coding;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11013,7 +11012,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = media_file;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11098,7 +11097,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = webrtc_utility;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11181,7 +11180,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = PCM16B;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11263,7 +11262,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = rtp_rtcp;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11351,7 +11350,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = iSACFix;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11434,7 +11433,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = G722;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11512,7 +11511,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = rtp_rtcp;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11593,7 +11592,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = video_capture_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11693,7 +11692,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = acm2;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11779,7 +11778,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11862,7 +11861,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_opus;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11944,7 +11943,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_i420;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12033,7 +12032,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = NetEq;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12118,7 +12117,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_capture_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12207,7 +12206,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_utility;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12291,7 +12290,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = webrtc_video_coding;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12380,7 +12379,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = desktop_capture;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12463,7 +12462,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = G711;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12557,7 +12556,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12639,7 +12638,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = bitrate_controller;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12725,7 +12724,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12810,7 +12809,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_processing_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12892,7 +12891,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = iLBC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12972,7 +12971,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = media_file;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13054,7 +13053,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = paced_sender;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13136,7 +13135,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = bitrate_controller;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13226,7 +13225,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = audio_device;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13312,7 +13311,7 @@
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = video_render_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13393,7 +13392,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = isac_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13475,7 +13474,7 @@
 				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_NAME = iSAC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
