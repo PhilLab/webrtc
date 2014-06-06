@@ -195,6 +195,7 @@ class OpenSlesOutput : public PlayoutDelayProvider {
   bool initialized_;
   bool speaker_initialized_;
   bool play_initialized_;
+  bool loudspeaker_enabled_;
 
   // Members that are read/write accessed concurrently by the process thread and
   // threads calling public functions of this class.

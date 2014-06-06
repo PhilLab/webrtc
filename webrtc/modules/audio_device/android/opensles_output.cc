@@ -48,6 +48,7 @@ OpenSlesOutput::OpenSlesOutput(const int32_t id)
       initialized_(false),
       speaker_initialized_(false),
       play_initialized_(false),
+      loudspeaker_enabled_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       playing_(false),
       num_fifo_buffers_needed_(0),
@@ -270,11 +271,16 @@ void OpenSlesOutput::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
 }
 
 int32_t OpenSlesOutput::SetLoudspeakerStatus(bool enable) {
+  loudspeaker_enabled_ = enable;
+  if (!playing_)
+    return 0;
+  StopPlayout();
+  StartPlayout();
   return 0;
 }
 
 int32_t OpenSlesOutput::GetLoudspeakerStatus(bool& enabled) const {  // NOLINT
-  enabled = true;
+  enabled = loudspeaker_enabled_;
   return 0;
 }
 
@@ -407,6 +413,21 @@ bool OpenSlesOutput::CreateAudioPlayer() {
                                              &audio_source, &audio_sink,
                                              kNumInterfaces, ids, req),
       false);
+  SLAndroidConfigurationItf player_config;
+  OPENSL_RETURN_ON_FAILURE(
+      (*sles_player_)->GetInterface(sles_player_, SL_IID_ANDROIDCONFIGURATION,
+                                    &player_config),
+      false);
+  SLint32 stream_type;
+  if (loudspeaker_enabled_)
+    stream_type = SL_ANDROID_STREAM_MEDIA;
+  else
+    stream_type = SL_ANDROID_STREAM_VOICE;
+  OPENSL_RETURN_ON_FAILURE(
+      (*player_config)->SetConfiguration(player_config, SL_ANDROID_KEY_STREAM_TYPE,
+                                         &stream_type, sizeof(SLint32)),
+      false);
+
   // Realize the player in synchronous mode.
   OPENSL_RETURN_ON_FAILURE((*sles_player_)->Realize(sles_player_,
                                                     SL_BOOLEAN_FALSE),
