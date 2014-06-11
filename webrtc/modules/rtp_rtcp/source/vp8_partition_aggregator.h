@@ -124,7 +124,7 @@ class Vp8PartitionAggregator {
 
  private:
   PartitionTreeNode* root_;
-  std::size_t num_partitions_;
+  size_t num_partitions_;
   int* size_vector_;
   int largest_partition_size_;
 

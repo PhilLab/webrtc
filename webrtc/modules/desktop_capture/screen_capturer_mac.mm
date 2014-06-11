@@ -921,8 +921,6 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
 
   LOG(LS_INFO) << "Using GlBlit";
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   CGLPixelFormatAttribute attributes[] = {
     // This function does an early return if IsOSLionOrLater(), this code only
     // runs on 10.6 and can be deleted once 10.6 support is dropped.  So just
@@ -936,7 +934,6 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
     (CGLPixelFormatAttribute)CGDisplayIDToOpenGLDisplayMask(mainDevice),
     (CGLPixelFormatAttribute)0
   };
-#pragma clang diagnostic pop
   CGLPixelFormatObj pixel_format = NULL;
   GLint matching_pixel_format_count = 0;
   CGLError err = CGLChoosePixelFormat(attributes,

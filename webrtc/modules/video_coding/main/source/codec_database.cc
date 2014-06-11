@@ -314,7 +314,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
 
   // Does not check startBitrate or maxFramerate
   if (new_send_codec.codecType != send_codec_.codecType ||
-	  strcmp(new_send_codec.plName, send_codec_.plName) != 0 ||
+      strcmp(new_send_codec.plName, send_codec_.plName) != 0 ||
       new_send_codec.plType != send_codec_.plType ||
       new_send_codec.width != send_codec_.width ||
       new_send_codec.height != send_codec_.height ||
@@ -331,8 +331,8 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
   switch (new_send_codec.codecType) {
     case kVideoCodecVP8:
       if (memcmp(&new_send_codec.codecSpecific.VP8,
-    		  	  	  &send_codec_.codecSpecific.VP8,
-    		  	  	  sizeof(new_send_codec.codecSpecific.VP8)) !=
+                 &send_codec_.codecSpecific.VP8,
+                 sizeof(new_send_codec.codecSpecific.VP8)) !=
           0) {
         return true;
       }
@@ -355,8 +355,8 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
     for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams;
          ++i) {
       if (memcmp(&new_send_codec.simulcastStream[i],
-    		  	  	  &send_codec_.simulcastStream[i],
-    		  	  	  sizeof(new_send_codec.simulcastStream[i])) !=
+                 &send_codec_.simulcastStream[i],
+                 sizeof(new_send_codec.simulcastStream[i])) !=
           0) {
         return true;
       }
@@ -468,7 +468,7 @@ bool VCMCodecDataBase::DeregisterReceiveCodec(
   dec_map_.erase(it);
   if (receive_codec_.plType == payload_type) {
     // This codec is currently in use.
-	memset(&receive_codec_, 0, sizeof(VideoCodec));
+    memset(&receive_codec_, 0, sizeof(VideoCodec));
     current_dec_is_external_ = false;
   }
   return true;

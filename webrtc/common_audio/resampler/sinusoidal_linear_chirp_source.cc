@@ -43,7 +43,7 @@ void SinusoidalLinearChirpSource::Run(int frames, float* destination) {
       } else {
         // Sinusoidal linear chirp.
         destination[i] =
-        	std::sin(2 * M_PI * (kMinFrequency * t + (k_ / 2) * t * t));
+            sin(2 * M_PI * (kMinFrequency * t + (k_ / 2) * t * t));
       }
     }
   }

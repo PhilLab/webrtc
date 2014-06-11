@@ -784,11 +784,11 @@ int VoEFileImpl::ConvertPCMToWAV(const char* fileNameInUTF8,
 
     CodecInst codecInst;
     strncpy(codecInst.plname,"L16",32);
-                 codecInst.channels = 1;
-                 codecInst.rate     = 256000;
-                 codecInst.plfreq   = 16000;
-                 codecInst.pltype   = 94;
-                 codecInst.pacsize  = 160;
+            codecInst.channels = 1;
+            codecInst.rate     = 256000;
+            codecInst.plfreq   = 16000;
+            codecInst.pltype   = 94;
+            codecInst.pacsize  = 160;
 
     res = recObj.StartRecordingAudioFile(fileNameOutUTF8,codecInst,0);
     if (res)
@@ -868,11 +868,11 @@ int VoEFileImpl::ConvertPCMToWAV(InStream* streamIn, OutStream* streamOut)
         kFileFormatWavFile));
     CodecInst codecInst;
     strncpy(codecInst.plname, "L16", 32);
-                 codecInst.channels = 1;
-                 codecInst.rate     = 256000;
-                 codecInst.plfreq   = 16000;
-                 codecInst.pltype   = 94;
-                 codecInst.pacsize  = 160;
+            codecInst.channels = 1;
+            codecInst.rate     = 256000;
+            codecInst.plfreq   = 16000;
+            codecInst.pltype   = 94;
+            codecInst.pacsize  = 160;
     res = recObj.StartRecordingAudioFile(*streamOut,codecInst,0);
     if (res)
     {
@@ -947,11 +947,11 @@ int VoEFileImpl::ConvertWAVToPCM(const char* fileNameInUTF8,
 
     CodecInst codecInst;
     strncpy(codecInst.plname,"L16",32);
-                 codecInst.channels = 1;
-                 codecInst.rate     = 256000;
-                 codecInst.plfreq   = 16000;
-                 codecInst.pltype   = 94;
-                 codecInst.pacsize  = 160;
+            codecInst.channels = 1;
+            codecInst.rate     = 256000;
+            codecInst.plfreq   = 16000;
+            codecInst.pltype   = 94;
+            codecInst.pacsize  = 160;
 
     res = recObj.StartRecordingAudioFile(fileNameOutUTF8,codecInst,0);
     if (res)
@@ -1032,11 +1032,11 @@ int VoEFileImpl::ConvertWAVToPCM(InStream* streamIn, OutStream* streamOut)
 
     CodecInst codecInst;
     strncpy(codecInst.plname,"L16",32);
-                 codecInst.channels = 1;
-                 codecInst.rate     = 256000;
-                 codecInst.plfreq   = 16000;
-                 codecInst.pltype   = 94;
-                 codecInst.pacsize  = 160;
+            codecInst.channels = 1;
+            codecInst.rate     = 256000;
+            codecInst.plfreq   = 16000;
+            codecInst.pltype   = 94;
+            codecInst.pacsize  = 160;
 
     res = recObj.StartRecordingAudioFile(*streamOut,codecInst,0);
     if (res)
@@ -1277,11 +1277,11 @@ int VoEFileImpl::ConvertCompressedToPCM(const char* fileNameInUTF8,
 
     CodecInst codecInst;
     strncpy(codecInst.plname,"L16",32);
-                 codecInst.channels = 1;
-                 codecInst.rate     = 256000;
-                 codecInst.plfreq   = 16000;
-                 codecInst.pltype   = 94;
-                 codecInst.pacsize  = 160;
+            codecInst.channels = 1;
+            codecInst.rate     = 256000;
+            codecInst.plfreq   = 16000;
+            codecInst.pltype   = 94;
+            codecInst.pacsize  = 160;
 
     res = recObj.StartRecordingAudioFile(fileNameOutUTF8,codecInst,0);
     if (res)
@@ -1366,11 +1366,11 @@ int VoEFileImpl::ConvertCompressedToPCM(InStream* streamIn,
 
     CodecInst codecInst;
     strncpy(codecInst.plname,"L16",32);
-                 codecInst.channels = 1;
-                 codecInst.rate     = 256000;
-                 codecInst.plfreq   = 16000;
-                 codecInst.pltype   = 94;
-                 codecInst.pacsize  = 160;
+            codecInst.channels = 1;
+            codecInst.rate     = 256000;
+            codecInst.plfreq   = 16000;
+            codecInst.pltype   = 94;
+            codecInst.pacsize  = 160;
 
     res = recObj.StartRecordingAudioFile(*streamOut,codecInst,0);
     if (res)

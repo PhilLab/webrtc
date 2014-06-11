@@ -182,7 +182,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
 
   // Prepare FEC packets by setting them to 0.
   for (int i = 0; i < num_fec_packets; ++i) {
-	memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
+    memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
     generated_fec_packets_[i].length = 0;  // Use this as a marker for untouched
                                            // packets.
     fec_packet_list->push_back(&generated_fec_packets_[i]);
@@ -463,7 +463,7 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
 
     // Copy the packet mask.
     memcpy(&generated_fec_packets_[i].data[12], &packet_mask[i * num_maskBytes],
-                num_maskBytes);
+           num_maskBytes);
   }
 }
 
@@ -530,7 +530,7 @@ void ForwardErrorCorrection::UpdateCoveringFECPackets(RecoveredPacket* packet) {
   for (FecPacketList::iterator it = fec_packet_list_.begin();
        it != fec_packet_list_.end(); ++it) {
     // Is this FEC packet protecting the media packet |packet|?
-    ProtectedPacketList::iterator protected_it = lower_bound(
+    ProtectedPacketList::iterator protected_it = std::lower_bound(
         (*it)->protected_pkt_list.begin(), (*it)->protected_pkt_list.end(),
         packet, SortablePacket::LessThan);
     if (protected_it != (*it)->protected_pkt_list.end() &&
@@ -606,10 +606,10 @@ void ForwardErrorCorrection::AssignRecoveredPackets(
   // another FEC packet.
   ProtectedPacketList* not_recovered = &fec_packet->protected_pkt_list;
   RecoveredPacketList already_recovered;
-  set_intersection(
+  std::set_intersection(
       recovered_packets->begin(), recovered_packets->end(),
       not_recovered->begin(), not_recovered->end(),
-      inserter(already_recovered, already_recovered.end()),
+      std::inserter(already_recovered, already_recovered.end()),
       SortablePacket::LessThan);
   // Set the FEC pointers to all recovered packets so that we don't have to
   // search for them when we are doing recovery.
@@ -659,8 +659,8 @@ void ForwardErrorCorrection::InitRecovery(const FecPacket* fec_packet,
   memcpy(protection_length, &fec_packet->pkt->data[10], 2);
   // Copy FEC payload, skipping the ULP header.
   memcpy(&recovered->pkt->data[kRtpHeaderSize],
-		  	  &fec_packet->pkt->data[kFecHeaderSize + ulp_header_size],
-		  	  ModuleRTPUtility::BufferToUWord16(protection_length));
+         &fec_packet->pkt->data[kFecHeaderSize + ulp_header_size],
+         ModuleRTPUtility::BufferToUWord16(protection_length));
   // Copy the length recovery field.
   memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
   // Copy the first 2 bytes of the FEC header.
@@ -815,8 +815,8 @@ int32_t ForwardErrorCorrection::DecodeFEC(
   // error?
   if (recovered_packet_list->size() == kMaxMediaPackets) {
     const unsigned int seq_num_diff =
-    	abs(static_cast<int>(received_packet_list->front()->seq_num) -
-    			 static_cast<int>(recovered_packet_list->back()->seq_num));
+        abs(static_cast<int>(received_packet_list->front()->seq_num) -
+            static_cast<int>(recovered_packet_list->back()->seq_num));
     if (seq_num_diff > kMaxMediaPackets) {
       // A big gap in sequence numbers. The old recovered packets
       // are now useless, so it's safe to do a reset.

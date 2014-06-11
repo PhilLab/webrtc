@@ -3492,7 +3492,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
     CSRCs = rtp_receiver_->CSRCs(arrOfCSRC);
     if (CSRCs > 0)
     {
-    	memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
+        memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
         for (int i = 0; i < (int) CSRCs; i++)
         {
             WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,

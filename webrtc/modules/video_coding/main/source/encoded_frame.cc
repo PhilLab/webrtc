@@ -163,7 +163,7 @@ VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
         if(_buffer)
         {
             // copy old data
-        	memcpy(newBuffer, _buffer, _size);
+            memcpy(newBuffer, _buffer, _size);
             delete [] _buffer;
         }
         _buffer = newBuffer;

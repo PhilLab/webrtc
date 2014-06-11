@@ -16,7 +16,7 @@ namespace webrtc {
 namespace test {
 
 uint32_t RtpGenerator::GetRtpHeader(uint8_t payload_type,
-									std::size_t payload_length_samples,
+                                    size_t payload_length_samples,
                                     WebRtcRTPHeader* rtp_header) {
   assert(rtp_header);
   if (!rtp_header) {

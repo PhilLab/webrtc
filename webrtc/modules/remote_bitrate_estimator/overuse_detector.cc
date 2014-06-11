@@ -51,7 +51,7 @@ OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
       {
   memcpy(E_, options_.initial_e, sizeof(E_));
   memcpy(process_noise_, options_.initial_process_noise,
-		  	  sizeof(process_noise_));
+         sizeof(process_noise_));
 }
 
 OveruseDetector::~OveruseDetector() {

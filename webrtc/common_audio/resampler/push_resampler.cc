@@ -74,7 +74,7 @@ int PushResampler::Resample(const int16_t* src, int src_length,
   if (src_sample_rate_hz_ == dst_sample_rate_hz_) {
     // The old resampler provides this memcpy facility in the case of matching
     // sample rates, so reproduce it here for the sinc resampler.
-	memcpy(dst, src, src_length * sizeof(int16_t));
+    memcpy(dst, src, src_length * sizeof(int16_t));
     return src_length;
   }
   if (num_channels_ == 2) {

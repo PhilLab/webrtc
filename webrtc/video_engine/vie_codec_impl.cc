@@ -89,8 +89,8 @@ int ViECodecImpl::GetCodec(const unsigned char list_number,
     video_codec.codecType = kVideoCodecRED;
     video_codec.plType = VCM_RED_PAYLOAD_TYPE;
   } else if (list_number == VideoCodingModule::NumberOfCodecs() + 1) {
-	memset(&video_codec, 0, sizeof(VideoCodec));
-	strcpy(video_codec.plName, "ulpfec");
+    memset(&video_codec, 0, sizeof(VideoCodec));
+    strcpy(video_codec.plName, "ulpfec");
     video_codec.codecType = kVideoCodecULPFEC;
     video_codec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
   } else if (VideoCodingModule::Codec(list_number, &video_codec) != VCM_OK) {
@@ -779,7 +779,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
                  "Codec type doesn't match pl_name", video_codec.plType);
     return false;
   } else if ((video_codec.codecType == kVideoCodecVP8 &&
-		  	  strncmp(video_codec.plName, "VP8", 4) == 0) ||
+              strncmp(video_codec.plName, "VP8", 4) == 0) ||
              (video_codec.codecType == kVideoCodecI420 &&
               strncmp(video_codec.plName, "I420", 4) == 0)) {
     // OK.

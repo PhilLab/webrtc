@@ -55,7 +55,7 @@ int Plane::Copy(const Plane& plane) {
   if (MaybeResize(plane.allocated_size_) < 0)
     return -1;
   if (plane.buffer_.get())
-	memcpy(buffer_.get(), plane.buffer_.get(), plane.plane_size_);
+    memcpy(buffer_.get(), plane.buffer_.get(), plane.plane_size_);
   stride_ = plane.stride_;
   plane_size_ = plane.plane_size_;
   return 0;

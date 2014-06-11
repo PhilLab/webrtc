@@ -138,7 +138,7 @@ int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
 
   const unsigned char startCode[] = {0, 0, 0, 1};
   if (packet.insertStartCode) {
-	memcpy(const_cast<uint8_t*>(packet.dataPtr), startCode,
+    memcpy(const_cast<uint8_t*>(packet.dataPtr), startCode,
            kH264StartCodeLengthBytes);
   }
   memcpy(const_cast<uint8_t*>(packet.dataPtr

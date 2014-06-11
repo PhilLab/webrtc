@@ -37,7 +37,7 @@ class RtpGenerator {
   // Writes the next RTP header to |rtp_header|, which will be of type
   // |payload_type|. Returns the send time for this packet (in ms). The value of
   // |payload_length_samples| determines the send time for the next packet.
-  uint32_t GetRtpHeader(uint8_t payload_type, std::size_t payload_length_samples,
+  uint32_t GetRtpHeader(uint8_t payload_type, size_t payload_length_samples,
                         WebRtcRTPHeader* rtp_header);
 
   void set_drift_factor(double factor);
