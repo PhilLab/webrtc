@@ -3,7 +3,7 @@ rule $
   command = cd ../../../webrtc/modules; python $
       ../../build/android/gyp/javac.py $
       "--output-dir=../../projects/android/ninja/gen/audio_device_module_java/classes" $
-      "--classpath=/home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk//platforms/android-19/android.jar" $
+      "--classpath=$android_sdk_path/platforms/android-19/android.jar" $
       "--src-gendirs=" "--javac-includes=" "--chromium-code=0" $
       "--stamp=../../projects/android/ninja/gen/audio_device_module_java/compile.stamp" $
       audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioTrack.java $
@@ -19,14 +19,14 @@ build gen/audio_device_module_java/compile.stamp: $
     ../../../webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioTrack.java $
     ../../../webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioRecord.java $
     ../../../webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/AudioManagerAndroid.java $
-    /home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk/platforms/android-19/android.jar $
+    $android_sdk_path/platforms/android-19/android.jar $
     || ../../../build/android
 
 rule $
     audio_device_module_java_target_lint_audio_device_module_java_9a177d6edf37e024f744aadc5823f69e
   command = cd ../../../webrtc/modules; python $
       ../../build/android/gyp/lint.py $
-      "--lint-path=/home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk//tools/lint" $
+      "--lint-path=$android_sdk_path/tools/lint" $
       "--config-path=../../build/android/lint/suppressions.xml" $
       "--processed-config-path=../../projects/android/ninja/gen/audio_device_module_java/lint_config.xml" $
       "--manifest-path=../../build/android/AndroidManifest.xml" $
@@ -105,7 +105,7 @@ rule $
   command = cd ../../../webrtc/modules; python $
       ../../build/android/gyp/dex.py $
       "--dex-path=../../projects/android/ninja/lib.java/audio_device_module_java.dex.jar" $
-      "--android-sdk-tools=/home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk//build-tools/19.0.0" $
+      "--android-sdk-tools=$android_sdk_path/build-tools/19.0.0" $
       "--configuration-name=ninja" "--proguard-enabled=false" $
       "--proguard-enabled-input-path=" "--no-locals=0" $
       ../../projects/android/ninja/lib.java/audio_device_module_java.jar
@@ -125,7 +125,5 @@ build $
     stamp gen/audio_device_module_java/compile.stamp $
     gen/audio_device_module_java/lint.stamp $
     gen/audio_device_module_java/audio_device_module_java.jar $
-    lib.java/audio_device_module_java.jar $
-    lib.java/audio_device_module_java.jar.TOC $
-    lib.java/audio_device_module_java.dex.jar
+    lib.java/audio_device_module_java.jar
 

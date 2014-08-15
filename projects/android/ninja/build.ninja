@@ -216,7 +216,9 @@ build all: phony obj/third_party/libvpx/libvpx.a $
     obj/webrtc/modules/remote_bitrate_estimator/librbe_components.a obj/third_party/libvpx/libvpx_asm_offsets_vp8.a $
     obj/webrtc/modules/libaudio_device.a obj/webrtc/modules/libisac_neon.a $
     obj/webrtc/modules/video_coding/codecs/vp8/libwebrtc_vp8.a $
+    obj/webrtc/modules/video_capture_module_java.actions_rules_copies.stamp $
     obj/webrtc/modules/libiLBC.a obj/third_party/android_tools/ndk/libcpu_features.a $
+    obj/webrtc/modules/audio_device_module_java.actions_rules_copies.stamp $
     obj/webrtc/modules/libaudio_processing_neon.a $
     obj/webrtc/modules/libaudio_processing.a $
     obj/webrtc/voice_engine/libvoice_engine.a obj/webrtc/modules/libNetEq4.a $
@@ -229,7 +231,7 @@ build all: phony obj/third_party/libvpx/libvpx.a $
     obj/webrtc/modules/libmedia_file.a $
     obj/webrtc/modules/libacm2.a obj/webrtc/modules/libCNG.a obj/webrtc/modules/libwebrtc_video_coding.a $
     obj/webrtc/modules/libbwe_tools_util.a obj/webrtc/modules/libG711.a libvpx_obj_int_extract $
-    obj/third_party/opus/libopus.a $
+    obj/third_party/opus/libopus.a obj/webrtc/modules/video_render_module_java.actions_rules_copies.stamp $
     obj/webrtc/modules/audio_processing/gen_nsx_core_neon_offsets_h.actions_rules_copies.stamp $
     obj/webrtc/modules/libaudio_conference_mixer.a $
     obj/third_party/libvpx/libvpx_intrinsics_neon.a obj/webrtc/libwebrtc.a $

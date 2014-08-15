@@ -13,7 +13,7 @@ rule $
   command = cd ../../../webrtc/modules; python $
       ../../build/android/gyp/javac.py $
       "--output-dir=../../projects/android/ninja/gen/video_capture_module_java/classes" $
-      "--classpath=/home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk//platforms/android-19/android.jar $
+      "--classpath=$android_sdk_path/platforms/android-19/android.jar $
       \"../../projects/android/ninja/lib.java/video_render_module_java.jar\"" $
       "--src-gendirs=" "--javac-includes=" "--chromium-code=0" $
       "--stamp=../../projects/android/ninja/gen/video_capture_module_java/compile.stamp" $
@@ -28,7 +28,7 @@ build gen/video_capture_module_java/compile.stamp: $
     ../../../build/android/gyp/javac.py $
     ../../../webrtc/modules/video_capture/android/java/src/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java $
     ../../../webrtc/modules/video_capture/android/java/src/org/webrtc/videoengine/VideoCaptureAndroid.java $
-    /home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk/platforms/android-19/android.jar $
+    $android_sdk_path/platforms/android-19/android.jar $
     lib.java/video_render_module_java.jar || $
     obj/webrtc/modules/video_capture_module_java.actions_depends.stamp
 
@@ -36,7 +36,7 @@ rule $
     video_capture_module_java_target_lint_video_capture_module_java_d7898941161a6c8cef4117addde7c0c7
   command = cd ../../../webrtc/modules; python $
       ../../build/android/gyp/lint.py $
-      "--lint-path=/home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk//tools/lint" $
+      "--lint-path=$android_sdk_path/tools/lint" $
       "--config-path=../../build/android/lint/suppressions.xml" $
       "--processed-config-path=../../projects/android/ninja/gen/video_capture_module_java/lint_config.xml" $
       "--manifest-path=../../build/android/AndroidManifest.xml" $
@@ -118,7 +118,7 @@ rule $
   command = cd ../../../webrtc/modules; python $
       ../../build/android/gyp/dex.py $
       "--dex-path=../../projects/android/ninja/lib.java/video_capture_module_java.dex.jar" $
-      "--android-sdk-tools=/home/runamedia/webrtc_trunk/trunk/third_party/android_tools/sdk//build-tools/19.0.0" $
+      "--android-sdk-tools=$android_sdk_path/build-tools/19.0.0" $
       "--configuration-name=ninja" "--proguard-enabled=false" $
       "--proguard-enabled-input-path=" "--no-locals=0" $
       ../../projects/android/ninja/lib.java/video_capture_module_java.jar
@@ -139,7 +139,5 @@ build $
     stamp gen/video_capture_module_java/compile.stamp $
     gen/video_capture_module_java/lint.stamp $
     gen/video_capture_module_java/video_capture_module_java.jar $
-    lib.java/video_capture_module_java.jar $
-    lib.java/video_capture_module_java.jar.TOC $
-    lib.java/video_capture_module_java.dex.jar
+    lib.java/video_capture_module_java.jar
 
