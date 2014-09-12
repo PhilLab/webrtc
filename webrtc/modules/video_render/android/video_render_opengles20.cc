@@ -213,6 +213,42 @@ int32_t VideoRenderOpenGles20::SetCoordinates(int32_t zOrder,
 
   return 0;
 }
+  
+int32_t VideoRenderOpenGles20::SetStreamCropping(const float left,
+                                                 const float top,
+                                                 const float right,
+                                                 const float bottom) {
+  if ((top > 1 || top < 0) || (right > 1 || right < 0) ||
+      (bottom > 1 || bottom < 0) || (left > 1 || left < 0)) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                 "%s: Wrong cropping parameters", __FUNCTION__);
+    return -1;
+  }
+  
+  //  X, Y, Z, U, V
+  // -1, -1, 0, 0, 1, // Bottom Left
+  //  1, -1, 0, 1, 1, //Bottom Right
+  //  1,  1, 0, 1, 0, //Top Right
+  // -1,  1, 0, 0, 0  //Top Left
+  
+  // Bottom Left
+  _vertices[3] = left;
+  _vertices[4] = bottom;
+  
+  //Bottom Right
+  _vertices[8] = right;
+  _vertices[9] = bottom;
+  
+  //Top Right
+  _vertices[13] = right;
+  _vertices[14] = top;
+  
+  //Top Left
+  _vertices[18] = left;
+  _vertices[19] = top;
+  
+  return 0;
+}
 
 int32_t VideoRenderOpenGles20::Render(const I420VideoFrame& frameToRender) {
 
