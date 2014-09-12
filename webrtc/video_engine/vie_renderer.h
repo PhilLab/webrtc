@@ -65,6 +65,11 @@ class ViERenderer: public ViEFrameCallback {
                                I420VideoFrame& video_frame);
 
   int SetExpectedRenderDelay(int render_delay);
+  
+  int32_t SetStreamCropping(const float left,
+                            const float top,
+                            const float right,
+                            const float bottom);
 
   int32_t ConfigureRenderer(const unsigned int z_order,
                             const float left,

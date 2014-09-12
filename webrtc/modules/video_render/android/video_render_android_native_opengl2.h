@@ -32,8 +32,7 @@ class AndroidNativeOpenGl2Channel: public AndroidStream {
   int32_t Init(int32_t zOrder, const float left, const float top,
                const float right, const float bottom);
   
-  int32_t SetStreamCropping(const uint32_t streamId,
-                            const float left, const float top,
+  int32_t SetStreamCropping(const float left, const float top,
                             const float right, const float bottom);
 
   //Implement VideoRenderCallback

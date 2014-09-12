@@ -58,6 +58,14 @@ int32_t ViERenderer::GetLastRenderedFrame(const int32_t renderID,
 int ViERenderer::SetExpectedRenderDelay(int render_delay) {
   return render_module_.SetExpectedRenderDelay(render_id_, render_delay);
 }
+  
+int32_t ViERenderer::SetStreamCropping(const float left,
+                                       const float top,
+                                       const float right,
+                                       const float bottom) {
+  return render_module_.SetStreamCropping(render_id_, left, top, right,
+                                          bottom);
+}
 
 int32_t ViERenderer::ConfigureRenderer(const unsigned int z_order,
                                        const float left,

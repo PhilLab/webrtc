@@ -233,14 +233,14 @@ int32_t VideoRenderOpenGles20::SetStreamCropping(const float left,
   
   // Bottom Left
   _vertices[3] = left;
-  _vertices[4] = 1 - bottom;
+  _vertices[4] = bottom;
   
   //Bottom Right
-  _vertices[8] = 1 - right;
-  _vertices[9] = 1 - bottom;
+  _vertices[8] = right;
+  _vertices[9] = bottom;
   
   //Top Right
-  _vertices[13] = 1 - right;
+  _vertices[13] = right;
   _vertices[14] = top;
   
   //Top Left

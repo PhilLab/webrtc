@@ -230,7 +230,7 @@ int32_t AndroidNativeOpenGl2Renderer::SetStreamCropping(
 
   AndroidNativeOpenGl2Channel* stream = (AndroidNativeOpenGl2Channel*)item->second;
   
-  stream->SetStreamCropping(streamId, left, top, right, bottom);
+  stream->SetStreamCropping(left, top, right, bottom);
   
   return 0;
 }
@@ -402,6 +402,23 @@ int32_t AndroidNativeOpenGl2Channel::Init(int32_t zOrder,
   }
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id,
                "%s: AndroidNativeOpenGl2Channel done", __FUNCTION__);
+  return 0;
+}
+  
+int32_t AndroidNativeOpenGl2Channel::SetStreamCropping(const float left,
+                                                       const float top,
+                                                       const float right,
+                                                       const float bottom)
+{
+  WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id,
+               "%s: AndroidNativeOpenGl2Channel", __FUNCTION__);
+  
+  if (_openGLRenderer.SetStreamCropping(left, top, right, bottom) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
+                 "%s: Failed to set stream cropping parameters", __FUNCTION__);
+    return -1;
+  }
+  
   return 0;
 }
 
