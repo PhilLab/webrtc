@@ -567,6 +567,17 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
       // compilers.
       ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
     }
+  
+    if (_rtpPacketObserver)
+    {
+        CriticalSectionScoped cs(&_callbackCritSect);
+    
+        if (_rtpPacketObserverPtr)
+        {
+            _rtpPacketObserverPtr->OnIncomingPacket(payloadData, payloadSize);
+        }
+    }
+
     return 0;
 }
 
@@ -892,6 +903,7 @@ Channel::Channel(int32_t channelId,
     _externalMixing(false),
     _inputIsOnHold(false),
     _mixFileWithMicrophone(false),
+    _rtpPacketObserver(false),
     _rtpObserver(false),
     _rtcpObserver(false),
     _mute(false),
@@ -3350,6 +3362,48 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
 }
 
 #endif // #ifdef WEBRTC_VOICE_ENGINE_NR
+  
+int
+Channel::RegisterRTPPacketObserver(VoERTPPacketObserver& observer)
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+                 "Channel::RegisterRTPPacketObserver()");
+    CriticalSectionScoped cs(&_callbackCritSect);
+  
+    if (_rtpObserverPtr)
+    {
+        _engineStatisticsPtr->SetLastError(
+                                           VE_INVALID_OPERATION, kTraceError,
+                                           "RegisterRTPPacketObserver() observer already enabled");
+        return -1;
+    }
+  
+    _rtpPacketObserverPtr = &observer;
+    _rtpPacketObserver = true;
+  
+    return 0;
+}
+  
+int
+Channel::DeRegisterRTPPacketObserver()
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::DeRegisterRTPPacketObserver()");
+    CriticalSectionScoped cs(&_callbackCritSect);
+  
+    if (!_rtpObserverPtr)
+    {
+        _engineStatisticsPtr->SetLastError(
+                                           VE_INVALID_OPERATION, kTraceWarning,
+                                           "DeRegisterRTPPacketObserver() observer already disabled");
+        return 0;
+    }
+  
+    _rtpPacketObserver = false;
+    _rtpPacketObserverPtr = NULL;
+  
+    return 0;
+}
 
 int
 Channel::RegisterRTPObserver(VoERTPObserver& observer)
@@ -3432,6 +3486,55 @@ Channel::DeRegisterRTCPObserver()
     _rtcpObserver = false;
     _rtcpObserverPtr = NULL;
 
+    return 0;
+}
+  
+int
+Channel::SendRTPPacket(int channel,
+                       uint32_t  timeStamp,
+                       const uint8_t*  payloadData,
+                       uint16_t  payloadSize)
+{
+    FrameType frameType = kAudioFrameSpeech;
+    int8_t payloadType = 0;
+    RTPFragmentationHeader* fragmentation = NULL;
+  
+    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::SendRTPPacket(frameType=%u, payloadType=%u, timeStamp=%u,"
+                 " payloadSize=%u, fragmentation=0x%x)",
+                 frameType, payloadType, timeStamp, payloadSize, fragmentation);
+  
+    if (_includeAudioLevelIndication)
+    {
+        // Store current audio level in the RTP/RTCP module.
+        // The level will be used in combination with voice-activity state
+        // (frameType) to add an RTP header extension
+        _rtpRtcpModule->SetAudioLevel(rtp_audioproc_->level_estimator()->RMS());
+    }
+  
+    // Push data from ACM to RTP/RTCP-module to deliver audio frame for
+    // packetization.
+    // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
+    if (_rtpRtcpModule->SendOutgoingData((FrameType&)frameType,
+                                         payloadType,
+                                         timeStamp,
+                                         // Leaving the time when this frame was
+                                         // received from the capture device as
+                                         // undefined for voice for now.
+                                         -1,
+                                         payloadData,
+                                         payloadSize,
+                                         fragmentation) == -1)
+    {
+        _engineStatisticsPtr->SetLastError(
+                                           VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
+                                           "Channel::SendData() failed to send data to RTP/RTCP module");
+        return -1;
+    }
+  
+    _lastLocalTimeStamp = timeStamp;
+    _lastPayloadType = payloadType;
+  
     return 0;
 }
 

@@ -21,6 +21,10 @@ class VoERTP_RTCPImpl : public VoERTP_RTCP
 {
 public:
     // Registration of observers for RTP and RTCP callbacks
+    virtual int RegisterRTPPacketObserver(int channel, VoERTPPacketObserver& observer);
+  
+    virtual int DeRegisterRTPPacketObserver(int channel);
+  
     virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer);
 
     virtual int DeRegisterRTPObserver(int channel);
@@ -28,6 +32,12 @@ public:
     virtual int RegisterRTCPObserver(int channel, VoERTCPObserver& observer);
 
     virtual int DeRegisterRTCPObserver(int channel);
+  
+    // RTP
+    virtual int SendRTPPacket(int channel,
+                              uint32_t  timeStamp,
+                              const uint8_t*  payloadData,
+                              uint16_t  payloadSize);
 
     // RTCP
     virtual int SetRTCPStatus(int channel, bool enable);

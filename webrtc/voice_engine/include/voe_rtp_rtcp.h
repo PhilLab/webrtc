@@ -46,6 +46,18 @@ namespace webrtc {
 
 class ViENetwork;
 class VoiceEngine;
+  
+// VoERTPPacketObserver
+class WEBRTC_DLLEXPORT VoERTPPacketObserver
+{
+public:
+    virtual void OnIncomingPacket(
+                                  const uint8_t* payloadData,
+                                  uint16_t payloadSize) = 0;
+  
+protected:
+    virtual ~VoERTPPacketObserver() {}
+  };
 
 // VoERTPObserver
 class WEBRTC_DLLEXPORT VoERTPObserver
@@ -124,6 +136,14 @@ public:
     // be zero for all sub-API:s before the VoiceEngine object can be safely
     // deleted.
     virtual int Release() = 0;
+  
+    // Registers an instance of a VoERTPPacketObserver derived class for a specified
+    // |channel|. It will allow the user to receive RTP content with comporesed data.
+    virtual int RegisterRTPPacketObserver(int channel, VoERTPPacketObserver& observer) = 0;
+    
+    // Deregisters an instance of a VoERTPPacketObserver derived class for a
+    // specified |channel|.
+    virtual int DeRegisterRTPPacketObserver(int channel) = 0;
 
     // Registers an instance of a VoERTPObserver derived class for a specified
     // |channel|. It will allow the user to observe callbacks related to the
@@ -142,6 +162,12 @@ public:
     // Deregisters an instance of a VoERTCPObserver derived class for a
     // specified |channel|.
     virtual int DeRegisterRTCPObserver(int channel) = 0;
+  
+    // Sends an RTP packet with comporessed data on a specific |channel|.
+    virtual int SendRTPPacket(int channel,
+                              uint32_t  timeStamp,
+                              const uint8_t*  payloadData,
+                              uint16_t  payloadSize) = 0;
 
     // Sets the local RTP synchronization source identifier (SSRC) explicitly.
     virtual int SetLocalSSRC(int channel, unsigned int ssrc) = 0;
