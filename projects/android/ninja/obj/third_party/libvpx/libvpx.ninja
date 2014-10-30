@@ -611,13 +611,12 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-exceptions $
     -Wno-missing-field-initializers -fvisibility=hidden -pipe -fPIC $
     -Wa,-I,/home/runamedia/webrtc_trunk/trunk/third_party/libvpx/source/config/linux/arm-neon-cpu-detect $
     -Wa,-I,/home/runamedia/webrtc_trunk/trunk/third_party/libvpx/source/config $
-    -Wa,-I,gen/third_party/libvpx -Wa,-mfpu=neon -Wno-format -march=armv7-a $
-    -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb -fno-tree-sra -fuse-ld=gold $
-    -Wno-psabi -mthumb-interwork -ffunction-sections -funwind-tables -g $
-    -fstack-protector -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
+    -Wa,-I,gen/third_party/libvpx -Wno-format -target arm-linux-androideabi -mcpu=cortex-a9 $
+     -ffunction-sections -funwind-tables -g $
+    -fstack-protector -fno-short-enums  -Wa,--noexecstack $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/gnu-libstdc++/$toolchain_version/include $
-    -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
+    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
+    -Os -I$android_ndk_path/sources/android/support/include -U__APPLE__ -D__ANDROID__ -D__linux__ -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
     -funwind-tables
 cflags_c = 
 cflags_cc = -fno-rtti -fno-threadsafe-statics -fvisibility-inlines-hidden $

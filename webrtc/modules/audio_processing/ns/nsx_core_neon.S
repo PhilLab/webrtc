@@ -119,7 +119,7 @@ DEFINE_FUNCTION WebRtcNsx_NoiseEstimationNeon
 LOOP_SET_LMAGN:
   ldrh r2, [r1], #2           @ magn[i]
   cmp r2, #0
-  streqh r3, [r12], #2        @ lmagn[i] = logval;
+  strheq r3, [r12], #2        @ lmagn[i] = logval;
   beq CHECK_LMAGN_COUNTER
 
   clz r6, r2

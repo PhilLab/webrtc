@@ -20,12 +20,11 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -Werror $
     -Wno-missing-field-initializers -fvisibility=hidden -pipe -fPIC -Wextra $
     -Wno-unused-parameter -Wno-missing-field-initializers $
     -Wno-strict-overflow -fno-builtin-cos -fno-builtin-sin $
-    -fno-builtin-cosf -fno-builtin-sinf -march=armv7-a -mfpu=vfpv3-d16 $
-    -mfloat-abi=softfp -mthumb -fno-tree-sra -fuse-ld=gold -Wno-psabi $
-    -mthumb-interwork -ffunction-sections -funwind-tables -g $
-    -fstack-protector -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
+    -fno-builtin-cosf -fno-builtin-sinf -target arm-linux-androideabi -mcpu=cortex-a9  $
+     -ffunction-sections -funwind-tables -g $
+    -fstack-protector -fno-short-enums  -Wa,--noexecstack $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/gnu-libstdc++/$toolchain_version/include $
+    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
     -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
     -funwind-tables
 cflags_c = 

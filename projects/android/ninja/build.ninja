@@ -1,11 +1,11 @@
 include conf.ninja
 cc = $
-    $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-gcc
+    $android_ndk_path/toolchains/llvm-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/clang
 cxx = $
-    $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-g++
+    $android_ndk_path/toolchains/llvm-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/clang++
 ld = $cc
 ldxx = $cxx
-ar = $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-ar
+ar = $android_ndk_path/toolchains/llvm-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/llvm-ar
 ar_host = /usr/bin/ar
 cc_host = /usr/bin/gcc
 cxx_host = /usr/bin/g++

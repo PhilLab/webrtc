@@ -25,7 +25,7 @@ case "$HOST_OS" in
 esac
 
 #GNU Toolchain Version
-TOOLCHAIN_VERSION=4.7
+TOOLCHAIN_VERSION=3.5
 
 #NDK-path
 if [[ $1 == *ndk* ]]; then
@@ -60,7 +60,7 @@ pushd `pwd`
 mkdir -p ./../../../build/android/webrtc
 
 #export ANDROID_NDK_PATH=$Input
-export ar=$Input/toolchains/arm-linux-androideabi-$TOOLCHAIN_VERSION/prebuilt/$HOST_OS-$ARCHTYPE/bin/arm-linux-androideabi-ar
+export ar=$Input/toolchains/llvm-$TOOLCHAIN_VERSION/prebuilt/$HOST_OS-$ARCHTYPE/bin/llvm-ar
 cd ./../../
 #rm -rf ./out
 
