@@ -28,6 +28,8 @@ class VideoRenderOpenGles20 {
   int32_t Render(const I420VideoFrame& frameToRender);
   int32_t SetCoordinates(int32_t zOrder, const float left, const float top,
                          const float right, const float bottom);
+  int32_t SetStreamCropping(const float left, const float top,
+                            const float right, const float bottom);
 
  private:
   void printGLString(const char *name, GLenum s);

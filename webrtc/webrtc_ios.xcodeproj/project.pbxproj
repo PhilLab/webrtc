@@ -1843,7 +1843,9 @@
 		890AC7B0B4F647A8A39DF4C4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COPY_PHASE_STRIP = NO;
 				PRODUCT_NAME = All;
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Release;
 		};
@@ -1972,7 +1974,9 @@
 		EC75BB9D51A32CA72656968D /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COPY_PHASE_STRIP = NO;
 				PRODUCT_NAME = All;
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Profile;
 		};
@@ -2071,7 +2075,9 @@
 		FE3E226FA5F298F2DDA9F0D4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COPY_PHASE_STRIP = NO;
 				PRODUCT_NAME = All;
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Debug;
 		};

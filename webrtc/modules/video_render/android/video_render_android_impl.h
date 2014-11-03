@@ -134,13 +134,14 @@ class VideoRenderAndroid: IVideoRender {
   VideoRenderType _renderType;
   jobject _ptrWindow;
 
+  // Map with streams to render.
+  typedef std::map<int32_t, AndroidStream*> AndroidStreamMap;
+  AndroidStreamMap _streamsMap;
+
  private:
   static bool JavaRenderThreadFun(void* obj);
   bool JavaRenderThreadProcess();
 
-  // Map with streams to render.
-  typedef std::map<int32_t, AndroidStream*> AndroidStreamMap;
-  AndroidStreamMap _streamsMap;
   // True if the _javaRenderThread thread shall be detached from the JVM.
   bool _javaShutDownFlag;
   EventWrapper& _javaShutdownEvent;

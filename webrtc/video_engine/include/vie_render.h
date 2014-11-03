@@ -92,6 +92,13 @@ class ViERender {
   // the number of ms a frame will be sent to rendering before the actual render
   // time.
   virtual int SetExpectedRenderDelay(int render_id, int render_delay) = 0;
+  
+  // Set cropping parameters for a render stream.
+  virtual int SetStreamCropping(int render_id,
+                                const float left,
+                                const float top,
+                                const float right,
+                                const float bottom) = 0;
 
   // Configures an already added render stream.
   virtual int ConfigureRender(int render_id,
