@@ -100,6 +100,13 @@ Channel::SendData(FrameType frameType,
                  "Channel::SendData(frameType=%u, payloadType=%u, timeStamp=%u,"
                  " payloadSize=%u, fragmentation=0x%x)",
                  frameType, payloadType, timeStamp, payloadSize, fragmentation);
+  
+    if (_forwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
+                     "SendData() method called on forwarding channel");
+        return -1;
+    }
 
     if (_includeAudioLevelIndication)
     {
@@ -140,6 +147,13 @@ Channel::InFrameType(int16_t frameType)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::InFrameType(frameType=%d)", frameType);
+  
+    if (_forwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
+                     "InFrameType() method called on forwarding channel");
+        return -1;
+    }
 
     CriticalSectionScoped cs(&_callbackCritSect);
     // 1 indicates speech
@@ -574,7 +588,8 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     
         if (_rtpPacketObserverPtr)
         {
-            _rtpPacketObserverPtr->OnIncomingPacket(payloadData, payloadSize);
+            _rtpPacketObserverPtr->OnIncomingPacket(kAudioFrameSpeech, rtpHeader->header.payloadType, rtpHeader->header.timestamp,
+                                                    payloadData, payloadSize);
         }
     }
 
@@ -759,13 +774,14 @@ int32_t
 Channel::CreateChannel(Channel*& channel,
                        int32_t channelId,
                        uint32_t instanceId,
-                       const Config& config)
+                       const Config& config,
+                       bool forwardingChannel)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId,channelId),
                  "Channel::CreateChannel(channelId=%d, instanceId=%d)",
         channelId, instanceId);
 
-    channel = new Channel(channelId, instanceId, config);
+    channel = new Channel(channelId, instanceId, config, forwardingChannel);
     if (channel == NULL)
     {
         WEBRTC_TRACE(kTraceMemory, kTraceVoice,
@@ -840,7 +856,8 @@ Channel::RecordFileEnded(int32_t id)
 
 Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
-                 const Config& config) :
+                 const Config& config,
+                 bool forwardingChannel) :
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     volume_settings_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
@@ -899,6 +916,7 @@ Channel::Channel(int32_t channelId,
     _sendFrameType(0),
     _rtpObserverPtr(NULL),
     _rtcpObserverPtr(NULL),
+    _forwardingChannel(forwardingChannel),
     _externalPlayout(false),
     _externalMixing(false),
     _inputIsOnHold(false),
@@ -1206,6 +1224,21 @@ Channel::Init()
       return -1;
     }
 
+    return 0;
+}
+
+int32_t
+Channel::SetEngineInformation(Statistics& engineStatistics,
+                              ProcessThread& moduleProcessThread,
+                              VoiceEngineObserver* voiceEngineObserver,
+                              CriticalSectionWrapper* callbackCritSect)
+{
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::SetEngineInformation()");
+    _engineStatisticsPtr = &engineStatistics;
+    _moduleProcessThreadPtr = &moduleProcessThread;
+    _voiceEngineObserverPtr = voiceEngineObserver;
+    _callbackCritSectPtr = callbackCritSect;
     return 0;
 }
 
@@ -3369,7 +3402,7 @@ Channel::RegisterRTPPacketObserver(VoERTPPacketObserver& observer)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::RegisterRTPPacketObserver()");
     CriticalSectionScoped cs(&_callbackCritSect);
-  
+
     if (_rtpObserverPtr)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3390,7 +3423,7 @@ Channel::DeRegisterRTPPacketObserver()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterRTPPacketObserver()");
     CriticalSectionScoped cs(&_callbackCritSect);
-  
+
     if (!_rtpObserverPtr)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3491,19 +3524,24 @@ Channel::DeRegisterRTCPObserver()
   
 int
 Channel::SendRTPPacket(int channel,
+                       FrameType frameType,
+                       int8_t payloadType,
                        uint32_t  timeStamp,
                        const uint8_t*  payloadData,
                        uint16_t  payloadSize)
 {
-    FrameType frameType = kAudioFrameSpeech;
-    int8_t payloadType = 0;
-    RTPFragmentationHeader* fragmentation = NULL;
-  
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendRTPPacket(frameType=%u, payloadType=%u, timeStamp=%u,"
-                 " payloadSize=%u, fragmentation=0x%x)",
-                 frameType, payloadType, timeStamp, payloadSize, fragmentation);
+                 " payloadSize=%u)",
+                 frameType, payloadType, timeStamp, payloadSize);
   
+    if (!_forwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
+                     "SendRTPPacket() method called on non forwarding channel");
+        return -1;
+    }
+
     if (_includeAudioLevelIndication)
     {
         // Store current audio level in the RTP/RTCP module.
@@ -3524,11 +3562,11 @@ Channel::SendRTPPacket(int channel,
                                          -1,
                                          payloadData,
                                          payloadSize,
-                                         fragmentation) == -1)
+                                         NULL) == -1)
     {
         _engineStatisticsPtr->SetLastError(
                                            VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
-                                           "Channel::SendData() failed to send data to RTP/RTCP module");
+                                           "Channel::SendRTPPacket() failed to send data to RTP/RTCP module");
         return -1;
     }
   

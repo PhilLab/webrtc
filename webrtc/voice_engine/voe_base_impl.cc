@@ -544,7 +544,7 @@ int VoEBaseImpl::Terminate()
     return TerminateInternal();
 }
 
-int VoEBaseImpl::CreateChannel() {
+int VoEBaseImpl::CreateChannel(bool forwardingChannel) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "CreateChannel()");
   CriticalSectionScoped cs(_shared->crit_sec());
@@ -553,19 +553,19 @@ int VoEBaseImpl::CreateChannel() {
       return -1;
   }
 
-  voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel();
+  voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel(forwardingChannel);
 
   return InitializeChannel(&channel_owner);
 }
 
-int VoEBaseImpl::CreateChannel(const Config& config) {
+int VoEBaseImpl::CreateChannel(const Config& config, bool forwardingChannel) {
   CriticalSectionScoped cs(_shared->crit_sec());
   if (!_shared->statistics().Initialized()) {
       _shared->SetLastError(VE_NOT_INITED, kTraceError);
       return -1;
   }
   voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel(
-      config);
+      config, forwardingChannel);
   return InitializeChannel(&channel_owner);
 }
 

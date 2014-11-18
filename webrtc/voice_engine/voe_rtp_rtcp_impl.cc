@@ -174,6 +174,8 @@ int VoERTP_RTCPImpl::DeRegisterRTCPObserver(int channel)
 }
   
 int VoERTP_RTCPImpl::SendRTPPacket(int channel,
+                                   FrameType frameType,
+                                   int8_t payloadType,
                                    uint32_t  timeStamp,
                                    const uint8_t*  payloadData,
                                    uint16_t  payloadSize)
@@ -193,7 +195,7 @@ int VoERTP_RTCPImpl::SendRTPPacket(int channel,
                               "SendRTPPacket() failed to locate channel");
         return -1;
     }
-    return channelPtr->SendRTPPacket(channel, timeStamp, payloadData, payloadSize);
+    return channelPtr->SendRTPPacket(channel, frameType, payloadType, timeStamp, payloadData, payloadSize);
 }
 
 int VoERTP_RTCPImpl::SetLocalSSRC(int channel, unsigned int ssrc)

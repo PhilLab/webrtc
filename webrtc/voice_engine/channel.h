@@ -169,9 +169,15 @@ public:
     static int32_t CreateChannel(Channel*& channel,
                                  int32_t channelId,
                                  uint32_t instanceId,
-                                 const Config& config);
-    Channel(int32_t channelId, uint32_t instanceId, const Config& config);
+                                 const Config& config,
+                                 bool forwardingChannel);
+    Channel(int32_t channelId, uint32_t instanceId, const Config& config, bool forwardingChannel);
     int32_t Init();
+    int32_t SetEngineInformation(
+        Statistics& engineStatistics,
+        ProcessThread& moduleProcessThread,
+        VoiceEngineObserver* voiceEngineObserver,
+        CriticalSectionWrapper* callbackCritSect);
     int32_t SetEngineInformation(
         Statistics& engineStatistics,
         OutputMixer& outputMixer,
@@ -340,6 +346,8 @@ public:
     int RegisterRTCPObserver(VoERTCPObserver& observer);
     int DeRegisterRTCPObserver();
     int SendRTPPacket(int channel,
+                      FrameType frameType,
+                      int8_t payloadType,
                       uint32_t  timeStamp,
                       const uint8_t*  payloadData,
                       uint16_t  payloadSize);
@@ -598,6 +606,7 @@ private:
     VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
     // VoEBase
+    bool _forwardingChannel;
     bool _externalPlayout;
     bool _externalMixing;
     bool _inputIsOnHold;

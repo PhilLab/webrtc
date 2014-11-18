@@ -35,6 +35,8 @@ public:
   
     // RTP
     virtual int SendRTPPacket(int channel,
+                              FrameType frameType,
+                              int8_t payloadType,
                               uint32_t  timeStamp,
                               const uint8_t*  payloadData,
                               uint16_t  payloadSize);

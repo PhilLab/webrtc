@@ -52,6 +52,9 @@ class WEBRTC_DLLEXPORT VoERTPPacketObserver
 {
 public:
     virtual void OnIncomingPacket(
+                                  FrameType frameType,
+                                  int8_t payloadType,
+                                  uint32_t timeStamp,
                                   const uint8_t* payloadData,
                                   uint16_t payloadSize) = 0;
   
@@ -165,6 +168,8 @@ public:
   
     // Sends an RTP packet with comporessed data on a specific |channel|.
     virtual int SendRTPPacket(int channel,
+                              FrameType frameType,
+                              int8_t payloadType,
                               uint32_t  timeStamp,
                               const uint8_t*  payloadData,
                               uint16_t  payloadSize) = 0;
