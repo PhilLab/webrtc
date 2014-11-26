@@ -173,15 +173,15 @@ int VoERTP_RTCPImpl::DeRegisterRTCPObserver(int channel)
     return channelPtr->DeRegisterRTCPObserver();
 }
   
-int VoERTP_RTCPImpl::SendRTPPacket(int channel,
-                                   FrameType frameType,
-                                   int8_t payloadType,
-                                   uint32_t  timeStamp,
-                                   const uint8_t*  payloadData,
-                                   uint16_t  payloadSize)
+int VoERTP_RTCPImpl::SendData(int channel,
+                              FrameType frameType,
+                              int8_t payloadType,
+                              uint32_t  timeStamp,
+                              const uint8_t*  payloadData,
+                              uint16_t  payloadSize)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SendRTPPacket(channel=%d)", channel);
+                 "SendData(channel=%d)", channel);
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -192,10 +192,10 @@ int VoERTP_RTCPImpl::SendRTPPacket(int channel,
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                              "SendRTPPacket() failed to locate channel");
+                              "SendData() failed to locate channel");
         return -1;
     }
-    return channelPtr->SendRTPPacket(channel, frameType, payloadType, timeStamp, payloadData, payloadSize);
+    return channelPtr->SendData(frameType, payloadType, timeStamp, payloadData, payloadSize, NULL);
 }
 
 int VoERTP_RTCPImpl::SetLocalSSRC(int channel, unsigned int ssrc)

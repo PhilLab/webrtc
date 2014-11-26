@@ -167,12 +167,12 @@ public:
     virtual int DeRegisterRTCPObserver(int channel) = 0;
   
     // Sends an RTP packet with comporessed data on a specific |channel|.
-    virtual int SendRTPPacket(int channel,
-                              FrameType frameType,
-                              int8_t payloadType,
-                              uint32_t  timeStamp,
-                              const uint8_t*  payloadData,
-                              uint16_t  payloadSize) = 0;
+    virtual int SendData(int channel,
+                         FrameType frameType,
+                         int8_t payloadType,
+                         uint32_t  timeStamp,
+                         const uint8_t*  payloadData,
+                         uint16_t  payloadSize) = 0;
 
     // Sets the local RTP synchronization source identifier (SSRC) explicitly.
     virtual int SetLocalSSRC(int channel, unsigned int ssrc) = 0;

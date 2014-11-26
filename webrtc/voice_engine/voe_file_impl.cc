@@ -619,7 +619,7 @@ int VoEFileImpl::StopRecordingMicrophone()
 
     // TODO(xians): consider removing Start/StopRecording() in
     // Start/StopRecordingMicrophone() if no channel is recording.
-    if (_shared->NumOfSendingChannels() == 0 &&
+    if (_shared->NumOfRecordingChannels() == 0 &&
         _shared->audio_device()->Recording())
     {
         // Stop audio-device recording if no channel is recording
@@ -739,7 +739,7 @@ int VoEFileImpl::StopRecordingCall()
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    if (_shared->NumOfSendingChannels() == 0 &&
+    if (_shared->NumOfRecordingChannels() == 0 &&
         _shared->audio_device()->Recording())
     {
         // Stop audio-device recording if no channel is recording

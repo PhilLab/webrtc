@@ -345,12 +345,6 @@ public:
     int DeRegisterRTPObserver();
     int RegisterRTCPObserver(VoERTCPObserver& observer);
     int DeRegisterRTCPObserver();
-    int SendRTPPacket(int channel,
-                      FrameType frameType,
-                      int8_t payloadType,
-                      uint32_t  timeStamp,
-                      const uint8_t*  payloadData,
-                      uint16_t  payloadSize);
     int SetLocalSSRC(unsigned int ssrc);
     int GetLocalSSRC(unsigned int& ssrc);
     int GetRemoteSSRC(unsigned int& ssrc);
@@ -472,6 +466,10 @@ public:
     int32_t ChannelId() const
     {
         return _channelId;
+    }
+    bool IsForwardingChannel() const
+    {
+        return _forwardingChannel;
     }
     bool Playing() const
     {

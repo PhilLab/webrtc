@@ -56,6 +56,7 @@ public:
       _audioDeviceLayer = layer;
     }
 
+    int NumOfRecordingChannels();
     int NumOfSendingChannels();
     int NumOfPlayingChannels();
 

@@ -571,7 +571,8 @@ int VoEBaseImpl::CreateChannel(const Config& config, bool forwardingChannel) {
 
 int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner)
 {
-    if (channel_owner->channel()->SetEngineInformation(
+    if (!channel_owner->channel()->IsForwardingChannel() &&
+        channel_owner->channel()->SetEngineInformation(
             _shared->statistics(),
             *_shared->output_mixer(),
             *_shared->transmit_mixer(),
@@ -583,6 +584,20 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner)
           VE_CHANNEL_NOT_CREATED,
           kTraceError,
           "CreateChannel() failed to associate engine and channel."
+          " Destroying channel.");
+      _shared->channel_manager()
+          .DestroyChannel(channel_owner->channel()->ChannelId());
+      return -1;
+    } else if (channel_owner->channel()->IsForwardingChannel() &&
+               channel_owner->channel()->SetEngineInformation(
+                   _shared->statistics(),
+                   *_shared->process_thread(),
+                   _voiceEngineObserverPtr,
+                   &_callbackCritSect) != 0) {
+      _shared->SetLastError(
+          VE_CHANNEL_NOT_CREATED,
+          kTraceError,
+          "CreateChannel() failed to associate engine and forwarding channel."
           " Destroying channel.");
       _shared->channel_manager()
           .DestroyChannel(channel_owner->channel()->ChannelId());
@@ -764,7 +779,7 @@ int VoEBaseImpl::StartSend(int channel)
     {
         return 0;
     }
-    if (StartSend() != 0)
+    if (!channelPtr->IsForwardingChannel() && StartSend() != 0)
     {
         _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
             "StartSend() failed to start recording");
@@ -797,7 +812,10 @@ int VoEBaseImpl::StopSend(int channel)
             VoEId(_shared->instance_id(), -1),
             "StopSend() failed to stop sending for channel %d", channel);
     }
-    return StopSend();
+    if (!channelPtr->IsForwardingChannel())
+        return StopSend();
+    else
+        return 0;
 }
 
 int VoEBaseImpl::GetVersion(char version[1024])
@@ -1080,7 +1098,7 @@ int32_t VoEBaseImpl::StopSend()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::StopSend()");
 
-    if (_shared->NumOfSendingChannels() == 0 &&
+    if (_shared->NumOfRecordingChannels() == 0 &&
         !_shared->transmit_mixer()->IsRecordingMic())
     {
         // Stop audio-device recording if no channel is recording

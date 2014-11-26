@@ -186,7 +186,7 @@ int VoEExternalMediaImpl::ExternalRecordingInsertData(
            "ExternalRecordingInsertData() external recording is not enabled");
         return -1;
     }
-    if (shared_->NumOfSendingChannels() == 0)
+    if (shared_->NumOfRecordingChannels() == 0)
     {
         shared_->SetLastError(VE_ALREADY_SENDING, kTraceError,
             "SetExternalRecordingStatus() no channel is sending");

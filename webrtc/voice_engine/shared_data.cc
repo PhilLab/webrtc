@@ -74,6 +74,19 @@ void SharedData::set_audio_processing(AudioProcessing* audioproc) {
   _transmitMixerPtr->SetAudioProcessingModule(audioproc);
   _outputMixerPtr->SetAudioProcessingModule(audioproc);
 }
+  
+int SharedData::NumOfRecordingChannels() {
+  ChannelManager::Iterator it(&_channelManager);
+  int recording_channels = 0;
+  
+  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
+       it.Increment()) {
+    if (!it.GetChannel()->IsForwardingChannel() && it.GetChannel()->Sending())
+      ++recording_channels;
+  }
+  
+  return recording_channels;
+}
 
 int SharedData::NumOfSendingChannels() {
   ChannelManager::Iterator it(&_channelManager);
