@@ -103,6 +103,7 @@ Channel::SendData(FrameType frameType,
 
     if (_includeAudioLevelIndication)
     {
+        assert(!_forwardingChannel);
         // Store current audio level in the RTP/RTCP module.
         // The level will be used in combination with voice-activity state
         // (frameType) to add an RTP header extension
@@ -581,14 +582,14 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
       ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
     }
   
-    if (_rtpPacketObserver)
+    if (_rtpObserver)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
     
-        if (_rtpPacketObserverPtr)
+        if (_rtpObserverPtr)
         {
-            _rtpPacketObserverPtr->OnIncomingPacket(kAudioFrameSpeech, rtpHeader->header.payloadType, rtpHeader->header.timestamp,
-                                                    payloadData, payloadSize);
+            _rtpObserverPtr->OnIncomingRTPPacket(kAudioFrameSpeech, rtpHeader->header.payloadType, rtpHeader->header.timestamp,
+                                                 payloadData, payloadSize);
         }
     }
 
@@ -927,7 +928,6 @@ Channel::Channel(int32_t channelId,
     _externalMixing(false),
     _inputIsOnHold(false),
     _mixFileWithMicrophone(false),
-    _rtpPacketObserver(false),
     _rtpObserver(false),
     _rtcpObserver(false),
     _mute(false),
@@ -3692,80 +3692,12 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
 }
 
 #endif // #ifdef WEBRTC_VOICE_ENGINE_NR
-  
-int
-Channel::RegisterRTPPacketObserver(VoERTPPacketObserver& observer)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::RegisterRTPPacketObserver()");
-  
-    if (_forwardingChannel)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::RegisterRTPPacketObserver() RTP packet observer cannot be registered on forwarding channel");
-        return -1;
-    }
-
-    CriticalSectionScoped cs(&_callbackCritSect);
-  
-    if (_rtpPacketObserverPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-                                           VE_INVALID_OPERATION, kTraceError,
-                                           "RegisterRTPPacketObserver() observer already enabled");
-        return -1;
-    }
-  
-    _rtpPacketObserverPtr = &observer;
-    _rtpPacketObserver = true;
-  
-    return 0;
-}
-  
-int
-Channel::DeRegisterRTPPacketObserver()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::DeRegisterRTPPacketObserver()");
-  
-    if (_forwardingChannel)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::DeRegisterRTPPacketObserver() RTP packet observer cannot be deregistered from forwarding channel");
-        return -1;
-    }
-  
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (!_rtpPacketObserverPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-                                           VE_INVALID_OPERATION, kTraceWarning,
-                                           "DeRegisterRTPPacketObserver() observer already disabled");
-        return 0;
-    }
-  
-    _rtpPacketObserver = false;
-    _rtpPacketObserverPtr = NULL;
-  
-    return 0;
-}
 
 int
 Channel::RegisterRTPObserver(VoERTPObserver& observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::RegisterRTPObserver()");
-  
-    if (_forwardingChannel)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::RegisterRTPPacketObserver() RTP packet observer cannot be registered on forwarding channel");
-        return -1;
-    }
 
     CriticalSectionScoped cs(&_callbackCritSect);
 
@@ -3788,14 +3720,6 @@ Channel::DeRegisterRTPObserver()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterRTPObserver()");
-  
-    if (_forwardingChannel)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::DeRegisterRTPPacketObserver() RTP packet observer cannot be deregistered from forwarding channel");
-        return -1;
-    }
 
     CriticalSectionScoped cs(&_callbackCritSect);
 

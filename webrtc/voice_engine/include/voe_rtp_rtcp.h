@@ -46,21 +46,6 @@ namespace webrtc {
 
 class ViENetwork;
 class VoiceEngine;
-  
-// VoERTPPacketObserver
-class WEBRTC_DLLEXPORT VoERTPPacketObserver
-{
-public:
-    virtual void OnIncomingPacket(
-                                  FrameType frameType,
-                                  int8_t payloadType,
-                                  uint32_t timeStamp,
-                                  const uint8_t* payloadData,
-                                  uint16_t payloadSize) = 0;
-  
-protected:
-    virtual ~VoERTPPacketObserver() {}
-  };
 
 // VoERTPObserver
 class WEBRTC_DLLEXPORT VoERTPObserver
@@ -71,6 +56,10 @@ public:
 
     virtual void OnIncomingSSRCChanged(
         int channel, unsigned int SSRC) = 0;
+
+    virtual void OnIncomingRTPPacket(
+        FrameType frameType, int8_t payloadType, uint32_t timeStamp,
+        const uint8_t* payloadData, uint16_t payloadSize) = 0;
 
 protected:
     virtual ~VoERTPObserver() {}
@@ -139,18 +128,10 @@ public:
     // be zero for all sub-API:s before the VoiceEngine object can be safely
     // deleted.
     virtual int Release() = 0;
-  
-    // Registers an instance of a VoERTPPacketObserver derived class for a specified
-    // |channel|. It will allow the user to receive RTP content with comporesed data.
-    virtual int RegisterRTPPacketObserver(int channel, VoERTPPacketObserver& observer) = 0;
-    
-    // Deregisters an instance of a VoERTPPacketObserver derived class for a
-    // specified |channel|.
-    virtual int DeRegisterRTPPacketObserver(int channel) = 0;
 
     // Registers an instance of a VoERTPObserver derived class for a specified
     // |channel|. It will allow the user to observe callbacks related to the
-    // RTP protocol such as changes in the incoming SSRC.
+    // RTP protocol such as incoming RTP packets or changes in the incoming SSRC.
     virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer) = 0;
 
     // Deregisters an instance of a VoERTPObserver derived class for a

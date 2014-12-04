@@ -50,7 +50,6 @@ class TelephoneEventHandler;
 class ViENetwork;
 class VoEMediaProcess;
 class VoERTCPObserver;
-class VoERTPPacketObserver;
 class VoERTPObserver;
 class VoiceEngineObserver;
 
@@ -339,8 +338,6 @@ public:
 #endif
 
     // VoERTP_RTCP
-    int RegisterRTPPacketObserver(VoERTPPacketObserver& observer);
-    int DeRegisterRTPPacketObserver();
     int RegisterRTPObserver(VoERTPObserver& observer);
     int DeRegisterRTPObserver();
     int RegisterRTCPObserver(VoERTCPObserver& observer);
@@ -600,7 +597,6 @@ private:
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
     int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
-    VoERTPPacketObserver* _rtpPacketObserverPtr;
     VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
     // VoEBase
@@ -609,7 +605,6 @@ private:
     bool _externalMixing;
     bool _inputIsOnHold;
     bool _mixFileWithMicrophone;
-    bool _rtpPacketObserver;
     bool _rtpObserver;
     bool _rtcpObserver;
     // VoEVolumeControl
