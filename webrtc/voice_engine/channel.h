@@ -56,7 +56,7 @@ class VoiceEngineObserver;
 struct CallStatistics;
 struct ReportBlock;
 struct SenderInfo;
-
+  
 namespace voe {
 
 class Statistics;
@@ -169,8 +169,8 @@ public:
                                  int32_t channelId,
                                  uint32_t instanceId,
                                  const Config& config,
-                                 bool forwardingChannel);
-    Channel(int32_t channelId, uint32_t instanceId, const Config& config, bool forwardingChannel);
+                                 ChannelMode channelMode);
+    Channel(int32_t channelId, uint32_t instanceId, const Config& config, ChannelMode channelMode);
     int32_t Init();
     int32_t SetEngineInformation(
         Statistics& engineStatistics,
@@ -464,9 +464,9 @@ public:
     {
         return _channelId;
     }
-    bool IsForwardingChannel() const
+    ChannelMode GetChannelMode() const
     {
-        return _forwardingChannel;
+        return _channelMode;
     }
     bool Playing() const
     {
@@ -600,7 +600,7 @@ private:
     VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
     // VoEBase
-    bool _forwardingChannel;
+    ChannelMode _channelMode;
     bool _externalPlayout;
     bool _externalMixing;
     bool _inputIsOnHold;

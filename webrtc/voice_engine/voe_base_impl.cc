@@ -544,7 +544,7 @@ int VoEBaseImpl::Terminate()
     return TerminateInternal();
 }
 
-int VoEBaseImpl::CreateChannel(bool forwardingChannel) {
+int VoEBaseImpl::CreateChannel(ChannelMode channelMode) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "CreateChannel()");
   CriticalSectionScoped cs(_shared->crit_sec());
@@ -553,25 +553,25 @@ int VoEBaseImpl::CreateChannel(bool forwardingChannel) {
       return -1;
   }
 
-  voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel(forwardingChannel);
+  voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel(channelMode);
 
   return InitializeChannel(&channel_owner);
 }
 
-int VoEBaseImpl::CreateChannel(const Config& config, bool forwardingChannel) {
+int VoEBaseImpl::CreateChannel(const Config& config, ChannelMode channelMode) {
   CriticalSectionScoped cs(_shared->crit_sec());
   if (!_shared->statistics().Initialized()) {
       _shared->SetLastError(VE_NOT_INITED, kTraceError);
       return -1;
   }
   voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel(
-      config, forwardingChannel);
+      config, channelMode);
   return InitializeChannel(&channel_owner);
 }
 
 int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner)
 {
-    if (!channel_owner->channel()->IsForwardingChannel() &&
+    if (channel_owner->channel()->GetChannelMode() == kFullChannel &&
         channel_owner->channel()->SetEngineInformation(
             _shared->statistics(),
             *_shared->output_mixer(),
@@ -588,7 +588,8 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner)
       _shared->channel_manager()
           .DestroyChannel(channel_owner->channel()->ChannelId());
       return -1;
-    } else if (channel_owner->channel()->IsForwardingChannel() &&
+    } else if ((channel_owner->channel()->GetChannelMode() == kReceiveForwardingChannel ||
+                channel_owner->channel()->GetChannelMode() == kSendForwardingChannel) &&
                channel_owner->channel()->SetEngineInformation(
                    _shared->statistics(),
                    *_shared->process_thread(),
@@ -779,7 +780,7 @@ int VoEBaseImpl::StartSend(int channel)
     {
         return 0;
     }
-    if (!channelPtr->IsForwardingChannel() && StartSend() != 0)
+    if (channelPtr->GetChannelMode() == kFullChannel && StartSend() != 0)
     {
         _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
             "StartSend() failed to start recording");
@@ -812,7 +813,7 @@ int VoEBaseImpl::StopSend(int channel)
             VoEId(_shared->instance_id(), -1),
             "StopSend() failed to stop sending for channel %d", channel);
     }
-    if (!channelPtr->IsForwardingChannel())
+    if (channelPtr->GetChannelMode() == kFullChannel)
         return StopSend();
     else
         return 0;

@@ -100,10 +100,12 @@ Channel::SendData(FrameType frameType,
                  "Channel::SendData(frameType=%u, payloadType=%u, timeStamp=%u,"
                  " payloadSize=%u, fragmentation=0x%x)",
                  frameType, payloadType, timeStamp, payloadSize, fragmentation);
+  
+    assert(_channelMode != kReceiveForwardingChannel);
 
     if (_includeAudioLevelIndication)
     {
-        assert(!_forwardingChannel);
+        assert(_channelMode != kSendForwardingChannel);
         // Store current audio level in the RTP/RTCP module.
         // The level will be used in combination with voice-activity state
         // (frameType) to add an RTP header extension
@@ -262,7 +264,7 @@ Channel::OnPlayTelephoneEvent(int32_t id,
                  "Channel::OnPlayTelephoneEvent(id=%d, event=%u, lengthMs=%u,"
                  " volume=%u)", id, event, lengthMs, volume);
   
-    assert(!_forwardingChannel);
+    assert(_channelMode == kFullChannel);
 
     if (!_playOutbandDtmfEvent || (event > 15))
     {
@@ -287,7 +289,7 @@ Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
 
     int32_t channel = VoEChannelId(id);
     assert(channel == _channelId);
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
   
     // Update ssrc so that NTP for AV sync can be updated.
     _rtpRtcpModule->SetRemoteSSRC(ssrc);
@@ -314,7 +316,7 @@ void Channel::OnIncomingCSRCChanged(int32_t id,
 
     int32_t channel = VoEChannelId(id);
     assert(channel == _channelId);
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
 
     if (_rtpObserver)
     {
@@ -328,7 +330,7 @@ void Channel::OnIncomingCSRCChanged(int32_t id,
 }
 
 void Channel::ResetStatistics(uint32_t ssrc) {
-  assert(!_forwardingChannel);
+  assert(_channelMode != kSendForwardingChannel);
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(ssrc);
   if (statistician) {
@@ -382,7 +384,7 @@ Channel::OnInitializeDecoder(
                  id, payloadType, payloadName, frequency, channels, rate);
 
     assert(VoEChannelId(id) == _channelId);
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
 
     CodecInst receiveCodec = {0};
     CodecInst dummyCodec = {0};
@@ -416,7 +418,7 @@ Channel::OnPacketTimeout(int32_t id)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPacketTimeout(id=%d)", id);
 
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
   
     CriticalSectionScoped cs(_callbackCritSectPtr);
     if (_voiceEngineObserverPtr)
@@ -448,7 +450,7 @@ Channel::OnReceivedPacket(int32_t id,
                  id, packetType);
 
     assert(VoEChannelId(id) == _channelId);
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
 
     // Notify only for the case when we have restarted an RTP session.
     if (_rtpPacketTimedOut && (kPacketRtp == packetType))
@@ -479,7 +481,7 @@ Channel::OnPeriodicDeadOrAlive(int32_t id,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPeriodicDeadOrAlive(id=%d, alive=%d)", id, alive);
   
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
 
     {
         CriticalSectionScoped cs(&_callbackCritSect);
@@ -539,11 +541,11 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
                  rtpHeader->header.payloadType,
                  rtpHeader->type.Audio.channel);
   
-    assert(!_forwardingChannel);
+    assert(_channelMode != kSendForwardingChannel);
 
     _lastRemoteTimeStamp = rtpHeader->header.timestamp;
 
-    if (!channel_state_.Get().playing)
+    if (_channelMode == kFullChannel && !channel_state_.Get().playing)
     {
         // Avoid inserting into NetEQ when we are not playing. Count the
         // packet as discarded.
@@ -556,7 +558,8 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     }
 
     // Push the incoming payload (parsed and ready for decoding) into the ACM
-    if (audio_coding_->IncomingPacket(payloadData,
+    if (_channelMode == kFullChannel &&
+        audio_coding_->IncomingPacket(payloadData,
                                       payloadSize,
                                       *rtpHeader) != 0)
     {
@@ -566,20 +569,23 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
         return -1;
     }
 
-    // Update the packet delay.
-    UpdatePacketDelay(rtpHeader->header.timestamp,
-                      rtpHeader->header.sequenceNumber);
+    if (_channelMode == kFullChannel)
+    {
+        // Update the packet delay.
+        UpdatePacketDelay(rtpHeader->header.timestamp,
+                          rtpHeader->header.sequenceNumber);
 
-    uint16_t round_trip_time = 0;
-    _rtpRtcpModule->RTT(rtp_receiver_->SSRC(), &round_trip_time,
-                        NULL, NULL, NULL);
-
-    std::vector<uint16_t> nack_list = audio_coding_->GetNackList(
-        round_trip_time);
-    if (!nack_list.empty()) {
-      // Can't use nack_list.data() since it's not supported by all
-      // compilers.
-      ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
+        uint16_t round_trip_time = 0;
+        _rtpRtcpModule->RTT(rtp_receiver_->SSRC(), &round_trip_time,
+                            NULL, NULL, NULL);
+      
+        std::vector<uint16_t> nack_list = audio_coding_->GetNackList(
+            round_trip_time);
+        if (!nack_list.empty()) {
+            // Can't use nack_list.data() since it's not supported by all
+            // compilers.
+            ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
+        }
     }
   
     if (_rtpObserver)
@@ -598,7 +604,7 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
 
 bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
                                 int rtp_packet_length) {
-  assert(!_forwardingChannel);
+  assert(_channelMode != kSendForwardingChannel);
   RTPHeader header;
   if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length, &header)) {
     WEBRTC_TRACE(kTraceDebug, webrtc::kTraceVoice, _channelId,
@@ -617,7 +623,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetAudioFrame(id=%d)", id);
 
-    assert(!_forwardingChannel);
+    assert(_channelMode == kFullChannel);
   
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
     if (audio_coding_->PlayoutData10Ms(audioFrame.sample_rate_hz_,
@@ -739,7 +745,7 @@ Channel::NeededFrequency(int32_t id)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::NeededFrequency(id=%d)", id);
   
-    assert(!_forwardingChannel);
+    assert(_channelMode == kFullChannel);
 
     int highestNeeded = 0;
 
@@ -780,13 +786,13 @@ Channel::CreateChannel(Channel*& channel,
                        int32_t channelId,
                        uint32_t instanceId,
                        const Config& config,
-                       bool forwardingChannel)
+                       ChannelMode channelMode)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId,channelId),
-                 "Channel::CreateChannel(channelId=%d, instanceId=%d)",
-        channelId, instanceId);
+                 "Channel::CreateChannel(channelId=%d, instanceId=%d, channelMode=%d)",
+        channelId, instanceId, channelMode);
 
-    channel = new Channel(channelId, instanceId, config, forwardingChannel);
+    channel = new Channel(channelId, instanceId, config, channelMode);
     if (channel == NULL)
     {
         WEBRTC_TRACE(kTraceMemory, kTraceVoice,
@@ -804,6 +810,8 @@ Channel::PlayNotification(int32_t id, uint32_t durationMs)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PlayNotification(id=%d, durationMs=%d)",
                  id, durationMs);
+  
+    assert(_channelMode == kFullChannel);
 
     // Not implement yet
 }
@@ -814,6 +822,8 @@ Channel::RecordNotification(int32_t id, uint32_t durationMs)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RecordNotification(id=%d, durationMs=%d)",
                  id, durationMs);
+  
+    assert(_channelMode == kFullChannel);
 
     // Not implement yet
 }
@@ -823,6 +833,8 @@ Channel::PlayFileEnded(int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PlayFileEnded(id=%d)", id);
+  
+    assert(_channelMode == kFullChannel);
 
     if (id == _inputFilePlayerId)
     {
@@ -849,6 +861,7 @@ Channel::RecordFileEnded(int32_t id)
                  "Channel::RecordFileEnded(id=%d)", id);
 
     assert(id == _outputFileRecorderId);
+    assert(_channelMode == kFullChannel);
 
     CriticalSectionScoped cs(&_fileCritSect);
 
@@ -862,25 +875,25 @@ Channel::RecordFileEnded(int32_t id)
 Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
                  const Config& config,
-                 bool forwardingChannel) :
+                 ChannelMode channelMode) :
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     volume_settings_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
     _channelId(channelId),
-    rtp_header_parser_(forwardingChannel ? NULL : RtpHeaderParser::Create()),
+    rtp_header_parser_(channelMode == kSendForwardingChannel ? NULL : RtpHeaderParser::Create()),
     rtp_payload_registry_(
-        forwardingChannel ? NULL :
+        channelMode == kSendForwardingChannel ? NULL :
         new RTPPayloadRegistry(channelId,
-                               RTPPayloadStrategy::CreateStrategy(true))),
+            RTPPayloadStrategy::CreateStrategy(true))),
     rtp_receive_statistics_(ReceiveStatistics::Create(
         Clock::GetRealTimeClock())),
-    rtp_receiver_(forwardingChannel ? NULL : RtpReceiver::CreateAudioReceiver(
+    rtp_receiver_(channelMode == kSendForwardingChannel ? NULL : RtpReceiver::CreateAudioReceiver(
         VoEModuleId(instanceId, channelId), Clock::GetRealTimeClock(), this,
         this, this, rtp_payload_registry_.get())),
-    telephone_event_handler_(forwardingChannel ? NULL : rtp_receiver_->GetTelephoneEventHandler()),
-    audio_coding_(forwardingChannel ? NULL : config.Get<AudioCodingModuleFactory>().Create(
-        VoEModuleId(instanceId, channelId))),
+    telephone_event_handler_(channelMode == kSendForwardingChannel ? NULL : rtp_receiver_->GetTelephoneEventHandler()),
+    audio_coding_((channelMode == kFullChannel || channelMode == kReceiveForwardingChannel) ? config.Get<AudioCodingModuleFactory>().Create(
+        VoEModuleId(instanceId, channelId)) : NULL),
     _rtpDumpIn(*RtpDump::CreateRtpDump()),
     _rtpDumpOut(*RtpDump::CreateRtpDump()),
     _outputAudioLevel(),
@@ -916,14 +929,14 @@ Channel::Channel(int32_t channelId,
     _voiceEngineObserverPtr(NULL),
     _callbackCritSectPtr(NULL),
     _transportPtr(NULL),
-    rx_audioproc_(forwardingChannel ? NULL : AudioProcessing::Create(
-        VoEModuleId(instanceId, channelId))),
+    rx_audioproc_(channelMode == kFullChannel ? AudioProcessing::Create(
+        VoEModuleId(instanceId, channelId)) : NULL),
     _rxVadObserverPtr(NULL),
     _oldVadDecision(-1),
     _sendFrameType(0),
     _rtpObserverPtr(NULL),
     _rtcpObserverPtr(NULL),
-    _forwardingChannel(forwardingChannel),
+    _channelMode(channelMode),
     _externalPlayout(false),
     _externalMixing(false),
     _inputIsOnHold(false),
@@ -995,7 +1008,7 @@ Channel::~Channel()
         DeRegisterExternalMediaProcessing(kRecordingPerChannel);
     }
     StopSend();
-    if (!_forwardingChannel)
+    if (_channelMode == kFullChannel)
         StopPlayout();
 
     {
@@ -1027,14 +1040,14 @@ Channel::~Channel()
     // 1. De-register callbacks in modules
     // 2. De-register modules in process thread
     // 3. Destroy modules
-    if (!_forwardingChannel && audio_coding_->RegisterTransportCallback(NULL) == -1)
+    if (_channelMode == kFullChannel && audio_coding_->RegisterTransportCallback(NULL) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                      VoEId(_instanceId,_channelId),
                      "~Channel() failed to de-register transport callback"
                      " (Audio coding module)");
     }
-    if (!_forwardingChannel && audio_coding_->RegisterVADCallback(NULL) == -1)
+    if (_channelMode == kFullChannel && audio_coding_->RegisterVADCallback(NULL) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1095,7 +1108,7 @@ Channel::Init()
     }
     // --- ACM initialization
 
-    if (!_forwardingChannel && ((audio_coding_->InitializeReceiver() == -1) ||
+    if ((_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel) && ((audio_coding_->InitializeReceiver() == -1) ||
 #ifdef WEBRTC_CODEC_AVT
         // out-of-band Dtmf tones are played out by default
         (audio_coding_->SetDtmfPlayoutStatus(true) == -1) ||
@@ -1115,7 +1128,7 @@ Channel::Init()
     // disabled by the user.
     // After StopListen (when no sockets exists), RTCP packets will no longer
     // be transmitted since the Transport object will then be invalid.
-    if (!_forwardingChannel)
+    if (_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel)
         telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
     // RTCP is enabled by default.
     if (_rtpRtcpModule->SetRTCPStatus(kRtcpCompound) == -1)
@@ -1126,7 +1139,7 @@ Channel::Init()
         return -1;
     }
 
-    if (!_forwardingChannel)
+    if (_channelMode == kFullChannel)
     {
          // --- Register all permanent callbacks
         const bool fail =
@@ -1150,7 +1163,7 @@ Channel::Init()
 
     for (int idx = 0; idx < nSupportedCodecs; idx++)
     {
-        if (!_forwardingChannel)
+        if (_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel)
         {
             // Open up the RTP/RTCP receiver for all supported codecs
             if ((audio_coding_->Codec(idx, &codec) == -1) ||
@@ -1189,7 +1202,8 @@ Channel::Init()
         if (!STR_CASE_CMP(codec.plname, "telephone-event"))
         {
             if ((_rtpRtcpModule->RegisterSendPayload(codec) == -1) ||
-                (!_forwardingChannel && (audio_coding_->RegisterReceiveCodec(codec) == -1)))
+                ((_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel) &&
+                 (audio_coding_->RegisterReceiveCodec(codec) == -1)))
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                              VoEId(_instanceId,_channelId),
@@ -1201,8 +1215,10 @@ Channel::Init()
 
         if (!STR_CASE_CMP(codec.plname, "CN"))
         {
-            if ((!_forwardingChannel && (audio_coding_->RegisterSendCodec(codec) == -1)) ||
-                (!_forwardingChannel && (audio_coding_->RegisterReceiveCodec(codec) == -1)) ||
+            if (((_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel) &&
+                 (audio_coding_->RegisterSendCodec(codec) == -1)) ||
+                ((_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel) &&
+                 (audio_coding_->RegisterReceiveCodec(codec) == -1)) ||
                 (_rtpRtcpModule->RegisterSendPayload(codec) == -1))
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
@@ -1217,7 +1233,8 @@ Channel::Init()
         // We will not receive an OnInitializeDecoder() callback for RED.
         if (!STR_CASE_CMP(codec.plname, "RED"))
         {
-            if (!_forwardingChannel && (audio_coding_->RegisterReceiveCodec(codec) == -1))
+            if ((_channelMode == kFullChannel || _channelMode == kReceiveForwardingChannel) &&
+                (audio_coding_->RegisterReceiveCodec(codec) == -1))
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                              VoEId(_instanceId,_channelId),
@@ -1229,11 +1246,11 @@ Channel::Init()
 #endif
     }
 
-    if (!_forwardingChannel && (rx_audioproc_->noise_suppression()->set_level(kDefaultNsMode) != 0)) {
+    if ((_channelMode == kFullChannel) && (rx_audioproc_->noise_suppression()->set_level(kDefaultNsMode) != 0)) {
       LOG_FERR1(LS_ERROR, noise_suppression()->set_level, kDefaultNsMode);
       return -1;
     }
-    if (!_forwardingChannel && (rx_audioproc_->gain_control()->set_mode(kDefaultRxAgcMode) != 0)) {
+    if ((_channelMode == kFullChannel) && (rx_audioproc_->gain_control()->set_mode(kDefaultRxAgcMode) != 0)) {
       LOG_FERR1(LS_ERROR, gain_control()->set_mode, kDefaultRxAgcMode);
       return -1;
     }
@@ -1291,7 +1308,7 @@ Channel::StartPlayout()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartPlayout()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1328,7 +1345,7 @@ Channel::StopPlayout()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayout()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1363,6 +1380,15 @@ Channel::StartSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartSend()");
+  
+    if (_channelMode == kReceiveForwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_instanceId,_channelId),
+                     "Channel::StartSend() cannot start sending on receive forwarding channel");
+        return -1;
+    }
+
     // Resume the previous sequence number which was reset by StopSend().
     // This needs to be done before |sending| is set to true.
     if (send_sequence_number_)
@@ -1392,6 +1418,15 @@ Channel::StopSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopSend()");
+  
+    if (_channelMode == kReceiveForwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_instanceId,_channelId),
+                     "Channel::StopSend() cannot stop sending on receive forwarding channel");
+        return -1;
+    }
+
     if (!channel_state_.Get().sending)
     {
       return 0;
@@ -1424,7 +1459,8 @@ Channel::StartReceiving()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartReceiving()");
-    if (_forwardingChannel)
+  
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1445,7 +1481,8 @@ Channel::StopReceiving()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopReceiving()");
-    if (_forwardingChannel)
+  
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1466,7 +1503,7 @@ Channel::SetNetEQPlayoutMode(NetEqModes mode)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetNetEQPlayoutMode()");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1502,7 +1539,7 @@ Channel::SetNetEQPlayoutMode(NetEqModes mode)
 int32_t
 Channel::GetNetEQPlayoutMode(NetEqModes& mode)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1615,7 +1652,7 @@ Channel::DeRegisterVoiceEngineObserver()
 int32_t
 Channel::GetSendCodec(CodecInst& codec)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1628,7 +1665,7 @@ Channel::GetSendCodec(CodecInst& codec)
 int32_t
 Channel::GetRecCodec(CodecInst& codec)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1644,7 +1681,7 @@ Channel::SetSendCodec(const CodecInst& codec)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetSendCodec()");
 
-    if (!_forwardingChannel && (audio_coding_->RegisterSendCodec(codec) != 0))
+    if ((_channelMode == kFullChannel) && (audio_coding_->RegisterSendCodec(codec) != 0))
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
                      "SetSendCodec() failed to register codec to ACM");
@@ -1679,7 +1716,7 @@ Channel::SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetVADStatus(mode=%d)", mode);
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1703,7 +1740,7 @@ Channel::GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetVADStatus");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1727,11 +1764,11 @@ Channel::SetRecPayloadType(const CodecInst& codec)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRecPayloadType()");
 
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::SetRecPayloadType() cannot set receive payload type on forwarding channel");
+                     "Channel::SetRecPayloadType() cannot set receive payload type on send forwarding channel");
         return -1;
     }
     if (channel_state_.Get().playing)
@@ -1825,7 +1862,7 @@ Channel::GetRecPayloadType(CodecInst& codec)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetRecPayloadType()");
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1898,7 +1935,7 @@ Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetSendCNPayloadType()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1955,7 +1992,7 @@ Channel::SetISACInitTargetRate(int rateBps, bool useFixedFrameSize)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetISACInitTargetRate()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2031,7 +2068,7 @@ Channel::SetISACMaxRate(int rateBps)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetISACMaxRate()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2103,7 +2140,7 @@ Channel::SetISACMaxPayloadSize(int sizeBytes)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetISACMaxPayloadSize()");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2212,16 +2249,17 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data, int32_t length,
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::ReceivedRTPPacket()");
   
-  if (_forwardingChannel)
+  if (_channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
-                 "Channel::ReceivedRTPPacket() forwarding channel cannot receive RTP packets");
+                 "Channel::ReceivedRTPPacket() send forwarding channel cannot receive RTP packets");
     return -1;
   }
 
   // Store playout timestamp for the received RTP packet
-  UpdatePlayoutTimestamp(false);
+  if (_channelMode == kFullChannel)
+    UpdatePlayoutTimestamp(false);
 
   // Dump the RTP packet to a file (if RTP dump is enabled).
   if (_rtpDumpIn.DumpPacket((const uint8_t*)data,
@@ -2342,7 +2380,8 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, int32_t length) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::ReceivedRTCPPacket()");
   // Store playout timestamp for the received RTCP packet
-  UpdatePlayoutTimestamp(true);
+  if (_channelMode == kFullChannel)
+    UpdatePlayoutTimestamp(true);
 
   // Dump the RTCP packet to a file (if RTP dump is enabled).
   if (_rtpDumpIn.DumpPacket((const uint8_t*)data,
@@ -2376,7 +2415,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
                  "stopPosition=%d)", fileName, loop, format, volumeScaling,
                  startPosition, stopPosition);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2454,7 +2493,7 @@ int Channel::StartPlayingFileLocally(InStream* stream,
                  " volumeScaling=%5.3f, startPosition=%d, stopPosition=%d)",
                  format, volumeScaling, startPosition, stopPosition);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2533,7 +2572,7 @@ int Channel::StopPlayingFileLocally()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayingFileLocally()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2598,7 +2637,7 @@ int Channel::RegisterFilePlayingToMixer()
         return 0;
     }
   
-    assert(!_forwardingChannel);
+    assert(_channelMode == kFullChannel);
 
     // |_fileCritSect| cannot be taken while calling
     // SetAnonymousMixabilityStatus() since as soon as the participant is added
@@ -2689,7 +2728,7 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
                  "stopPosition=%d)", fileName, loop, format, volumeScaling,
                  startPosition, stopPosition);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2764,7 +2803,7 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
                  "volumeScaling=%5.3f, startPosition=%d, stopPosition=%d)",
                  format, volumeScaling, startPosition, stopPosition);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2836,7 +2875,7 @@ int Channel::StopPlayingFileAsMicrophone()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayingFileAsMicrophone()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2909,7 +2948,7 @@ int Channel::StartRecordingPlayout(const char* fileName,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartRecordingPlayout(fileName=%s)", fileName);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -2995,7 +3034,7 @@ int Channel::StartRecordingPlayout(OutStream* stream,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartRecordingPlayout()");
 
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3080,7 +3119,7 @@ int Channel::StopRecordingPlayout()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,-1),
                  "Channel::StopRecordingPlayout()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3245,7 +3284,7 @@ Channel::SetDtmfPlayoutStatus(bool enable)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetDtmfPlayoutStatus()");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3265,7 +3304,7 @@ Channel::SetDtmfPlayoutStatus(bool enable)
 bool
 Channel::DtmfPlayoutStatus() const
 {
-    if (!_forwardingChannel)
+    if (_channelMode == kFullChannel)
         return audio_coding_->DtmfPlayoutStatus();
     else
         return false;
@@ -3320,7 +3359,7 @@ Channel::UpdateRxVadDetection(AudioFrame& audioFrame)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::UpdateRxVadDetection()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3351,7 +3390,7 @@ Channel::RegisterRxVadObserver(VoERxVadCallback &observer)
                  "Channel::RegisterRxVadObserver()");
     CriticalSectionScoped cs(&_callbackCritSect);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3378,7 +3417,7 @@ Channel::DeRegisterRxVadObserver()
                  "Channel::DeRegisterRxVadObserver()");
     CriticalSectionScoped cs(&_callbackCritSect);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3417,7 +3456,7 @@ Channel::SetRxAgcStatus(bool enable, AgcModes mode)
                  "Channel::SetRxAgcStatus(enable=%d, mode=%d)",
                  (int)enable, (int)mode);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3473,7 +3512,7 @@ Channel::GetRxAgcStatus(bool& enabled, AgcModes& mode)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::GetRxAgcStatus(enable=?, mode=?)");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3511,7 +3550,7 @@ Channel::SetRxAgcConfig(AgcConfig config)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRxAgcConfig()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3555,7 +3594,7 @@ Channel::GetRxAgcConfig(AgcConfig& config)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetRxAgcConfig(config=%?)");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3592,7 +3631,7 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
                  "Channel::SetRxNsStatus(enable=%d, mode=%d)",
                  (int)enable, (int)mode);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3654,7 +3693,7 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetRxNsStatus(enable=?, mode=?)");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -3784,6 +3823,13 @@ Channel::SetLocalSSRC(unsigned int ssrc)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::SetLocalSSRC()");
+    if (_channelMode == kReceiveForwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_instanceId,_channelId),
+                     "Channel::SetLocalSSRC() cannot set local SSRC for receive forwarding channel");
+        return -1;
+    }
     if (channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3804,6 +3850,13 @@ Channel::SetLocalSSRC(unsigned int ssrc)
 int
 Channel::GetLocalSSRC(unsigned int& ssrc)
 {
+    if (_channelMode == kReceiveForwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_instanceId,_channelId),
+                     "Channel::GetLocalSSRC() cannot get local SSRC for receive forwarding channel");
+        return -1;
+    }
     ssrc = _rtpRtcpModule->SSRC();
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -3814,11 +3867,11 @@ Channel::GetLocalSSRC(unsigned int& ssrc)
 int
 Channel::GetRemoteSSRC(unsigned int& ssrc)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::GetRemoteSSRC() cannot get remote SSRC for forwarding channel");
+                     "Channel::GetRemoteSSRC() cannot get remote SSRC for send forwarding channel");
         return -1;
     }
 
@@ -3832,11 +3885,11 @@ Channel::GetRemoteSSRC(unsigned int& ssrc)
 int
 Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
 {
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::GetRemoteCSRCs() cannot get remote CSRCs for forwarding channel");
+                     "Channel::GetRemoteCSRCs() cannot get remote CSRCs for send forwarding channel");
         return -1;
     }
     if (arrCSRC == NULL)
@@ -3868,7 +3921,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
 }
 
 int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -3893,15 +3946,22 @@ int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
 }
 
 int Channel::SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
+  if (_channelMode == kReceiveForwardingChannel)
+  {
+    WEBRTC_TRACE(kTraceError, kTraceVoice,
+                 VoEId(_instanceId,_channelId),
+                 "Channel::SetSendAbsoluteSenderTimeStatus() cannot set send absolute sender time status on receive forwarding channel");
+    return -1;
+  }
   return SetSendRtpHeaderExtension(enable, kRtpExtensionAbsoluteSendTime, id);
 }
 
 int Channel::SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
-  if (_forwardingChannel)
+  if (_channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
-                 "Channel::SetReceiveAbsoluteSenderTimeStatus() cannot set receive absolute sender time status on forwarding channel");
+                 "Channel::SetReceiveAbsoluteSenderTimeStatus() cannot set receive absolute sender time status on send forwarding channel");
     return -1;
   }
   rtp_header_parser_->DeregisterRtpHeaderExtension(
@@ -3974,11 +4034,11 @@ Channel::GetRTCP_CNAME(char cName[256])
 int
 Channel::GetRemoteRTCP_CNAME(char cName[256])
 {
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::GetRemoteRTCP_CNAME() cannot get remote CNAME for forwarding channel");
+                     "Channel::GetRemoteRTCP_CNAME() cannot get remote CNAME for send forwarding channel");
         return -1;
     }
     if (cName == NULL)
@@ -4015,11 +4075,11 @@ Channel::GetRemoteRTCPData(
 {
     // --- Information from sender info in received Sender Reports
 
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::GetRemoteRTCPData() cannot get remote RTCP data for forwarding channel");
+                     "Channel::GetRemoteRTCPData() cannot get remote RTCP data for send forwarding channel");
         return -1;
     }
   
@@ -4113,6 +4173,13 @@ Channel::SendApplicationDefinedRTCPPacket(unsigned char subType,
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::SendApplicationDefinedRTCPPacket()");
+    if (_channelMode == kReceiveForwardingChannel)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_instanceId,_channelId),
+                     "Channel::SendApplicationDefinedRTCPPacket() cannot send application defined RTCP packet for receive forwarding channel");
+        return -1;
+    }
     if (!channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
@@ -4164,7 +4231,7 @@ Channel::GetRTPStatistics(
         unsigned int& maxJitterMs,
         unsigned int& discardedPackets)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4268,11 +4335,11 @@ int Channel::GetRemoteRTCPReportBlocks(
 int
 Channel::GetRTPStatistics(CallStatistics& stats)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::GetRTPStatistics() cannot get RTP statistics for forwarding channel");
+                     "Channel::GetRTPStatistics() cannot get RTP statistics for send forwarding channel");
         return -1;
     }
   
@@ -4385,7 +4452,7 @@ int Channel::SetFECStatus(bool enable, int redPayloadtype) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetFECStatus()");
 
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -4421,7 +4488,7 @@ int Channel::SetFECStatus(bool enable, int redPayloadtype) {
 int
 Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
 {
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4453,7 +4520,7 @@ Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
 }
 
 void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -4472,7 +4539,7 @@ void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
 
 // Called when we are missing one or more packets.
 int Channel::ResendPackets(const uint16_t* sequence_numbers, int length) {
-  if (_forwardingChannel)
+  if (_channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -4489,7 +4556,8 @@ Channel::StartRTPDump(const char fileNameUTF8[1024],
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::StartRTPDump()");
     if (((direction != kRtpIncoming) && (direction != kRtpOutgoing)) ||
-        (_forwardingChannel && (direction != kRtpIncoming)))
+        (_channelMode == kReceiveForwardingChannel && (direction != kRtpOutgoing)) ||
+        (_channelMode == kSendForwardingChannel && (direction != kRtpIncoming)))
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_ARGUMENT, kTraceError,
@@ -4523,7 +4591,8 @@ Channel::StopRTPDump(RTPDirections direction)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::StopRTPDump()");
     if (((direction != kRtpIncoming) && (direction != kRtpOutgoing)) ||
-        (_forwardingChannel && (direction != kRtpIncoming)))
+        (_channelMode == kReceiveForwardingChannel && (direction != kRtpOutgoing)) ||
+        (_channelMode == kSendForwardingChannel && (direction != kRtpIncoming)))
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_ARGUMENT, kTraceError,
@@ -4548,7 +4617,8 @@ bool
 Channel::RTPDumpIsActive(RTPDirections direction)
 {
     if (((direction != kRtpIncoming) && (direction != kRtpOutgoing)) ||
-        (_forwardingChannel && (direction != kRtpIncoming)))
+        (_channelMode == kReceiveForwardingChannel && (direction != kRtpOutgoing)) ||
+        (_channelMode == kSendForwardingChannel && (direction != kRtpIncoming)))
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_ARGUMENT, kTraceError,
@@ -4580,7 +4650,7 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Demultiplex()");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4596,7 +4666,7 @@ void Channel::Demultiplex(const int16_t* audio_data,
                           int sample_rate,
                           int number_of_frames,
                           int number_of_channels) {
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -4628,7 +4698,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PrepareEncodeAndSend()");
 
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4689,7 +4759,7 @@ Channel::EncodeAndSend()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::EncodeAndSend()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4734,7 +4804,7 @@ int Channel::RegisterExternalMediaProcessing(
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RegisterExternalMediaProcessing()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4778,7 +4848,7 @@ int Channel::DeRegisterExternalMediaProcessing(ProcessingTypes type)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterExternalMediaProcessing()");
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4822,7 +4892,7 @@ int Channel::SetExternalMixing(bool enabled) {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetExternalMixing(enabled=%d)", enabled);
   
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4849,11 +4919,11 @@ Channel::ResetRTCPStatistics()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::ResetRTCPStatistics()");
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::ResetRTCPStatistics() remote RTCP statistics cannot be reset on forwarding channel");
+                     "Channel::ResetRTCPStatistics() remote RTCP statistics cannot be reset on send forwarding channel");
         return -1;
     }
     uint32_t remoteSSRC(0);
@@ -4866,11 +4936,11 @@ Channel::GetRoundTripTimeSummary(StatVal& delaysMs) const
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetRoundTripTimeSummary()");
-    if (_forwardingChannel)
+    if (_channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
-                     "Channel::GetRoundTripTimeSummary() there is no RTT summary for forwarding channel");
+                     "Channel::GetRoundTripTimeSummary() there is no RTT summary for send forwarding channel");
         return -1;
     }
     // Override default module outputs for the case when RTCP is disabled.
@@ -4925,7 +4995,7 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetNetworkStatistics()");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -4941,6 +5011,13 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 }
 
 void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
+  {
+    WEBRTC_TRACE(kTraceError, kTraceVoice,
+                 VoEId(_instanceId,_channelId),
+                 "Channel::GetDecodingCallStatistics() decoding statistics cannot be obtained for forwarding channel");
+    return;
+  }
   audio_coding_->GetDecodingCallStatistics(stats);
 }
 
@@ -4963,7 +5040,7 @@ int Channel::SetInitialPlayoutDelay(int delay_ms)
 {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetInitialPlayoutDelay()");
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -4994,7 +5071,7 @@ Channel::SetMinimumPlayoutDelay(int delayMs)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetMinimumPlayoutDelay()");
-    if (_forwardingChannel)
+    if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -5021,7 +5098,7 @@ Channel::SetMinimumPlayoutDelay(int delayMs)
 
 void Channel::UpdatePlayoutTimestamp(bool rtcp) {
   
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -5391,14 +5468,6 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::UpdatePacketDelay(timestamp=%lu, sequenceNumber=%u)",
                rtp_timestamp, sequence_number);
-  
-  if (_forwardingChannel)
-  {
-    WEBRTC_TRACE(kTraceError, kTraceVoice,
-                 VoEId(_instanceId,_channelId),
-                 "Channel::UpdatePacketDelay() packet delay cannot be updated for forwarding channel");
-    return;
-  }
 
   // Get frequency of last received payload
   int rtp_receive_frequency = audio_coding_->ReceiveFrequency();
@@ -5467,14 +5536,6 @@ Channel::RegisterReceiveCodecsToRTPModule()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RegisterReceiveCodecsToRTPModule()");
-  
-    if (_forwardingChannel)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::RegisterReceiveCodecsToRTPModule() no receive codec is used on forwarding channel");
-        return;
-    }
 
     CodecInst codec;
     const uint8_t nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
@@ -5516,7 +5577,7 @@ Channel::RegisterReceiveCodecsToRTPModule()
 
 int Channel::SetSecondarySendCodec(const CodecInst& codec,
                                    int red_payload_type) {
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -5549,7 +5610,7 @@ int Channel::SetSecondarySendCodec(const CodecInst& codec,
 }
 
 void Channel::RemoveSecondarySendCodec() {
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -5560,7 +5621,7 @@ void Channel::RemoveSecondarySendCodec() {
 }
 
 int Channel::GetSecondarySendCodec(CodecInst* codec) {
-  if (_forwardingChannel)
+  if (_channelMode == kReceiveForwardingChannel || _channelMode == kSendForwardingChannel)
   {
     WEBRTC_TRACE(kTraceError, kTraceVoice,
                  VoEId(_instanceId,_channelId),

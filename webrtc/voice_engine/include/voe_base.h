@@ -139,10 +139,10 @@ public:
     // Creates a new channel and allocates the required resources for it.
     // One can use |config| to configure the channel. Currently that is used for
     // choosing between ACM1 and ACM2, when creating Audio Coding Module.
-    // Forwarding channel is feeded by RTP packets with compressed content. It is
-    // send only channel.
-    virtual int CreateChannel(bool forwardingChannel = false) = 0;
-    virtual int CreateChannel(const Config& config, bool forwardingChannel = false) = 0;
+    // Forwarding channels are used for relaying of RTP content. They do not use
+    // audio devices, coding componenets and procesing modules.
+    virtual int CreateChannel(ChannelMode channelMode = kFullChannel) = 0;
+    virtual int CreateChannel(const Config& config, ChannelMode channelMode = kFullChannel) = 0;
 
     // Deletes an existing channel and releases the utilized resources.
     virtual int DeleteChannel(int channel) = 0;

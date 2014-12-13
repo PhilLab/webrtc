@@ -94,11 +94,12 @@ class ChannelManager {
 
   // CreateChannel will always return a valid ChannelOwner instance. The channel
   // is created either based on internal configuration, i.e. |config_|, by
-  // calling CreateChannel(bool forwardingChannel), or using and external configuration
+  // calling CreateChannel(ChannelMode channelMode), or using and external configuration
   // |external_config| if the overloaded method
-  // CreateChannel(const Config& external_config, bool forwardingChannel) is called.
-  ChannelOwner CreateChannel(bool forwardingChannel);
-  ChannelOwner CreateChannel(const Config& external_config, bool forwardingChannel);
+  // CreateChannel(const Config& external_config, ChannelMode channelMode) is called.
+  // Channel mode defines a type the channel - normal channel or forwading channel.
+  ChannelOwner CreateChannel(ChannelMode channelMode);
+  ChannelOwner CreateChannel(const Config& external_config, ChannelMode channelMode);
 
   // ChannelOwner.channel() will be NULL if channel_id is invalid or no longer
   // exists. This should be checked with ChannelOwner::IsValid().
@@ -112,7 +113,7 @@ class ChannelManager {
 
  private:
   // Create a channel given a configuration, |config|.
-  ChannelOwner CreateChannelInternal(const Config& config, bool forwardingChannel);
+  ChannelOwner CreateChannelInternal(const Config& config, ChannelMode channelMode);
 
   uint32_t instance_id_;
 

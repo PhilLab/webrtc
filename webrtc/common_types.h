@@ -161,6 +161,13 @@ enum FrameType
     kVideoFrameKey         = 3,    // independent frame
     kVideoFrameDelta       = 4,    // depends on the previus frame
 };
+  
+enum ChannelMode
+{
+    kFullChannel                = 0,
+    kReceiveForwardingChannel   = 1,
+    kSendForwardingChannel      = 2
+};
 
 // External transport callback interface
 class Transport

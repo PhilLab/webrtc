@@ -51,17 +51,17 @@ ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(config) {}
 
-ChannelOwner ChannelManager::CreateChannel(bool forwardingChannel) {
-  return CreateChannelInternal(config_, forwardingChannel);
+ChannelOwner ChannelManager::CreateChannel(ChannelMode channelMode) {
+  return CreateChannelInternal(config_, channelMode);
 }
 
-ChannelOwner ChannelManager::CreateChannel(const Config& external_config, bool forwardingChannel) {
-  return CreateChannelInternal(external_config, forwardingChannel);
+ChannelOwner ChannelManager::CreateChannel(const Config& external_config, ChannelMode channelMode) {
+  return CreateChannelInternal(external_config, channelMode);
 }
 
-ChannelOwner ChannelManager::CreateChannelInternal(const Config& config, bool forwardingChannel) {
+ChannelOwner ChannelManager::CreateChannelInternal(const Config& config, ChannelMode channelMode) {
   Channel* channel;
-  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config, forwardingChannel);
+  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config, channelMode);
   ChannelOwner channel_owner(channel);
 
   CriticalSectionScoped crit(lock_.get());

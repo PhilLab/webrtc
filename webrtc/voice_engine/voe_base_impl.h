@@ -38,8 +38,8 @@ public:
 
     virtual int Terminate();
 
-    virtual int CreateChannel(bool forwardingChannel = false);
-    virtual int CreateChannel(const Config& config, bool forwardingChannel = false);
+    virtual int CreateChannel(ChannelMode channelMode = kFullChannel);
+    virtual int CreateChannel(const Config& config, ChannelMode channelMode = kFullChannel);
 
     virtual int DeleteChannel(int channel);
 

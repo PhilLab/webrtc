@@ -81,7 +81,7 @@ int SharedData::NumOfRecordingChannels() {
   
   for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
        it.Increment()) {
-    if (!it.GetChannel()->IsForwardingChannel() && it.GetChannel()->Sending())
+    if (it.GetChannel()->GetChannelMode() == kFullChannel && it.GetChannel()->Sending())
       ++recording_channels;
   }
   
