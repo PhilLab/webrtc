@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX) && !defined(WEBRTC_MAC)
 #include "testing/gtest/include/gtest/gtest.h"
 #endif
 #include "webrtc/test/channel_transport/udp_transport.h"
@@ -36,7 +36,7 @@ VoiceChannelTransport::VoiceChannelTransport(VoENetwork* voe_network,
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
   int registered = voe_network_->RegisterExternalTransport(channel,
                                                            *socket_transport_);
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX) && !defined(WEBRTC_MAC)
   EXPECT_EQ(0, registered);
 #else
   assert(registered == 0);
@@ -89,7 +89,7 @@ VideoChannelTransport::VideoChannelTransport(ViENetwork* vie_network,
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
   int registered = vie_network_->RegisterSendTransport(channel,
                                                        *socket_transport_);
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX) && !defined(WEBRTC_MAC)
   EXPECT_EQ(0, registered);
 #else
   assert(registered == 0);
