@@ -2130,6 +2130,10 @@ bool AudioDeviceMac::PlayoutError() const
 {
     return (_playError > 0);
 }
+  
+bool AudioDeviceMac::PlayoutRouteChanged() const {
+    return false;
+}
 
 bool AudioDeviceMac::RecordingWarning() const
 {
@@ -2139,6 +2143,14 @@ bool AudioDeviceMac::RecordingWarning() const
 bool AudioDeviceMac::RecordingError() const
 {
     return (_recError > 0);
+}
+
+bool AudioDeviceMac::InterruptionBegan() const {
+    return false;
+}
+  
+bool AudioDeviceMac::InterruptionEnded() const {
+    return false;
 }
 
 void AudioDeviceMac::ClearPlayoutWarning()

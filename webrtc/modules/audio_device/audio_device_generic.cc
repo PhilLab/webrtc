@@ -83,21 +83,21 @@ bool AudioDeviceGeneric::PlayoutRouteChanged() const
 {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
                  "Playout Route Changed event not supported on this platform");
-    return -1;
+    return false;
 }
   
 bool AudioDeviceGeneric::InterruptionBegan() const
 {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
                  "Interruption Began event not supported on this platform");
-    return -1;
+    return false;
 }
   
 bool AudioDeviceGeneric::InterruptionEnded() const
 {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
                  "Interruption Ended event not supported on this platform");
-    return -1;
+    return false;
 }
   
 void AudioDeviceGeneric::ClearPlayoutRouteChanged()

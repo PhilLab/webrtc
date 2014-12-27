@@ -167,8 +167,11 @@ public:
 
     virtual bool PlayoutWarning() const;
     virtual bool PlayoutError() const;
+    virtual bool PlayoutRouteChanged() const;
     virtual bool RecordingWarning() const;
     virtual bool RecordingError() const;
+    virtual bool InterruptionBegan() const;
+    virtual bool InterruptionEnded() const;
     virtual void ClearPlayoutWarning();
     virtual void ClearPlayoutError();
     virtual void ClearRecordingWarning();

@@ -681,7 +681,7 @@ int VoEHardwareImpl::GetLoudspeakerStatus(bool& enabled)
     return 0;
 #else
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "  no support for setting loudspeaker status");
+      "  no support for getting loudspeaker status");
     return -1;
 #endif
 }
