@@ -139,19 +139,21 @@ class my_transportation : public Transport
       netw(network) {
   }
 
-  int SendPacket(int channel,const void *data,int len);
-  int SendRTCPPacket(int channel, const void *data, int len);
+  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
+  virtual int SendRTCPPacket(int channel,
+                             const void *data,
+                             size_t len) OVERRIDE;
  private:
   VoENetwork * netw;
 };
 
-int my_transportation::SendPacket(int channel,const void *data,int len)
+int my_transportation::SendPacket(int channel, const void *data, size_t len)
 {
   netw->ReceivedRTPPacket(channel, data, len);
   return len;
 }
 
-int my_transportation::SendRTCPPacket(int channel, const void *data, int len)
+int my_transportation::SendRTCPPacket(int channel, const void *data, size_t len)
 {
   netw->ReceivedRTCPPacket(channel, data, len);
   return len;
@@ -710,10 +712,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_StartSend(
      return -1;
      } */
 
-    /* if (veData1.rtp_rtcp->SetFECStatus(channel, 1) != 0)
+    /* if (veData1.rtp_rtcp->SetREDStatus(channel, 1) != 0)
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-         "Failed to enable FEC");
+         "Failed to enable RED");
      return -1;
      } */
 
@@ -755,10 +757,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_StopSend(
         jobject,
         jint channel)
 {
-    /* if (veData1.rtp_rtcp->SetFECStatus(channel, 0) != 0)
+    /* if (veData1.rtp_rtcp->SetREDStatus(channel, 0) != 0)
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-         "Failed to disable FEC");
+         "Failed to disable RED");
      return -1;
      } */
 
@@ -1142,21 +1144,21 @@ Java_org_webrtc_voiceengine_test_AndroidTest_SetLoudspeakerStatus(
 
     /*VALIDATE_RTP_RTCP_POINTER;
 
-     if (veData1.rtp_rtcp->SetFECStatus(0, enable, -1) != 0)
+     if (veData1.rtp_rtcp->SetREDStatus(0, enable, -1) != 0)
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-         "Could not set FEC");
+         "Could not set RED");
      return -1;
      }
      else if(enable)
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-         "Could enable FEC");
+         "Could enable RED");
      }
      else
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-         "Could disable FEC");
+         "Could disable RED");
      }*/
 
     return 0;

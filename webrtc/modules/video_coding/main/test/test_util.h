@@ -17,9 +17,9 @@
 
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 
 enum { kMaxNackListSize = 250 };
@@ -51,7 +51,7 @@ double NormalDist(double mean, double stdDev);
 
 struct RtpPacket {
   uint8_t data[1650]; // max packet size
-  int32_t length;
+  size_t length;
   int64_t receiveTime;
 };
 

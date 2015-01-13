@@ -8,7 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <math.h>
+#include <limits>
+
 #include "webrtc/audio_processing/debug.pb.h"
+#include "webrtc/common_audio/include/audio_util.h"
+#include "webrtc/common_audio/wav_file.h"
+#include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -18,36 +24,63 @@ namespace webrtc {
 static const AudioProcessing::Error kNoErr = AudioProcessing::kNoError;
 #define EXPECT_NOERR(expr) EXPECT_EQ(kNoErr, (expr))
 
-static const int kChunkSizeMs = 10;
-
-// Helper to encapsulate a contiguous data buffer with access to a pointer
-// array of the deinterleaved channels.
-template <typename T>
-class ChannelBuffer {
+class RawFile {
  public:
-  ChannelBuffer(int samples_per_channel, int num_channels)
-      : data_(new T[samples_per_channel * num_channels]),
-        channels_(new T*[num_channels]),
-        samples_per_channel_(samples_per_channel) {
-    memset(data_.get(), 0, sizeof(T) * samples_per_channel * num_channels);
-    for (int i = 0; i < num_channels; ++i)
-      channels_[i] = &data_[i * samples_per_channel];
-  }
-  ~ChannelBuffer() {}
+  RawFile(const std::string& filename)
+      : file_handle_(fopen(filename.c_str(), "wb")) {}
 
-  void CopyFrom(const void* channel_ptr, int index) {
-    memcpy(channels_[index], channel_ptr, samples_per_channel_ * sizeof(T));
+  ~RawFile() {
+    fclose(file_handle_);
   }
 
-  T* data() { return data_.get(); }
-  T* channel(int index) { return channels_[index]; }
-  T** channels() { return channels_.get(); }
+  void WriteSamples(const int16_t* samples, size_t num_samples) {
+#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+#error "Need to convert samples to little-endian when writing to PCM file"
+#endif
+    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
+  }
+
+  void WriteSamples(const float* samples, size_t num_samples) {
+    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
+  }
 
  private:
-  scoped_ptr<T[]> data_;
-  scoped_ptr<T*[]> channels_;
-  int samples_per_channel_;
+  FILE* file_handle_;
 };
+
+static inline void WriteIntData(const int16_t* data,
+                                size_t length,
+                                WavWriter* wav_file,
+                                RawFile* raw_file) {
+  if (wav_file) {
+    wav_file->WriteSamples(data, length);
+  }
+  if (raw_file) {
+    raw_file->WriteSamples(data, length);
+  }
+}
+
+static inline void WriteFloatData(const float* const* data,
+                                  size_t samples_per_channel,
+                                  int num_channels,
+                                  WavWriter* wav_file,
+                                  RawFile* raw_file) {
+  size_t length = num_channels * samples_per_channel;
+  scoped_ptr<float[]> buffer(new float[length]);
+  Interleave(data, samples_per_channel, num_channels, buffer.get());
+  if (raw_file) {
+    raw_file->WriteSamples(buffer.get(), length);
+  }
+  // TODO(aluebs): Use ScaleToInt16Range() from audio_util
+  for (size_t i = 0; i < length; ++i) {
+    buffer[i] = buffer[i] > 0 ?
+                buffer[i] * std::numeric_limits<int16_t>::max() :
+                -buffer[i] * std::numeric_limits<int16_t>::min();
+  }
+  if (wav_file) {
+    wav_file->WriteSamples(buffer.get(), length);
+  }
+}
 
 // Exits on failure; do not use in unit tests.
 static inline FILE* OpenFile(const std::string& filename, const char* mode) {
@@ -59,10 +92,15 @@ static inline FILE* OpenFile(const std::string& filename, const char* mode) {
   return file;
 }
 
+static inline int SamplesFromRate(int rate) {
+  return AudioProcessing::kChunkSizeMs * rate / 1000;
+}
+
 static inline void SetFrameSampleRate(AudioFrame* frame,
                                       int sample_rate_hz) {
   frame->sample_rate_hz_ = sample_rate_hz;
-  frame->samples_per_channel_ = kChunkSizeMs * sample_rate_hz / 1000;
+  frame->samples_per_channel_ = AudioProcessing::kChunkSizeMs *
+      sample_rate_hz / 1000;
 }
 
 template <typename T>
@@ -114,6 +152,28 @@ static inline bool ReadMessageFromFile(FILE* file,
 
   msg->Clear();
   return msg->ParseFromArray(bytes.get(), size);
+}
+
+template <typename T>
+float ComputeSNR(const T* ref, const T* test, int length, float* variance) {
+  float mse = 0;
+  float mean = 0;
+  *variance = 0;
+  for (int i = 0; i < length; ++i) {
+    T error = ref[i] - test[i];
+    mse += error * error;
+    *variance += ref[i] * ref[i];
+    mean += ref[i];
+  }
+  mse /= length;
+  *variance /= length;
+  mean /= length;
+  *variance -= mean * mean;
+
+  float snr = 100;  // We assign 100 dB to the zero-error case.
+  if (mse > 0)
+    snr = 10 * log10(*variance / mse);
+  return snr;
 }
 
 }  // namespace webrtc

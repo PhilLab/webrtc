@@ -25,18 +25,17 @@ class CriticalSectionWrapper;
 
 class FecReceiverImpl : public FecReceiver {
  public:
-  FecReceiverImpl(const int32_t id, RtpData* callback);
+  FecReceiverImpl(RtpData* callback);
   virtual ~FecReceiverImpl();
 
   virtual int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
                                        const uint8_t* incoming_rtp_packet,
-                                       int packet_length,
+                                       size_t packet_length,
                                        uint8_t ulpfec_payload_type) OVERRIDE;
 
   virtual int32_t ProcessReceivedFec() OVERRIDE;
 
  private:
-  int id_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   RtpData* recovered_packet_callback_;
   ForwardErrorCorrection* fec_;

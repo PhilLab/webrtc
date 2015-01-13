@@ -11,12 +11,12 @@
 #include "webrtc/engine_configurations.h"
 #if defined(COCOA_RENDERING)
 
-#include "video_render_nsopengl.h"
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "trace.h"
-#include "thread_wrapper.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_render/mac/video_render_nsopengl.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -36,7 +36,7 @@ _oldStretchedHeight( 0),
 _oldStretchedWidth( 0),
 _buffer( 0),
 _bufferSize( 0),
-_incommingBufferSize( 0),
+_incomingBufferSize( 0),
 _bufferIsUpdated( false),
 _numberOfStreams( 0),
 _pixelFormat( GL_RGBA),
@@ -150,7 +150,7 @@ int VideoChannelNSOpenGL::FrameSizeChange(int width, int height, int numberOfStr
         _bufferSize = 0;
     }
 
-    _incommingBufferSize = CalcBufferSize(kI420, _width, _height);
+    _incomingBufferSize = CalcBufferSize(kI420, _width, _height);
     _bufferSize = CalcBufferSize(kARGB, _width, _height);
     _buffer = new unsigned char [_bufferSize];
     memset(_buffer, 0, _bufferSize * sizeof(unsigned char));
@@ -215,8 +215,8 @@ int VideoChannelNSOpenGL::DeliverFrame(const I420VideoFrame& videoFrame) {
     return 0;
   }
 
-  int length = CalcBufferSize(kI420, videoFrame.width(), videoFrame.height());
-  if (length != _incommingBufferSize) {
+  if (CalcBufferSize(kI420, videoFrame.width(), videoFrame.height()) !=
+      _incomingBufferSize) {
     _owner->UnlockAGLCntx();
     return -1;
   }

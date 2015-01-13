@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/agc/include/gain_control.h"
+#include "webrtc/modules/audio_processing/agc/legacy/gain_control.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
@@ -59,17 +59,11 @@ int GainControlImpl::ProcessRenderAudio(AudioBuffer* audio) {
 
   assert(audio->samples_per_split_channel() <= 160);
 
-  int16_t* mixed_data = audio->low_pass_split_data(0);
-  if (audio->num_channels() > 1) {
-    audio->CopyAndMixLowPass(1);
-    mixed_data = audio->mixed_low_pass_data(0);
-  }
-
   for (int i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     int err = WebRtcAgc_AddFarend(
         my_handle,
-        mixed_data,
+        audio->mixed_low_pass_data(),
         static_cast<int16_t>(audio->samples_per_split_channel()));
 
     if (err != apm_->kNoError) {
@@ -96,8 +90,8 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
       Handle* my_handle = static_cast<Handle*>(handle(i));
       err = WebRtcAgc_AddMic(
           my_handle,
-          audio->low_pass_split_data(i),
-          audio->high_pass_split_data(i),
+          audio->split_bands(i),
+          audio->num_bands(),
           static_cast<int16_t>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
@@ -112,8 +106,8 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
 
       err = WebRtcAgc_VirtualMic(
           my_handle,
-          audio->low_pass_split_data(i),
-          audio->high_pass_split_data(i),
+          audio->split_bands(i),
+          audio->num_bands(),
           static_cast<int16_t>(audio->samples_per_split_channel()),
           analog_capture_level_,
           &capture_level_out);
@@ -150,11 +144,10 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
     int err = WebRtcAgc_Process(
         my_handle,
-        audio->low_pass_split_data(i),
-        audio->high_pass_split_data(i),
+        audio->split_bands_const(i),
+        audio->num_bands(),
         static_cast<int16_t>(audio->samples_per_split_channel()),
-        audio->low_pass_split_data(i),
-        audio->high_pass_split_data(i),
+        audio->split_bands(i),
         capture_levels_[i],
         &capture_level_out,
         apm_->echo_cancellation()->stream_has_echo(),
@@ -317,8 +310,8 @@ void* GainControlImpl::CreateHandle() const {
   return handle;
 }
 
-int GainControlImpl::DestroyHandle(void* handle) const {
-  return WebRtcAgc_Free(static_cast<Handle*>(handle));
+void GainControlImpl::DestroyHandle(void* handle) const {
+  WebRtcAgc_Free(static_cast<Handle*>(handle));
 }
 
 int GainControlImpl::InitializeHandle(void* handle) const {
@@ -326,11 +319,11 @@ int GainControlImpl::InitializeHandle(void* handle) const {
                           minimum_capture_level_,
                           maximum_capture_level_,
                           MapSetting(mode_),
-                          apm_->sample_rate_hz());
+                          apm_->proc_sample_rate_hz());
 }
 
 int GainControlImpl::ConfigureHandle(void* handle) const {
-  WebRtcAgc_config_t config;
+  WebRtcAgcConfig config;
   // TODO(ajm): Flip the sign here (since AGC expects a positive value) if we
   //            change the interface.
   //assert(target_level_dbfs_ <= 0);

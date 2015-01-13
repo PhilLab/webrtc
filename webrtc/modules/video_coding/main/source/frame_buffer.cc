@@ -14,13 +14,13 @@
 #include <string.h>
 
 #include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
 VCMFrameBuffer::VCMFrameBuffer()
   :
     _state(kStateEmpty),
-    _frameCounted(false),
     _nackCount(0),
     _latestPacketTimeMs(-1) {
 }
@@ -32,7 +32,6 @@ VCMFrameBuffer::VCMFrameBuffer(const VCMFrameBuffer& rhs)
 :
 VCMEncodedFrame(rhs),
 _state(rhs._state),
-_frameCounted(rhs._frameCounted),
 _sessionInfo(),
 _nackCount(rhs._nackCount),
 _latestPacketTimeMs(rhs._latestPacketTimeMs) {
@@ -86,20 +85,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
                              int64_t timeInMs,
                              VCMDecodeErrorMode decode_error_mode,
                              const FrameData& frame_data) {
-    // Is this packet part of this frame?
-    if (TimeStamp() && (TimeStamp() != packet.timestamp)) {
-        return kTimeStampError;
-    }
-
-    // sanity checks
-    if (_size + packet.sizeBytes +
-        (packet.insertStartCode ?  kH264StartCodeLengthBytes : 0 )
-        > kMaxJBFrameSizeBytes) {
-        return kSizeError;
-    }
-    if (NULL == packet.dataPtr && packet.sizeBytes > 0) {
-        return kSizeError;
-    }
+    assert(!(NULL == packet.dataPtr && packet.sizeBytes > 0));
     if (packet.dataPtr != NULL) {
         _payloadType = packet.payloadType;
     }
@@ -108,6 +94,8 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
         // First packet (empty and/or media) inserted into this frame.
         // store some info and set some initial values.
         _timeStamp = packet.timestamp;
+        // We only take the ntp timestamp of the first packet of a frame.
+        ntp_time_ms_ = packet.ntp_time_ms_;
         _codec = packet.codec;
         if (packet.frameType != kFrameEmpty) {
             // first media packet
@@ -126,11 +114,11 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
         const uint32_t newSize = _size +
                                        increments * kBufferIncStepSizeBytes;
         if (newSize > kMaxJBFrameSizeBytes) {
+            LOG(LS_ERROR) << "Failed to insert packet due to frame being too "
+                             "big.";
             return kSizeError;
         }
-        if (VerifyAndAllocate(newSize) == -1) {
-            return kSizeError;
-        }
+        VerifyAndAllocate(newSize);
         _sessionInfo.UpdateDataPointers(prevBuffer, _buffer);
     }
 
@@ -201,7 +189,6 @@ VCMFrameBuffer::Reset() {
     _length = 0;
     _timeStamp = 0;
     _sessionInfo.Reset();
-    _frameCounted = false;
     _payloadType = 0;
     _nackCount = 0;
     _latestPacketTimeMs = -1;
@@ -243,15 +230,6 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
     _state = state;
 }
 
-// Set counted status (as counted by JB or not)
-void VCMFrameBuffer::SetCountedFrame(bool frameCounted) {
-    _frameCounted = frameCounted;
-}
-
-bool VCMFrameBuffer::GetCountedFrame() const {
-    return _frameCounted;
-}
-
 // Get current state of frame
 VCMFrameBufferStateEnum
 VCMFrameBuffer::GetState() const {
@@ -278,11 +256,11 @@ VCMFrameBuffer::PrepareForDecode(bool continuous) {
             _sessionInfo.BuildVP8FragmentationHeader(_buffer, _length,
                                                      &_fragmentation);
     } else {
-        int bytes_removed = _sessionInfo.MakeDecodable();
+        size_t bytes_removed = _sessionInfo.MakeDecodable();
         _length -= bytes_removed;
     }
 #else
-    int bytes_removed = _sessionInfo.MakeDecodable();
+    size_t bytes_removed = _sessionInfo.MakeDecodable();
     _length -= bytes_removed;
 #endif
     // Transfer frame information to EncodedFrame and create any codec

@@ -44,13 +44,13 @@ public:
     // audio with more channels (in which case the audio will be coverted to
     // mono).
     int32_t ReadAviAudioData(int8_t* outBuffer,
-                             const uint32_t bufferLengthInBytes);
+                             size_t bufferLengthInBytes);
 
     // Put one video frame into outBuffer. bufferLengthInBytes indicates the
     // size of outBuffer.
     // The return value is the number of bytes written to videoBuffer.
     int32_t ReadAviVideoData(int8_t* videoBuffer,
-                             const uint32_t bufferLengthInBytes);
+                             size_t bufferLengthInBytes);
 
     // Open/create the file specified by fileName for writing audio/video data
     // (relative path is allowed). codecInst specifies the encoding of the audio
@@ -67,7 +67,7 @@ public:
     // InitAviWriting(..) call.
     // Note: bufferLength must be exactly one frame.
     int32_t WriteAviAudioData(const int8_t* audioBuffer,
-                              uint32_t bufferLengthInBytes);
+                              size_t bufferLengthInBytes);
 
 
     // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
@@ -77,7 +77,7 @@ public:
     // InitAviWriting(..) call. The videoBuffer must contain exactly
     // one video frame.
     int32_t WriteAviVideoData(const int8_t* videoBuffer,
-                              uint32_t bufferLengthInBytes);
+                              size_t bufferLengthInBytes);
 
     // Stop recording to file or stream.
     int32_t CloseAviFile();
@@ -132,7 +132,7 @@ public:
     // audio with more channels (in which case the audio will be converted to
     // mono).
     int32_t ReadWavDataAsMono(InStream& stream, int8_t* audioBuffer,
-                              const uint32_t dataLengthInBytes);
+                              const size_t dataLengthInBytes);
 
     // Put 10-60ms, depending on codec frame size, of audio data from file into
     // audioBufferLeft and audioBufferRight. The buffers contain the left and
@@ -145,7 +145,7 @@ public:
     int32_t ReadWavDataAsStereo(InStream& wav,
                                 int8_t* audioBufferLeft,
                                 int8_t* audioBufferRight,
-                                const uint32_t bufferLength);
+                                const size_t bufferLength);
 
     // Prepare for recording audio to stream.
     // codecInst specifies the encoding of the audio data.
@@ -159,7 +159,7 @@ public:
     // The return value is the number of bytes written to audioBuffer.
     int32_t WriteWavData(OutStream& stream,
                          const int8_t* audioBuffer,
-                         const uint32_t bufferLength);
+                         const size_t bufferLength);
 
     // Finalizes the WAV header so that it is correct if nothing more will be
     // written to stream.
@@ -182,7 +182,7 @@ public:
     // codec frame size. dataLengthInBytes indicates the size of audioBuffer.
     // The return value is the number of bytes written to audioBuffer.
     int32_t ReadPCMData(InStream& stream, int8_t* audioBuffer,
-                        const uint32_t dataLengthInBytes);
+                        const size_t dataLengthInBytes);
 
     // Prepare for recording audio to stream.
     // freqInHz is the PCM sampling frequency.
@@ -195,7 +195,7 @@ public:
     // The return value is the number of bytes written to audioBuffer.
     int32_t WritePCMData(OutStream& stream,
                          const int8_t* audioBuffer,
-                         uint32_t bufferLength);
+                         size_t bufferLength);
 
     // Prepare for playing audio from stream.
     // startPointMs and stopPointMs, unless zero, specify what part of the file
@@ -209,7 +209,7 @@ public:
     // The return value is the number of bytes written to audioBuffer.
     int32_t ReadCompressedData(InStream& stream,
                                int8_t* audioBuffer,
-                               const uint32_t dataLengthInBytes);
+                               const size_t dataLengthInBytes);
 
     // Prepare for recording audio to stream.
     // codecInst specifies the encoding of the audio data.
@@ -223,7 +223,7 @@ public:
     // Note: bufferLength must be exactly one frame.
     int32_t WriteCompressedData(OutStream& stream,
                                 const int8_t* audioBuffer,
-                                const uint32_t bufferLength);
+                                const size_t bufferLength);
 
     // Prepare for playing audio from stream.
     // codecInst specifies the encoding of the audio data.
@@ -235,7 +235,7 @@ public:
     // The return value is the number of bytes written to audioBuffer.
     int32_t ReadPreEncodedData(InStream& stream,
                                int8_t* audioBuffer,
-                               const uint32_t dataLengthInBytes);
+                               const size_t dataLengthInBytes);
 
     // Prepare for recording audio to stream.
     // codecInst specifies the encoding of the audio data.
@@ -249,7 +249,7 @@ public:
     // Note: bufferLength must be exactly one frame.
     int32_t WritePreEncodedData(OutStream& stream,
                                 const int8_t* inData,
-                                const uint32_t dataLengthInBytes);
+                                const size_t dataLengthInBytes);
 
     // Set durationMs to the size of the file (in ms) specified by fileName.
     // freqInHz specifies the sampling frequency of the file.
@@ -354,7 +354,7 @@ private:
     uint32_t _stopPointInMs;
     uint32_t _startPointInMs;
     uint32_t _playoutPositionMs;
-    uint32_t _bytesWritten;
+    size_t _bytesWritten;
 
     CodecInst codec_info_;
     MediaFileUtility_CodecType _codecId;

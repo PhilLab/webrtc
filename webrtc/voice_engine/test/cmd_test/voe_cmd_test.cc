@@ -19,10 +19,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/common.h"
-#include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
@@ -42,8 +39,6 @@
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 
-DEFINE_bool(use_acm_version_1, false,
-            "If true, we'll run the tests with Audio Coding Module version 2.");
 DEFINE_bool(use_log_file, false,
     "Output logs to a file; by default they will be printed to stderr.");
 
@@ -129,13 +124,7 @@ int main(int argc, char** argv) {
 
   printf("Test started \n");
 
-  // TODO(minyue): Remove when the old ACM is removed.
-  Config config;
-  config.Set<AudioCodingModuleFactory>(FLAGS_use_acm_version_1 ?
-      new AudioCodingModuleFactory() :
-      new NewAudioCodingModuleFactory());
-  m_voe = VoiceEngine::Create(config);
-
+  m_voe = VoiceEngine::Create();
   base1 = VoEBase::GetInterface(m_voe);
   codec = VoECodec::GetInterface(m_voe);
   apm = VoEAudioProcessing::GetInterface(m_voe);
@@ -242,7 +231,6 @@ void RunTest(std::string out_path) {
   bool enable_rx_ns = false;
   bool typing_detection = false;
   bool muted = false;
-  bool on_hold = false;
   bool opus_stereo = false;
   bool experimental_ns_enabled = false;
 
@@ -445,7 +433,6 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle receive-side NS \n", option_index++);
       printf("%i. AGC status \n", option_index++);
       printf("%i. Toggle microphone mute \n", option_index++);
-      printf("%i. Toggle on hold status \n", option_index++);
       printf("%i. Get last error code \n", option_index++);
       printf("%i. Toggle typing detection \n",
              option_index++);
@@ -458,6 +445,9 @@ void RunTest(std::string out_path) {
       printf("%i. Remove a file-playing channel \n", option_index++);
       printf("%i. Toggle Opus stereo (Opus must be selected again to apply "
              "the setting) \n", option_index++);
+      printf("%i. Set Opus maximum playback rate \n", option_index++);
+      printf("%i. Set bit rate (only take effect on codecs that allow the "
+             "change) \n", option_index++);
 
       printf("Select action or %i to stop the call: ", option_index);
       int option_selection;
@@ -497,9 +487,9 @@ void RunTest(std::string out_path) {
           printf("\n NS is now off! \n");
       } else if (option_selection == option_index++) {
         experimental_ns_enabled = !experimental_ns_enabled;
-        res = base1->audio_processing()->EnableExperimentalNs(
-            experimental_ns_enabled);
-        VALIDATE;
+        Config config;
+        config.Set<ExperimentalNs>(new ExperimentalNs(experimental_ns_enabled));
+        base1->audio_processing()->SetExtraOptions(config);
         if (experimental_ns_enabled) {
           printf("\n Experimental NS is now on!\n");
         } else {
@@ -632,19 +622,6 @@ void RunTest(std::string out_path) {
           printf("\n Microphone is now on mute! \n");
         else
           printf("\n Microphone is no longer on mute! \n");
-      } else if (option_selection == option_index++) {
-        // Toggle the call on hold
-        OnHoldModes mode;
-        res = base1->GetOnHoldStatus(chan, on_hold, mode);
-        VALIDATE;
-        on_hold = !on_hold;
-        mode = kHoldSendAndPlay;
-        res = base1->SetOnHoldStatus(chan, on_hold, mode);
-        VALIDATE;
-        if (on_hold)
-          printf("\n Call now on hold! \n");
-        else
-          printf("\n Call now not on hold! \n");
       } else if (option_selection == option_index++) {
         // Get the last error code and print to screen
         int err_code = 0;
@@ -783,6 +760,19 @@ void RunTest(std::string out_path) {
         else
           printf("\n Opus mono enabled (select Opus again to apply the "
                  "setting). \n");
+      } else if (option_selection == option_index++) {
+        printf("\n Input maxium playback rate in Hz: ");
+        int max_playback_rate;
+        ASSERT_EQ(1, scanf("%i", &max_playback_rate));
+        res = codec->SetOpusMaxPlaybackRate(chan, max_playback_rate);
+        VALIDATE;
+      } else if (option_selection == option_index++) {
+        res = codec->GetSendCodec(chan, cinst);
+        VALIDATE;
+        printf("Current bit rate is %i bps, set to: ", cinst.rate);
+        ASSERT_EQ(1, scanf("%i", &cinst.rate));
+        res = codec->SetSendCodec(chan, cinst);
+        VALIDATE;
       } else {
         break;
       }

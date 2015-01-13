@@ -289,7 +289,7 @@ void OpenSlesInput::AllocateBuffers() {
   fifo_.reset(new SingleRwFifo(num_fifo_buffers_needed_));
 
   // Allocate the memory area to be used.
-  rec_buf_.reset(new scoped_array<int8_t>[TotalBuffersUsed()]);
+  rec_buf_.reset(new scoped_ptr<int8_t[]>[TotalBuffersUsed()]);
   for (int i = 0; i < TotalBuffersUsed(); ++i) {
     rec_buf_[i].reset(new int8_t[buffer_size_bytes()]);
   }
@@ -358,6 +358,24 @@ bool OpenSlesInput::CreateAudioRecorder() {
                                                kNumInterfaces,
                                                id,
                                                req),
+      false);
+
+  SLAndroidConfigurationItf recorder_config;
+  OPENSL_RETURN_ON_FAILURE(
+      (*sles_recorder_)->GetInterface(sles_recorder_,
+                                      SL_IID_ANDROIDCONFIGURATION,
+                                      &recorder_config),
+      false);
+
+  // Set audio recorder configuration to
+  // SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION which ensures that we
+  // use the main microphone tuned for audio communications.
+  SLint32 stream_type = SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION;
+  OPENSL_RETURN_ON_FAILURE(
+      (*recorder_config)->SetConfiguration(recorder_config,
+                                           SL_ANDROID_KEY_RECORDING_PRESET,
+                                           &stream_type,
+                                           sizeof(SLint32)),
       false);
 
   // Realize the recorder in synchronous mode.

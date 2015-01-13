@@ -116,7 +116,9 @@ class AudioTransportAPI: public AudioTransport {
       const uint8_t nChannels,
       const uint32_t sampleRate,
       void* audioSamples,
-      uint32_t& nSamplesOut) {
+      uint32_t& nSamplesOut,
+      int64_t* elapsed_time_ms,
+      int64_t* ntp_time_ms) {
     play_count_++;
     if (play_count_ % 100 == 0) {
       if (nChannels == 1) {
@@ -142,10 +144,16 @@ class AudioTransportAPI: public AudioTransport {
     return 0;
   }
 
-  virtual void OnData(int voe_channel, const void* audio_data,
-                      int bits_per_sample, int sample_rate,
-                      int number_of_channels,
-                      int number_of_frames) {}
+  virtual void PushCaptureData(int voe_channel, const void* audio_data,
+                               int bits_per_sample, int sample_rate,
+                               int number_of_channels,
+                               int number_of_frames) {}
+
+  virtual void PullRenderData(int bits_per_sample, int sample_rate,
+                              int number_of_channels, int number_of_frames,
+                              void* audio_data,
+                              int64_t* elapsed_time_ms,
+                              int64_t* ntp_time_ms) {}
  private:
   uint32_t rec_count_;
   uint32_t play_count_;
@@ -378,6 +386,8 @@ TEST_F(AudioDeviceAPITest, RecordingDevices) {
   EXPECT_GT(audio_device_->RecordingDevices(), 0);
 }
 
+// TODO(henrika): uncomment when you have decided what to do with issue 3675.
+#if 0
 TEST_F(AudioDeviceAPITest, PlayoutDeviceName) {
   char name[kAdmMaxDeviceNameSize];
   char guid[kAdmMaxGuidSize];
@@ -474,6 +484,7 @@ TEST_F(AudioDeviceAPITest, SetRecordingDevice) {
     EXPECT_EQ(0, audio_device_->SetRecordingDevice(i));
   }
 }
+#endif  // 0
 
 TEST_F(AudioDeviceAPITest, PlayoutIsAvailable) {
   bool available;
@@ -1788,19 +1799,19 @@ TEST_F(AudioDeviceAPITest, SetPlayoutSpeaker) {
 #if defined(WEBRTC_IOS)
   // Not playing or recording, should just return a success
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(true));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_TRUE(loudspeakerOn);
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(false));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_FALSE(loudspeakerOn);
 
   EXPECT_EQ(0, audio_device_->InitPlayout());
   EXPECT_EQ(0, audio_device_->StartPlayout());
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(true));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_TRUE(loudspeakerOn);
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(false));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_FALSE(loudspeakerOn);
 
 #else

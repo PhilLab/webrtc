@@ -32,7 +32,7 @@ int MediaOptTest::RunTest(int testNum, CmdArgs& args)
     Trace::CreateTrace();
     Trace::SetTraceFile((test::OutputPath() + "mediaOptTestTrace.txt").c_str());
     Trace::set_level_filter(webrtc::kTraceAll);
-    VideoCodingModule* vcm = VideoCodingModule::Create(1);
+    VideoCodingModule* vcm = VideoCodingModule::Create();
     Clock* clock = Clock::GetRealTimeClock();
     MediaOptTest* mot = new MediaOptTest(vcm, clock);
     if (testNum == 0)
@@ -308,7 +308,7 @@ MediaOptTest::Perform()
     _vcm->RegisterReceiveCallback(&receiveCallback);
 
     _frameCnt  = 0;
-    _sumEncBytes = 0.0;
+    _sumEncBytes = 0;
     _numFramesDropped = 0;
     int half_width = (_width + 1) / 2;
     int half_height = (_height + 1) / 2;
@@ -338,7 +338,7 @@ MediaOptTest::Perform()
             printf ("Decode error in frame # %d",_frameCnt);
         }
 
-        float encBytes = encodeCompleteCallback->EncodedBytes();
+        size_t encBytes = encodeCompleteCallback->EncodedBytes();
         if (encBytes == 0)
         {
             _numFramesDropped += 1;

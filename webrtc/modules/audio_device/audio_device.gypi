@@ -20,7 +20,7 @@
         '.',
         '../interface',
         'include',
-        'dummy', # dummy audio device
+        'dummy',  # Contains dummy audio device implementations.
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -45,6 +45,8 @@
         'dummy/audio_device_dummy.h',
         'dummy/audio_device_utility_dummy.cc',
         'dummy/audio_device_utility_dummy.h',
+        'dummy/file_audio_device.cc',
+        'dummy/file_audio_device.h',
       ],
       'conditions': [
         ['OS=="linux"', {
@@ -77,6 +79,13 @@
             'WEBRTC_DUMMY_AUDIO_BUILD',
           ],
         }],
+        ['build_with_chromium==0', {
+          'sources': [
+            # Don't link these into Chrome since they contain static data.
+            'dummy/file_audio_device_factory.cc',
+            'dummy/file_audio_device_factory.h',
+          ],
+        }],
         ['include_internal_audio_device==1', {
           'sources': [
             'linux/alsasymboltable_linux.cc',
@@ -89,7 +98,7 @@
             'linux/audio_mixer_manager_alsa_linux.h',
             'linux/latebindingsymboltable_linux.cc',
             'linux/latebindingsymboltable_linux.h',
-            'ios/audio_device_ios.cc',
+            'ios/audio_device_ios.mm',
             'ios/audio_device_ios.h',
             'ios/audio_device_utility_ios.cc',
             'ios/audio_device_utility_ios.h',
@@ -166,12 +175,25 @@
                 }],
               ],
             }],
-            ['OS=="mac" or OS=="ios"', {
+            ['OS=="mac"', {
               'link_settings': {
                 'libraries': [
                   '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
                   '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
                 ],
+              },
+            }],
+            ['OS=="ios"', {
+              'xcode_settings': {
+                'CLANG_ENABLE_OBJC_ARC': 'YES',
+              },
+              'link_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework AudioToolbox',
+                    '-framework AVFoundation',
+                  ],
+                },
               },
             }],
             ['OS=="win"', {
@@ -238,7 +260,6 @@
               ],
               'includes': [
                 '../../build/isolate.gypi',
-                'audio_device_tests.isolate',
               ],
               'sources': [
                 'audio_device_tests.isolate',

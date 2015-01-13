@@ -26,14 +26,14 @@ enum {
 };
 
 typedef struct {
-  short buffer[kResamplerBufferSize];
+  float buffer[kResamplerBufferSize];
   float position;
 
   int deviceSampleRateHz;
   int skewData[kEstimateLengthFrames];
   int skewDataIndex;
   float skewEstimate;
-} resampler_t;
+} AecResampler;
 
 static int EstimateSkew(const int* rawSkew,
                         int size,
@@ -41,7 +41,7 @@ static int EstimateSkew(const int* rawSkew,
                         float* skewEst);
 
 int WebRtcAec_CreateResampler(void** resampInst) {
-  resampler_t* obj = malloc(sizeof(resampler_t));
+  AecResampler* obj = malloc(sizeof(AecResampler));
   *resampInst = obj;
   if (obj == NULL) {
     return -1;
@@ -51,7 +51,7 @@ int WebRtcAec_CreateResampler(void** resampInst) {
 }
 
 int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz) {
-  resampler_t* obj = (resampler_t*)resampInst;
+  AecResampler* obj = (AecResampler*)resampInst;
   memset(obj->buffer, 0, sizeof(obj->buffer));
   obj->position = 0.0;
 
@@ -64,22 +64,22 @@ int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz) {
 }
 
 int WebRtcAec_FreeResampler(void* resampInst) {
-  resampler_t* obj = (resampler_t*)resampInst;
+  AecResampler* obj = (AecResampler*)resampInst;
   free(obj);
 
   return 0;
 }
 
 void WebRtcAec_ResampleLinear(void* resampInst,
-                              const short* inspeech,
+                              const float* inspeech,
                               int size,
                               float skew,
-                              short* outspeech,
+                              float* outspeech,
                               int* size_out) {
-  resampler_t* obj = (resampler_t*)resampInst;
+  AecResampler* obj = (AecResampler*)resampInst;
 
-  short* y;
-  float be, tnew, interp;
+  float* y;
+  float be, tnew;
   int tn, mm;
 
   assert(!(size < 0 || size > 2 * FRAME_LEN));
@@ -91,7 +91,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   // Add new frame data in lookahead
   memcpy(&obj->buffer[FRAME_LEN + kResamplingDelay],
          inspeech,
-         size * sizeof(short));
+         size * sizeof(inspeech[0]));
 
   // Sample rate ratio
   be = 1 + skew;
@@ -106,15 +106,7 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   while (tn < size) {
 
     // Interpolation
-    interp = y[tn] + (tnew - tn) * (y[tn + 1] - y[tn]);
-
-    if (interp > 32767) {
-      interp = 32767;
-    } else if (interp < -32768) {
-      interp = -32768;
-    }
-
-    outspeech[mm] = (short)interp;
+    outspeech[mm] = y[tn] + (tnew - tn) * (y[tn + 1] - y[tn]);
     mm++;
 
     tnew = be * mm + obj->position;
@@ -127,11 +119,11 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   // Shift buffer
   memmove(obj->buffer,
           &obj->buffer[size],
-          (kResamplerBufferSize - size) * sizeof(short));
+          (kResamplerBufferSize - size) * sizeof(obj->buffer[0]));
 }
 
 int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst) {
-  resampler_t* obj = (resampler_t*)resampInst;
+  AecResampler* obj = (AecResampler*)resampInst;
   int err = 0;
 
   if (obj->skewDataIndex < kEstimateLengthFrames) {

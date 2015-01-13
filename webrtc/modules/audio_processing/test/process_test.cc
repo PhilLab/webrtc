@@ -59,7 +59,7 @@ void usage() {
   "when -ir or -i is used, the specified files will be processed directly in\n"
   "a simulation mode. Otherwise the full set of legacy test files is expected\n"
   "to be present in the working directory. OUT_FILE should be specified\n"
-  "without extension to support both int and float output.\n\n");
+  "without extension to support both raw and wav output.\n\n");
   printf("Options\n");
   printf("General configuration (only used for the simulation mode):\n");
   printf("  -fs SAMPLE_RATE_HZ\n");
@@ -78,6 +78,7 @@ void usage() {
   printf("  --no_delay_logging\n");
   printf("  --aec_suppression_level LEVEL  [0 - 2]\n");
   printf("  --extended_filter\n");
+  printf("  --no_reported_delay\n");
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
@@ -111,6 +112,7 @@ void usage() {
   printf("  --perf             Measure performance.\n");
   printf("  --quiet            Suppress text output.\n");
   printf("  --no_progress      Suppress progress.\n");
+  printf("  --raw_output       Raw output instead of WAV file.\n");
   printf("  --debug_file FILE  Dump a debug recording.\n");
 }
 
@@ -155,7 +157,6 @@ void void_main(int argc, char* argv[]) {
   const char* aecm_echo_path_out_filename = NULL;
 
   int32_t sample_rate_hz = 16000;
-  int32_t device_sample_rate_hz = 16000;
 
   int num_capture_input_channels = 1;
   int num_capture_output_channels = 1;
@@ -167,6 +168,7 @@ void void_main(int argc, char* argv[]) {
   bool perf_testing = false;
   bool verbose = true;
   bool progress = true;
+  bool raw_output = false;
   int extra_delay_ms = 0;
   int override_delay_ms = 0;
 
@@ -256,6 +258,11 @@ void void_main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--extended_filter") == 0) {
       Config config;
       config.Set<DelayCorrection>(new DelayCorrection(true));
+      apm->SetExtraOptions(config);
+
+    } else if (strcmp(argv[i], "--no_reported_delay") == 0) {
+      Config config;
+      config.Set<ReportedDelay>(new ReportedDelay(false));
       apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
@@ -395,7 +402,9 @@ void void_main(int argc, char* argv[]) {
       vad_out_filename = argv[i];
 
     } else if (strcmp(argv[i], "-expns") == 0) {
-      ASSERT_EQ(apm->kNoError, apm->EnableExperimentalNs(true));
+      Config config;
+      config.Set<ExperimentalNs>(new ExperimentalNs(true));
+      apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "--noasm") == 0) {
       WebRtc_GetCPUInfo = WebRtc_GetCPUInfoNoASM;
@@ -419,6 +428,9 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "--no_progress") == 0) {
       progress = false;
+
+    } else if (strcmp(argv[i], "--raw_output") == 0) {
+      raw_output = true;
 
     } else if (strcmp(argv[i], "--debug_file") == 0) {
       i++;
@@ -457,8 +469,6 @@ void void_main(int argc, char* argv[]) {
   if (out_filename.size() == 0) {
     out_filename = out_path + "out";
   }
-  std::string out_float_filename = out_filename + ".float";
-  out_filename += ".pcm";
 
   if (!vad_out_filename) {
     vad_out_filename = vad_file_default.c_str();
@@ -478,6 +488,9 @@ void void_main(int argc, char* argv[]) {
   FILE* ns_prob_file = NULL;
   FILE* aecm_echo_path_in_file = NULL;
   FILE* aecm_echo_path_out_file = NULL;
+
+  scoped_ptr<WavWriter> output_wav_file;
+  scoped_ptr<RawFile> output_raw_file;
 
   if (pb_filename) {
     pb_file = OpenFile(pb_filename, "rb");
@@ -519,7 +532,7 @@ void void_main(int argc, char* argv[]) {
 
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    scoped_array<char> echo_path(new char[path_size]);
+    scoped_ptr<char[]> echo_path(new char[path_size]);
     ASSERT_EQ(path_size, fread(echo_path.get(),
                                sizeof(char),
                                path_size,
@@ -563,6 +576,8 @@ void void_main(int argc, char* argv[]) {
     Event event_msg;
     scoped_ptr<ChannelBuffer<float> > reverse_cb;
     scoped_ptr<ChannelBuffer<float> > primary_cb;
+    int output_sample_rate = 32000;
+    AudioProcessing::ChannelLayout output_layout = AudioProcessing::kMono;
     while (ReadMessageFromFile(pb_file, &event_msg)) {
       std::ostringstream trace_stream;
       trace_stream << "Processed frames: " << reverse_count << " (reverse), "
@@ -578,39 +593,53 @@ void void_main(int argc, char* argv[]) {
         ASSERT_TRUE(msg.has_num_output_channels());
         ASSERT_TRUE(msg.has_num_reverse_channels());
         int reverse_sample_rate = msg.sample_rate();
-        if (msg.has_reverse_sample_rate())
+        if (msg.has_reverse_sample_rate()) {
           reverse_sample_rate = msg.reverse_sample_rate();
-        ASSERT_EQ(apm->kNoError, apm->Initialize(msg.sample_rate(),
-                                                 reverse_sample_rate,
-                                                 msg.num_input_channels(),
-                                                 msg.num_output_channels(),
-                                                 msg.num_reverse_channels()));
-        ASSERT_TRUE(msg.has_device_sample_rate());
-        ASSERT_EQ(apm->kNoError,
-                  apm->echo_cancellation()->set_device_sample_rate_hz(
-                      msg.device_sample_rate()));
-
+        }
+        output_sample_rate = msg.sample_rate();
+        if (msg.has_output_sample_rate()) {
+          output_sample_rate = msg.output_sample_rate();
+        }
+        output_layout = LayoutFromChannels(msg.num_output_channels());
+        ASSERT_EQ(kNoErr, apm->Initialize(
+                              msg.sample_rate(),
+                              output_sample_rate,
+                              reverse_sample_rate,
+                              LayoutFromChannels(msg.num_input_channels()),
+                              output_layout,
+                              LayoutFromChannels(msg.num_reverse_channels())));
 
         samples_per_channel = msg.sample_rate() / 100;
-        far_frame.sample_rate_hz_ = msg.sample_rate();
-        far_frame.samples_per_channel_ = samples_per_channel;
+        far_frame.sample_rate_hz_ = reverse_sample_rate;
+        far_frame.samples_per_channel_ = reverse_sample_rate / 100;
         far_frame.num_channels_ = msg.num_reverse_channels();
         near_frame.sample_rate_hz_ = msg.sample_rate();
         near_frame.samples_per_channel_ = samples_per_channel;
         near_frame.num_channels_ = msg.num_input_channels();
-        reverse_cb.reset(new ChannelBuffer<float>(samples_per_channel,
-                                                  msg.num_reverse_channels()));
+        reverse_cb.reset(new ChannelBuffer<float>(
+            far_frame.samples_per_channel_,
+            msg.num_reverse_channels()));
         primary_cb.reset(new ChannelBuffer<float>(samples_per_channel,
                                                   msg.num_input_channels()));
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
               primary_count, reverse_count);
-          printf("  Sample rate: %d Hz\n", msg.sample_rate());
+          printf("  Primary rates: %d Hz (in), %d Hz (out)\n",
+                 msg.sample_rate(), output_sample_rate);
           printf("  Primary channels: %d (in), %d (out)\n",
                  msg.num_input_channels(),
                  msg.num_output_channels());
-          printf("  Reverse channels: %d \n", msg.num_reverse_channels());
+          printf("  Reverse rate: %d\n", reverse_sample_rate);
+          printf("  Reverse channels: %d\n", msg.num_reverse_channels());
+        }
+
+        if (!raw_output) {
+          // The WAV file needs to be reset every time, because it cant change
+          // it's sample rate or number of channels.
+          output_wav_file.reset(new WavWriter(out_filename + ".wav",
+                                              output_sample_rate,
+                                              msg.num_output_channels()));
         }
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {
@@ -620,7 +649,7 @@ void void_main(int argc, char* argv[]) {
 
         ASSERT_TRUE(msg.has_data() ^ (msg.channel_size() > 0));
         if (msg.has_data()) {
-          ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
+          ASSERT_EQ(sizeof(int16_t) * far_frame.samples_per_channel_ *
               far_frame.num_channels_, msg.data().size());
           memcpy(far_frame.data_, msg.data().data(), msg.data().size());
         } else {
@@ -672,14 +701,16 @@ void void_main(int argc, char* argv[]) {
           memcpy(near_frame.data_,
                  msg.input_data().data(),
                  msg.input_data().size());
+          near_read_bytes += msg.input_data().size();
         } else {
           for (int i = 0; i < msg.input_channel_size(); ++i) {
             primary_cb->CopyFrom(msg.input_channel(i).data(), i);
+            near_read_bytes += msg.input_channel(i).size();
           }
         }
 
-        near_read_bytes += msg.input_data().size();
         if (progress && primary_count % 100 == 0) {
+          near_read_bytes = std::min(near_read_bytes, near_size_bytes);
           printf("%.0f%% complete\r",
               (near_read_bytes * 100.0) / near_size_bytes);
           fflush(stdout);
@@ -715,7 +746,9 @@ void void_main(int argc, char* argv[]) {
               near_frame.samples_per_channel_,
               near_frame.sample_rate_hz_,
               LayoutFromChannels(near_frame.num_channels_),
-              LayoutFromChannels(apm->num_output_channels()));
+              output_sample_rate,
+              output_layout,
+              primary_cb->channels());
         }
 
         if (err == apm->kBadStreamParameterWarning) {
@@ -753,19 +786,24 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size_t num_samples = samples_per_channel * apm->num_output_channels();
+        const size_t samples_per_channel = output_sample_rate / 100;
         if (msg.has_input_data()) {
-          static FILE* out_file = OpenFile(out_filename, "wb");
-          ASSERT_EQ(num_samples, fwrite(near_frame.data_,
-                                        sizeof(*near_frame.data_),
-                                        num_samples,
-                                        out_file));
+          if (raw_output && !output_raw_file) {
+            output_raw_file.reset(new RawFile(out_filename + ".pcm"));
+          }
+          WriteIntData(near_frame.data_,
+                       apm->num_output_channels() * samples_per_channel,
+                       output_wav_file.get(),
+                       output_raw_file.get());
         } else {
-          static FILE* out_float_file = OpenFile(out_float_filename, "wb");
-          ASSERT_EQ(num_samples, fwrite(primary_cb->data(),
-                                        sizeof(*primary_cb->data()),
-                                        num_samples,
-                                        out_float_file));
+          if (raw_output && !output_raw_file) {
+            output_raw_file.reset(new RawFile(out_filename + ".float"));
+          }
+          WriteFloatData(primary_cb->channels(),
+                         samples_per_channel,
+                         apm->num_output_channels(),
+                         output_wav_file.get(),
+                         output_raw_file.get());
         }
       }
     }
@@ -814,25 +852,34 @@ void void_main(int argc, char* argv[]) {
             fread(&sample_rate_hz, sizeof(sample_rate_hz), 1, event_file));
         samples_per_channel = sample_rate_hz / 100;
 
+        int32_t unused_device_sample_rate_hz;
         ASSERT_EQ(1u,
-            fread(&device_sample_rate_hz,
-                  sizeof(device_sample_rate_hz),
+            fread(&unused_device_sample_rate_hz,
+                  sizeof(unused_device_sample_rate_hz),
                   1,
                   event_file));
 
-        // TODO(bjornv): Replace set_sample_rate_hz() when we have a smarter
-        // AnalyzeReverseStream().
-        ASSERT_EQ(apm->kNoError, apm->set_sample_rate_hz(sample_rate_hz));
-
-        ASSERT_EQ(apm->kNoError,
-                  apm->echo_cancellation()->set_device_sample_rate_hz(
-                      device_sample_rate_hz));
+        ASSERT_EQ(kNoErr, apm->Initialize(
+                              sample_rate_hz,
+                              sample_rate_hz,
+                              sample_rate_hz,
+                              LayoutFromChannels(num_capture_input_channels),
+                              LayoutFromChannels(num_capture_output_channels),
+                              LayoutFromChannels(num_render_channels)));
 
         far_frame.sample_rate_hz_ = sample_rate_hz;
         far_frame.samples_per_channel_ = samples_per_channel;
         far_frame.num_channels_ = num_render_channels;
         near_frame.sample_rate_hz_ = sample_rate_hz;
         near_frame.samples_per_channel_ = samples_per_channel;
+
+        if (!raw_output) {
+          // The WAV file needs to be reset every time, because it can't change
+          // it's sample rate or number of channels.
+          output_wav_file.reset(new WavWriter(out_filename + ".wav",
+                                              sample_rate_hz,
+                                              num_capture_output_channels));
+        }
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -978,12 +1025,18 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size = samples_per_channel * near_frame.num_channels_;
-        static FILE* out_file = OpenFile(out_filename, "wb");
-        ASSERT_EQ(size, fwrite(near_frame.data_,
-                               sizeof(int16_t),
-                               size,
-                               out_file));
+        if (raw_output && !output_raw_file) {
+          output_raw_file.reset(new RawFile(out_filename + ".pcm"));
+        }
+        if (!raw_output && !output_wav_file) {
+          output_wav_file.reset(new WavWriter(out_filename + ".wav",
+                                              sample_rate_hz,
+                                              num_capture_output_channels));
+        }
+        WriteIntData(near_frame.data_,
+                     size,
+                     output_wav_file.get(),
+                     output_raw_file.get());
       }
       else {
         FAIL() << "Event " << event << " is unrecognized";
@@ -995,7 +1048,7 @@ void void_main(int argc, char* argv[]) {
   if (aecm_echo_path_out_file != NULL) {
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    scoped_array<char> echo_path(new char[path_size]);
+    scoped_ptr<char[]> echo_path(new char[path_size]);
     apm->echo_control_mobile()->GetEchoPath(echo_path.get(), path_size);
     ASSERT_EQ(path_size, fwrite(echo_path.get(),
                                 sizeof(char),

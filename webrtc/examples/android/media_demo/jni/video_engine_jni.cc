@@ -631,7 +631,8 @@ JOWW(jint, VideoEngine_setTraceFile)(JNIEnv* jni, jobject, jstring j_filename,
   return webrtc::VideoEngine::SetTraceFile(filename.c_str(), file_counter);
 }
 
-JOWW(jint, VideoEngine_setTraceFilter)(JNIEnv* jni, jobject, jint filter) {
+JOWW(jint, VideoEngine_nativeSetTraceFilter)(JNIEnv* jni, jobject,
+                                             jint filter) {
   return webrtc::VideoEngine::SetTraceFilter(filter);
 }
 
@@ -708,4 +709,10 @@ JOWW(void, VideoCodecInst_setMaxFrameRate)(JNIEnv* jni, jobject j_codec,
 
 JOWW(void, CameraDesc_dispose)(JNIEnv* jni, jobject j_camera) {
   delete GetCameraDesc(jni, j_camera);
+}
+
+JOWW(jint, VideoEngine_setLocalSSRC)(JNIEnv* jni, jobject j_vie, jint channel,
+                                      jint ssrc) {
+  VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);
+  return vie_data->rtp->SetLocalSSRC(channel, ssrc);
 }
