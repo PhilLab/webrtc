@@ -13,7 +13,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/base/base.gyp:rtc_base',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
       ],
       'sources': [
         'cropped_desktop_frame.cc',

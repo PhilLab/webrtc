@@ -221,8 +221,8 @@
           'dependencies': [
             'common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gmock.gyp:gmock',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gmock.gyp:gmock',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'audio_converter_unittest.cc',

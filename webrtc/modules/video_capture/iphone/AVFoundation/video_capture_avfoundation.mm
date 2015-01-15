@@ -11,8 +11,8 @@
 #include "video_capture_avfoundation.h"
 #include "video_capture_avfoundation_objc.h"
 #include "video_capture_avfoundation_info_objc.h"
-#include "trace.h"
-#include "critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "../../video_capture_config.h"
 
 namespace webrtc
@@ -57,12 +57,6 @@ VideoCaptureIPhoneAVFoundation::~VideoCaptureIPhoneAVFoundation()
     if(_captureDevice)
     {
         [_captureDevice stopCapture];
-        [_captureDevice release];
-    }
-
-    if(_captureInfo)
-    {
-        [_captureInfo release];
     }
 }
 

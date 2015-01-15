@@ -24,7 +24,7 @@
 
 #include	"webrtc/modules/video_render/include/video_render_defines.h"
 
-#import		"tick_util.h"
+#import		"webrtc/system_wrappers/interface/tick_util.h"
 
 class Trace;
 

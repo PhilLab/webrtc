@@ -11,9 +11,9 @@
 #include "webrtc/engine_configurations.h"
 
 #include "video_render_iphone_impl.h"
-#include "critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "video_render_uiview.h"
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -49,7 +49,7 @@ VideoRenderIPhoneImpl::Init()
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     // cast ptrWindow from void* to CocoaRenderer. Void* was once NSOpenGLView, and CocoaRenderer is NSOpenGLView.
-    _ptrUIViewRender = new VideoRenderUIView((UIImageView*)_ptrWindow, _fullScreen, _id);
+    _ptrUIViewRender = new VideoRenderUIView((__bridge UIImageView*)_ptrWindow, _fullScreen, _id);
     if (!_ptrWindow)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, _id, "Constructor %s:%d", __FUNCTION__, __LINE__);
@@ -96,7 +96,7 @@ VideoRenderIPhoneImpl::ChangeWindow(void* window)
     WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     _ptrWindow = window;
-    _ptrUIViewRender->ChangeWindow((UIImageView*)_ptrWindow);
+    _ptrUIViewRender->ChangeWindow((__bridge UIImageView*)_ptrWindow);
 
     return 0;
 }

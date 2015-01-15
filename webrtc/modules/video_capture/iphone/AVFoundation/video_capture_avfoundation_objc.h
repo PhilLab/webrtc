@@ -71,7 +71,6 @@
     NSString*                            _machineName;
     
     // other
-    NSAutoreleasePool*                    _pool;
     NSInteger                             _index;
 }
 /**************************************************************************

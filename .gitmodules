@@ -16,3 +16,6 @@
 [submodule "third_party/libsrtp"]
 	path = third_party/libsrtp
 	url = https://github.com/openpeer/libsrtp.git
+[submodule "tools/gyp"]
+	path = tools/gyp
+	url = https://chromium.googlesource.com/external/gyp.git

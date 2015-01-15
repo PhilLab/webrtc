@@ -13,7 +13,7 @@
       'target_name': 'system_wrappers_unittests',
       'type': '<(gtest_target_type)',
       'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
+        #'<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/test/test.gyp:test_support_main',
       ],

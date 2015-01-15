@@ -1,0 +1,98 @@
+build obj/webrtc/test/test_support_unittests.actions_depends.stamp: stamp $
+    libchannel_transport.a libtest_support_main.a libsystem_wrappers.a $
+    librtc_base_approved.a libfield_trial.a libtest_support.a libgflags.a $
+    libmetrics_default.a
+
+defines = -DV8_DEPRECATION_WARNINGS -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DCLD_VERSION=2 -DDISABLE_FTP_SUPPORT=1 -DWEBRTC_RESTRICT_LOGGING $
+    -DEXPAT_RELATIVE_PATH -DWEBRTC_MODULE_UTILITY_VIDEO -DWEBRTC_ARCH_ARM $
+    -DWEBRTC_ARCH_ARM64_NEON -DWEBRTC_POSIX -DWEBRTC_MAC -DWEBRTC_IOS $
+    -DUSE_LIBPCI=1 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -DNDEBUG $
+    -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0 -DNS_BLOCK_ASSERTIONS=1 $
+    -D_FORTIFY_SOURCE=2
+includes = -Igen -I../../../..
+cflags = -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -Os -gdwarf-2 -fvisibility=hidden -Werror -Wnewline-eof $
+    -miphoneos-version-min=7.0 -arch arm64 -Wall -Wendif-labels -Wextra $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -Wno-selector-type-mismatch -Wno-unknown-warning-option $
+    -Wheader-hygiene -Wno-char-subscripts $
+    -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
+    -Wstring-conversion -Wno-c++11-narrowing -Wno-deprecated-register $
+    -Wno-inconsistent-missing-override
+cflags_c = -std=c99 -fcolor-diagnostics
+cflags_cc = -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions $
+    -fvisibility-inlines-hidden -fno-threadsafe-statics -fcolor-diagnostics
+cflags_objc = $cflags_c -Wobjc-missing-property-synthesis
+cflags_objcc = $cflags_cc -Wobjc-missing-property-synthesis $
+    -fobjc-call-cxx-cdtors
+
+build $
+    obj/webrtc/test/channel_transport/test_support_unittests.udp_transport_unittest.o: $
+    cxx ../../../../webrtc/test/channel_transport/udp_transport_unittest.cc
+build $
+    obj/webrtc/test/channel_transport/test_support_unittests.udp_socket_manager_unittest.o: $
+    cxx $
+    ../../../../webrtc/test/channel_transport/udp_socket_manager_unittest.cc
+build $
+    obj/webrtc/test/channel_transport/test_support_unittests.udp_socket_wrapper_unittest.o: $
+    cxx $
+    ../../../../webrtc/test/channel_transport/udp_socket_wrapper_unittest.cc
+build $
+    obj/webrtc/test/testsupport/test_support_unittests.always_passing_unittest.o: $
+    cxx ../../../../webrtc/test/testsupport/always_passing_unittest.cc
+build $
+    obj/webrtc/test/testsupport/test_support_unittests.fileutils_unittest.o: $
+    cxx ../../../../webrtc/test/testsupport/fileutils_unittest.cc
+build $
+    obj/webrtc/test/testsupport/test_support_unittests.frame_reader_unittest.o: $
+    cxx ../../../../webrtc/test/testsupport/frame_reader_unittest.cc
+build $
+    obj/webrtc/test/testsupport/test_support_unittests.frame_writer_unittest.o: $
+    cxx ../../../../webrtc/test/testsupport/frame_writer_unittest.cc
+build $
+    obj/webrtc/test/testsupport/test_support_unittests.packet_reader_unittest.o: $
+    cxx ../../../../webrtc/test/testsupport/packet_reader_unittest.cc
+build $
+    obj/webrtc/test/testsupport/test_support_unittests.perf_test_unittest.o: $
+    cxx ../../../../webrtc/test/testsupport/perf_test_unittest.cc
+
+ldflags = -Wl,-search_paths_first -Wl,-dead_strip $
+    -miphoneos-version-min=7.0 -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -arch arm64 -L. -stdlib=libc++
+libs = 
+build test_support_unittests: link $
+    obj/webrtc/test/channel_transport/test_support_unittests.udp_transport_unittest.o $
+    obj/webrtc/test/channel_transport/test_support_unittests.udp_socket_manager_unittest.o $
+    obj/webrtc/test/channel_transport/test_support_unittests.udp_socket_wrapper_unittest.o $
+    obj/webrtc/test/testsupport/test_support_unittests.always_passing_unittest.o $
+    obj/webrtc/test/testsupport/test_support_unittests.fileutils_unittest.o $
+    obj/webrtc/test/testsupport/test_support_unittests.frame_reader_unittest.o $
+    obj/webrtc/test/testsupport/test_support_unittests.frame_writer_unittest.o $
+    obj/webrtc/test/testsupport/test_support_unittests.packet_reader_unittest.o $
+    obj/webrtc/test/testsupport/test_support_unittests.perf_test_unittest.o $
+    libchannel_transport.a libtest_support_main.a libsystem_wrappers.a $
+    librtc_base_approved.a libfield_trial.a libtest_support.a libgflags.a $
+    libmetrics_default.a
+  ld = $ldxx
+  postbuilds = $ && (export $
+      BUILT_PRODUCTS_DIR=../../projects/ios/ninja-arm64/Release-iphoneos; $
+      export CONFIGURATION=Release-iphoneos; export $
+      EXECUTABLE_NAME=test_support_unittests; export $
+      EXECUTABLE_PATH=test_support_unittests; export $
+      FULL_PRODUCT_NAME=test_support_unittests; export $
+      PRODUCT_NAME=test_support_unittests; export $
+      PRODUCT_TYPE=com.apple.product-type.tool; export $
+      SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk; $
+      export $
+      SRCROOT=../../projects/ios/ninja-arm64/Release-iphoneos/../../../../webrtc/test; $
+      export SOURCE_ROOT="$${SRCROOT}"; export $
+      TARGET_BUILD_DIR=../../projects/ios/ninja-arm64/Release-iphoneos; $
+      export TEMP_DIR="$${TMPDIR}"; (cd ../../../../webrtc/test && strip  $
+      ../../projects/ios/ninja-arm64/Release-iphoneos/test_support_unittests); $
+      G=$$?; ((exit $$G) || rm -rf test_support_unittests) && exit $$G)

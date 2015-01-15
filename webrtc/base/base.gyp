@@ -463,7 +463,7 @@
           'conditions': [
             ['build_json==1', {
               'dependencies': [
-                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+                #'<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
               ],
             }, {
               'include_dirs': [
@@ -546,9 +546,9 @@
                 # it's pulled from the system.
                 ['OS == "mac" or OS == "ios" or OS == "win"', {
                   'dependencies': [
-                    '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
-                    '<(DEPTH)/third_party/nss/nss.gyp:nspr',
-                    '<(DEPTH)/third_party/nss/nss.gyp:nss',
+                    #'<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+                    #'<(DEPTH)/third_party/nss/nss.gyp:nspr',
+                    #'<(DEPTH)/third_party/nss/nss.gyp:nss',
                   ],
                 }],
                 ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {

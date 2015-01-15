@@ -19,8 +19,6 @@
       'type': 'none',
       'dependencies': [
         'webrtc/webrtc.gyp:*',
-        '<(libjingle_root)/talk/libjingle.gyp:*',
-        '<(libjingle_root)/talk/libjingle_examples.gyp:*',
         '<@(webrtc_root_additional_dependencies)',
       ],
       'conditions': [
@@ -31,7 +29,6 @@
         }],
         ['include_tests==1', {
           'dependencies': [
-            '<(libjingle_root)/talk/libjingle_tests.gyp:*',
           ],
         }],
       ],

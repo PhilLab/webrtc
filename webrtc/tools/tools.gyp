@@ -118,7 +118,7 @@
           'target_name': 'agc_harness',
           'type': 'executable',
           'dependencies': [
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
             '<(webrtc_root)/test/test.gyp:channel_transport',
@@ -133,8 +133,8 @@
           'target_name': 'agc_proc',
           'type': 'executable',
           'dependencies': [
-            '<(DEPTH)/testing/gmock.gyp:gmock',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gmock.gyp:gmock',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
@@ -149,7 +149,7 @@
           'target_name': 'activity_metric',
           'type': 'executable',
           'dependencies': [
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             'agc_manager',
           ],
@@ -164,7 +164,7 @@
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
@@ -179,7 +179,7 @@
             'video_quality_analysis',
             '<(webrtc_root)/tools/internal_tools.gyp:command_line_parser',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'simple_command_line_parser_unittest.cc',

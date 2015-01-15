@@ -1,0 +1,78 @@
+defines = -DV8_DEPRECATION_WARNINGS -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DCLD_VERSION=2 -DDISABLE_FTP_SUPPORT=1 -DWEBRTC_RESTRICT_LOGGING $
+    -DEXPAT_RELATIVE_PATH -DWEBRTC_MODULE_UTILITY_VIDEO -DWEBRTC_ARCH_ARM $
+    -DWEBRTC_ARCH_ARM64_NEON -DWEBRTC_POSIX -DWEBRTC_MAC -DWEBRTC_IOS $
+    -DUSE_LIBPCI=1 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS $
+    -DDYNAMIC_ANNOTATIONS_ENABLED=1 -DWTF_USE_DYNAMIC_ANNOTATIONS=1 -D_DEBUG
+includes = -Igen -I../../../.. -I../../../../webrtc/modules/audio_device $
+    -I../../../../webrtc/modules/interface $
+    -I../../../../webrtc/modules/audio_device/include $
+    -I../../../../webrtc/modules/audio_device/dummy $
+    -I../../../../webrtc/modules/audio_device/ios $
+    -I../../../../webrtc/common_audio/resampler/include $
+    -I../../../../webrtc/common_audio/signal_processing/include $
+    -I../../../../webrtc/common_audio/vad/include $
+    -I../../../../webrtc/system_wrappers/interface
+cflags = -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -O0 -gdwarf-2 -fvisibility=hidden -Werror -Wnewline-eof $
+    -miphoneos-version-min=7.0 -arch arm64 -Wall -Wendif-labels -Wextra $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -Wno-selector-type-mismatch -Wno-unknown-warning-option $
+    -Wheader-hygiene -Wno-char-subscripts $
+    -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
+    -Wstring-conversion -Wno-c++11-narrowing -Wno-deprecated-register $
+    -Wno-inconsistent-missing-override
+cflags_c = -std=c99 -fcolor-diagnostics -fstack-protector-all $
+    -Wno-undefined-bool-conversion -Wno-tautological-undefined-compare
+cflags_cc = -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions $
+    -fvisibility-inlines-hidden -fno-threadsafe-statics -fcolor-diagnostics $
+    -fstack-protector-all -Wno-undefined-bool-conversion $
+    -Wno-tautological-undefined-compare
+cflags_objc = $cflags_c -fobjc-arc -Wobjc-missing-property-synthesis
+cflags_objcc = $cflags_cc -fobjc-arc -Wobjc-missing-property-synthesis $
+    -fobjc-call-cxx-cdtors
+
+build obj/webrtc/modules/audio_device/audio_device.audio_device_buffer.o: $
+    cxx ../../../../webrtc/modules/audio_device/audio_device_buffer.cc
+build obj/webrtc/modules/audio_device/audio_device.audio_device_generic.o: $
+    cxx ../../../../webrtc/modules/audio_device/audio_device_generic.cc
+build obj/webrtc/modules/audio_device/audio_device.audio_device_utility.o: $
+    cxx ../../../../webrtc/modules/audio_device/audio_device_utility.cc
+build obj/webrtc/modules/audio_device/audio_device.audio_device_impl.o: cxx $
+    ../../../../webrtc/modules/audio_device/audio_device_impl.cc
+build $
+    obj/webrtc/modules/audio_device/dummy/audio_device.audio_device_dummy.o: $
+    cxx ../../../../webrtc/modules/audio_device/dummy/audio_device_dummy.cc
+build $
+    obj/webrtc/modules/audio_device/dummy/audio_device.audio_device_utility_dummy.o: $
+    cxx $
+    ../../../../webrtc/modules/audio_device/dummy/audio_device_utility_dummy.cc
+build $
+    obj/webrtc/modules/audio_device/dummy/audio_device.file_audio_device.o: $
+    cxx ../../../../webrtc/modules/audio_device/dummy/file_audio_device.cc
+build $
+    obj/webrtc/modules/audio_device/dummy/audio_device.file_audio_device_factory.o: $
+    cxx $
+    ../../../../webrtc/modules/audio_device/dummy/file_audio_device_factory.cc
+build obj/webrtc/modules/audio_device/ios/audio_device.audio_device_ios.o: $
+    objcxx ../../../../webrtc/modules/audio_device/ios/audio_device_ios.mm
+build $
+    obj/webrtc/modules/audio_device/ios/audio_device.audio_device_utility_ios.o: $
+    cxx $
+    ../../../../webrtc/modules/audio_device/ios/audio_device_utility_ios.cc
+
+build libaudio_device.a: alink $
+    obj/webrtc/modules/audio_device/audio_device.audio_device_buffer.o $
+    obj/webrtc/modules/audio_device/audio_device.audio_device_generic.o $
+    obj/webrtc/modules/audio_device/audio_device.audio_device_utility.o $
+    obj/webrtc/modules/audio_device/audio_device.audio_device_impl.o $
+    obj/webrtc/modules/audio_device/dummy/audio_device.audio_device_dummy.o $
+    obj/webrtc/modules/audio_device/dummy/audio_device.audio_device_utility_dummy.o $
+    obj/webrtc/modules/audio_device/dummy/audio_device.file_audio_device.o $
+    obj/webrtc/modules/audio_device/dummy/audio_device.file_audio_device_factory.o $
+    obj/webrtc/modules/audio_device/ios/audio_device.audio_device_ios.o $
+    obj/webrtc/modules/audio_device/ios/audio_device.audio_device_utility_ios.o

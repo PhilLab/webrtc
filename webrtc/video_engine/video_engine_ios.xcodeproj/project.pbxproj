@@ -6,225 +6,125 @@
 	objectVersion = 46;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		0A409F3BCD2C0DFC55FF154E /* All */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = BD2EC65892A9B1F668072FC3 /* Build configuration list for PBXAggregateTarget "All" */;
-			buildPhases = (
-			);
-			dependencies = (
-				8A3C0DB0826CE2DC752730A6 /* PBXTargetDependency */,
-			);
-			name = All;
-			productName = All;
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
-		017AEAD4BF9006F7B8647D6D /* call_stats.cc in Sources */ = {isa = PBXBuildFile; fileRef = 84053663E0445F35CFDB93D3 /* call_stats.cc */; };
-		054193DF17F96D922242033F /* vie_sync_module.cc in Sources */ = {isa = PBXBuildFile; fileRef = FBB81EA5B89C7F0526D1F27C /* vie_sync_module.cc */; };
-		0B9BB94AA56A170520FCA330 /* vie_sender.cc in Sources */ = {isa = PBXBuildFile; fileRef = C9A7979E649B7BD9DE92A33B /* vie_sender.cc */; };
-		15D6DA2B40558535D4A983F5 /* vie_frame_provider_base.cc in Sources */ = {isa = PBXBuildFile; fileRef = F6B9B8D320E8381EE7004EDF /* vie_frame_provider_base.cc */; };
-		1E6BBC1750D07D74943255A5 /* vie_capturer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 422BE9932466CB755F655B29 /* vie_capturer.cc */; };
-		2A0272ECFE9461667852C646 /* vie_render_manager.cc in Sources */ = {isa = PBXBuildFile; fileRef = 137CA8C952D12EDA8E725379 /* vie_render_manager.cc */; };
-		2BDB3B94CC4BCF2B3AFA54B2 /* vie_channel.cc in Sources */ = {isa = PBXBuildFile; fileRef = 71DC69C62F72E96AF2CE6800 /* vie_channel.cc */; };
-		374DBE82D024013DCF1CA10C /* vie_rtp_rtcp_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0E2F632C6C5E86418C8477CF /* vie_rtp_rtcp_impl.cc */; };
-		42A9B06916CD5FC761EBE90F /* vie_shared_data.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4D9AB008147D4DC0CB84BA78 /* vie_shared_data.cc */; };
-		43A9C88E2E1C7BAF986DA20F /* vie_base_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 50FA5699E4414B93675A0554 /* vie_base_impl.cc */; };
-		45093B30502B78C2F81074E3 /* vie_receiver.cc in Sources */ = {isa = PBXBuildFile; fileRef = A7D02FB11194EA159EE1850D /* vie_receiver.cc */; };
-		6BFDEA295D0C4C71C47423C3 /* vie_codec_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 648225F250AE5AFF6F1D6480 /* vie_codec_impl.cc */; };
-		6CD90B1D14E2D319CB74B790 /* vie_capture_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = BAB256185324DC9A3088443A /* vie_capture_impl.cc */; };
-		7CA0A909D71FC4D768D0F33E /* vie_network_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = DEA34578BBDF516F6A1FA724 /* vie_network_impl.cc */; };
-		83CEA68779261A1BF61D1B92 /* vie_ref_count.cc in Sources */ = {isa = PBXBuildFile; fileRef = 789F4A67FF53E950FBC7D12A /* vie_ref_count.cc */; };
-		8663D98EC168C19924E6765B /* vie_remb.cc in Sources */ = {isa = PBXBuildFile; fileRef = ACDC3FF2FCC119F751608433 /* vie_remb.cc */; };
-		8E987B2CDB30C3B0F06EEA7C /* vie_channel_manager.cc in Sources */ = {isa = PBXBuildFile; fileRef = FBD4DC4C8242807395AA4FE0 /* vie_channel_manager.cc */; };
-		951003A6E951163858ECBF20 /* vie_encoder.cc in Sources */ = {isa = PBXBuildFile; fileRef = 5B2362582EFAA721240FB5FD /* vie_encoder.cc */; };
-		A578644D99EAB465BD62D442 /* vie_manager_base.cc in Sources */ = {isa = PBXBuildFile; fileRef = 401E25695E57B524309F0CEA /* vie_manager_base.cc */; };
-		ADF04CB398E90EF252A09551 /* vie_render_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = FDF07046437E231B89631442 /* vie_render_impl.cc */; };
-		C76D1BB8E5DE813E6F0D46A4 /* vie_external_codec_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 18029CFED30877BDB20A0C33 /* vie_external_codec_impl.cc */; };
-		C776428DB6AE7F1F1B7644CA /* vie_channel_group.cc in Sources */ = {isa = PBXBuildFile; fileRef = 00346D59DA21C5EBC448A4F1 /* vie_channel_group.cc */; };
-		CE27E8257985A517EE1B74FB /* vie_renderer.cc in Sources */ = {isa = PBXBuildFile; fileRef = E3725456AAE084EC2B9C65D6 /* vie_renderer.cc */; };
-		D5A79655BBA2E3652959C145 /* stream_synchronization.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0C363F8774FBA49276FD4869 /* stream_synchronization.cc */; };
-		DBB8A08DAE5041CDFD960652 /* vie_input_manager.cc in Sources */ = {isa = PBXBuildFile; fileRef = B56D268D32150D0B8956FA88 /* vie_input_manager.cc */; };
-		E6E101904AA165235507CC3B /* vie_image_process_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = B5D0C60497191F913DBF98FC /* vie_image_process_impl.cc */; };
-		EE14F8358230917A225F092C /* vie_file_image.cc in Sources */ = {isa = PBXBuildFile; fileRef = 08D1097649DFAE59B6A2FAF1 /* vie_file_image.cc */; };
-		EFB3070CBD40E528E5CD8DB4 /* overuse_frame_detector.cc in Sources */ = {isa = PBXBuildFile; fileRef = 53815D3F9E7BFBE981887D87 /* overuse_frame_detector.cc */; };
-		F5CA5A45D08117600555AE9C /* encoder_state_feedback.cc in Sources */ = {isa = PBXBuildFile; fileRef = CBC569049D192B01358C9147 /* encoder_state_feedback.cc */; };
-		FD44D70FE403314C20D923CE /* vie_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = FF0C183105BF08843FE7FCE9 /* vie_impl.cc */; };
+		0829298C05BD899B91BBCC3C /* vie_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = FF0C183105BF08843FE7FCE9 /* vie_impl.cc */; };
+		0A8284BDF57F3D8DF2D4789C /* vie_receiver.cc in Sources */ = {isa = PBXBuildFile; fileRef = A7D02FB11194EA159EE1850D /* vie_receiver.cc */; };
+		129F3B2802377AEF699C0347 /* vie_capture_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = BAB256185324DC9A3088443A /* vie_capture_impl.cc */; };
+		135B21AE1F6A7C46799BE324 /* vie_base_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 50FA5699E4414B93675A0554 /* vie_base_impl.cc */; };
+		1BE1B5BF0743EDCFDFA53C4D /* vie_channel_manager.cc in Sources */ = {isa = PBXBuildFile; fileRef = FBD4DC4C8242807395AA4FE0 /* vie_channel_manager.cc */; };
+		2245F2AC79C226F182BCB829 /* vie_codec_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 648225F250AE5AFF6F1D6480 /* vie_codec_impl.cc */; };
+		251EA4DF3C1B01EF1592E7E7 /* vie_image_process_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = B5D0C60497191F913DBF98FC /* vie_image_process_impl.cc */; };
+		4076E640D2A20DA89916874F /* vie_network_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = DEA34578BBDF516F6A1FA724 /* vie_network_impl.cc */; };
+		47042E4B92C7E91C990D4637 /* vie_encoder.cc in Sources */ = {isa = PBXBuildFile; fileRef = 5B2362582EFAA721240FB5FD /* vie_encoder.cc */; };
+		4E80F325E8B1A44FE74CB163 /* overuse_frame_detector.cc in Sources */ = {isa = PBXBuildFile; fileRef = 53815D3F9E7BFBE981887D87 /* overuse_frame_detector.cc */; };
+		59A21DEB271F0DAECAD0FEE6 /* vie_sender.cc in Sources */ = {isa = PBXBuildFile; fileRef = C9A7979E649B7BD9DE92A33B /* vie_sender.cc */; };
+		698DB8F4C458975A46740607 /* vie_remb.cc in Sources */ = {isa = PBXBuildFile; fileRef = ACDC3FF2FCC119F751608433 /* vie_remb.cc */; };
+		6AF38A8141CF8B445676B718 /* vie_input_manager.cc in Sources */ = {isa = PBXBuildFile; fileRef = B56D268D32150D0B8956FA88 /* vie_input_manager.cc */; };
+		6BD1845A9325231FE191F23C /* vie_channel.cc in Sources */ = {isa = PBXBuildFile; fileRef = 71DC69C62F72E96AF2CE6800 /* vie_channel.cc */; };
+		72165762587B04B6F6AA96B4 /* vie_file_image.cc in Sources */ = {isa = PBXBuildFile; fileRef = 08D1097649DFAE59B6A2FAF1 /* vie_file_image.cc */; };
+		72B9A0A22BC695BC22170393 /* vie_external_codec_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 18029CFED30877BDB20A0C33 /* vie_external_codec_impl.cc */; };
+		79A45E83EF996777F04CB924 /* vie_shared_data.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4D9AB008147D4DC0CB84BA78 /* vie_shared_data.cc */; };
+		83DD7D753C5046C8960E6BD3 /* call_stats.cc in Sources */ = {isa = PBXBuildFile; fileRef = 84053663E0445F35CFDB93D3 /* call_stats.cc */; };
+		84290AADC8C595EC8BC9B442 /* vie_render_manager.cc in Sources */ = {isa = PBXBuildFile; fileRef = 137CA8C952D12EDA8E725379 /* vie_render_manager.cc */; };
+		904E70CD59543F49756FDC40 /* vie_ref_count.cc in Sources */ = {isa = PBXBuildFile; fileRef = 789F4A67FF53E950FBC7D12A /* vie_ref_count.cc */; };
+		9435DEFD8C8E2D499C34B143 /* vie_capturer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 422BE9932466CB755F655B29 /* vie_capturer.cc */; };
+		9AA59A474BFEAFB297677DAA /* vie_render_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = FDF07046437E231B89631442 /* vie_render_impl.cc */; };
+		AB055907C9D74E211B8FCE0F /* encoder_state_feedback.cc in Sources */ = {isa = PBXBuildFile; fileRef = CBC569049D192B01358C9147 /* encoder_state_feedback.cc */; };
+		BA063510AA987843B72915F9 /* vie_rtp_rtcp_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0E2F632C6C5E86418C8477CF /* vie_rtp_rtcp_impl.cc */; };
+		D809C276EEE737D35B21646B /* vie_channel_group.cc in Sources */ = {isa = PBXBuildFile; fileRef = 00346D59DA21C5EBC448A4F1 /* vie_channel_group.cc */; };
+		E03BDED4D0E2E48F363A8FF1 /* vie_renderer.cc in Sources */ = {isa = PBXBuildFile; fileRef = E3725456AAE084EC2B9C65D6 /* vie_renderer.cc */; };
+		E5BD7476FC1FCCEB532D3D31 /* stream_synchronization.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0C363F8774FBA49276FD4869 /* stream_synchronization.cc */; };
+		EB2DAFF4F82CB56A24389176 /* report_block_stats.cc in Sources */ = {isa = PBXBuildFile; fileRef = 52B0705184B10D29FBE489FF /* report_block_stats.cc */; };
+		EE4D168CB4BDF7545942B15D /* vie_sync_module.cc in Sources */ = {isa = PBXBuildFile; fileRef = FBB81EA5B89C7F0526D1F27C /* vie_sync_module.cc */; };
+		F384EAEF5F60D8FD9BE8B108 /* vie_manager_base.cc in Sources */ = {isa = PBXBuildFile; fileRef = 401E25695E57B524309F0CEA /* vie_manager_base.cc */; };
+		F7BC747DB9B2CA6211B2D644 /* vie_frame_provider_base.cc in Sources */ = {isa = PBXBuildFile; fileRef = F6B9B8D320E8381EE7004EDF /* vie_frame_provider_base.cc */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		6227F47C7EAA65D8041D05E1 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 89B610676921C5F6E85081C3 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 1247F349AF14CF01874DA447;
-			remoteInfo = video_engine_core;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		00346D59DA21C5EBC448A4F1 /* vie_channel_group.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_channel_group.cc; sourceTree = "<group>"; };
-		0170BE05C4A359C2FD9769B1 /* vie_api_integration_test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_api_integration_test.cc; sourceTree = "<group>"; };
-		037EC7E921A5AC098CB87A5E /* vie_autotest_windows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest_windows.h; sourceTree = "<group>"; };
-		065A2C4988796B8D6F10D6A9 /* vie_window_manager_factory_linux.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_window_manager_factory_linux.cc; sourceTree = "<group>"; };
-		06A1E95F725E66D6D26E1EF7 /* vie_to_file_renderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_to_file_renderer.h; sourceTree = "<group>"; };
 		06FA4874D2CBFFAC7DB15ACA /* vie_receiver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_receiver.h; sourceTree = "<group>"; };
-		070E89D9828500EA9A2EEB76 /* vie_autotest_base.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_base.cc; sourceTree = "<group>"; };
 		08D1097649DFAE59B6A2FAF1 /* vie_file_image.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_file_image.cc; sourceTree = "<group>"; };
 		0AF91E7D74DCF6B2E493F46D /* vie_channel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_channel.h; sourceTree = "<group>"; };
 		0C363F8774FBA49276FD4869 /* stream_synchronization.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = stream_synchronization.cc; sourceTree = "<group>"; };
 		0E2F632C6C5E86418C8477CF /* vie_rtp_rtcp_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_rtp_rtcp_impl.cc; sourceTree = "<group>"; };
-		0EEBFCFAC0F30D9D3F8E81C5 /* tb_external_transport.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tb_external_transport.cc; sourceTree = "<group>"; };
-		10848AE6D48F055091A2D9A5 /* vie_autotest_linux.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_linux.cc; sourceTree = "<group>"; };
 		10E17DF076E4B5DBEBF918F9 /* vie_encoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_encoder.h; sourceTree = "<group>"; };
 		1147118498A352A6C1186FF3 /* overuse_frame_detector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = overuse_frame_detector.h; sourceTree = "<group>"; };
 		137CA8C952D12EDA8E725379 /* vie_render_manager.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_render_manager.cc; sourceTree = "<group>"; };
 		1506C08F378DA1C7AF0B1CBB /* vie_channel_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_channel_manager.h; sourceTree = "<group>"; };
-		16804AD103E099B16FDD7599 /* vie_autotest_image_process.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_image_process.cc; sourceTree = "<group>"; };
 		18029CFED30877BDB20A0C33 /* vie_external_codec_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_external_codec_impl.cc; sourceTree = "<group>"; };
 		1875DB35FB61B241A24B7134 /* vie_manager_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_manager_base.h; sourceTree = "<group>"; };
+		1A09EADBD1ECADFDF9D2C077 /* report_block_stats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = report_block_stats.h; sourceTree = "<group>"; };
 		1AF93C3D476B532CE14F4607 /* vie_shared_data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_shared_data.h; sourceTree = "<group>"; };
-		1CCF32BDC5965FC86E08ABE5 /* input_helpers.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = input_helpers.cc; sourceTree = "<group>"; };
-		1DC53E5AEEB3CA6D629BCD4A /* vie_autotest_codec.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_codec.cc; sourceTree = "<group>"; };
 		1E024BB431D285E47876910F /* video_engine.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = video_engine.gyp; sourceTree = "<group>"; };
 		1E1D14E55B3E5A5605D8E860 /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
-		1EB78A932AEF5CF5F9D0AAC1 /* vie_window_manager_factory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_window_manager_factory.h; sourceTree = "<group>"; };
 		2421396C54F0F803F513711E /* vie_external_codec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_external_codec.h; sourceTree = "<group>"; };
-		249D00402EA7EA1C1E3839D3 /* vie_codec_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_codec_unittest.cc; sourceTree = "<group>"; };
 		26527AA81CFD0A6792741C0F /* vie_capture_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_capture_impl.h; sourceTree = "<group>"; };
 		26A950A666374E7143CA1217 /* vie_ref_count.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_ref_count.h; sourceTree = "<group>"; };
 		298FE8A7D28BD4DF3477EC2D /* vie_remb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_remb.h; sourceTree = "<group>"; };
-		2D903BAACC46C02AC38E2FFE /* base_primitives.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = base_primitives.cc; sourceTree = "<group>"; };
 		2F1C49D205D2F850BE90DA45 /* vie_capturer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_capturer.h; sourceTree = "<group>"; };
-		2F4C4C00C95BD3520FFA5A2E /* tb_video_channel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tb_video_channel.h; sourceTree = "<group>"; };
-		3031EF4FD371B7C7BBB59ED3 /* vie_autotest_window_manager_interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest_window_manager_interface.h; sourceTree = "<group>"; };
 		30F4F01316BD11986D9F48AE /* vie_render_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_render_impl.h; sourceTree = "<group>"; };
-		3174C43439406FE002B662A3 /* vie_file_capture_device.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_file_capture_device.cc; sourceTree = "<group>"; };
-		31A95801D6DC21413D71A54C /* vie_autotest_capture.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_capture.cc; sourceTree = "<group>"; };
-		3226295BA75CEC69E9CC958C /* general_primitives.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = general_primitives.cc; sourceTree = "<group>"; };
 		35F45089E831CFB174B0F902 /* libvietest.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = libvietest.gypi; path = test/libvietest/libvietest.gypi; sourceTree = "<group>"; };
 		3C340D0DFDC394065D213CB9 /* stream_synchronization.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stream_synchronization.h; sourceTree = "<group>"; };
-		3DD225C3D91749492B0034A3 /* fake_stdin.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fake_stdin.cc; sourceTree = "<group>"; };
-		3FA8B0F4CDCE5F3D2EFE2B9C /* tb_interfaces.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tb_interfaces.h; sourceTree = "<group>"; };
 		401E25695E57B524309F0CEA /* vie_manager_base.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_manager_base.cc; sourceTree = "<group>"; };
 		422BE9932466CB755F655B29 /* vie_capturer.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_capturer.cc; sourceTree = "<group>"; };
-		42DFC34B0E45656B2CCBBB84 /* input_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = input_helpers.h; sourceTree = "<group>"; };
 		48732B51EC1C801CD0F5EC3E /* vie_sender.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_sender.h; sourceTree = "<group>"; };
-		4B26338D71B8F9D8413EFCD0 /* unittest-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "unittest-Info.plist"; sourceTree = "<group>"; };
-		4B2F6BCC065DC3092002EE16 /* vie_autotest_custom_call.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_custom_call.cc; sourceTree = "<group>"; };
-		4C693E71ED774B5C5A0E9E42 /* framedrop_primitives_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = framedrop_primitives_unittest.cc; sourceTree = "<group>"; };
 		4D9AB008147D4DC0CB84BA78 /* vie_shared_data.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_shared_data.cc; sourceTree = "<group>"; };
 		50FA5699E4414B93675A0554 /* vie_base_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_base_impl.cc; sourceTree = "<group>"; };
 		51D2BB32BA44366326B39BBD /* vie_channel_group.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_channel_group.h; sourceTree = "<group>"; };
-		5200F938E284A091F54DD86B /* vie_network_test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_network_test.cc; sourceTree = "<group>"; };
-		5357DA89BCCC906D91BC2756 /* input_helpers_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = input_helpers_unittest.cc; sourceTree = "<group>"; };
+		52B0705184B10D29FBE489FF /* report_block_stats.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = report_block_stats.cc; sourceTree = "<group>"; };
 		53815D3F9E7BFBE981887D87 /* overuse_frame_detector.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = overuse_frame_detector.cc; sourceTree = "<group>"; };
 		547974DA333D3FB93CE32DB0 /* vie_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_base.h; sourceTree = "<group>"; };
-		588D30BFD6A5B09A0BFB037C /* vie_to_file_renderer.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_to_file_renderer.cc; sourceTree = "<group>"; };
 		5B2362582EFAA721240FB5FD /* vie_encoder.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_encoder.cc; sourceTree = "<group>"; };
 		5B79E0E3108F51CA97452FD7 /* vie_render_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_render_manager.h; sourceTree = "<group>"; };
-		5B85597BBDC6E238ED7CB4A8 /* vie_autotest_defines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest_defines.h; sourceTree = "<group>"; };
-		5BEC3A1DC7825BA75139389D /* vie_autotest_mac_cocoa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest_mac_cocoa.h; sourceTree = "<group>"; };
+		5E3E40FCBD96F0C0770BCF07 /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
 		60E2B52CC84C5A4E8E739B0C /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
 		624D2F82627DC006D0413411 /* vie_network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_network.h; sourceTree = "<group>"; };
 		648225F250AE5AFF6F1D6480 /* vie_codec_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_codec_impl.cc; sourceTree = "<group>"; };
-		65319B45345D993B78081A4E /* vie_autotest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest.h; sourceTree = "<group>"; };
 		65FAD501761E53144B6833FF /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../build/common.gypi; sourceTree = "<group>"; };
-		66E421E76809DF6DD6362934 /* vie_remb_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_remb_unittest.cc; sourceTree = "<group>"; };
-		67F7A81071B06E25DAC8DCFE /* video_engine_core_unittests.isolate */ = {isa = PBXFileReference; lastKnownFileType = text; path = video_engine_core_unittests.isolate; sourceTree = "<group>"; };
-		6D170D3F4CDB7EF69C0AC5E3 /* stream_synchronization_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = stream_synchronization_unittest.cc; sourceTree = "<group>"; };
-		6E17E0B3CE22ADCF76AA530F /* vie_autotest_record.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_record.cc; sourceTree = "<group>"; };
 		6F7BFF2CEDAECF3801728DD6 /* vie_external_codec_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_external_codec_impl.h; sourceTree = "<group>"; };
 		71DC69C62F72E96AF2CE6800 /* vie_channel.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_channel.cc; sourceTree = "<group>"; };
 		73FFE1A160C1E365959C954F /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../build/filename_rules.gypi; sourceTree = "<group>"; };
-		740D7B56D9C858E2A095F8F1 /* tb_external_transport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tb_external_transport.h; sourceTree = "<group>"; };
-		7698176FC30FCDB5BC102177 /* vie_autotest_rtp_rtcp.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_rtp_rtcp.cc; sourceTree = "<group>"; };
 		787512B1B2781EF2840F9E3E /* vie_frame_provider_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_frame_provider_base.h; sourceTree = "<group>"; };
 		789F4A67FF53E950FBC7D12A /* vie_ref_count.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_ref_count.cc; sourceTree = "<group>"; };
-		78A207C93B1240E8B1AD2209 /* base_primitives.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = base_primitives.h; sourceTree = "<group>"; };
-		7E605883B3AE3C01986E4880 /* overuse_frame_detector_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = overuse_frame_detector_unittest.cc; sourceTree = "<group>"; };
 		7F416E68D228CF55E9A04E1D /* vie_base_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_base_impl.h; sourceTree = "<group>"; };
 		8399CDBAADB2B1160DD4A0D2 /* vie_image_process_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_image_process_impl.h; sourceTree = "<group>"; };
 		84053663E0445F35CFDB93D3 /* call_stats.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = call_stats.cc; sourceTree = "<group>"; };
-		8461BCC5A9EE8F8239107A7B /* vie_fake_camera.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_fake_camera.h; sourceTree = "<group>"; };
-		84A541281F920AEF98B92B7B /* vie_autotest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest.cc; sourceTree = "<group>"; };
-		862F864CAEA90CCC09E4A63A /* vie_standard_integration_test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_standard_integration_test.cc; sourceTree = "<group>"; };
-		870CF22768846B8B0DB67EE5 /* vie_fake_camera.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_fake_camera.cc; sourceTree = "<group>"; };
 		872997A5CEFA5F897C043DCA /* libvideo_engine_core.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libvideo_engine_core.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		882184A8D2D35FC624D5CE26 /* vie_codec_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_codec_impl.h; sourceTree = "<group>"; };
 		884CC79869FAF6BAC3158FC3 /* vie_sync_module.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_sync_module.h; sourceTree = "<group>"; };
 		8B7C15976A3BD275DA32FDD4 /* vie_network_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_network_impl.h; sourceTree = "<group>"; };
-		8C41628ABACFFDF2E47E4012 /* framedrop_primitives.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = framedrop_primitives.cc; sourceTree = "<group>"; };
-		8D05F97AE6E1610518DBFCF8 /* tb_video_channel.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tb_video_channel.cc; sourceTree = "<group>"; };
-		8E3B6B27CB430B382E4CDCFF /* choice_helpers.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = choice_helpers.cc; sourceTree = "<group>"; };
 		8E5A6C32602D3E74702D6CC4 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
 		8E5F9DFBB8DA7B48D12B361E /* call_stats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = call_stats.h; sourceTree = "<group>"; };
-		8F10994DF8211F90BB01A212 /* vie_file_based_comparison_tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_file_based_comparison_tests.h; sourceTree = "<group>"; };
 		912296B231719D25088FF0ED /* vie_file_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_file_image.h; sourceTree = "<group>"; };
-		93B46EC3A2AEF0EA2311A029 /* tb_I420_codec.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tb_I420_codec.cc; sourceTree = "<group>"; };
-		93D514B1BAB79194D3BE6C0F /* vie_autotest_simulcast.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_simulcast.cc; sourceTree = "<group>"; };
 		947786C9EE62CEF0563FEC17 /* vie_input_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_input_manager.h; sourceTree = "<group>"; };
 		94C309AD7F86A1EEA08B88B4 /* vie_auto_test.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = vie_auto_test.gypi; path = test/auto_test/vie_auto_test.gypi; sourceTree = "<group>"; };
-		94E28B5738B27110C50D09AB /* vie_autotest_linux.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest_linux.h; sourceTree = "<group>"; };
-		95826978F07AEFEEA8F2717E /* tb_I420_codec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tb_I420_codec.h; sourceTree = "<group>"; };
-		95F30D5F6D27DB3A713C19D9 /* legacy_fixture.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = legacy_fixture.cc; sourceTree = "<group>"; };
 		99278AFDD0DE38E37798C7BB /* vie_render.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_render.h; sourceTree = "<group>"; };
-		99D460AAC90E0CF8B6FB83FD /* general_primitives.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = general_primitives.h; sourceTree = "<group>"; };
-		9C377D45E6620CACA520860C /* vie_external_render_filter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_external_render_filter.h; sourceTree = "<group>"; };
 		9F6192A7FD62F14F22306465 /* vie_renderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_renderer.h; sourceTree = "<group>"; };
 		A09DF7C8BDF2FD7DB29E1094 /* vie_rtp_rtcp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_rtp_rtcp.h; sourceTree = "<group>"; };
-		A135D42903E8A177DC53C2CB /* vie_window_creator.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_window_creator.cc; sourceTree = "<group>"; };
 		A5310AC7D9F876D2CF0745B1 /* vie_image_process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_image_process.h; sourceTree = "<group>"; };
 		A677EF07CB1D5C2E55759C7A /* vie_capture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_capture.h; sourceTree = "<group>"; };
 		A6DA737F57B3E24A3DA8BB7F /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
 		A7D02FB11194EA159EE1850D /* vie_receiver.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_receiver.cc; sourceTree = "<group>"; };
 		A957BFEB65BCFC6913F227B6 /* isolate.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = isolate.gypi; path = ../build/isolate.gypi; sourceTree = "<group>"; };
-		A9D0FC63B445844962978B7D /* vie_window_manager_factory_mac.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = vie_window_manager_factory_mac.mm; sourceTree = "<group>"; };
-		A9F1AB14585D4D5E0CE4D709 /* tb_interfaces.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tb_interfaces.cc; sourceTree = "<group>"; };
-		AAE8AA1F0E80A49D5366FDAB /* tb_capture_device.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tb_capture_device.cc; sourceTree = "<group>"; };
 		AB40F4A465CEB884E6DC178D /* vie_defines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_defines.h; sourceTree = "<group>"; };
 		ACDC3FF2FCC119F751608433 /* vie_remb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_remb.cc; sourceTree = "<group>"; };
-		ADE444E014DA5460FFCE9DD3 /* call_stats_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = call_stats_unittest.cc; sourceTree = "<group>"; };
 		B3B0AD9ADBB5F637D2B4169F /* video_engine_core.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = video_engine_core.gypi; sourceTree = "<group>"; };
 		B56D268D32150D0B8956FA88 /* vie_input_manager.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_input_manager.cc; sourceTree = "<group>"; };
 		B5D0C60497191F913DBF98FC /* vie_image_process_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_image_process_impl.cc; sourceTree = "<group>"; };
-		B61ADF51C59BA071AD4B62E3 /* vie_window_creator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_window_creator.h; sourceTree = "<group>"; };
 		B7DE32A71C62072A7D61435F /* vie_rtp_rtcp_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_rtp_rtcp_impl.h; sourceTree = "<group>"; };
 		BAB256185324DC9A3088443A /* vie_capture_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_capture_impl.cc; sourceTree = "<group>"; };
-		BB68DC983EB8939D464FF253 /* choice_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = choice_helpers.h; sourceTree = "<group>"; };
-		BF030CD077116930A079FDFB /* vie_autotest_win.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_win.cc; sourceTree = "<group>"; };
-		BF65CD40517F23E0EABF20FE /* vie_auto_test.isolate */ = {isa = PBXFileReference; lastKnownFileType = text; name = vie_auto_test.isolate; path = test/auto_test/vie_auto_test.isolate; sourceTree = "<group>"; };
 		C27E0B8981BEF7E1C6FCDF50 /* encoder_state_feedback.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encoder_state_feedback.h; sourceTree = "<group>"; };
 		C9A7979E649B7BD9DE92A33B /* vie_sender.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_sender.cc; sourceTree = "<group>"; };
-		CA6467B371EFC0306CEBD20D /* vie_video_verification_test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_video_verification_test.cc; sourceTree = "<group>"; };
 		CBC569049D192B01358C9147 /* encoder_state_feedback.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = encoder_state_feedback.cc; sourceTree = "<group>"; };
 		D0E71B4C1E959716F2C91D85 /* vie_errors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_errors.h; sourceTree = "<group>"; };
-		D2F3BA7C568CC42158674515 /* framedrop_primitives.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = framedrop_primitives.h; sourceTree = "<group>"; };
-		D55E55634FF8687821F0A4A7 /* vie_autotest_cocoa_mac.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = vie_autotest_cocoa_mac.mm; sourceTree = "<group>"; };
-		D71483CADCFCCDF08C6DEDB6 /* vie_autotest_loopback.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_loopback.cc; sourceTree = "<group>"; };
 		D898A3998421299700C1B8ED /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../supplement.gypi; sourceTree = "<group>"; };
-		DB2F258F2A8D0F420DB21D7A /* vie_extended_integration_test.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_extended_integration_test.cc; sourceTree = "<group>"; };
 		DEA34578BBDF516F6A1FA724 /* vie_network_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_network_impl.cc; sourceTree = "<group>"; };
-		E3034A42998DFF9E2A5A232A /* vie_autotest_render.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_render.cc; sourceTree = "<group>"; };
 		E3725456AAE084EC2B9C65D6 /* vie_renderer.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_renderer.cc; sourceTree = "<group>"; };
-		E5D9C084E5FD7EB43925048A /* vie_autotest_main.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_main.cc; sourceTree = "<group>"; };
-		E69A2996B2EDB8C3D7C320D1 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		E7478C7C70C9CECBB942E1B7 /* vie_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_impl.h; sourceTree = "<group>"; };
-		EA1B9788BB6E6EDE25CF5584 /* choice_helpers_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = choice_helpers_unittest.cc; sourceTree = "<group>"; };
 		EA8173C8E3D35AC0FB3D5684 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../build/release.gypi; sourceTree = "<group>"; };
-		EB9D142F7CA699C23BAF0623 /* encoder_state_feedback_unittest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = encoder_state_feedback_unittest.cc; sourceTree = "<group>"; };
-		ED1712C5ED9289ABEB82DFBF /* two_windows_fixture.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = two_windows_fixture.cc; sourceTree = "<group>"; };
-		F096AD9581E2DB6951B850F7 /* tb_capture_device.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tb_capture_device.h; sourceTree = "<group>"; };
-		F2C0A6ED18AB4A2463AACB24 /* vie_file_capture_device.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_file_capture_device.h; sourceTree = "<group>"; };
-		F44B303FE60C09E940672B32 /* vie_file_based_comparison_tests.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_file_based_comparison_tests.cc; sourceTree = "<group>"; };
-		F5FD573E9975F8C01873DD68 /* vie_window_manager_factory_win.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_window_manager_factory_win.cc; sourceTree = "<group>"; };
-		F66AA3EC520C85F00742E7D9 /* vie_autotest_main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_autotest_main.h; sourceTree = "<group>"; };
 		F6B9B8D320E8381EE7004EDF /* vie_frame_provider_base.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_frame_provider_base.cc; sourceTree = "<group>"; };
 		FBB81EA5B89C7F0526D1F27C /* vie_sync_module.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_sync_module.cc; sourceTree = "<group>"; };
 		FBD4DC4C8242807395AA4FE0 /* vie_channel_manager.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_channel_manager.cc; sourceTree = "<group>"; };
-		FBFC29E4CEEAAE9E0C47CB57 /* fake_stdin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fake_stdin.h; sourceTree = "<group>"; };
-		FC30D110C6F5CDF85F60F5FF /* vie_autotest_android.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_autotest_android.cc; sourceTree = "<group>"; };
 		FDF07046437E231B89631442 /* vie_render_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_render_impl.cc; sourceTree = "<group>"; };
 		FE0A2E9A497FB425465C48B0 /* vie_codec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vie_codec.h; sourceTree = "<group>"; };
 		FF0C183105BF08843FE7FCE9 /* vie_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vie_impl.cc; sourceTree = "<group>"; };
@@ -241,123 +141,74 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		045F7CECEF5E86E4941E2D41 /* helpers */ = {
+		6FD72B76F40A5B529D733013 /* include */ = {
 			isa = PBXGroup;
 			children = (
-				870CF22768846B8B0DB67EE5 /* vie_fake_camera.cc */,
-				3174C43439406FE002B662A3 /* vie_file_capture_device.cc */,
-				588D30BFD6A5B09A0BFB037C /* vie_to_file_renderer.cc */,
+				547974DA333D3FB93CE32DB0 /* vie_base.h */,
+				A677EF07CB1D5C2E55759C7A /* vie_capture.h */,
+				FE0A2E9A497FB425465C48B0 /* vie_codec.h */,
+				D0E71B4C1E959716F2C91D85 /* vie_errors.h */,
+				2421396C54F0F803F513711E /* vie_external_codec.h */,
+				A5310AC7D9F876D2CF0745B1 /* vie_image_process.h */,
+				624D2F82627DC006D0413411 /* vie_network.h */,
+				99278AFDD0DE38E37798C7BB /* vie_render.h */,
+				A09DF7C8BDF2FD7DB29E1094 /* vie_rtp_rtcp.h */,
 			);
-			path = helpers;
+			path = include;
 			sourceTree = "<group>";
 		};
-		0DBAA874E265E07617855761 /* auto_test */ = {
+		73B21618246C7820EEB3345C /* Build */ = {
 			isa = PBXGroup;
 			children = (
-				1D5A5F2E1627B47BA7187C73 /* automated */,
-				1BE9B6E0E4EC4B7A8F854773 /* interface */,
-				F905BA447B086B2872E3AB78 /* primitives */,
-				323CFA683D7A3F5685AEB42A /* source */,
+				8E5A6C32602D3E74702D6CC4 /* common.gypi */,
+				65FAD501761E53144B6833FF /* common.gypi */,
+				73FFE1A160C1E365959C954F /* filename_rules.gypi */,
+				A957BFEB65BCFC6913F227B6 /* isolate.gypi */,
+				35F45089E831CFB174B0F902 /* libvietest.gypi */,
+				EA8173C8E3D35AC0FB3D5684 /* release.gypi */,
+				60E2B52CC84C5A4E8E739B0C /* release_defaults.gypi */,
+				A6DA737F57B3E24A3DA8BB7F /* release_impl.gypi */,
+				1E1D14E55B3E5A5605D8E860 /* release_impl_official.gypi */,
+				5E3E40FCBD96F0C0770BCF07 /* set_clang_warning_flags.gypi */,
+				D898A3998421299700C1B8ED /* supplement.gypi */,
+				1E024BB431D285E47876910F /* video_engine.gyp */,
+				B3B0AD9ADBB5F637D2B4169F /* video_engine_core.gypi */,
+				94C309AD7F86A1EEA08B88B4 /* vie_auto_test.gypi */,
 			);
-			path = auto_test;
+			name = Build;
 			sourceTree = "<group>";
 		};
-		1BE9B6E0E4EC4B7A8F854773 /* interface */ = {
+		D66677C50FAE24ADD0208714 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				65319B45345D993B78081A4E /* vie_autotest.h */,
-				5B85597BBDC6E238ED7CB4A8 /* vie_autotest_defines.h */,
-				94E28B5738B27110C50D09AB /* vie_autotest_linux.h */,
-				5BEC3A1DC7825BA75139389D /* vie_autotest_mac_cocoa.h */,
-				F66AA3EC520C85F00742E7D9 /* vie_autotest_main.h */,
-				3031EF4FD371B7C7BBB59ED3 /* vie_autotest_window_manager_interface.h */,
-				037EC7E921A5AC098CB87A5E /* vie_autotest_windows.h */,
-				8F10994DF8211F90BB01A212 /* vie_file_based_comparison_tests.h */,
-				B61ADF51C59BA071AD4B62E3 /* vie_window_creator.h */,
-				1EB78A932AEF5CF5F9D0AAC1 /* vie_window_manager_factory.h */,
+				872997A5CEFA5F897C043DCA /* libvideo_engine_core.a */,
 			);
-			path = interface;
+			name = Products;
 			sourceTree = "<group>";
 		};
-		1D5A5F2E1627B47BA7187C73 /* automated */ = {
+		D6AE97C91F3C5FA0E9A3D896 = {
 			isa = PBXGroup;
 			children = (
-				95F30D5F6D27DB3A713C19D9 /* legacy_fixture.cc */,
-				ED1712C5ED9289ABEB82DFBF /* two_windows_fixture.cc */,
-				0170BE05C4A359C2FD9769B1 /* vie_api_integration_test.cc */,
-				DB2F258F2A8D0F420DB21D7A /* vie_extended_integration_test.cc */,
-				5200F938E284A091F54DD86B /* vie_network_test.cc */,
-				862F864CAEA90CCC09E4A63A /* vie_standard_integration_test.cc */,
-				CA6467B371EFC0306CEBD20D /* vie_video_verification_test.cc */,
-			);
-			path = automated;
-			sourceTree = "<group>";
-		};
-		23F0DD9C19A2FD87D2BB25D3 /* libvietest */ = {
-			isa = PBXGroup;
-			children = (
-				045F7CECEF5E86E4941E2D41 /* helpers */,
-				CB67D7A4CA48020FBFA50715 /* include */,
-				C9A6A3D18F844F816D788BB8 /* testbed */,
-			);
-			path = libvietest;
-			sourceTree = "<group>";
-		};
-		2CAF492B13CBC9E8C91FF039 = {
-			isa = PBXGroup;
-			children = (
-				5A1B4FA4796092AFFEB02321 /* Source */,
-				82D18AE65F0B391C7DF5400B /* Products */,
-				A4CFCC54E450416E7E26BF84 /* Build */,
+				FBA3D7FD0DD5AB5202A083F3 /* Source */,
+				D66677C50FAE24ADD0208714 /* Products */,
+				73B21618246C7820EEB3345C /* Build */,
 			);
 			sourceTree = "<group>";
 		};
-		323CFA683D7A3F5685AEB42A /* source */ = {
+		FBA3D7FD0DD5AB5202A083F3 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				84A541281F920AEF98B92B7B /* vie_autotest.cc */,
-				FC30D110C6F5CDF85F60F5FF /* vie_autotest_android.cc */,
-				070E89D9828500EA9A2EEB76 /* vie_autotest_base.cc */,
-				31A95801D6DC21413D71A54C /* vie_autotest_capture.cc */,
-				D55E55634FF8687821F0A4A7 /* vie_autotest_cocoa_mac.mm */,
-				1DC53E5AEEB3CA6D629BCD4A /* vie_autotest_codec.cc */,
-				4B2F6BCC065DC3092002EE16 /* vie_autotest_custom_call.cc */,
-				16804AD103E099B16FDD7599 /* vie_autotest_image_process.cc */,
-				10848AE6D48F055091A2D9A5 /* vie_autotest_linux.cc */,
-				D71483CADCFCCDF08C6DEDB6 /* vie_autotest_loopback.cc */,
-				E5D9C084E5FD7EB43925048A /* vie_autotest_main.cc */,
-				6E17E0B3CE22ADCF76AA530F /* vie_autotest_record.cc */,
-				E3034A42998DFF9E2A5A232A /* vie_autotest_render.cc */,
-				7698176FC30FCDB5BC102177 /* vie_autotest_rtp_rtcp.cc */,
-				93D514B1BAB79194D3BE6C0F /* vie_autotest_simulcast.cc */,
-				BF030CD077116930A079FDFB /* vie_autotest_win.cc */,
-				F44B303FE60C09E940672B32 /* vie_file_based_comparison_tests.cc */,
-				A135D42903E8A177DC53C2CB /* vie_window_creator.cc */,
-				065A2C4988796B8D6F10D6A9 /* vie_window_manager_factory_linux.cc */,
-				A9D0FC63B445844962978B7D /* vie_window_manager_factory_mac.mm */,
-				F5FD573E9975F8C01873DD68 /* vie_window_manager_factory_win.cc */,
-			);
-			path = source;
-			sourceTree = "<group>";
-		};
-		5A1B4FA4796092AFFEB02321 /* Source */ = {
-			isa = PBXGroup;
-			children = (
-				B3040075664760B6FDDD69E8 /* ../../testing/gtest_ios */,
 				6FD72B76F40A5B529D733013 /* include */,
-				A2BBB3EDA7A5CF206283CABF /* test */,
 				84053663E0445F35CFDB93D3 /* call_stats.cc */,
 				8E5F9DFBB8DA7B48D12B361E /* call_stats.h */,
-				ADE444E014DA5460FFCE9DD3 /* call_stats_unittest.cc */,
 				CBC569049D192B01358C9147 /* encoder_state_feedback.cc */,
 				C27E0B8981BEF7E1C6FCDF50 /* encoder_state_feedback.h */,
-				EB9D142F7CA699C23BAF0623 /* encoder_state_feedback_unittest.cc */,
 				53815D3F9E7BFBE981887D87 /* overuse_frame_detector.cc */,
 				1147118498A352A6C1186FF3 /* overuse_frame_detector.h */,
-				7E605883B3AE3C01986E4880 /* overuse_frame_detector_unittest.cc */,
+				52B0705184B10D29FBE489FF /* report_block_stats.cc */,
+				1A09EADBD1ECADFDF9D2C077 /* report_block_stats.h */,
 				0C363F8774FBA49276FD4869 /* stream_synchronization.cc */,
 				3C340D0DFDC394065D213CB9 /* stream_synchronization.h */,
-				6D170D3F4CDB7EF69C0AC5E3 /* stream_synchronization_unittest.cc */,
 				50FA5699E4414B93675A0554 /* vie_base_impl.cc */,
 				7F416E68D228CF55E9A04E1D /* vie_base_impl.h */,
 				BAB256185324DC9A3088443A /* vie_capture_impl.cc */,
@@ -372,7 +223,6 @@
 				1506C08F378DA1C7AF0B1CBB /* vie_channel_manager.h */,
 				648225F250AE5AFF6F1D6480 /* vie_codec_impl.cc */,
 				882184A8D2D35FC624D5CE26 /* vie_codec_impl.h */,
-				249D00402EA7EA1C1E3839D3 /* vie_codec_unittest.cc */,
 				AB40F4A465CEB884E6DC178D /* vie_defines.h */,
 				5B2362582EFAA721240FB5FD /* vie_encoder.cc */,
 				10E17DF076E4B5DBEBF918F9 /* vie_encoder.h */,
@@ -398,7 +248,6 @@
 				26A950A666374E7143CA1217 /* vie_ref_count.h */,
 				ACDC3FF2FCC119F751608433 /* vie_remb.cc */,
 				298FE8A7D28BD4DF3477EC2D /* vie_remb.h */,
-				66E421E76809DF6DD6362934 /* vie_remb_unittest.cc */,
 				FDF07046437E231B89631442 /* vie_render_impl.cc */,
 				30F4F01316BD11986D9F48AE /* vie_render_impl.h */,
 				137CA8C952D12EDA8E725379 /* vie_render_manager.cc */,
@@ -415,120 +264,6 @@
 				884CC79869FAF6BAC3158FC3 /* vie_sync_module.h */,
 			);
 			name = Source;
-			sourceTree = "<group>";
-		};
-		6FD72B76F40A5B529D733013 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				547974DA333D3FB93CE32DB0 /* vie_base.h */,
-				A677EF07CB1D5C2E55759C7A /* vie_capture.h */,
-				FE0A2E9A497FB425465C48B0 /* vie_codec.h */,
-				D0E71B4C1E959716F2C91D85 /* vie_errors.h */,
-				2421396C54F0F803F513711E /* vie_external_codec.h */,
-				A5310AC7D9F876D2CF0745B1 /* vie_image_process.h */,
-				624D2F82627DC006D0413411 /* vie_network.h */,
-				99278AFDD0DE38E37798C7BB /* vie_render.h */,
-				A09DF7C8BDF2FD7DB29E1094 /* vie_rtp_rtcp.h */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-		82D18AE65F0B391C7DF5400B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				872997A5CEFA5F897C043DCA /* libvideo_engine_core.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		A2BBB3EDA7A5CF206283CABF /* test */ = {
-			isa = PBXGroup;
-			children = (
-				0DBAA874E265E07617855761 /* auto_test */,
-				23F0DD9C19A2FD87D2BB25D3 /* libvietest */,
-			);
-			path = test;
-			sourceTree = "<group>";
-		};
-		A4CFCC54E450416E7E26BF84 /* Build */ = {
-			isa = PBXGroup;
-			children = (
-				8E5A6C32602D3E74702D6CC4 /* common.gypi */,
-				65FAD501761E53144B6833FF /* common.gypi */,
-				73FFE1A160C1E365959C954F /* filename_rules.gypi */,
-				A957BFEB65BCFC6913F227B6 /* isolate.gypi */,
-				35F45089E831CFB174B0F902 /* libvietest.gypi */,
-				EA8173C8E3D35AC0FB3D5684 /* release.gypi */,
-				60E2B52CC84C5A4E8E739B0C /* release_defaults.gypi */,
-				A6DA737F57B3E24A3DA8BB7F /* release_impl.gypi */,
-				1E1D14E55B3E5A5605D8E860 /* release_impl_official.gypi */,
-				D898A3998421299700C1B8ED /* supplement.gypi */,
-				1E024BB431D285E47876910F /* video_engine.gyp */,
-				B3B0AD9ADBB5F637D2B4169F /* video_engine_core.gypi */,
-				67F7A81071B06E25DAC8DCFE /* video_engine_core_unittests.isolate */,
-				94C309AD7F86A1EEA08B88B4 /* vie_auto_test.gypi */,
-				BF65CD40517F23E0EABF20FE /* vie_auto_test.isolate */,
-			);
-			name = Build;
-			sourceTree = "<group>";
-		};
-		B3040075664760B6FDDD69E8 /* ../../testing/gtest_ios */ = {
-			isa = PBXGroup;
-			children = (
-				E69A2996B2EDB8C3D7C320D1 /* Default-568h@2x.png */,
-				4B26338D71B8F9D8413EFCD0 /* unittest-Info.plist */,
-			);
-			path = ../../testing/gtest_ios;
-			sourceTree = "<group>";
-		};
-		C9A6A3D18F844F816D788BB8 /* testbed */ = {
-			isa = PBXGroup;
-			children = (
-				93B46EC3A2AEF0EA2311A029 /* tb_I420_codec.cc */,
-				AAE8AA1F0E80A49D5366FDAB /* tb_capture_device.cc */,
-				0EEBFCFAC0F30D9D3F8E81C5 /* tb_external_transport.cc */,
-				A9F1AB14585D4D5E0CE4D709 /* tb_interfaces.cc */,
-				8D05F97AE6E1610518DBFCF8 /* tb_video_channel.cc */,
-			);
-			path = testbed;
-			sourceTree = "<group>";
-		};
-		CB67D7A4CA48020FBFA50715 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				95826978F07AEFEEA8F2717E /* tb_I420_codec.h */,
-				F096AD9581E2DB6951B850F7 /* tb_capture_device.h */,
-				740D7B56D9C858E2A095F8F1 /* tb_external_transport.h */,
-				3FA8B0F4CDCE5F3D2EFE2B9C /* tb_interfaces.h */,
-				2F4C4C00C95BD3520FFA5A2E /* tb_video_channel.h */,
-				9C377D45E6620CACA520860C /* vie_external_render_filter.h */,
-				8461BCC5A9EE8F8239107A7B /* vie_fake_camera.h */,
-				F2C0A6ED18AB4A2463AACB24 /* vie_file_capture_device.h */,
-				06A1E95F725E66D6D26E1EF7 /* vie_to_file_renderer.h */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-		F905BA447B086B2872E3AB78 /* primitives */ = {
-			isa = PBXGroup;
-			children = (
-				2D903BAACC46C02AC38E2FFE /* base_primitives.cc */,
-				78A207C93B1240E8B1AD2209 /* base_primitives.h */,
-				8E3B6B27CB430B382E4CDCFF /* choice_helpers.cc */,
-				BB68DC983EB8939D464FF253 /* choice_helpers.h */,
-				EA1B9788BB6E6EDE25CF5584 /* choice_helpers_unittest.cc */,
-				3DD225C3D91749492B0034A3 /* fake_stdin.cc */,
-				FBFC29E4CEEAAE9E0C47CB57 /* fake_stdin.h */,
-				8C41628ABACFFDF2E47E4012 /* framedrop_primitives.cc */,
-				D2F3BA7C568CC42158674515 /* framedrop_primitives.h */,
-				4C693E71ED774B5C5A0E9E42 /* framedrop_primitives_unittest.cc */,
-				3226295BA75CEC69E9CC958C /* general_primitives.cc */,
-				99D460AAC90E0CF8B6FB83FD /* general_primitives.h */,
-				1CCF32BDC5965FC86E08ABE5 /* input_helpers.cc */,
-				42DFC34B0E45656B2CCBBB84 /* input_helpers.h */,
-				5357DA89BCCC906D91BC2756 /* input_helpers_unittest.cc */,
-			);
-			path = primitives;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -557,7 +292,6 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 0510;
 			};
 			buildConfigurationList = 4E700130979D1C438B5FD310 /* Build configuration list for PBXProject "video_engine_ios" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -566,11 +300,10 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = 2CAF492B13CBC9E8C91FF039;
+			mainGroup = D6AE97C91F3C5FA0E9A3D896;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0A409F3BCD2C0DFC55FF154E /* All */,
 				1247F349AF14CF01874DA447 /* video_engine_core */,
 			);
 		};
@@ -581,88 +314,61 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				017AEAD4BF9006F7B8647D6D /* call_stats.cc in Sources */,
-				F5CA5A45D08117600555AE9C /* encoder_state_feedback.cc in Sources */,
-				EFB3070CBD40E528E5CD8DB4 /* overuse_frame_detector.cc in Sources */,
-				D5A79655BBA2E3652959C145 /* stream_synchronization.cc in Sources */,
-				43A9C88E2E1C7BAF986DA20F /* vie_base_impl.cc in Sources */,
-				6CD90B1D14E2D319CB74B790 /* vie_capture_impl.cc in Sources */,
-				6BFDEA295D0C4C71C47423C3 /* vie_codec_impl.cc in Sources */,
-				C76D1BB8E5DE813E6F0D46A4 /* vie_external_codec_impl.cc in Sources */,
-				E6E101904AA165235507CC3B /* vie_image_process_impl.cc in Sources */,
-				FD44D70FE403314C20D923CE /* vie_impl.cc in Sources */,
-				7CA0A909D71FC4D768D0F33E /* vie_network_impl.cc in Sources */,
-				83CEA68779261A1BF61D1B92 /* vie_ref_count.cc in Sources */,
-				ADF04CB398E90EF252A09551 /* vie_render_impl.cc in Sources */,
-				374DBE82D024013DCF1CA10C /* vie_rtp_rtcp_impl.cc in Sources */,
-				42A9B06916CD5FC761EBE90F /* vie_shared_data.cc in Sources */,
-				1E6BBC1750D07D74943255A5 /* vie_capturer.cc in Sources */,
-				2BDB3B94CC4BCF2B3AFA54B2 /* vie_channel.cc in Sources */,
-				C776428DB6AE7F1F1B7644CA /* vie_channel_group.cc in Sources */,
-				8E987B2CDB30C3B0F06EEA7C /* vie_channel_manager.cc in Sources */,
-				951003A6E951163858ECBF20 /* vie_encoder.cc in Sources */,
-				EE14F8358230917A225F092C /* vie_file_image.cc in Sources */,
-				15D6DA2B40558535D4A983F5 /* vie_frame_provider_base.cc in Sources */,
-				DBB8A08DAE5041CDFD960652 /* vie_input_manager.cc in Sources */,
-				A578644D99EAB465BD62D442 /* vie_manager_base.cc in Sources */,
-				45093B30502B78C2F81074E3 /* vie_receiver.cc in Sources */,
-				8663D98EC168C19924E6765B /* vie_remb.cc in Sources */,
-				CE27E8257985A517EE1B74FB /* vie_renderer.cc in Sources */,
-				2A0272ECFE9461667852C646 /* vie_render_manager.cc in Sources */,
-				0B9BB94AA56A170520FCA330 /* vie_sender.cc in Sources */,
-				054193DF17F96D922242033F /* vie_sync_module.cc in Sources */,
+				83DD7D753C5046C8960E6BD3 /* call_stats.cc in Sources */,
+				AB055907C9D74E211B8FCE0F /* encoder_state_feedback.cc in Sources */,
+				4E80F325E8B1A44FE74CB163 /* overuse_frame_detector.cc in Sources */,
+				EB2DAFF4F82CB56A24389176 /* report_block_stats.cc in Sources */,
+				E5BD7476FC1FCCEB532D3D31 /* stream_synchronization.cc in Sources */,
+				135B21AE1F6A7C46799BE324 /* vie_base_impl.cc in Sources */,
+				129F3B2802377AEF699C0347 /* vie_capture_impl.cc in Sources */,
+				2245F2AC79C226F182BCB829 /* vie_codec_impl.cc in Sources */,
+				72B9A0A22BC695BC22170393 /* vie_external_codec_impl.cc in Sources */,
+				251EA4DF3C1B01EF1592E7E7 /* vie_image_process_impl.cc in Sources */,
+				0829298C05BD899B91BBCC3C /* vie_impl.cc in Sources */,
+				4076E640D2A20DA89916874F /* vie_network_impl.cc in Sources */,
+				904E70CD59543F49756FDC40 /* vie_ref_count.cc in Sources */,
+				9AA59A474BFEAFB297677DAA /* vie_render_impl.cc in Sources */,
+				BA063510AA987843B72915F9 /* vie_rtp_rtcp_impl.cc in Sources */,
+				79A45E83EF996777F04CB924 /* vie_shared_data.cc in Sources */,
+				9435DEFD8C8E2D499C34B143 /* vie_capturer.cc in Sources */,
+				6BD1845A9325231FE191F23C /* vie_channel.cc in Sources */,
+				D809C276EEE737D35B21646B /* vie_channel_group.cc in Sources */,
+				1BE1B5BF0743EDCFDFA53C4D /* vie_channel_manager.cc in Sources */,
+				47042E4B92C7E91C990D4637 /* vie_encoder.cc in Sources */,
+				72165762587B04B6F6AA96B4 /* vie_file_image.cc in Sources */,
+				F7BC747DB9B2CA6211B2D644 /* vie_frame_provider_base.cc in Sources */,
+				6AF38A8141CF8B445676B718 /* vie_input_manager.cc in Sources */,
+				F384EAEF5F60D8FD9BE8B108 /* vie_manager_base.cc in Sources */,
+				0A8284BDF57F3D8DF2D4789C /* vie_receiver.cc in Sources */,
+				698DB8F4C458975A46740607 /* vie_remb.cc in Sources */,
+				E03BDED4D0E2E48F363A8FF1 /* vie_renderer.cc in Sources */,
+				84290AADC8C595EC8BC9B442 /* vie_render_manager.cc in Sources */,
+				59A21DEB271F0DAECAD0FEE6 /* vie_sender.cc in Sources */,
+				EE4D168CB4BDF7545942B15D /* vie_sync_module.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		8A3C0DB0826CE2DC752730A6 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 1247F349AF14CF01874DA447 /* video_engine_core */;
-			targetProxy = 6227F47C7EAA65D8041D05E1 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		027E6211585971EF52B59433 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = All;
-			};
-			name = Profile;
-		};
-		176843062D17E9F99DC88D7A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = All;
-			};
-			name = Release;
-		};
 		42108511DCE2D5F40B73F36D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
 				SYMROOT = ../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
-		6240B5881D621AB39589121B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = All;
-			};
-			name = Debug;
-		};
 		A98D4D47C726386D79F0C3C5 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -679,24 +385,24 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
 					DISABLE_NACL,
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_CONFIGURATION_POLICY,
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
 					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
 					WEBRTC_IOS,
+					"USE_LIBPCI=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
@@ -711,48 +417,33 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../..,
 					../common_video/interface,
 					../common_video/libyuv/include,
 					../system_wrappers/interface,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-framework",
-					AVFoundation,
-					"-framework",
-					CoreMedia,
-					"-framework",
-					CoreVideo,
-					"-framework",
-					UIKit,
-					"-framework",
-					OpenGLES,
-					"-framework",
-					QuartzCore,
-					"-framework",
-					UIKit,
-				);
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_engine_core;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
+					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
+					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Profile;
@@ -761,7 +452,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -777,28 +470,29 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
 					DISABLE_NACL,
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_CONFIGURATION_POLICY,
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
 					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
 					WEBRTC_IOS,
+					"USE_LIBPCI=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -806,48 +500,38 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../..,
 					../common_video/interface,
 					../common_video/libyuv/include,
 					../system_wrappers/interface,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "-fstack-protector-all";
-				OTHER_LDFLAGS = (
-					"-framework",
-					AVFoundation,
-					"-framework",
-					CoreMedia,
-					"-framework",
-					CoreVideo,
-					"-framework",
-					UIKit,
-					"-framework",
-					OpenGLES,
-					"-framework",
-					QuartzCore,
-					"-framework",
-					UIKit,
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				OTHER_CFLAGS = (
+					"-Wno-shorten-64-to-32",
+					"-fstack-protector-all",
+					"-Wno-undefined-bool-conversion",
+					"-Wno-tautological-undefined-compare",
 				);
 				PRODUCT_NAME = video_engine_core;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
+					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
+					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Debug;
@@ -858,7 +542,6 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
 				SYMROOT = ../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -868,7 +551,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -885,24 +570,24 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
 					DISABLE_NACL,
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_CONFIGURATION_POLICY,
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
 					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
 					WEBRTC_IOS,
+					"USE_LIBPCI=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
@@ -917,48 +602,33 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../..,
 					../common_video/interface,
 					../common_video/libyuv/include,
 					../system_wrappers/interface,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-framework",
-					AVFoundation,
-					"-framework",
-					CoreMedia,
-					"-framework",
-					CoreVideo,
-					"-framework",
-					UIKit,
-					"-framework",
-					OpenGLES,
-					"-framework",
-					QuartzCore,
-					"-framework",
-					UIKit,
-				);
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_engine_core;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
+					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
+					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Release;
@@ -969,7 +639,6 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
 				SYMROOT = ../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -994,16 +663,6 @@
 				E53EC6BDEABCCC97BD2DC066 /* Debug */,
 				CE9816F944E45154EF98A5A5 /* Profile */,
 				42108511DCE2D5F40B73F36D /* Release */,
-			);
-			defaultConfigurationIsVisible = 1;
-			defaultConfigurationName = Debug;
-		};
-		BD2EC65892A9B1F668072FC3 /* Build configuration list for PBXAggregateTarget "All" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				6240B5881D621AB39589121B /* Debug */,
-				027E6211585971EF52B59433 /* Profile */,
-				176843062D17E9F99DC88D7A /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;

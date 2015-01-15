@@ -16,7 +16,7 @@
       'target_name': 'channel_transport',
       'type': 'static_library',
       'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
+        #'<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
@@ -86,7 +86,7 @@
       ],
       'dependencies': [
         'field_trial',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
+        #'<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:metrics_default',
       ],
@@ -95,8 +95,8 @@
       'target_name': 'test_support',
       'type': 'static_library',
       'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
+        #'<(DEPTH)/testing/gtest.gyp:gtest',
+        #'<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
@@ -126,8 +126,8 @@
       'dependencies': [
         'field_trial',
         'test_support',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
+        #'<(DEPTH)/testing/gmock.gyp:gmock',
+        #'<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:metrics_default',
       ],
@@ -160,8 +160,8 @@
       'dependencies': [
         'channel_transport',
         'test_support_main',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
+        #'<(DEPTH)/testing/gmock.gyp:gmock',
+        #'<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'sources': [
         'channel_transport/udp_transport_unittest.cc',

@@ -35,6 +35,10 @@
 .pydevproject
 .settings
 .sw?
+.ninja_deps
+.ninja_log
+bwe_rtp_play
+bwe_rtp_to_text
 xcuserdata
 xcshareddata
 /Makefile

@@ -29,7 +29,7 @@
           'dependencies': [
             'audio_processing',
             'audioproc_debug_proto',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support',
           ],
@@ -60,7 +60,7 @@
           'target_name': 'transient_suppression_test',
           'type': 'executable',
           'dependencies': [
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/modules/modules.gyp:audio_processing',

@@ -11,11 +11,11 @@
 #include "webrtc/engine_configurations.h"
 
 #include "video_render_uiview.h"
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "trace.h"
-#include "thread_wrapper.h"
-#include "webrtc_libyuv.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc {
 
@@ -204,8 +204,6 @@ int VideoChannelUIView::DeliverFrame(unsigned char* buffer, int bufferSize, unsi
 
     ConvertI420ToABGR(buffer, captureFrame.Buffer(), _width, _height, 0);
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
   
     CGContextRef context = 
@@ -227,8 +225,6 @@ int VideoChannelUIView::DeliverFrame(unsigned char* buffer, int bufferSize, unsi
 //    [windowRef setFrame:CGRectMake(windowRef.frame.origin.x, windowRef.frame.origin.y, image.size.width, image.size.height)];
     [windowRef performSelectorOnMainThread:@selector(setImage:)
                               withObject:image waitUntilDone:NO];
-  
-    [pool release];
   
 //    if ((TickTime::Now() - _lastFramerateReportTime).Milliseconds() >= 1000)
 //    {
@@ -314,7 +310,6 @@ _zOrderToChannel( ),
 _threadID (0),
 _renderingIsPaused (FALSE)
 {
-    [_windowRef retain];
     _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
     _screenUpdateEvent = EventWrapper::Create();
 }
@@ -323,12 +318,6 @@ int VideoRenderUIView::ChangeWindow(UIImageView* newWindowRef)
 {
 
     LockAGLCntx();
-  
-    if (_windowRef)
-    {
-        [_windowRef release];
-        _windowRef = [newWindowRef retain];
-    }
 
     if(CreateMixingContext() == -1)
     {
@@ -523,9 +512,6 @@ VideoRenderUIView::~VideoRenderUIView()
         zIt = _zOrderToChannel.begin();
     }
     _zOrderToChannel.clear();
-  
-    [_windowRef release];
-
 }
 
 /* static */

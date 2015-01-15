@@ -48,7 +48,7 @@
             'webrtc_opus',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'include_dirs': [
             '<(webrtc_root)',

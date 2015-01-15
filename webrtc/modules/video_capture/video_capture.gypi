@@ -115,8 +115,8 @@
         }],  # win
         ['OS=="android"', {
           'dependencies': [
-            '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
-            '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+            #'<(DEPTH)/third_party/icu/icu.gyp:icuuc',
+            #'<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
           ],
           'sources': [
             'android/device_info_android.cc',
@@ -127,14 +127,26 @@
         }],  # android
         ['OS=="ios"', {
           'sources': [
-            'ios/device_info_ios.h',
-            'ios/device_info_ios.mm',
-            'ios/device_info_ios_objc.h',
-            'ios/device_info_ios_objc.mm',
-            'ios/rtc_video_capture_ios_objc.h',
-            'ios/rtc_video_capture_ios_objc.mm',
-            'ios/video_capture_ios.h',
-            'ios/video_capture_ios.mm',
+            #'ios/device_info_ios.h',
+            #'ios/device_info_ios.mm',
+            #'ios/device_info_ios_objc.h',
+            #'ios/device_info_ios_objc.mm',
+            #'ios/rtc_video_capture_ios_objc.h',
+            #'ios/rtc_video_capture_ios_objc.mm',
+            #'ios/video_capture_ios.h',
+            #'ios/video_capture_ios.mm',
+            'iphone/video_capture_iphone.mm',
+            'iphone/AVFoundation/video_capture_avfoundation.h',
+            'iphone/AVFoundation/video_capture_avfoundation.mm',
+            'iphone/AVFoundation/video_capture_avfoundation_info.h',
+            'iphone/AVFoundation/video_capture_avfoundation_info.mm',
+            'iphone/AVFoundation/video_capture_avfoundation_info_objc.h',
+            'iphone/AVFoundation/video_capture_avfoundation_info_objc.mm',
+            'iphone/AVFoundation/video_capture_avfoundation_objc.h',
+            'iphone/AVFoundation/video_capture_avfoundation_objc.mm',
+            'iphone/AVFoundation/video_capture_avfoundation_utility.h',
+            'iphone/AVFoundation/video_capture_recursive_lock.h',
+            'iphone/AVFoundation/video_capture_recursive_lock.mm',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
@@ -164,7 +176,7 @@
             'video_capture_module_internal_impl',
             'webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'ensure_initialized.cc',

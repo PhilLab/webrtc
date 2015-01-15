@@ -137,7 +137,7 @@
             '<@(codecs)',
             'audio_decoder_interface',
             'neteq_unittest_tools',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],

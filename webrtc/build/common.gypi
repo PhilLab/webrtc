@@ -140,8 +140,8 @@
         'include_tests%': 0,
         'restrict_webrtc_logging%': 1,
       }, {
-        'include_tests%': 1,
-        'restrict_webrtc_logging%': 0,
+        'include_tests%': 0,
+        'restrict_webrtc_logging%': 1,
       }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,
