@@ -19,3 +19,9 @@
 [submodule "tools/gyp"]
 	path = tools/gyp
 	url = https://chromium.googlesource.com/external/gyp.git
+[submodule "third_party/openmax_dl"]
+	path = third_party/openmax_dl
+	url = https://chromium.googlesource.com/external/webrtc/deps/third_party/openmax.git
+[submodule "third_party/libjpeg_turbo"]
+	path = third_party/libjpeg_turbo
+	url=https://github.com/openpeer/libjpeg_turbo.git

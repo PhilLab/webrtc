@@ -510,7 +510,7 @@
           'conditions': [
             ['build_ssl==1', {
               'dependencies': [
-                '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
+                #'<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
               ],
             }, {
               'include_dirs': [

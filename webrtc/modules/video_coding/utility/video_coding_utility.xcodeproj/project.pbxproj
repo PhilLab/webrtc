@@ -149,9 +149,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -159,39 +157,63 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_CW_ASM_SYNTAX = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					DISABLE_NACL,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
 					DONT_EMBED_BUILD_METADATA,
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"DISABLE_FTP_SUPPORT=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_SUPERVISED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
 					WEBRTC_RESTRICT_LOGGING,
 					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
-					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
-					WEBRTC_IOS,
 					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
-					"NS_BLOCK_ASSERTIONS=1",
 					"_FORTIFY_SOURCE=2",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
@@ -204,14 +226,11 @@
 					../../../..,
 					../../../system_wrappers/interface,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
-				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				OTHER_CFLAGS = "-fno-strict-aliasing";
 				PRODUCT_NAME = video_coding_utility;
+				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = (
-					arm64,
-					x86_64,
-				);
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -219,7 +238,6 @@
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
 					"-Wno-selector-type-mismatch",
-					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
@@ -227,35 +245,22 @@
 					"-Wstring-conversion",
 					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Release;
-		};
-		3A12637F3377EF332587AB78 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = iphoneos;
-				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Profile;
 		};
 		4DA38C90510291E8DE48D3D3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = lib;
 				GCC_CW_ASM_SYNTAX = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_PASCAL_STRINGS = NO;
@@ -265,24 +270,48 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					DISABLE_NACL,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
+					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
+					"ENABLE_REMOTING=1",
+					"ENABLE_WEBRTC=1",
+					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
+					ENABLE_NOTIFICATIONS,
+					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
 					DONT_EMBED_BUILD_METADATA,
+					"ENABLE_TASK_MANAGER=1",
+					"ENABLE_EXTENSIONS=1",
+					"ENABLE_PLUGIN_INSTALLATION=1",
+					"ENABLE_PLUGINS=1",
+					"ENABLE_SESSION_SERVICE=1",
+					"ENABLE_THEMES=1",
+					"ENABLE_AUTOFILL_DIALOG=1",
+					"ENABLE_BACKGROUND=1",
+					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"DISABLE_FTP_SUPPORT=1",
+					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
+					"ENABLE_SPELLCHECK=1",
+					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
+					"ENABLE_APP_LIST=1",
+					"ENABLE_SETTINGS_APP=1",
+					"ENABLE_SUPERVISED_USERS=1",
+					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
 					WEBRTC_RESTRICT_LOGGING,
 					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
-					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
-					WEBRTC_IOS,
 					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
@@ -299,19 +328,16 @@
 					../../../..,
 					../../../system_wrappers/interface,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
-					"-Wno-shorten-64-to-32",
+					"-fno-strict-aliasing",
 					"-fstack-protector-all",
-					"-Wno-undefined-bool-conversion",
-					"-Wno-tautological-undefined-compare",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				PRODUCT_NAME = video_coding_utility;
+				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = (
-					arm64,
-					x86_64,
-				);
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -319,7 +345,6 @@
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
 					"-Wno-selector-type-mismatch",
-					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
@@ -327,7 +352,6 @@
 					"-Wstring-conversion",
 					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Debug;
@@ -335,109 +359,22 @@
 		8716591FE216FDF787D10CAE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = x86_64;
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = iphoneos;
+				SDKROOT = macosx10.9;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
-		};
-		E1E794FBD70180DDA3C0E8F5 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
-				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_CW_ASM_SYNTAX = NO;
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
-				GCC_ENABLE_PASCAL_STRINGS = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
-				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = s;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					V8_DEPRECATION_WARNINGS,
-					DISABLE_NACL,
-					CHROMIUM_BUILD,
-					"USE_LIBJPEG_TURBO=1",
-					ENABLE_CONFIGURATION_POLICY,
-					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
-					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					DONT_EMBED_BUILD_METADATA,
-					"CLD_VERSION=2",
-					"DISABLE_FTP_SUPPORT=1",
-					WEBRTC_RESTRICT_LOGGING,
-					EXPAT_RELATIVE_PATH,
-					WEBRTC_MODULE_UTILITY_VIDEO,
-					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM64_NEON,
-					WEBRTC_POSIX,
-					WEBRTC_MAC,
-					WEBRTC_IOS,
-					"USE_LIBPCI=1",
-					__STDC_CONSTANT_MACROS,
-					__STDC_FORMAT_MACROS,
-					NDEBUG,
-					NVALGRIND,
-					"DYNAMIC_ANNOTATIONS_ENABLED=0",
-					"NS_BLOCK_ASSERTIONS=1",
-					"_FORTIFY_SOURCE=2",
-				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				GCC_THREADSAFE_STATICS = NO;
-				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(SHARED_INTERMEDIATE_DIR)",
-					../../../..,
-					../../../system_wrappers/interface,
-				);
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
-				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
-				PRODUCT_NAME = video_coding_utility;
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = (
-					arm64,
-					x86_64,
-				);
-				WARNING_CFLAGS = (
-					"-Wall",
-					"-Wendif-labels",
-					"-Wextra",
-					"-Wno-unused-parameter",
-					"-Wno-missing-field-initializers",
-					"-Wno-selector-type-mismatch",
-					"-Wno-unknown-warning-option",
-					"-Wheader-hygiene",
-					"-Wno-char-subscripts",
-					"-Wno-unneeded-internal-declaration",
-					"-Wno-covered-switch-default",
-					"-Wstring-conversion",
-					"-Wno-c++11-narrowing",
-					"-Wno-deprecated-register",
-					"-Wno-inconsistent-missing-override",
-				);
-			};
-			name = Profile;
 		};
 		EF8C251A11309778C12A19F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = x86_64;
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = iphoneos;
+				SDKROOT = macosx10.9;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -448,7 +385,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EF8C251A11309778C12A19F0 /* Debug */,
-				3A12637F3377EF332587AB78 /* Profile */,
 				8716591FE216FDF787D10CAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
@@ -458,7 +394,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4DA38C90510291E8DE48D3D3 /* Debug */,
-				E1E794FBD70180DDA3C0E8F5 /* Profile */,
 				33B27C18E68E9FA6BEACE077 /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
