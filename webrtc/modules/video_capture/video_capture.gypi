@@ -202,7 +202,7 @@
             }],
             ['OS=="android"', {
               'dependencies': [
-                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+                #'<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
               # Need to disable error due to the line in
               # base/android/jni_android.h triggering it:

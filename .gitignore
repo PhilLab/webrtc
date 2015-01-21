@@ -53,6 +53,16 @@ xcshareddata
 /links.db
 /net
 /out
+/projects/android/ninja-mac-arm/Debug/gen
+/projects/android/ninja-mac-arm/Debug/obj/third_party/opus/opus.gen
+/projects/android/ninja-mac-arm/Debug/conf.ninja
+/projects/android/ninja-mac-arm/Debug/bwe_rtp_play
+/projects/android/ninja-mac-arm/Debug/bwe_rtp_to_text
+/projects/android/ninja-mac-arm/Release/gen
+/projects/android/ninja-mac-arm/Release/obj/third_party/opus/opus.gen
+/projects/android/ninja-mac-arm/Release/conf.ninja
+/projects/android/ninja-mac-arm/Release/bwe_rtp_play
+/projects/android/ninja-mac-arm/Release/bwe_rtp_to_text
 /projects/android/ninja/gen
 /projects/android/ninja/.ninja_deps
 /projects/android/ninja/.ninja_log
@@ -103,7 +113,7 @@ xcshareddata
 /third_party/boringssl
 /third_party/BUILD.gn
 /third_party/clang_format
-/third_party/colorama
+/third_party/colorama/src
 /third_party/cygwin
 /third_party/directxsdk
 /third_party/drmemory
@@ -134,7 +144,7 @@ xcshareddata
 /third_party/oauth2
 /third_party/ocmock
 /third_party/openmax_dl
-/third_party/opus
+/third_party/opus/src
 /third_party/protobuf
 /third_party/requests
 /third_party/sqlite

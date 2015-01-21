@@ -24,7 +24,7 @@
       'conditions': [
         ['OS=="android"', {
           'dependencies': [
-            'webrtc/webrtc_examples.gyp:*',
+            #'webrtc/webrtc_examples.gyp:*',
           ],
         }],
         ['include_tests==1', {

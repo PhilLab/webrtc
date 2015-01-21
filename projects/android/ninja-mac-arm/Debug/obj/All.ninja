@@ -1,0 +1,3 @@
+build obj/All.actions_depends.stamp: stamp $
+    obj/webrtc/webrtc_all.actions_depends.stamp obj/webrtc/libwebrtc.a
+

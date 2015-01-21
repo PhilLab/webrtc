@@ -182,7 +182,7 @@
       'conditions': [
         ['OS=="android"', {
           'dependencies': [
-            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+            #'<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
       ],

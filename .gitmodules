@@ -25,3 +25,6 @@
 [submodule "third_party/libjpeg_turbo"]
 	path = third_party/libjpeg_turbo
 	url=https://github.com/openpeer/libjpeg_turbo.git
+[submodule "third_party/colorama/src"]
+	path = third_party/colorama/src
+	url = https://chromium.googlesource.com/external/colorama.git
