@@ -9,9 +9,8 @@ defines = -DV8_DEPRECATION_WARNINGS -D_FILE_OFFSET_BITS=64 -DNO_TCMALLOC $
     -DV8_USE_EXTERNAL_STARTUP_DATA -DGFLAGS_DLL_DECL= $
     -DGFLAGS_DLL_DECLARE_FLAG= -DGFLAGS_DLL_DEFINE_FLAG= -DUSE_LIBPCI=1 $
     -DUSE_OPENSSL=1 -DUSE_OPENSSL_CERTS=1 -DANDROID -D__GNU_SOURCE=1 $
-    -DUSE_STLPORT=1 -D_STLP_USE_PTR_SPECIALIZATIONS=1 $
-    '-DCHROME_BUILD_ID=""' -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND $
-    -DDYNAMIC_ANNOTATIONS_ENABLED=0
+    -D_STLP_USE_PTR_SPECIALIZATIONS=1 '-DCHROME_BUILD_ID=""' $
+    -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
 includes = -Igen -I../../../../third_party/gflags/gen/posix/include/private $
     -I../../../../third_party/gflags/gen/posix/include $
     -I../../../../third_party/gflags/src
@@ -23,7 +22,8 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-strict-aliasing $
     -mthumb-interwork -ffunction-sections -funwind-tables -g $
     -fstack-protector -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -isystem$android_ndk_path/sources/cxx-stl/stlport/stlport $
+    -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/include $
+    -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi-v7a/include $
     -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
     -funwind-tables
 cflags_c = 

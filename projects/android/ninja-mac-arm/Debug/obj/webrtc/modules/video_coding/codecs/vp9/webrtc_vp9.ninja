@@ -12,7 +12,7 @@ defines = -DV8_DEPRECATION_WARNINGS -D_FILE_OFFSET_BITS=64 -DNO_TCMALLOC $
     -DWEBRTC_LINUX -DWEBRTC_ANDROID -DWEBRTC_ANDROID_OPENSLES $
     -DUSE_LIBPCI=1 -DUSE_OPENSSL=1 -DUSE_OPENSSL_CERTS=1 $
     -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -DANDROID $
-    -D__GNU_SOURCE=1 -DUSE_STLPORT=1 -D_STLP_USE_PTR_SPECIALIZATIONS=1 $
+    -D__GNU_SOURCE=1 -D_STLP_USE_PTR_SPECIALIZATIONS=1 $
     '-DCHROME_BUILD_ID=""' -DHAVE_SYS_UIO_H -DDYNAMIC_ANNOTATIONS_ENABLED=1 $
     -DWTF_USE_DYNAMIC_ANNOTATIONS=1 -D_DEBUG
 includes = -Igen -I../../../.. -I../../../../webrtc/common_video/interface $
@@ -30,7 +30,8 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -Werror $
     -ffunction-sections -funwind-tables -g -fstack-protector $
     -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -isystem$android_ndk_path/sources/cxx-stl/stlport/stlport $
+    -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/include $
+    -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi-v7a/include $
     -Os -g -gdwarf-4 -fdata-sections -ffunction-sections $
     -fomit-frame-pointer -funwind-tables
 cflags_c = 
