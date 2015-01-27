@@ -620,7 +620,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = system_wrappers_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -709,7 +708,6 @@
 				);
 				PRODUCT_NAME = system_wrappers;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -796,7 +794,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = system_wrappers;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -879,7 +876,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = system_wrappers_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -981,7 +977,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = metrics_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1065,7 +1060,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = field_trial_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1163,7 +1157,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = system_wrappers;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1256,7 +1249,6 @@
 				);
 				PRODUCT_NAME = field_trial_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1347,7 +1339,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = field_trial_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1432,7 +1423,6 @@
 				);
 				PRODUCT_NAME = system_wrappers_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1516,7 +1506,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = metrics_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1602,7 +1591,6 @@
 				);
 				PRODUCT_NAME = metrics_default;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",

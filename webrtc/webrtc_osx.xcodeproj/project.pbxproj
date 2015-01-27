@@ -25,6 +25,9 @@
 			buildPhases = (
 			);
 			dependencies = (
+				E29C92271A77DA4D005B53AC /* PBXTargetDependency */,
+				E29C920C1A77D9B8005B53AC /* PBXTargetDependency */,
+				E2FED0FE1A73136700795C40 /* PBXTargetDependency */,
 				E27A895C1A69A9F0006B88A2 /* PBXTargetDependency */,
 				E27A895E1A69A9F0006B88A2 /* PBXTargetDependency */,
 				E27A89601A69A9F0006B88A2 /* PBXTargetDependency */,
@@ -832,6 +835,20 @@
 			remoteGlobalIDString = 45CF6C23327D8578B7E49291;
 			remoteInfo = webrtc_vp9;
 		};
+		E29C920B1A77D9B8005B53AC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2D8D82C1A69A626003868E2 /* system_wrappers_osx.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = A0D14594CF19BC7EF7EA5CE2;
+			remoteInfo = field_trial_default;
+		};
+		E29C92261A77DA4D005B53AC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2D8D82C1A69A626003868E2 /* system_wrappers_osx.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 8462C7E420AD3137301BEA98;
+			remoteInfo = metrics_default;
+		};
 		E2D8D8341A69A626003868E2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E2D8D82C1A69A626003868E2 /* system_wrappers_osx.xcodeproj */;
@@ -859,6 +876,20 @@
 			proxyType = 2;
 			remoteGlobalIDString = AC1AE2D40FFFF3A0239E7B16;
 			remoteInfo = system_wrappers_default;
+		};
+		E2FED0FB1A73135200795C40 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2FED0E21A73135200795C40 /* video_coding_utility_osx.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 187AC5D2E1791D7913C8F00D;
+			remoteInfo = video_coding_utility;
+		};
+		E2FED0FD1A73136700795C40 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E2FED0E21A73135200795C40 /* video_coding_utility_osx.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = D91A4F6F28D55902144D60E1;
+			remoteInfo = video_coding_utility;
 		};
 		ED08DAB6AB2EB53D89C4CB03 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -909,6 +940,7 @@
 		D6B241EEAA297189666BBF4E /* video_send_stream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = video_send_stream.h; sourceTree = "<group>"; };
 		D9F32959024A3DE38441E273 /* libwebrtc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libwebrtc.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2D8D82C1A69A626003868E2 /* system_wrappers_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = system_wrappers_osx.xcodeproj; path = system_wrappers/source/system_wrappers_osx.xcodeproj; sourceTree = "<group>"; };
+		E2FED0E21A73135200795C40 /* video_coding_utility_osx.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = video_coding_utility_osx.xcodeproj; path = modules/video_coding/utility/video_coding_utility_osx.xcodeproj; sourceTree = "<group>"; };
 		E8C30A0E099D4216454E7743 /* webrtc_video.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = webrtc_video.gypi; path = video/webrtc_video.gypi; sourceTree = "<group>"; };
 		EB69AD7E82E64BDD0E1A580A /* webrtc_tests.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = webrtc_tests.gypi; sourceTree = "<group>"; };
 		EE07DCE595C32C9C759C89AE /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = build/common.gypi; sourceTree = "<group>"; };
@@ -951,6 +983,7 @@
 				8F1A03E15C2D22DF51870BC0 /* voice_engine_osx.xcodeproj */,
 				B04746865C69200FA736AAC0 /* vp8_osx.xcodeproj */,
 				964564F74F7CF3C2A0F1A66D /* vp9_osx.xcodeproj */,
+				E2FED0E21A73135200795C40 /* video_coding_utility_osx.xcodeproj */,
 			);
 			name = Projects;
 			sourceTree = "<group>";
@@ -1139,6 +1172,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		E2FED0E31A73135200795C40 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E2FED0FC1A73135200795C40 /* libvideo_coding_utility.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E654CD18FB5EA9C8E2B78555 /* video */ = {
 			isa = PBXGroup;
 			children = (
@@ -1223,6 +1264,10 @@
 				{
 					ProductGroup = E21EC13A1A69A81500219A1D /* Products */;
 					ProjectRef = 99963446FBD30CBC0A8A1015 /* test_osx.xcodeproj */;
+				},
+				{
+					ProductGroup = E2FED0E31A73135200795C40 /* Products */;
+					ProjectRef = E2FED0E21A73135200795C40 /* video_coding_utility_osx.xcodeproj */;
 				},
 				{
 					ProductGroup = E21EC1711A69A81500219A1D /* Products */;
@@ -1678,6 +1723,13 @@
 			remoteRef = E2D8D83A1A69A626003868E2 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		E2FED0FC1A73135200795C40 /* libvideo_coding_utility.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libvideo_coding_utility.a;
+			remoteRef = E2FED0FB1A73135200795C40 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -1947,6 +1999,21 @@
 			isa = PBXTargetDependency;
 			name = webrtc_vp9;
 			targetProxy = E27A89B71A69A9F0006B88A2 /* PBXContainerItemProxy */;
+		};
+		E29C920C1A77D9B8005B53AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = field_trial_default;
+			targetProxy = E29C920B1A77D9B8005B53AC /* PBXContainerItemProxy */;
+		};
+		E29C92271A77DA4D005B53AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = metrics_default;
+			targetProxy = E29C92261A77DA4D005B53AC /* PBXContainerItemProxy */;
+		};
+		E2FED0FE1A73136700795C40 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = video_coding_utility;
+			targetProxy = E2FED0FD1A73136700795C40 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

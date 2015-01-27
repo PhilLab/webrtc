@@ -978,7 +978,6 @@
 				PRODUCT_NAME = opus_demo;
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
@@ -1059,7 +1058,6 @@
 				PRODUCT_NAME = opus;
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
@@ -1139,7 +1137,6 @@
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
@@ -1256,7 +1253,6 @@
 				PRODUCT_NAME = opus;
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
@@ -1340,7 +1336,6 @@
 				PRODUCT_NAME = opus;
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
@@ -1439,7 +1434,6 @@
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wendif-labels",
 					"-Wno-unused-parameter",

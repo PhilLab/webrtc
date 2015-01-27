@@ -199,7 +199,6 @@
 				);
 				PRODUCT_NAME = webrtc_common;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -293,7 +292,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_common;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -398,7 +396,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_common;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",

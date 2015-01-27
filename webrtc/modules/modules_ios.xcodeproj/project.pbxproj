@@ -5591,7 +5591,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = G711;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -5678,7 +5677,6 @@
 				);
 				PRODUCT_NAME = red;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -5761,7 +5759,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_encoder_interface;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -5845,7 +5842,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_i420;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -5930,7 +5926,6 @@
 				);
 				PRODUCT_NAME = video_capture_module_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6016,7 +6011,6 @@
 				);
 				PRODUCT_NAME = remote_bitrate_estimator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6103,7 +6097,6 @@
 				);
 				PRODUCT_NAME = webrtc_opus;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6191,7 +6184,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = iSAC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6275,7 +6267,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_capture_module_internal_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6379,7 +6370,6 @@
 				);
 				PRODUCT_NAME = audio_coding_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6469,7 +6459,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = iSACFix;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6554,7 +6543,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_opus;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6639,7 +6627,6 @@
 				);
 				PRODUCT_NAME = video_render_module_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6728,7 +6715,6 @@
 				PRODUCT_NAME = bwe_rtp_to_text;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6827,7 +6813,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = iSAC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -6915,7 +6900,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = iLBC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7001,7 +6985,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_render_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7090,7 +7073,6 @@
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = bwe_rtp_to_text;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7175,7 +7157,6 @@
 				);
 				PRODUCT_NAME = audio_encoder_interface;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7261,7 +7242,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_capture_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7348,7 +7328,6 @@
 				);
 				PRODUCT_NAME = G711;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7432,7 +7411,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = remote_bitrate_estimator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7530,7 +7508,6 @@
 				);
 				PRODUCT_NAME = G722;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7618,7 +7595,6 @@
 				);
 				PRODUCT_NAME = audio_conference_mixer;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7704,7 +7680,6 @@
 				);
 				PRODUCT_NAME = desktop_capture;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7789,7 +7764,6 @@
 				);
 				PRODUCT_NAME = audio_decoder_interface;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7877,7 +7851,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = CNG;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -7961,7 +7934,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = remote_bitrate_estimator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8049,7 +8021,6 @@
 				);
 				PRODUCT_NAME = PCM16B;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8135,7 +8106,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_conference_mixer;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8226,7 +8196,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_utility;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8310,7 +8279,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rtp_rtcp;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8396,7 +8364,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = media_file;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8482,7 +8449,6 @@
 				);
 				PRODUCT_NAME = bitrate_controller;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8568,7 +8534,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_conference_mixer;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8681,7 +8646,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_coding_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8766,7 +8730,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = G722;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8850,7 +8813,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_capture_module_internal_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -8940,7 +8902,6 @@
 				);
 				PRODUCT_NAME = CNG;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9024,7 +8985,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = desktop_capture;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9126,7 +9086,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_coding_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9214,7 +9173,6 @@
 				PRODUCT_NAME = bwe_rtp_to_text;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9300,7 +9258,6 @@
 				);
 				PRODUCT_NAME = bwe_tools_util;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9386,7 +9343,6 @@
 				);
 				PRODUCT_NAME = video_capture_module_internal_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9471,7 +9427,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = red;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9557,7 +9512,6 @@
 				);
 				PRODUCT_NAME = video_render_module_internal_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9649,7 +9603,6 @@
 				);
 				PRODUCT_NAME = iSACFix;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9737,7 +9690,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = iLBC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9820,7 +9772,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_render_module_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9904,7 +9855,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_render_module_internal_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -9974,6 +9924,88 @@
 					"NS_BLOCK_ASSERTIONS=1",
 					"_FORTIFY_SOURCE=2",
 				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM64_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=armv7]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=armv7s]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
@@ -9990,7 +10022,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_processing_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10079,7 +10110,6 @@
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = bwe_rtp_play;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10163,7 +10193,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = paced_sender;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10251,7 +10280,6 @@
 				);
 				PRODUCT_NAME = webrtc_video_coding;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10335,7 +10363,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_render_module_internal_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10421,7 +10448,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = PCM16B;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10504,7 +10530,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_decoder_interface;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10603,7 +10628,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = neteq;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10696,7 +10720,6 @@
 				);
 				PRODUCT_NAME = webrtc_i420;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10782,7 +10805,6 @@
 				);
 				PRODUCT_NAME = paced_sender;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10874,7 +10896,6 @@
 				);
 				PRODUCT_NAME = audio_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -10969,7 +10990,6 @@
 				);
 				PRODUCT_NAME = audio_device;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11070,7 +11090,6 @@
 				);
 				PRODUCT_NAME = neteq;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11161,7 +11180,6 @@
 				);
 				PRODUCT_NAME = video_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11228,6 +11246,82 @@
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 					_DEBUG,
 				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM64_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=armv7]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=armv7s]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					"DYNAMIC_ANNOTATIONS_ENABLED=1",
+					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
+				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
@@ -11249,7 +11343,6 @@
 				);
 				PRODUCT_NAME = audio_processing_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11337,7 +11430,6 @@
 				);
 				PRODUCT_NAME = video_render_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11422,7 +11514,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = red;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11505,7 +11596,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_render_module_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11593,7 +11683,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = CNG;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11681,7 +11770,6 @@
 				PRODUCT_NAME = bwe_rtp_play;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11770,7 +11858,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11863,7 +11950,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_device;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -11949,7 +12035,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_video_coding;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12035,7 +12120,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = media_file;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12118,7 +12202,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_encoder_interface;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12211,7 +12294,6 @@
 				);
 				PRODUCT_NAME = webrtc_utility;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12297,7 +12379,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = PCM16B;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12386,7 +12467,6 @@
 				PRODUCT_NAME = bwe_rtp_play;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12470,7 +12550,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rtp_rtcp;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12554,7 +12633,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = bwe_tools_util;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12644,7 +12722,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = iSACFix;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12728,7 +12805,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = bwe_tools_util;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12827,7 +12903,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = neteq;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12912,7 +12987,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = G722;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -12998,7 +13072,6 @@
 				);
 				PRODUCT_NAME = rtp_rtcp;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13086,7 +13159,6 @@
 				);
 				PRODUCT_NAME = video_capture_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13176,7 +13248,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13261,7 +13332,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_opus;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13344,7 +13414,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_capture_module_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13428,7 +13497,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_i420;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13514,7 +13582,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_capture_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13597,7 +13664,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_decoder_interface;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13680,7 +13746,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_capture_module_impl;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13771,7 +13836,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_utility;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13857,7 +13921,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = webrtc_video_coding;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -13948,7 +14011,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = desktop_capture;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14033,7 +14095,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = G711;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14129,7 +14190,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14213,7 +14273,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = bitrate_controller;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14303,7 +14362,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_processing;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14373,6 +14431,88 @@
 					"NS_BLOCK_ASSERTIONS=1",
 					"_FORTIFY_SOURCE=2",
 				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=arm64]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_ARCH_ARM64_NEON,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=armv7]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=armv7s]" = (
+					V8_DEPRECATION_WARNINGS,
+					DISABLE_NACL,
+					CHROMIUM_BUILD,
+					"USE_LIBJPEG_TURBO=1",
+					ENABLE_CONFIGURATION_POLICY,
+					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
+					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
+					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
+					WEBRTC_MODULE_UTILITY_VIDEO,
+					WEBRTC_ARCH_ARM,
+					WEBRTC_POSIX,
+					WEBRTC_MAC,
+					WEBRTC_IOS,
+					"USE_LIBPCI=1",
+					__STDC_CONSTANT_MACROS,
+					__STDC_FORMAT_MACROS,
+					NDEBUG,
+					NVALGRIND,
+					"DYNAMIC_ANNOTATIONS_ENABLED=0",
+					"NS_BLOCK_ASSERTIONS=1",
+					"_FORTIFY_SOURCE=2",
+				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
@@ -14389,7 +14529,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_processing_neon;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14479,7 +14618,6 @@
 				);
 				PRODUCT_NAME = iLBC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14567,7 +14705,6 @@
 				);
 				PRODUCT_NAME = media_file;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14651,7 +14788,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = paced_sender;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14735,7 +14871,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = bitrate_controller;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14828,7 +14963,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = audio_device;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -14914,7 +15048,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = video_render_module;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -15004,7 +15137,6 @@
 				);
 				PRODUCT_NAME = iSAC;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",

@@ -1004,7 +1004,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = channel_transport;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1119,7 +1118,6 @@
 				);
 				PRODUCT_NAME = test_main;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1207,7 +1205,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_support_main;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1290,7 +1287,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_support_main_threaded_mac;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1376,7 +1372,6 @@
 				);
 				PRODUCT_NAME = field_trial;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1464,7 +1459,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_main;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1548,7 +1542,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_support;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1634,7 +1627,6 @@
 				);
 				PRODUCT_NAME = test_support;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1730,7 +1722,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = frame_generator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1815,7 +1806,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = frame_generator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1899,7 +1889,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = channel_transport;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -1989,7 +1978,6 @@
 				);
 				PRODUCT_NAME = test_support_main;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2077,7 +2065,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_support_main;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2162,7 +2149,6 @@
 				);
 				PRODUCT_NAME = test_support_main_threaded_mac;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2245,7 +2231,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rtp_test_utils;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2332,7 +2317,6 @@
 				);
 				PRODUCT_NAME = frame_generator;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2415,7 +2399,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_support_main_threaded_mac;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2499,7 +2482,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = field_trial;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2587,7 +2569,6 @@
 				PRODUCT_NAME = test_support_unittests;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2681,7 +2662,6 @@
 				PRODUCT_NAME = test_support_unittests;
 				STRIP_INSTALLED_PRODUCT = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2765,7 +2745,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = field_trial;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2850,7 +2829,6 @@
 				);
 				PRODUCT_NAME = rtp_test_utils;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -2933,7 +2911,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rtp_test_utils;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -3021,7 +2998,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_main;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -3105,7 +3081,6 @@
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = test_support;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -3193,7 +3168,6 @@
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = test_support_unittests;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
@@ -3279,7 +3253,6 @@
 				);
 				PRODUCT_NAME = channel_transport;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "arm64 x86_64";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",

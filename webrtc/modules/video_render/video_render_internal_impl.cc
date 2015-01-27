@@ -26,7 +26,7 @@
 // gets defined if WEBRTC_IOS is defined
 #elif defined(WEBRTC_IOS)
 #define STANDARD_RENDERING kRenderiOS
-#include "webrtc/modules/video_render/ios/video_render_ios_impl.h"
+#include "webrtc/modules/video_render/iphone/video_render_iphone_impl.h"
 #elif defined(WEBRTC_MAC)
 #if defined(COCOA_RENDERING)
 #define STANDARD_RENDERING kRenderCocoa
@@ -109,7 +109,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
 #elif defined(WEBRTC_IOS)
         case kRenderiOS:
         {
-            VideoRenderIosImpl* ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
+            VideoRenderIPhoneImpl* ptrRenderer = new VideoRenderIPhoneImpl(_id, kRenderiOS, window, _fullScreen);
             if(ptrRenderer)
             {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
@@ -241,7 +241,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #elif defined(WEBRTC_IOS)
             case kRenderiOS:
             {
-              VideoRenderIosImpl* ptrRenderer = reinterpret_cast<VideoRenderIosImpl*> (_ptrRenderer);
+              VideoRenderIPhoneImpl* ptrRenderer = reinterpret_cast<VideoRenderIPhoneImpl*> (_ptrRenderer);
               _ptrRenderer = NULL;
               delete ptrRenderer;
             }
@@ -336,8 +336,8 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
     _ptrRenderer = NULL;
     delete _ptrRenderer;
 
-    VideoRenderIosImpl* ptrRenderer;
-    ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
+    VideoRenderIPhoneImpl* ptrRenderer;
+    ptrRenderer = new VideoRenderIPhoneImpl(_id, kRenderiOS, window, _fullScreen);
     if (!ptrRenderer)
     {
         return -1;

@@ -7,28 +7,30 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AFE22ACDC85B34367C0A1E14 /* vp9_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 51119FF68A086DDE30723619 /* vp9_impl.cc */; };
+		B155C125F0746D27CC0A9780 /* quality_scaler.cc in Sources */ = {isa = PBXBuildFile; fileRef = 56D22122AB9C59E661C4E991 /* quality_scaler.cc */; };
+		E51FE43F3D6F2141D3D82BCE /* frame_dropper.cc in Sources */ = {isa = PBXBuildFile; fileRef = F1E265C7D891F48D3E33304D /* frame_dropper.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0902672A0E5324A5C077F78C /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../../../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
-		4A16D47776E06292713D02E6 /* vp9_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vp9_impl.h; sourceTree = "<group>"; };
-		51119FF68A086DDE30723619 /* vp9_impl.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vp9_impl.cc; sourceTree = "<group>"; };
-		81DD22AB1444A9483713887F /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
-		8949806682B89770AE55C942 /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../../../build/filename_rules.gypi; sourceTree = "<group>"; };
-		9A2259690C74EEF0121B1424 /* vp9.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vp9.h; sourceTree = "<group>"; };
-		9A47D9DD550F9A49F56ACCBC /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../../../build/common.gypi; sourceTree = "<group>"; };
-		A24298C34E3A1BAFF12FD8CE /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
-		ACF6F32397982C356CD9142B /* vp9.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = vp9.gyp; sourceTree = "<group>"; };
-		C467EB4C743F1E7E32ABF280 /* libwebrtc_vp9.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libwebrtc_vp9.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		C6E1901458F798107E1C426B /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
-		DC6EAE409385E2883D489D4F /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../../../supplement.gypi; sourceTree = "<group>"; };
-		E117FA0696312A6A734F3F56 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../../build/common.gypi; sourceTree = "<group>"; };
-		FE6C5BD0051AEBFAF5A6D39A /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../../../build/release.gypi; sourceTree = "<group>"; };
+		0741BDFC92129D62574DEB69 /* frame_dropper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame_dropper.h; sourceTree = "<group>"; };
+		0E8D781F3192DA238532DB30 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../build/common.gypi; sourceTree = "<group>"; };
+		187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libvideo_coding_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		28EC6EBF0F16C3F9AB3596FF /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
+		56D22122AB9C59E661C4E991 /* quality_scaler.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = quality_scaler.cc; sourceTree = "<group>"; };
+		7123743720D8A249D9A85CAA /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../../supplement.gypi; sourceTree = "<group>"; };
+		7B3FABA06CC8853E5AAFC597 /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
+		84A9CB237B9D0139FE223904 /* quality_scaler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = quality_scaler.h; sourceTree = "<group>"; };
+		8821849D80A268CC5DCB7DEB /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
+		890D6BFA4D2F16896DCE0310 /* video_coding_utility.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = video_coding_utility.gyp; sourceTree = "<group>"; };
+		9922527EE153CFFE50008BDC /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
+		ACACCA575EC4E80A766707CE /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../../build/filename_rules.gypi; sourceTree = "<group>"; };
+		B15668BB22DB775984984708 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../../build/common.gypi; sourceTree = "<group>"; };
+		EF975FE4193C98AC860BAF88 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../../build/release.gypi; sourceTree = "<group>"; };
+		F1E265C7D891F48D3E33304D /* frame_dropper.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = frame_dropper.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		5AD50DC52B9CB67C998A705B /* Frameworks */ = {
+		CD21734765E2F7954BB1A4B0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -38,114 +40,116 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		18F9AE4BDEE5DD2688476869 /* Products */ = {
+		2C58C6B8E21E26712EA21F57 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C467EB4C743F1E7E32ABF280 /* libwebrtc_vp9.a */,
+				187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		5AC7EFE1067ABA7B24BEC714 = {
+		3CE9BCD1AFB93371F6DF9A22 = {
 			isa = PBXGroup;
 			children = (
-				871B5C09F1754469E343D902 /* Source */,
-				18F9AE4BDEE5DD2688476869 /* Products */,
-				DF736BA8AEC98FDCA5E8E6F5 /* Build */,
+				70B8E89353381D75EF3799EB /* Source */,
+				2C58C6B8E21E26712EA21F57 /* Products */,
+				A810DC2EEB3535855ADD709C /* Build */,
 			);
 			sourceTree = "<group>";
 		};
-		871B5C09F1754469E343D902 /* Source */ = {
+		589441574902D3C8DFA0D409 /* include */ = {
 			isa = PBXGroup;
 			children = (
-				E14190CA26DEE06F5E7D5A72 /* include */,
-				51119FF68A086DDE30723619 /* vp9_impl.cc */,
-				4A16D47776E06292713D02E6 /* vp9_impl.h */,
+				0741BDFC92129D62574DEB69 /* frame_dropper.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		70B8E89353381D75EF3799EB /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				589441574902D3C8DFA0D409 /* include */,
+				F1E265C7D891F48D3E33304D /* frame_dropper.cc */,
+				56D22122AB9C59E661C4E991 /* quality_scaler.cc */,
+				84A9CB237B9D0139FE223904 /* quality_scaler.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";
 		};
-		DF736BA8AEC98FDCA5E8E6F5 /* Build */ = {
+		A810DC2EEB3535855ADD709C /* Build */ = {
 			isa = PBXGroup;
 			children = (
-				9A47D9DD550F9A49F56ACCBC /* common.gypi */,
-				E117FA0696312A6A734F3F56 /* common.gypi */,
-				8949806682B89770AE55C942 /* filename_rules.gypi */,
-				FE6C5BD0051AEBFAF5A6D39A /* release.gypi */,
-				81DD22AB1444A9483713887F /* release_defaults.gypi */,
-				C6E1901458F798107E1C426B /* release_impl.gypi */,
-				A24298C34E3A1BAFF12FD8CE /* release_impl_official.gypi */,
-				0902672A0E5324A5C077F78C /* set_clang_warning_flags.gypi */,
-				DC6EAE409385E2883D489D4F /* supplement.gypi */,
-				ACF6F32397982C356CD9142B /* vp9.gyp */,
+				B15668BB22DB775984984708 /* common.gypi */,
+				0E8D781F3192DA238532DB30 /* common.gypi */,
+				ACACCA575EC4E80A766707CE /* filename_rules.gypi */,
+				EF975FE4193C98AC860BAF88 /* release.gypi */,
+				28EC6EBF0F16C3F9AB3596FF /* release_defaults.gypi */,
+				7B3FABA06CC8853E5AAFC597 /* release_impl.gypi */,
+				8821849D80A268CC5DCB7DEB /* release_impl_official.gypi */,
+				9922527EE153CFFE50008BDC /* set_clang_warning_flags.gypi */,
+				7123743720D8A249D9A85CAA /* supplement.gypi */,
+				890D6BFA4D2F16896DCE0310 /* video_coding_utility.gyp */,
 			);
 			name = Build;
-			sourceTree = "<group>";
-		};
-		E14190CA26DEE06F5E7D5A72 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				9A2259690C74EEF0121B1424 /* vp9.h */,
-			);
-			path = include;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		45CF6C23327D8578B7E49291 /* webrtc_vp9 */ = {
+		D91A4F6F28D55902144D60E1 /* video_coding_utility */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 334F765980D77B4F9222F57D /* Build configuration list for PBXNativeTarget "webrtc_vp9" */;
+			buildConfigurationList = 3ED3CF94D05106BCF0A1BB5A /* Build configuration list for PBXNativeTarget "video_coding_utility" */;
 			buildPhases = (
-				BDE27F25B14713B53607E3DE /* Sources */,
-				5AD50DC52B9CB67C998A705B /* Frameworks */,
+				7031FAC3F54304277753F917 /* Sources */,
+				CD21734765E2F7954BB1A4B0 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = webrtc_vp9;
-			productName = webrtc_vp9;
-			productReference = C467EB4C743F1E7E32ABF280 /* libwebrtc_vp9.a */;
+			name = video_coding_utility;
+			productName = video_coding_utility;
+			productReference = 187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		DC23B5AABE2912C664F8E50F /* Project object */ = {
+		7293F4698F6120A9ED2BC812 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 			};
-			buildConfigurationList = F9A9B575470F5CF5D4173C16 /* Build configuration list for PBXProject "vp9_ios" */;
+			buildConfigurationList = 16E5F530D748663FBEE3D7EE /* Build configuration list for PBXProject "video_coding_utility_ios" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
 			);
-			mainGroup = 5AC7EFE1067ABA7B24BEC714;
+			mainGroup = 3CE9BCD1AFB93371F6DF9A22;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				45CF6C23327D8578B7E49291 /* webrtc_vp9 */,
+				D91A4F6F28D55902144D60E1 /* video_coding_utility */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		BDE27F25B14713B53607E3DE /* Sources */ = {
+		7031FAC3F54304277753F917 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AFE22ACDC85B34367C0A1E14 /* vp9_impl.cc in Sources */,
+				E51FE43F3D6F2141D3D82BCE /* frame_dropper.cc in Sources */,
+				B155C125F0746D27CC0A9780 /* quality_scaler.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		1284BCF032152782E27FEA85 /* Release */ = {
+		33B27C18E68E9FA6BEACE077 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -201,15 +205,12 @@
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SHARED_INTERMEDIATE_DIR)",
-					../../../../..,
-					../../../../common_video/interface,
-					../../../../common_video/libyuv/include,
-					../../../../system_wrappers/interface,
-					../../../../../third_party/libvpx/source/libvpx,
+					../../../..,
+					../../../system_wrappers/interface,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
-				PRODUCT_NAME = webrtc_vp9;
+				PRODUCT_NAME = video_coding_utility;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -226,12 +227,22 @@
 					"-Wstring-conversion",
 					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Release;
 		};
-		21638F4F180AB88363AB3D34 /* Debug */ = {
+		3A12637F3377EF332587AB78 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = iphoneos;
+				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SYMROOT = ../../../../xcodebuild;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
+		};
+		4DA38C90510291E8DE48D3D3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -284,20 +295,17 @@
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SHARED_INTERMEDIATE_DIR)",
-					../../../../..,
-					../../../../common_video/interface,
-					../../../../common_video/libyuv/include,
-					../../../../system_wrappers/interface,
-					../../../../../third_party/libvpx/source/libvpx,
+					../../../..,
+					../../../system_wrappers/interface,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = (
 					"-Wno-shorten-64-to-32",
 					"-fstack-protector-all",
-					"-Wno-undefined-bool-conversion",
-					"-Wno-tautological-undefined-compare",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
-				PRODUCT_NAME = webrtc_vp9;
+				PRODUCT_NAME = video_coding_utility;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -314,23 +322,22 @@
 					"-Wstring-conversion",
 					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Debug;
 		};
-		23784B24741F5D2CFDD10032 /* Debug */ = {
+		8716591FE216FDF787D10CAE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../../xcodebuild;
+				SYMROOT = ../../../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Debug;
+			name = Release;
 		};
-		6ED49EF34A491D8C7B19DA67 /* Profile */ = {
+		E1E794FBD70180DDA3C0E8F5 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -386,15 +393,12 @@
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SHARED_INTERMEDIATE_DIR)",
-					../../../../..,
-					../../../../common_video/interface,
-					../../../../common_video/libyuv/include,
-					../../../../system_wrappers/interface,
-					../../../../../third_party/libvpx/source/libvpx,
+					../../../..,
+					../../../system_wrappers/interface,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
-				PRODUCT_NAME = webrtc_vp9;
+				PRODUCT_NAME = video_coding_utility;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -411,57 +415,45 @@
 					"-Wstring-conversion",
 					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Profile;
 		};
-		A4AEEAF7C7ABD324D438CDAE /* Profile */ = {
+		EF8C251A11309778C12A19F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../../xcodebuild;
+				SYMROOT = ../../../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
-			name = Profile;
-		};
-		F0C3B49CB0FA732A0BD1BB8D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = iphoneos;
-				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SYMROOT = ../../../../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		334F765980D77B4F9222F57D /* Build configuration list for PBXNativeTarget "webrtc_vp9" */ = {
+		16E5F530D748663FBEE3D7EE /* Build configuration list for PBXProject "video_coding_utility_ios" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				21638F4F180AB88363AB3D34 /* Debug */,
-				6ED49EF34A491D8C7B19DA67 /* Profile */,
-				1284BCF032152782E27FEA85 /* Release */,
+				EF8C251A11309778C12A19F0 /* Debug */,
+				3A12637F3377EF332587AB78 /* Profile */,
+				8716591FE216FDF787D10CAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;
 		};
-		F9A9B575470F5CF5D4173C16 /* Build configuration list for PBXProject "vp9_ios" */ = {
+		3ED3CF94D05106BCF0A1BB5A /* Build configuration list for PBXNativeTarget "video_coding_utility" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				23784B24741F5D2CFDD10032 /* Debug */,
-				A4AEEAF7C7ABD324D438CDAE /* Profile */,
-				F0C3B49CB0FA732A0BD1BB8D /* Release */,
+				4DA38C90510291E8DE48D3D3 /* Debug */,
+				E1E794FBD70180DDA3C0E8F5 /* Profile */,
+				33B27C18E68E9FA6BEACE077 /* Release */,
 			);
 			defaultConfigurationIsVisible = 1;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = DC23B5AABE2912C664F8E50F /* Project object */;
+	rootObject = 7293F4698F6120A9ED2BC812 /* Project object */;
 }

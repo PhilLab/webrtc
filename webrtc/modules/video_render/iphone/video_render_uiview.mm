@@ -90,40 +90,41 @@ int32_t VideoChannelUIView::GetChannelProperties(float& left,
 int32_t VideoChannelUIView::RenderFrame(const uint32_t /*streamId*/,
                                               I420VideoFrame& videoFrame)
 {
+    @autoreleasepool {
+        _owner->LockAGLCntx();
 
-    _owner->LockAGLCntx();
-
-    if(_width != (int)videoFrame.width() ||
-            _height != (int)videoFrame.height())
-    {
-        if(FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
+        if(_width != (int)videoFrame.width() ||
+                _height != (int)videoFrame.height())
         {
+            if(FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
+            {
+                _owner->UnlockAGLCntx();
+                return -1;
+            }
+        }
+
+        int bufferSize = CalcBufferSize(kI420, _width, _height);
+        
+        // Allocate ARGB buffer
+        VideoFrame captureFrame;
+        captureFrame.VerifyAndAllocate(bufferSize);
+        if (!captureFrame.Buffer())
+        {
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                         "Failed to allocate capture frame buffer.");
             _owner->UnlockAGLCntx();
             return -1;
         }
-    }
+        
+        captureFrame.SetLength(bufferSize);
+        
+        webrtc::ExtractBuffer(videoFrame, captureFrame.Length(), captureFrame.Buffer());
 
-    int bufferSize = CalcBufferSize(kI420, _width, _height);
-    
-    // Allocate ARGB buffer
-    VideoFrame captureFrame;
-    captureFrame.VerifyAndAllocate(bufferSize);
-    if (!captureFrame.Buffer())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                     "Failed to allocate capture frame buffer.");
+        int ret = DeliverFrame(captureFrame.Buffer(), captureFrame.Length(), videoFrame.timestamp());
+
         _owner->UnlockAGLCntx();
-        return -1;
+        return ret;
     }
-    
-    captureFrame.SetLength(bufferSize);
-    
-    webrtc::ExtractBuffer(videoFrame, captureFrame.Length(), captureFrame.Buffer());
-
-    int ret = DeliverFrame(captureFrame.Buffer(), captureFrame.Length(), videoFrame.timestamp());
-
-    _owner->UnlockAGLCntx();
-    return ret;
 }
 
 int VideoChannelUIView::UpdateSize(int width, int height)
@@ -786,7 +787,9 @@ VideoChannelUIView* VideoRenderUIView::ConfigureNSGLChannel(int channel, int zOr
 
 bool VideoRenderUIView::ScreenUpdateThreadProc(void* obj)
 {
-    return static_cast<VideoRenderUIView*>(obj)->ScreenUpdateProcess();
+    @autoreleasepool {
+        return static_cast<VideoRenderUIView*>(obj)->ScreenUpdateProcess();
+    }
 }
 
 bool VideoRenderUIView::ScreenUpdateProcess()
