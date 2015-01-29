@@ -115,7 +115,7 @@ build $
     obj/webrtc/modules/rtp_rtcp/source/rtp_rtcp.vp8_partition_aggregator.o: $
     cxx ../../../../webrtc/modules/rtp_rtcp/source/vp8_partition_aggregator.cc
 
-build obj/webrtc/modules/librtp_rtcp.a: alink_thin $
+build obj/webrtc/modules/librtp_rtcp.a: alink $
     obj/webrtc/modules/rtp_rtcp/source/rtp_rtcp.bitrate.o $
     obj/webrtc/modules/rtp_rtcp/source/rtp_rtcp.fec_receiver_impl.o $
     obj/webrtc/modules/rtp_rtcp/source/rtp_rtcp.receive_statistics_impl.o $

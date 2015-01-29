@@ -1112,7 +1112,7 @@ build $
     ../../../../third_party/libvpx/source/libvpx/vpx_scale/vpx_scale_rtcd.c $
     || obj/third_party/libvpx/libvpx.actions_rules_copies.stamp
 
-build obj/third_party/libvpx/libvpx.a: alink_thin $
+build obj/third_party/libvpx/libvpx.a: alink $
     obj/third_party/libvpx/gen/third_party/libvpx/libvpx.bilinearfilter_v6.o $
     obj/third_party/libvpx/gen/third_party/libvpx/libvpx.copymem16x16_v6.o $
     obj/third_party/libvpx/gen/third_party/libvpx/libvpx.copymem8x4_v6.o $

@@ -45,6 +45,6 @@ build $
     cxx ../../../../webrtc/modules/video_coding/utility/quality_scaler.cc
 
 build obj/webrtc/modules/video_coding/utility/libvideo_coding_utility.a: $
-    alink_thin $
+    alink $
     obj/webrtc/modules/video_coding/utility/video_coding_utility.frame_dropper.o $
     obj/webrtc/modules/video_coding/utility/video_coding_utility.quality_scaler.o

@@ -156,7 +156,7 @@ build $
     cc $
     ../../../../webrtc/modules/audio_coding/codecs/isac/main/source/transform.c
 
-build obj/webrtc/modules/libiSAC.a: alink_thin $
+build obj/webrtc/modules/libiSAC.a: alink $
     obj/webrtc/modules/audio_coding/codecs/isac/main/source/iSAC.arith_routines.o $
     obj/webrtc/modules/audio_coding/codecs/isac/main/source/iSAC.arith_routines_hist.o $
     obj/webrtc/modules/audio_coding/codecs/isac/main/source/iSAC.arith_routines_logist.o $

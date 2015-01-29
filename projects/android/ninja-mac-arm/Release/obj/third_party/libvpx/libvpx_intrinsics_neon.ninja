@@ -163,7 +163,7 @@ build $
     cc $
     ../../../../third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_variance_neon.c
 
-build obj/third_party/libvpx/libvpx_intrinsics_neon.a: alink_thin $
+build obj/third_party/libvpx/libvpx_intrinsics_neon.a: alink $
     obj/third_party/libvpx/source/libvpx/vp8/common/arm/neon/libvpx_intrinsics_neon.bilinearpredict_neon.o $
     obj/third_party/libvpx/source/libvpx/vp8/common/arm/neon/libvpx_intrinsics_neon.copymem_neon.o $
     obj/third_party/libvpx/source/libvpx/vp8/common/arm/neon/libvpx_intrinsics_neon.dc_only_idct_add_neon.o $

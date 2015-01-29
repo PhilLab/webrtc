@@ -44,5 +44,5 @@ build $
     obj/webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator.rate_statistics.o: $
     cxx ../../../../webrtc/modules/remote_bitrate_estimator/rate_statistics.cc
 
-build obj/webrtc/modules/libremote_bitrate_estimator.a: alink_thin $
+build obj/webrtc/modules/libremote_bitrate_estimator.a: alink $
     obj/webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator.rate_statistics.o

@@ -47,5 +47,5 @@ build $
     cxx $
     ../../../../webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.cc
 
-build obj/webrtc/modules/libred.a: alink_thin $
+build obj/webrtc/modules/libred.a: alink $
     obj/webrtc/modules/audio_coding/codecs/red/red.audio_encoder_copy_red.o

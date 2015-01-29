@@ -93,7 +93,7 @@ build $
     obj/webrtc/modules/desktop_capture/desktop_capture.window_capturer_null.o: $
     cxx ../../../../webrtc/modules/desktop_capture/window_capturer_null.cc
 
-build obj/webrtc/modules/libdesktop_capture.a: alink_thin $
+build obj/webrtc/modules/libdesktop_capture.a: alink $
     obj/webrtc/modules/desktop_capture/desktop_capture.cropped_desktop_frame.o $
     obj/webrtc/modules/desktop_capture/desktop_capture.cropping_window_capturer.o $
     obj/webrtc/modules/desktop_capture/desktop_capture.desktop_and_cursor_composer.o $

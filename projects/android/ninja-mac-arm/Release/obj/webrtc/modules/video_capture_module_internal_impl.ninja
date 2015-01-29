@@ -50,6 +50,6 @@ build $
     ../../../../webrtc/modules/video_capture/android/video_capture_android.cc
 
 build obj/webrtc/modules/libvideo_capture_module_internal_impl.a: $
-    alink_thin $
+    alink $
     obj/webrtc/modules/video_capture/android/video_capture_module_internal_impl.device_info_android.o $
     obj/webrtc/modules/video_capture/android/video_capture_module_internal_impl.video_capture_android.o

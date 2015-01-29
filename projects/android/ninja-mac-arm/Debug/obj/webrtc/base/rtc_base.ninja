@@ -192,7 +192,7 @@ build obj/webrtc/base/rtc_base.opensslidentity.o: cxx $
 build obj/webrtc/base/rtc_base.opensslstreamadapter.o: cxx $
     ../../../../webrtc/base/opensslstreamadapter.cc
 
-build obj/webrtc/base/librtc_base.a: alink_thin $
+build obj/webrtc/base/librtc_base.a: alink $
     obj/webrtc/base/rtc_base.asyncfile.o $
     obj/webrtc/base/rtc_base.asynchttprequest.o $
     obj/webrtc/base/rtc_base.asyncinvoker.o $

@@ -82,7 +82,7 @@ build $
     cxx $
     ../../../../webrtc/modules/video_processing/main/source/video_processing_impl.cc
 
-build obj/webrtc/modules/libvideo_processing.a: alink_thin $
+build obj/webrtc/modules/libvideo_processing.a: alink $
     obj/webrtc/modules/video_processing/main/source/video_processing.brighten.o $
     obj/webrtc/modules/video_processing/main/source/video_processing.brightness_detection.o $
     obj/webrtc/modules/video_processing/main/source/video_processing.color_enhancement.o $

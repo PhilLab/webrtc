@@ -67,7 +67,7 @@ build obj/webrtc/modules/video_coding/codecs/vp8/webrtc_vp8.vp8_impl.o: cxx $
     ../../../../webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
 
 build obj/webrtc/modules/video_coding/codecs/vp8/libwebrtc_vp8.a: $
-    alink_thin $
+    alink $
     obj/webrtc/modules/video_coding/codecs/vp8/webrtc_vp8.default_temporal_layers.o $
     obj/webrtc/modules/video_coding/codecs/vp8/webrtc_vp8.realtime_temporal_layers.o $
     obj/webrtc/modules/video_coding/codecs/vp8/webrtc_vp8.reference_picture_selection.o $

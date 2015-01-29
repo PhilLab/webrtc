@@ -45,5 +45,5 @@ build $
     cxx $
     ../../../../webrtc/modules/video_coding/codecs/i420/main/source/i420.cc
 
-build obj/webrtc/modules/libwebrtc_i420.a: alink_thin $
+build obj/webrtc/modules/libwebrtc_i420.a: alink $
     obj/webrtc/modules/video_coding/codecs/i420/main/source/webrtc_i420.i420.o

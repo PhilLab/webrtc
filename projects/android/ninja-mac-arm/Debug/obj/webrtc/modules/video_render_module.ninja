@@ -53,7 +53,7 @@ build $
     obj/webrtc/modules/video_render/video_render_module.video_render_frames.o: $
     cxx ../../../../webrtc/modules/video_render/video_render_frames.cc
 
-build obj/webrtc/modules/libvideo_render_module.a: alink_thin $
+build obj/webrtc/modules/libvideo_render_module.a: alink $
     obj/webrtc/modules/video_render/external/video_render_module.video_render_external_impl.o $
     obj/webrtc/modules/video_render/video_render_module.incoming_video_stream.o $
     obj/webrtc/modules/video_render/video_render_module.video_render_frames.o

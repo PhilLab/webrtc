@@ -181,7 +181,7 @@ build $
     cc $
     ../../../../webrtc/common_audio/signal_processing/filter_ar_fast_q12_armv7.S
 
-build obj/webrtc/common_audio/libcommon_audio.a: alink_thin $
+build obj/webrtc/common_audio/libcommon_audio.a: alink $
     obj/webrtc/common_audio/common_audio.audio_converter.o $
     obj/webrtc/common_audio/common_audio.audio_util.o $
     obj/webrtc/common_audio/common_audio.blocker.o $

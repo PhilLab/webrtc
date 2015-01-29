@@ -26,17 +26,21 @@ public class VideoCaptureDeviceInfoAndroid {
   private final static String TAG = "WEBRTC-JC";
   
   private static class FrameSize {
-	  int width;
-	  int height;
+      int width;
+      int height;
   }
-  
+
+  private static class MfpsRange {
+      int minMfps;
+      int maxMfps;
+  }
+
   private static class DeviceInfo {
-	  String name;
-	  boolean frontFacing;
-	  int orientation;
-	  FrameSize[] sizes = new FrameSize[10];
-	  int minMfps;
-	  int maxMfps;
+      String name;
+      boolean frontFacing;
+      int orientation;
+      FrameSize[] sizes = new FrameSize[10];
+      MfpsRange[] mfpsRanges = new MfpsRange[10];
   }
 
   private static boolean isFrontFacing(CameraInfo info) {
@@ -153,32 +157,78 @@ public class VideoCaptureDeviceInfoAndroid {
       String uniqueName = deviceUniqueName(i, info);
       List<Size> supportedSizes;
       List<int[]> supportedFpsRanges;
+      Camera camera = null;
       try {
-        Camera camera = Camera.open(i);
+        camera = Camera.open(i);
         Parameters parameters = camera.getParameters();
         supportedSizes = parameters.getSupportedPreviewSizes();
         supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
-        camera.release();
         Log.d(TAG, uniqueName);
       } catch (RuntimeException e) {
-        Log.e(TAG, "Failed to open " + uniqueName + ", skipping");
+        Log.e(TAG, "Failed to open " + uniqueName + ", skipping", e);
         continue;
+      } finally {
+        if (camera != null) {
+          camera.release();
+        }
       }
-      int[] mfps = supportedFpsRanges.get(supportedFpsRanges.size() - 1);
+
+      for (int j = 0; j < supportedSizes.size() && j < 10; ++j) {
+        Size size = supportedSizes.get(j);
+        FrameSize frameSize = new FrameSize();
+        frameSize.width = size.width;
+        frameSize.height = size.height;
+        deviceInfo.sizes[j] = frameSize;
+      }
+
+      boolean is30fpsRange = false;
+      boolean is15fpsRange = false;
+      // If there is constant 30 fps mode, but no 15 fps - add 15 fps
+      // mode to the list of supported ranges. Frame drop will be done
+      // in software.
+      for (int[] range : supportedFpsRanges) {
+        if (range[Parameters.PREVIEW_FPS_MIN_INDEX] == 30000 &&
+            range[Parameters.PREVIEW_FPS_MAX_INDEX] == 30000) {
+          is30fpsRange = true;
+        }
+        if (range[Parameters.PREVIEW_FPS_MIN_INDEX] == 15000 &&
+            range[Parameters.PREVIEW_FPS_MAX_INDEX] == 15000) {
+          is15fpsRange = true;
+        }
+      }
+      if (is30fpsRange && !is15fpsRange) {
+        Log.d(TAG, "Adding 15 fps support");
+        int[] newRange = new int [Parameters.PREVIEW_FPS_MAX_INDEX + 1];
+        newRange[Parameters.PREVIEW_FPS_MIN_INDEX] = 15000;
+        newRange[Parameters.PREVIEW_FPS_MAX_INDEX] = 15000;
+        for (int j = 0; j < supportedFpsRanges.size(); j++ ) {
+          int[] range = supportedFpsRanges.get(j);
+          if (range[Parameters.PREVIEW_FPS_MAX_INDEX] >
+              newRange[Parameters.PREVIEW_FPS_MAX_INDEX]) {
+            supportedFpsRanges.add(j, newRange);
+            break;
+          }
+        }
+      }
+
+      for (int j = 0; j < supportedFpsRanges.size() && j < 10; ++j) {
+        int[] range = supportedFpsRanges.get(j);
+        MfpsRange mfpsRange = new MfpsRange();
+        // Android SDK deals in integral "milliframes per second"
+        // (i.e. fps*1000, instead of floating-point frames-per-second) so we
+        // preserve that through the Java->C++->Java round-trip.
+        mfpsRange.minMfps = range[Parameters.PREVIEW_FPS_MIN_INDEX];
+        mfpsRange.maxMfps = range[Parameters.PREVIEW_FPS_MAX_INDEX];
+        deviceInfo.mfpsRanges[j] = mfpsRange;
+      }
+
       deviceInfo.name = uniqueName;
       deviceInfo.frontFacing = isFrontFacing(info);
       deviceInfo.orientation = info.orientation;
-      deviceInfo.minMfps = mfps[Parameters.PREVIEW_FPS_MIN_INDEX];
-      deviceInfo.maxMfps = mfps[Parameters.PREVIEW_FPS_MAX_INDEX];
-      for (int j = 0; j < supportedSizes.size() && j < 10; ++j) {
-        Size supportedSize = supportedSizes.get(j);
-        FrameSize frameSize = new FrameSize();
-        frameSize.width = supportedSize.width;
-        frameSize.height = supportedSize.height;
-        deviceInfo.sizes[j] = frameSize;
-      }
+
       deviceInfoArray[i] = deviceInfo;
     }
+      
     return deviceInfoArray;
   }
 }

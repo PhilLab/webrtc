@@ -40,5 +40,5 @@ cflags_cc = -fno-exceptions -fno-rtti -fno-threadsafe-statics $
 build obj/webrtc/test/field_trial.field_trial.o: cxx $
     ../../../../webrtc/test/field_trial.cc
 
-build obj/webrtc/test/libfield_trial.a: alink_thin $
+build obj/webrtc/test/libfield_trial.a: alink $
     obj/webrtc/test/field_trial.field_trial.o

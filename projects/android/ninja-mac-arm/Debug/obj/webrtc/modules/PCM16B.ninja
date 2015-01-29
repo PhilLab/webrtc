@@ -50,6 +50,6 @@ build $
 build obj/webrtc/modules/audio_coding/codecs/pcm16b/PCM16B.pcm16b.o: cc $
     ../../../../webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.c
 
-build obj/webrtc/modules/libPCM16B.a: alink_thin $
+build obj/webrtc/modules/libPCM16B.a: alink $
     obj/webrtc/modules/audio_coding/codecs/pcm16b/PCM16B.audio_encoder_pcm16b.o $
     obj/webrtc/modules/audio_coding/codecs/pcm16b/PCM16B.pcm16b.o

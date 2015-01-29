@@ -44,5 +44,5 @@ build $
     obj/webrtc/modules/remote_bitrate_estimator/tools/bwe_tools_util.bwe_rtp.o: $
     cxx ../../../../webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.cc
 
-build obj/webrtc/modules/libbwe_tools_util.a: alink_thin $
+build obj/webrtc/modules/libbwe_tools_util.a: alink $
     obj/webrtc/modules/remote_bitrate_estimator/tools/bwe_tools_util.bwe_rtp.o

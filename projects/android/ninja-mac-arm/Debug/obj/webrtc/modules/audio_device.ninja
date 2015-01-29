@@ -103,7 +103,7 @@ build $
     obj/webrtc/modules/audio_device/android/audio_device.single_rw_fifo.o: $
     cxx ../../../../webrtc/modules/audio_device/android/single_rw_fifo.cc
 
-build obj/webrtc/modules/libaudio_device.a: alink_thin $
+build obj/webrtc/modules/libaudio_device.a: alink $
     obj/webrtc/modules/audio_device/audio_device.audio_device_buffer.o $
     obj/webrtc/modules/audio_device/audio_device.audio_device_generic.o $
     obj/webrtc/modules/audio_device/audio_device.audio_device_utility.o $

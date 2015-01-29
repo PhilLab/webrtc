@@ -39,5 +39,5 @@ cflags_cc = -fno-exceptions -fno-rtti -fno-threadsafe-statics $
 
 build obj/webrtc/webrtc_common.config.o: cxx ../../../../webrtc/config.cc
 
-build obj/webrtc/libwebrtc_common.a: alink_thin $
+build obj/webrtc/libwebrtc_common.a: alink $
     obj/webrtc/webrtc_common.config.o

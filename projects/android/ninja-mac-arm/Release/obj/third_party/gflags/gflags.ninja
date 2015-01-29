@@ -38,7 +38,7 @@ build obj/third_party/gflags/src/gflags.gflags_completions.o: cxx $
 build obj/third_party/gflags/src/gflags.gflags_reporting.o: cxx $
     ../../../../third_party/gflags/src/gflags_reporting.cc
 
-build obj/third_party/gflags/libgflags.a: alink_thin $
+build obj/third_party/gflags/libgflags.a: alink $
     obj/third_party/gflags/src/gflags.gflags.o $
     obj/third_party/gflags/src/gflags.gflags_completions.o $
     obj/third_party/gflags/src/gflags.gflags_reporting.o

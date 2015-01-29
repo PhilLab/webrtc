@@ -55,7 +55,7 @@ build $
     cc $
     ../../../../webrtc/common_audio/signal_processing/min_max_operations_neon.S
 
-build obj/webrtc/common_audio/libcommon_audio_neon.a: alink_thin $
+build obj/webrtc/common_audio/libcommon_audio_neon.a: alink $
     obj/webrtc/common_audio/common_audio_neon.fir_filter_neon.o $
     obj/webrtc/common_audio/resampler/common_audio_neon.sinc_resampler_neon.o $
     obj/webrtc/common_audio/signal_processing/common_audio_neon.cross_correlation_neon.o $

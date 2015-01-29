@@ -104,7 +104,7 @@ build obj/webrtc/system_wrappers/source/system_wrappers.trace_impl.o: cxx $
 build obj/webrtc/system_wrappers/source/system_wrappers.trace_posix.o: cxx $
     ../../../../webrtc/system_wrappers/source/trace_posix.cc
 
-build obj/webrtc/system_wrappers/source/libsystem_wrappers.a: alink_thin $
+build obj/webrtc/system_wrappers/source/libsystem_wrappers.a: alink $
     obj/webrtc/system_wrappers/source/system_wrappers.aligned_malloc.o $
     obj/webrtc/system_wrappers/source/system_wrappers.atomic32_posix.o $
     obj/webrtc/system_wrappers/source/system_wrappers.clock.o $

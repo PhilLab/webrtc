@@ -42,5 +42,5 @@ build $
     cxx ../../../../webrtc/system_wrappers/source/field_trial_default.cc
 
 build obj/webrtc/system_wrappers/source/libfield_trial_default.a: $
-    alink_thin $
+    alink $
     obj/webrtc/system_wrappers/source/field_trial_default.field_trial_default.o

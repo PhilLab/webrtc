@@ -50,7 +50,7 @@ build obj/webrtc/modules/media_file/source/media_file.media_file_impl.o: $
 build obj/webrtc/modules/media_file/source/media_file.media_file_utility.o: $
     cxx ../../../../webrtc/modules/media_file/source/media_file_utility.cc
 
-build obj/webrtc/modules/libmedia_file.a: alink_thin $
+build obj/webrtc/modules/libmedia_file.a: alink $
     obj/webrtc/modules/media_file/source/media_file.avi_file.o $
     obj/webrtc/modules/media_file/source/media_file.media_file_impl.o $
     obj/webrtc/modules/media_file/source/media_file.media_file_utility.o

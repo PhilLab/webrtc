@@ -45,6 +45,6 @@ build obj/webrtc/test/test_support_main.run_all_unittests.o: cxx $
 build obj/webrtc/test/test_support_main.test_suite.o: cxx $
     ../../../../webrtc/test/test_suite.cc
 
-build obj/webrtc/test/libtest_support_main.a: alink_thin $
+build obj/webrtc/test/libtest_support_main.a: alink $
     obj/webrtc/test/test_support_main.run_all_unittests.o $
     obj/webrtc/test/test_support_main.test_suite.o

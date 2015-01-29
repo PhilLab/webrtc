@@ -50,7 +50,7 @@ build obj/webrtc/modules/audio_coding/codecs/g711/G711.audio_encoder_pcm.o: $
     cxx $
     ../../../../webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.cc
 
-build obj/webrtc/modules/libG711.a: alink_thin $
+build obj/webrtc/modules/libG711.a: alink $
     obj/webrtc/modules/audio_coding/codecs/g711/G711.g711_interface.o $
     obj/webrtc/modules/audio_coding/codecs/g711/G711.g711.o $
     obj/webrtc/modules/audio_coding/codecs/g711/G711.audio_encoder_pcm.o

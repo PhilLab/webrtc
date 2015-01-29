@@ -49,6 +49,6 @@ build $
     obj/webrtc/modules/audio_coding/codecs/opus/webrtc_opus.opus_interface.o: $
     cc ../../../../webrtc/modules/audio_coding/codecs/opus/opus_interface.c
 
-build obj/webrtc/modules/libwebrtc_opus.a: alink_thin $
+build obj/webrtc/modules/libwebrtc_opus.a: alink $
     obj/webrtc/modules/audio_coding/codecs/opus/webrtc_opus.audio_encoder_opus.o $
     obj/webrtc/modules/audio_coding/codecs/opus/webrtc_opus.opus_interface.o

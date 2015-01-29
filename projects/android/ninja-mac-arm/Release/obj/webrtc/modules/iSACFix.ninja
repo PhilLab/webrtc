@@ -159,7 +159,7 @@ build $
     cc $
     ../../../../webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_filter_armv6.S
 
-build obj/webrtc/modules/libiSACFix.a: alink_thin $
+build obj/webrtc/modules/libiSACFix.a: alink $
     obj/webrtc/modules/audio_coding/codecs/isac/fix/source/iSACFix.arith_routines.o $
     obj/webrtc/modules/audio_coding/codecs/isac/fix/source/iSACFix.arith_routines_hist.o $
     obj/webrtc/modules/audio_coding/codecs/isac/fix/source/iSACFix.arith_routines_logist.o $

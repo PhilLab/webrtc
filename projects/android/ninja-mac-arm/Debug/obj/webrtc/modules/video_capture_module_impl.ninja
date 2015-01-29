@@ -49,6 +49,6 @@ build $
     cxx $
     ../../../../webrtc/modules/video_capture/external/video_capture_external.cc
 
-build obj/webrtc/modules/libvideo_capture_module_impl.a: alink_thin $
+build obj/webrtc/modules/libvideo_capture_module_impl.a: alink $
     obj/webrtc/modules/video_capture/external/video_capture_module_impl.device_info_external.o $
     obj/webrtc/modules/video_capture/external/video_capture_module_impl.video_capture_external.o

@@ -60,7 +60,7 @@ build $
     cxx $
     ../../../../webrtc/modules/audio_conference_mixer/source/time_scheduler.cc
 
-build obj/webrtc/modules/libaudio_conference_mixer.a: alink_thin $
+build obj/webrtc/modules/libaudio_conference_mixer.a: alink $
     obj/webrtc/modules/audio_conference_mixer/source/audio_conference_mixer.audio_frame_manipulator.o $
     obj/webrtc/modules/audio_conference_mixer/source/audio_conference_mixer.level_indicator.o $
     obj/webrtc/modules/audio_conference_mixer/source/audio_conference_mixer.audio_conference_mixer_impl.o $

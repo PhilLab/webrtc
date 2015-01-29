@@ -102,7 +102,7 @@ build obj/webrtc/video_engine/video_engine_core.vie_sender.o: cxx $
 build obj/webrtc/video_engine/video_engine_core.vie_sync_module.o: cxx $
     ../../../../webrtc/video_engine/vie_sync_module.cc
 
-build obj/webrtc/video_engine/libvideo_engine_core.a: alink_thin $
+build obj/webrtc/video_engine/libvideo_engine_core.a: alink $
     obj/webrtc/video_engine/video_engine_core.call_stats.o $
     obj/webrtc/video_engine/video_engine_core.encoder_state_feedback.o $
     obj/webrtc/video_engine/video_engine_core.overuse_frame_detector.o $

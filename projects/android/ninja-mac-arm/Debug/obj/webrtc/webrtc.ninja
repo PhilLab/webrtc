@@ -51,7 +51,7 @@ build obj/webrtc/video/webrtc.video_receive_stream.o: cxx $
 build obj/webrtc/video/webrtc.video_send_stream.o: cxx $
     ../../../../webrtc/video/video_send_stream.cc
 
-build obj/webrtc/libwebrtc.a: alink_thin obj/webrtc/video/webrtc.call.o $
+build obj/webrtc/libwebrtc.a: alink obj/webrtc/video/webrtc.call.o $
     obj/webrtc/video/webrtc.encoded_frame_callback_adapter.o $
     obj/webrtc/video/webrtc.send_statistics_proxy.o $
     obj/webrtc/video/webrtc.receive_statistics_proxy.o $

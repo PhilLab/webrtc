@@ -44,5 +44,5 @@ build obj/webrtc/modules/video_coding/codecs/vp9/webrtc_vp9.vp9_impl.o: cxx $
     ../../../../webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc
 
 build obj/webrtc/modules/video_coding/codecs/vp9/libwebrtc_vp9.a: $
-    alink_thin $
+    alink $
     obj/webrtc/modules/video_coding/codecs/vp9/webrtc_vp9.vp9_impl.o

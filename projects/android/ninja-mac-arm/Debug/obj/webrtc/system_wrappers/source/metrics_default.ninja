@@ -40,5 +40,5 @@ cflags_cc = -fno-exceptions -fno-rtti -fno-threadsafe-statics $
 build obj/webrtc/system_wrappers/source/metrics_default.metrics_default.o: $
     cxx ../../../../webrtc/system_wrappers/source/metrics_default.cc
 
-build obj/webrtc/system_wrappers/source/libmetrics_default.a: alink_thin $
+build obj/webrtc/system_wrappers/source/libmetrics_default.a: alink $
     obj/webrtc/system_wrappers/source/metrics_default.metrics_default.o

@@ -33,5 +33,5 @@ build $
     cc $
     $android_ndk_path/sources/android/cpufeatures/cpu-features.c
 
-build obj/third_party/android_tools/ndk/libcpu_features.a: alink_thin $
+build obj/third_party/android_tools/ndk/libcpu_features.a: alink $
     $android_ndk_path/sources/android/cpufeatures/cpu_features.cpu-features.o

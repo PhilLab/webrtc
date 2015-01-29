@@ -53,7 +53,7 @@ build obj/webrtc/modules/audio_coding/codecs/cng/CNG.webrtc_cng.o: cc $
 build obj/webrtc/modules/audio_coding/codecs/cng/CNG.cng_helpfuns.o: cc $
     ../../../../webrtc/modules/audio_coding/codecs/cng/cng_helpfuns.c
 
-build obj/webrtc/modules/libCNG.a: alink_thin $
+build obj/webrtc/modules/libCNG.a: alink $
     obj/webrtc/modules/audio_coding/codecs/cng/CNG.audio_encoder_cng.o $
     obj/webrtc/modules/audio_coding/codecs/cng/CNG.webrtc_cng.o $
     obj/webrtc/modules/audio_coding/codecs/cng/CNG.cng_helpfuns.o

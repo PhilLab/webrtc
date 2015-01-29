@@ -45,6 +45,6 @@ build obj/webrtc/modules/pacing/paced_sender.bitrate_prober.o: cxx $
 build obj/webrtc/modules/pacing/paced_sender.paced_sender.o: cxx $
     ../../../../webrtc/modules/pacing/paced_sender.cc
 
-build obj/webrtc/modules/libpaced_sender.a: alink_thin $
+build obj/webrtc/modules/libpaced_sender.a: alink $
     obj/webrtc/modules/pacing/paced_sender.bitrate_prober.o $
     obj/webrtc/modules/pacing/paced_sender.paced_sender.o

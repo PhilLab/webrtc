@@ -53,7 +53,7 @@ build obj/webrtc/modules/audio_coding/codecs/g722/G722.g722_encode.o: cc $
 build obj/webrtc/modules/audio_coding/codecs/g722/G722.g722_decode.o: cc $
     ../../../../webrtc/modules/audio_coding/codecs/g722/g722_decode.c
 
-build obj/webrtc/modules/libG722.a: alink_thin $
+build obj/webrtc/modules/libG722.a: alink $
     obj/webrtc/modules/audio_coding/codecs/g722/G722.audio_encoder_g722.o $
     obj/webrtc/modules/audio_coding/codecs/g722/G722.g722_interface.o $
     obj/webrtc/modules/audio_coding/codecs/g722/G722.g722_encode.o $

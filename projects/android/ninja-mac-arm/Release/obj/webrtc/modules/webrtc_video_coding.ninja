@@ -117,7 +117,7 @@ build $
     obj/webrtc/modules/video_coding/main/source/webrtc_video_coding.video_receiver.o: $
     cxx ../../../../webrtc/modules/video_coding/main/source/video_receiver.cc
 
-build obj/webrtc/modules/libwebrtc_video_coding.a: alink_thin $
+build obj/webrtc/modules/libwebrtc_video_coding.a: alink $
     obj/webrtc/modules/video_coding/main/source/webrtc_video_coding.codec_database.o $
     obj/webrtc/modules/video_coding/main/source/webrtc_video_coding.codec_timer.o $
     obj/webrtc/modules/video_coding/main/source/webrtc_video_coding.content_metrics_processing.o $

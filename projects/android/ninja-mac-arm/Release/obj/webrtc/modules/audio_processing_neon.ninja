@@ -56,7 +56,7 @@ build $
     obj/webrtc/modules/audio_processing/ns/audio_processing_neon.nsx_core_neon.o: $
     cc ../../../../webrtc/modules/audio_processing/ns/nsx_core_neon.c
 
-build obj/webrtc/modules/libaudio_processing_neon.a: alink_thin $
+build obj/webrtc/modules/libaudio_processing_neon.a: alink $
     obj/webrtc/modules/audio_processing/aec/audio_processing_neon.aec_core_neon.o $
     obj/webrtc/modules/audio_processing/aec/audio_processing_neon.aec_rdft_neon.o $
     obj/webrtc/modules/audio_processing/aecm/audio_processing_neon.aecm_core_neon.o $

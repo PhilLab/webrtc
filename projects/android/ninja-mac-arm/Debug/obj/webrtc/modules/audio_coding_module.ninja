@@ -142,7 +142,7 @@ build $
 build obj/webrtc/modules/audio_coding/main/acm2/audio_coding_module.nack.o: $
     cxx ../../../../webrtc/modules/audio_coding/main/acm2/nack.cc
 
-build obj/webrtc/modules/libaudio_coding_module.a: alink_thin $
+build obj/webrtc/modules/libaudio_coding_module.a: alink $
     obj/webrtc/modules/audio_coding/main/acm2/audio_coding_module.acm_amr.o $
     obj/webrtc/modules/audio_coding/main/acm2/audio_coding_module.acm_amrwb.o $
     obj/webrtc/modules/audio_coding/main/acm2/audio_coding_module.acm_cng.o $

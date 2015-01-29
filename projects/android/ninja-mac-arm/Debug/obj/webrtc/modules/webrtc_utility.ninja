@@ -72,7 +72,7 @@ build $
     obj/webrtc/modules/utility/source/webrtc_utility.video_frames_queue.o: $
     cxx ../../../../webrtc/modules/utility/source/video_frames_queue.cc
 
-build obj/webrtc/modules/libwebrtc_utility.a: alink_thin $
+build obj/webrtc/modules/libwebrtc_utility.a: alink $
     obj/webrtc/modules/utility/source/webrtc_utility.audio_frame_operations.o $
     obj/webrtc/modules/utility/source/webrtc_utility.coder.o $
     obj/webrtc/modules/utility/source/webrtc_utility.file_player_impl.o $

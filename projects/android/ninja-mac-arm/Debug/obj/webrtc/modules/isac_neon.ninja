@@ -68,7 +68,7 @@ build $
     cc $
     ../../../../webrtc/modules/audio_coding/codecs/isac/fix/source/transform_neon.S
 
-build obj/webrtc/modules/libisac_neon.a: alink_thin $
+build obj/webrtc/modules/libisac_neon.a: alink $
     obj/webrtc/modules/audio_coding/codecs/isac/fix/source/isac_neon.entropy_coding_neon.o $
     obj/webrtc/modules/audio_coding/codecs/isac/fix/source/isac_neon.filterbanks_neon.o $
     obj/webrtc/modules/audio_coding/codecs/isac/fix/source/isac_neon.filters_neon.o $

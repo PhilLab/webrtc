@@ -185,7 +185,7 @@ build $
     obj/webrtc/modules/audio_processing/aecm/audio_processing.aecm_core_c.o: $
     cc ../../../../webrtc/modules/audio_processing/aecm/aecm_core_c.c
 
-build obj/webrtc/modules/libaudio_processing.a: alink_thin $
+build obj/webrtc/modules/libaudio_processing.a: alink $
     obj/webrtc/modules/audio_processing/aec/audio_processing.aec_core.o $
     obj/webrtc/modules/audio_processing/aec/audio_processing.aec_rdft.o $
     obj/webrtc/modules/audio_processing/aec/audio_processing.aec_resampler.o $

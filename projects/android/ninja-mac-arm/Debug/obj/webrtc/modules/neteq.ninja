@@ -119,7 +119,7 @@ build obj/webrtc/modules/audio_coding/neteq/neteq.timestamp_scaler.o: cxx $
 build obj/webrtc/modules/audio_coding/neteq/neteq.time_stretch.o: cxx $
     ../../../../webrtc/modules/audio_coding/neteq/time_stretch.cc
 
-build obj/webrtc/modules/libneteq.a: alink_thin $
+build obj/webrtc/modules/libneteq.a: alink $
     obj/webrtc/modules/audio_coding/neteq/neteq.accelerate.o $
     obj/webrtc/modules/audio_coding/neteq/neteq.audio_classifier.o $
     obj/webrtc/modules/audio_coding/neteq/neteq.audio_decoder_impl.o $

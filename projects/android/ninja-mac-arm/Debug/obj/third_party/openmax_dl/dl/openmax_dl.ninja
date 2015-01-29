@@ -244,7 +244,7 @@ build $
     cc $
     ../../../../third_party/openmax_dl/dl/sp/src/arm/neon/omxSP_FFTInv_CCSToR_F32_Sfs_s.S
 
-build obj/third_party/openmax_dl/dl/libopenmax_dl.a: alink_thin $
+build obj/third_party/openmax_dl/dl/libopenmax_dl.a: alink $
     obj/third_party/openmax_dl/dl/sp/src/openmax_dl.armSP_FFT_F32TwiddleTable.o $
     obj/third_party/openmax_dl/dl/sp/src/arm/openmax_dl.armSP_FFT_S32TwiddleTable.o $
     obj/third_party/openmax_dl/dl/sp/src/arm/openmax_dl.omxSP_FFTGetBufSize_C_FC32.o $

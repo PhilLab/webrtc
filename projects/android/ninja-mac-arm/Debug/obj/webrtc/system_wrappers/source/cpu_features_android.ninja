@@ -43,5 +43,5 @@ build $
     cc ../../../../webrtc/system_wrappers/source/cpu_features_android.c
 
 build obj/webrtc/system_wrappers/source/libcpu_features_android.a: $
-    alink_thin $
+    alink $
     obj/webrtc/system_wrappers/source/cpu_features_android.cpu_features_android.o

@@ -122,7 +122,7 @@ build obj/third_party/libjpeg_turbo/simd/libjpeg.jsimd_arm.o: cc $
 build obj/third_party/libjpeg_turbo/simd/libjpeg.jsimd_arm_neon.o: cc $
     ../../../../third_party/libjpeg_turbo/simd/jsimd_arm_neon.S
 
-build obj/third_party/libjpeg_turbo/libjpeg_turbo.a: alink_thin $
+build obj/third_party/libjpeg_turbo/libjpeg_turbo.a: alink $
     obj/third_party/libjpeg_turbo/libjpeg.jcapimin.o $
     obj/third_party/libjpeg_turbo/libjpeg.jcapistd.o $
     obj/third_party/libjpeg_turbo/libjpeg.jccoefct.o $

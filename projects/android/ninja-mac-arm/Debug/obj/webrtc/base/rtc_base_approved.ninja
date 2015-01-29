@@ -52,7 +52,7 @@ build obj/webrtc/base/rtc_base_approved.stringutils.o: cxx $
 build obj/webrtc/base/rtc_base_approved.timeutils.o: cxx $
     ../../../../webrtc/base/timeutils.cc
 
-build obj/webrtc/base/librtc_base_approved.a: alink_thin $
+build obj/webrtc/base/librtc_base_approved.a: alink $
     obj/webrtc/base/rtc_base_approved.checks.o $
     obj/webrtc/base/rtc_base_approved.exp_filter.o $
     obj/webrtc/base/rtc_base_approved.md5.o $

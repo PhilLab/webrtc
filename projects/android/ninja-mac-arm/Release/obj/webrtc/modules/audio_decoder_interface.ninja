@@ -44,5 +44,5 @@ build $
     obj/webrtc/modules/audio_coding/codecs/audio_decoder_interface.audio_decoder.o: $
     cxx ../../../../webrtc/modules/audio_coding/codecs/audio_decoder.cc
 
-build obj/webrtc/modules/libaudio_decoder_interface.a: alink_thin $
+build obj/webrtc/modules/libaudio_decoder_interface.a: alink $
     obj/webrtc/modules/audio_coding/codecs/audio_decoder_interface.audio_decoder.o

@@ -60,7 +60,7 @@ build $
     cxx $
     ../../../../webrtc/modules/video_render/android/video_render_opengles20.cc
 
-build obj/webrtc/modules/libvideo_render_module_internal_impl.a: alink_thin $
+build obj/webrtc/modules/libvideo_render_module_internal_impl.a: alink $
     obj/webrtc/modules/video_render/video_render_module_internal_impl.video_render_internal_impl.o $
     obj/webrtc/modules/video_render/android/video_render_module_internal_impl.video_render_android_impl.o $
     obj/webrtc/modules/video_render/android/video_render_module_internal_impl.video_render_android_native_opengl2.o $

@@ -453,7 +453,7 @@ build $
     cc obj/third_party/opus/opus.gen/celt_pitch_xcorr_arm_gnu.S || $
     obj/third_party/opus/opus.gen/celt_pitch_xcorr_arm_gnu.S
 
-build obj/third_party/opus/libopus.a: alink_thin $
+build obj/third_party/opus/libopus.a: alink $
     obj/third_party/opus/src/celt/opus.bands.o $
     obj/third_party/opus/src/celt/opus.celt.o $
     obj/third_party/opus/src/celt/opus.celt_decoder.o $

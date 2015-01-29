@@ -97,7 +97,7 @@ build obj/webrtc/voice_engine/voice_engine.voe_volume_control_impl.o: cxx $
 build obj/webrtc/voice_engine/voice_engine.voice_engine_impl.o: cxx $
     ../../../../webrtc/voice_engine/voice_engine_impl.cc
 
-build obj/webrtc/voice_engine/libvoice_engine.a: alink_thin $
+build obj/webrtc/voice_engine/libvoice_engine.a: alink $
     obj/webrtc/voice_engine/voice_engine.channel.o $
     obj/webrtc/voice_engine/voice_engine.channel_manager.o $
     obj/webrtc/voice_engine/voice_engine.dtmf_inband.o $

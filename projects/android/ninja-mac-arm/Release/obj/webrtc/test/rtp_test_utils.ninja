@@ -44,7 +44,7 @@ build obj/webrtc/test/rtp_test_utils.rtp_file_reader.o: cxx $
 build obj/webrtc/test/rtp_test_utils.rtp_file_writer.o: cxx $
     ../../../../webrtc/test/rtp_file_writer.cc
 
-build obj/webrtc/test/librtp_test_utils.a: alink_thin $
+build obj/webrtc/test/librtp_test_utils.a: alink $
     obj/webrtc/test/rtp_test_utils.rtcp_packet_parser.o $
     obj/webrtc/test/rtp_test_utils.rtp_file_reader.o $
     obj/webrtc/test/rtp_test_utils.rtp_file_writer.o

@@ -212,7 +212,7 @@ build obj/webrtc/modules/audio_coding/codecs/ilbc/iLBC.window32_w32.o: cc $
 build obj/webrtc/modules/audio_coding/codecs/ilbc/iLBC.xcorr_coef.o: cc $
     ../../../../webrtc/modules/audio_coding/codecs/ilbc/xcorr_coef.c
 
-build obj/webrtc/modules/libiLBC.a: alink_thin $
+build obj/webrtc/modules/libiLBC.a: alink $
     obj/webrtc/modules/audio_coding/codecs/ilbc/iLBC.abs_quant.o $
     obj/webrtc/modules/audio_coding/codecs/ilbc/iLBC.abs_quant_loop.o $
     obj/webrtc/modules/audio_coding/codecs/ilbc/iLBC.audio_encoder_ilbc.o $

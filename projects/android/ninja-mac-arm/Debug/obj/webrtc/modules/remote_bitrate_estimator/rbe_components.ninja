@@ -75,7 +75,7 @@ build $
     ../../../../webrtc/modules/remote_bitrate_estimator/remote_rate_control.cc
 
 build obj/webrtc/modules/remote_bitrate_estimator/librbe_components.a: $
-    alink_thin $
+    alink $
     obj/webrtc/modules/remote_bitrate_estimator/test/rbe_components.bwe_test_logging.o $
     obj/webrtc/modules/remote_bitrate_estimator/rbe_components.aimd_rate_control.o $
     obj/webrtc/modules/remote_bitrate_estimator/rbe_components.inter_arrival.o $

@@ -50,7 +50,7 @@ build obj/webrtc/test/testsupport/test_support.perf_test.o: cxx $
 build obj/webrtc/test/testsupport/test_support.trace_to_stderr.o: cxx $
     ../../../../webrtc/test/testsupport/trace_to_stderr.cc
 
-build obj/webrtc/test/libtest_support.a: alink_thin $
+build obj/webrtc/test/libtest_support.a: alink $
     obj/webrtc/test/testsupport/test_support.fileutils.o $
     obj/webrtc/test/testsupport/test_support.frame_reader.o $
     obj/webrtc/test/testsupport/test_support.frame_writer.o $

@@ -52,7 +52,7 @@ build obj/webrtc/common_video/common_video.plane.o: cxx $
 build obj/webrtc/common_video/common_video.texture_video_frame.o: cxx $
     ../../../../webrtc/common_video/texture_video_frame.cc
 
-build obj/webrtc/common_video/libcommon_video.a: alink_thin $
+build obj/webrtc/common_video/libcommon_video.a: alink $
     obj/webrtc/common_video/common_video.i420_video_frame.o $
     obj/webrtc/common_video/libyuv/common_video.webrtc_libyuv.o $
     obj/webrtc/common_video/libyuv/common_video.scaler.o $

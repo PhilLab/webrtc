@@ -52,7 +52,7 @@ build $
     obj/webrtc/modules/video_capture/video_capture_module.video_capture_impl.o: $
     cxx ../../../../webrtc/modules/video_capture/video_capture_impl.cc
 
-build obj/webrtc/modules/libvideo_capture_module.a: alink_thin $
+build obj/webrtc/modules/libvideo_capture_module.a: alink $
     obj/webrtc/modules/video_capture/video_capture_module.device_info_impl.o $
     obj/webrtc/modules/video_capture/video_capture_module.video_capture_factory.o $
     obj/webrtc/modules/video_capture/video_capture_module.video_capture_impl.o

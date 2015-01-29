@@ -100,9 +100,12 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
       jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$DeviceInfo");
   jclass j_size_class =
       jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$FrameSize");
+  jclass j_mfpsRange_class =
+      jni->FindClass("org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$MfpsRange");
   assert(j_info_class);
   assert(j_device_info_class);
   assert(j_size_class);
+  assert(j_mfpsRange_class);
   jmethodID j_device_info_array_method = jni->GetStaticMethodID(
       j_info_class, "getDeviceInfoArray", "()[Lorg/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$DeviceInfo;");
   
@@ -123,14 +126,10 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
     jint j_orientation_field = jni->GetIntField(j_device_info, j_orientation_fieldID);
     jfieldID j_sizes_fieldID = jni->GetFieldID(j_device_info_class, "sizes", "[Lorg/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$FrameSize;");
     jobjectArray j_sizes_field = static_cast<jobjectArray>(jni->GetObjectField(j_device_info, j_sizes_fieldID));
-    //jfieldID j_minMfps_fieldID = jni->GetFieldID(j_device_info_class, "minMfps", "I");
-    //jint j_minMfps_field = jni->GetIntField(j_device_info, j_minMfps_fieldID);
-    //jfieldID j_maxMfps_fieldID = jni->GetFieldID(j_device_info_class, "maxMfps", "I");
-    //jint j_maxMfps_field = jni->GetIntField(j_device_info, j_maxMfps_fieldID);
+    jfieldID j_mfpsRanges_fieldID = jni->GetFieldID(j_device_info_class, "mfpsRanges", "[Lorg/webrtc/videoengine/VideoCaptureDeviceInfoAndroid$MfpsRange;");
+    jobjectArray j_mfpsRanges_field = static_cast<jobjectArray>(jni->GetObjectField(j_device_info, j_mfpsRanges_fieldID));
     AndroidCameraInfo info;
     info.name = name_field;
-    //info.min_mfps = j_minMfps_field;
-    //info.max_mfps = j_maxMfps_field;
     info.front_facing = j_frontFacing_field;
     info.orientation = j_orientation_field;
     int size_count = jni->GetArrayLength(j_sizes_field);
@@ -143,6 +142,17 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
       jfieldID j_height_fieldID = jni->GetFieldID(j_size_class, "height", "I");
       jint j_height_field = jni->GetIntField(j_size, j_height_fieldID);
       info.resolutions.push_back(std::make_pair(j_width_field, j_height_field));
+    }
+    int mfpsRanges_count = jni->GetArrayLength(j_mfpsRanges_field);
+    for (int j = 0; j < mfpsRanges_count; j++) {
+      jobject j_mfpsRange = jni->GetObjectArrayElement(j_mfpsRanges_field, j);
+      if (j_mfpsRange == NULL)
+        break;
+      jfieldID j_minMfps_fieldID = jni->GetFieldID(j_mfpsRange_class, "minMfps", "I");
+      jint j_minMfps_field = jni->GetIntField(j_mfpsRange, j_minMfps_fieldID);
+      jfieldID j_maxMfps_fieldID = jni->GetFieldID(j_mfpsRange_class, "maxMfps", "I");
+      jint j_maxMfps_field = jni->GetIntField(j_mfpsRange, j_maxMfps_fieldID);
+      info.mfpsRanges.push_back(std::make_pair(j_minMfps_field, j_maxMfps_field));
     }
     jni->ReleaseStringUTFChars(j_name_field, name_field);
     g_camera_info->push_back(info);

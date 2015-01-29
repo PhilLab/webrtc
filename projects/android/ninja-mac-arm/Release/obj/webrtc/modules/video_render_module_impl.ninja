@@ -44,5 +44,5 @@ build $
     obj/webrtc/modules/video_render/video_render_module_impl.video_render_impl.o: $
     cxx ../../../../webrtc/modules/video_render/video_render_impl.cc
 
-build obj/webrtc/modules/libvideo_render_module_impl.a: alink_thin $
+build obj/webrtc/modules/libvideo_render_module_impl.a: alink $
     obj/webrtc/modules/video_render/video_render_module_impl.video_render_impl.o
