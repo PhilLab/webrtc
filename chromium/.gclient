@@ -1,6 +1,6 @@
 solutions = [{
   'name': 'src',
-  'url': 'https://chromium.googlesource.com/chromium/src.git',
+  'url': 'https://dpeted.visualstudio.com/DefaultCollection/TED%20Consumer/_git/RTC_chromium',
   'deps_file': '.DEPS.git',
   'managed': False,
   'custom_deps': {
