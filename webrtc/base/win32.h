@@ -128,6 +128,14 @@ inline bool IsCurrentProcessLowIntegrity() {
 
 bool AdjustCurrentProcessPrivilege(const TCHAR* privilege, bool to_enable);
 
+// In many cases it's just a matter of using the ****Ex() version of API functions.
+// TODO: Should this go in a separate file?
+#ifdef WINRT
+
+#define InitializeCriticalSection(a) InitializeCriticalSectionEx(a, 0, 0)
+
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace rtc
