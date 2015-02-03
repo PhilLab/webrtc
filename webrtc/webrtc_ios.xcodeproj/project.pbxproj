@@ -52,7 +52,6 @@
 				E2E6FE821A68613A009F0587 /* PBXTargetDependency */,
 				E2E6FE841A68613A009F0587 /* PBXTargetDependency */,
 				E2E6FE861A68613A009F0587 /* PBXTargetDependency */,
-				E2E6FE881A68613A009F0587 /* PBXTargetDependency */,
 				E2E6FE8A1A68613A009F0587 /* PBXTargetDependency */,
 				E2E6FE8C1A68613A009F0587 /* PBXTargetDependency */,
 				E2E6FE8E1A68613A009F0587 /* PBXTargetDependency */,
@@ -677,13 +676,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 0F2C22351C44CB4C0E7E56EE;
 			remoteInfo = remote_bitrate_estimator;
-		};
-		E2E6FE871A68613A009F0587 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 89D53D4FAA8C44D1B15586F2 /* modules_ios.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 88C5707174F22613EB28400F;
-			remoteInfo = bwe_tools_util;
 		};
 		E2E6FE891A68613A009F0587 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1815,11 +1807,6 @@
 			isa = PBXTargetDependency;
 			name = remote_bitrate_estimator;
 			targetProxy = E2E6FE851A68613A009F0587 /* PBXContainerItemProxy */;
-		};
-		E2E6FE881A68613A009F0587 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = bwe_tools_util;
-			targetProxy = E2E6FE871A68613A009F0587 /* PBXContainerItemProxy */;
 		};
 		E2E6FE8A1A68613A009F0587 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
