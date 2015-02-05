@@ -29,7 +29,11 @@ uint32_t CpuInfo::DetectNumberOfCores() {
   if (!number_of_cores_) {
 #if defined(_WIN32)
     SYSTEM_INFO si;
+#if defined(WINRT)
+    GetNativeSystemInfo(&si);
+#else
     GetSystemInfo(&si);
+#endif
     number_of_cores_ = static_cast<uint32_t>(si.dwNumberOfProcessors);
     WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                  "Available number of cores:%d", number_of_cores_);

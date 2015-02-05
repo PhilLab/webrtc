@@ -10,6 +10,10 @@
 
 #include "webrtc/system_wrappers/source/critical_section_win.h"
 
+#ifdef WINRT
+#define InitializeCriticalSection(a) InitializeCriticalSectionEx(a, 0, 0)
+#endif
+
 namespace webrtc {
 
 CriticalSectionWindows::CriticalSectionWindows() {

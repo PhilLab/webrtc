@@ -37,7 +37,11 @@ namespace rtc {
 #if defined(WEBRTC_WIN)
 class LOCKABLE CriticalSection {
  public:
+#ifdef WINRT
+  CriticalSection() { InitializeCriticalSectionEx(&crit_, 0, 0); }
+#else
   CriticalSection() { InitializeCriticalSection(&crit_); }
+#endif
   ~CriticalSection() { DeleteCriticalSection(&crit_); }
   void Enter() EXCLUSIVE_LOCK_FUNCTION() {
     EnterCriticalSection(&crit_);

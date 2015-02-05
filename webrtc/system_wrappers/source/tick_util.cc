@@ -31,12 +31,14 @@ int64_t TickTime::QueryOsForTicks() {
   TickTime result;
 #if _WIN32
   // TODO(wu): Remove QueryPerformanceCounter implementation.
-#ifdef USE_QUERY_PERFORMANCE_COUNTER
+#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
   // QueryPerformanceCounter returns the value from the TSC which is
   // incremented at the CPU frequency. The algorithm used requires
   // the CPU frequency to be constant. Technology like speed stepping
   // which has variable CPU frequency will therefore yield unpredictable,
   // incorrect time estimations.
+
+  // Regarding the above comment, QPC seem reliable on WinRT platforms.
   LARGE_INTEGER qpcnt;
   QueryPerformanceCounter(&qpcnt);
   result.ticks_ = qpcnt.QuadPart;

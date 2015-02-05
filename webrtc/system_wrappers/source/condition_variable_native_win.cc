@@ -43,6 +43,19 @@ ConditionVariableWrapper* ConditionVariableNativeWin::Create() {
   return ret_val;
 }
 
+#ifdef WINRT // WinRT doesn't support LoadLibrary
+bool ConditionVariableNativeWin::Init() {
+    PInitializeConditionVariable_ = InitializeConditionVariable;
+    PSleepConditionVariableCS_ = SleepConditionVariableCS;
+    PWakeConditionVariable_ = WakeConditionVariable;
+    PWakeAllConditionVariable_ = WakeAllConditionVariable;
+
+    win_support_condition_variables_primitive = true;
+
+    PInitializeConditionVariable_(&condition_variable_);
+    return true;
+}
+#else
 bool ConditionVariableNativeWin::Init() {
   if (!library) {
     // Native implementation is supported on Vista+.
@@ -79,6 +92,7 @@ bool ConditionVariableNativeWin::Init() {
   PInitializeConditionVariable_(&condition_variable_);
   return true;
 }
+#endif
 
 void ConditionVariableNativeWin::SleepCS(CriticalSectionWrapper& crit_sect) {
   SleepCS(crit_sect, INFINITE);
