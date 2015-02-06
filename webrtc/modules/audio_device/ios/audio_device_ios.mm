@@ -8,21 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <AudioToolbox/AudioServices.h>  // AudioSession
+#import <AVFoundation/AVFoundation.h>
+#import <Foundation/Foundation.h>
 
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
-
-#ifndef USE_AUDIO_SESSION_API
-#include <AVFoundation/AVAudioSession.h>
-#endif
-
-#ifndef USE_AUDIO_SESSION_API
 @interface AudioDeviceIOSObjC : NSObject  {
 @private
     AVAudioSession *_audioSession;
@@ -41,11 +34,11 @@
         [notificationCenter addObserver: self
                                selector: @selector (interruptionHandler:)
                                    name: AVAudioSessionInterruptionNotification
-                                 object: _audioSession];
+                                 object: nil];
         [notificationCenter addObserver: self
                                selector: @selector (routeChangeHandler:)
                                    name: AVAudioSessionRouteChangeNotification
-                                 object: _audioSession];
+                                 object: nil];
     }
   
     return self;
@@ -101,7 +94,6 @@
 }
 
 @end
-#endif
 
 namespace webrtc {
 AudioDeviceIOS::AudioDeviceIOS(const int32_t id)
@@ -223,36 +215,7 @@ int32_t AudioDeviceIOS::Init() {
                      _id, "Thread already created");
     }
   
-#ifdef USE_AUDIO_SESSION_API
-    OSStatus result = AudioSessionInitialize(NULL, NULL, InterruptionListenerCallback, NULL);
-    if (0 != result) {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     "Could not initialize audio session (result=%d)", result);
-    }
-  
-    result = AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange,
-                                             PropertyListenerCallback, this);
-    if (0 != result) {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     "Could not set property listener (result=%d)", result);
-    }
-#else
     _audioSession = (__bridge void*)[AVAudioSession sharedInstance];
-    _audioDevice = (__bridge void*)[[AudioDeviceIOSObjC alloc] init];
-    if (NULL == _audioDevice)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioDevice, _id,
-                     "Failed to create an instance of AudioDeviceIOSObjC");
-        return -1;
-    }
-  
-    if (-1 == [[(__bridge AudioDeviceIOSObjC*)_audioDevice registerOwner:this] intValue])
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioDevice, _id,
-                     "Failed to register owner for _audioDevice");
-        return -1;
-    }
-#endif
   
     _playWarning = 0;
     _playError = 0;
@@ -274,7 +237,6 @@ int32_t AudioDeviceIOS::Terminate() {
     if (!_initialized) {
         return 0;
     }
-
 
     // Stop capture thread
     if (_captureWorkerThread != NULL) {
@@ -809,20 +771,6 @@ int32_t AudioDeviceIOS::SetLoudspeakerStatus(bool enable) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioDeviceIOS::SetLoudspeakerStatus(enable=%u)", enable);
   
-#ifdef USE_AUDIO_SESSION_API
-    UInt32 audioRouteOverride;
-    if (enable)
-        audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
-    else
-        audioRouteOverride = kAudioSessionOverrideAudioRoute_None;
-    OSStatus err = AudioSessionSetProperty(kAudioSessionProperty_OverrideAudioRoute,
-                                           sizeof(audioRouteOverride), &audioRouteOverride);
-    if (err != noErr) {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "Cannot override audio route");
-        return -1;
-    }
-#else
     AVAudioSessionPortOverride portOverride;
     if (enable)
         portOverride = AVAudioSessionPortOverrideSpeaker;
@@ -834,7 +782,6 @@ int32_t AudioDeviceIOS::SetLoudspeakerStatus(bool enable) {
                      " Cannot override audio route");
         return -1;
     }
-#endif
   
     return 0;
 }
@@ -843,44 +790,6 @@ int32_t AudioDeviceIOS::GetLoudspeakerStatus(bool &enabled) const {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                "AudioDeviceIOS::GetLoudspeakerStatus()");
   
-#ifdef USE_AUDIO_SESSION_API
-    char osVersion[30];
-    [[[UIDevice currentDevice] systemVersion] getCString:osVersion maxLength:30 encoding:NSUTF8StringEncoding];
-  
-    if (strncmp(osVersion, "5.0", 3) >= 0) {
-        CFDictionaryRef audioRouteDescription;
-        UInt32 size = sizeof(audioRouteDescription);
-        OSStatus err = AudioSessionGetProperty(kAudioSessionProperty_AudioRouteDescription,
-                                               &size, &audioRouteDescription);
-        if (err != noErr)
-            return -1;
-        CFArrayRef audioRuteOutputs = (CFArrayRef)CFDictionaryGetValue(audioRouteDescription, CFSTR("RouteDetailedDescription_Outputs"));
-        enabled = false;
-        for (int i = 0; i < CFArrayGetCount(audioRuteOutputs); i++) {
-            CFDictionaryRef audioRouteOutput = (CFDictionaryRef)CFArrayGetValueAtIndex(audioRuteOutputs, i);
-            CFStringRef audioRoute = (CFStringRef)CFDictionaryGetValue(audioRouteOutput, CFSTR("RouteDetailedDescription_PortType"));
-            if (CFStringCompare(audioRoute, CFSTR("Speaker"), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
-                enabled = true;
-                break;
-            }
-        }
-    } else {
-        CFStringRef audioRoute;
-        UInt32 size = sizeof(audioRoute);
-        OSStatus err = AudioSessionGetProperty(kAudioSessionProperty_AudioRoute,
-                                               &size, &audioRoute);
-        if (err != noErr) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         " Cannot get audio route property");
-            return -1;
-        }
-    
-        if (CFStringCompare(audioRoute, CFSTR("SpeakerAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-            enabled = true;
-        else
-            enabled = false;
-    }
-#else
     NSArray *currentRouteDescriptionOutputs = [[(__bridge AVAudioSession*)_audioSession currentRoute] outputs];
     enabled = false;
     for (AVAudioSessionPortDescription *description in currentRouteDescriptionOutputs) {
@@ -889,7 +798,6 @@ int32_t AudioDeviceIOS::GetLoudspeakerStatus(bool &enabled) const {
             break;
         }
     }
-#endif
   
     return 0;
 }
@@ -914,6 +822,14 @@ int32_t AudioDeviceIOS::SetInterruptionBegan() {
 }
 
 int32_t AudioDeviceIOS::SetInterruptionEnded() {
+    if ([(__bridge AVAudioSession*)_audioSession setActive:YES error:nil] != YES) {
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                     "  Cannot set Audio Session to active state");
+    }
+    // Post interruption the audio unit render callbacks don't
+    // automatically continue, so we restart the unit manually here.
+    AudioOutputUnitStop(_auVoiceProcessing);
+    AudioOutputUnitStart(_auVoiceProcessing);
     _interruptionEnded = true;
     return 0;
 }
@@ -1099,15 +1015,6 @@ int32_t AudioDeviceIOS::StartRecording() {
     _recError = 0;
 
     if (!_playing) {
-        _interruptionBegan = false;
-        _interruptionEnded = false;
-#ifndef USE_AUDIO_SESSION_API
-        if ([(__bridge AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
-          WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                       "  Cannot set Audio Session to active state");
-          return -1;
-        }
-#endif
         // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                      "  Starting Audio Unit");
@@ -1181,18 +1088,8 @@ int32_t AudioDeviceIOS::StartPlayout() {
     _playoutDelayMeasurementCounter = 9999;
     _playWarning = 0;
     _playError = 0;
-    _playoutRouteChanged = false;
 
     if (!_recording) {
-        _interruptionBegan = false;
-        _interruptionEnded = false;
-#ifndef USE_AUDIO_SESSION_API
-        if ([(__bridge AVAudioSession*)_audioSession setActive:true error:nil] != YES) {
-            WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                         "  Cannot set Audio Session to active state");
-            return -1;
-        }
-#endif
         // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                      "  Starting Audio Unit");
@@ -1389,82 +1286,6 @@ void AudioDeviceIOS::ClearInterruptionEnded() {
 // ============================================================================
 //                                 Private Methods
 // ============================================================================
-  
-#ifdef USE_AUDIO_SESSION_API
-void AudioDeviceIOS::InterruptionListenerCallback(void *inUserData, UInt32 interruptionState)
-{
-}
-  
-void AudioDeviceIOS::PropertyListenerCallback(void *inClientData, AudioSessionPropertyID	inID,
-                                              UInt32 inDataSize, const void* inData)
-{
-    AudioDeviceIOS* ptrThis = (AudioDeviceIOS*) inClientData;
-    
-    if (inID == kAudioSessionProperty_AudioRouteChange)
-    {
-        char osVersion[30];
-        [[[UIDevice currentDevice] systemVersion] getCString:osVersion maxLength:30 encoding:NSUTF8StringEncoding];
-      
-        if (strncmp(osVersion, "5.0", 3) >= 0)
-        {
-            CFDictionaryRef routeChangeDictionary = (CFDictionaryRef) inData;
-            CFDictionaryRef currentRouteDescription =
-            (CFDictionaryRef) CFDictionaryGetValue(
-                                                   routeChangeDictionary,
-                                                   CFSTR("ActiveAudioRouteDidChange_NewDetailedRoute"));
-            CFArrayRef audioRuteOutputs = (CFArrayRef)CFDictionaryGetValue(currentRouteDescription,  CFSTR("RouteDetailedDescription_Outputs"));
-            for (int i = 0; i < CFArrayGetCount(audioRuteOutputs); i++)
-            {
-                CFDictionaryRef audioRouteOutput = (CFDictionaryRef)CFArrayGetValueAtIndex(audioRuteOutputs, i);
-                CFStringRef audioRoute = (CFStringRef)CFDictionaryGetValue(audioRouteOutput, CFSTR("RouteDetailedDescription_PortType"));
-                if (CFStringCompare(audioRoute, CFSTR("Headphones"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-                {
-                    ptrThis->_outputAudioRoute = kOutputAudioRouteHeadphone;
-                    ptrThis->_playoutRouteChanged = true;
-                    break;
-                }
-                else if (CFStringCompare(audioRoute, CFSTR("Receiver"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-                {
-                    ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInReceiver;
-                    ptrThis->_playoutRouteChanged = true;
-                    break;
-                }
-                else if (CFStringCompare(audioRoute, CFSTR("Speaker"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-                {
-                    ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInSpeaker;
-                    ptrThis->_playoutRouteChanged = true;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            CFStringRef audioRoute;
-            UInt32 size = sizeof(audioRoute);
-            OSStatus err = AudioSessionGetProperty(kAudioSessionProperty_AudioRoute,
-                                                   &size, &audioRoute);
-            if (err != noErr)
-                return;
-        
-            if (CFStringCompare(audioRoute, CFSTR("HeadphonesAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-            {
-                ptrThis->_outputAudioRoute = kOutputAudioRouteHeadphone;
-                ptrThis->_playoutRouteChanged = true;
-            }
-            else if (CFStringCompare(audioRoute, CFSTR("ReceiverAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-            {
-                ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInReceiver;
-                ptrThis->_playoutRouteChanged = true;
-            }
-            else if (CFStringCompare(audioRoute, CFSTR("SpeakerAndMicrophone"), kCFCompareCaseInsensitive) == kCFCompareEqualTo)
-            {
-                ptrThis->_outputAudioRoute = kOutputAudioRouteBuiltInSpeaker;
-                ptrThis->_playoutRouteChanged = true;
-            }
-        }
-    }
-}
-#endif
 
 int32_t AudioDeviceIOS::InitPlayOrRecord() {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
@@ -1506,21 +1327,6 @@ int32_t AudioDeviceIOS::InitPlayOrRecord() {
         return -1;
     }
 
-#ifdef USE_AUDIO_SESSION_API
-    // Set preferred hardware sample rate to 16 kHz
-    Float64 sampleRate(16000.0);
-    result = AudioSessionSetProperty(
-                         kAudioSessionProperty_PreferredHardwareSampleRate,
-                         sizeof(sampleRate), &sampleRate);
-    if (0 != result) {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     " Could not set preferred sample rate (result=%d)", result);
-    }
-
-    uint32_t voiceChat = kAudioSessionMode_VoiceChat;
-    AudioSessionSetProperty(kAudioSessionProperty_Mode,
-                            sizeof(voiceChat), &voiceChat);
-#else
     // Set preferred hardware sample rate to 16 kHz
     double sampleRate(16000.0);
     if ([(__bridge AVAudioSession*)_audioSession setPreferredSampleRate:sampleRate error:nil] != YES)
@@ -1538,7 +1344,6 @@ int32_t AudioDeviceIOS::InitPlayOrRecord() {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      " Could not set audio session mode");
     }
-#endif
   
     //////////////////////
     // Setup Voice Processing Audio Unit
@@ -1734,26 +1539,45 @@ int32_t AudioDeviceIOS::InitPlayOrRecord() {
     // Get hardware sample rate for logging (see if we get what we asked for)
     Float64 hardwareSampleRate = 0.0;
     size = sizeof(hardwareSampleRate);
-#ifdef USE_AUDIO_SESSION_API
-    result = AudioSessionGetProperty(
-        kAudioSessionProperty_CurrentHardwareSampleRate, &size,
-        &hardwareSampleRate);
-    if (0 != result) {
-        WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-            "  Could not get current HW sample rate (result=%d)", result);
-    }
-#else
     hardwareSampleRate = [(__bridge AVAudioSession*)_audioSession sampleRate];
-#endif
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                  "  Current HW sample rate is %f, ADB sample rate is %d",
                  hardwareSampleRate, _adbSampFreq);
+
+    _playoutRouteChanged = false;
+    _interruptionBegan = false;
+    _interruptionEnded = false;
+    _audioDevice = (__bridge_retained void*)[[AudioDeviceIOSObjC alloc] init];
+    if (NULL == _audioDevice)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioDevice, _id,
+                     "Failed to create an instance of AudioDeviceIOSObjC");
+        return -1;
+    }
+    
+    if (-1 == [[(__bridge AudioDeviceIOSObjC*)_audioDevice registerOwner:this] intValue])
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioDevice, _id,
+                     "Failed to register owner for _audioDevice");
+        return -1;
+    }
   
+    if ([(__bridge AVAudioSession*)_audioSession setActive:YES error:nil] != YES) {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "  Cannot set Audio Session to active state");
+        return -1;
+    }
+
     return 0;
 }
 
 int32_t AudioDeviceIOS::ShutdownPlayOrRecord() {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+  
+    if (_audioDevice != NULL) {
+        CFRelease(_audioDevice);
+        _audioDevice = NULL;
+    }
 
     // Close and delete AU
     OSStatus result = -1;
@@ -1770,14 +1594,6 @@ int32_t AudioDeviceIOS::ShutdownPlayOrRecord() {
         }
         _auVoiceProcessing = NULL;
     }
-  
-#ifndef USE_AUDIO_SESSION_API
-    if ([(__bridge AVAudioSession*)_audioSession setActive:false error:nil] != YES) {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  Cannot set Audio Session to inactive state");
-        return -1;
-    }
-#endif
 
     return 0;
 }
@@ -2041,30 +1857,7 @@ void AudioDeviceIOS::UpdatePlayoutDelay() {
 
         OSStatus result;
         UInt32 size;
-#ifdef USE_AUDIO_SESSION_API
-        // HW output latency
-        Float32 f32(0);
-        size = sizeof(f32);
-        result = AudioSessionGetProperty(
-            kAudioSessionProperty_CurrentHardwareOutputLatency, &size, &f32);
-        if (0 != result) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "error HW latency (result=%d)", result);
-        }
-        assert(f32 >= 0);
-        totalDelaySeconds += f32;
-
-        // HW buffer duration
-        f32 = 0;
-        result = AudioSessionGetProperty(
-            kAudioSessionProperty_CurrentHardwareIOBufferDuration, &size, &f32);
-        if (0 != result) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "error HW buffer duration (result=%d)", result);
-        }
-        assert(f32 >= 0);
-        totalDelaySeconds += f32;
-#else
+      
         // HW output latency
         NSTimeInterval hwLatency = [(__bridge AVAudioSession*)_audioSession outputLatency];
         totalDelaySeconds += static_cast<int>(hwLatency);
@@ -2072,7 +1865,6 @@ void AudioDeviceIOS::UpdatePlayoutDelay() {
         // HW buffer duration
         NSTimeInterval bufferDuration = [(__bridge AVAudioSession*)_audioSession IOBufferDuration];
         totalDelaySeconds += static_cast<int>(bufferDuration);
-#endif
 
         // AU latency
         Float64 f64(0);
@@ -2110,30 +1902,7 @@ void AudioDeviceIOS::UpdateRecordingDelay() {
 
         OSStatus result;
         UInt32 size;
-#ifdef USE_AUDIO_SESSION_API
-        // HW input latency
-        Float32 f32(0);
-        size = sizeof(f32);
-        result = AudioSessionGetProperty(
-            kAudioSessionProperty_CurrentHardwareInputLatency, &size, &f32);
-        if (0 != result) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "error HW latency (result=%d)", result);
-        }
-        assert(f32 >= 0);
-        totalDelaySeconds += f32;
 
-        // HW buffer duration
-        f32 = 0;
-        result = AudioSessionGetProperty(
-            kAudioSessionProperty_CurrentHardwareIOBufferDuration, &size, &f32);
-        if (0 != result) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "error HW buffer duration (result=%d)", result);
-        }
-        assert(f32 >= 0);
-        totalDelaySeconds += f32;
-#else
         // HW input latency
         NSTimeInterval hwLatency = [(__bridge AVAudioSession*)_audioSession inputLatency];
         totalDelaySeconds += static_cast<int>(hwLatency);
@@ -2141,7 +1910,6 @@ void AudioDeviceIOS::UpdateRecordingDelay() {
         // HW buffer duration
         NSTimeInterval bufferDuration = [(__bridge AVAudioSession*)_audioSession IOBufferDuration];
         totalDelaySeconds += static_cast<int>(bufferDuration);
-#endif
 
         // AU latency
         Float64 f64(0);

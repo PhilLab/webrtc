@@ -11,13 +11,7 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IOS_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IOS_H
 
-//#define USE_AUDIO_SESSION_API
-
 #include <AudioUnit/AudioUnit.h>
-
-#ifdef USE_AUDIO_SESSION_API
-#include <AudioToolbox/AudioServices.h>
-#endif
 
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -237,10 +231,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
 
   AudioUnit _auVoiceProcessing;
 
-#ifndef USE_AUDIO_SESSION_API
   void* _audioSession;
   void* _audioDevice;
-#endif
 
  private:
   bool _initialized;
