@@ -84,7 +84,7 @@ class RealTimeClock : public Clock {
   }
 };
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(WINRT)
 // TODO(pbos): Consider modifying the implementation to synchronize itself
 // against system time (update ref_point_, make it non-const) periodically to
 // prevent clock drift.
@@ -186,6 +186,117 @@ class WindowsRealTimeClock : public RealTimeClock {
   const ReferencePoint ref_point_;
 };
 
+
+#elif defined(WINRT)
+// TODO(pbos): Consider modifying the implementation to synchronize itself
+// against system time (update ref_point_, make it non-const) periodically to
+// prevent clock drift.
+class WinRTRealTimeClock : public RealTimeClock {
+public:
+    WinRTRealTimeClock()
+        : last_time_ms_(),
+        ref_point_(GetSystemReferencePoint()) {}
+
+    virtual ~WinRTRealTimeClock() {}
+
+protected:
+    struct ReferencePoint {
+        FILETIME file_time;
+        LARGE_INTEGER counter_ms;
+    };
+
+    virtual timeval CurrentTimeVal() const OVERRIDE{
+        const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
+
+        FILETIME StartTime;
+        uint64_t Time;
+        struct timeval tv;
+
+        // We can't use query performance counter since they can change depending on
+        // speed stepping.
+        GetTime(&StartTime);
+
+        Time = (((uint64_t)StartTime.dwHighDateTime) << 32) +
+            (uint64_t)StartTime.dwLowDateTime;
+
+        // Convert the hecto-nano second time to tv format.
+        Time -= FILETIME_1970;
+
+        tv.tv_sec = (uint32_t)(Time / (uint64_t)10000000);
+        tv.tv_usec = (uint32_t)((Time % (uint64_t)10000000) / 10);
+        return tv;
+    }
+
+    static LARGE_INTEGER ConvertToMilliseconds(LARGE_INTEGER const& t, LARGE_INTEGER const& freq) {
+        auto ret = t;
+        ret.QuadPart = ret.QuadPart /* ticks */
+            * 1000 /* ms/s */
+            / freq.QuadPart /* ticks/s */;
+        return ret;
+    }
+
+    void GetTime(FILETIME* current_time) const {
+
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+
+        {
+            rtc::CritScope lock(&crit_);
+            // time MUST be fetched inside the critical section to avoid non-monotonic
+            // last_time_ms_ values that'll register as incorrect wraparounds due to
+            // concurrent calls to GetTime.
+            QueryPerformanceCounter(&last_time_ms_);
+            last_time_ms_ = ConvertToMilliseconds(last_time_ms_, freq);
+        }
+        LARGE_INTEGER elapsed_ms; 
+        elapsed_ms.QuadPart = last_time_ms_.QuadPart - ref_point_.counter_ms.QuadPart;
+
+        // Translate to 100-nanoseconds intervals (FILETIME resolution)
+        // and add to reference FILETIME to get current FILETIME.
+        ULARGE_INTEGER filetime_ref_as_ul;
+        filetime_ref_as_ul.HighPart = ref_point_.file_time.dwHighDateTime;
+        filetime_ref_as_ul.LowPart = ref_point_.file_time.dwLowDateTime;
+        filetime_ref_as_ul.QuadPart +=
+            static_cast<ULONGLONG>((elapsed_ms.QuadPart) * 1000 * 10);
+
+        // Copy to result
+        current_time->dwHighDateTime = filetime_ref_as_ul.HighPart;
+        current_time->dwLowDateTime = filetime_ref_as_ul.LowPart;
+    }
+
+    static ReferencePoint GetSystemReferencePoint() {
+        ReferencePoint ref = { 0 };
+        FILETIME ft0 = { 0 };
+        FILETIME ft1 = { 0 };
+        // Spin waiting for a change in system time. As soon as this change happens,
+        // get the matching call for QueryPerformanceCounter() as soon as possible. This is
+        // assumed to be the most accurate offset that we can get between
+        // QueryPerformanceCounter() and system time.
+
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+
+        GetSystemTimeAsFileTime(&ft0);
+        do {
+            GetSystemTimeAsFileTime(&ft1);
+
+            QueryPerformanceCounter(&ref.counter_ms);
+            Sleep(0);
+        } while ((ft0.dwHighDateTime == ft1.dwHighDateTime) &&
+            (ft0.dwLowDateTime == ft1.dwLowDateTime));
+        ref.file_time = ft1;
+
+        // Convert to ms
+        ref.counter_ms = ConvertToMilliseconds(ref.counter_ms, freq);
+        return ref;
+    }
+
+    // mutable as time-accessing functions are const.
+    mutable rtc::CriticalSection crit_;
+    mutable LARGE_INTEGER last_time_ms_;
+    const ReferencePoint ref_point_;
+};
+
 #elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
 class UnixRealTimeClock : public RealTimeClock {
  public:
@@ -205,9 +316,14 @@ class UnixRealTimeClock : public RealTimeClock {
 };
 #endif
 
+#if defined(WINRT)
+typedef WinRTRealTimeClock WindowsRealTimeClock;
+#endif
+
 #if defined(_WIN32)
 static WindowsRealTimeClock* volatile g_shared_clock = nullptr;
 #endif
+
 Clock* Clock::GetRealTimeClock() {
 #if defined(_WIN32)
   // This read relies on volatile read being atomic-load-acquire. This is
