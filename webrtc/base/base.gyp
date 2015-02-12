@@ -656,6 +656,29 @@
             'macwindowpicker.h',
           ],
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources!': [
+            'win32regkey.cc',
+            'win32regkey.h',
+            'win32window.cc',
+            'win32window.h',
+            'win32windowpicker.cc',
+            'win32windowpicker.h',
+            'win32filesystem.cc',
+            'win32filesystem.h',
+            'diskcache.cc',
+            'diskcache.h',
+            'diskcache_win32.cc',
+            'diskcache_win32.h',
+            'winfirewall.cc',
+            'winfirewall.h',
+            'sec_buffer.h',
+            'schanneladapter.cc',
+            'schanneladapter.h',
+            'win32socketserver.cc',
+            'win32socketserver.h',
+          ],
+        }],
         ['OS=="win"', {
           'link_settings': {
             'libraries': [

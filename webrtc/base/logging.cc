@@ -13,6 +13,10 @@
 #include <windows.h>
 #define snprintf _snprintf
 #undef ERROR  // wingdi.h
+
+#if defined(WINRT)
+#include <stdlib.h>
+#endif
 #endif
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
@@ -139,7 +143,15 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
       case ERRCTX_HRESULT: {
         char msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
+#if defined(WINRT)
+        // TODO: Review this use of LoadPackagedLibrary() to get an HMODULE.
+        wchar_t modulew[255];
+        size_t temp;
+        mbstowcs_s(&temp, modulew, 255, module, _TRUNCATE);
+        HMODULE hmod = LoadPackagedLibrary(modulew, 0);
+#else
         HMODULE hmod = GetModuleHandleA(module);
+#endif
         if (hmod)
           flags |= FORMAT_MESSAGE_FROM_HMODULE;
         if (DWORD len = FormatMessageA(
@@ -310,7 +322,7 @@ void LogMessage::ConfigureLogging(const char* params, const char* filename) {
     }
   }
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   if ((NO_LOGGING != debug_level) && !::IsDebuggerPresent()) {
     // First, attempt to attach to our parent's console... so if you invoke
     // from the command line, we'll see the output there.  Otherwise, create
@@ -416,7 +428,12 @@ void LogMessage::OutputToDebug(const std::string& str,
     CFRelease(key);
   }
 #endif
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // Always log to the debugger.
+  OutputDebugStringA(str.c_str());
+  // TODO: Pipe log to TCP port here?
+  // TODO: How to open STD_ERROR_HANDLE?
+#elif defined(WEBRTC_WIN)
   // Always log to the debugger.
   // Perhaps stderr should be controlled by a preference, as on Mac?
   OutputDebugStringA(str.c_str());

@@ -26,8 +26,8 @@
 
 namespace rtc {
 
-Timing::Timing() {
-#if defined(WEBRTC_WIN)
+Timing::Timing() : timer_handle_(0) {
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   // This may fail, but we handle failure gracefully in the methods
   // that use it (use alternative sleep method).
   //
@@ -91,7 +91,7 @@ double Timing::IdleWait(double period) {
   while (nanosleep(&ts, &ts) == -1 && errno == EINTR) {
   }
 
-#elif defined(WEBRTC_WIN)
+#elif defined(WEBRTC_WIN) && !defined(WINRT)
   if (timer_handle_ != NULL) {
     LARGE_INTEGER due_time;
 
@@ -105,6 +105,9 @@ double Timing::IdleWait(double period) {
     // The unit is in milliseconds.
     Sleep(DWORD(period * 1.0e3));
   }
+#elif defined(WINRT)
+  // TODO: Look into a higher accuracy wait.
+  Sleep(DWORD(period * 1.0e3));
 #endif
 
   return TimerNow() - start_time;

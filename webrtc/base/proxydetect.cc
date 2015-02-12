@@ -42,6 +42,14 @@
 #define _TRY_IE_LAN_SETTINGS 1
 #endif  // WEBRTC_WIN 
 
+#if defined(WINRT)
+using namespace Windows::Networking::Connectivity;
+using namespace Windows::Foundation;
+using namespace Platform;
+#include <xlocbuf>
+#include <codecvt>
+#endif
+
 // For all platforms try Firefox.
 #define _TRY_FIREFOX 1
 
@@ -374,7 +382,9 @@ bool EndsWith(const std::string& a, const std::string& b) {
 }
 
 bool GetFirefoxProfilePath(Pathname* path) {
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  return false;
+#elif defined(WEBRTC_WIN)
   wchar_t w_path[MAX_PATH];
   if (SHGetFolderPath(0, CSIDL_APPDATA, 0, SHGFP_TYPE_CURRENT, w_path) !=
       S_OK) {
@@ -582,7 +592,21 @@ bool GetFirefoxProxySettings(const char* url, ProxyInfo* proxy) {
   return success;
 }
 
-#if defined(WEBRTC_WIN)  // Windows specific implementation for reading Internet
+#if defined(WINRT)
+String^ MkString(const char* str) {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wstr = converter.from_bytes(str);
+    return ref new String(wstr.data());
+}
+
+bool GetWinRTProxySettings(const char* agent, const char* url, ProxyInfo* proxy) {
+    // TODO: Figure out how to do this
+    //       auto action = NetworkInformation::GetProxyConfigurationAsync(ref new Uri(MkString(url)));
+    //       Problem is this function is async which doesn't play well with the existing sync nature of our api.
+
+    return false;
+}
+#elif defined(WEBRTC_WIN)  // Windows specific implementation for reading Internet
               // Explorer proxy settings.
 
 void LogGetProxyFault() {
@@ -1181,7 +1205,7 @@ bool GetMacProxySettings(ProxyInfo* proxy) {
 
 bool AutoDetectProxySettings(const char* agent, const char* url,
                              ProxyInfo* proxy) {
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   return WinHttpAutoDetectProxyForUrl(agent, url, proxy);
 #else
   LOG(LS_WARNING) << "Proxy auto-detection not implemented for this platform";
@@ -1191,7 +1215,9 @@ bool AutoDetectProxySettings(const char* agent, const char* url,
 
 bool GetSystemDefaultProxySettings(const char* agent, const char* url,
                                    ProxyInfo* proxy) {
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  return GetWinRTProxySettings(agent, url, proxy);
+#elif defined(WEBRTC_WIN)
   return GetIeProxySettings(agent, url, proxy);
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   return GetMacProxySettings(proxy);
@@ -1210,7 +1236,7 @@ bool GetProxySettingsForUrl(const char* agent, const char* url,
       result = GetFirefoxProxySettings(url, proxy);
       break;
     }
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
     case UA_INTERNETEXPLORER:
       result = GetIeProxySettings(agent, url, proxy);
       break;

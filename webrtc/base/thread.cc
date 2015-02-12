@@ -579,9 +579,13 @@ bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
 
 #if defined(WEBRTC_WIN)
   if (need_synchronize_access) {
+#if defined(WINRT)
+    thread_ = GetCurrentThread();
+#else
     // We explicitly ask for no rights other than synchronization.
     // This gives us the best chance of succeeding.
     thread_ = OpenThread(SYNCHRONIZE, FALSE, GetCurrentThreadId());
+#endif
     if (!thread_) {
       LOG_GLE(LS_ERROR) << "Unable to get handle to thread.";
       return false;

@@ -13,7 +13,9 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/winping.h"
+#if !defined(WINRT)
 #include "webrtc/base/win32window.h"
+#endif
 #include <ws2tcpip.h>  // NOLINT
 
 namespace rtc {

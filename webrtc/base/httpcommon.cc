@@ -714,7 +714,7 @@ std::string quote(const std::string& str) {
   return result;
 }
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT) // SSPI not available in WinRT it would seem.
 struct NegotiateAuthContext : public HttpAuthContext {
   CredHandle cred;
   CtxtHandle ctx;
@@ -852,7 +852,7 @@ HttpAuthResult HttpAuthenticate(
     return HAR_RESPONSE;
   }
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
 #if 1
   bool want_negotiate = (_stricmp(auth_method.c_str(), "negotiate") == 0);
   bool want_ntlm = (_stricmp(auth_method.c_str(), "ntlm") == 0);

@@ -243,7 +243,7 @@ class FlagList {
   static Flag* list_;
 };
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
 // A helper class to translate Windows command line arguments into UTF8,
 // which then allows us to just pass them to the flags system.
 // This encapsulates all the work of getting the command line and translating

@@ -38,10 +38,23 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 
+#if defined(WINRT)
+#define GetSystemInfo GetNativeSystemInfo
+#endif
+
 namespace rtc {
 
 // See Also: http://msdn.microsoft.com/en-us/library/ms683194(v=vs.85).aspx
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+static void GetProcessorInformation(int* physical_cpus, int* cache_size) {
+  SYSTEM_INFO system_info;
+  GetNativeSystemInfo(&system_info);
+  // Not the number of "logical" processors.  Will not count hyper-threads.
+  *physical_cpus = system_info.dwNumberOfProcessors;
+  // TODO: How to determine the cache size on WinRT platforms?
+  *cache_size = 0;
+}
+#elif defined(WEBRTC_WIN)
 typedef BOOL (WINAPI *LPFN_GLPI)(
     PSYSTEM_LOGICAL_PROCESSOR_INFORMATION,
     PDWORD);
@@ -224,7 +237,10 @@ int SystemInfo::GetMaxPhysicalCpus() {
 // Can be affected by heat.
 int SystemInfo::GetCurCpus() {
   int cur_cpus;
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // TODO: WinRT alternative to GetProcessAffinityMask.
+  cur_cpus = 1;
+#elif defined(WEBRTC_WIN)
   DWORD_PTR process_mask, system_mask;
   ::GetProcessAffinityMask(::GetCurrentProcess(), &process_mask, &system_mask);
   for (cur_cpus = 0; process_mask; ++cur_cpus) {
@@ -296,7 +312,11 @@ int SystemInfo::GetMaxCpuSpeed() {
   if (cpu_speed_) {
     return cpu_speed_;
   }
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // TODO: How to get CPU max speed on WinRT.
+  cpu_speed_ = 0;
+
+#elif defined(WEBRTC_WIN)
   HKEY key;
   static const WCHAR keyName[] =
       L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
@@ -359,7 +379,10 @@ int64 SystemInfo::GetMemorySize() {
     return memory_;
   }
 
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // TODO: How to get system memory size on WinRT?
+  memory_ = -1;
+#elif defined(WEBRTC_WIN)
   MEMORYSTATUSEX status = {0};
   status.dwLength = sizeof(status);
 
@@ -465,7 +488,10 @@ static void GetProperty(io_service_t port, CFStringRef name,
 // iff successful.
 bool SystemInfo::GetGpuInfo(GpuInfo *info) {
   if (!info) return false;
-#if defined(WEBRTC_WIN) && !defined(EXCLUDE_D3D9)
+#if defined(WINRT)
+  // TODO: How to get GPU info on WinRT platforms?
+  return false;
+#elif defined(WEBRTC_WIN) && !defined(EXCLUDE_D3D9)
   D3DADAPTER_IDENTIFIER9 identifier;
   HRESULT hr = E_FAIL;
   HINSTANCE d3d_lib = LoadLibrary(L"d3d9.dll");

@@ -32,7 +32,7 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
 #include "webrtc/base/sec_buffer.h"
 #endif  // WEBRTC_WIN 
 
@@ -400,7 +400,7 @@ void AsyncHttpsProxySocket::ProcessLine(char * data, size_t len) {
           );
         //std::string msg("Please report the following information to foo@bar.com:\r\nUnknown methods: ");
         msg.append(unknown_mechanisms_);
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
         MessageBoxA(0, msg.c_str(), "Oops!", MB_OK);
 #endif
 #if defined(WEBRTC_POSIX)

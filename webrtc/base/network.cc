@@ -54,6 +54,11 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/thread.h"
 
+#if defined(WINRT)
+using namespace Windows::Networking;
+using namespace Windows::Networking::Connectivity;
+#endif
+
 namespace rtc {
 namespace {
 
@@ -335,6 +340,16 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 
 #elif defined(WEBRTC_WIN)
 
+#if defined(WINRT)
+bool BasicNetworkManager::CreateNetworks(bool include_ignored,
+    NetworkList* networks) const {
+    // TODO: Implement using WinRT APIs.
+    //       NetworkInformation::GetLanIdentifiers() ?
+    auto lans = NetworkInformation::GetLanIdentifiers();
+    return false;
+}
+#else
+
 unsigned int GetPrefix(PIP_ADAPTER_PREFIX prefixlist,
               const IPAddress& ip, IPAddress* prefix) {
   IPAddress current_prefix;
@@ -470,6 +485,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
   }
   return true;
 }
+#endif
 #endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_LINUX)

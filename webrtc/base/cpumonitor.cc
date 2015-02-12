@@ -107,6 +107,13 @@ bool CpuSampler::Init() {
     return false;
   }
 #if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // TODO: Find ways of making this possible.
+  //       cpumonitor seems to be used in adaptive video engine.
+  //       we might be able to do without for a while.
+  get_system_times_ = NULL;
+  nt_query_system_information_ = NULL;
+#else
   // Note that GetSystemTimes is available in Windows XP SP1 or later.
   // http://msdn.microsoft.com/en-us/library/ms724400.aspx
   // NtQuerySystemInformation is used as a fallback.
@@ -119,6 +126,7 @@ bool CpuSampler::Init() {
   if ((get_system_times_ == NULL) && (nt_query_system_information_ == NULL)) {
     return false;
   }
+#endif
 #endif
 #if defined(WEBRTC_LINUX)
   Pathname sname("/proc/stat");
@@ -169,7 +177,12 @@ float CpuSampler::GetSystemLoad() {
       elapsed < min_load_interval_) {
     return system_.prev_load_;
   }
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // TODO: Is cpu load available on WinRT platforms?
+  const uint64 cpu_times = 0;
+  const uint64 total_times = 0;
+
+#elif defined(WEBRTC_WIN)
   uint64 total_times, cpu_times;
 
   typedef BOOL (_stdcall *GST_PROC)(LPFILETIME, LPFILETIME, LPFILETIME);
@@ -290,7 +303,11 @@ float CpuSampler::GetProcessLoad() {
       elapsed < min_load_interval_) {
     return process_.prev_load_;
   }
-#if defined(WEBRTC_WIN)
+#if defined(WINRT)
+  // TODO: Is an alternative to GetProcessTimes available on WinRT platforms?
+  const uint64 cpu_times = 0;
+  const uint64 total_times = 0;
+#elif defined(WEBRTC_WIN)
   FILETIME current_file_time;
   ::GetSystemTimeAsFileTime(&current_file_time);
 
