@@ -54,6 +54,14 @@ uint64 TimeNanos() {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   ticks = kNumNanosecsPerSec * static_cast<int64>(ts.tv_sec) +
       static_cast<int64>(ts.tv_nsec);
+#elif defined(WINRT)
+  FILETIME ft;
+  // Time in 100ns intervals.
+  GetSystemTimeAsFileTime(&ft);
+  LARGE_INTEGER li;
+  li.HighPart = ft.dwHighDateTime;
+  li.LowPart = ft.dwLowDateTime;
+  ticks = li.QuadPart * 100;
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64 num_wrap_timegettime = 0;
