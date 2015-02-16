@@ -8,6 +8,7 @@
 *.rules
 *.scons
 *.sdf
+*.opensdf
 *.sln
 *.suo
 *.target.mk
@@ -23,6 +24,7 @@
 *.xcodeproj
 *_proto.xml
 *_proto_cpp.xml
+*_run.xml
 *~
 .*.sw?
 .classpath
