@@ -158,6 +158,8 @@
         'linked_ptr.h',
         'logging.cc',
         'logging.h',
+        'loggingserver.cc',
+        'loggingserver.h',
         'macasyncsocket.cc',
         'macasyncsocket.h',
         'maccocoasocketserver.h',
