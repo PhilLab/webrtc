@@ -18,6 +18,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test.WindowsPhone", "Test\T
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtc_base_approved", "..\..\base\rtc_base_approved.vcxproj", "{510DEDDC-ED2F-0A3B-ABE1-F7F1E6D75CF8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{DC2C3F8F-A172-49DB-AB09-58F30CCEC915}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_client", "Tools\logging_client\logging_client.vcxproj", "{D410E364-B436-4A33-911B-6B998E081C94}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Test\Test.Shared\Test.Shared.vcxitems*{7fbb66d5-de89-45c9-8628-46cb4a2cea38}*SharedItemsImports = 9
@@ -85,6 +89,14 @@ Global
 		{510DEDDC-ED2F-0A3B-ABE1-F7F1E6D75CF8}.Release|Win32.Build.0 = Release|Win32
 		{510DEDDC-ED2F-0A3B-ABE1-F7F1E6D75CF8}.Release|x64.ActiveCfg = Release|x64
 		{510DEDDC-ED2F-0A3B-ABE1-F7F1E6D75CF8}.Release|x64.Build.0 = Release|x64
+		{D410E364-B436-4A33-911B-6B998E081C94}.Debug|ARM.ActiveCfg = Debug|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Debug|Win32.Build.0 = Debug|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Debug|x64.ActiveCfg = Debug|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Release|ARM.ActiveCfg = Release|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Release|Win32.ActiveCfg = Release|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Release|Win32.Build.0 = Release|Win32
+		{D410E364-B436-4A33-911B-6B998E081C94}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -93,5 +105,6 @@ Global
 		{7FBB66D5-DE89-45C9-8628-46CB4A2CEA38} = {6CA13D3E-0BE0-4648-8264-D3C9D498485C}
 		{EC26D850-365B-4760-AE23-C51930131B82} = {6CA13D3E-0BE0-4648-8264-D3C9D498485C}
 		{CED4D8A1-5FE7-4B3F-83DD-DD679A6E7FA5} = {6CA13D3E-0BE0-4648-8264-D3C9D498485C}
+		{D410E364-B436-4A33-911B-6B998E081C94} = {DC2C3F8F-A172-49DB-AB09-58F30CCEC915}
 	EndGlobalSection
 EndGlobal
