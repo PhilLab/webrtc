@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     // Print out the received info in console and file
     msgBuffer[ret] = '\0';
     printf("'%s'\n", msgBuffer);
-    if (err != 0)  {
+    if (err == 0)  {
       fprintf(fileStream, "'%s'\n", msgBuffer);
     }
   }
