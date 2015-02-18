@@ -144,6 +144,12 @@ std::string OutputPath() {
   return path + kPathDelimiter;
 }
 
+#if defined(WINRT)
+std::string WorkingDir() {
+  // TODO (winrt): Is working directory relevant on WinRT?
+  return kFallbackPath;
+}
+#else
 std::string WorkingDir() {
   char path_buffer[FILENAME_MAX];
   if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
@@ -153,13 +159,18 @@ std::string WorkingDir() {
     return std::string(path_buffer);
   }
 }
+#endif
 
 #endif  // !WEBRTC_ANDROID
 
 // Generate a temporary filename in a safe way.
 // Largely copied from talk/base/{unixfilesystem,win32filesystem}.cc.
 std::string TempFilename(const std::string &dir, const std::string &prefix) {
-#ifdef WIN32
+#if defined(WINRT)
+  // TODO (winrt): Find a way to generate temporary filenames in a sync fashion.
+  assert(false);
+  return "";
+#elif defined(WIN32)
   wchar_t filename[MAX_PATH];
   if (::GetTempFileName(ToUtf16(dir).c_str(),
                         ToUtf16(prefix).c_str(), 0, filename) != 0)

@@ -15,10 +15,6 @@
 
 #include <windows.h>
 
-#if defined(WINRT)
-using namespace Windows::Foundation;
-#endif
-
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 
@@ -57,11 +53,7 @@ class ThreadWindows : public ThreadWrapper {
   EventWrapper*           event_;
   CriticalSectionWrapper* critsect_stop_;
 
-#if defined(WINRT)
-  IAsyncAction^           thread_;
-#else
   HANDLE                  thread_;
-#endif
 
   unsigned int            id_;
   char                    name_[kThreadMaxNameLength];
