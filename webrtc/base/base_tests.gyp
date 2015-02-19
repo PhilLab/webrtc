@@ -40,6 +40,14 @@
       'export_dependent_settings': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
+      'conditions': [
+        # On WinRT we define the entrypoint in the wrapper app.
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources!': [
+            'unittest_main.cc'
+          ]
+        }]
+      ],
     },
     {
       'target_name': 'rtc_base_tests',
@@ -161,6 +169,28 @@
           }],
         ],  # conditions
       },
+    },
+    {
+      'target_name': 'rtc_base_unittests',
+      'type': 'static_library',
+      'dependencies': [
+        'rtc_base_tests',
+        'base.gyp:rtc_base',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+      ],
+      'defines': [
+        'GTEST_RELATIVE_PATH',
+      ],
+      'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+            'sources!': [
+                'win32regkey_unittest.cc',
+                'win32toolhelp_unittest.cc',
+                'winfirewall_unittest.cc',
+                'win32window_unittest.cc',
+            ],
+        }]
+      ],
     },
   ],
 }

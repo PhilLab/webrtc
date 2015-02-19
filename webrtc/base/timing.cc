@@ -26,7 +26,7 @@
 
 namespace rtc {
 
-Timing::Timing() : timer_handle_(0) {
+Timing::Timing() {
 #if defined(WEBRTC_WIN) && !defined(WINRT)
   // This may fail, but we handle failure gracefully in the methods
   // that use it (use alternative sleep method).
@@ -36,6 +36,8 @@ Timing::Timing() : timer_handle_(0) {
   timer_handle_ = CreateWaitableTimer(NULL,     // Security attributes.
                                       FALSE,    // Manual reset?
                                       NULL);    // Timer name.
+#elif defined(WINRT)
+  timer_handle_ = 0;
 #endif
 }
 

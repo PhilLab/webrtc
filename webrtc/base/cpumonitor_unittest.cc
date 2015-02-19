@@ -101,7 +101,7 @@ class CpuLoadListener : public sigslot::has_slots<> {
 // Note that this function affects Windows scheduling, effectively giving
 //   the thread with affinity for a specified CPU more priority on that CPU.
 bool SetThreadAffinity(BusyThread* t, int cpu, int affinity) {
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   if (affinity >= 0) {
     return ::SetThreadAffinityMask(t->GetHandle(),
         1 << (cpu + affinity)) != FALSE;

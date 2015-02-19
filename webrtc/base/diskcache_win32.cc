@@ -34,7 +34,11 @@ bool DiskCacheWin32::InitializeEntries() {
   path16.append(1, '*');
 
   WIN32_FIND_DATA find_data;
+#if defined(WINRT)
+  HANDLE find_handle = FindFirstFileEx(path16.c_str(), FindExInfoStandard, &find_data, FindExSearchNameMatch, NULL, 0);
+#else
   HANDLE find_handle = FindFirstFile(path16.c_str(), &find_data);
+#endif
   if (find_handle != INVALID_HANDLE_VALUE) {
     do {
       size_t index;
@@ -57,6 +61,12 @@ bool DiskCacheWin32::InitializeEntries() {
 }
 
 bool DiskCacheWin32::PurgeFiles() {
+#if defined(WINRT)
+  auto fs = Filesystem::default_filesystem();
+  Pathname path;
+  path.SetPathname(folder_);
+  return fs->DeleteFolderContents(path);
+#else
   std::wstring path16 = ToUtf16(folder_);
   path16.append(1, '*');
   path16.append(1, '\0');
@@ -72,11 +82,19 @@ bool DiskCacheWin32::PurgeFiles() {
   }
 
   return true;
+#endif
 }
 
 bool DiskCacheWin32::FileExists(const std::string& filename) const {
+#if defined(WINRT)
+  auto fs = Filesystem::default_filesystem();
+  Pathname path;
+  path.SetPathname(filename);
+  return !fs->IsAbsent(path);
+#else
   DWORD result = ::GetFileAttributes(ToUtf16(filename).c_str());
   return (INVALID_FILE_ATTRIBUTES != result);
+#endif
 }
 
 bool DiskCacheWin32::DeleteFile(const std::string& filename) const {
