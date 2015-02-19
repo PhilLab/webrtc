@@ -18,7 +18,7 @@ using namespace Windows::Foundation;
 #endif
 
 #ifdef WINRT
-#define CreateEvent(lpEventAttributes, bManualReset, bInitialState, lpName) CreateEventEx(lpEventAttributes, lpName, (bManualReset?CREATE_EVENT_MANUAL_RESET:0 | bInitialState?CREATE_EVENT_INITIAL_SET:0), 0)
+#define CreateEvent(lpEventAttributes, bManualReset, bInitialState, lpName) CreateEventEx(lpEventAttributes, lpName, (bManualReset?CREATE_EVENT_MANUAL_RESET:0 | bInitialState?CREATE_EVENT_INITIAL_SET:0), EVENT_ALL_ACCESS)
 #define WaitForSingleObject(a, b) WaitForSingleObjectEx(a, b, FALSE)
 #endif
 

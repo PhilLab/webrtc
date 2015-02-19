@@ -20,8 +20,6 @@
 
 #if defined(WINRT)
 #define WaitForSingleObject(a, b) WaitForSingleObjectEx(a, b, FALSE)
-using namespace Windows::Foundation;
-using namespace Windows::System::Threading;
 #endif
 
 namespace webrtc {
@@ -36,11 +34,7 @@ ThreadWindows::ThreadWindows(ThreadRunFunction func, ThreadObj obj,
       do_not_close_handle_(false),
       prio_(prio),
       event_(NULL),
-#if defined(WINRT)
-      thread_(nullptr),
-#else
       thread_(NULL),
-#endif
       id_(0),
       name_(),
       set_thread_name_(false) {
@@ -58,11 +52,7 @@ ThreadWindows::~ThreadWindows() {
   assert(!alive_);
 #endif
   if (thread_) {
-#if defined(WINRT)
-    thread_->Close();
-#else
     CloseHandle(thread_);
-#endif
   }
   if (event_) {
     delete event_;
@@ -81,45 +71,6 @@ unsigned int WINAPI ThreadWindows::StartThread(LPVOID lp_parameter) {
   return 0;
 }
 
-#if defined(WINRT)
-bool ThreadWindows::Start(unsigned int& thread_id) {
-    if (!run_function_) {
-        return false;
-    }
-    do_not_close_handle_ = false;
-
-    auto workItem = ref new WorkItemHandler(
-        [this](IAsyncAction^ workItem)
-    {
-        this->StartThread((void*)workItem);
-    });
-
-    auto priority = WorkItemPriority::Normal;
-
-    // WinRT doesn't provide the fine grained priority of Win32.
-    switch (prio_) {
-    case kLowPriority:
-        priority = WorkItemPriority::Low;
-        break;
-    case kHighPriority:
-    case kHighestPriority:
-    case kRealtimePriority:
-        priority = WorkItemPriority::High;
-        break;
-    };
-
-    thread_ = ThreadPool::RunAsync(workItem, priority);
-
-    if (thread_ == nullptr) {
-        return false;
-    }
-    id_ = thread_->Id;
-    event_->Wait(INFINITE);
-
-    return true;
-}
-
-#else
 bool ThreadWindows::Start(unsigned int& thread_id) {
   if (!run_function_) {
     return false;
@@ -127,8 +78,12 @@ bool ThreadWindows::Start(unsigned int& thread_id) {
   do_not_close_handle_ = false;
 
   // Set stack size to 1M
+#if defined(WINRT)
+  thread_ = ::CreateThread(NULL, 1024 * 1024, (LPTHREAD_START_ROUTINE)StartThread, (void*)this, 0, (LPDWORD)&thread_id);
+#else
   thread_ = (HANDLE)_beginthreadex(NULL, 1024 * 1024, StartThread, (void*)this,
                                    0, &thread_id);
+#endif
   if (thread_ == NULL) {
     return false;
   }
@@ -154,7 +109,6 @@ bool ThreadWindows::Start(unsigned int& thread_id) {
   };
   return true;
 }
-#endif
 
 bool ThreadWindows::SetAffinity(const int* processor_numbers,
                                 const unsigned int amount_of_processors) {
@@ -190,26 +144,15 @@ bool ThreadWindows::Stop() {
   if (thread_ && !dead_) {
     critsect_stop_->Leave();
 
-#if defined(WINRT)
-    // TODO: Is there a way to wait for a thread to complete?
-    thread_->Cancel();
-    signaled = true;
-#else
     // Wait up to 2 seconds for the thread to complete.
     if (WAIT_OBJECT_0 == WaitForSingleObject(thread_, 2000)) {
       signaled = true;
     }
-#endif
     critsect_stop_->Enter();
   }
   if (thread_) {
-#if defined(WINRT)
-    thread_->Close();
-    thread_ = nullptr;
-#else
     CloseHandle(thread_);
     thread_ = NULL;
-#endif
   }
   critsect_stop_->Leave();
 
@@ -256,15 +199,9 @@ void ThreadWindows::Run() {
   critsect_stop_->Enter();
 
   if (thread_ && !do_not_close_handle_) {
-#if defined(WINRT)
-    auto thread = thread_;
-    thread_ = nullptr;
-    thread->Close();
-#else
     HANDLE thread = thread_;
     thread_ = NULL;
     CloseHandle(thread);
-#endif
   }
   dead_ = true;
 
