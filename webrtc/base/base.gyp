@@ -278,6 +278,8 @@
         'thread.h',
         'timing.cc',
         'timing.h',
+        'tracelog.cc',
+        'tracelog.h',
         'transformadapter.cc',
         'transformadapter.h',
         'unixfilesystem.cc',
