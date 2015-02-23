@@ -211,10 +211,19 @@
     if ([systemVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending)
     {
         AVCaptureDevice* device = [_captureVideoDeviceInput device];
-        if ([device lockForConfiguration:NULL] == YES )
-        {
+        AVCaptureDeviceFormat* activeFormat = device.activeFormat;
+        NSArray* supportedRanges = activeFormat.videoSupportedFrameRateRanges;
+        AVFrameRateRange* targetRange = [supportedRanges count] > 0 ?
+            supportedRanges[0] : nil;
+        for (AVFrameRateRange* range in supportedRanges) {
+            if (range.maxFrameRate <= _frameRate &&
+                targetRange.maxFrameRate <= range.maxFrameRate) {
+                targetRange = range;
+            }
+        }
+        if (targetRange && [device lockForConfiguration:NULL]) {
             [device setActiveVideoMinFrameDuration:CMTimeMake(1, _frameRate)];
-            [device setActiveVideoMaxFrameDuration:CMTimeMake(1, 2)];
+            [device setActiveVideoMaxFrameDuration:targetRange.maxFrameDuration];
             [device unlockForConfiguration];
         }
     }
