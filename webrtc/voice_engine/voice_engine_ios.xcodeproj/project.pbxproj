@@ -402,6 +402,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = voice_engine;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -429,6 +430,7 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SKIP_INSTALL = YES;
 				SYMROOT = ../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -440,6 +442,7 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SKIP_INSTALL = YES;
 				SYMROOT = ../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -451,6 +454,7 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
+				SKIP_INSTALL = YES;
 				SYMROOT = ../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -529,6 +533,7 @@
 					"-Wno-tautological-undefined-compare",
 				);
 				PRODUCT_NAME = voice_engine;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -621,6 +626,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = voice_engine;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",

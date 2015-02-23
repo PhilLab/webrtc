@@ -271,6 +271,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rbe_components;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -356,6 +357,7 @@
 					"-Wno-tautological-undefined-compare",
 				);
 				PRODUCT_NAME = rbe_components;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
@@ -439,6 +441,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rbe_components;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = (
 					"-Wall",
