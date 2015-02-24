@@ -150,10 +150,13 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
 #if defined(WINRT)
         // TODO: Review this use of LoadPackagedLibrary() to get an HMODULE.
-        wchar_t modulew[255];
-        size_t temp;
-        mbstowcs_s(&temp, modulew, 255, module, _TRUNCATE);
-        HMODULE hmod = LoadPackagedLibrary(modulew, 0);
+        HMODULE hmod = NULL;
+        if (module) {
+          wchar_t modulew[255];
+          size_t temp;
+          mbstowcs_s(&temp, modulew, 255, module, _TRUNCATE);
+          hmod = LoadPackagedLibrary(modulew, 0);
+        }
 #else
         HMODULE hmod = GetModuleHandleA(module);
 #endif

@@ -345,8 +345,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
     NetworkList* networks) const {
     // TODO: Implement using WinRT APIs.
     //       NetworkInformation::GetLanIdentifiers() ?
-    auto lans = NetworkInformation::GetLanIdentifiers();
-    return false;
+    return true;
 }
 #else
 
