@@ -2,13 +2,14 @@
 #define WEBRTC_BASE_TRACELOG_H_
 
 #include <vector>
+#include <string>
 
 #include "webrtc/base/criticalsection.h"
 
 namespace rtc {
 
 class TraceLog {
-public:
+ public:
   TraceLog();
   virtual ~TraceLog();
 
@@ -29,7 +30,7 @@ public:
   void Save(const std::string& file_name);
   void Save(const std::string& addr, int port);
 
-private:
+ private:
   bool is_tracing_;
   std::vector<std::string> traces_;
   CriticalSection critical_section_;

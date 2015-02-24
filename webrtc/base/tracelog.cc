@@ -1,7 +1,7 @@
 #include <sstream>
 #include <fstream>
 
-#include "tracelog.h"
+#include "webrtc/base/tracelog.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -25,11 +25,9 @@ void TraceLog::Add(char phase,
   const unsigned char* arg_types,
   const unsigned long long* arg_values,
   unsigned char flags) {
-
   if (!is_tracing_)
     return;
 
-  critical_section_.Enter();
   std::ostringstream t;
   t << "{"
     << "\"name\": \"" << name << "\", "
@@ -46,8 +44,7 @@ void TraceLog::Add(char phase,
     t << "\"" << arg_names[i] << "\": ";
     tvu.as_uint = arg_values[i];
 
-    switch (arg_types[i])
-    {
+    switch (arg_types[i]) {
     case TRACE_VALUE_TYPE_BOOL:
       t << tvu.as_bool;
       break;
@@ -78,12 +75,12 @@ void TraceLog::Add(char phase,
 
   t << "}" << "}";
 
+  CritScope lock(&critical_section_);
   traces_.push_back(t.str());
-
-  critical_section_.Leave();
 }
 
 void TraceLog::StartTracing() {
+  CritScope lock(&critical_section_);
   traces_.clear();
   is_tracing_ = true;
 }
