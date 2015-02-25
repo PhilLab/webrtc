@@ -4,11 +4,13 @@
 #include <vector>
 #include <string>
 
+#include "webrtc/base/sigslot.h"
 #include "webrtc/base/criticalsection.h"
 
 namespace rtc {
+class AsyncSocket;
 
-class TraceLog {
+class TraceLog : public sigslot::has_slots<> {
  public:
   TraceLog();
   virtual ~TraceLog();
@@ -29,6 +31,10 @@ class TraceLog {
 
   void Save(const std::string& file_name);
   void Save(const std::string& addr, int port);
+
+ private:
+  void OnCloseEvent(AsyncSocket* socket, int err);
+  void OnWriteEvent(AsyncSocket* socket);
 
  private:
   bool is_tracing_;
