@@ -2,6 +2,9 @@
 #include <fstream>
 
 #include "webrtc/base/tracelog.h"
+#include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -111,6 +114,52 @@ void TraceLog::Save(const std::string& file_name) {
 }
 
 void TraceLog::Save(const std::string& addr, int port) {
+  AsyncSocket* sock =
+    Thread::Current()->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
+  sock->SignalWriteEvent.connect(this, &TraceLog::OnWriteEvent);
+  sock->SignalCloseEvent.connect(this, &TraceLog::OnCloseEvent);
+
+  SocketAddress server_addr(addr, port);
+  sock->Connect(server_addr);
+}
+
+void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {
+  if (!socket)
+    return;
+
+  SocketAddress addr = socket->GetRemoteAddress();
+  LOG(LS_ERROR) << "The connection was closed. "
+    << "IP: " << addr.HostAsURIString() << ", "
+    << "Port: " << addr.port() << ", "
+    << "Error: " << err;
+
+  Thread::Current()->Dispose(socket);
+}
+
+void TraceLog::OnWriteEvent(AsyncSocket* socket) {
+  if (!socket)
+    return;
+
+  // TODO(Bakhshi): Traced data can grow to couple of megabytes.
+  // Send chunks of data.
+  std::ostringstream oss;
+  oss << "{ \"traceEvents\": [";
+
+  int traces_size = traces_.size();
+  for (int i = 0; i < traces_size; ++i) {
+    oss << traces_[i];
+    if (i < traces_size - 1) {
+      oss << ", ";
+    }
+  }
+
+  oss << "]}";
+
+  const std::string& tmp = oss.str();
+  size_t tmp_size = tmp.size();
+  socket->Send(tmp.c_str(), tmp_size);
+  socket->Close();
+  Thread::Current()->Dispose(socket);
 }
 
 }  //  namespace rtc
