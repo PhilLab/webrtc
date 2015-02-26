@@ -140,8 +140,6 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   if (!socket)
     return;
 
-  // TODO(Bakhshi): Traced data can grow to couple of megabytes.
-  // Send chunks of data.
   std::ostringstream oss;
   oss << "{ \"traceEvents\": [";
 
@@ -157,7 +155,19 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
 
   const std::string& tmp = oss.str();
   size_t tmp_size = tmp.size();
-  socket->Send(tmp.c_str(), tmp_size);
+  const char* data = tmp.c_str();
+
+  unsigned int offset = 0;
+  int sent_size = 0;
+  while (offset < tmp_size) {
+    sent_size = socket->Send((const void*) (data + offset), tmp_size - offset);
+    if (sent_size == -1) {
+      break;
+    } else {
+      offset += sent_size;
+    }
+  }
+
   socket->Close();
   Thread::Current()->Dispose(socket);
 }
