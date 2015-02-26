@@ -288,7 +288,7 @@ std::string Win32Filesystem::TempFilename(const Pathname &dir,
   // printf format for the filename, consists of prefix followed by guid.
   wchar_t* maskForFN = L"%s_%08x_%04x_%04x_%02x%02x_%02x%02x%02x%02x%02x%02x";
 
-  swprintf(filename, maskForFN, prefix.c_str(), g.Data1, g.Data2, g.Data3,
+  swprintf(filename, maskForFN, ToUtf16(prefix).c_str(), g.Data1, g.Data2, g.Data3,
     UINT(g.Data4[0]), UINT(g.Data4[1]), UINT(g.Data4[2]), UINT(g.Data4[3]),
     UINT(g.Data4[4]), UINT(g.Data4[5]), UINT(g.Data4[6]), UINT(g.Data4[7]));
 
