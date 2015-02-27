@@ -25,3 +25,35 @@ MainPage::MainPage()
 {
 	InitializeComponent();
 }
+
+//forward decl
+extern "C" int roc_main();
+
+void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+  static const size_t kBufferSize = 1024 * 1024; //1MB
+  std::string stdout_buf;
+  // Capture stdout
+  stdout_buf.resize(kBufferSize);
+
+  setvbuf(stdout, const_cast<char*>(stdout_buf.c_str()), _IOFBF, kBufferSize);
+
+  //create test collection
+  TestSolution::Instance().AddTest(SpTestBase_t(new CReplayDriverTest()));
+  TestSolution::Instance().AddTest(SpTestBase_t(new CRocDriverTest()));
+  TestSolution::Instance().AddTest(SpTestBase_t(new CRtpwTest()));
+
+  //Run tests
+  TestSolution::Instance().Execute();
+    
+  //convert output to wchar_t
+  int nRequiredSize = ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(stdout_buf.c_str()), -1, NULL, 0);
+  std::wstring wStdOut;
+  if (nRequiredSize >= 0)
+  {
+    wStdOut.resize(nRequiredSize);
+    ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(stdout_buf.c_str()), -1, const_cast<wchar_t*>(wStdOut.c_str()), nRequiredSize);
+  }
+
+  OutputBox->Text = ref new String(wStdOut.c_str());
+}

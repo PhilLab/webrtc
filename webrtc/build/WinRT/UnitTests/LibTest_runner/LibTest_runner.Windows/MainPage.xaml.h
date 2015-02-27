@@ -17,5 +17,7 @@ namespace LibTest_runner
 	public:
 		MainPage();
 
-	};
+  private:
+    void RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+  };
 }

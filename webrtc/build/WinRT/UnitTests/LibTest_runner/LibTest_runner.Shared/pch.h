@@ -9,3 +9,19 @@
 #include <ppltasks.h>
 
 #include "App.xaml.h"
+
+// STL includes
+#include <string>
+#include <vector>
+
+// Helpers
+#include "Helpers/SafeSingleton.h"
+
+// Test Solution 
+#include "TestSolution/TestBase.h"
+#include "TestSolution/TestSolution.h"
+
+// Tests
+#include "Tests\ReplayDriverTest.h"
+#include "Tests\RocDriverTest.h"
+#include "Tests\RtpwTest.h"
