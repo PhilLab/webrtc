@@ -19,13 +19,24 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)App.xaml.cpp">
       <DependentUpon>$(MSBuildThisFileDirectory)App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestSolution.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\ReplayDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.cpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)App.xaml.h">
       <DependentUpon>$(MSBuildThisFileDirectory)App.xaml</DependentUpon>
     </ClInclude>
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />                   
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SafeSingleton.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestSolution.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\ReplayDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectCapability Include="SourceItemsFromImports" />

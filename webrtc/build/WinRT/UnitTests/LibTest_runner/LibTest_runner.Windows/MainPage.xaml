@@ -8,6 +8,9 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Button Name="RunAll" Click="RunAll_Click">RunAll</Button>
+            <TextBox Name="OutputBox" Width="640" Height="480" AcceptsReturn="True" PlaceholderText="Test outputs appears here!"></TextBox>
+        </StackPanel>
     </Grid>
 </Page>
