@@ -12,6 +12,7 @@ namespace LibTest_runner
   class CRocDriverTest :
     public CTestBase
   {
+    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRocDriverTest);
   public:
     void Execute();
     virtual ~CRocDriverTest() {};

@@ -12,6 +12,8 @@ namespace LibTest_runner
   class CReplayDriverTest :
     public CTestBase
   {
+  private:
+    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CReplayDriverTest);
   public:
     void Execute();
     virtual ~CReplayDriverTest() {};

@@ -38,11 +38,6 @@ void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::U
 
   setvbuf(stdout, const_cast<char*>(stdout_buf.c_str()), _IOFBF, kBufferSize);
 
-  //create test collection
-  TestSolution::Instance().AddTest(SpTestBase_t(new CReplayDriverTest()));
-  TestSolution::Instance().AddTest(SpTestBase_t(new CRocDriverTest()));
-  TestSolution::Instance().AddTest(SpTestBase_t(new CRtpwTest()));
-
   //Run tests
   TestSolution::Instance().Execute();
     

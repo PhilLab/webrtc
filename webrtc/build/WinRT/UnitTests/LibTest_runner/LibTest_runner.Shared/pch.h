@@ -16,6 +16,7 @@
 
 // Helpers
 #include "Helpers/SafeSingleton.h"
+#include "Helpers/TestInserter.h"
 
 // Test Solution 
 #include "TestSolution/TestBase.h"

@@ -12,6 +12,7 @@ namespace LibTest_runner
   class CRtpwTest :
     public CTestBase
   {
+    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRtpwTest);
   public:
     virtual ~CRtpwTest() {};
     void Execute();

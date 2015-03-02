@@ -17,7 +17,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="$(MSBuildThisFileDirectory)App.xaml" />
@@ -49,6 +51,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.h">
       <Filter>Tests</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TestInserter.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
