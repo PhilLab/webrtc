@@ -88,7 +88,7 @@
                 },
               },
             }],  # mac
-            ['OS=="win"', {
+            ['OS=="win" and OS_RUNTIME!="winrt"', {
               'dependencies': [
                 '<(DEPTH)/third_party/winsdk_samples/winsdk_samples.gyp:directshow_baseclasses',
               ],
@@ -112,7 +112,17 @@
                   '-lStrmiids.lib',
                 ],
               },
-            }],  # win
+            }],
+            ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'sources': [
+                'windows/device_info_winrt.cc',
+                'windows/device_info_winrt.h',
+                'windows/video_capture_sink_winrt.cc',
+                'windows/video_capture_sink_winrt.h',
+                'windows/video_capture_winrt.cc',
+                'windows/video_capture_winrt.h',
+              ],
+            }],  # winrt
             ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
@@ -254,4 +264,3 @@
     }],
   ],
 }
-
