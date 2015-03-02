@@ -239,6 +239,14 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\..\chromium\src\third_party\openmax_dl\dl\openmax_dl.vcxproj">
+      <Project>{0e8dc429-aa74-1515-f004-dc6870b9e429}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\..\third_party\gflags\gflags.vcxproj">
       <Project>{791c7308-aab1-3ef0-32c2-a350302cdd9a}</Project>
       <Private>false</Private>
@@ -265,6 +273,30 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\base\rtc_base_unittests.vcxproj">
       <Project>{3c52a6bd-8f2e-85f7-4365-fcc9cd1b5fc2}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\common_audio\common_audio.vcxproj">
+      <Project>{39fe2bb0-c2e7-db9c-d514-19b221f3ca00}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\common_audio\common_audio_sse2.vcxproj">
+      <Project>{b6b37b26-252c-247d-dba3-d03511ac9509}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\common_audio\common_audio_unittests.vcxproj">
+      <Project>{52a7d63a-b534-1e47-d50c-27f4e90c60bb}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

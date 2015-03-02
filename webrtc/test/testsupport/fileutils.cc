@@ -133,6 +133,14 @@ std::string ProjectRootPath() {
 }
 
 std::string OutputPath() {
+#if defined(WINRT)
+  // TODO revisit this if needed as soon as the WorkingDir() is fixed for WinRT
+  // output files are created in the local app folder
+  auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
+  wchar_t buffer[255];
+  wcsncpy_s(buffer, 255, folder->Path->Data(), _TRUNCATE);
+  return ToUtf8(buffer) + kPathDelimiter;
+#else
   std::string path = ProjectRootPath();
   if (path == kCannotFindProjectRootDir) {
     return kFallbackPath;
@@ -142,6 +150,7 @@ std::string OutputPath() {
     return kFallbackPath;
   }
   return path + kPathDelimiter;
+#endif
 }
 
 #if defined(WINRT)
