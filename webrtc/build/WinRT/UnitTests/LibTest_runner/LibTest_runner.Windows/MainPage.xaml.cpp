@@ -26,9 +26,6 @@ MainPage::MainPage()
 	InitializeComponent();
 }
 
-//forward decl
-extern "C" int roc_main();
-
 void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
   static const size_t kBufferSize = 1024 * 1024; //1MB

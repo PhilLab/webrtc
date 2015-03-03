@@ -16,6 +16,7 @@ namespace LibTest_runner
   public:
     virtual ~CRtpwTest() {};
     void Execute();
+    TEST_NAME_METHOD_IMPL(CRtpwTest);
   };
 }
 

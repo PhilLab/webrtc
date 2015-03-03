@@ -16,6 +16,7 @@ void LibTest_runner::CTestSolution::Execute()
   {
     for (auto it = m_spTests->cbegin(); it != m_spTests->cend(); ++it)
     {
+      printf("\n--- Executing %s ------\n", (*it)->Name().c_str());
       (*it)->Execute();
     }
   }
