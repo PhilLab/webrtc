@@ -28,7 +28,7 @@ MainPage::MainPage()
 
 void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-  static const size_t kBufferSize = 1024 * 1024; //1MB
+  static const size_t kBufferSize = 2 * 1024 * 1024; //1MB
   std::string stdout_buf;
   // Capture stdout
   stdout_buf.resize(kBufferSize);
