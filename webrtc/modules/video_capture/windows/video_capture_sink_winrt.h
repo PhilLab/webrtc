@@ -7,26 +7,26 @@
 
 #include <wrl\implements.h>
 
-using namespace ABI::Windows::Media;
-using namespace Microsoft::WRL;
-
 namespace webrtc {
 namespace videocapturemodule {
 
 class VideoCaptureSinkWinRT
-    : public RuntimeClass<
-                          RuntimeClassFlags< RuntimeClassType::WinRtClassicComMix >,
-                          IMediaExtension,
-                          FtmBase,
-                          IMFMediaSink,
-                          IMFClockStateSink>
-{
+    : public Microsoft::WRL::RuntimeClass<
+        Microsoft::WRL::RuntimeClassFlags<
+            Microsoft::WRL::RuntimeClassType::WinRtClassicComMix >,
+        ABI::Windows::Media::IMediaExtension,
+        Microsoft::WRL::FtmBase,
+        IMFMediaSink,
+        IMFClockStateSink> {
  public:
   VideoCaptureSinkWinRT();
   ~VideoCaptureSinkWinRT();
 
   // IMediaExtension
-  IFACEMETHOD(SetProperties) (ABI::Windows::Foundation::Collections::IPropertySet *pConfiguration) { return S_OK; }
+  IFACEMETHOD(SetProperties) (
+      ABI::Windows::Foundation::Collections::IPropertySet *pConfiguration) {
+    return S_OK;
+  }
 
   // IMFMediaSink methods
   IFACEMETHOD(GetCharacteristics) (DWORD *pdwCharacteristics);
@@ -38,10 +38,16 @@ class VideoCaptureSinkWinRT
 
   IFACEMETHOD(RemoveStreamSink) (DWORD dwStreamSinkIdentifier);
   IFACEMETHOD(GetStreamSinkCount) (_Out_ DWORD *pcStreamSinkCount);
-  IFACEMETHOD(GetStreamSinkByIndex) (DWORD dwIndex, _Outptr_ IMFStreamSink **ppStreamSink);
-  IFACEMETHOD(GetStreamSinkById) (DWORD dwIdentifier, IMFStreamSink **ppStreamSink);
-  IFACEMETHOD(SetPresentationClock) (IMFPresentationClock *pPresentationClock);
-  IFACEMETHOD(GetPresentationClock) (IMFPresentationClock **ppPresentationClock);
+  IFACEMETHOD(GetStreamSinkByIndex) (
+      DWORD dwIndex,
+      _Outptr_ IMFStreamSink **ppStreamSink);
+  IFACEMETHOD(GetStreamSinkById) (
+      DWORD dwIdentifier,
+      IMFStreamSink **ppStreamSink);
+  IFACEMETHOD(SetPresentationClock) (
+      IMFPresentationClock *pPresentationClock);
+  IFACEMETHOD(GetPresentationClock) (
+      IMFPresentationClock **ppPresentationClock);
   IFACEMETHOD(Shutdown) ();
 
   // IMFClockStateSink methods
@@ -52,13 +58,12 @@ class VideoCaptureSinkWinRT
   IFACEMETHOD(OnClockSetRate) (MFTIME hnsSystemTime, float flRate);
 
  private:
-  long                            _cRef;                      // reference count
+  int64 _cRef;
+  bool _isShutdown;
+  bool _isConnected;
+  LONGLONG _llStartTime;
 
-  bool                            _IsShutdown;                // Flag to indicate if Shutdown() method was called.
-  bool                            _IsConnected;
-  LONGLONG                        _llStartTime;
-
-  ComPtr<IMFPresentationClock>    _spClock;                   // Presentation clock.
+  Microsoft::WRL::ComPtr<IMFPresentationClock> _spClock;
 };
 
 }  // namespace videocapturemodule

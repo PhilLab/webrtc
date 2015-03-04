@@ -20,7 +20,7 @@ class VideoCaptureWinRT : public VideoCaptureImpl {
       VideoCaptureCapability& settings);
 
  protected:
-   virtual ~VideoCaptureWinRT();
+  virtual ~VideoCaptureWinRT();
 };
 
 }  // namespace videocapturemodule

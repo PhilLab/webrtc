@@ -13,61 +13,56 @@
 namespace webrtc {
 
 VideoRenderSourceWinRT::VideoRenderSourceWinRT(void)
-    : _cRef(1)
-{
+    : _cRef(1) {
 }
 
-VideoRenderSourceWinRT::~VideoRenderSourceWinRT(void)
-{
+VideoRenderSourceWinRT::~VideoRenderSourceWinRT(void) {
 }
 
 // IMFMediaSource methods
 IFACEMETHODIMP VideoRenderSourceWinRT::CreatePresentationDescriptor(
-    IMFPresentationDescriptor **ppPresentationDescriptor)
-{
+    IMFPresentationDescriptor **ppPresentationDescriptor) {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::GetCharacteristics(DWORD *pdwCharacteristics)
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::GetCharacteristics(
+    DWORD *pdwCharacteristics) {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::Pause()
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::Pause() {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::Shutdown()
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::Shutdown() {
   return S_OK;
 }
 
 IFACEMETHODIMP VideoRenderSourceWinRT::Start(
     IMFPresentationDescriptor *pPresentationDescriptor,
     const GUID *pguidTimeFormat,
-    const PROPVARIANT *pvarStartPos)
-{
+    const PROPVARIANT *pvarStartPos) {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::Stop()
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::Stop() {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::GetService(_In_ REFGUID guidService, _In_ REFIID riid, _Out_opt_ LPVOID *ppvObject)
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::GetService(
+    _In_ REFGUID guidService,
+    _In_ REFIID riid,
+    _Out_opt_ LPVOID *ppvObject) {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::SetRate(BOOL fThin, float flRate)
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::SetRate(BOOL fThin, float flRate) {
   return S_OK;
 }
 
-IFACEMETHODIMP VideoRenderSourceWinRT::GetRate(_Inout_opt_ BOOL *pfThin, _Inout_opt_ float *pflRate)
-{
+IFACEMETHODIMP VideoRenderSourceWinRT::GetRate(
+    _Inout_opt_ BOOL *pfThin,
+    _Inout_opt_ float *pflRate) {
   return S_OK;
 }
 

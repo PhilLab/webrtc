@@ -6,7 +6,6 @@
 namespace webrtc {
 namespace videocapturemodule {
 
-// Provides video capture device information using the Media Foundation API.
 class DeviceInfoWinRT : public DeviceInfoImpl {
  public:
   explicit DeviceInfoWinRT(const int32_t id);
@@ -25,7 +24,7 @@ class DeviceInfoWinRT : public DeviceInfoImpl {
   virtual int32_t DisplayCaptureSettingsDialogBox(
       const char* deviceUniqueIdUTF8, const char* dialogTitleUTF8,
       void* parentWindow, uint32_t positionX, uint32_t positionY);
-  };
+};
 
 }  // namespace videocapturemodule
 }  // namespace webrtc
