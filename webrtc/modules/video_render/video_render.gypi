@@ -139,7 +139,7 @@
                 'mac/cocoa_full_screen_window.mm',
               ],
             }],
-            ['OS=="win"', {
+            ['OS=="win" and OS_RUNTIME!="winrt"', {
               'sources': [
                 'windows/i_video_render_win.h',
                 'windows/video_render_direct3d9.h',
@@ -149,6 +149,17 @@
               ],
               'include_dirs': [
                 '<(directx_sdk_path)/Include',
+              ],
+            }],
+            ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'sources': [
+                'windows/i_video_render_win.h',
+                'windows/video_render_windows_impl.h',
+                'windows/video_render_windows_impl.cc',
+                'windows/video_render_source_winrt.h',
+                'windows/video_render_source_winrt.cc',
+                'windows/video_render_winrt.h',
+                'windows/video_render_winrt.cc',
               ],
             }],
           ] # conditions
@@ -220,4 +231,3 @@
     }], # include_tests==1
   ], # conditions
 }
-
