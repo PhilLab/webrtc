@@ -3,23 +3,23 @@
 namespace LibTest_runner
 {
   //=============================================================================
-  //         class: CReplayDriverTest
+  //         class: CSrtpDriverTest
   //   Description: class executes replay_driver test project, 
-  //                see chromium\src\third_party\libsrtp\replay_driver.vcxproj
+  //                see chromium\src\third_party\libsrtp\srtp_driver.vcxproj
   // History: 
   // 2015/02/27 TP: created
   //=============================================================================
-  class CReplayDriverTest :
+  class CSrtpDriverTest :
     public CTestBase
   {
   private:
-    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CReplayDriverTest);
+    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpDriverTest);
   public:
     void Execute();
-    virtual ~CReplayDriverTest() {};
-    TEST_NAME_METHOD_IMPL(CReplayDriverTest);
+    virtual ~CSrtpDriverTest() {};
+    TEST_NAME_METHOD_IMPL(CSrtpDriverTest);
   };
 
-  typedef std::shared_ptr<CReplayDriverTest> SpReplayDriverTest_t;
+  typedef std::shared_ptr<CSrtpDriverTest> SpSrtpDriverTest_t;
 }
 

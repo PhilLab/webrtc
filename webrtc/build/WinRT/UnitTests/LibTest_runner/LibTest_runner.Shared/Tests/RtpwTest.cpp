@@ -4,6 +4,8 @@
 //test entry point declaration
 extern "C" int rtpw_main(int argc, char *argv[]);
 
+AUTO_ADD_TEST_IMPL(LibTest_runner::CRtpwTest);
+
 namespace LibTest_runner
 {
 
@@ -12,9 +14,8 @@ namespace LibTest_runner
     // Configuration has to be somehow handled.
     // Rtpw act as sender and receiver, both has to be launched in same time. 
     // We probably needs two threads here.
-    // char* argv[] = { "-s", "127.0.0.1", "100" };
-    // rtpw_main(3, argv);
-    printf("Failed\n");
+    char* argv[] = { "-s", "127.0.0.1", "100" };
+    rtpw_main(3, argv);
   }
 
 }
