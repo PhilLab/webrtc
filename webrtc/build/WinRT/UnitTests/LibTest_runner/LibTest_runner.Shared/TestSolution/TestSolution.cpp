@@ -3,28 +3,6 @@
 
 
 //=======================================================================
-//         Method: InternalTestExecute
-//    Description: Runs specified test
-//       Argument: const SpTestBase_t & pTest test to run
-//         return: void
-//
-//       History:
-// 2015/03/03 TP: created
-//======================================================================
-void LibTest_runner::CTestSolution::InternalTestExecute(const SpTestBase_t& pTest)
-{
-  try
-  {
-    printf("\n--- Executing %s ------\n", pTest->Name().c_str());
-    pTest->Execute();
-  }
-  catch (int status)
-  {
-    printf("--- %s test terminated with status %d ------\n", pTest->Name().c_str(), status);
-  }
-}
-
-//=======================================================================
 //         Method: CTestSolution::Execute
 //    Description: executes test solution
 //         return: void
@@ -38,31 +16,8 @@ void LibTest_runner::CTestSolution::Execute()
   {
     for (auto it = m_spTests->cbegin(); it != m_spTests->cend(); ++it)
     {
-      InternalTestExecute(*it);
-    }
-  }
-}
-
-
-//=======================================================================
-//         Method: Execute
-//    Description: Executes test with specified name
-//       Argument: const char * testName - specified test name
-//         return: void
-//
-//       History:
-// 2015/03/03 TP: created
-//======================================================================
-void LibTest_runner::CTestSolution::Execute(const char* testName)
-{
-  if (!IsEmpty())
-  {
-    for (auto it = m_spTests->cbegin(); it != m_spTests->cend(); ++it)
-    {
-      if ((*it)->Name().compare(testName) == 0)
-      {
-        InternalTestExecute(*it);
-      }
+      printf("\n--- Executing %s ------\n", (*it)->Name().c_str());
+      (*it)->Execute();
     }
   }
 }

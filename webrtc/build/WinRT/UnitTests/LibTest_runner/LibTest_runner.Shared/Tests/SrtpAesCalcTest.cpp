@@ -9,7 +9,9 @@ AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpAesCalcTest);
 void LibTest_runner::CSrtpAesCalcTest::Execute()
 {
   //TODO: change proper parameters
-  char* argv[] = { "." };
+  char* argv[] = { "FF", "AA" };
 
-  srtp_test_aes_calc_main(1, argv);
+  //Commented out -> crashes
+  //srtp_aes_calc_main(2, argv);
+  printf("failed\n");
 }

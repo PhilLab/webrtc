@@ -14,8 +14,9 @@ namespace LibTest_runner
     // Configuration has to be somehow handled.
     // Rtpw act as sender and receiver, both has to be launched in same time. 
     // We probably needs two threads here.
-    char* argv[] = { "-s", "127.0.0.1", "100" };
-    rtpw_main(3, argv);
+    // char* argv[] = { "-s", "127.0.0.1", "100" };
+    // rtpw_main(3, argv);
+    printf("Failed\n");
   }
 
 }
