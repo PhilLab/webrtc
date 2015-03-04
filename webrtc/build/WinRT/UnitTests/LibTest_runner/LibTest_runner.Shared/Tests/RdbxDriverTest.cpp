@@ -11,7 +11,7 @@ namespace LibTest_runner
   void CRdbxDriverTest::Execute()
   {
     //TODO: rdbx support two parameters -t and -v
-    char* argv[] = { "-v"};
-    rdbx_driver_main(1, argv);
+    char* argv[] = { ".", "-v"};
+    rdbx_driver_main(2, argv);
   }
 }

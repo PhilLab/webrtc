@@ -9,7 +9,7 @@ AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpRandGenTest);
 void LibTest_runner::CSrtpRandGenTest::Execute()
 {
   //TODO: configuration has to be handled
-  char* argv[] = { "10" };
+  char* argv[] = { ".", "10" };
   srtp_test_rand_gen_main(1, argv);
 }
 
