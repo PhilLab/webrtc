@@ -10,8 +10,6 @@ void LibTest_runner::CSrtpDriverTest::Execute()
 {
   //TODO: configuration has to be handled
   char* argv[] = { " " };
-  //crashes
-  //srtp_driver_main(0, NULL);
-  printf("failed\n");
+  srtp_driver_main(1, argv);
 }
 
