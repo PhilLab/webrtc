@@ -12,5 +12,6 @@
             <Button Name="RunAll" Click="RunAll_Click">RunAll</Button>
             <TextBox Name="OutputBox" Width="640" Height="480" AcceptsReturn="True" PlaceholderText="Test outputs appears here!"></TextBox>
         </StackPanel>
-    </Grid>
+        <ProgressRing Name="ProgressRingCtrl" Width="50" Height="50"></ProgressRing>
+  </Grid>
 </Page>
