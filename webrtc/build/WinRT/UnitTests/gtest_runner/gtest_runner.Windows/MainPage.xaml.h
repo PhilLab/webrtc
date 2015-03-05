@@ -17,6 +17,8 @@ namespace gtest_runner
 	public:
 		MainPage();
 
+    virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
+
   private:
     void RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
   };

@@ -53,3 +53,12 @@ void gtest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI:
 
   OutputBox->Text = ref new String(rtc::ToUtf16(stdout_buffer, strlen(stdout_buffer)).data());
 }
+
+void gtest_runner::MainPage::OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e)
+{
+  if (e != nullptr && e->Parameter != nullptr && e->Parameter->ToString() == "autostart")
+  {
+    RunAll_Click(nullptr, nullptr);
+    App::Current->Exit();
+  }
+}
