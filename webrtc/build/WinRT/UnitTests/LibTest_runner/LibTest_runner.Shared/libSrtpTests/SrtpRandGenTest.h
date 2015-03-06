@@ -14,8 +14,9 @@ namespace libSrtpTests
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpRandGenTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CSrtpRandGenTest() {};
     TEST_NAME_METHOD_IMPL(CSrtpRandGenTest);
   };

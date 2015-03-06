@@ -13,8 +13,9 @@ namespace libSrtpTests
     public CTestBase
   {
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRocDriverTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CRocDriverTest() {};
     TEST_NAME_METHOD_IMPL(CRocDriverTest);
   };

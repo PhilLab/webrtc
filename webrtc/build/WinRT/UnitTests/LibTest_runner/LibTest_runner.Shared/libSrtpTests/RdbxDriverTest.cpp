@@ -8,10 +8,10 @@ AUTO_ADD_TEST_IMPL(libSrtpTests::CRdbxDriverTest);
 
 namespace libSrtpTests
 {
-  void CRdbxDriverTest::Execute()
-  {
+  int CRdbxDriverTest::InterchangeableExecute()
+{
     //TODO: rdbx support two parameters -t and -v
     char* argv[] = { ".", "-v"};
-    rdbx_driver_main(2, argv);
+    return rdbx_driver_main(2, argv);
   }
 }

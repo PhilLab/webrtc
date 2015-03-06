@@ -13,9 +13,10 @@ namespace libSrtpTests
     public CTestBase
   {
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRtpwTest);
+  protected:
+    int InterchangeableExecute();
   public:
     virtual ~CRtpwTest() {};
-    void Execute();
     TEST_NAME_METHOD_IMPL(CRtpwTest);
   };
 }

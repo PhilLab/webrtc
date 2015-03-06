@@ -6,8 +6,8 @@ extern "C" int srtp_test_sha1_driver_main();
 
 AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpSha1DriverTest);
 
-void libSrtpTests::CSrtpSha1DriverTest::Execute()
+int libSrtpTests::CSrtpSha1DriverTest::InterchangeableExecute()
 {
-  srtp_test_sha1_driver_main();
+  return srtp_test_sha1_driver_main();
 }
 

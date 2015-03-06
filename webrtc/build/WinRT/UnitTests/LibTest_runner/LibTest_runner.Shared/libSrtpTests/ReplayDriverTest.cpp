@@ -6,8 +6,8 @@ extern "C" int replay_driver_main();
 
 AUTO_ADD_TEST_IMPL(libSrtpTests::CReplayDriverTest);
 
-void libSrtpTests::CReplayDriverTest::Execute()
+int libSrtpTests::CReplayDriverTest::InterchangeableExecute()
 {
-  replay_driver_main();
+  return replay_driver_main();
 }
 

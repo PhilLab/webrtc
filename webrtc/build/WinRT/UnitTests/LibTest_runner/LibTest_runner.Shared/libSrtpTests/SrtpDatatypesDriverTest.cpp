@@ -6,8 +6,8 @@ extern "C" int srtp_test_datatypes_driver_main();
 
 AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpDatatypesDriverTest);
 
-void libSrtpTests::CSrtpDatatypesDriverTest::Execute()
+int libSrtpTests::CSrtpDatatypesDriverTest::InterchangeableExecute()
 {
-  srtp_test_datatypes_driver_main();
+  return srtp_test_datatypes_driver_main();
 }
 

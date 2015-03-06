@@ -14,8 +14,9 @@ namespace libSrtpTests
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpEnvTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CSrtpEnvTest() {};
     TEST_NAME_METHOD_IMPL(CSrtpEnvTest);
   };

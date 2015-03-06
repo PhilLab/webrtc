@@ -24,7 +24,7 @@ namespace LibTest_runner
   public:
     CTestSolution() {}
     void Execute() throw();
-    void Execute(const char* testName);
+    void Execute(const wchar_t* testName);
     void AddTest(const SpTestBase_t& ptrTest);
     size_t GetTestCount() const;
     //=======================================================================

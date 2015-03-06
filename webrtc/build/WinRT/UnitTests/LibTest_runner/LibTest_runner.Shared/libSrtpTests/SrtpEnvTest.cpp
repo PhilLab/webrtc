@@ -6,8 +6,8 @@ extern "C" int srtp_test_env_main();
 
 AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpEnvTest);
 
-void libSrtpTests::CSrtpEnvTest::Execute()
+int libSrtpTests::CSrtpEnvTest::InterchangeableExecute()
 {
-  srtp_test_env_main();
+  return srtp_test_env_main();
 }
 

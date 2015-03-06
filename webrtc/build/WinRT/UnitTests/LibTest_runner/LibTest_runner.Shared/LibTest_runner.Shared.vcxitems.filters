@@ -120,5 +120,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\libsrtpTestSolution.h">
       <Filter>libsrtp Tests</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdOutputRedirector.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

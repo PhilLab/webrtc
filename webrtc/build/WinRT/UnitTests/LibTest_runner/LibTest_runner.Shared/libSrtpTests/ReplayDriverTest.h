@@ -14,8 +14,9 @@ namespace libSrtpTests
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CReplayDriverTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CReplayDriverTest() {};
     TEST_NAME_METHOD_IMPL(CReplayDriverTest);
   };

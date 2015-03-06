@@ -6,8 +6,8 @@ extern "C" int srtp_test_stat_driver_main();
 
 AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpStatDriverTest);
 
-void libSrtpTests::CSrtpStatDriverTest::Execute()
+int libSrtpTests::CSrtpStatDriverTest::InterchangeableExecute()
 {
-  srtp_test_stat_driver_main();
+  return srtp_test_stat_driver_main();
 }
 

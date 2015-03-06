@@ -47,13 +47,13 @@ void LibTest_runner::CTestSolution::Execute()
 //=======================================================================
 //         Method: Execute
 //    Description: Executes test with specified name
-//       Argument: const char * testName - specified test name
+//       Argument: const wchar_t * testName - specified test name
 //         return: void
 //
 //       History:
 // 2015/03/03 TP: created
 //======================================================================
-void LibTest_runner::CTestSolution::Execute(const char* testName)
+void LibTest_runner::CTestSolution::Execute(const wchar_t* testName)
 {
   if (!IsEmpty())
   {

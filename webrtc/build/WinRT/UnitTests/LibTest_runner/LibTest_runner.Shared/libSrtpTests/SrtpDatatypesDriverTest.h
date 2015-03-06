@@ -14,8 +14,9 @@ namespace libSrtpTests
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpDatatypesDriverTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CSrtpDatatypesDriverTest() {};
     TEST_NAME_METHOD_IMPL(CSrtpDatatypesDriverTest);
   };
