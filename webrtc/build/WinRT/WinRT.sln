@@ -93,6 +93,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common_audio_unittests", ".
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openmax_dl", "..\..\..\chromium\src\third_party\openmax_dl\dl\openmax_dl.vcxproj", "{0E8DC429-AA74-1515-F004-DC6870B9E429}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{518CBC31-C6D7-46A8-A9A4-6639AFD61082}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "webrtc_utility", "..\..\modules\webrtc_utility.vcxproj", "{FD13189F-4037-1A90-3F67-3CA74542A87B}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		UnitTests\LibTest_runner\LibTest_runner.Shared\LibTest_runner.Shared.vcxitems*{2df6d95b-aeb0-4983-9b82-151c50625222}*SharedItemsImports = 9
@@ -529,6 +533,16 @@ Global
 		{0E8DC429-AA74-1515-F004-DC6870B9E429}.Release|Win32.Build.0 = Release|Win32
 		{0E8DC429-AA74-1515-F004-DC6870B9E429}.Release|x64.ActiveCfg = Release|x64
 		{0E8DC429-AA74-1515-F004-DC6870B9E429}.Release|x64.Build.0 = Release|x64
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Debug|ARM.ActiveCfg = Debug|Win32
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Debug|Win32.Build.0 = Debug|Win32
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Debug|x64.ActiveCfg = Debug|x64
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Debug|x64.Build.0 = Debug|x64
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Release|ARM.ActiveCfg = Release|Win32
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Release|Win32.ActiveCfg = Release|Win32
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Release|Win32.Build.0 = Release|Win32
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Release|x64.ActiveCfg = Release|x64
+		{FD13189F-4037-1A90-3F67-3CA74542A87B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -570,5 +584,7 @@ Global
 		{39FE2BB0-C2E7-DB9C-D514-19B221F3CA00} = {83375A98-BB7A-40DC-87BC-ADE6CDFF2932}
 		{B6B37B26-252C-247D-DBA3-D03511AC9509} = {83375A98-BB7A-40DC-87BC-ADE6CDFF2932}
 		{52A7D63A-B534-1E47-D50C-27F4E90C60BB} = {83375A98-BB7A-40DC-87BC-ADE6CDFF2932}
+		{518CBC31-C6D7-46A8-A9A4-6639AFD61082} = {F764D245-DB78-42CB-9B5E-BE62A69B1E1C}
+		{FD13189F-4037-1A90-3F67-3CA74542A87B} = {518CBC31-C6D7-46A8-A9A4-6639AFD61082}
 	EndGlobalSection
 EndGlobal

@@ -16,6 +16,7 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/source/trace_win.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -228,8 +229,10 @@ bool RtpDumpImpl::RTCP(const uint8_t* packet) const
 // TODO (hellner): why is TickUtil not used here?
 inline uint32_t RtpDumpImpl::GetTimeInMS() const
 {
-#if defined(_WIN32)
-    return timeGetTime();
+#if defined(_WIN32) && !defined(WINRT)
+  return timeGetTime();
+#elif defined(WINRT)
+  return TraceWindows::timeGetTime();
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     struct timeval tv;
     struct timezone tz;
