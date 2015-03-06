@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int srtp_test_kernel_driver_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpKernelDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpKernelDriverTest);
 
-void LibTest_runner::CSrtpKernelDriverTest::Execute()
+void libSrtpTests::CSrtpKernelDriverTest::Execute()
 {
   //TODO: configuration has to be handled
   char* argv[] = { ".", "-v" };

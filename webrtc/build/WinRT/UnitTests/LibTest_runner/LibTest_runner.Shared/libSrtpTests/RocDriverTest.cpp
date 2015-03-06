@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int roc_driver_main();
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CRocDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CRocDriverTest);
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   
   void CRocDriverTest::Execute()

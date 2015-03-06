@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int rdbx_driver_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CRdbxDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CRdbxDriverTest);
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   void CRdbxDriverTest::Execute()
   {

@@ -25,7 +25,7 @@ namespace LibTest_runner
 
   // This marco simplifies implementation of CTestBase::Name()
   #define TEST_NAME_METHOD_IMPL(CLAZZ) \
-    virtual const std::string& LibTest_runner::CLAZZ::Name() \
+    virtual const std::string& CLAZZ::Name() \
     { \
       static std::string name = #CLAZZ; \
       return name; \

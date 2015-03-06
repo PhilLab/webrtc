@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int srtp_test_datatypes_driver_main();
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpDatatypesDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpDatatypesDriverTest);
 
-void LibTest_runner::CSrtpDatatypesDriverTest::Execute()
+void libSrtpTests::CSrtpDatatypesDriverTest::Execute()
 {
   srtp_test_datatypes_driver_main();
 }

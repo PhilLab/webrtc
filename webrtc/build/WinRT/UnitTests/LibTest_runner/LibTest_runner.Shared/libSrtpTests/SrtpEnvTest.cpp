@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int srtp_test_env_main();
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpEnvTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpEnvTest);
 
-void LibTest_runner::CSrtpEnvTest::Execute()
+void libSrtpTests::CSrtpEnvTest::Execute()
 {
   srtp_test_env_main();
 }

@@ -36,7 +36,7 @@ void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::U
   setvbuf(stdout, const_cast<char*>(stdout_buf.c_str()), _IOFBF, kBufferSize);
 
   //Run tests
-  TestSolution::Instance().Execute();
+  libSrtpTests::TestSolution::Instance().Execute();
     
   //convert output to wchar_t
   int nRequiredSize = ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(stdout_buf.c_str()), -1, NULL, 0);

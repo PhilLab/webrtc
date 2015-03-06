@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int rtpw_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CRtpwTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CRtpwTest);
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
 
   void CRtpwTest::Execute()

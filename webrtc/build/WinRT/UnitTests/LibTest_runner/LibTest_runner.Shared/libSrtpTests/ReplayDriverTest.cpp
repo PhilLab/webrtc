@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int replay_driver_main();
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CReplayDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CReplayDriverTest);
 
-void LibTest_runner::CReplayDriverTest::Execute()
+void libSrtpTests::CReplayDriverTest::Execute()
 {
   replay_driver_main();
 }

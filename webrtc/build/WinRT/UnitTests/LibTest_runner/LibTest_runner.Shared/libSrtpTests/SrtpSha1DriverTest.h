@@ -1,6 +1,6 @@
 #pragma once
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   //=============================================================================
   //         class: CSrtpSha1DriverTest

@@ -4,9 +4,9 @@
 //test entry point declaration
 extern "C" int srtp_test_cipher_driver_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpCipherDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpCipherDriverTest);
 
-void LibTest_runner::CSrtpCipherDriverTest::Execute()
+void libSrtpTests::CSrtpCipherDriverTest::Execute()
 {
   //TODO: change proper parameters
   char* argv[] = { ".", "-t" };

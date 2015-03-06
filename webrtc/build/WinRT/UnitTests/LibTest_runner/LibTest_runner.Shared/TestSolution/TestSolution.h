@@ -40,20 +40,4 @@ namespace LibTest_runner
       return (m_spTests == NULL) || m_spTests->empty(); 
     }
   };
-
-  typedef CSafeSingletonT<CTestSolution> TestSolution;
-
-  //=============================================================================
-  //         class: SingleInstanceTestSolutionProvider
-  //   Description: Functor providing single instance of CTestSolution class
-  // History: 
-  // 2015/03/02 TP: created
-  //=============================================================================
-  struct SingleInstanceTestSolutionProvider
-  {
-    CTestSolution& operator()()
-    {
-      return TestSolution::Instance();
-    }
-  };
 };
