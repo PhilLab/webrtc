@@ -17,7 +17,7 @@ preparelink()
 		exit -1
 	fi
 	if [ ! -h "$2" ]; then
-		echo Creating webrtc symbolic link \"$2\"...
+		echo In path \"$1\" creating webrtc symbolic link \"$2\" pointing to \"$3\"...
 		ln -s $3 $2
 		if [ $? -ne 0 ]; then
 			failure=$?
@@ -31,6 +31,7 @@ preparelink()
 
 preparelink "." "build" "../webrtc-deps/webrtc-build/"
 preparelink "third_party/yasm/source" "patched-yasm" "../../../../webrtc-deps/patched-yasm/"
+preparelink "third_party/opus" "src" "../../../webrtc-deps/opus/"
 
 
 echo
