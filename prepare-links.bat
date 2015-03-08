@@ -5,27 +5,42 @@ echo.
 
 set failure=0
 
-call:dolink build ..\webrtc-deps\webrtc-build
+call:dolink . build ..\webrtc-deps\webrtc-build
+if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party\yasm\source  patched-yasm ..\..\..\..\webrtc-deps\patched-yasm
 if "%failure%" neq "0" goto:done_with_error
 
 goto:done
 
 
 :dolink
-IF EXIST .\%~1\nul goto:eof
-IF NOT EXIST %~2\nul call:failure -1 %~1 %~2 "%~2 does not exist!"
+if NOT EXIST %~1\nul call:failure -1 "%~1 does not exist!"
 if "%failure%" neq "0" goto:eof
 
-echo creating symbolic link for "%~1" to "%~2"
-mklink /J %~1 %~2
-if %errorlevel% neq 0 call:failure %errorlevel% %~1 %~2 "Could not create symbolic link to %~1 from %~2"
+pushd %~1
+
+IF EXIST .\%~2\nul goto:alreadyexists
+
+IF NOT EXIST %~3\nul call:failure -1 "%~3 does not exist!"
+if "%failure%" neq "0" popd
+if "%failure%" neq "0" goto:eof
+
+echo creating symbolic link for "%~2" to "%~3"
+mklink /J %~2 %~3
+if %errorlevel% neq 0 call:failure %errorlevel% "Could not create symbolic link to %~2 from %~3"
+popd
 if "%failure%" neq "0" goto:eof
 
 goto:eof
 
+:alreadyexists
+popd
+goto:eof
+
 :failure
 echo.
-echo ERROR: %~4
+cd
+echo ERROR: %~2
 echo.
 
 set failure=%~1
