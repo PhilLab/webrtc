@@ -11,6 +11,12 @@ call:dolink third_party\yasm\source patched-yasm ..\..\..\..\webrtc-deps\patched
 if "%failure%" neq "0" goto:done_with_error
 call:dolink third_party\opus src ..\..\..\webrtc-deps\opus
 if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party libsrtp ..\..\webrtc-deps\libsrtp
+if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party libvpx ..\..\webrtc-deps\libvpx
+if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party libyuv ..\..\webrtc-deps\libyuv
+if "%failure%" neq "0" goto:done_with_error
 
 goto:done
 
