@@ -32,7 +32,9 @@ preparelink()
 preparelink "." "build" "../webrtc-deps/webrtc-build/"
 preparelink "third_party/yasm/source" "patched-yasm" "../../../../webrtc-deps/patched-yasm/"
 preparelink "third_party/opus" "src" "../../../webrtc-deps/opus/"
-
+preparelink "third_party" "libsrtp" "../../webrtc-deps/libsrtp/"
+preparelink "third_party" "libvpx" "../../webrtc-deps/libvpx/"
+preparelink "third_party" "libyuv" "../../webrtc-deps/libyuv/"
 
 echo
 echo WebRTC ready.
