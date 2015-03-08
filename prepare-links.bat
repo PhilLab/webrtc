@@ -7,7 +7,9 @@ set failure=0
 
 call:dolink . build ..\webrtc-deps\webrtc-build
 if "%failure%" neq "0" goto:done_with_error
-call:dolink third_party\yasm\source  patched-yasm ..\..\..\..\webrtc-deps\patched-yasm
+call:dolink third_party\yasm\source patched-yasm ..\..\..\..\webrtc-deps\patched-yasm
+if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party\opus src ..\..\..\webrtc-deps\opus
 if "%failure%" neq "0" goto:done_with_error
 
 goto:done
@@ -25,7 +27,7 @@ IF NOT EXIST %~3\nul call:failure -1 "%~3 does not exist!"
 if "%failure%" neq "0" popd
 if "%failure%" neq "0" goto:eof
 
-echo creating symbolic link for "%~2" to "%~3"
+echo In path "%~1" creating symbolic link for "%~2" to "%~3"
 mklink /J %~2 %~3
 if %errorlevel% neq 0 call:failure %errorlevel% "Could not create symbolic link to %~2 from %~3"
 popd
