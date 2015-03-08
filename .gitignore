@@ -37,7 +37,7 @@
 .sw?
 xcuserdata
 xcshareddata
-build/
+/build
 /Makefile
 /chromium_deps
 /chromium_gn
