@@ -13,7 +13,7 @@
 LibTest_runner::CTestBase::CTestBase()
   : m_nExitStatus(0)
   , m_bSucceed(false)
-  , m_Executed(false)
+  , m_bExecuted(false)
 {
 }
 
@@ -46,7 +46,7 @@ void LibTest_runner::CTestBase::VerifyResult()
 {
   m_bSucceed = false;
 
-  if (m_Executed)
+  if (m_bExecuted)
   {
     //this is pretty much we can do here, rest of the 
     //verification has to be test specific
@@ -65,11 +65,10 @@ void LibTest_runner::CTestBase::VerifyResult()
 //======================================================================
 int LibTest_runner::CTestBase::Execute()
 {
-  m_Executed = true;
+  PrepareForExecution();
+  m_bExecuted = true;
   try
   {
-    //grab test output
-    PrepareForExecution();
     LibTest_runner::CStdOutputRedirector<true> redirector(m_wsOutput); //grab test output
     m_nExitStatus = InterchangeableExecute();
   }
@@ -96,6 +95,6 @@ void LibTest_runner::CTestBase::Reset()
 {
   m_nExitStatus = 0;
   m_bSucceed = false;
-  m_Executed = false;
+  m_bExecuted = false;
   m_wsOutput.clear();
 }

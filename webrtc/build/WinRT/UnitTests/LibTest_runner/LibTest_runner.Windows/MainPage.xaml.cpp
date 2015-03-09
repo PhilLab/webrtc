@@ -30,11 +30,14 @@ MainPage::MainPage()
 void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
   //TODO: redesign not to block UI thread
-  //libSrtpTests::TestSolution::Instance().Execute();
-  libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");
-  libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");
+  SpWStringReporter_t spStringReporter(new CWStringReporter());
 
-  OutputBox->Text = L"Execution finished.\n";
+  libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
+  /*libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");
+  libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");*/
+  libSrtpTests::TestSolution::Instance().Execute();
+  libSrtpTests::TestSolution::Instance().GenerateReport();
 
-
+  OutputBox->Text = ref new String((*spStringReporter->GetReport()).c_str());
+  OutputBox->Text += L"Execution finished.\n";
 }

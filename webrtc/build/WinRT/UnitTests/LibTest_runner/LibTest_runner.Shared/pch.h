@@ -13,6 +13,7 @@
 // STL includes
 #include <string>
 #include <vector>
+#include <exception>
 
 // Helpers
 #include "Helpers/SafeSingleton.h"
@@ -20,8 +21,12 @@
 #include "Helpers/StdOutputRedirector.h"
 
 // Test Solution 
+#include "TestSolution/ReportGenerationException.h"
+#include "TestSolution/TestsReporterBase.h"
 #include "TestSolution/TestBase.h"
 #include "TestSolution/TestSolution.h"
+#include "TestSolution/WStringReporter.h"
+
 
 // libsrtp tests
 #include "libSrtpTests\libsrtpTestSolution.h"

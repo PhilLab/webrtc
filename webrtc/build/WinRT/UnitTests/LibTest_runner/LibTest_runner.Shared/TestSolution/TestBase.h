@@ -21,7 +21,7 @@ namespace LibTest_runner
     //TODO: following members should be private and modified by methods !!!
     int            m_nExitStatus; //test exit code (from main method)
     bool           m_bSucceed; //true if test succeed
-    bool           m_Executed; //true if test was executed
+    bool           m_bExecuted; //true if test was executed
     virtual int    InterchangeableExecute() = 0;
     //=======================================================================
     //         Method: InterchangeablePrepareForExecution
@@ -75,7 +75,7 @@ namespace LibTest_runner
     //       History:
     // 2015/03/06 TP: created
     //======================================================================
-    virtual const std::wstring& Name() = 0;
+    virtual const std::wstring& Name() const = 0;
     //=======================================================================
     //         Method: Output
     //    Description: Returns test output (from standard output)
@@ -104,13 +104,23 @@ namespace LibTest_runner
     //======================================================================
     bool Succeed() const { return m_bSucceed;  }
     void Reset();
+
+    //=======================================================================
+    //         Method: Executed
+    //    Description: Returns true if test was executed
+    //         return: bool true if test was executed
+    //
+    //       History:
+    // 2015/03/09 TP: created
+    //======================================================================
+    bool Executed() const { return m_bExecuted; }
   };
 
   typedef std::shared_ptr<CTestBase> SpTestBase_t;
 
   // This marco simplifies implementation of CTestBase::Name()
 #define TEST_NAME_METHOD_IMPL(CLAZZ) \
-    virtual const std::wstring& CLAZZ::Name() \
+    virtual const std::wstring& CLAZZ::Name() const\
       { \
       static std::wstring name = L#CLAZZ; \
       return name; \
