@@ -9,13 +9,32 @@
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
+#if defined(WEBRTC_WIN)
+#include "webrtc/base/win32socketserver.h"
+#endif
+#if defined(WEBRTC_POSIX)
+#include "webrtc/base/physicalsocketserver.h"
+#endif
+
 namespace rtc {
 
-TraceLog::TraceLog() : is_tracing_(false) {
+TraceLog::TraceLog() : is_tracing_(false), tw_(NULL) {
   traces_.reserve(16384);
+#if defined(WEBRTC_WIN)
+  thread_ = new Win32Thread();
+#endif
+#if defined(WEBRTC_POSIX)
+  PhysicalSocketServer* pss = new PhysicalSocketServer();
+  thread_ = new Thread(pss);
+#endif
 }
 
 TraceLog::~TraceLog() {
+  if (tw_) {
+    tw_->Stop();
+    thread_->Stop();
+    delete tw_;
+  }
 }
 
 
@@ -114,8 +133,16 @@ void TraceLog::Save(const std::string& file_name) {
 }
 
 void TraceLog::Save(const std::string& addr, int port) {
+  if (tw_ == NULL) {
+    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages, thread_);
+    unsigned int id;
+    tw_->Start(id);
+
+    LOG(LS_INFO) << "New thread created with id: " << id;
+  }
+
   AsyncSocket* sock =
-    Thread::Current()->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
+    thread_->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
   sock->SignalWriteEvent.connect(this, &TraceLog::OnWriteEvent);
   sock->SignalCloseEvent.connect(this, &TraceLog::OnCloseEvent);
 
@@ -133,7 +160,7 @@ void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {
     << "Port: " << addr.port() << ", "
     << "Error: " << err;
 
-  Thread::Current()->Dispose(socket);
+  thread_->Dispose(socket);
 }
 
 void TraceLog::OnWriteEvent(AsyncSocket* socket) {
@@ -169,7 +196,14 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   }
 
   socket->Close();
-  Thread::Current()->Dispose(socket);
+  thread_->Dispose(socket);
+}
+
+bool TraceLog::processMessages(void* args) {
+  Thread* t = reinterpret_cast<Thread*>(args);
+  if (t)
+    t->Run();
+  return true;
 }
 
 }  //  namespace rtc
