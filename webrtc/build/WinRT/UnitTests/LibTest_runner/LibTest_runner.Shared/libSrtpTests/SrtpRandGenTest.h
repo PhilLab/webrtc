@@ -18,7 +18,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CSrtpRandGenTest() {};
-    TEST_NAME_METHOD_IMPL(CSrtpRandGenTest);
+    TEST_NAME_IMPL(SrtpRandGenTest);
+    TEST_PROJECT_IMPL(srtp_test_rand_gen);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CSrtpRandGenTest> SpSrtpRandGenTest_t;

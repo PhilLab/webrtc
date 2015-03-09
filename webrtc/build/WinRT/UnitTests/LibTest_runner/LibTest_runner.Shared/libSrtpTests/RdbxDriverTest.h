@@ -17,7 +17,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CRdbxDriverTest() {};
-    TEST_NAME_METHOD_IMPL(CRdbxDriverTest);
+    TEST_NAME_IMPL(CRdbxDriverTest);
+    TEST_PROJECT_IMPL(Rdbx_driver);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CRdbxDriverTest> SpRdbxDriverTest_t;

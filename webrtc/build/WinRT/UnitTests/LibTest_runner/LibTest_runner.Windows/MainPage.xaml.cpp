@@ -33,8 +33,8 @@ void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::U
   SpWStringReporter_t spStringReporter(new CWStringReporter());
 
   libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
-  /*libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");
-  libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");*/
+  /*libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");*/
+  /*libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");*/
   libSrtpTests::TestSolution::Instance().Execute();
   libSrtpTests::TestSolution::Instance().GenerateReport();
 

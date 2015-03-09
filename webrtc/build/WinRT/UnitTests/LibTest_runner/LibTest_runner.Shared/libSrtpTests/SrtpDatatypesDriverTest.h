@@ -18,7 +18,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CSrtpDatatypesDriverTest() {};
-    TEST_NAME_METHOD_IMPL(CSrtpDatatypesDriverTest);
+    TEST_NAME_IMPL(CSrtpDatatypesDriverTest);
+    TEST_PROJECT_IMPL(srtp_test_datatypes_driver);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CSrtpDatatypesDriverTest> SpSrtpDatatypesDriverTest_t;
