@@ -13,8 +13,9 @@
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/video_encoder.h"
 
 namespace webrtc {
 namespace test {
@@ -29,7 +30,7 @@ class FakeEncoder : public VideoEncoder {
 
   virtual int32_t InitEncode(const VideoCodec* config,
                              int32_t number_of_cores,
-                             uint32_t max_payload_size) OVERRIDE;
+                             size_t max_payload_size) OVERRIDE;
   virtual int32_t Encode(
      const I420VideoFrame& input_image,
      const CodecSpecificInfo* codec_specific_info,
@@ -41,14 +42,46 @@ class FakeEncoder : public VideoEncoder {
   virtual int32_t SetRates(uint32_t new_target_bitrate,
                            uint32_t framerate) OVERRIDE;
 
- private:
-  Clock* clock_;
+ protected:
+  Clock* const clock_;
   VideoCodec config_;
   EncodedImageCallback* callback_;
   int target_bitrate_kbps_;
   int max_target_bitrate_kbps_;
   int64_t last_encode_time_ms_;
   uint8_t encoded_buffer_[100000];
+};
+
+class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
+ public:
+  explicit FakeH264Encoder(Clock* clock);
+  virtual ~FakeH264Encoder() {}
+
+  virtual int32_t RegisterEncodeCompleteCallback(
+      EncodedImageCallback* callback) OVERRIDE;
+
+  virtual int32_t Encoded(
+      const EncodedImage& encodedImage,
+      const CodecSpecificInfo* codecSpecificInfo,
+      const RTPFragmentationHeader* fragments) OVERRIDE;
+
+ private:
+  EncodedImageCallback* callback_;
+  int idr_counter_;
+};
+
+class DelayedEncoder : public test::FakeEncoder {
+ public:
+  DelayedEncoder(Clock* clock, int delay_ms);
+  virtual ~DelayedEncoder() {}
+
+  virtual int32_t Encode(
+      const I420VideoFrame& input_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const std::vector<VideoFrameType>* frame_types) OVERRIDE;
+
+ private:
+  const int delay_ms_;
 };
 }  // namespace test
 }  // namespace webrtc

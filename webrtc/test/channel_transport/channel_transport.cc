@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_MAC) && !defined(WEBRTC_QNX)
 #include "testing/gtest/include/gtest/gtest.h"
 #endif
 #include "webrtc/test/channel_transport/udp_transport.h"
@@ -20,7 +20,7 @@
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_QNX)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_MAC) || defined(WEBRTC_QNX)
 #undef NDEBUG
 #include <assert.h>
 #endif
@@ -36,7 +36,7 @@ VoiceChannelTransport::VoiceChannelTransport(VoENetwork* voe_network,
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
   int registered = voe_network_->RegisterExternalTransport(channel,
                                                            *socket_transport_);
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_MAC) && !defined(WEBRTC_QNX)
   EXPECT_EQ(0, registered);
 #else
   assert(registered == 0);
@@ -50,7 +50,7 @@ VoiceChannelTransport::~VoiceChannelTransport() {
 
 void VoiceChannelTransport::IncomingRTPPacket(
     const int8_t* incoming_rtp_packet,
-    const int32_t packet_length,
+    const size_t packet_length,
     const char* /*from_ip*/,
     const uint16_t /*from_port*/) {
   voe_network_->ReceivedRTPPacket(
@@ -59,7 +59,7 @@ void VoiceChannelTransport::IncomingRTPPacket(
 
 void VoiceChannelTransport::IncomingRTCPPacket(
     const int8_t* incoming_rtcp_packet,
-    const int32_t packet_length,
+    const size_t packet_length,
     const char* /*from_ip*/,
     const uint16_t /*from_port*/) {
   voe_network_->ReceivedRTCPPacket(channel_, incoming_rtcp_packet,
@@ -89,7 +89,7 @@ VideoChannelTransport::VideoChannelTransport(ViENetwork* vie_network,
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
   int registered = vie_network_->RegisterSendTransport(channel,
                                                        *socket_transport_);
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_QNX)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_MAC) && !defined(WEBRTC_QNX)
   EXPECT_EQ(0, registered);
 #else
   assert(registered == 0);
@@ -103,7 +103,7 @@ VideoChannelTransport::~VideoChannelTransport() {
 
 void VideoChannelTransport::IncomingRTPPacket(
     const int8_t* incoming_rtp_packet,
-    const int32_t packet_length,
+    const size_t packet_length,
     const char* /*from_ip*/,
     const uint16_t /*from_port*/) {
   vie_network_->ReceivedRTPPacket(
@@ -112,7 +112,7 @@ void VideoChannelTransport::IncomingRTPPacket(
 
 void VideoChannelTransport::IncomingRTCPPacket(
     const int8_t* incoming_rtcp_packet,
-    const int32_t packet_length,
+    const size_t packet_length,
     const char* /*from_ip*/,
     const uint16_t /*from_port*/) {
   vie_network_->ReceivedRTCPPacket(channel_, incoming_rtcp_packet,

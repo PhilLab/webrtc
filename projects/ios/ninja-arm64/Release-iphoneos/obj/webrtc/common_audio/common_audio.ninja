@@ -1,0 +1,231 @@
+defines = -DV8_DEPRECATION_WARNINGS -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DCLD_VERSION=2 -DDISABLE_FTP_SUPPORT=1 -DWEBRTC_RESTRICT_LOGGING $
+    -DEXPAT_RELATIVE_PATH -DWEBRTC_MODULE_UTILITY_VIDEO -DWEBRTC_ARCH_ARM $
+    -DWEBRTC_ARCH_ARM64_NEON -DWEBRTC_POSIX -DWEBRTC_MAC -DWEBRTC_IOS $
+    -DUSE_LIBPCI=1 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -DNDEBUG $
+    -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0 -DNS_BLOCK_ASSERTIONS=1 $
+    -D_FORTIFY_SOURCE=2
+includes = -Igen -I../../../.. $
+    -I../../../../webrtc/common_audio/resampler/include $
+    -I../../../../webrtc/common_audio/signal_processing/include $
+    -I../../../../webrtc/system_wrappers/interface
+cflags = -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -Os -gdwarf-2 -fvisibility=hidden -Werror -Wnewline-eof $
+    -miphoneos-version-min=7.0 -arch arm64 -Wall -Wendif-labels -Wextra $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+<<<<<<< HEAD:projects/android/ninja/obj/webrtc/common_audio/common_audio.ninja
+    -Wno-strict-overflow -fno-builtin-cos -fno-builtin-sin $
+    -fno-builtin-cosf -fno-builtin-sinf -target arm-linux-androideabi -mcpu=cortex-a9  $
+     -ffunction-sections -funwind-tables -g $
+    -fstack-protector -fno-short-enums  -Wa,--noexecstack $
+    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
+    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
+    -I$android_ndk_path/sources/android/support/include -U__APPLE__ -D__ANDROID__ -D__linux__ $
+    -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
+    -funwind-tables
+cflags_c = 
+cflags_cc = -fno-rtti -fno-threadsafe-statics -fvisibility-inlines-hidden $
+    -Wsign-compare -Wnon-virtual-dtor -Woverloaded-virtual -Wno-abi
+=======
+    -Wno-selector-type-mismatch -Wno-unknown-warning-option $
+    -Wheader-hygiene -Wno-char-subscripts $
+    -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
+    -Wstring-conversion -Wno-c++11-narrowing -Wno-deprecated-register $
+    -Wno-inconsistent-missing-override
+cflags_c = -std=c99 -fcolor-diagnostics
+cflags_cc = -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions $
+    -fvisibility-inlines-hidden -fno-threadsafe-statics -fcolor-diagnostics
+cflags_objc = $cflags_c -Wobjc-missing-property-synthesis
+cflags_objcc = $cflags_cc -Wobjc-missing-property-synthesis $
+    -fobjc-call-cxx-cdtors
+>>>>>>> origin/20140401-dev-stable:projects/ios/ninja-arm64/Release-iphoneos/obj/webrtc/common_audio/common_audio.ninja
+
+build obj/webrtc/common_audio/common_audio.audio_converter.o: cxx $
+    ../../../../webrtc/common_audio/audio_converter.cc
+build obj/webrtc/common_audio/common_audio.audio_util.o: cxx $
+    ../../../../webrtc/common_audio/audio_util.cc
+build obj/webrtc/common_audio/common_audio.blocker.o: cxx $
+    ../../../../webrtc/common_audio/blocker.cc
+build obj/webrtc/common_audio/common_audio.fir_filter.o: cxx $
+    ../../../../webrtc/common_audio/fir_filter.cc
+build obj/webrtc/common_audio/resampler/common_audio.push_resampler.o: cxx $
+    ../../../../webrtc/common_audio/resampler/push_resampler.cc
+build obj/webrtc/common_audio/resampler/common_audio.push_sinc_resampler.o: $
+    cxx ../../../../webrtc/common_audio/resampler/push_sinc_resampler.cc
+build obj/webrtc/common_audio/resampler/common_audio.resampler.o: cxx $
+    ../../../../webrtc/common_audio/resampler/resampler.cc
+build obj/webrtc/common_audio/resampler/common_audio.sinc_resampler.o: cxx $
+    ../../../../webrtc/common_audio/resampler/sinc_resampler.cc
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.auto_corr_to_refl_coef.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/auto_corr_to_refl_coef.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.auto_correlation.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/auto_correlation.c
+build obj/webrtc/common_audio/signal_processing/common_audio.complex_fft.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/complex_fft.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.complex_bit_reverse.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/complex_bit_reverse.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.copy_set_operations.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/copy_set_operations.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.cross_correlation.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/cross_correlation.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.division_operations.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/division_operations.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.dot_product_with_scale.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/dot_product_with_scale.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.downsample_fast.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/downsample_fast.c
+build obj/webrtc/common_audio/signal_processing/common_audio.energy.o: cc $
+    ../../../../webrtc/common_audio/signal_processing/energy.c
+build obj/webrtc/common_audio/signal_processing/common_audio.filter_ar.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/filter_ar.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.filter_ar_fast_q12.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/filter_ar_fast_q12.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.filter_ma_fast_q12.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/filter_ma_fast_q12.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.get_hanning_window.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/get_hanning_window.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.get_scaling_square.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/get_scaling_square.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.ilbc_specific_functions.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/ilbc_specific_functions.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.levinson_durbin.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/levinson_durbin.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.lpc_to_refl_coef.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/lpc_to_refl_coef.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.min_max_operations.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/min_max_operations.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.randomization_functions.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/randomization_functions.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.refl_coef_to_lpc.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/refl_coef_to_lpc.c
+build obj/webrtc/common_audio/signal_processing/common_audio.real_fft.o: cc $
+    ../../../../webrtc/common_audio/signal_processing/real_fft.c
+build obj/webrtc/common_audio/signal_processing/common_audio.resample.o: cc $
+    ../../../../webrtc/common_audio/signal_processing/resample.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_48khz.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/resample_48khz.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_by_2.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/resample_by_2.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_by_2_internal.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/resample_by_2_internal.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_fractional.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/resample_fractional.c
+build obj/webrtc/common_audio/signal_processing/common_audio.spl_init.o: cc $
+    ../../../../webrtc/common_audio/signal_processing/spl_init.c
+build obj/webrtc/common_audio/signal_processing/common_audio.spl_sqrt.o: cc $
+    ../../../../webrtc/common_audio/signal_processing/spl_sqrt.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.spl_sqrt_floor.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/spl_sqrt_floor.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.splitting_filter.o: $
+    cc ../../../../webrtc/common_audio/signal_processing/splitting_filter.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.sqrt_of_one_minus_x_squared.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/sqrt_of_one_minus_x_squared.c
+build $
+    obj/webrtc/common_audio/signal_processing/common_audio.vector_scaling_operations.o: $
+    cc $
+    ../../../../webrtc/common_audio/signal_processing/vector_scaling_operations.c
+build obj/webrtc/common_audio/vad/common_audio.vad.o: cxx $
+    ../../../../webrtc/common_audio/vad/vad.cc
+build obj/webrtc/common_audio/vad/common_audio.webrtc_vad.o: cc $
+    ../../../../webrtc/common_audio/vad/webrtc_vad.c
+build obj/webrtc/common_audio/vad/common_audio.vad_core.o: cc $
+    ../../../../webrtc/common_audio/vad/vad_core.c
+build obj/webrtc/common_audio/vad/common_audio.vad_filterbank.o: cc $
+    ../../../../webrtc/common_audio/vad/vad_filterbank.c
+build obj/webrtc/common_audio/vad/common_audio.vad_gmm.o: cc $
+    ../../../../webrtc/common_audio/vad/vad_gmm.c
+build obj/webrtc/common_audio/vad/common_audio.vad_sp.o: cc $
+    ../../../../webrtc/common_audio/vad/vad_sp.c
+build obj/webrtc/common_audio/common_audio.wav_header.o: cxx $
+    ../../../../webrtc/common_audio/wav_header.cc
+build obj/webrtc/common_audio/common_audio.wav_file.o: cxx $
+    ../../../../webrtc/common_audio/wav_file.cc
+build obj/webrtc/common_audio/common_audio.window_generator.o: cxx $
+    ../../../../webrtc/common_audio/window_generator.cc
+
+build libcommon_audio.a: alink $
+    obj/webrtc/common_audio/common_audio.audio_converter.o $
+    obj/webrtc/common_audio/common_audio.audio_util.o $
+    obj/webrtc/common_audio/common_audio.blocker.o $
+    obj/webrtc/common_audio/common_audio.fir_filter.o $
+    obj/webrtc/common_audio/resampler/common_audio.push_resampler.o $
+    obj/webrtc/common_audio/resampler/common_audio.push_sinc_resampler.o $
+    obj/webrtc/common_audio/resampler/common_audio.resampler.o $
+    obj/webrtc/common_audio/resampler/common_audio.sinc_resampler.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.auto_corr_to_refl_coef.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.auto_correlation.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.complex_fft.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.complex_bit_reverse.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.copy_set_operations.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.cross_correlation.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.division_operations.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.dot_product_with_scale.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.downsample_fast.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.energy.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.filter_ar.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.filter_ar_fast_q12.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.filter_ma_fast_q12.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.get_hanning_window.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.get_scaling_square.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.ilbc_specific_functions.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.levinson_durbin.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.lpc_to_refl_coef.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.min_max_operations.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.randomization_functions.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.refl_coef_to_lpc.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.real_fft.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_48khz.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_by_2.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_by_2_internal.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.resample_fractional.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.spl_init.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.spl_sqrt.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.spl_sqrt_floor.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.splitting_filter.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.sqrt_of_one_minus_x_squared.o $
+    obj/webrtc/common_audio/signal_processing/common_audio.vector_scaling_operations.o $
+    obj/webrtc/common_audio/vad/common_audio.vad.o $
+    obj/webrtc/common_audio/vad/common_audio.webrtc_vad.o $
+    obj/webrtc/common_audio/vad/common_audio.vad_core.o $
+    obj/webrtc/common_audio/vad/common_audio.vad_filterbank.o $
+    obj/webrtc/common_audio/vad/common_audio.vad_gmm.o $
+    obj/webrtc/common_audio/vad/common_audio.vad_sp.o $
+    obj/webrtc/common_audio/common_audio.wav_header.o $
+    obj/webrtc/common_audio/common_audio.wav_file.o $
+    obj/webrtc/common_audio/common_audio.window_generator.o

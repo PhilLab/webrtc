@@ -28,6 +28,7 @@
 		ADF10FF516E7424960C453EC /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../build/common.gypi; sourceTree = "<group>"; };
 		BBD772A9F8616A58D1D34145 /* libcommon_video.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcommon_video.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C34521AA2B99D626EC1487EB /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../build/filename_rules.gypi; sourceTree = "<group>"; };
+		D27F76F5587A62AFDB8A9A93 /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
 		D451B63C9B46A10720B8909D /* texture_video_frame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = texture_video_frame.h; sourceTree = "<group>"; };
 		D5FAF2B268028A51C90E105F /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
 		D734B9229270E4FD4E5EE2F3 /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../supplement.gypi; sourceTree = "<group>"; };
@@ -58,7 +59,7 @@
 			path = include;
 			sourceTree = "<group>";
 		};
-		0F45638EC299A61BE05FA639 /* Build */ = {
+		50876BEA8C35288EA5B83E28 /* Build */ = {
 			isa = PBXGroup;
 			children = (
 				D5FAF2B268028A51C90E105F /* common.gypi */,
@@ -69,6 +70,7 @@
 				34E02C0DDEB57B063187DDB2 /* release_defaults.gypi */,
 				F3CB90FB3A1056B9736A915B /* release_impl.gypi */,
 				A73A6D35A3B7C5D4A7B6F7D9 /* release_impl_official.gypi */,
+				D27F76F5587A62AFDB8A9A93 /* set_clang_warning_flags.gypi */,
 				D734B9229270E4FD4E5EE2F3 /* supplement.gypi */,
 			);
 			name = Build;
@@ -79,7 +81,7 @@
 			children = (
 				DD2EA85A93BDA11AC6494C71 /* Source */,
 				B40A29204DB4FDEE1435EBBE /* Products */,
-				0F45638EC299A61BE05FA639 /* Build */,
+				50876BEA8C35288EA5B83E28 /* Build */,
 			);
 			sourceTree = "<group>";
 		};
@@ -187,8 +189,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -205,20 +211,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -227,24 +233,31 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -252,7 +265,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../..,
 					../../webrtc/modules/interface/,
 					interface,
@@ -265,6 +278,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				PRODUCT_NAME = common_video;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -275,12 +290,13 @@
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 			};
@@ -290,8 +306,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -305,24 +325,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -331,20 +351,26 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
@@ -358,7 +384,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../..,
 					../../webrtc/modules/interface/,
 					interface,
@@ -378,12 +404,13 @@
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 			};
@@ -392,10 +419,16 @@
 		55804DE597E314D8055FBD73 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+<<<<<<< HEAD
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+=======
+				ARCHS = x86_64;
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = macosx10.9;
+>>>>>>> origin/20140401-dev-stable
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
 			};
@@ -404,9 +437,13 @@
 		E5DC38F944C26855F5DCE941 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+<<<<<<< HEAD
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+=======
+				ARCHS = x86_64;
+>>>>>>> origin/20140401-dev-stable
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = macosx;
+				SDKROOT = macosx10.9;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
 			};

@@ -10,6 +10,7 @@
 
 #include "webrtc/video_engine/vie_channel_group.h"
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
@@ -17,8 +18,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/vie_channel.h"
@@ -32,64 +32,61 @@ static const uint32_t kTimeOffsetSwitchThreshold = 30;
 
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
-  WrappingBitrateEstimator(int engine_id, RemoteBitrateObserver* observer,
-                           Clock* clock, ProcessThread* process_thread,
+  WrappingBitrateEstimator(int engine_id,
+                           RemoteBitrateObserver* observer,
+                           Clock* clock,
                            const Config& config)
       : observer_(observer),
         clock_(clock),
-        process_thread_(process_thread),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         engine_id_(engine_id),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
-        rate_control_type_(kMimdControl),
+        rate_control_type_(kAimdControl),
         rbe_(RemoteBitrateEstimatorFactory().Create(observer_,
                                                     clock_,
                                                     rate_control_type_,
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
         packets_since_absolute_send_time_(0) {
-    assert(process_thread_ != NULL);
-    process_thread_->RegisterModule(rbe_.get());
-  }
-  virtual ~WrappingBitrateEstimator() {
-    process_thread_->DeRegisterModule(rbe_.get());
   }
 
+  virtual ~WrappingBitrateEstimator() {}
+
   virtual void IncomingPacket(int64_t arrival_time_ms,
-                              int payload_size,
-                              const RTPHeader& header) {
+                              size_t payload_size,
+                              const RTPHeader& header) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     PickEstimatorFromHeader(header);
     rbe_->IncomingPacket(arrival_time_ms, payload_size, header);
   }
 
-  virtual int32_t Process() {
-    assert(false && "Not supposed to register the WrappingBitrateEstimator!");
-    return 0;
+  virtual int32_t Process() OVERRIDE {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return rbe_->Process();
   }
 
-  virtual int32_t TimeUntilNextProcess() {
-    assert(false && "Not supposed to register the WrappingBitrateEstimator!");
-    return 0;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return rbe_->TimeUntilNextProcess();
   }
 
-  virtual void OnRttUpdate(uint32_t rtt) {
+  virtual void OnRttUpdate(uint32_t rtt) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     rbe_->OnRttUpdate(rtt);
   }
 
-  virtual void RemoveStream(unsigned int ssrc) {
+  virtual void RemoveStream(unsigned int ssrc) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     rbe_->RemoveStream(ssrc);
   }
 
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                              unsigned int* bitrate_bps) const {
+                              unsigned int* bitrate_bps) const OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->LatestEstimate(ssrcs, bitrate_bps);
   }
 
-  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->GetStats(output);
   }
@@ -111,8 +108,8 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     if (header.extension.hasAbsoluteSendTime) {
       // If we see AST in header, switch RBE strategy immediately.
       if (!using_absolute_send_time_) {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
-            "WrappingBitrateEstimator: Switching to absolute send time RBE.");
+        LOG(LS_INFO) <<
+            "WrappingBitrateEstimator: Switching to absolute send time RBE.";
         using_absolute_send_time_ = true;
         PickEstimator();
       }
@@ -122,9 +119,8 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       if (using_absolute_send_time_) {
         ++packets_since_absolute_send_time_;
         if (packets_since_absolute_send_time_ >= kTimeOffsetSwitchThreshold) {
-          WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
-              "WrappingBitrateEstimator: Switching to transmission time offset "
-              "RBE.");
+          LOG(LS_INFO) << "WrappingBitrateEstimator: Switching to transmission "
+                       << "time offset RBE.";
           using_absolute_send_time_ = false;
           PickEstimator();
         }
@@ -134,7 +130,6 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
-    process_thread_->DeRegisterModule(rbe_.get());
     if (using_absolute_send_time_) {
       rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
           observer_, clock_, rate_control_type_, min_bitrate_bps_));
@@ -142,12 +137,10 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       rbe_.reset(RemoteBitrateEstimatorFactory().Create(
           observer_, clock_, rate_control_type_, min_bitrate_bps_));
     }
-    process_thread_->RegisterModule(rbe_.get());
   }
 
   RemoteBitrateObserver* observer_;
   Clock* clock_;
-  ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   const int engine_id_;
   const uint32_t min_bitrate_bps_;
@@ -177,14 +170,16 @@ ChannelGroup::ChannelGroup(int engine_id,
     config_ = own_config_.get();
   }
   assert(config_);  // Must have a valid config pointer here.
+
   remote_bitrate_estimator_.reset(
       new WrappingBitrateEstimator(engine_id,
                                    remb_.get(),
                                    Clock::GetRealTimeClock(),
-                                   process_thread,
-                                   *config_)),
-      call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
+                                   *config_));
 
+  call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
+
+  process_thread->RegisterModule(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(call_stats_.get());
   process_thread->RegisterModule(bitrate_controller_.get());
 }
@@ -192,6 +187,7 @@ ChannelGroup::ChannelGroup(int engine_id,
 ChannelGroup::~ChannelGroup() {
   process_thread_->DeRegisterModule(bitrate_controller_.get());
   process_thread_->DeRegisterModule(call_stats_.get());
+  process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   assert(channels_.empty());
   assert(!remb_->InUse());
@@ -230,16 +226,12 @@ EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() {
   return encoder_state_feedback_.get();
 }
 
-bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
-                                        bool receiver, ViEChannel* channel) {
+void ChannelGroup::SetChannelRembStatus(int channel_id,
+                                        bool sender,
+                                        bool receiver,
+                                        ViEChannel* channel) {
   // Update the channel state.
-  if (sender || receiver) {
-    if (!channel->EnableRemb(true)) {
-      return false;
-    }
-  } else {
-    channel->EnableRemb(false);
-  }
+  channel->EnableRemb(sender || receiver);
   // Update the REMB instance with necessary RTP modules.
   RtpRtcp* rtp_module = channel->rtp_rtcp();
   if (sender) {
@@ -252,7 +244,6 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
   } else {
     remb_->RemoveReceiveChannel(rtp_module);
   }
-  return true;
 }
 
 void ChannelGroup::SetBandwidthEstimationConfig(const webrtc::Config& config) {

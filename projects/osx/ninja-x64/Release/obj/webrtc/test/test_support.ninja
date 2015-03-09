@@ -1,0 +1,58 @@
+defines = -DV8_DEPRECATION_WARNINGS $
+    -D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0 -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_ONE_CLICK_SIGNIN $
+    -DENABLE_PRE_SYNC_BACKUP -DENABLE_REMOTING=1 -DENABLE_WEBRTC=1 $
+    -DENABLE_PEPPER_CDMS -DENABLE_CONFIGURATION_POLICY $
+    -DENABLE_NOTIFICATIONS -DENABLE_HIDPI=1 $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DENABLE_TASK_MANAGER=1 -DENABLE_EXTENSIONS=1 $
+    -DENABLE_PLUGIN_INSTALLATION=1 -DENABLE_PLUGINS=1 $
+    -DENABLE_SESSION_SERVICE=1 -DENABLE_THEMES=1 -DENABLE_AUTOFILL_DIALOG=1 $
+    -DENABLE_BACKGROUND=1 -DENABLE_GOOGLE_NOW=1 -DCLD_VERSION=2 $
+    -DENABLE_PRINTING=1 -DENABLE_BASIC_PRINTING=1 -DENABLE_PRINT_PREVIEW=1 $
+    -DENABLE_SPELLCHECK=1 -DENABLE_CAPTIVE_PORTAL_DETECTION=1 $
+    -DENABLE_APP_LIST=1 -DENABLE_SETTINGS_APP=1 -DENABLE_SUPERVISED_USERS=1 $
+    -DENABLE_SERVICE_DISCOVERY=1 -DENABLE_WIFI_BOOTSTRAPPING=1 $
+    -DV8_USE_EXTERNAL_STARTUP_DATA -DWEBRTC_RESTRICT_LOGGING $
+    -DEXPAT_RELATIVE_PATH -DWEBRTC_MODULE_UTILITY_VIDEO -DWEBRTC_POSIX $
+    -DWEBRTC_MAC -DUSE_LIBPCI=1 -DUSE_OPENSSL=1 -D__STDC_CONSTANT_MACROS $
+    -D__STDC_FORMAT_MACROS -DNDEBUG -DNVALGRIND $
+    -DDYNAMIC_ANNOTATIONS_ENABLED=0 -D_FORTIFY_SOURCE=2
+includes = -Igen -I../../../.. -I../../../../webrtc/system_wrappers/interface
+cflags = -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk $
+    -O2 -gdwarf-2 -fvisibility=hidden -Werror -Wnewline-eof $
+    -mmacosx-version-min=10.6 -arch x86_64 -Wall -Wendif-labels -Wextra $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -Wno-selector-type-mismatch -Wheader-hygiene -Wno-char-subscripts $
+    -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
+    -Wstring-conversion -Wno-c++11-narrowing -Wno-deprecated-register
+cflags_c = -std=c99 -fcolor-diagnostics -fno-strict-aliasing
+cflags_cc = -std=c++11 -fno-rtti -fno-exceptions $
+    -fvisibility-inlines-hidden -fno-threadsafe-statics -fcolor-diagnostics $
+    -fno-strict-aliasing
+cflags_objc = $cflags_c -Wobjc-missing-property-synthesis
+cflags_objcc = $cflags_cc -Wobjc-missing-property-synthesis $
+    -fobjc-call-cxx-cdtors
+
+build obj/webrtc/test/testsupport/test_support.fileutils.o: cxx $
+    ../../../../webrtc/test/testsupport/fileutils.cc
+build obj/webrtc/test/testsupport/test_support.frame_reader.o: cxx $
+    ../../../../webrtc/test/testsupport/frame_reader.cc
+build obj/webrtc/test/testsupport/test_support.frame_writer.o: cxx $
+    ../../../../webrtc/test/testsupport/frame_writer.cc
+build obj/webrtc/test/testsupport/test_support.packet_reader.o: cxx $
+    ../../../../webrtc/test/testsupport/packet_reader.cc
+build obj/webrtc/test/testsupport/test_support.perf_test.o: cxx $
+    ../../../../webrtc/test/testsupport/perf_test.cc
+build obj/webrtc/test/testsupport/test_support.trace_to_stderr.o: cxx $
+    ../../../../webrtc/test/testsupport/trace_to_stderr.cc
+
+build libtest_support.a: alink $
+    obj/webrtc/test/testsupport/test_support.fileutils.o $
+    obj/webrtc/test/testsupport/test_support.frame_reader.o $
+    obj/webrtc/test/testsupport/test_support.frame_writer.o $
+    obj/webrtc/test/testsupport/test_support.packet_reader.o $
+    obj/webrtc/test/testsupport/test_support.perf_test.o $
+    obj/webrtc/test/testsupport/test_support.trace_to_stderr.o

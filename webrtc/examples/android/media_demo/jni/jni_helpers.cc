@@ -12,9 +12,9 @@
 
 #include <limits>
 
-#include "third_party/icu/source/common/unicode/unistr.h"
+//#include "third_party/icu/source/common/unicode/unistr.h"
 
-using icu::UnicodeString;
+//using icu::UnicodeString;
 
 jmethodID GetMethodID(JNIEnv* jni, jclass c, const std::string& name,
                       const char* signature) {
@@ -36,14 +36,12 @@ jlong jlongFromPointer(void* ptr) {
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
-  const jchar* jchars = jni->GetStringChars(j_string, NULL);
-  CHECK_EXCEPTION(jni, "Error during GetStringChars");
-  UnicodeString ustr(jchars, jni->GetStringLength(j_string));
-  CHECK_EXCEPTION(jni, "Error during GetStringLength");
-  jni->ReleaseStringChars(j_string, jchars);
-  CHECK_EXCEPTION(jni, "Error during ReleaseStringChars");
-  std::string ret;
-  return ustr.toUTF8String(ret);
+  const char* chars = jni->GetStringUTFChars(j_string, NULL);
+  CHECK_EXCEPTION(jni, "Error during GetStringUTFChars");
+  std::string ret(chars);
+  jni->ReleaseStringUTFChars(j_string, chars);
+  CHECK_EXCEPTION(jni, "Error during ReleaseStringUTFChars");
+  return ret;
 }
 
 ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni, const char** classes,

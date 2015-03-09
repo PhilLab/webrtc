@@ -1,0 +1,49 @@
+defines = -DV8_DEPRECATION_WARNINGS -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DCLD_VERSION=2 -DDISABLE_FTP_SUPPORT=1 -DUSE_LIBPCI=1 -DNDEBUG $
+    -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0 -DNS_BLOCK_ASSERTIONS=1
+includes = -Igen -I../../../../third_party/opus/src/celt $
+    -I../../../../third_party/opus/src/silk $
+    -I../../../../third_party/opus/src/include
+cflags = -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -Os -gdwarf-2 -fvisibility=hidden -Wnewline-eof $
+    -miphoneos-version-min=7.0 -arch arm64 -Wendif-labels $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -Wno-selector-type-mismatch -Wno-unknown-warning-option $
+    -Wheader-hygiene -Wno-char-subscripts $
+    -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
+    -Wstring-conversion -Wno-c++11-narrowing -Wno-deprecated-register $
+    -Wno-inconsistent-missing-override
+cflags_c = -std=c99 -fcolor-diagnostics
+cflags_cc = -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions $
+    -fvisibility-inlines-hidden -fno-threadsafe-statics -fcolor-diagnostics
+cflags_objc = $cflags_c
+cflags_objcc = $cflags_cc -fobjc-call-cxx-cdtors
+
+build obj/third_party/opus/src/src/opus_demo.opus_demo.o: cc $
+    ../../../../third_party/opus/src/src/opus_demo.c
+
+ldflags = -Wl,-search_paths_first -Wl,-dead_strip $
+    -miphoneos-version-min=7.0 -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -arch arm64 -L. -stdlib=libc++
+libs = -lm
+build opus_demo: link obj/third_party/opus/src/src/opus_demo.opus_demo.o $
+    libopus.a
+  postbuilds = $ && (export $
+      BUILT_PRODUCTS_DIR=../../projects/ios/ninja-arm64/Release-iphoneos; $
+      export CONFIGURATION=Release-iphoneos; export $
+      EXECUTABLE_NAME=opus_demo; export EXECUTABLE_PATH=opus_demo; export $
+      FULL_PRODUCT_NAME=opus_demo; export PRODUCT_NAME=opus_demo; export $
+      PRODUCT_TYPE=com.apple.product-type.tool; export $
+      SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk; $
+      export $
+      SRCROOT=../../projects/ios/ninja-arm64/Release-iphoneos/../../../../third_party/opus; $
+      export SOURCE_ROOT="$${SRCROOT}"; export $
+      TARGET_BUILD_DIR=../../projects/ios/ninja-arm64/Release-iphoneos; $
+      export TEMP_DIR="$${TMPDIR}"; (cd ../../../../third_party/opus && $
+      strip  ../../projects/ios/ninja-arm64/Release-iphoneos/opus_demo); $
+      G=$$?; ((exit $$G) || rm -rf opus_demo) && exit $$G)

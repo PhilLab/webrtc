@@ -11,14 +11,12 @@
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/tools/audio_codec_speed_test.h"
 
-using ::std::tr1::make_tuple;
-using ::testing::ValuesIn;
+using ::std::string;
 
 namespace webrtc {
 
 static const int kOpusBlockDurationMs = 20;
-static const int kOpusInputSamplingKhz = 48;
-static const int kOpustOutputSamplingKhz = 32;
+static const int kOpusSamplingKhz = 48;
 
 class OpusSpeedTest : public AudioCodecSpeedTest {
  protected:
@@ -35,8 +33,8 @@ class OpusSpeedTest : public AudioCodecSpeedTest {
 
 OpusSpeedTest::OpusSpeedTest()
     : AudioCodecSpeedTest(kOpusBlockDurationMs,
-                          kOpusInputSamplingKhz,
-                          kOpustOutputSamplingKhz),
+                          kOpusSamplingKhz,
+                          kOpusSamplingKhz),
       opus_encoder_(NULL),
       opus_decoder_(NULL) {
 }
@@ -74,8 +72,8 @@ float OpusSpeedTest::DecodeABlock(const uint8_t* bit_stream,
   int value;
   int16_t audio_type;
   clock_t clocks = clock();
-  value = WebRtcOpus_DecodeNew(opus_decoder_, bit_stream, encoded_bytes,
-                               out_data, &audio_type);
+  value = WebRtcOpus_Decode(opus_decoder_, bit_stream, encoded_bytes, out_data,
+                            &audio_type);
   clocks = clock() - clocks;
   EXPECT_EQ(output_length_sample_, value);
   return 1000.0 * clocks / CLOCKS_PER_SEC;
@@ -105,14 +103,17 @@ ADD_TEST(0);
 
 // List all test cases: (channel, bit rat, filename, extension).
 const coding_param param_set[] =
-    {make_tuple(1, 64000, string("audio_coding/speech_mono_32_48kHz"),
-                string("pcm"), true),
-     make_tuple(1, 32000, string("audio_coding/speech_mono_32_48kHz"),
-                string("pcm"), true),
-     make_tuple(2, 64000, string("audio_coding/music_stereo_48kHz"),
-                string("pcm"), true)};
+    {::std::tr1::make_tuple(1, 64000,
+                            string("audio_coding/speech_mono_32_48kHz"),
+                            string("pcm"), true),
+     ::std::tr1::make_tuple(1, 32000,
+                            string("audio_coding/speech_mono_32_48kHz"),
+                            string("pcm"), true),
+     ::std::tr1::make_tuple(2, 64000,
+                            string("audio_coding/music_stereo_48kHz"),
+                            string("pcm"), true)};
 
 INSTANTIATE_TEST_CASE_P(AllTest, OpusSpeedTest,
-                        ValuesIn(param_set));
+                        ::testing::ValuesIn(param_set));
 
 }  // namespace webrtc

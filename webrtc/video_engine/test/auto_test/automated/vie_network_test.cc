@@ -25,19 +25,23 @@ class RtcpCollectorTransport : public webrtc::Transport {
   RtcpCollectorTransport() : packets_() {}
   virtual ~RtcpCollectorTransport() {}
 
-  virtual int SendPacket(int /*channel*/, const void* /*data*/, int /*len*/) {
+  virtual int SendPacket(int /*channel*/,
+                         const void* /*data*/,
+                         size_t /*len*/) OVERRIDE {
     EXPECT_TRUE(false);
     return 0;
   }
-  virtual int SendRTCPPacket(int channel, const void* data, int len) {
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             size_t len) OVERRIDE {
     const uint8_t* buf = static_cast<const uint8_t*>(data);
-    webrtc::ModuleRTPUtility::RTPHeaderParser parser(buf, len);
+    webrtc::RtpUtility::RtpHeaderParser parser(buf, len);
     if (parser.RTCP()) {
       Packet p;
       p.channel = channel;
       p.length = len;
       if (parser.ParseRtcp(&p.header)) {
-        if (p.header.payloadType == 201) {
+        if (p.header.payloadType == 201 && len >= 20) {
           buf += 20;
           len -= 20;
         } else {
@@ -66,20 +70,20 @@ class RtcpCollectorTransport : public webrtc::Transport {
   struct Packet {
     Packet() : channel(-1), length(0), header(), remb_bitrate(0), remb_ssrc() {}
     int channel;
-    int length;
+    size_t length;
     webrtc::RTPHeader header;
     double remb_bitrate;
     std::vector<uint32_t> remb_ssrc;
   };
 
-  bool TryParseREMB(const uint8_t* buf, int length, Packet* p) {
+  bool TryParseREMB(const uint8_t* buf, size_t length, Packet* p) {
     if (length < 8) {
       return false;
     }
     if (buf[0] != 'R' || buf[1] != 'E' || buf[2] != 'M' || buf[3] != 'B') {
       return false;
     }
-    uint8_t ssrcs = buf[4];
+    size_t ssrcs = buf[4];
     uint8_t exp = buf[5] >> 2;
     uint32_t mantissa = ((buf[5] & 0x03) << 16) + (buf[6] << 8) + buf[7];
     double bitrate = mantissa * static_cast<double>(1 << exp);
@@ -89,7 +93,7 @@ class RtcpCollectorTransport : public webrtc::Transport {
       return false;
     }
     buf += 8;
-    for (uint8_t i = 0; i < ssrcs; ++i) {
+    for (size_t i = 0; i < ssrcs; ++i) {
       uint32_t ssrc = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
       p->remb_ssrc.push_back(ssrc);
       buf += 4;
@@ -105,17 +109,13 @@ class ViENetworkTest : public testing::Test {
   ViENetworkTest() : vie_("ViENetworkTest"), channel_(-1), transport() {}
   virtual ~ViENetworkTest() {}
 
-  virtual void SetUp() {
+  virtual void SetUp() OVERRIDE {
     EXPECT_EQ(0, vie_.base->CreateChannel(channel_));
     EXPECT_EQ(0, vie_.rtp_rtcp->SetRembStatus(channel_, false, true));
     EXPECT_EQ(0, vie_.network->RegisterSendTransport(channel_, transport));
   }
 
-  virtual void TearDown() {
-    unsigned int bandwidth = 0;
-    EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
-                                                             &bandwidth));
-    EXPECT_EQ(bandwidth, 0u);
+  virtual void TearDown() OVERRIDE {
     EXPECT_EQ(0, vie_.network->DeregisterSendTransport(channel_));
   }
 
@@ -156,6 +156,9 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_NoExtension)  {
     webrtc::SleepMs(kIntervalMs);
   }
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_TOF)  {
@@ -173,6 +176,9 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_TOF)  {
     webrtc::SleepMs(kIntervalMs);
   }
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_AST)  {
@@ -180,6 +186,10 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_AST)  {
                                                                1));
   ReceiveASTPacketsForBWE();
   EXPECT_TRUE(transport.FindREMBFor(kSsrc1, 100000.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
+  EXPECT_GT(bandwidth, 0u);
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_ASTx2)  {
@@ -202,6 +212,10 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_ASTx2)  {
   }
   EXPECT_TRUE(transport.FindREMBFor(kSsrc1, 200000.0));
   EXPECT_TRUE(transport.FindREMBFor(kSsrc2, 200000.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
+  EXPECT_GT(bandwidth, 0u);
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_AST_DisabledReceive)  {
@@ -209,5 +223,8 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_AST_DisabledReceive)  {
                                                                1));
   ReceiveASTPacketsForBWE();
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
 }
 }  // namespace

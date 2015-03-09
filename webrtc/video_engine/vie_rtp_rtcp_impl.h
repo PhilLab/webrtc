@@ -45,14 +45,17 @@ class ViERTP_RTCPImpl
                                        const uint8_t payload_type);
   virtual int SetStartSequenceNumber(const int video_channel,
                                      uint16_t sequence_number);
+  virtual void SetRtpStateForSsrc(int video_channel,
+                                  uint32_t ssrc,
+                                  const RtpState& rtp_state) OVERRIDE;
+  virtual RtpState GetRtpStateForSsrc(int video_channel,
+                                      uint32_t ssrc) OVERRIDE;
   virtual int SetRTCPStatus(const int video_channel,
                             const ViERTCPMode rtcp_mode);
   virtual int GetRTCPStatus(const int video_channel,
                             ViERTCPMode& rtcp_mode) const;
   virtual int SetRTCPCName(const int video_channel,
                            const char rtcp_cname[KMaxRTCPCNameLength]);
-  virtual int GetRTCPCName(const int video_channel,
-                           char rtcp_cname[KMaxRTCPCNameLength]) const;
   virtual int GetRemoteRTCPCName(const int video_channel,
                                  char rtcp_cname[KMaxRTCPCNameLength]) const;
   virtual int SendApplicationDefinedRTCPPacket(
@@ -130,9 +133,6 @@ class ViERTP_RTCPImpl
   virtual int RegisterRTPObserver(const int video_channel,
                                   ViERTPObserver& observer);
   virtual int DeregisterRTPObserver(const int video_channel);
-  virtual int RegisterRTCPObserver(const int video_channel,
-                                   ViERTCPObserver& observer);
-  virtual int DeregisterRTCPObserver(const int video_channel);
 
   virtual int RegisterSendChannelRtcpStatisticsCallback(
       int channel, RtcpStatisticsCallback* callback);

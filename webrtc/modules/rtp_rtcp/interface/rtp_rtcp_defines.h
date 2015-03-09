@@ -63,6 +63,11 @@ enum RTPAliveType
     kRtpAlive  = 2
 };
 
+enum ProtectionType {
+  kUnprotectedPacket,
+  kProtectedPacket
+};
+
 enum StorageType {
   kDontStore,
   kDontRetransmit,
@@ -138,7 +143,7 @@ enum RtxMode {
                                   // instead of padding.
 };
 
-const int kRtxHeaderSize = 2;
+const size_t kRtxHeaderSize = 2;
 
 struct RTCPSenderInfo
 {
@@ -192,6 +197,22 @@ struct RtcpReceiveTimeInfo {
 
 typedef std::list<RTCPReportBlock> ReportBlockList;
 
+struct RtpState {
+  RtpState()
+      : sequence_number(0),
+        start_timestamp(0),
+        timestamp(0),
+        capture_time_ms(-1),
+        last_timestamp_time_ms(-1),
+        media_has_been_sent(false) {}
+  uint16_t sequence_number;
+  uint32_t start_timestamp;
+  uint32_t timestamp;
+  int64_t capture_time_ms;
+  int64_t last_timestamp_time_ms;
+  bool media_has_been_sent;
+};
+
 class RtpData
 {
 public:
@@ -199,31 +220,11 @@ public:
 
     virtual int32_t OnReceivedPayloadData(
         const uint8_t* payloadData,
-        const uint16_t payloadSize,
+        const size_t payloadSize,
         const WebRtcRTPHeader* rtpHeader) = 0;
 
     virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                   int packet_length) = 0;
-};
-
-class RtcpFeedback
-{
-public:
-    virtual void OnApplicationDataReceived(const int32_t /*id*/,
-                                           const uint8_t /*subType*/,
-                                           const uint32_t /*name*/,
-                                           const uint16_t /*length*/,
-                                           const uint8_t* /*data*/)  {};
-
-    virtual void OnXRVoIPMetricReceived(
-        const int32_t /*id*/,
-        const RTCPVoIPMetric* /*metric*/)  {};
-
-    virtual void OnReceiveReportReceived(const int32_t id,
-                                         const uint32_t senderSSRC)  {};
-
-protected:
-    virtual ~RtcpFeedback() {}
+                                   size_t packet_length) = 0;
 };
 
 class RtpFeedback
@@ -282,7 +283,7 @@ class RtcpIntraFrameObserver {
 class RtcpBandwidthObserver {
  public:
   // REMB or TMMBR
-  virtual void OnReceivedEstimatedBitrate(const uint32_t bitrate) = 0;
+  virtual void OnReceivedEstimatedBitrate(uint32_t bitrate) = 0;
 
   virtual void OnReceivedRtcpReceiverReport(
       const ReportBlockList& report_blocks,
@@ -333,13 +334,13 @@ class NullRtpData : public RtpData {
 
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
-      const uint16_t payloadSize,
+      const size_t payloadSize,
       const WebRtcRTPHeader* rtpHeader) OVERRIDE {
     return 0;
   }
 
   virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 int packet_length) {
+                                 size_t packet_length) OVERRIDE {
     return true;
   }
 };

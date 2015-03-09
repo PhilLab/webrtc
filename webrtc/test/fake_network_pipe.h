@@ -13,7 +13,7 @@
 
 #include <queue>
 
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
@@ -33,21 +33,21 @@ class FakeNetworkPipe {
  public:
   struct Config {
     Config()
-        : queue_length(0),
+        : queue_length_packets(0),
           queue_delay_ms(0),
           delay_standard_deviation_ms(0),
           link_capacity_kbps(0),
           loss_percent(0) {
     }
     // Queue length in number of packets.
-    size_t queue_length;
+    size_t queue_length_packets;
     // Delay in addition to capacity induced delay.
     int queue_delay_ms;
     // Standard deviation of the extra delay.
     int delay_standard_deviation_ms;
     // Link capacity in kbps.
     int link_capacity_kbps;
-    // Random packet loss. Not implemented.
+    // Random packet loss.
     int loss_percent;
   };
 
@@ -66,7 +66,7 @@ class FakeNetworkPipe {
   // Processes the network queues and trigger PacketReceiver::IncomingPacket for
   // packets ready to be delivered.
   void Process();
-  int TimeUntilNextProcess() const;
+  int64_t TimeUntilNextProcess() const;
 
   // Get statistics.
   float PercentageLoss();

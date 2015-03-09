@@ -1,0 +1,51 @@
+defines = -DV8_DEPRECATION_WARNINGS -DDISABLE_NACL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_CONFIGURATION_POLICY $
+    -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DCLD_VERSION=2 -DDISABLE_FTP_SUPPORT=1 -DWEBRTC_RESTRICT_LOGGING $
+    -DEXPAT_RELATIVE_PATH -DWEBRTC_MODULE_UTILITY_VIDEO -DWEBRTC_ARCH_ARM $
+    -DWEBRTC_ARCH_ARM64_NEON -DWEBRTC_POSIX -DWEBRTC_MAC -DWEBRTC_IOS $
+    -DUSE_LIBPCI=1 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS $
+    -DDYNAMIC_ANNOTATIONS_ENABLED=1 -DWTF_USE_DYNAMIC_ANNOTATIONS=1 -D_DEBUG
+includes = -Igen -I../../../..
+cflags = -isysroot $
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.1.sdk $
+    -O0 -gdwarf-2 -fvisibility=hidden -Werror -Wnewline-eof $
+    -miphoneos-version-min=7.0 -arch arm64 -Wall -Wendif-labels -Wextra $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -Wno-selector-type-mismatch -Wno-unknown-warning-option $
+    -Wheader-hygiene -Wno-char-subscripts $
+    -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
+    -Wstring-conversion -Wno-c++11-narrowing -Wno-deprecated-register $
+    -Wno-inconsistent-missing-override
+cflags_c = -std=c99 -fcolor-diagnostics -fstack-protector-all $
+    -Wno-undefined-bool-conversion -Wno-tautological-undefined-compare
+cflags_cc = -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions $
+    -fvisibility-inlines-hidden -fno-threadsafe-statics -fcolor-diagnostics $
+    -fstack-protector-all -Wno-undefined-bool-conversion $
+    -Wno-tautological-undefined-compare
+cflags_objc = $cflags_c -Wobjc-missing-property-synthesis
+cflags_objcc = $cflags_cc -Wobjc-missing-property-synthesis $
+    -fobjc-call-cxx-cdtors
+
+build obj/webrtc/video/webrtc.call.o: cxx ../../../../webrtc/video/call.cc
+build obj/webrtc/video/webrtc.encoded_frame_callback_adapter.o: cxx $
+    ../../../../webrtc/video/encoded_frame_callback_adapter.cc
+build obj/webrtc/video/webrtc.send_statistics_proxy.o: cxx $
+    ../../../../webrtc/video/send_statistics_proxy.cc
+build obj/webrtc/video/webrtc.receive_statistics_proxy.o: cxx $
+    ../../../../webrtc/video/receive_statistics_proxy.cc
+build obj/webrtc/video/webrtc.transport_adapter.o: cxx $
+    ../../../../webrtc/video/transport_adapter.cc
+build obj/webrtc/video/webrtc.video_receive_stream.o: cxx $
+    ../../../../webrtc/video/video_receive_stream.cc
+build obj/webrtc/video/webrtc.video_send_stream.o: cxx $
+    ../../../../webrtc/video/video_send_stream.cc
+
+build libwebrtc.a: alink obj/webrtc/video/webrtc.call.o $
+    obj/webrtc/video/webrtc.encoded_frame_callback_adapter.o $
+    obj/webrtc/video/webrtc.send_statistics_proxy.o $
+    obj/webrtc/video/webrtc.receive_statistics_proxy.o $
+    obj/webrtc/video/webrtc.transport_adapter.o $
+    obj/webrtc/video/webrtc.video_receive_stream.o $
+    obj/webrtc/video/webrtc.video_send_stream.o

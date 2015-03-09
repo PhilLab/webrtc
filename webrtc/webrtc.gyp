@@ -19,6 +19,8 @@
   ],
   'variables': {
     'webrtc_all_dependencies': [
+      'base/base.gyp:rtc_base_approved',
+      'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
       'modules/modules.gyp:*',
@@ -26,6 +28,8 @@
       'video_engine/video_engine.gyp:*',
       'voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
+      '<(webrtc_vp9_dir)/vp9.gyp:*',
+      'test/test.gyp:channel_transport',
     ],
   },
   'targets': [
@@ -46,11 +50,7 @@
             'test/webrtc_test_common.gyp:webrtc_test_common_unittests',
             'tools/tools.gyp:*',
             'webrtc_tests',
-          ],
-        }],
-        ['build_with_chromium==0 and OS=="android"', {
-          'dependencies': [
-            '../tools/android/android_tools_precompiled.gyp:*',
+            'rtc_unittests',
           ],
         }],
       ],
@@ -73,7 +73,18 @@
         '<@(webrtc_video_sources)',
       ],
       'dependencies': [
+        'common.gyp:*',
         '<@(webrtc_video_dependencies)',
+      ],
+      'conditions': [
+        # TODO(andresp): Chromium libpeerconnection should link directly with
+        # this and no if conditions should be needed on webrtc build files.
+        ['build_with_chromium==1', {
+          'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
+            '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
+          ],
+        }],
       ],
     },
   ],

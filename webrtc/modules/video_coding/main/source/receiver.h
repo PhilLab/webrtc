@@ -25,7 +25,6 @@ class VCMEncodedFrame;
 
 enum VCMNackStatus {
   kNackOk,
-  kNackNeedMoreMemory,
   kNackKeyFrameRequest
 };
 
@@ -40,8 +39,6 @@ class VCMReceiver {
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
               EventFactory* event_factory,
-              int32_t vcm_id,
-              int32_t receiver_id,
               bool master);
   ~VCMReceiver();
 
@@ -53,11 +50,9 @@ class VCMReceiver {
                        uint16_t frame_height);
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
                                     int64_t& next_render_time_ms,
-                                    bool render_timing = true,
-                                    VCMReceiver* dual_receiver = NULL);
+                                    bool render_timing = true);
   void ReleaseFrame(VCMEncodedFrame* frame);
   void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
-  void ReceivedFrameCount(VCMFrameCount* frame_count) const;
   uint32_t DiscardedPackets() const;
 
   // NACK.
@@ -70,10 +65,6 @@ class VCMReceiver {
   VCMNackMode NackMode() const;
   VCMNackStatus NackList(uint16_t* nackList, uint16_t size,
                          uint16_t* nack_list_length);
-
-  // Dual decoder.
-  bool DualDecoderCaughtUp(VCMEncodedFrame* dual_frame,
-                           VCMReceiver& dual_receiver) const;
   VCMReceiverState State() const;
 
   // Receiver video delay.
@@ -88,17 +79,13 @@ class VCMReceiver {
   // the time this function is called.
   int RenderBufferSizeMs();
 
+  void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
+
  private:
-  void CopyJitterBufferStateFromReceiver(const VCMReceiver& receiver);
-  void UpdateState(VCMReceiverState new_state);
-  void UpdateState(const VCMEncodedFrame& frame);
   static int32_t GenerateReceiverId();
 
   CriticalSectionWrapper* crit_sect_;
-  int32_t vcm_id_;
   Clock* clock_;
-  int32_t receiver_id_;
-  bool master_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
   scoped_ptr<EventWrapper> render_wait_event_;

@@ -45,7 +45,7 @@ public:
 
 public: // RefCountedModule
     virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-    virtual int32_t TimeUntilNextProcess() OVERRIDE;
+    virtual int64_t TimeUntilNextProcess() OVERRIDE;
     virtual int32_t Process() OVERRIDE;
 
 public:
@@ -200,6 +200,8 @@ public:
     virtual int32_t SetLoudspeakerStatus(bool enable) OVERRIDE;
     virtual int32_t GetLoudspeakerStatus(bool* enabled) const OVERRIDE;
     virtual int32_t GetOutputAudioRoute(OutputAudioRoute* route) const OVERRIDE;
+
+    virtual bool BuiltInAECIsAvailable() const OVERRIDE;
 
     virtual int32_t EnableBuiltInAEC(bool enable) OVERRIDE;
     virtual bool BuiltInAECIsEnabled() const OVERRIDE;

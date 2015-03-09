@@ -15,6 +15,7 @@
 
 #include <vector>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
@@ -35,18 +36,10 @@ class RTPPacketHistory {
 
   // Stores RTP packet.
   int32_t PutRTPPacket(const uint8_t* packet,
-                       uint16_t packet_length,
-                       uint16_t max_packet_length,
+                       size_t packet_length,
+                       size_t max_packet_length,
                        int64_t capture_time_ms,
                        StorageType type);
-
-  // Replaces the stored RTP packet with matching sequence number with the
-  // RTP header of the provided packet.
-  // Note: Calling this function assumes that the RTP header length should not
-  // have changed since the packet was stored.
-  int32_t ReplaceRTPHeader(const uint8_t* packet,
-                           uint16_t sequence_number,
-                           uint16_t rtp_header_length);
 
   // Gets stored RTP packet corresponding to the input sequence number.
   // The packet is copied to the buffer pointed to by ptr_rtp_packet.
@@ -63,33 +56,33 @@ class RTPPacketHistory {
                                uint32_t min_elapsed_time_ms,
                                bool retransmit,
                                uint8_t* packet,
-                               uint16_t* packet_length,
+                               size_t* packet_length,
                                int64_t* stored_time_ms);
 
-  bool GetBestFittingPacket(uint8_t* packet, uint16_t* packet_length,
+  bool GetBestFittingPacket(uint8_t* packet, size_t* packet_length,
                             int64_t* stored_time_ms);
 
   bool HasRTPPacket(uint16_t sequence_number) const;
 
  private:
-  void GetPacket(int index, uint8_t* packet, uint16_t* packet_length,
+  void GetPacket(int index, uint8_t* packet, size_t* packet_length,
                  int64_t* stored_time_ms) const;
-  void Allocate(uint16_t number_to_store);
-  void Free();
-  void VerifyAndAllocatePacketLength(uint16_t packet_length);
+  void Allocate(uint16_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  void Free() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  void VerifyAndAllocatePacketLength(size_t packet_length);
   bool FindSeqNum(uint16_t sequence_number, int32_t* index) const;
-  int FindBestFittingPacket(uint16_t size) const;
+  int FindBestFittingPacket(size_t size) const;
 
  private:
   Clock* clock_;
   CriticalSectionWrapper* critsect_;
   bool store_;
   uint32_t prev_index_;
-  uint16_t max_packet_length_;
+  size_t max_packet_length_;
 
   std::vector<std::vector<uint8_t> > stored_packets_;
   std::vector<uint16_t> stored_seq_nums_;
-  std::vector<uint16_t> stored_lengths_;
+  std::vector<size_t> stored_lengths_;
   std::vector<int64_t> stored_times_;
   std::vector<int64_t> stored_send_times_;
   std::vector<StorageType> stored_types_;

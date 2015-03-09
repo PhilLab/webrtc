@@ -82,8 +82,8 @@ int Filter(FilterState* hpf, int16_t* data, int length) {
     y[2] = y[0];
     y[3] = y[1];
     y[0] = static_cast<int16_t>(tmp_int32 >> 13);
-    y[1] = static_cast<int16_t>((tmp_int32 -
-        WEBRTC_SPL_LSHIFT_W32(static_cast<int32_t>(y[0]), 13)) << 2);
+    y[1] = static_cast<int16_t>(
+        (tmp_int32 - (static_cast<int32_t>(y[0]) << 13)) << 2);
 
     // Rounding in Q12, i.e. add 2^11
     tmp_int32 += 2048;
@@ -93,9 +93,8 @@ int Filter(FilterState* hpf, int16_t* data, int length) {
                                tmp_int32,
                                static_cast<int32_t>(-134217728));
 
-    // Convert back to Q0 and use rounding
-    data[i] = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp_int32, 12);
-
+    // Convert back to Q0 and use rounding.
+    data[i] = (int16_t)(tmp_int32 >> 12);
   }
 
   return AudioProcessing::kNoError;
@@ -124,7 +123,7 @@ int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   for (int i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     err = Filter(my_handle,
-                 audio->low_pass_split_data(i),
+                 audio->split_bands(i)[kBand0To8kHz],
                  audio->samples_per_split_channel());
 
     if (err != apm_->kNoError) {
@@ -148,14 +147,13 @@ void* HighPassFilterImpl::CreateHandle() const {
   return new FilterState;
 }
 
-int HighPassFilterImpl::DestroyHandle(void* handle) const {
+void HighPassFilterImpl::DestroyHandle(void* handle) const {
   delete static_cast<Handle*>(handle);
-  return apm_->kNoError;
 }
 
 int HighPassFilterImpl::InitializeHandle(void* handle) const {
   return InitializeFilter(static_cast<Handle*>(handle),
-                          apm_->sample_rate_hz());
+                          apm_->proc_sample_rate_hz());
 }
 
 int HighPassFilterImpl::ConfigureHandle(void* /*handle*/) const {

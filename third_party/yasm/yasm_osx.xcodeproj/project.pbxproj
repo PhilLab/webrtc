@@ -491,6 +491,7 @@
 		5B94D4FC9467A030946DCD0C /* elf-objfmt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "elf-objfmt.c"; sourceTree = "<group>"; };
 		5D6B57FC72C3DFF020D9C136 /* module.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = module.in; sourceTree = "<group>"; };
 		5EC8458FC176CBB2E21379F7 /* floatnum.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = floatnum.c; sourceTree = "<group>"; };
+		64965E350AB6585E9B9EE5D1 /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
 		68575F2AB21EC1EDC3F2CD67 /* cv-type.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "cv-type.c"; sourceTree = "<group>"; };
 		68F84C76BC0A38A5475F6D3F /* stabs-dbgfmt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "stabs-dbgfmt.c"; sourceTree = "<group>"; };
 		6A7C0E1AA7EFFAC3E4771602 /* win64-nasm.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "win64-nasm.c"; sourceTree = "<group>"; };
@@ -789,7 +790,7 @@
 				B83B75F20DE5CD2C305112F6 /* Source */,
 				4802FF6B03F14C7DB42AF8E1 /* Intermediates */,
 				6AB082A455E625BBED63AF41 /* Products */,
-				71ED53716F9F66CAA564C040 /* Build */,
+				849EDC1A8CA58FA80630EE4B /* Build */,
 			);
 			sourceTree = "<group>";
 		};
@@ -862,21 +863,6 @@
 			path = elf;
 			sourceTree = "<group>";
 		};
-		71ED53716F9F66CAA564C040 /* Build */ = {
-			isa = PBXGroup;
-			children = (
-				4529943D6B71E123C0C5625D /* common.gypi */,
-				85BBB38F8C9EA7D6E106EBC0 /* filename_rules.gypi */,
-				DCFF2C8286DA15D138489DB5 /* release.gypi */,
-				387DF109F572F92ECA1EF42B /* release_defaults.gypi */,
-				AB128738A2A3A4DA21F8D557 /* release_impl.gypi */,
-				259EE8265A8CB99C2C20A544 /* release_impl_official.gypi */,
-				73EE245097C46BD10B71B614 /* supplement.gypi */,
-				915804D39D9CA64DFDA3D3B2 /* yasm.gyp */,
-			);
-			name = Build;
-			sourceTree = "<group>";
-		};
 		7DA139F87B7E53D850555A3D /* modules */ = {
 			isa = PBXGroup;
 			children = (
@@ -888,6 +874,22 @@
 				4C806E2F835069605E2BD4E7 /* preprocs */,
 			);
 			path = modules;
+			sourceTree = "<group>";
+		};
+		849EDC1A8CA58FA80630EE4B /* Build */ = {
+			isa = PBXGroup;
+			children = (
+				4529943D6B71E123C0C5625D /* common.gypi */,
+				85BBB38F8C9EA7D6E106EBC0 /* filename_rules.gypi */,
+				DCFF2C8286DA15D138489DB5 /* release.gypi */,
+				387DF109F572F92ECA1EF42B /* release_defaults.gypi */,
+				AB128738A2A3A4DA21F8D557 /* release_impl.gypi */,
+				259EE8265A8CB99C2C20A544 /* release_impl_official.gypi */,
+				64965E350AB6585E9B9EE5D1 /* set_clang_warning_flags.gypi */,
+				73EE245097C46BD10B71B614 /* supplement.gypi */,
+				915804D39D9CA64DFDA3D3B2 /* yasm.gyp */,
+			);
+			name = Build;
 			sourceTree = "<group>";
 		};
 		8DAB2AA2C1151FF7EB32068D /* macho */ = {
@@ -1957,9 +1959,13 @@
 		17F1786ACA7B8A7C0C64B5F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+<<<<<<< HEAD
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+=======
+				ARCHS = x86_64;
+>>>>>>> origin/20140401-dev-stable
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = macosx;
+				SDKROOT = macosx10.9;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
 			};
@@ -1969,7 +1975,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -1986,20 +1992,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2008,17 +2014,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -2028,6 +2038,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2035,6 +2046,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2047,12 +2060,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2063,7 +2077,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2080,20 +2094,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2102,17 +2116,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -2122,6 +2140,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2129,6 +2148,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2141,12 +2162,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 					"-Wno-switch",
 				);
@@ -2158,7 +2180,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2172,24 +2194,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2198,17 +2220,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -2219,6 +2245,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2235,12 +2262,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2251,7 +2279,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2267,20 +2295,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2289,17 +2317,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -2308,10 +2340,13 @@
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = "$(SHARED_INTERMEDIATE_DIR)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = generate_files;
@@ -2321,12 +2356,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2337,7 +2373,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2351,24 +2387,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2377,17 +2413,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -2398,6 +2438,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2414,12 +2455,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2430,7 +2472,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2444,24 +2486,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2470,17 +2512,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -2491,6 +2537,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2507,12 +2554,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2530,7 +2578,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2543,24 +2591,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2569,17 +2617,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -2589,6 +2641,7 @@
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = "$(SHARED_INTERMEDIATE_DIR)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
@@ -2599,12 +2652,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2615,7 +2669,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2629,24 +2683,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2655,17 +2709,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -2676,6 +2734,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2692,12 +2751,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2708,7 +2768,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2725,20 +2785,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2747,17 +2807,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -2767,6 +2831,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2774,6 +2839,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2786,12 +2853,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2802,7 +2870,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2819,20 +2887,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2841,17 +2909,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -2861,6 +2933,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2868,6 +2941,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -2880,12 +2955,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -2896,7 +2972,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2910,24 +2986,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -2936,17 +3012,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -2957,6 +3037,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -2973,12 +3054,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 					"-Wno-switch",
 				);
@@ -2989,10 +3071,16 @@
 		9E2731C6702DEA1C35BDA141 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+<<<<<<< HEAD
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+=======
+				ARCHS = x86_64;
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = macosx10.9;
+>>>>>>> origin/20140401-dev-stable
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../xcodebuild;
 			};
@@ -3009,7 +3097,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3023,24 +3111,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3049,18 +3137,22 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
 					HAVE_CONFIG_H,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -3071,6 +3163,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 					"$(SHARED_INTERMEDIATE_DIR)/third_party/yasm",
@@ -3089,12 +3182,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 					"-Wno-incompatible-pointer-types",
 				);
@@ -3113,7 +3207,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3127,24 +3221,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3153,18 +3247,22 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
 					HAVE_CONFIG_H,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -3175,6 +3273,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -3187,12 +3286,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3203,7 +3303,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3220,20 +3320,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3242,17 +3342,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -3262,6 +3366,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -3269,6 +3374,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -3281,12 +3388,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3297,7 +3405,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3314,20 +3422,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3336,17 +3444,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -3356,6 +3468,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -3363,6 +3476,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -3375,12 +3490,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3391,7 +3507,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3404,24 +3520,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3430,17 +3546,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -3450,6 +3570,7 @@
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = "$(SHARED_INTERMEDIATE_DIR)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
@@ -3460,12 +3581,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3476,7 +3598,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3490,24 +3612,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3516,17 +3638,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					NDEBUG,
 					NVALGRIND,
 					"DYNAMIC_ANNOTATIONS_ENABLED=0",
@@ -3537,6 +3663,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -3553,12 +3680,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3569,7 +3697,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3585,20 +3713,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3607,17 +3735,21 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -3626,10 +3758,13 @@
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				HEADER_SEARCH_PATHS = "$(SHARED_INTERMEDIATE_DIR)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = config_sources;
@@ -3639,12 +3774,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";
@@ -3655,7 +3791,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3672,20 +3808,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3694,18 +3830,22 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
 					HAVE_CONFIG_H,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -3715,6 +3855,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 					"$(SHARED_INTERMEDIATE_DIR)/third_party/yasm",
@@ -3724,6 +3865,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				OTHER_LDFLAGS = (
 					"-Wl,-search_paths_first",
@@ -3736,12 +3879,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 					"-Wno-incompatible-pointer-types",
 				);
@@ -3753,7 +3897,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++11";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3770,20 +3914,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -3792,18 +3936,22 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
 					HAVE_CONFIG_H,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
 				);
@@ -3813,6 +3961,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					source/config/mac,
 					"source/patched-yasm",
 				);
@@ -3820,6 +3969,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				PRODUCT_NAME = genperf_libs;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -3828,12 +3979,13 @@
 					"-Wendif-labels",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 				WARNING_CFLAGS_excluded = "-Wall -Wextra";

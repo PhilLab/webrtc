@@ -1,0 +1,19 @@
+build obj/webrtc/webrtc_all.actions_depends.stamp: stamp $
+    librtc_base_approved.a libwebrtc_common.a libcommon_audio.a $
+    libcommon_video.a libaudio_decoder_interface.a $
+    libaudio_encoder_interface.a libCNG.a libG711.a libG722.a libiLBC.a $
+    libiSAC.a libiSACFix.a libPCM16B.a libred.a libaudio_coding_module.a $
+    libneteq.a libaudio_conference_mixer.a libaudio_device.a $
+    libaudio_processing.a libbitrate_controller.a libdesktop_capture.a $
+    libmedia_file.a libpaced_sender.a libremote_bitrate_estimator.a $
+    libbwe_tools_util.a bwe_rtp_to_text bwe_rtp_play librtp_rtcp.a $
+    libwebrtc_utility.a libwebrtc_i420.a libwebrtc_video_coding.a $
+    libvideo_capture_module.a libvideo_capture_module_impl.a $
+    libvideo_capture_module_internal_impl.a libvideo_processing.a $
+    libvideo_render_module.a libvideo_render_module_impl.a $
+    libvideo_render_module_internal_impl.a libwebrtc_opus.a $
+    libaudio_processing_neon.a libsystem_wrappers.a $
+    libfield_trial_default.a libmetrics_default.a libvideo_engine_core.a $
+    libvoice_engine.a libwebrtc_vp8.a libwebrtc_vp9.a $
+    libchannel_transport.a libwebrtc.a
+

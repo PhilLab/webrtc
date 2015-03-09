@@ -22,7 +22,6 @@
 namespace webrtc {
 
 const double kPi = 3.14159265;
-const int kDefaultProcessIntervalMs = 30;
 
 static int GaussianRandom(int mean_delay_ms, int standard_deviation_ms) {
   // Creating a Normal distribution variable from two independent uniform
@@ -31,6 +30,11 @@ static int GaussianRandom(int mean_delay_ms, int standard_deviation_ms) {
   double uniform2 = (rand() + 1.0) / (RAND_MAX + 1.0);  // NOLINT
   return static_cast<int>(mean_delay_ms + standard_deviation_ms *
                           sqrt(-2 * log(uniform1)) * cos(2 * kPi * uniform2));
+}
+
+static bool UniformLoss(int loss_percent) {
+  int outcome = rand() % 100;
+  return outcome < loss_percent;
 }
 
 class NetworkPacket {
@@ -104,8 +108,8 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
   if (packet_receiver_ == NULL)
     return;
   CriticalSectionScoped crit(lock_.get());
-  if (config_.queue_length > 0 &&
-      capacity_link_.size() >= config_.queue_length) {
+  if (config_.queue_length_packets > 0 &&
+      capacity_link_.size() >= config_.queue_length_packets) {
     // Too many packet on the link, drop this one.
     ++dropped_packets_;
     return;
@@ -159,6 +163,12 @@ void FakeNetworkPipe::Process() {
       NetworkPacket* packet = capacity_link_.front();
       capacity_link_.pop();
 
+      // Packets are randomly dropped after being affected by the bottleneck.
+      if (UniformLoss(config_.loss_percent)) {
+        delete packet;
+        continue;
+      }
+
       // Add extra delay and jitter, but make sure the arrival time is not
       // earlier than the last packet in the queue.
       int extra_delay = GaussianRandom(config_.queue_delay_ms,
@@ -197,12 +207,13 @@ void FakeNetworkPipe::Process() {
   }
 }
 
-int FakeNetworkPipe::TimeUntilNextProcess() const {
+int64_t FakeNetworkPipe::TimeUntilNextProcess() const {
   CriticalSectionScoped crit(lock_.get());
+  const int64_t kDefaultProcessIntervalMs = 30;
   if (capacity_link_.size() == 0 || delay_link_.size() == 0)
     return kDefaultProcessIntervalMs;
-  return std::max(static_cast<int>(next_process_time_ -
-      TickTime::MillisecondTimestamp()), 0);
+  return std::max<int64_t>(
+      next_process_time_ - TickTime::MillisecondTimestamp(), 0);
 }
 
 }  // namespace webrtc

@@ -1,0 +1,81 @@
+defines = -DV8_DEPRECATION_WARNINGS -D_FILE_OFFSET_BITS=64 -DNO_TCMALLOC $
+    -DDISABLE_NACL -DDL_ARM_NEON_OPTIONAL -DCHROMIUM_BUILD $
+    -DUSE_LIBJPEG_TURBO=1 -DENABLE_WEBRTC=1 -DUSE_PROPRIETARY_CODECS $
+    -DENABLE_BROWSER_CDMS -DENABLE_CONFIGURATION_POLICY $
+    -DENABLE_NOTIFICATIONS -DDISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY $
+    -DSYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE -DDONT_EMBED_BUILD_METADATA $
+    -DENABLE_AUTOFILL_DIALOG=1 -DCLD_VERSION=1 -DENABLE_PRINTING=1 $
+    -DENABLE_BASIC_PRINTING=1 -DENABLE_SUPERVISED_USERS=1 -DVIDEO_HOLE=1 $
+    -DV8_USE_EXTERNAL_STARTUP_DATA -DUSE_LIBPCI=1 -DUSE_OPENSSL=1 $
+    -DUSE_OPENSSL_CERTS=1 -DANDROID -D__GNU_SOURCE=1 $
+    -D_STLP_USE_PTR_SPECIALIZATIONS=1 '-DCHROME_BUILD_ID=""' $
+    -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
+includes = -I../../../../third_party/openmax_dl -Igen $
+    -I$android_ndk_path/sources/android/cpufeatures
+cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-strict-aliasing $
+    -Wno-unused-parameter -Wno-missing-field-initializers $
+    -fvisibility=hidden -pipe -fPIC -Wno-unused-local-typedefs -Wno-format $
+    -march=armv7-a -mtune=generic-armv7-a -mfpu=vfpv3-d16 $
+    -mfloat-abi=softfp -mthumb -fno-tree-sra -fno-caller-saves -Wno-psabi $
+    -mthumb-interwork -ffunction-sections -funwind-tables -g $
+    -fstack-protector -fno-short-enums -finline-limit=64 -Wa,--noexecstack $
+    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
+    -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/include $
+    -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi-v7a/include $
+    -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
+    -funwind-tables
+cflags_c = 
+cflags_cc = -fno-exceptions -fno-rtti -fno-threadsafe-statics $
+    -fvisibility-inlines-hidden -Wno-deprecated -Wno-abi -std=gnu++11 $
+    -Wno-narrowing -Wno-literal-suffix
+
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix2_fs_unsafe_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/armSP_FFT_CToC_FC32_Radix2_fs_unsafe_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix4_fs_unsafe_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/armSP_FFT_CToC_FC32_Radix4_fs_unsafe_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix4_unsafe_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/armSP_FFT_CToC_FC32_Radix4_unsafe_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix8_fs_unsafe_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/armSP_FFT_CToC_FC32_Radix8_fs_unsafe_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTInv_CToC_FC32_Sfs_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/omxSP_FFTInv_CToC_FC32_Sfs_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTFwd_CToC_FC32_Sfs_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/omxSP_FFTFwd_CToC_FC32_Sfs_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFTInv_CCSToR_F32_preTwiddleRadix2_unsafe_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/armSP_FFTInv_CCSToR_F32_preTwiddleRadix2_unsafe_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTFwd_RToCCS_F32_Sfs_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/omxSP_FFTFwd_RToCCS_F32_Sfs_s.S
+build $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTInv_CCSToR_F32_Sfs_s.o: $
+    cc $
+    ../../../../third_party/openmax_dl/dl/sp/src/arm/armv7/omxSP_FFTInv_CCSToR_F32_Sfs_s.S
+build obj/third_party/openmax_dl/dl/sp/src/arm/openmax_dl_armv7.detect.o: $
+    cc ../../../../third_party/openmax_dl/dl/sp/src/arm/detect.c
+
+build obj/third_party/openmax_dl/dl/libopenmax_dl_armv7.a: alink $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix2_fs_unsafe_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix4_fs_unsafe_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix4_unsafe_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFT_CToC_FC32_Radix8_fs_unsafe_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTInv_CToC_FC32_Sfs_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTFwd_CToC_FC32_Sfs_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.armSP_FFTInv_CCSToR_F32_preTwiddleRadix2_unsafe_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTFwd_RToCCS_F32_Sfs_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/armv7/openmax_dl_armv7.omxSP_FFTInv_CCSToR_F32_Sfs_s.o $
+    obj/third_party/openmax_dl/dl/sp/src/arm/openmax_dl_armv7.detect.o

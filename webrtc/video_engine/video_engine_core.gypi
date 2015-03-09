@@ -49,6 +49,7 @@
         'call_stats.h',
         'encoder_state_feedback.h',
         'overuse_frame_detector.h',
+        'report_block_stats.h',
         'stream_synchronization.h',
         'vie_base_impl.h',
         'vie_capture_impl.h',
@@ -82,6 +83,7 @@
         'call_stats.cc',
         'encoder_state_feedback.cc',
         'overuse_frame_detector.cc',
+        'report_block_stats.cc',
         'stream_synchronization.cc',
         'vie_base_impl.cc',
         'vie_capture_impl.cc',
@@ -122,33 +124,33 @@
           'type': '<(gtest_target_type)',
           'dependencies': [
             'video_engine_core',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
+            '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gmock.gyp:gmock',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'call_stats_unittest.cc',
             'encoder_state_feedback_unittest.cc',
             'overuse_frame_detector_unittest.cc',
+            'report_block_stats_unittest.cc',
             'stream_synchronization_unittest.cc',
+            'vie_capturer_unittest.cc',
             'vie_codec_unittest.cc',
             'vie_remb_unittest.cc',
           ],
           'conditions': [
-            # TODO(henrike): remove build_with_chromium==1 when the bots are
-            # using Chromium's buildbots.
-            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+            ['OS=="android"', {
               'dependencies': [
-                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+                #'<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
             }],
           ],
         },
       ], # targets
       'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+        ['OS=="android"', {
           'targets': [
             {
               'target_name': 'video_engine_core_unittests_apk_target',
@@ -169,7 +171,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'video_engine_core_unittests.isolate',
               ],
               'sources': [
                 'video_engine_core_unittests.isolate',

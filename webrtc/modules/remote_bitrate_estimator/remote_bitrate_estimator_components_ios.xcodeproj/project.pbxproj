@@ -7,24 +7,42 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		96A8DFB41314904E2C1A6CA3 /* remote_rate_control.cc in Sources */ = {isa = PBXBuildFile; fileRef = 277D83E3E8EC3CC890794EED /* remote_rate_control.cc */; };
-		CFABCAE7BF3E54F05CCE714B /* overuse_detector.cc in Sources */ = {isa = PBXBuildFile; fileRef = F83EBDF166C02010B8929E0A /* overuse_detector.cc */; };
-		F10C9C0FEDEEA724A7AD041D /* remote_bitrate_estimator_single_stream.cc in Sources */ = {isa = PBXBuildFile; fileRef = 8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */; };
+		0378B1D8EEDFB14BEBBB19D4 /* overuse_detector.cc in Sources */ = {isa = PBXBuildFile; fileRef = F83EBDF166C02010B8929E0A /* overuse_detector.cc */; };
+		10EBB0158B15E86218EB50CF /* mimd_rate_control.cc in Sources */ = {isa = PBXBuildFile; fileRef = 354B41F6DA701CE5EF16478B /* mimd_rate_control.cc */; };
+		533F88595240E0E66BE16CBB /* aimd_rate_control.cc in Sources */ = {isa = PBXBuildFile; fileRef = B436BEA4CB89A18CB88777CE /* aimd_rate_control.cc */; };
+		9D61919F66DBD3B9610D5596 /* inter_arrival.cc in Sources */ = {isa = PBXBuildFile; fileRef = D5882850C13F6AD17DF627F1 /* inter_arrival.cc */; };
+		BE724C05D06B821FBA84131D /* remote_bitrate_estimator_single_stream.cc in Sources */ = {isa = PBXBuildFile; fileRef = 8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */; };
+		D67319A7B0175BE751E6D0BC /* remote_rate_control.cc in Sources */ = {isa = PBXBuildFile; fileRef = 277D83E3E8EC3CC890794EED /* remote_rate_control.cc */; };
+		DF8E0E66223B75E921D8165D /* bwe_test_logging.cc in Sources */ = {isa = PBXBuildFile; fileRef = D6E6BB8CFC44D5F8AED347D8 /* bwe_test_logging.cc */; };
+		EE7E0BB0E07E00AD8F3DD94B /* remote_bitrate_estimator_abs_send_time.cc in Sources */ = {isa = PBXBuildFile; fileRef = 5B7749217C53CCA15047883C /* remote_bitrate_estimator_abs_send_time.cc */; };
+		F2F6DCAE4C118DE467092529 /* overuse_estimator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 117759BDAF2D620A0283502A /* overuse_estimator.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		007389F677D23C4BFE42E40A /* remote_rate_control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = remote_rate_control.h; sourceTree = "<group>"; };
 		06B7B46284CA49A484CF342A /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../build/common.gypi; sourceTree = "<group>"; };
 		070D4CAFB5A4E22E865C9964 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../build/release.gypi; sourceTree = "<group>"; };
+		0F4C4A553A3DB891D73D8184 /* bwe_test_logging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bwe_test_logging.h; sourceTree = "<group>"; };
+		117759BDAF2D620A0283502A /* overuse_estimator.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = overuse_estimator.cc; sourceTree = "<group>"; };
+		1E4AAE36E3E17D8451B6E1E6 /* overuse_estimator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = overuse_estimator.h; sourceTree = "<group>"; };
 		277D83E3E8EC3CC890794EED /* remote_rate_control.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = remote_rate_control.cc; sourceTree = "<group>"; };
+		2CB3084E77BD5708F22BD59F /* mimd_rate_control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mimd_rate_control.h; sourceTree = "<group>"; };
 		2DBC903AC2FF10B98B596C54 /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
+		354B41F6DA701CE5EF16478B /* mimd_rate_control.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mimd_rate_control.cc; sourceTree = "<group>"; };
 		590DE45068C85D2A3A354F8F /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../build/common.gypi; sourceTree = "<group>"; };
+		5B7749217C53CCA15047883C /* remote_bitrate_estimator_abs_send_time.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = remote_bitrate_estimator_abs_send_time.cc; sourceTree = "<group>"; };
+		5ECE8B25E74F774FD9B486E1 /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
 		61DD25121769ED88899CEBA5 /* librbe_components.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librbe_components.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		7CAC02AFC5749FB63F0EABBD /* aimd_rate_control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aimd_rate_control.h; sourceTree = "<group>"; };
 		8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = remote_bitrate_estimator_single_stream.cc; sourceTree = "<group>"; };
 		96B4067F93C2961BEF2DD454 /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
 		A3771D0E78D6EE39C99E4B72 /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
 		AAA79554DEC4643028D54602 /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../supplement.gypi; sourceTree = "<group>"; };
+		B436BEA4CB89A18CB88777CE /* aimd_rate_control.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = aimd_rate_control.cc; sourceTree = "<group>"; };
 		B64D0345667FD5F2FCB8E915 /* overuse_detector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = overuse_detector.h; sourceTree = "<group>"; };
+		D2E5A2F613D2874571A99400 /* inter_arrival.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = inter_arrival.h; sourceTree = "<group>"; };
+		D5882850C13F6AD17DF627F1 /* inter_arrival.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = inter_arrival.cc; sourceTree = "<group>"; };
+		D6E6BB8CFC44D5F8AED347D8 /* bwe_test_logging.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bwe_test_logging.cc; sourceTree = "<group>"; };
 		DABA9C5903B3AFCDB6470088 /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../build/filename_rules.gypi; sourceTree = "<group>"; };
 		EE47E46780AB10EA7BD8A5FE /* remote_bitrate_estimator_components.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = remote_bitrate_estimator_components.gyp; sourceTree = "<group>"; };
 		F83EBDF166C02010B8929E0A /* overuse_detector.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = overuse_detector.cc; sourceTree = "<group>"; };
@@ -41,7 +59,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2C70F4C72807C36DB570833D /* Build */ = {
+		28CC0C2CD03EA8ED96239B03 /* Build */ = {
 			isa = PBXGroup;
 			children = (
 				590DE45068C85D2A3A354F8F /* common.gypi */,
@@ -52,6 +70,7 @@
 				2DBC903AC2FF10B98B596C54 /* release_impl.gypi */,
 				96B4067F93C2961BEF2DD454 /* release_impl_official.gypi */,
 				EE47E46780AB10EA7BD8A5FE /* remote_bitrate_estimator_components.gyp */,
+				5ECE8B25E74F774FD9B486E1 /* set_clang_warning_flags.gypi */,
 				AAA79554DEC4643028D54602 /* supplement.gypi */,
 			);
 			name = Build;
@@ -65,11 +84,21 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		85663115967F96ED5219A0E2 /* Source */ = {
+		7621DB8F5648F7E41729DE31 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				9BA600FC04A907152FE7755B /* ../../../webrtc/modules/remote_bitrate_estimator/test */,
+				B436BEA4CB89A18CB88777CE /* aimd_rate_control.cc */,
+				7CAC02AFC5749FB63F0EABBD /* aimd_rate_control.h */,
+				D5882850C13F6AD17DF627F1 /* inter_arrival.cc */,
+				D2E5A2F613D2874571A99400 /* inter_arrival.h */,
+				354B41F6DA701CE5EF16478B /* mimd_rate_control.cc */,
+				2CB3084E77BD5708F22BD59F /* mimd_rate_control.h */,
 				F83EBDF166C02010B8929E0A /* overuse_detector.cc */,
 				B64D0345667FD5F2FCB8E915 /* overuse_detector.h */,
+				117759BDAF2D620A0283502A /* overuse_estimator.cc */,
+				1E4AAE36E3E17D8451B6E1E6 /* overuse_estimator.h */,
+				5B7749217C53CCA15047883C /* remote_bitrate_estimator_abs_send_time.cc */,
 				8D6514843D2BD102AD9C0515 /* remote_bitrate_estimator_single_stream.cc */,
 				277D83E3E8EC3CC890794EED /* remote_rate_control.cc */,
 				007389F677D23C4BFE42E40A /* remote_rate_control.h */,
@@ -77,12 +106,21 @@
 			name = Source;
 			sourceTree = "<group>";
 		};
+		9BA600FC04A907152FE7755B /* ../../../webrtc/modules/remote_bitrate_estimator/test */ = {
+			isa = PBXGroup;
+			children = (
+				D6E6BB8CFC44D5F8AED347D8 /* bwe_test_logging.cc */,
+				0F4C4A553A3DB891D73D8184 /* bwe_test_logging.h */,
+			);
+			path = ../../../webrtc/modules/remote_bitrate_estimator/test;
+			sourceTree = "<group>";
+		};
 		A48DC4CE92B7BABA5B9F902D = {
 			isa = PBXGroup;
 			children = (
-				85663115967F96ED5219A0E2 /* Source */,
+				7621DB8F5648F7E41729DE31 /* Source */,
 				6B22BAFA506203BB0925CE30 /* Products */,
-				2C70F4C72807C36DB570833D /* Build */,
+				28CC0C2CD03EA8ED96239B03 /* Build */,
 			);
 			sourceTree = "<group>";
 		};
@@ -112,7 +150,10 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
+<<<<<<< HEAD
 				LastUpgradeCheck = 0610;
+=======
+>>>>>>> origin/20140401-dev-stable
 			};
 			buildConfigurationList = 785188A61FCAE25327BF045F /* Build configuration list for PBXProject "remote_bitrate_estimator_components_ios" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -135,9 +176,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CFABCAE7BF3E54F05CCE714B /* overuse_detector.cc in Sources */,
-				F10C9C0FEDEEA724A7AD041D /* remote_bitrate_estimator_single_stream.cc in Sources */,
-				96A8DFB41314904E2C1A6CA3 /* remote_rate_control.cc in Sources */,
+				DF8E0E66223B75E921D8165D /* bwe_test_logging.cc in Sources */,
+				533F88595240E0E66BE16CBB /* aimd_rate_control.cc in Sources */,
+				9D61919F66DBD3B9610D5596 /* inter_arrival.cc in Sources */,
+				10EBB0158B15E86218EB50CF /* mimd_rate_control.cc in Sources */,
+				0378B1D8EEDFB14BEBBB19D4 /* overuse_detector.cc in Sources */,
+				F2F6DCAE4C118DE467092529 /* overuse_estimator.cc in Sources */,
+				EE7E0BB0E07E00AD8F3DD94B /* remote_bitrate_estimator_abs_send_time.cc in Sources */,
+				BE724C05D06B821FBA84131D /* remote_bitrate_estimator_single_stream.cc in Sources */,
+				D67319A7B0175BE751E6D0BC /* remote_rate_control.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,7 +198,6 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
 				SYMROOT = ../../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -163,7 +209,6 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
 				SYMROOT = ../../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -173,8 +218,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+				CLANG_CXX_LIBRARY = "libstdc++";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -191,24 +242,24 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
 					DISABLE_NACL,
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_CONFIGURATION_POLICY,
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
 					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
 					WEBRTC_IOS,
+					"USE_LIBPCI=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
@@ -223,29 +274,31 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../../..,
-					../../..,
+					../../../webrtc/modules/remote_bitrate_estimator,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rbe_components;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
+					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
+					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Profile;
@@ -254,8 +307,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+				CLANG_CXX_LIBRARY = "libstdc++";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -271,28 +330,29 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
 					DISABLE_NACL,
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_CONFIGURATION_POLICY,
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
 					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
 					WEBRTC_IOS,
+					"USE_LIBPCI=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -300,29 +360,36 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../../..,
-					../../..,
+					../../../webrtc/modules/remote_bitrate_estimator,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "-fstack-protector-all";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				OTHER_CFLAGS = (
+					"-Wno-shorten-64-to-32",
+					"-fstack-protector-all",
+					"-Wno-undefined-bool-conversion",
+					"-Wno-tautological-undefined-compare",
+				);
 				PRODUCT_NAME = rbe_components;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
+					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
+					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Debug;
@@ -331,8 +398,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+				CLANG_CXX_LIBRARY = "libstdc++";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -349,24 +422,24 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
 					DISABLE_NACL,
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_CONFIGURATION_POLICY,
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
-					"CLD_VERSION=1",
-					"ENABLE_SPELLCHECK=1",
+					DONT_EMBED_BUILD_METADATA,
+					"CLD_VERSION=2",
 					"DISABLE_FTP_SUPPORT=1",
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_ARCH_ARM,
-					WEBRTC_ARCH_ARM_V7,
-					WEBRTC_ARCH_ARM_NEON,
+					WEBRTC_ARCH_ARM64_NEON,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
 					WEBRTC_IOS,
+					"USE_LIBPCI=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
@@ -381,29 +454,31 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../../..,
-					../../..,
+					../../../webrtc/modules/remote_bitrate_estimator,
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
-				OTHER_CFLAGS = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				OTHER_CFLAGS = "-Wno-shorten-64-to-32";
 				PRODUCT_NAME = rbe_components;
+				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
-				VALID_ARCHS = "armv7 armv7s";
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wendif-labels",
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
+					"-Wno-unknown-warning-option",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
-					"-Wno-absolute-value",
-					"-Wno-unknown-warning-option",
+					"-Wno-inconsistent-missing-override",
 				);
 			};
 			name = Release;
@@ -414,7 +489,6 @@
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = iphoneos;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
 				SYMROOT = ../../../xcodebuild;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

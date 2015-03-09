@@ -25,7 +25,6 @@
 @interface VideoCaptureIPhoneAVFoundationInfoObjC : NSObject{
     bool                                _OSSupportedInfo;
     NSArray*                            _captureDevicesInfo;
-    NSAutoreleasePool*                    _poolInfo;
     int                                    _captureDeviceCountInfo;
     int                                    _frontCameraIndex;
     int                                    _backCameraIndex;

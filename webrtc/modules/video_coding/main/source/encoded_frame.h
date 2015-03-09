@@ -56,7 +56,7 @@ public:
     /**
     *   Get frame length
     */
-    uint32_t Length() const {return _length;}
+    size_t Length() const {return _length;}
     /**
     *   Get frame timestamp (90kHz)
     */
@@ -104,7 +104,7 @@ protected:
     * is copied to the new buffer.
     * Buffer size is updated to minimumSize.
     */
-    int32_t VerifyAndAllocate(const uint32_t minimumSize);
+    void VerifyAndAllocate(const uint32_t minimumSize);
 
     void Reset();
 

@@ -20,7 +20,7 @@ namespace test {
 struct Frame {
  public:
   Frame(unsigned char* buffer,
-        int buffer_size,
+        size_t buffer_size,
         uint32_t timestamp,
         int64_t render_time)
       : buffer(new unsigned char[buffer_size]),
@@ -30,8 +30,8 @@ struct Frame {
     memcpy(this->buffer.get(), buffer, buffer_size);
   }
 
-  webrtc::scoped_array<unsigned char> buffer;
-  int buffer_size;
+  webrtc::scoped_ptr<unsigned char[]> buffer;
+  size_t buffer_size;
   uint32_t timestamp;
   int64_t render_time;
 
@@ -121,8 +121,9 @@ void ViEToFileRenderer::ForgetOutputFile() {
 }
 
 int ViEToFileRenderer::DeliverFrame(unsigned char *buffer,
-                                    int buffer_size,
+                                    size_t buffer_size,
                                     uint32_t time_stamp,
+                                    int64_t ntp_time_ms,
                                     int64_t render_time,
                                     void* /*handle*/) {
   webrtc::CriticalSectionScoped lock(frame_queue_cs_.get());
@@ -173,8 +174,8 @@ bool ViEToFileRenderer::ProcessRenderQueue() {
     // the renderer.
     frame_queue_cs_->Leave();
     assert(output_file_);
-    int written = fwrite(frame->buffer.get(), sizeof(unsigned char),
-                              frame->buffer_size, output_file_);
+    size_t written = fwrite(frame->buffer.get(), sizeof(unsigned char),
+                            frame->buffer_size, output_file_);
     frame_queue_cs_->Enter();
     // Return the frame.
     free_frame_queue_.push_front(frame);

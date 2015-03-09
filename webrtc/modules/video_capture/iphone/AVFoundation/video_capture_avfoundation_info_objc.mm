@@ -8,7 +8,7 @@
 
 #import "video_capture_avfoundation_info_objc.h"
 
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 
 
@@ -40,7 +40,6 @@
 - (void)dealloc {
      webrtc::Trace::Add(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
                   "%s:%d", __FUNCTION__, __LINE__);
-    [super dealloc];
 }
 
 // ****************** public methods ******************
@@ -145,7 +144,6 @@
         return [NSNumber numberWithInt:0];
     }
 
-    _poolInfo = [[NSAutoreleasePool alloc]init];
     _captureDeviceCountInfo = 0;
     _frontCameraIndex = -1;
     _backCameraIndex = -1;
@@ -182,10 +180,6 @@
         return [NSNumber numberWithInt:0];
     }
 
-    if(_captureDevicesInfo)
-    {
-        [_captureDevicesInfo release];
-    }
     _captureDevicesInfo = [[NSArray alloc]
                             initWithArray:[AVCaptureDevice
                                            devicesWithMediaType:AVMediaTypeVideo]];
@@ -221,10 +215,6 @@
         return [NSNumber numberWithInt:-1];
     }
   
-    if(_captureDevicesInfo)
-    {
-        [_captureDevicesInfo release];
-    }
     _captureDevicesInfo = [[NSArray alloc]
                          initWithArray:[AVCaptureDevice
                                         devicesWithMediaType:AVMediaTypeVideo]];

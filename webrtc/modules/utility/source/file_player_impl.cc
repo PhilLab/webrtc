@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/utility/source/file_player_impl.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
     #include "frame_scaler.h"
@@ -35,8 +35,6 @@ FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
         return new VideoFilePlayerImpl(instanceID, fileFormat);
 #else
-        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                     "Invalid file format: %d", kFileFormatAviFile);
         assert(false);
         return NULL;
 #endif
@@ -119,10 +117,9 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
 {
     if(_codec.plfreq == 0)
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, _instanceID,
-           "FilePlayerImpl::Get10msAudioFromFile() playing not started!\
- codecFreq = %d, wantedFreq = %d",
-           _codec.plfreq, frequencyInHz);
+        LOG(LS_WARNING) << "Get10msAudioFromFile() playing not started!"
+                        << " codec freq = " << _codec.plfreq
+                        << ", wanted freq = " << frequencyInHz;
         return -1;
     }
 
@@ -132,7 +129,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
         unresampledAudioFrame.sample_rate_hz_ = _codec.plfreq;
 
         // L16 is un-encoded data. Just pull 10 ms.
-        uint32_t lengthInBytes =
+        size_t lengthInBytes =
             sizeof(unresampledAudioFrame.data_);
         if (_fileModule.PlayoutAudioData(
                 (int8_t*)unresampledAudioFrame.data_,
@@ -155,11 +152,11 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
         // expects a full frame. If the frame size is larger than 10 ms,
         // PlayoutAudioData(..) data should be called proportionally less often.
         int16_t encodedBuffer[MAX_AUDIO_BUFFER_IN_SAMPLES];
-        uint32_t encodedLengthInBytes = 0;
+        size_t encodedLengthInBytes = 0;
         if(++_numberOf10MsInDecoder >= _numberOf10MsPerFrame)
         {
             _numberOf10MsInDecoder = 0;
-            uint32_t bytesFromFile = sizeof(encodedBuffer);
+            size_t bytesFromFile = sizeof(encodedBuffer);
             if (_fileModule.PlayoutAudioData((int8_t*)encodedBuffer,
                                              bytesFromFile) == -1)
             {
@@ -180,8 +177,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
     if(_resampler.ResetIfNeeded(unresampledAudioFrame.sample_rate_hz_,
                                 frequencyInHz, kResamplerSynchronous))
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, _instanceID,
-           "FilePlayerImpl::Get10msAudioFromFile() unexpected codec");
+        LOG(LS_WARNING) << "Get10msAudioFromFile() unexpected codec.";
 
         // New sampling frequency. Update state.
         outLen = frequencyInHz / 100;
@@ -219,8 +215,7 @@ int32_t FilePlayerImpl::SetAudioScaling(float scaleFactor)
         _scaling = scaleFactor;
         return 0;
     }
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, _instanceID,
-              "FilePlayerImpl::SetAudioScaling() not allowed scale factor");
+    LOG(LS_WARNING) << "SetAudioScaling() non-allowed scale factor.";
     return -1;
 }
 
@@ -260,9 +255,8 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
             codecInstL16.pacsize  = 160;
         } else
         {
-            WEBRTC_TRACE(kTraceError, kTraceVoice, _instanceID,
-                       "FilePlayerImpl::StartPlayingFile() sample frequency\
- specifed not supported for PCM format.");
+            LOG(LS_ERROR) << "StartPlayingFile() sample frequency not "
+                          << "supported for PCM format.";
             return -1;
         }
 
@@ -271,12 +265,8 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
                                               startPosition,
                                               stopPosition) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceWarning,
-                kTraceVoice,
-                _instanceID,
-                "FilePlayerImpl::StartPlayingFile() failed to initialize file\
- %s playout.", fileName);
+            LOG(LS_WARNING) << "StartPlayingFile() failed to initialize "
+                            << "pcm file " << fileName;
             return -1;
         }
         SetAudioScaling(volumeScaling);
@@ -285,13 +275,8 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
         if (_fileModule.StartPlayingAudioFile(fileName, notification, loop,
                                               _fileFormat, codecInst) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceWarning,
-                kTraceVoice,
-                _instanceID,
-                "FilePlayerImpl::StartPlayingPreEncodedFile() failed to\
- initialize pre-encoded file %s playout.",
-                fileName);
+            LOG(LS_WARNING) << "StartPlayingFile() failed to initialize "
+                            << "pre-encoded file " << fileName;
             return -1;
         }
     } else
@@ -302,12 +287,8 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
                                               startPosition,
                                               stopPosition) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceWarning,
-                kTraceVoice,
-                _instanceID,
-                "FilePlayerImpl::StartPlayingFile() failed to initialize file\
- %s playout.", fileName);
+            LOG(LS_WARNING) << "StartPlayingFile() failed to initialize file "
+                            << fileName;
             return -1;
         }
         SetAudioScaling(volumeScaling);
@@ -355,12 +336,8 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
             codecInstL16.pacsize  = 160;
         }else
         {
-            WEBRTC_TRACE(
-                kTraceError,
-                kTraceVoice,
-                _instanceID,
-                "FilePlayerImpl::StartPlayingFile() sample frequency specifed\
- not supported for PCM format.");
+            LOG(LS_ERROR) << "StartPlayingFile() sample frequency not "
+                          << "supported for PCM format.";
             return -1;
         }
         if (_fileModule.StartPlayingAudioStream(sourceStream, notification,
@@ -368,12 +345,8 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
                                                 startPosition,
                                                 stopPosition) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceError,
-                kTraceVoice,
-                _instanceID,
-                "FilePlayerImpl::StartPlayingFile() failed to initialize stream\
- playout.");
+            LOG(LS_ERROR) << "StartPlayingFile() failed to initialize stream "
+                          << "playout.";
             return -1;
         }
 
@@ -382,12 +355,8 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
         if (_fileModule.StartPlayingAudioStream(sourceStream, notification,
                                                 _fileFormat, codecInst) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceWarning,
-                kTraceVoice,
-                _instanceID,
-                "FilePlayerImpl::StartPlayingFile() failed to initialize stream\
- playout.");
+            LOG(LS_ERROR) << "StartPlayingFile() failed to initialize stream "
+                          << "playout.";
             return -1;
         }
     } else {
@@ -397,9 +366,8 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
                                                 startPosition,
                                                 stopPosition) == -1)
         {
-            WEBRTC_TRACE(kTraceError, kTraceVoice, _instanceID,
-                       "FilePlayerImpl::StartPlayingFile() failed to initialize\
- stream playout.");
+            LOG(LS_ERROR) << "StartPlayingFile() failed to initialize stream "
+                          << "playout.";
             return -1;
         }
     }
@@ -435,23 +403,14 @@ int32_t FilePlayerImpl::SetUpAudioDecoder()
 {
     if ((_fileModule.codec_info(_codec) == -1))
     {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceVoice,
-            _instanceID,
-            "FilePlayerImpl::StartPlayingFile() failed to retrieve Codec info\
- of file data.");
+        LOG(LS_WARNING) << "Failed to retrieve codec info of file data.";
         return -1;
     }
     if( STR_CASE_CMP(_codec.plname, "L16") != 0 &&
         _audioDecoder.SetDecodeCodec(_codec,AMRFileStorage) == -1)
     {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceVoice,
-            _instanceID,
-            "FilePlayerImpl::StartPlayingFile() codec %s not supported",
-            _codec.plname);
+        LOG(LS_WARNING) << "SetUpAudioDecoder() codec " << _codec.plname
+                        << " not supported.";
         return -1;
     }
     _numberOf10MsPerFrame = _codec.pacsize / (_codec.plfreq / 100);
@@ -463,7 +422,7 @@ int32_t FilePlayerImpl::SetUpAudioDecoder()
 VideoFilePlayerImpl::VideoFilePlayerImpl(uint32_t instanceID,
                                          FileFormats fileFormat)
     : FilePlayerImpl(instanceID, fileFormat),
-      video_decoder_(new VideoCoder(instanceID)),
+      video_decoder_(new VideoCoder()),
       video_codec_info_(),
       _decodedVideoFrames(0),
       _encodedData(*new EncodedVideoData()),
@@ -527,7 +486,7 @@ int32_t VideoFilePlayerImpl::StopPlayingFile()
     CriticalSectionScoped lock( _critSec);
 
     _decodedVideoFrames = 0;
-    video_decoder_.reset(new VideoCoder(_instanceID));
+    video_decoder_.reset(new VideoCoder());
 
     return FilePlayerImpl::StopPlayingFile();
 }
@@ -627,17 +586,12 @@ int32_t VideoFilePlayerImpl::TimeUntilNextVideoFrame()
         if(_fileFormat == kFileFormatAviFile)
         {
             // Get next video frame
-            uint32_t encodedBufferLengthInBytes = _encodedData.bufferSize;
+            size_t encodedBufferLengthInBytes = _encodedData.bufferSize;
             if(_fileModule.PlayoutAVIVideoData(
                    reinterpret_cast< int8_t*>(_encodedData.payloadData),
                    encodedBufferLengthInBytes) != 0)
             {
-                 WEBRTC_TRACE(
-                     kTraceWarning,
-                     kTraceVideo,
-                     _instanceID,
-                     "FilePlayerImpl::TimeUntilNextVideoFrame() error reading\
- video data");
+                LOG(LS_WARNING) << "Error reading video data.";
                 return -1;
             }
             _encodedData.payloadSize = encodedBufferLengthInBytes;
@@ -690,23 +644,16 @@ int32_t VideoFilePlayerImpl::SetUpVideoDecoder()
 {
     if (_fileModule.VideoCodecInst(video_codec_info_) != 0)
     {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceVideo,
-            _instanceID,
-            "FilePlayerImpl::SetVideoDecoder() failed to retrieve Codec info of\
- file data.");
+        LOG(LS_WARNING) << "SetVideoDecoder() failed to retrieve codec info of "
+                        << "file data.";
         return -1;
     }
 
     int32_t useNumberOfCores = 1;
     if (video_decoder_->SetDecodeCodec(video_codec_info_, useNumberOfCores) !=
         0) {
-      WEBRTC_TRACE(kTraceWarning,
-                   kTraceVideo,
-                   _instanceID,
-                   "FilePlayerImpl::SetUpVideoDecoder() codec %s not supported",
-                   video_codec_info_.plName);
+        LOG(LS_WARNING) << "SetUpVideoDecoder() codec "
+                        << video_codec_info_.plName << " not supported.";
         return -1;
     }
 
@@ -714,7 +661,7 @@ int32_t VideoFilePlayerImpl::SetUpVideoDecoder()
 
     // Size of unencoded data (I420) should be the largest possible frame size
     // in a file.
-    const uint32_t KReadBufferSize = 3 * video_codec_info_.width *
+    const size_t KReadBufferSize = 3 * video_codec_info_.width *
         video_codec_info_.height / 2;
     _encodedData.VerifyAndAllocate(KReadBufferSize);
     _encodedData.encodedHeight = video_codec_info_.height;

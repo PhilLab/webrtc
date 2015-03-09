@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AE9E8420CD6D0FC9FB8EB3CC /* frame_dropper.cc in Sources */ = {isa = PBXBuildFile; fileRef = F1E265C7D891F48D3E33304D /* frame_dropper.cc */; };
-		C814EC61FD7A861BA0C0DFFE /* exp_filter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7BF1688D75F503966053A3D8 /* exp_filter.cc */; };
+		B155C125F0746D27CC0A9780 /* quality_scaler.cc in Sources */ = {isa = PBXBuildFile; fileRef = 56D22122AB9C59E661C4E991 /* quality_scaler.cc */; };
+		E51FE43F3D6F2141D3D82BCE /* frame_dropper.cc in Sources */ = {isa = PBXBuildFile; fileRef = F1E265C7D891F48D3E33304D /* frame_dropper.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -16,16 +16,17 @@
 		0E8D781F3192DA238532DB30 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../build/common.gypi; sourceTree = "<group>"; };
 		187AC5D2E1791D7913C8F00D /* libvideo_coding_utility.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libvideo_coding_utility.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		28EC6EBF0F16C3F9AB3596FF /* release_defaults.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_defaults.gypi; path = ../../../../build/internal/release_defaults.gypi; sourceTree = "<group>"; };
+		56D22122AB9C59E661C4E991 /* quality_scaler.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = quality_scaler.cc; sourceTree = "<group>"; };
 		7123743720D8A249D9A85CAA /* supplement.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = supplement.gypi; path = ../../../supplement.gypi; sourceTree = "<group>"; };
 		7B3FABA06CC8853E5AAFC597 /* release_impl.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl.gypi; path = ../../../../build/internal/release_impl.gypi; sourceTree = "<group>"; };
-		7BF1688D75F503966053A3D8 /* exp_filter.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = exp_filter.cc; sourceTree = "<group>"; };
+		84A9CB237B9D0139FE223904 /* quality_scaler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = quality_scaler.h; sourceTree = "<group>"; };
 		8821849D80A268CC5DCB7DEB /* release_impl_official.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release_impl_official.gypi; path = ../../../../build/internal/release_impl_official.gypi; sourceTree = "<group>"; };
 		890D6BFA4D2F16896DCE0310 /* video_coding_utility.gyp */ = {isa = PBXFileReference; explicitFileType = sourcecode; path = video_coding_utility.gyp; sourceTree = "<group>"; };
+		9922527EE153CFFE50008BDC /* set_clang_warning_flags.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = set_clang_warning_flags.gypi; path = ../../../../build/set_clang_warning_flags.gypi; sourceTree = "<group>"; };
 		ACACCA575EC4E80A766707CE /* filename_rules.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = filename_rules.gypi; path = ../../../../build/filename_rules.gypi; sourceTree = "<group>"; };
 		B15668BB22DB775984984708 /* common.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = common.gypi; path = ../../../../build/common.gypi; sourceTree = "<group>"; };
 		EF975FE4193C98AC860BAF88 /* release.gypi */ = {isa = PBXFileReference; explicitFileType = sourcecode; name = release.gypi; path = ../../../../build/release.gypi; sourceTree = "<group>"; };
 		F1E265C7D891F48D3E33304D /* frame_dropper.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = frame_dropper.cc; sourceTree = "<group>"; };
-		FB93168AD65F8207CAD9DE26 /* exp_filter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = exp_filter.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,32 +51,32 @@
 		3CE9BCD1AFB93371F6DF9A22 = {
 			isa = PBXGroup;
 			children = (
-				A518E72C9084FC992409BA15 /* Source */,
+				70B8E89353381D75EF3799EB /* Source */,
 				2C58C6B8E21E26712EA21F57 /* Products */,
-				F3416F5D89807C8D50F240C7 /* Build */,
+				A810DC2EEB3535855ADD709C /* Build */,
 			);
 			sourceTree = "<group>";
 		};
-		59FBE37824AF726F956B4FF8 /* include */ = {
+		589441574902D3C8DFA0D409 /* include */ = {
 			isa = PBXGroup;
 			children = (
-				FB93168AD65F8207CAD9DE26 /* exp_filter.h */,
 				0741BDFC92129D62574DEB69 /* frame_dropper.h */,
 			);
 			path = include;
 			sourceTree = "<group>";
 		};
-		A518E72C9084FC992409BA15 /* Source */ = {
+		70B8E89353381D75EF3799EB /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				59FBE37824AF726F956B4FF8 /* include */,
-				7BF1688D75F503966053A3D8 /* exp_filter.cc */,
+				589441574902D3C8DFA0D409 /* include */,
 				F1E265C7D891F48D3E33304D /* frame_dropper.cc */,
+				56D22122AB9C59E661C4E991 /* quality_scaler.cc */,
+				84A9CB237B9D0139FE223904 /* quality_scaler.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";
 		};
-		F3416F5D89807C8D50F240C7 /* Build */ = {
+		A810DC2EEB3535855ADD709C /* Build */ = {
 			isa = PBXGroup;
 			children = (
 				B15668BB22DB775984984708 /* common.gypi */,
@@ -85,6 +86,7 @@
 				28EC6EBF0F16C3F9AB3596FF /* release_defaults.gypi */,
 				7B3FABA06CC8853E5AAFC597 /* release_impl.gypi */,
 				8821849D80A268CC5DCB7DEB /* release_impl_official.gypi */,
+				9922527EE153CFFE50008BDC /* set_clang_warning_flags.gypi */,
 				7123743720D8A249D9A85CAA /* supplement.gypi */,
 				890D6BFA4D2F16896DCE0310 /* video_coding_utility.gyp */,
 			);
@@ -139,8 +141,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C814EC61FD7A861BA0C0DFFE /* exp_filter.cc in Sources */,
-				AE9E8420CD6D0FC9FB8EB3CC /* frame_dropper.cc in Sources */,
+				E51FE43F3D6F2141D3D82BCE /* frame_dropper.cc in Sources */,
+				B155C125F0746D27CC0A9780 /* quality_scaler.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,8 +153,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -166,24 +172,24 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -192,20 +198,26 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					NDEBUG,
@@ -219,7 +231,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../../../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../../../..,
 					../../../system_wrappers/interface,
 				);
@@ -234,12 +246,13 @@
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 			};
@@ -249,8 +262,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+<<<<<<< HEAD
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+=======
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
+>>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -267,20 +284,20 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					V8_DEPRECATION_WARNINGS,
-					BLINK_SCALE_FILTERS_AT_RECORD_TIME,
+					"__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORE=0",
 					CHROMIUM_BUILD,
 					"USE_LIBJPEG_TURBO=1",
 					ENABLE_ONE_CLICK_SIGNIN,
+					ENABLE_PRE_SYNC_BACKUP,
 					"ENABLE_REMOTING=1",
 					"ENABLE_WEBRTC=1",
 					ENABLE_PEPPER_CDMS,
 					ENABLE_CONFIGURATION_POLICY,
-					ENABLE_INPUT_SPEECH,
 					ENABLE_NOTIFICATIONS,
 					"ENABLE_HIDPI=1",
 					DISCARDABLE_MEMORY_ALWAYS_SUPPORTED_NATIVELY,
 					SYSTEM_NATIVELY_SIGNALS_MEMORY_PRESSURE,
-					"ENABLE_EGLIMAGE=1",
+					DONT_EMBED_BUILD_METADATA,
 					"ENABLE_TASK_MANAGER=1",
 					"ENABLE_EXTENSIONS=1",
 					"ENABLE_PLUGIN_INSTALLATION=1",
@@ -289,24 +306,31 @@
 					"ENABLE_THEMES=1",
 					"ENABLE_AUTOFILL_DIALOG=1",
 					"ENABLE_BACKGROUND=1",
-					"ENABLE_AUTOMATION=1",
 					"ENABLE_GOOGLE_NOW=1",
 					"CLD_VERSION=2",
-					"ENABLE_FULL_PRINTING=1",
 					"ENABLE_PRINTING=1",
+					"ENABLE_BASIC_PRINTING=1",
+					"ENABLE_PRINT_PREVIEW=1",
 					"ENABLE_SPELLCHECK=1",
 					"ENABLE_CAPTIVE_PORTAL_DETECTION=1",
 					"ENABLE_APP_LIST=1",
 					"ENABLE_SETTINGS_APP=1",
-					"ENABLE_MANAGED_USERS=1",
+					"ENABLE_SUPERVISED_USERS=1",
 					"ENABLE_SERVICE_DISCOVERY=1",
+					"ENABLE_WIFI_BOOTSTRAPPING=1",
+					V8_USE_EXTERNAL_STARTUP_DATA,
+					WEBRTC_RESTRICT_LOGGING,
+					EXPAT_RELATIVE_PATH,
 					WEBRTC_MODULE_UTILITY_VIDEO,
 					WEBRTC_POSIX,
 					WEBRTC_MAC,
+					"USE_LIBPCI=1",
+					"USE_OPENSSL=1",
 					__STDC_CONSTANT_MACROS,
 					__STDC_FORMAT_MACROS,
 					"DYNAMIC_ANNOTATIONS_ENABLED=1",
 					"WTF_USE_DYNAMIC_ANNOTATIONS=1",
+					_DEBUG,
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_THREADSAFE_STATICS = NO;
@@ -314,7 +338,7 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				HEADER_SEARCH_PATHS = (
-					../../../..,
+					"$(SHARED_INTERMEDIATE_DIR)",
 					../../../..,
 					../../../system_wrappers/interface,
 				);
@@ -322,6 +346,8 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",
+					"-Wno-bool-conversion",
+					"-Wno-tautological-compare",
 				);
 				PRODUCT_NAME = video_coding_utility;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -332,12 +358,13 @@
 					"-Wextra",
 					"-Wno-unused-parameter",
 					"-Wno-missing-field-initializers",
+					"-Wno-selector-type-mismatch",
 					"-Wheader-hygiene",
-					"-Wno-c++11-narrowing",
 					"-Wno-char-subscripts",
 					"-Wno-unneeded-internal-declaration",
 					"-Wno-covered-switch-default",
 					"-Wstring-conversion",
+					"-Wno-c++11-narrowing",
 					"-Wno-deprecated-register",
 				);
 			};
@@ -346,9 +373,13 @@
 		8716591FE216FDF787D10CAE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+<<<<<<< HEAD
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+=======
+				ARCHS = x86_64;
+>>>>>>> origin/20140401-dev-stable
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				SDKROOT = macosx;
+				SDKROOT = macosx10.9;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../../../xcodebuild;
 			};
@@ -357,10 +388,16 @@
 		EF8C251A11309778C12A19F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+<<<<<<< HEAD
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+=======
+				ARCHS = x86_64;
+				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
+				SDKROOT = macosx10.9;
+>>>>>>> origin/20140401-dev-stable
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../../../../xcodebuild;
 			};

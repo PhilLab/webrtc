@@ -12,7 +12,7 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/media_file/interface/media_file.h"
 #include "webrtc/modules/utility/source/file_recorder_impl.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
     #include "critical_section_wrapper.h"
@@ -38,8 +38,6 @@ FileRecorder* FileRecorder::CreateFileRecorder(uint32_t instanceID,
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
         return new AviRecorder(instanceID, fileFormat);
 #else
-        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                             "Invalid file format: %d", kFileFormatAviFile);
         assert(false);
         return NULL;
 #endif
@@ -124,13 +122,8 @@ int32_t FileRecorderImpl::StartRecordingAudioFile(
     }
     if( retVal != 0)
     {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceVoice,
-            _instanceID,
-            "FileRecorder::StartRecording() failed to initialize file %s for\
- recording.",
-            fileName);
+        LOG(LS_WARNING) << "Failed to initialize file " << fileName
+                        << " for recording.";
 
         if(IsRecording())
         {
@@ -161,12 +154,7 @@ int32_t FileRecorderImpl::StartRecordingAudioFile(
     }
     if( retVal != 0)
     {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceVoice,
-            _instanceID,
-            "FileRecorder::StartRecording() failed to initialize outStream for\
- recording.");
+        LOG(LS_WARNING) << "Failed to initialize outStream for recording.";
 
         if(IsRecording())
         {
@@ -193,12 +181,8 @@ int32_t FileRecorderImpl::RecordAudioToFile(
 {
     if (codec_info_.plfreq == 0)
     {
-        WEBRTC_TRACE(
-            kTraceWarning,
-            kTraceVoice,
-            _instanceID,
-            "FileRecorder::RecordAudioToFile() recording audio is not turned\
- on");
+        LOG(LS_WARNING) << "RecordAudioToFile() recording audio is not "
+                        << "turned on.";
         return -1;
     }
     AudioFrame tempAudioFrame;
@@ -252,20 +236,16 @@ int32_t FileRecorderImpl::RecordAudioToFile(
     // NOTE: stereo recording is only supported for WAV files.
     // TODO (hellner): WAV expect PCM in little endian byte order. Not
     // "encoding" with PCM coder should be a problem for big endian systems.
-    uint32_t encodedLenInBytes = 0;
+    size_t encodedLenInBytes = 0;
     if (_fileFormat == kFileFormatPreencodedFile ||
         STR_CASE_CMP(codec_info_.plname, "L16") != 0)
     {
         if (_audioEncoder.Encode(*ptrAudioFrame, _audioBuffer,
                                  encodedLenInBytes) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceWarning,
-                kTraceVoice,
-                _instanceID,
-                "FileRecorder::RecordAudioToFile() codec %s not supported or\
- failed to encode stream",
-                codec_info_.plname);
+            LOG(LS_WARNING) << "RecordAudioToFile() codec "
+                            << codec_info_.plname
+                            << " not supported or failed to encode stream.";
             return -1;
         }
     } else {
@@ -301,9 +281,8 @@ int32_t FileRecorderImpl::RecordAudioToFile(
         uint16_t msOfData =
             ptrAudioFrame->samples_per_channel_ /
             uint16_t(ptrAudioFrame->sample_rate_hz_ / 1000);
-        if (WriteEncodedAudioData(_audioBuffer,
-                                  (uint16_t)encodedLenInBytes,
-                                  msOfData, playoutTS) == -1)
+        if (WriteEncodedAudioData(_audioBuffer, encodedLenInBytes, msOfData,
+                                  playoutTS) == -1)
         {
             return -1;
         }
@@ -318,12 +297,8 @@ int32_t FileRecorderImpl::SetUpAudioEncoder()
     {
         if(_audioEncoder.SetEncodeCodec(codec_info_,_amrFormat) == -1)
         {
-            WEBRTC_TRACE(
-                kTraceError,
-                kTraceVoice,
-                _instanceID,
-                "FileRecorder::StartRecording() codec %s not supported",
-                codec_info_.plname);
+            LOG(LS_ERROR) << "SetUpAudioEncoder() codec "
+                          << codec_info_.plname << " not supported.";
             return -1;
         }
     }
@@ -342,7 +317,7 @@ int32_t FileRecorderImpl::codec_info(CodecInst& codecInst) const
 
 int32_t FileRecorderImpl::WriteEncodedAudioData(
     const int8_t* audioBuffer,
-    uint16_t bufferLength,
+    size_t bufferLength,
     uint16_t /*millisecondsOfData*/,
     const TickTime* /*playoutTS*/)
 {
@@ -361,7 +336,7 @@ AviRecorder::AviRecorder(uint32_t instanceID, FileFormats fileFormat)
       _writtenAudioMS(0),
       _writtenVideoMS(0)
 {
-    _videoEncoder = new VideoCoder(instanceID);
+    _videoEncoder = new VideoCoder();
     _frameScaler = new FrameScaler();
     _videoFramesQueue = new VideoFramesQueue();
     _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,
@@ -432,7 +407,7 @@ int32_t AviRecorder::StopRecording()
     return FileRecorderImpl::StopRecording();
 }
 
-int32_t AviRecorder::CalcI420FrameSize( ) const
+size_t AviRecorder::CalcI420FrameSize( ) const
 {
     return 3 * _videoCodecInst.width * _videoCodecInst.height / 2;
 }
@@ -610,8 +585,8 @@ bool AviRecorder::Process()
             error = EncodeAndWriteVideoToFile( *frameToProcess);
             if( error != 0)
             {
-                WEBRTC_TRACE(kTraceError, kTraceVideo, _instanceID,
-                        "AviRecorder::Process() error writing to file.");
+                LOG(LS_ERROR) << "AviRecorder::Process() error writing to "
+                              << "file.";
                 break;
             } else {
                 uint32_t frameLengthMS = 1000 /
@@ -650,8 +625,7 @@ bool AviRecorder::Process()
         error = EncodeAndWriteVideoToFile( *frameToProcess);
         if(error != 0)
         {
-            WEBRTC_TRACE(kTraceError, kTraceVideo, _instanceID,
-                    "AviRecorder::Process() error writing to file.");
+            LOG(LS_ERROR) << "AviRecorder::Process() error writing to file.";
         } else {
             _writtenVideoMS += frameLengthMS;
         }
@@ -676,8 +650,8 @@ int32_t AviRecorder::EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame)
 
     if( STR_CASE_CMP(_videoCodecInst.plName, "I420") == 0)
     {
-       int length  = CalcBufferSize(kI420, videoFrame.width(),
-                                    videoFrame.height());
+       size_t length =
+           CalcBufferSize(kI420, videoFrame.width(), videoFrame.height());
         _videoEncodedData.VerifyAndAllocate(length);
 
         // I420 is raw data. No encoding needed (each sample is represented by
@@ -702,17 +676,12 @@ int32_t AviRecorder::EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame)
                (int8_t*)(_videoEncodedData.payloadData),
                _videoEncodedData.payloadSize))
         {
-            WEBRTC_TRACE(kTraceError, kTraceVideo, _instanceID,
-                         "Error writing AVI file");
+            LOG(LS_ERROR) << "Error writing AVI file.";
             return -1;
         }
     } else {
-        WEBRTC_TRACE(
-            kTraceError,
-            kTraceVideo,
-            _instanceID,
-            "FileRecorder::RecordVideoToFile() frame dropped by encoder bitrate\
- likely to low.");
+        LOG(LS_ERROR) << "FileRecorder::RecordVideoToFile() frame dropped by "
+                      << "encoder, bitrate likely too low.";
     }
     return 0;
 }
@@ -721,7 +690,7 @@ int32_t AviRecorder::EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame)
 // happens in AviRecorder::Process().
 int32_t AviRecorder::WriteEncodedAudioData(
     const int8_t* audioBuffer,
-    uint16_t bufferLength,
+    size_t bufferLength,
     uint16_t millisecondsOfData,
     const TickTime* playoutTS)
 {
@@ -773,7 +742,7 @@ MP4Recorder::MP4Recorder(uint32_t instanceID, FileFormats fileFormat)
     _writtenAudioMS(0),
     _writtenVideoMS(0)
 {
-    _videoEncoder = new VideoCoder(instanceID);
+    _videoEncoder = new VideoCoder();
     _frameScaler = new FrameScaler();
     _videoFramesQueue = new VideoFramesQueue();
     _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,
@@ -1152,10 +1121,10 @@ int32_t MP4Recorder::EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame)
 // Store audio frame in the _audioFramesToWrite buffer. The writing to file
 // happens in MP4Recorder::Process().
 int32_t MP4Recorder::WriteEncodedAudioData(
-                                           const int8_t* audioBuffer,
-                                           uint16_t bufferLength,
-                                           uint16_t millisecondsOfData,
-                                           const TickTime* playoutTS)
+    const int8_t* audioBuffer,
+    size_t bufferLength,
+    uint16_t millisecondsOfData,
+    const TickTime* playoutTS)
 {
     if (!IsRecording())
     {

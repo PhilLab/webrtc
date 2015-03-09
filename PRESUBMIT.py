@@ -6,7 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import os
 import re
+import sys
 
 
 def _CheckNoIOStreamInHeaders(input_api, output_api):
@@ -29,6 +31,7 @@ def _CheckNoIOStreamInHeaders(input_api, output_api):
         files) ]
   return []
 
+
 def _CheckNoFRIEND_TEST(input_api, output_api):
   """Make sure that gtest's FRIEND_TEST() macro is not used, the
   FRIEND_TEST_ALL_PREFIXES() macro from testsupport/gtest_prod_util.h should be
@@ -46,6 +49,7 @@ def _CheckNoFRIEND_TEST(input_api, output_api):
   return [output_api.PresubmitPromptWarning('WebRTC\'s code should not use '
       'gtest\'s FRIEND_TEST() macro. Include testsupport/gtest_prod_util.h and '
       'use FRIEND_TEST_ALL_PREFIXES() instead.\n' + '\n'.join(problems))]
+
 
 def _CheckApprovedFilesLintClean(input_api, output_api,
                                  source_file_filter=None):
@@ -93,22 +97,109 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   return result
 
-def _CheckTalkOrWebrtcOnly(input_api, output_api):
-  base_folders = set(["webrtc", "talk"])
-  base_folders_in_cl = set()
+def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
+  pattern = input_api.re.compile(r"base.gyp:rtc_base\s*'")
+  violating_files = []
+  for f in gyp_files:
+    gyp_exceptions = (
+        'base_tests.gyp',
+        'desktop_capture.gypi',
+        'libjingle.gyp',
+        'libjingle_tests.gyp',
+        'sound.gyp',
+        'webrtc_test_common.gyp',
+        'webrtc_tests.gypi',
+    )
+    if f.LocalPath().endswith(gyp_exceptions):
+      continue
+    contents = input_api.ReadFile(f)
+    if pattern.search(contents):
+      violating_files.append(f)
+  if violating_files:
+    return [output_api.PresubmitError(
+        'Depending on rtc_base is not allowed. Change your dependency to '
+        'rtc_base_approved and possibly sanitize and move the desired source '
+        'file(s) to rtc_base_approved.\nChanged GYP files:',
+        items=violating_files)]
+  return []
 
+def _CheckGypChanges(input_api, output_api):
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, white_list=(r'.+\.(gyp|gypi)$',))
+
+  gyp_files = []
+  for f in input_api.AffectedSourceFiles(source_file_filter):
+    if f.LocalPath().startswith('webrtc'):
+      gyp_files.append(f)
+
+  result = []
+  if gyp_files:
+    result.append(output_api.PresubmitNotifyResult(
+        'As you\'re changing GYP files: please make sure corresponding '
+        'BUILD.gn files are also updated.\nChanged GYP files:',
+        items=gyp_files))
+    result.extend(_CheckNoRtcBaseDeps(input_api, gyp_files, output_api))
+  return result
+
+def _CheckUnwantedDependencies(input_api, output_api):
+  """Runs checkdeps on #include statements added in this
+  change. Breaking - rules is an error, breaking ! rules is a
+  warning.
+  """
+  # Copied from Chromium's src/PRESUBMIT.py.
+
+  # We need to wait until we have an input_api object and use this
+  # roundabout construct to import checkdeps because this file is
+  # eval-ed and thus doesn't have __file__.
+  original_sys_path = sys.path
+  try:
+    checkdeps_path = input_api.os_path.join(input_api.PresubmitLocalPath(),
+                                            'buildtools', 'checkdeps')
+    if not os.path.exists(checkdeps_path):
+      return [output_api.PresubmitError(
+          'Cannot find checkdeps at %s\nHave you run "gclient sync" to '
+          'download Chromium and setup the symlinks?' % checkdeps_path)]
+    sys.path.append(checkdeps_path)
+    import checkdeps
+    from cpp_checker import CppChecker
+    from rules import Rule
+  finally:
+    # Restore sys.path to what it was before.
+    sys.path = original_sys_path
+
+  added_includes = []
   for f in input_api.AffectedFiles():
-    full_path = f.LocalPath()
-    base_folders_in_cl.add(full_path[:full_path.find('/')])
+    if not CppChecker.IsCppFile(f.LocalPath()):
+      continue
+
+    changed_lines = [line for _line_num, line in f.ChangedContents()]
+    added_includes.append([f.LocalPath(), changed_lines])
+
+  deps_checker = checkdeps.DepsChecker(input_api.PresubmitLocalPath())
+
+  error_descriptions = []
+  warning_descriptions = []
+  for path, rule_type, rule_description in deps_checker.CheckAddedCppIncludes(
+      added_includes):
+    description_with_path = '%s\n    %s' % (path, rule_description)
+    if rule_type == Rule.DISALLOW:
+      error_descriptions.append(description_with_path)
+    else:
+      warning_descriptions.append(description_with_path)
 
   results = []
-  if base_folders.issubset(base_folders_in_cl):
-    error_type = output_api.PresubmitError
-    results.append(error_type(
-        'It is not allowed to check in files to ' + ', '.join(base_folders) +
-        ' in the same cl',
-        []))
+  if error_descriptions:
+    results.append(output_api.PresubmitError(
+        'You added one or more #includes that violate checkdeps rules.',
+        error_descriptions))
+  if warning_descriptions:
+    results.append(output_api.PresubmitPromptOrNotify(
+        'You added one or more #includes of files that are temporarily\n'
+        'allowed but being removed. Can you avoid introducing the\n'
+        '#include? See relevant DEPS file(s) for details and contacts.',
+        warning_descriptions))
   return results
+
 
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
@@ -118,10 +209,15 @@ def _CommonChecks(input_api, output_api):
       black_list=(r'^.*gviz_api\.py$',
                   r'^.*gaeunit\.py$',
                   # Embedded shell-script fakes out pylint.
+                  r'^build/.*\.py$',
+                  r'^buildtools/.*\.py$',
+                  r'^chromium/.*\.py$',
+                  r'^out.*/.*\.py$',
                   r'^talk/site_scons/site_tools/talk_linux.py$',
-                  r'^third_party/.*\.py$',
                   r'^testing/.*\.py$',
+                  r'^third_party/.*\.py$',
                   r'^tools/clang/.*\.py$',
+                  r'^tools/gn/.*\.py$',
                   r'^tools/gyp/.*\.py$',
                   r'^tools/perf_expectations/.*\.py$',
                   r'^tools/protoc_wrapper/.*\.py$',
@@ -134,8 +230,8 @@ def _CommonChecks(input_api, output_api):
                   r'^tools/valgrind/.*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^webrtc/build/.*\.py$',
-                  r'^build/.*\.py$',
-                  r'^out.*/.*\.py$',),
+                  r'^xcodebuild.*/.*\.py$',),
+
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x
                          'W0232',  # Class has no __init__ method
@@ -151,13 +247,16 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
-  results.extend(_CheckTalkOrWebrtcOnly(input_api, output_api))
+  results.extend(_CheckGypChanges(input_api, output_api))
+  results.extend(_CheckUnwantedDependencies(input_api, output_api))
   return results
+
 
 def CheckChangeOnUpload(input_api, output_api):
   results = []
   results.extend(_CommonChecks(input_api, output_api))
   return results
+
 
 def CheckChangeOnCommit(input_api, output_api):
   results = []
@@ -176,6 +275,7 @@ def CheckChangeOnCommit(input_api, output_api):
       json_url='http://webrtc-status.appspot.com/current?format=json'))
   return results
 
+
 def GetDefaultTryConfigs(bots=None):
   """Returns a list of ('bot', set(['tests']), optionally filtered by [bots].
 
@@ -184,30 +284,39 @@ def GetDefaultTryConfigs(bots=None):
   """
   return { 'tryserver.webrtc': dict((bot, []) for bot in bots)}
 
+
 # pylint: disable=W0613
 def GetPreferredTryMasters(project, change):
   files = change.LocalPaths()
 
+  android_gn_bots = [
+      'android_gn',
+      'android_gn_rel',
+  ]
   android_bots = [
       'android',
-      'android_apk',
-      'android_apk_rel',
+      'android_arm64',
       'android_rel',
       'android_clang',
-  ]
+  ] + android_gn_bots
   ios_bots = [
       'ios',
+      'ios_arm64',
+      'ios_arm64_rel',
       'ios_rel',
+  ]
+  linux_gn_bots = [
+      'linux_gn',
+      'linux_gn_rel',
   ]
   linux_bots = [
       'linux',
       'linux_asan',
       'linux_baremetal',
-      'linux_memcheck',
+      'linux_msan',
       'linux_rel',
-      'linux_tsan',
       'linux_tsan2',
-  ]
+  ] + linux_gn_bots
   mac_bots = [
       'mac',
       'mac_asan',
@@ -219,12 +328,14 @@ def GetPreferredTryMasters(project, change):
       'win',
       'win_asan',
       'win_baremetal',
+      'win_drmemory_light',
       'win_rel',
       'win_x64_rel',
   ]
   if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
     return {}
-
+  if all(re.search(r'[\\/]BUILD.gn$', f) for f in files):
+    return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots)
   if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
     return GetDefaultTryConfigs(mac_bots)
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):

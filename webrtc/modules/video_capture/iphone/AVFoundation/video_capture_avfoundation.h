@@ -18,7 +18,7 @@
 #include "../../video_capture_impl.h"
 #include "video_capture_avfoundation_utility.h"
 #include "../../device_info_impl.h"
-#include "webrtc_libyuv.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 
 // Forward declaraion

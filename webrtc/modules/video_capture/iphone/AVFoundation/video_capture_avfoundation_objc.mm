@@ -16,8 +16,8 @@
 #import <UIKit/UIKit.h>
 #import "video_capture_avfoundation_objc.h"
 #include "video_capture_avfoundation_utility.h"
-#include "trace.h"
-#include "webrtc_libyuv.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include <sys/sysctl.h>
 
 @interface VideoCaptureIPhoneAVFoundationObjC()
@@ -60,13 +60,7 @@
     if(_captureSession)
     {
         [_captureSession stopRunning];
-        [_captureSession release];
     }
-    
-    if (_faceDetector)
-        [_faceDetector release];
-    
-    [super dealloc];
 }
 
 #pragma mark **** public methods
@@ -181,10 +175,6 @@
 
     NSError* error;
 
-    if(_captureVideoDeviceInput)
-    {
-        [_captureVideoDeviceInput release];
-    }
     _captureVideoDeviceInput = [[AVCaptureDeviceInput alloc]
                                  initWithDevice:tempCaptureDevice error:&error];
 
@@ -221,10 +211,19 @@
     if ([systemVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending)
     {
         AVCaptureDevice* device = [_captureVideoDeviceInput device];
-        if ([device lockForConfiguration:NULL] == YES )
-        {
+        AVCaptureDeviceFormat* activeFormat = device.activeFormat;
+        NSArray* supportedRanges = activeFormat.videoSupportedFrameRateRanges;
+        AVFrameRateRange* targetRange = [supportedRanges count] > 0 ?
+            supportedRanges[0] : nil;
+        for (AVFrameRateRange* range in supportedRanges) {
+            if (range.maxFrameRate <= _frameRate &&
+                targetRange.maxFrameRate <= range.maxFrameRate) {
+                targetRange = range;
+            }
+        }
+        if (targetRange && [device lockForConfiguration:NULL]) {
             [device setActiveVideoMinFrameDuration:CMTimeMake(1, _frameRate)];
-            [device setActiveVideoMaxFrameDuration:CMTimeMake(1, 2)];
+            [device setActiveVideoMaxFrameDuration:targetRange.maxFrameDuration];
             [device unlockForConfiguration];
         }
     }
@@ -433,8 +432,6 @@
         return [NSNumber numberWithInt:0];
     }
 
-    _pool = [[NSAutoreleasePool alloc]init];
-
     memset(_captureDeviceNameUTF8, 0, 1024);
     _counter = 0;
     _framesDelivered = 0;
@@ -503,10 +500,6 @@
         return [NSNumber numberWithInt:0];
     }
 
-    if(_captureDevices)
-    {
-        [_captureDevices release];
-    }
     _captureDevices = [[NSArray alloc] initWithArray:
         [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]];
 
@@ -640,7 +633,7 @@
     BOOL ret = NO;
     CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
 	CFDictionaryRef attachments = CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
-	CIImage *ciImage = [[CIImage alloc] initWithCVPixelBuffer:pixelBuffer options:(NSDictionary*)attachments];
+	CIImage *ciImage = [[CIImage alloc] initWithCVPixelBuffer:pixelBuffer options:(__bridge NSDictionary*)attachments];
 	if (attachments) {
 		CFRelease(attachments);
     }
@@ -663,7 +656,6 @@
 //    else
 //        NSLog(@"Face NOT Detected");
     
-    [ciImage release];
     return ret;
 }
 // This is the callback that is called when the OS has a frame to deliver to us.

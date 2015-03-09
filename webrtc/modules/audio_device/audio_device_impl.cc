@@ -48,8 +48,14 @@
     #include "audio_device_utility_bb.h"
     #include "audio_device_bb.h"
 #endif
+
+#if defined(WEBRTC_DUMMY_FILE_DEVICES)
+#include "webrtc/modules/audio_device/dummy/file_audio_device_factory.h"
+#endif
+
 #include "webrtc/modules/audio_device/dummy/audio_device_dummy.h"
 #include "webrtc/modules/audio_device/dummy/audio_device_utility_dummy.h"
+#include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -209,6 +215,14 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     {
         ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
     }
+#elif defined(WEBRTC_DUMMY_FILE_DEVICES)
+    ptrAudioDevice = FileAudioDeviceFactory::CreateFileAudioDevice(Id());
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                 "Will use file-playing dummy device.");
+    if (ptrAudioDevice != NULL)
+    {
+        ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
+    }
 #else
     const AudioLayer audioLayer(PlatformAudioLayer());
 
@@ -270,11 +284,13 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
 #if defined(WEBRTC_ANDROID_OPENSLES)
         ptrAudioDevice = new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
-#else
-        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
-#endif
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Android OpenSLES Audio APIs will be utilized");
+#else
+        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "Android JNI Audio APIs will be utilized");
+#endif
     }
 
     if (ptrAudioDevice != NULL)
@@ -341,15 +357,15 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 #if defined(WEBRTC_IOS)
     if (audioLayer == kPlatformDefaultAudio)
     {
-        // Create *iPhone Audio* implementation
-        ptrAudioDevice = new AudioDeviceIPhone(Id());
+        // Create iOS Audio Device implementation.
+        ptrAudioDevice = new AudioDeviceIOS(Id());
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "iPhone Audio APIs will be utilized");
     }
 
     if (ptrAudioDevice != NULL)
     {
-        // Create the Mac implementation of the Device Utility.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityIPhone(Id());
+        // Create iOS Device Utility implementation.
+        ptrAudioDeviceUtility = new AudioDeviceUtilityIOS(Id());
     }
     // END #if defined(WEBRTC_IOS)
 
@@ -486,7 +502,7 @@ int32_t AudioDeviceModuleImpl::ChangeUniqueId(const int32_t id)
 //  to call Process().
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceModuleImpl::TimeUntilNextProcess()
+int64_t AudioDeviceModuleImpl::TimeUntilNextProcess()
 {
     uint32_t now = AudioDeviceUtility::GetTimeInMS();
     int32_t deltaProcess = kAdmMaxIdleTimeProcess - (now - _lastProcessTime);
@@ -2034,9 +2050,8 @@ int32_t AudioDeviceModuleImpl::GetOutputAudioRoute(OutputAudioRoute* route) cons
 
 int32_t AudioDeviceModuleImpl::EnableBuiltInAEC(bool enable)
 {
-    CHECK_INITIALIZED();
-
-    return _ptrAudioDevice->EnableBuiltInAEC(enable);
+  CHECK_INITIALIZED();
+  return _ptrAudioDevice->EnableBuiltInAEC(enable);
 }
 
 bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const
@@ -2044,6 +2059,11 @@ bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const
     CHECK_INITIALIZED_BOOL();
 
     return _ptrAudioDevice->BuiltInAECIsEnabled();
+}
+
+bool AudioDeviceModuleImpl::BuiltInAECIsAvailable() const {
+  CHECK_INITIALIZED_BOOL();
+  return _ptrAudioDevice->BuiltInAECIsAvailable();
 }
 
 // ============================================================================

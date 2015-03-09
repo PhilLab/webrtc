@@ -17,9 +17,9 @@
 #include "../video_capture_impl.h"
 #include "../device_info_impl.h"
 #include "../video_capture_config.h"
-#include "ref_count.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
 
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #include "AVFoundation/video_capture_avfoundation.h"
 #include "AVFoundation/video_capture_avfoundation_info.h"

@@ -1,0 +1,43 @@
+build obj/webrtc/webrtc_all.actions_depends.stamp: stamp $
+    obj/webrtc/base/librtc_base_approved.a obj/webrtc/libwebrtc_common.a $
+    obj/webrtc/common_audio/libcommon_audio.a $
+    obj/webrtc/common_audio/libcommon_audio_neon.a $
+    obj/webrtc/common_video/libcommon_video.a $
+    obj/webrtc/modules/libaudio_decoder_interface.a $
+    obj/webrtc/modules/libaudio_encoder_interface.a $
+    obj/webrtc/modules/libCNG.a obj/webrtc/modules/libG711.a $
+    obj/webrtc/modules/libG722.a obj/webrtc/modules/libiLBC.a $
+    obj/webrtc/modules/libiSAC.a obj/webrtc/modules/libiSACFix.a $
+    obj/webrtc/modules/libPCM16B.a obj/webrtc/modules/libred.a $
+    obj/webrtc/modules/libaudio_coding_module.a $
+    obj/webrtc/modules/libneteq.a $
+    obj/webrtc/modules/libaudio_conference_mixer.a $
+    obj/webrtc/modules/libaudio_device.a $
+    obj/webrtc/modules/libaudio_processing.a $
+    obj/webrtc/modules/libbitrate_controller.a $
+    obj/webrtc/modules/libdesktop_capture.a $
+    obj/webrtc/modules/libmedia_file.a obj/webrtc/modules/libpaced_sender.a $
+    obj/webrtc/modules/libremote_bitrate_estimator.a $
+    obj/webrtc/modules/libbwe_tools_util.a bwe_rtp_to_text bwe_rtp_play $
+    obj/webrtc/modules/librtp_rtcp.a obj/webrtc/modules/libwebrtc_utility.a $
+    obj/webrtc/modules/libwebrtc_i420.a $
+    obj/webrtc/modules/libwebrtc_video_coding.a $
+    obj/webrtc/modules/libvideo_capture_module.a $
+    obj/webrtc/modules/libvideo_capture_module_impl.a $
+    obj/webrtc/modules/libvideo_capture_module_internal_impl.a $
+    obj/webrtc/modules/libvideo_processing.a $
+    obj/webrtc/modules/libvideo_render_module.a $
+    obj/webrtc/modules/libvideo_render_module_impl.a $
+    obj/webrtc/modules/libvideo_render_module_internal_impl.a $
+    obj/webrtc/modules/libwebrtc_opus.a obj/webrtc/modules/libisac_neon.a $
+    obj/webrtc/modules/libaudio_processing_neon.a $
+    obj/webrtc/system_wrappers/source/libsystem_wrappers.a $
+    obj/webrtc/system_wrappers/source/libfield_trial_default.a $
+    obj/webrtc/system_wrappers/source/libmetrics_default.a $
+    obj/webrtc/system_wrappers/source/libcpu_features_android.a $
+    obj/webrtc/video_engine/libvideo_engine_core.a $
+    obj/webrtc/voice_engine/libvoice_engine.a $
+    obj/webrtc/modules/video_coding/codecs/vp8/libwebrtc_vp8.a $
+    obj/webrtc/modules/video_coding/codecs/vp9/libwebrtc_vp9.a $
+    obj/webrtc/test/libchannel_transport.a obj/webrtc/libwebrtc.a
+

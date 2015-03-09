@@ -278,6 +278,12 @@ void WindowCapturerLinux::Start(Callback* callback) {
 }
 
 void WindowCapturerLinux::Capture(const DesktopRegion& region) {
+  if (!x_server_pixel_buffer_.IsWindowValid()) {
+    LOG(LS_INFO) << "The window is no longer valid.";
+    callback_->OnCaptureCompleted(NULL);
+    return;
+  }
+
   x_display_->ProcessPendingXEvents();
 
   if (!has_composite_extension_) {
@@ -295,6 +301,9 @@ void WindowCapturerLinux::Capture(const DesktopRegion& region) {
   x_server_pixel_buffer_.Synchronize();
   x_server_pixel_buffer_.CaptureRect(DesktopRect::MakeSize(frame->size()),
                                      frame);
+
+  frame->mutable_updated_region()->SetRect(
+      DesktopRect::MakeSize(frame->size()));
 
   callback_->OnCaptureCompleted(frame);
 }

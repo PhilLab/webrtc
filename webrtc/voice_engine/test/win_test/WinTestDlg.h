@@ -96,7 +96,6 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
 class MediaProcessImpl;
-class ConnectionObserver;
 class RxCallback;
 class MyTransport;
 
@@ -161,7 +160,6 @@ private:
 
     MyTransport*            _transportPtr;
     MediaProcessImpl*       _externalMediaPtr;
-    ConnectionObserver*     _connectionObserverPtr;
     RxCallback*             _rxVadObserverPtr;
 
 private:
@@ -268,7 +266,7 @@ public:
     afx_msg void OnBnClickedCheckNs1();
     afx_msg void OnBnClickedCheckRecCall();
     afx_msg void OnBnClickedCheckTypingDetection();
-    afx_msg void OnBnClickedCheckFEC();
+    afx_msg void OnBnClickedCheckRED();
     afx_msg void OnBnClickedButtonClearErrorCallback();
     afx_msg void OnBnClickedCheckBwe1();
 };

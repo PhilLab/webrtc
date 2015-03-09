@@ -11,11 +11,11 @@
 #include "webrtc/engine_configurations.h"
 
 #include "video_render_uiview.h"
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "trace.h"
-#include "thread_wrapper.h"
-#include "webrtc_libyuv.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc {
 
@@ -90,40 +90,41 @@ int32_t VideoChannelUIView::GetChannelProperties(float& left,
 int32_t VideoChannelUIView::RenderFrame(const uint32_t /*streamId*/,
                                               I420VideoFrame& videoFrame)
 {
+    @autoreleasepool {
+        _owner->LockAGLCntx();
 
-    _owner->LockAGLCntx();
-
-    if(_width != (int)videoFrame.width() ||
-            _height != (int)videoFrame.height())
-    {
-        if(FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
+        if(_width != (int)videoFrame.width() ||
+                _height != (int)videoFrame.height())
         {
+            if(FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
+            {
+                _owner->UnlockAGLCntx();
+                return -1;
+            }
+        }
+
+        int bufferSize = CalcBufferSize(kI420, _width, _height);
+        
+        // Allocate ARGB buffer
+        VideoFrame captureFrame;
+        captureFrame.VerifyAndAllocate(bufferSize);
+        if (!captureFrame.Buffer())
+        {
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                         "Failed to allocate capture frame buffer.");
             _owner->UnlockAGLCntx();
             return -1;
         }
-    }
+        
+        captureFrame.SetLength(bufferSize);
+        
+        webrtc::ExtractBuffer(videoFrame, captureFrame.Length(), captureFrame.Buffer());
 
-    int bufferSize = CalcBufferSize(kI420, _width, _height);
-    
-    // Allocate ARGB buffer
-    VideoFrame captureFrame;
-    captureFrame.VerifyAndAllocate(bufferSize);
-    if (!captureFrame.Buffer())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                     "Failed to allocate capture frame buffer.");
+        int ret = DeliverFrame(captureFrame.Buffer(), captureFrame.Length(), videoFrame.timestamp());
+
         _owner->UnlockAGLCntx();
-        return -1;
+        return ret;
     }
-    
-    captureFrame.SetLength(bufferSize);
-    
-    webrtc::ExtractBuffer(videoFrame, captureFrame.Length(), captureFrame.Buffer());
-
-    int ret = DeliverFrame(captureFrame.Buffer(), captureFrame.Length(), videoFrame.timestamp());
-
-    _owner->UnlockAGLCntx();
-    return ret;
 }
 
 int VideoChannelUIView::UpdateSize(int width, int height)
@@ -204,8 +205,6 @@ int VideoChannelUIView::DeliverFrame(unsigned char* buffer, int bufferSize, unsi
 
     ConvertI420ToABGR(buffer, captureFrame.Buffer(), _width, _height, 0);
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
   
     CGContextRef context = 
@@ -227,8 +226,6 @@ int VideoChannelUIView::DeliverFrame(unsigned char* buffer, int bufferSize, unsi
 //    [windowRef setFrame:CGRectMake(windowRef.frame.origin.x, windowRef.frame.origin.y, image.size.width, image.size.height)];
     [windowRef performSelectorOnMainThread:@selector(setImage:)
                               withObject:image waitUntilDone:NO];
-  
-    [pool release];
   
 //    if ((TickTime::Now() - _lastFramerateReportTime).Milliseconds() >= 1000)
 //    {
@@ -314,7 +311,6 @@ _zOrderToChannel( ),
 _threadID (0),
 _renderingIsPaused (FALSE)
 {
-    [_windowRef retain];
     _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
     _screenUpdateEvent = EventWrapper::Create();
 }
@@ -323,12 +319,6 @@ int VideoRenderUIView::ChangeWindow(UIImageView* newWindowRef)
 {
 
     LockAGLCntx();
-  
-    if (_windowRef)
-    {
-        [_windowRef release];
-        _windowRef = [newWindowRef retain];
-    }
 
     if(CreateMixingContext() == -1)
     {
@@ -523,9 +513,6 @@ VideoRenderUIView::~VideoRenderUIView()
         zIt = _zOrderToChannel.begin();
     }
     _zOrderToChannel.clear();
-  
-    [_windowRef release];
-
 }
 
 /* static */
@@ -800,7 +787,9 @@ VideoChannelUIView* VideoRenderUIView::ConfigureNSGLChannel(int channel, int zOr
 
 bool VideoRenderUIView::ScreenUpdateThreadProc(void* obj)
 {
-    return static_cast<VideoRenderUIView*>(obj)->ScreenUpdateProcess();
+    @autoreleasepool {
+        return static_cast<VideoRenderUIView*>(obj)->ScreenUpdateProcess();
+    }
 }
 
 bool VideoRenderUIView::ScreenUpdateProcess()

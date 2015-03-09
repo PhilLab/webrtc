@@ -42,7 +42,6 @@ typedef struct {
   short lastDelayDiff;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-  RingBuffer* far_pre_buf_s16;  // Time domain far-end pre-buffer in int16_t.
   FILE* bufFile;
   FILE* delayFile;
   FILE* skewFile;
@@ -63,6 +62,6 @@ typedef struct {
   int farend_started;
 
   AecCore* aec;
-} aecpc_t;
+} Aec;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_

@@ -91,6 +91,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
       ],
       'sources': [
         'force_mic_volume_max/force_mic_volume_max.cc',
@@ -101,12 +102,69 @@
     ['include_tests==1', {
       'targets' : [
         {
+          'target_name': 'agc_manager',
+          'type': 'static_library',
+          'dependencies': [
+            '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+            '<(webrtc_root)/modules/modules.gyp:audio_processing',
+            '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+          ],
+          'sources': [
+            '<(webrtc_root)/modules/audio_processing/agc/test/agc_manager.cc',
+            '<(webrtc_root)/modules/audio_processing/agc/test/agc_manager.h',
+          ],
+        },
+        {
+          'target_name': 'agc_harness',
+          'type': 'executable',
+          'dependencies': [
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+            '<(webrtc_root)/test/test.gyp:channel_transport',
+            '<(webrtc_root)/test/test.gyp:test_support',
+            'agc_manager',
+          ],
+          'sources': [
+            '<(webrtc_root)/modules/audio_processing/agc/test/agc_harness.cc',
+          ],
+        },  # agc_harness
+        {
+          'target_name': 'agc_proc',
+          'type': 'executable',
+          'dependencies': [
+            #'<(DEPTH)/testing/gmock.gyp:gmock',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            '<(webrtc_root)/test/test.gyp:test_support',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+            'agc_manager',
+          ],
+          'sources': [
+            '<(webrtc_root)/modules/audio_processing/agc/test/agc_test.cc',
+            '<(webrtc_root)/modules/audio_processing/agc/test/test_utils.cc',
+          ],
+        },  # agc_proc
+        {
+          'target_name': 'activity_metric',
+          'type': 'executable',
+          'dependencies': [
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            'agc_manager',
+          ],
+          'sources': [
+            '<(webrtc_root)/modules/audio_processing/agc/test/activity_metric.cc',
+          ],
+        },  # activity_metric
+        {
           'target_name': 'audio_e2e_harness',
           'type': 'executable',
           'dependencies': [
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
@@ -121,7 +179,7 @@
             'video_quality_analysis',
             '<(webrtc_root)/tools/internal_tools.gyp:command_line_parser',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
+            #'<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'simple_command_line_parser_unittest.cc',
@@ -133,20 +191,16 @@
             4267,  # size_t to int truncation.
           ],
           'conditions': [
-            # TODO(henrike): remove build_with_chromium==1 when the bots are
-            # using Chromium's buildbots.
-            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+            ['OS=="android"', {
               'dependencies': [
-                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+                #'<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
             }],
           ],
         }, # tools_unittests
       ], # targets
-      # TODO(henrike): remove build_with_chromium==1 when the bots are using
-      # Chromium's buildbots.
       'conditions': [
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+        ['OS=="android"', {
           'targets': [
             {
               'target_name': 'tools_unittests_apk_target',
@@ -167,7 +221,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'tools_unittests.isolate',
               ],
               'sources': [
                 'tools_unittests.isolate',

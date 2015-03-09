@@ -31,7 +31,7 @@ class TestVCMReceiver : public ::testing::Test {
   TestVCMReceiver()
       : clock_(new SimulatedClock(0)),
         timing_(clock_.get()),
-        receiver_(&timing_, clock_.get(), &event_factory_, 1, 1, true) {
+        receiver_(&timing_, clock_.get(), &event_factory_, true) {
     stream_generator_.reset(new
         StreamGenerator(0, 0, clock_->TimeInMilliseconds()));
     memset(data_buffer_, 0, kDataBufferSize);
@@ -81,8 +81,8 @@ class TestVCMReceiver : public ::testing::Test {
 
   bool DecodeNextFrame() {
     int64_t render_time_ms = 0;
-    VCMEncodedFrame* frame = receiver_.FrameForDecoding(0, render_time_ms,
-                                                        false, NULL);
+    VCMEncodedFrame* frame =
+        receiver_.FrameForDecoding(0, render_time_ms, false);
     if (!frame)
       return false;
     receiver_.ReleaseFrame(frame);

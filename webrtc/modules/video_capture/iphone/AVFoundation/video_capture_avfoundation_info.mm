@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #include "../../video_capture_config.h"
 #include "video_capture_avfoundation_info_objc.h"
 
@@ -31,8 +31,6 @@ VideoCaptureIPhoneAVFoundationInfo::~VideoCaptureIPhoneAVFoundationInfo()
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
                  "%s:%d", __FUNCTION__, __LINE__);
-    [_captureInfo release];
-
 }
 
 int32_t VideoCaptureIPhoneAVFoundationInfo::Init()
