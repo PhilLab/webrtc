@@ -14,6 +14,7 @@
 			);
 			dependencies = (
 				D1F412F0200340CEB46EDF22 /* PBXTargetDependency */,
+				8782DD62706B0CEF1D2EE32E /* PBXTargetDependency */,
 			);
 			name = All;
 			productName = All;
@@ -24,20 +25,6 @@
 			buildPhases = (
 			);
 			dependencies = (
-<<<<<<< HEAD
-				E2F9E1D31A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1D51A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1D71A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1D91A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1DB1A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1DD1A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1DF1A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1E11A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1E31A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1E51A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1E71A02AD52006AFBCC /* PBXTargetDependency */,
-				E2F9E1E91A02AD52006AFBCC /* PBXTargetDependency */,
-=======
 				E29C92271A77DA4D005B53AC /* PBXTargetDependency */,
 				E29C920C1A77D9B8005B53AC /* PBXTargetDependency */,
 				E2FED0FE1A73136700795C40 /* PBXTargetDependency */,
@@ -88,7 +75,6 @@
 				E27A89B41A69A9F0006B88A2 /* PBXTargetDependency */,
 				E27A89B61A69A9F0006B88A2 /* PBXTargetDependency */,
 				E27A89B81A69A9F0006B88A2 /* PBXTargetDependency */,
->>>>>>> origin/20140401-dev-stable
 				A935E142D0217088CABE8A19 /* PBXTargetDependency */,
 			);
 			name = webrtc_all;
@@ -114,9 +100,6 @@
 			remoteGlobalIDString = E7D076A489DB88E65EA89828;
 			remoteInfo = webrtc_all;
 		};
-<<<<<<< HEAD
-		E23C2EF1192E1B0400706ADA /* PBXContainerItemProxy */ = {
-=======
 		BBE50408207535947AF573EB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0C53B5B135FB7C49914A56B4 /* Project object */;
@@ -125,7 +108,6 @@
 			remoteInfo = webrtc;
 		};
 		E21EC13F1A69A81500219A1D /* PBXContainerItemProxy */ = {
->>>>>>> origin/20140401-dev-stable
 			isa = PBXContainerItemProxy;
 			containerPortal = 86168C8227755F7703AAD32B /* common_audio_osx.xcodeproj */;
 			proxyType = 2;
@@ -908,90 +890,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = D91A4F6F28D55902144D60E1;
 			remoteInfo = video_coding_utility;
-		};
-		E2F9E1D21A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 86168C8227755F7703AAD32B /* common_audio_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = B637BE212C1291BF53D2B334;
-			remoteInfo = All;
-		};
-		E2F9E1D41A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B5E346C8E76EC21E2CFCAC61 /* common_video_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 7C7BFBE130B42EB6D24D4F1C;
-			remoteInfo = common_video;
-		};
-		E2F9E1D61A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 89D53D4FAA8C44D1B15586F2 /* modules_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = B6A0643AFA262FC6A3CE8661;
-			remoteInfo = All;
-		};
-		E2F9E1D81A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = EC37690DA3989CEBC4AF6D40 /* system_wrappers_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 455BC70E81E4CAFA527F91CD;
-			remoteInfo = system_wrappers;
-		};
-		E2F9E1DA1A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AFAB47490817770D883BA4E1 /* video_engine_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 0A409F3BCD2C0DFC55FF154E;
-			remoteInfo = All;
-		};
-		E2F9E1DC1A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 8F1A03E15C2D22DF51870BC0 /* voice_engine_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = B72769664B0BB4FBC3DADCF5;
-			remoteInfo = All;
-		};
-		E2F9E1DE1A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B04746865C69200FA736AAC0 /* vp8_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 8F5C1330FDA6327FC786125D;
-			remoteInfo = All;
-		};
-		E2F9E1E01A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 35C13FB9D7136C414F7A5BB3 /* video_coding_utility_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = D91A4F6F28D55902144D60E1;
-			remoteInfo = video_coding_utility;
-		};
-		E2F9E1E21A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6AF1F18CA21B0532803BD9CC /* remote_bitrate_estimator_components_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 2BA81E870F086FBC199E2414;
-			remoteInfo = rbe_components;
-		};
-		E2F9E1E41A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5AAE6A356E12E45A33D6EC1B /* opus_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 343C989E9B7FEAC47C6AF974;
-			remoteInfo = All;
-		};
-		E2F9E1E61A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F263C4AFD078ED2FB3B62792 /* libyuv_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = BFCB3C407E427151B276345A;
-			remoteInfo = libyuv;
-		};
-		E2F9E1E81A02AD52006AFBCC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 9A95AE6FC4675C90AB9468A5 /* libvpx_osx.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9A1090C66B6349F31686A64B;
-			remoteInfo = All;
 		};
 		ED08DAB6AB2EB53D89C4CB03 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1852,6 +1750,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		8782DD62706B0CEF1D2EE32E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F49F64DE0324C1C581A660A5 /* webrtc */;
+			targetProxy = BBE50408207535947AF573EB /* PBXContainerItemProxy */;
+		};
 		A935E142D0217088CABE8A19 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F49F64DE0324C1C581A660A5 /* webrtc */;
@@ -1862,67 +1765,6 @@
 			target = E7D076A489DB88E65EA89828 /* webrtc_all */;
 			targetProxy = 54F7CDB319B73B1613128107 /* PBXContainerItemProxy */;
 		};
-<<<<<<< HEAD
-		E2F9E1D31A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1D21A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1D51A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = common_video;
-			targetProxy = E2F9E1D41A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1D71A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1D61A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1D91A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = system_wrappers;
-			targetProxy = E2F9E1D81A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1DB1A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1DA1A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1DD1A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1DC1A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1DF1A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1DE1A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1E11A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = video_coding_utility;
-			targetProxy = E2F9E1E01A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1E31A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = rbe_components;
-			targetProxy = E2F9E1E21A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1E51A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1E41A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1E71A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = libyuv;
-			targetProxy = E2F9E1E61A02AD52006AFBCC /* PBXContainerItemProxy */;
-		};
-		E2F9E1E91A02AD52006AFBCC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = All;
-			targetProxy = E2F9E1E81A02AD52006AFBCC /* PBXContainerItemProxy */;
-=======
 		E27A895C1A69A9F0006B88A2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = rtc_base_approved;
@@ -2172,7 +2014,6 @@
 			isa = PBXTargetDependency;
 			name = video_coding_utility;
 			targetProxy = E2FED0FD1A73136700795C40 /* PBXContainerItemProxy */;
->>>>>>> origin/20140401-dev-stable
 		};
 /* End PBXTargetDependency section */
 
@@ -2181,12 +2022,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-<<<<<<< HEAD
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-=======
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
->>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2262,7 +2098,7 @@
 					"$(SHARED_INTERMEDIATE_DIR)",
 					..,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-strict-aliasing";
 				PRODUCT_NAME = webrtc;
 				SHARED_PRECOMPS_DIR = "$(CONFIGURATION_BUILD_DIR)/SharedPrecompiledHeaders";
@@ -2288,11 +2124,7 @@
 		1039F089ED2DAF5123FF5B18 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-<<<<<<< HEAD
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-=======
 				ARCHS = x86_64;
->>>>>>> origin/20140401-dev-stable
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = macosx10.9;
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
@@ -2303,16 +2135,9 @@
 		121BAC2D65535B6715800D78 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-<<<<<<< HEAD
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
-=======
 				ARCHS = x86_64;
 				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
 				SDKROOT = macosx10.9;
->>>>>>> origin/20140401-dev-stable
 				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
 				SYMROOT = ../xcodebuild;
 			};
@@ -2586,12 +2411,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-<<<<<<< HEAD
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-=======
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
->>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2665,7 +2485,7 @@
 					"$(SHARED_INTERMEDIATE_DIR)",
 					..,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fstack-protector-all",

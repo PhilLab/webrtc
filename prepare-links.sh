@@ -29,12 +29,15 @@ preparelink()
 	popd > /dev/null
 }
 
-preparelink "." "build" "../webrtc-deps/webrtc-build/"
 preparelink "third_party/yasm/source" "patched-yasm" "../../../../webrtc-deps/patched-yasm/"
 preparelink "third_party/opus" "src" "../../../webrtc-deps/opus/"
+preparelink "third_party/colorama" "src" "../../../webrtc-deps/colorama/"
 preparelink "third_party" "libsrtp" "../../webrtc-deps/libsrtp/"
 preparelink "third_party" "libvpx" "../../webrtc-deps/libvpx/"
 preparelink "third_party" "libyuv" "../../webrtc-deps/libyuv/"
+preparelink "third_party" "openmax_dl" "../../webrtc-deps/openmax_dl/"
+preparelink "third_party/tools" "gyp" "../../../webrtc-deps/webrtc-gyp/"
+preparelink "." "build" "../webrtc-deps/webrtc-build/"
 preparelink ".." "third_party" "webrtc/third_party/"
 preparelink ".." "build" "webrtc-deps/webrtc-build/"
 preparelink "../webrtc-deps" "yasm" "../webrtc/third_party/yasm"

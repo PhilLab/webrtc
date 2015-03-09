@@ -1,16 +1,10 @@
 include conf.ninja
 cc = $
-    $android_ndk_path/toolchains/llvm-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/clang
+    $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-gcc
 cxx = $
-    $android_ndk_path/toolchains/llvm-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/clang++
+    $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-g++
 ld = $cc
 ldxx = $cxx
-<<<<<<< HEAD:projects/android/ninja/build.ninja
-ar = $android_ndk_path/toolchains/llvm-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/llvm-ar
-ar_host = /usr/bin/ar
-cc_host = /usr/bin/gcc
-cxx_host = /usr/bin/g++
-=======
 ar = $
     $android_ndk_path/toolchains/arm-linux-androideabi-$toolchain_version/prebuilt/${host_os}-${archtype}/bin/arm-linux-androideabi-ar
 nm = $
@@ -22,7 +16,6 @@ nm_host = nm
 readelf_host = readelf
 cc_host = ../../../../third_party/llvm-build/Release+Asserts/bin/clang
 cxx_host = ../../../../third_party/llvm-build/Release+Asserts/bin/clang++
->>>>>>> origin/20140401-dev-stable:projects/android/ninja-mac-arm/Release/build.ninja
 ld_host = $cc_host
 ldxx_host = $cxx_host
 

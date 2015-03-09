@@ -25,7 +25,7 @@ case "$HOST_OS" in
 esac
 
 #GNU Toolchain Version
-TOOLCHAIN_VERSION=3.5
+TOOLCHAIN_VERSION=4.7
 
 #NDK-path
 if [[ $1 == *ndk* ]]; then
@@ -47,12 +47,7 @@ echo "------------------- Building webrtc for ANDROID platform ---------------"
 pushd `pwd`
 mkdir -p ./../../../build/android/webrtc
 
-<<<<<<< HEAD
-#export ANDROID_NDK_PATH=$Input
-export ar=$Input/toolchains/llvm-$TOOLCHAIN_VERSION/prebuilt/$HOST_OS-$ARCHTYPE/bin/llvm-ar
-=======
 export ar=$Input/toolchains/arm-linux-androideabi-$TOOLCHAIN_VERSION/prebuilt/$HOST_OS-$ARCHTYPE/bin/arm-linux-androideabi-ar
->>>>>>> origin/20140401-dev-stable
 cd ./../../
 
 #Avoid generation of make files on mac platform

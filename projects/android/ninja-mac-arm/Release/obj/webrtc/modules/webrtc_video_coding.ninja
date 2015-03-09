@@ -26,16 +26,6 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -Werror $
     -fno-builtin-sin -fno-builtin-cosf -fno-builtin-sinf -Wextra $
     -Wno-unused-parameter -Wno-missing-field-initializers $
     -Wno-strict-overflow -fno-builtin-cos -fno-builtin-sin $
-<<<<<<< HEAD:projects/android/ninja/obj/webrtc/modules/webrtc_video_coding.ninja
-    -fno-builtin-cosf -fno-builtin-sinf -Wextra -Wno-unused-parameter $
-    -Wno-missing-field-initializers -Wno-strict-overflow -fno-builtin-cos $
-    -fno-builtin-sin -fno-builtin-cosf -fno-builtin-sinf -target arm-linux-androideabi -mcpu=cortex-a9 $
-     -ffunction-sections -funwind-tables -g $
-    -fstack-protector -fno-short-enums  -Wa,--noexecstack $
-    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
-    -I$android_ndk_path/sources/android/support/include -U__APPLE__ -D__ANDROID__ -D__linux__ $
-=======
     -fno-builtin-cosf -fno-builtin-sinf -march=armv7-a $
     -mtune=generic-armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb $
     -fno-tree-sra -fno-caller-saves -Wno-psabi -mthumb-interwork $
@@ -44,7 +34,6 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -Werror $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
     -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/include $
     -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi-v7a/include $
->>>>>>> origin/20140401-dev-stable:projects/android/ninja-mac-arm/Release/obj/webrtc/modules/webrtc_video_coding.ninja
     -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
     -funwind-tables
 cflags_c = 

@@ -557,30 +557,12 @@
 			productReference = 677AFFE3717A006BFE45BC10 /* libtest_support_main.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-<<<<<<< HEAD
-/* End PBXNativeTarget section */
-
-/* Begin PBXProject section */
-		4A6743A18569523314A4F834 /* Project object */ = {
-			isa = PBXProject;
-			attributes = {
-				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 0610;
-			};
-			buildConfigurationList = E3F7E478A7E11498DBFAAB31 /* Build configuration list for PBXProject "test_ios" */;
-			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
-			hasScannedForEncodings = 1;
-			knownRegions = (
-				en,
-=======
 		30C128737133ED726F648D3D /* rtp_test_utils */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F190C4904F130F19F2968881 /* Build configuration list for PBXNativeTarget "rtp_test_utils" */;
 			buildPhases = (
 				5A78EB1439531EF23C011351 /* Sources */,
 				3842F43AF0CA38392DD2438A /* Frameworks */,
->>>>>>> origin/20140401-dev-stable
 			);
 			buildRules = (
 			);
@@ -2873,14 +2855,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-<<<<<<< HEAD
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-=======
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libstdc++";
->>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -2959,15 +2936,6 @@
 		D0389C08EE5406D3E1F606CE /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-<<<<<<< HEAD
-				INTERMEDIATE_DIR = "$(PROJECT_DERIVED_FILE_DIR)/$(CONFIGURATION)";
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SHARED_INTERMEDIATE_DIR = "$(SYMROOT)/DerivedSources/$(CONFIGURATION)";
-				SKIP_INSTALL = YES;
-				SYMROOT = ../../xcodebuild;
-				TARGETED_DEVICE_FAMILY = "1,2";
-=======
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
@@ -3049,7 +3017,6 @@
 					"-Wno-deprecated-register",
 					"-Wno-inconsistent-missing-override",
 				);
->>>>>>> origin/20140401-dev-stable
 			};
 			name = Profile;
 		};
@@ -3057,14 +3024,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-<<<<<<< HEAD
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-=======
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libstdc++";
->>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;
@@ -3232,14 +3194,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-<<<<<<< HEAD
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-=======
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libstdc++";
->>>>>>> origin/20140401-dev-stable
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS = YES;
 				COPY_PHASE_STRIP = NO;

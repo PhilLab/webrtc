@@ -333,19 +333,6 @@ includes = -Igen $
     -I../../../../third_party/libvpx/source/config $
     -I../../../../third_party/libvpx/source/libvpx $
     -I$android_ndk_path/sources/android/cpufeatures
-<<<<<<< HEAD:projects/android/ninja/obj/third_party/libvpx/libvpx.ninja
-cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-exceptions $
-    -fno-strict-aliasing -Wno-unused-parameter $
-    -Wno-missing-field-initializers -fvisibility=hidden -pipe -fPIC $
-    -Wa,-I,/home/runamedia/webrtc_trunk/trunk/third_party/libvpx/source/config/linux/arm-neon-cpu-detect $
-    -Wa,-I,/home/runamedia/webrtc_trunk/trunk/third_party/libvpx/source/config $
-    -Wa,-I,gen/third_party/libvpx -Wno-format -target arm-linux-androideabi -mcpu=cortex-a9 $
-     -ffunction-sections -funwind-tables -g $
-    -fstack-protector -fno-short-enums  -Wa,--noexecstack $
-    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
-    -Os -I$android_ndk_path/sources/android/support/include -U__APPLE__ -D__ANDROID__ -D__linux__ -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
-=======
 cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-strict-aliasing $
     -Wno-unused-parameter -Wno-missing-field-initializers $
     -fvisibility=hidden -pipe -fPIC -Wno-unused-local-typedefs $
@@ -361,7 +348,6 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-strict-aliasing $
     -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/include $
     -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi-v7a/include $
     -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
->>>>>>> origin/20140401-dev-stable:projects/android/ninja-mac-arm/Release/obj/third_party/libvpx/libvpx.ninja
     -funwind-tables
 cflags_c = 
 cflags_cc = -fno-exceptions -fno-rtti -fno-threadsafe-statics $

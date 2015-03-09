@@ -39,9 +39,6 @@
 .ninja_log
 xcuserdata
 xcshareddata
-/chromium_deps
-/chromium_gn
-/google_apis/build
 /Makefile
 /base
 /build

@@ -15,8 +15,6 @@
 
 #include "webrtc/system_wrappers/interface/sort.h"
 
-#include <cstdio>
-
 #include <assert.h>
 #include <string.h>  // memcpy
 

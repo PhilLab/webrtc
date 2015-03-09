@@ -10,18 +10,6 @@ defines = -DV8_DEPRECATION_WARNINGS -D_FILE_OFFSET_BITS=64 -DNO_TCMALLOC $
     -DUSE_OPENSSL=1 -DUSE_OPENSSL_CERTS=1 -DANDROID -D__GNU_SOURCE=1 $
     -D_STLP_USE_PTR_SPECIALIZATIONS=1 '-DCHROME_BUILD_ID=""' $
     -DHAVE_SYS_UIO_H -DNDEBUG -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0
-<<<<<<< HEAD:projects/android/ninja/obj/third_party/libyuv/libyuv.ninja
-includes = -I../../../third_party/libyuv/include $
-    -I../../../third_party/libyuv -I../../../third_party/libjpeg_turbo
-cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-exceptions $
-    -fno-strict-aliasing -Wno-unused-parameter $
-    -Wno-missing-field-initializers -fvisibility=hidden -pipe -fPIC $
-    -Wno-format -target arm-linux-androideabi -mcpu=cortex-a9 $
-    -ffunction-sections -funwind-tables -g -fstack-protector $
-    -fno-short-enums  -Wa,--noexecstack $
-    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
-=======
 includes = -Igen -I../../../../third_party/libyuv/include $
     -I../../../../third_party/libyuv -I../../../../third_party/libjpeg_turbo
 cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-strict-aliasing $
@@ -34,7 +22,6 @@ cflags = -fstack-protector --param=ssp-buffer-size=4 -fno-strict-aliasing $
     --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
     -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/include $
     -isystem$android_ndk_path/sources/cxx-stl/gnu-libstdc++/4.7/libs/armeabi-v7a/include $
->>>>>>> origin/20140401-dev-stable:projects/android/ninja-mac-arm/Release/obj/third_party/libyuv/libyuv.ninja
     -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
     -funwind-tables
 cflags_c = 

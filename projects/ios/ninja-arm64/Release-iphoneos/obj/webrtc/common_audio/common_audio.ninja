@@ -17,20 +17,6 @@ cflags = -isysroot $
     -Os -gdwarf-2 -fvisibility=hidden -Werror -Wnewline-eof $
     -miphoneos-version-min=7.0 -arch arm64 -Wall -Wendif-labels -Wextra $
     -Wno-unused-parameter -Wno-missing-field-initializers $
-<<<<<<< HEAD:projects/android/ninja/obj/webrtc/common_audio/common_audio.ninja
-    -Wno-strict-overflow -fno-builtin-cos -fno-builtin-sin $
-    -fno-builtin-cosf -fno-builtin-sinf -target arm-linux-androideabi -mcpu=cortex-a9  $
-     -ffunction-sections -funwind-tables -g $
-    -fstack-protector -fno-short-enums  -Wa,--noexecstack $
-    --sysroot=$android_ndk_path/platforms/android-14/arch-arm $
-    -I$android_ndk_path/sources/cxx-stl/llvm-libc++/libcxx/include $
-    -I$android_ndk_path/sources/android/support/include -U__APPLE__ -D__ANDROID__ -D__linux__ $
-    -Os -fno-ident -fdata-sections -ffunction-sections -fomit-frame-pointer $
-    -funwind-tables
-cflags_c = 
-cflags_cc = -fno-rtti -fno-threadsafe-statics -fvisibility-inlines-hidden $
-    -Wsign-compare -Wnon-virtual-dtor -Woverloaded-virtual -Wno-abi
-=======
     -Wno-selector-type-mismatch -Wno-unknown-warning-option $
     -Wheader-hygiene -Wno-char-subscripts $
     -Wno-unneeded-internal-declaration -Wno-covered-switch-default $
@@ -42,7 +28,6 @@ cflags_cc = -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions $
 cflags_objc = $cflags_c -Wobjc-missing-property-synthesis
 cflags_objcc = $cflags_cc -Wobjc-missing-property-synthesis $
     -fobjc-call-cxx-cdtors
->>>>>>> origin/20140401-dev-stable:projects/ios/ninja-arm64/Release-iphoneos/obj/webrtc/common_audio/common_audio.ninja
 
 build obj/webrtc/common_audio/common_audio.audio_converter.o: cxx $
     ../../../../webrtc/common_audio/audio_converter.cc

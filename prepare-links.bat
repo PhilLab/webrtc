@@ -17,6 +17,8 @@ call:dolink third_party libvpx ..\..\webrtc-deps\libvpx
 if "%failure%" neq "0" goto:done_with_error
 call:dolink third_party libyuv ..\..\webrtc-deps\libyuv
 if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party\tools gyp ..\..\..\webrtc-deps\webrtc-gyp
+if "%failure%" neq "0" goto:done_with_error
 
 goto:done
 
