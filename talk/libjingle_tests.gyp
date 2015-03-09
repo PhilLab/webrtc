@@ -82,6 +82,13 @@
       'sources': [
         '<(DEPTH)/webrtc/test/testsupport/always_passing_unittest.cc',
       ],  # sources
+      'conditions': [
+        ['OS=="win"', {
+          'dependencies': [
+            '<(DEPTH)/webrtc/system_wrappers/system_wrappers.gyp:system_wrappers',
+          ],
+        }],
+      ],
     },  # target libjingle_unittest
     {
       'target_name': 'libjingle_media_unittest',

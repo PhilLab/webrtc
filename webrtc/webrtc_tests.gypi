@@ -24,6 +24,13 @@
         'sound/sound.gyp:rtc_sound',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
+      'conditions': [
+        ['OS=="win"', {
+          'dependencies': [
+            '<(DEPTH)/webrtc/system_wrappers/system_wrappers.gyp:system_wrappers',
+          ],
+        }],
+      ],
     },
     {
       'target_name': 'webrtc_tests',
