@@ -7,9 +7,18 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/criticalsection.h"
 
+namespace webrtc {
+class ThreadWrapper;
+}  // namespace webrtc
+
 namespace rtc {
 class AsyncSocket;
+class Thread;
 
+// Aggregates traces. Allows to save traces in local file
+// and send them to remote host. To start aggregating traces
+// call StartTracing method. Before saving the data locally or
+// remotely make sure you have called StopTracing method.
 class TraceLog : public sigslot::has_slots<> {
  public:
   TraceLog();
@@ -33,6 +42,9 @@ class TraceLog : public sigslot::has_slots<> {
   void Save(const std::string& addr, int port);
 
  private:
+  static bool processMessages(void* args);
+
+ private:
   void OnCloseEvent(AsyncSocket* socket, int err);
   void OnWriteEvent(AsyncSocket* socket);
 
@@ -40,6 +52,8 @@ class TraceLog : public sigslot::has_slots<> {
   bool is_tracing_;
   std::vector<std::string> traces_;
   CriticalSection critical_section_;
+  Thread* thread_;
+  webrtc::ThreadWrapper* tw_;
 };
 
 }  // namespace rtc
