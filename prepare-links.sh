@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#set -e
+set -e
 echo
 echo Preparing symbolic links for webrtc...
 echo
@@ -12,7 +12,7 @@ preparelink()
 	fi
 	pushd $1 > /dev/null
 	if [ ! -d "$3" ]; then
-		echo ERROR: Link destination is not found \"$3\" !
+		echo ERROR: Link destination is not found \"$3\" inside \"$1\" !
 		popd > /dev/null
 		exit -1
 	fi
@@ -35,6 +35,10 @@ preparelink "third_party/opus" "src" "../../../webrtc-deps/opus/"
 preparelink "third_party" "libsrtp" "../../webrtc-deps/libsrtp/"
 preparelink "third_party" "libvpx" "../../webrtc-deps/libvpx/"
 preparelink "third_party" "libyuv" "../../webrtc-deps/libyuv/"
+preparelink ".." "third_party" "webrtc/third_party/"
+preparelink ".." "build" "webrtc-deps/webrtc-build/"
+preparelink "../webrtc-deps" "yasm" "../webrtc/third_party/yasm"
+
 
 echo
 echo WebRTC ready.
