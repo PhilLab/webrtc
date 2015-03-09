@@ -4,12 +4,12 @@
 //test entry point declaration
 extern "C" int srtp_driver_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpDriverTest);
 
-void LibTest_runner::CSrtpDriverTest::Execute()
+int libSrtpTests::CSrtpDriverTest::InterchangeableExecute()
 {
   //TODO: configuration has to be handled
   char* argv[] = { ".", "-t" };
-  srtp_driver_main(2, argv);
+  return srtp_driver_main(2, argv);
 }
 

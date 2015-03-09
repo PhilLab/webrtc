@@ -1,6 +1,6 @@
 #pragma once
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   //=============================================================================
   //         class: CSrtpAesCalcTest
@@ -14,8 +14,9 @@ namespace LibTest_runner
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpAesCalcTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CSrtpAesCalcTest() {};
     TEST_NAME_METHOD_IMPL(CSrtpAesCalcTest);
   };

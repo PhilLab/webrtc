@@ -13,26 +13,33 @@
 // STL includes
 #include <string>
 #include <vector>
+#include <exception>
 
 // Helpers
 #include "Helpers/SafeSingleton.h"
 #include "Helpers/TestInserter.h"
+#include "Helpers/StdOutputRedirector.h"
 
 // Test Solution 
+#include "TestSolution/ReportGenerationException.h"
+#include "TestSolution/TestsReporterBase.h"
 #include "TestSolution/TestBase.h"
 #include "TestSolution/TestSolution.h"
+#include "TestSolution/WStringReporter.h"
 
-// Tests
-#include "Tests\ReplayDriverTest.h"
-#include "Tests\RocDriverTest.h"
-#include "Tests\RtpwTest.h"
-#include "Tests\RdbxDriverTest.h"
-#include "Tests\SrtpDriverTest.h"
-#include "Tests\SrtpAesCalcTest.h"
-#include "Tests\SrtpCipherDriverTest.h"
-#include "Tests\SrtpDatatypesDriverTest.h"
-#include "Tests\SrtpEnvTest.h"
-#include "Tests\SrtpKernelDriverTest.h"
-#include "Tests\SrtpRandGenTest.h"
-#include "Tests\SrtpSha1DriverTest.h"
-#include "Tests\SrtpStatDriverTest.h"
+
+// libsrtp tests
+#include "libSrtpTests\libsrtpTestSolution.h"
+#include "libSrtpTests\ReplayDriverTest.h"
+#include "libSrtpTests\RocDriverTest.h"
+#include "libSrtpTests\RtpwTest.h"
+#include "libSrtpTests\RdbxDriverTest.h"
+#include "libSrtpTests\SrtpDriverTest.h"
+#include "libSrtpTests\SrtpAesCalcTest.h"
+#include "libSrtpTests\SrtpCipherDriverTest.h"
+#include "libSrtpTests\SrtpDatatypesDriverTest.h"
+#include "libSrtpTests\SrtpEnvTest.h"
+#include "libSrtpTests\SrtpKernelDriverTest.h"
+#include "libSrtpTests\SrtpRandGenTest.h"
+#include "libSrtpTests\SrtpSha1DriverTest.h"
+#include "libSrtpTests\SrtpStatDriverTest.h"

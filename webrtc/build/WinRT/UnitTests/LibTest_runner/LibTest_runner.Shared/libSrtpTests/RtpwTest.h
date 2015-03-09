@@ -1,6 +1,6 @@
 #pragma once
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   //=============================================================================
   //         class: CRtpwTest
@@ -13,9 +13,10 @@ namespace LibTest_runner
     public CTestBase
   {
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRtpwTest);
+  protected:
+    int InterchangeableExecute();
   public:
     virtual ~CRtpwTest() {};
-    void Execute();
     TEST_NAME_METHOD_IMPL(CRtpwTest);
   };
 }

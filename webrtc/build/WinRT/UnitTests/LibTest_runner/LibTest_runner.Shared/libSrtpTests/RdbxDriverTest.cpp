@@ -4,14 +4,14 @@
 //test entry point declaration
 extern "C" int rdbx_driver_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CRdbxDriverTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CRdbxDriverTest);
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
-  void CRdbxDriverTest::Execute()
-  {
+  int CRdbxDriverTest::InterchangeableExecute()
+{
     //TODO: rdbx support two parameters -t and -v
     char* argv[] = { ".", "-v"};
-    rdbx_driver_main(2, argv);
+    return rdbx_driver_main(2, argv);
   }
 }

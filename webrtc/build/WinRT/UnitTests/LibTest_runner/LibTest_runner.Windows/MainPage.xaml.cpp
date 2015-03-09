@@ -24,28 +24,20 @@ using namespace Windows::UI::Xaml::Navigation;
 MainPage::MainPage()
 {
 	InitializeComponent();
+  OutputBox->Text = L"Tests results appears here\n";
 }
 
 void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-  static const size_t kBufferSize = 2 * 1024 * 1024; //1MB
-  std::string stdout_buf;
-  // Capture stdout
-  stdout_buf.resize(kBufferSize);
+  //TODO: redesign not to block UI thread
+  SpWStringReporter_t spStringReporter(new CWStringReporter());
 
-  setvbuf(stdout, const_cast<char*>(stdout_buf.c_str()), _IOFBF, kBufferSize);
+  libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
+  /*libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");
+  libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");*/
+  libSrtpTests::TestSolution::Instance().Execute();
+  libSrtpTests::TestSolution::Instance().GenerateReport();
 
-  //Run tests
-  TestSolution::Instance().Execute();
-    
-  //convert output to wchar_t
-  int nRequiredSize = ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(stdout_buf.c_str()), -1, NULL, 0);
-  std::wstring wStdOut;
-  if (nRequiredSize >= 0)
-  {
-    wStdOut.resize(nRequiredSize);
-    ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(stdout_buf.c_str()), -1, const_cast<wchar_t*>(wStdOut.c_str()), nRequiredSize);
-  }
-
-  OutputBox->Text = ref new String(wStdOut.c_str());
+  OutputBox->Text = ref new String((*spStringReporter->GetReport()).c_str());
+  OutputBox->Text += L"Execution finished.\n";
 }

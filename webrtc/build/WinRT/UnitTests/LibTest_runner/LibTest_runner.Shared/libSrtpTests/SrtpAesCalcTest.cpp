@@ -4,12 +4,12 @@
 //test entry point declaration
 extern "C" int srtp_test_aes_calc_main(int argc, char *argv[]);
 
-AUTO_ADD_TEST_IMPL(LibTest_runner::CSrtpAesCalcTest);
+AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpAesCalcTest);
 
-void LibTest_runner::CSrtpAesCalcTest::Execute()
+int libSrtpTests::CSrtpAesCalcTest::InterchangeableExecute()
 {
   //TODO: change proper parameters
   char* argv[] = { "." };
 
-  srtp_test_aes_calc_main(1, argv);
+  return srtp_test_aes_calc_main(1, argv);
 }

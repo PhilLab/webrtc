@@ -1,6 +1,6 @@
 #pragma once
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   //=============================================================================
   //         class: CRdbxDriverTest
@@ -13,8 +13,9 @@ namespace LibTest_runner
     public CTestBase
   {
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRdbxDriverTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CRdbxDriverTest() {};
     TEST_NAME_METHOD_IMPL(CRdbxDriverTest);
   };

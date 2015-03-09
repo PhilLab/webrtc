@@ -21,19 +21,21 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestSolution.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RdbxDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\ReplayDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpCipherDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpDatatypesDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpAesCalcTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpEnvTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpKernelDriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpRandGenTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpSha1DriverTest.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\SrtpStatDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RdbxDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\ReplayDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RocDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RtpwTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpCipherDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDatatypesDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpAesCalcTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpEnvTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpKernelDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpRandGenTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpSha1DriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpStatDriverTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\WStringReporter.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.cpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)App.xaml.h">
       <DependentUpon>$(MSBuildThisFileDirectory)App.xaml</DependentUpon>
     </ClInclude>
@@ -41,23 +43,29 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SafeSingleton.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdOutputRedirector.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TestInserter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\ReportGenerationException.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestsReporterBase.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestSolution.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RdbxDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\ReplayDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpCipherDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpDatatypesDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpAesCalcTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpEnvTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpKernelDriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpRandGenTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpSha1DriverTest.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\SrtpStatDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\libsrtpTestSolution.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\RdbxDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\ReplayDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\RocDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\RtpwTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpCipherDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDatatypesDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpAesCalcTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpEnvTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpKernelDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpRandGenTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpSha1DriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpStatDriverTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\WStringReporter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectCapability Include="SourceItemsFromImports" />

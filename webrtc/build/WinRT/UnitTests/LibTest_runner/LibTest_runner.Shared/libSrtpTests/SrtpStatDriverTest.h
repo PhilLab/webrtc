@@ -1,6 +1,6 @@
 #pragma once
 
-namespace LibTest_runner
+namespace libSrtpTests
 {
   //=============================================================================
   //         class: CSrtpStatDriverTest
@@ -14,8 +14,9 @@ namespace LibTest_runner
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpStatDriverTest);
+  protected:
+    int InterchangeableExecute();
   public:
-    void Execute();
     virtual ~CSrtpStatDriverTest() {};
     TEST_NAME_METHOD_IMPL(CSrtpStatDriverTest);
   };
