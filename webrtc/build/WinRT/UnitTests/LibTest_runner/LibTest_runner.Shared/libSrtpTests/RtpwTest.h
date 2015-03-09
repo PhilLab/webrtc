@@ -17,7 +17,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CRtpwTest() {};
-    TEST_NAME_METHOD_IMPL(CRtpwTest);
+    TEST_NAME_IMPL(CRtpwTest);
+    TEST_PROJECT_IMPL(rtpw);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 }
 

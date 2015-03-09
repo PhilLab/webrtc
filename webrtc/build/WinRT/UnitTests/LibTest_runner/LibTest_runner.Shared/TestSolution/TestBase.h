@@ -76,6 +76,26 @@ namespace LibTest_runner
     // 2015/03/06 TP: created
     //======================================================================
     virtual const std::wstring& Name() const = 0;
+
+    //=======================================================================
+    //         Method: Project
+    //    Description: Returns Test project
+    //         return: const std::wstring& test project
+    //
+    //       History:
+    // 2015/03/09 TP: created
+    //======================================================================
+    virtual const std::wstring& Project() const = 0;
+
+    //=======================================================================
+    //         Method: Library
+    //    Description: Returns library name
+    //         return: const std::wstring& library name
+    //
+    //       History:
+    // 2015/03/09 TP: created
+    //======================================================================
+    virtual const std::wstring& Library() const = 0;
     //=======================================================================
     //         Method: Output
     //    Description: Returns test output (from standard output)
@@ -119,11 +139,27 @@ namespace LibTest_runner
   typedef std::shared_ptr<CTestBase> SpTestBase_t;
 
   // This marco simplifies implementation of CTestBase::Name()
-#define TEST_NAME_METHOD_IMPL(CLAZZ) \
-    virtual const std::wstring& CLAZZ::Name() const\
+  #define TEST_NAME_IMPL(NAME) \
+    virtual const std::wstring& Name() const\
       { \
-      static std::wstring name = L#CLAZZ; \
+      static std::wstring name = L#NAME; \
       return name; \
+    }
+
+  // This marco simplifies implementation of CTestBase::Project()
+  #define TEST_PROJECT_IMPL(PROJECT) \
+    virtual const std::wstring& Project() const\
+          { \
+      static std::wstring project = L#PROJECT; \
+      return project; \
+    }
+
+  // This marco simplifies implementation of CTestBase::Library()
+#define TEST_LIBRARY_IMPL(LIBRARY) \
+    virtual const std::wstring& Library() const\
+          { \
+      static std::wstring library = L#LIBRARY; \
+      return library; \
     }
 }
 

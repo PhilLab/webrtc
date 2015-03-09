@@ -18,7 +18,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CSrtpCipherDriverTest() {};
-    TEST_NAME_METHOD_IMPL(CSrtpCipherDriverTest);
+    TEST_NAME_IMPL(CSrtpCipherDriverTest);
+    TEST_PROJECT_IMPL(srtp_test_cipher_driver);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CSrtpCipherDriverTest> SpSrtpCipherDriverTest_t;

@@ -18,7 +18,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CSrtpEnvTest() {};
-    TEST_NAME_METHOD_IMPL(CSrtpEnvTest);
+    TEST_NAME_IMPL(SrtpEnvTest);
+    TEST_PROJECT_IMPL(srtp_test_env);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CSrtpEnvTest> SpSrtpEnvTest_t;

@@ -18,7 +18,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CSrtpKernelDriverTest() {};
-    TEST_NAME_METHOD_IMPL(CSrtpKernelDriverTest);
+    TEST_NAME_IMPL(CSrtpKernelDriverTest);
+    TEST_PROJECT_IMPL(srtp_test_kernel_driver);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CSrtpKernelDriverTest> SpSrtpKernelDriverTest_t;

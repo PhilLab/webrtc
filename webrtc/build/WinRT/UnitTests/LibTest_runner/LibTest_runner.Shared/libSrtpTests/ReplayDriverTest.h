@@ -18,7 +18,9 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CReplayDriverTest() {};
-    TEST_NAME_METHOD_IMPL(CReplayDriverTest);
+    TEST_NAME_IMPL(CReplayDriverTest);
+    TEST_PROJECT_IMPL(replay_driver);
+    TEST_LIBRARY_IMPL(libSrtp);
   };
 
   typedef std::shared_ptr<CReplayDriverTest> SpReplayDriverTest_t;

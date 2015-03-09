@@ -25,7 +25,12 @@ namespace LibTest_runner
     //just simple output for now
     if (test.Executed() || (m_nFlags & kAllTests))
     {
-      (*m_spReport) += test.Name() + L": " + (test.Succeed() ? L"Pass" : L"Failed") + L"\n";
+      (*m_spReport) += L"Project: " + test.Library();
+      (*m_spReport) += L"::" + test.Project() + L"\t Name: "; 
+      (*m_spReport) += test.Name() + L"\tResult: " + (test.Succeed() ? L"Pass" : L"Failed");
+      (*m_spReport) += L"\tExit status: ";
+      (*m_spReport) += std::to_wstring(test.ExitStatus());
+      (*m_spReport) += L"\n";
     }
   }
 
