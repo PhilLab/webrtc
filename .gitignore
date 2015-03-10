@@ -166,5 +166,6 @@
 /webrtc/build/WinRT/**/Debug
 /webrtc/build/WinRT/**/Release
 /webrtc/build/WinRT/**/Generated Files
+/webrtc/build/WinRT_gyp/**/Generated Files
 !/webrtc/build/WinRT/**/*.pfx
 *.ipch
