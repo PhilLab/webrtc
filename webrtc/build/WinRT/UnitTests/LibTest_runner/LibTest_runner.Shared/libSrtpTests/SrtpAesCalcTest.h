@@ -18,9 +18,12 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CSrtpAesCalcTest() {};
-    TEST_NAME_IMPL(CSrtpAesCalcTest);
+    TEST_NAME_IMPL(SrtpAesCalcTest);
     TEST_PROJECT_IMPL(srtp_test_aes_calc);
     TEST_LIBRARY_IMPL(libSrtp)
+
+      virtual void InterchangeableVerifyResult();
+
   };
 
   typedef std::shared_ptr<CSrtpAesCalcTest> SpSrtpAesCalcTest_t;
