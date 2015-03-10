@@ -34,6 +34,11 @@
             '<(libjingle_root)/talk/libjingle_tests.gyp:*',
           ],
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'dependencies': [
+            'webrtc/build/WinRT_gyp/winrt.gyp:*'
+          ],
+        }],
       ],
     },
   ],
