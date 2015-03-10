@@ -21,6 +21,7 @@ namespace LibTest_runner
     int            m_nExitStatus; //test exit code (from main method)
   protected:
     std::wstring   m_wsOutput; // test output
+    std::wstring   m_wsResultMessage; // result message, e.g. explaining why test failed
     //=======================================================================
     //         Method: SetSucceed
     //    Description: Set succeed test status
@@ -115,6 +116,16 @@ namespace LibTest_runner
     // 2015/03/06 TP: created
     //======================================================================
     const std::wstring& Output() const { return m_wsOutput; }
+
+    //=======================================================================
+    //         Method: ResultMessage
+    //    Description: Returns result message, e.g. describing reason why test fails
+    //         return: const std::wstring& result message
+    //
+    //       History:
+    // 2015/03/10 TP: created
+    //======================================================================
+    const std::wstring& ResultMessage() const{ return  m_wsResultMessage; }
     //=======================================================================
     //         Method: ExitStatus
     //    Description: Returns test exist status

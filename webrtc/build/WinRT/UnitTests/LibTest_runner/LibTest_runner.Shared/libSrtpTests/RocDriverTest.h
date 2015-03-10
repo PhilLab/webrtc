@@ -17,7 +17,7 @@ namespace libSrtpTests
     int InterchangeableExecute();
   public:
     virtual ~CRocDriverTest() {};
-    TEST_NAME_IMPL(CRocDriverTest);
+    TEST_NAME_IMPL(RocDriverTest);
     TEST_PROJECT_IMPL(roc_driver);
     TEST_LIBRARY_IMPL(libSrtp);
   };

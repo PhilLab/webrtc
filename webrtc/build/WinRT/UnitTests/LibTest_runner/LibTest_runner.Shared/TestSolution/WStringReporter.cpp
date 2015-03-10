@@ -46,6 +46,11 @@ namespace LibTest_runner
       (*m_spReport) += test.Succeed() ? L"Pass" : L"Failed";
       (*m_spReport) += L"\tExit status: ";
       (*m_spReport) += std::to_wstring(test.ExitStatus());
+      if (!test.ResultMessage().empty())
+      {
+        (*m_spReport) += L"\n\tResult Message: ";
+        (*m_spReport) += test.ResultMessage();
+      }
       (*m_spReport) += L"\n";
 
       // in case output is print add separator to better reading experience
