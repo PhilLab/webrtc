@@ -14,7 +14,8 @@ namespace LibTest_runner
   class CWStringReporter : public CTestsReporterBase
   {
   public:
-    static const int kAllTests = 0x1; //include all tests, otherwise only executed
+    static const int kAllTests = 0x0001; //include all tests, otherwise only executed
+    static const int kPrintOutput = 0x0002; //print test output
   private:
     int m_nFlags; //flags
     std::shared_ptr<std::wstring> m_spReport;
@@ -39,4 +40,5 @@ namespace LibTest_runner
 
 #pragma  warning( pop )
 }
+
 

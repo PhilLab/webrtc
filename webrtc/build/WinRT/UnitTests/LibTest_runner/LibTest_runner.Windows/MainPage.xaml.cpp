@@ -30,11 +30,11 @@ MainPage::MainPage()
 void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
   //TODO: redesign not to block UI thread
-  SpWStringReporter_t spStringReporter(new CWStringReporter());
+  SpWStringReporter_t spStringReporter(new CWStringReporter(CWStringReporter::kPrintOutput));
 
   libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
-  /*libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");*/
-  /*libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");*/
+  //libSrtpTests::TestSolution::Instance().Execute(L"RdbxDriverValidationTest");
+  //libSrtpTests::TestSolution::Instance().Execute(L"RdbxDriverTimingTest");
   libSrtpTests::TestSolution::Instance().Execute();
   libSrtpTests::TestSolution::Instance().GenerateReport();
 
