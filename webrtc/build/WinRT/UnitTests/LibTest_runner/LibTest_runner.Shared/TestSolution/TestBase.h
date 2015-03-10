@@ -16,12 +16,22 @@ namespace LibTest_runner
     CTestBase(const CTestBase&);
     void PrepareForExecution();
     void VerifyResult();
+    bool           m_bExecuted; //true if test was executed
+    bool           m_bSucceed; //true if test succeed
+    int            m_nExitStatus; //test exit code (from main method)
   protected:
     std::wstring   m_wsOutput; // test output
-    //TODO: following members should be private and modified by methods !!!
-    int            m_nExitStatus; //test exit code (from main method)
-    bool           m_bSucceed; //true if test succeed
-    bool           m_bExecuted; //true if test was executed
+    //=======================================================================
+    //         Method: SetSucceed
+    //    Description: Set succeed test status
+    //       Argument: bool succeed - succeed status
+    //         return: void
+    //
+    //       History:
+    // 2015/03/10 TP: created
+    //======================================================================
+    void SetSucceed(bool succeed) { m_bSucceed = succeed; }
+
     virtual int    InterchangeableExecute() = 0;
     //=======================================================================
     //         Method: InterchangeablePrepareForExecution
@@ -116,13 +126,23 @@ namespace LibTest_runner
     int ExitStatus() const { return m_nExitStatus;  }
     //=======================================================================
     //         Method: Succeed
-    //    Description: Returns "success" state
+    //    Description: Returns success state
     //         return: bool true if success 
     //
     //       History:
     // 2015/03/06 TP: created
     //======================================================================
     bool Succeed() const { return m_bSucceed;  }
+
+    //=======================================================================
+    //         Method: Failed
+    //    Description: return true if test failed
+    //         return: bool true if test failed
+    //
+    //       History:
+    // 2015/03/10 TP: created
+    //======================================================================
+    bool Failed() const { return !m_bSucceed; }
     void Reset();
 
     //=======================================================================

@@ -10,7 +10,7 @@ namespace libSrtpTests
   // 2015/02/27 TP: created
   //=============================================================================
   class CSrtpSha1DriverTest :
-    public CTestBase
+    public CLibSrtpTestBase
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpSha1DriverTest);

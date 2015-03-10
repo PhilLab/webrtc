@@ -10,7 +10,7 @@ namespace libSrtpTests
   // 2015/02/27 TP: created
   //=============================================================================
   class CSrtpAesCalcTest :
-    public CTestBase
+    public CLibSrtpTestBase
   {
   private:
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CSrtpAesCalcTest);

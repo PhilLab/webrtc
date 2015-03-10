@@ -53,7 +53,12 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\WStringReporter.cpp">
       <Filter>TestSolution</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\LibSrtpTestBase.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.cpp">
+      <Filter>TestSolution</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="$(MSBuildThisFileDirectory)App.xaml" />
@@ -136,6 +141,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestsReporterBase.h">
       <Filter>TestSolution</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\LibSrtpTestBase.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.h">
+      <Filter>TestSolution</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -29,6 +29,7 @@
 
 
 // libsrtp tests
+#include "libSrtpTests\LibSrtpTestBase.h"
 #include "libSrtpTests\libsrtpTestSolution.h"
 #include "libSrtpTests\ReplayDriverTest.h"
 #include "libSrtpTests\RocDriverTest.h"

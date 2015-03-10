@@ -10,7 +10,7 @@ namespace libSrtpTests
   // 2015/02/27 TP: created
   //=============================================================================
   class CRocDriverTest :
-    public CTestBase
+    public CLibSrtpTestBase
   {
     AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, CRocDriverTest);
   protected:

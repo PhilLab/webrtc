@@ -19,6 +19,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)App.xaml.cpp">
       <DependentUpon>$(MSBuildThisFileDirectory)App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\LibSrtpTestBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestSolution.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RdbxDriverTest.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SafeSingleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdOutputRedirector.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TestInserter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\LibSrtpTestBase.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\ReportGenerationException.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.h" />
