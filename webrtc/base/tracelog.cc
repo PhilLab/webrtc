@@ -9,7 +9,7 @@
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
 #include "webrtc/base/win32socketserver.h"
 #endif
 #if defined(WEBRTC_POSIX)
@@ -20,7 +20,7 @@ namespace rtc {
 
 TraceLog::TraceLog() : is_tracing_(false), tw_(NULL) {
   traces_.reserve(16384);
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   thread_ = new Win32Thread();
 #endif
 #if defined(WEBRTC_POSIX)

@@ -6,7 +6,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
 #include "webrtc/base/win32socketserver.h"
 #endif
 #if defined(WEBRTC_POSIX)
@@ -16,7 +16,7 @@
 namespace rtc {
 
 LoggingServer::LoggingServer() {
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   thread_ = new Win32Thread();
 #endif
 #if defined(WEBRTC_POSIX)
