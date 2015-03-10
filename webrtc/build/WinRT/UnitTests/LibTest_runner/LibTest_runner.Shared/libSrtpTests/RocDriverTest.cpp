@@ -8,9 +8,8 @@ AUTO_ADD_TEST_IMPL(libSrtpTests::CRocDriverTest);
 
 namespace libSrtpTests
 {
-  
   int CRocDriverTest::InterchangeableExecute()
-{
+  {
     return roc_driver_main();
   }
 }
