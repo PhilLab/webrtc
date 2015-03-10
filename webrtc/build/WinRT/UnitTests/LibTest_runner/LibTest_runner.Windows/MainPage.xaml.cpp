@@ -33,14 +33,9 @@ void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::U
   SpWStringReporter_t spStringReporter(new CWStringReporter(CWStringReporter::kPrintOutput));
 
   libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
-<<<<<<< HEAD
-  //libSrtpTests::TestSolution::Instance().Execute(L"RdbxDriverValidationTest");
-  //libSrtpTests::TestSolution::Instance().Execute(L"RdbxDriverTimingTest");
-=======
-  /*libSrtpTests::TestSolution::Instance().Execute(L"CRdbxDriverTest");*/
-  /*libSrtpTests::TestSolution::Instance().Execute(L"CReplayDriverTest");*/
->>>>>>> added Project, Library method to CTestNase
-  libSrtpTests::TestSolution::Instance().Execute();
+  libSrtpTests::TestSolution::Instance().Execute(L"RdbxDriverValidationTest");
+  libSrtpTests::TestSolution::Instance().Execute(L"RdbxDriverTimingTest");
+  //libSrtpTests::TestSolution::Instance().Execute();
   libSrtpTests::TestSolution::Instance().GenerateReport();
 
   OutputBox->Text = ref new String((*spStringReporter->GetReport()).c_str());
