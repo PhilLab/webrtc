@@ -22,15 +22,37 @@ namespace LibTest_runner
 
   void CWStringReporter::AddTestResult(const CTestBase& test)
   {
-    //just simple output for now
     if (test.Executed() || (m_nFlags & kAllTests))
     {
+      // in case output is print add separator to better reading experience
+      if (m_nFlags & kPrintOutput)
+      {
+        (*m_spReport) += L"========== Begin Test ============\n";
+      }
+
+      //print test name
       (*m_spReport) += L"Project: " + test.Library();
-      (*m_spReport) += L"::" + test.Project() + L"\t Name: "; 
-      (*m_spReport) += test.Name() + L"\tResult: " + (test.Succeed() ? L"Pass" : L"Failed");
+      (*m_spReport) += L"::" + test.Project() + L"\t Name: ";
+      (*m_spReport) += test.Name() + L"\n";
+
+      if (m_nFlags & kPrintOutput)
+      {
+        (*m_spReport) += L"----------- Begin Console Output ----------\n";
+        (*m_spReport) += test.Output();
+        (*m_spReport) += L"\n---------- End Console Output ----------\n";
+      }
+
+      (*m_spReport) += L"\tResult: ";
+      (*m_spReport) += test.Succeed() ? L"Pass" : L"Failed";
       (*m_spReport) += L"\tExit status: ";
       (*m_spReport) += std::to_wstring(test.ExitStatus());
       (*m_spReport) += L"\n";
+
+      // in case output is print add separator to better reading experience
+      if (m_nFlags & kPrintOutput)
+      {
+        (*m_spReport) += L"========== End Test ============\n\n";
+      }
     }
   }
 

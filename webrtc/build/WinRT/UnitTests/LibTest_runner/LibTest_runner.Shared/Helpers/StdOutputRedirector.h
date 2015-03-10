@@ -42,11 +42,10 @@ namespace LibTest_runner
       {
         //convert output to wchar_t
         int nRequiredSize = ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(buffer.c_str()), -1, NULL, 0);
-        std::wstring wStdOut;
         if (nRequiredSize >= 0)
         {
-          wStdOut.resize(nRequiredSize);
-          ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(buffer.c_str()), -1, const_cast<wchar_t*>(output.c_str()), nRequiredSize);
+          output.resize(nRequiredSize - 1); //without ending NULL
+          nRequiredSize = ::MultiByteToWideChar(CP_ACP, 0, const_cast<char*>(buffer.c_str()), nRequiredSize - 1, const_cast<wchar_t*>(output.c_str()), nRequiredSize);
         }
       }
     };
