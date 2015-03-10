@@ -11,13 +11,17 @@ call:dolink third_party\yasm\source patched-yasm ..\..\..\..\webrtc-deps\patched
 if "%failure%" neq "0" goto:done_with_error
 call:dolink third_party\opus src ..\..\..\webrtc-deps\opus
 if "%failure%" neq "0" goto:done_with_error
+call:dolink third_party\colorama src ..\..\..\webrtc-deps\colorama
+if "%failure%" neq "0" goto:done_with_error
 call:dolink third_party libsrtp ..\..\webrtc-deps\libsrtp
 if "%failure%" neq "0" goto:done_with_error
 call:dolink third_party libvpx ..\..\webrtc-deps\libvpx
 if "%failure%" neq "0" goto:done_with_error
 call:dolink third_party libyuv ..\..\webrtc-deps\libyuv
 if "%failure%" neq "0" goto:done_with_error
-call:dolink third_party\tools gyp ..\..\..\webrtc-deps\webrtc-gyp
+call:dolink third_party openmax_dl ..\..\webrtc-deps\openmax_dl
+if "%failure%" neq "0" goto:done_with_error
+call:dolink tools gyp ..\..\webrtc-deps\webrtc-gyp
 if "%failure%" neq "0" goto:done_with_error
 
 goto:done
