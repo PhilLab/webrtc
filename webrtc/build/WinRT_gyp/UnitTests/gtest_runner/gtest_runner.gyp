@@ -49,6 +49,10 @@
       'msvs_disabled_warnings': [
         4453,  # A '[WebHostHidden]' type should not be used on the published surface of a public type that is not '[WebHostHidden]'
       ],
+      'msvs_package_certificate': {
+        'KeyFile': 'gtest_runner_TemporaryKey.pfx',
+        'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
+      },
       'msvs_settings': {
         'VCCLCompilerTool': {
           # ExceptionHandling must match _HAS_EXCEPTIONS above.

@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest">
-  <Identity Name="GTestRunner.Windows" Publisher="CN=WebRTC" Version="1.0.0.0" />
+  <Identity Name="GTestRunner" Publisher="CN=WebRTC" Version="1.0.0.0" />
   <Properties>
-    <DisplayName>gtest_runner.Windows</DisplayName>
+    <DisplayName>gtest_runner</DisplayName>
     <PublisherDisplayName>WebRTC</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
