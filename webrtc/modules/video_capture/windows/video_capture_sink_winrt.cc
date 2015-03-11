@@ -1,97 +1,1361 @@
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
 
-#include <assert.h>
+#include <ppltasks.h>
+
+#include <strsafe.h>
+
+#include <mferror.h>
+#include <mfapi.h>
+
+#include <windows.foundation.h>
+
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+
+namespace {
+
+enum {
+  TRACE_LEVEL_LOW,
+  TRACE_LEVEL_NORMAL,
+  TRACE_LEVEL_HIGH,
+};
+
+DWORD g_dwLogLevel = TRACE_LEVEL_NORMAL;
+
+void Trace(DWORD dwLevel, LPCWSTR pszFormat, ...) {
+  if (g_dwLogLevel > dwLevel) {
+    return;
+  }
+  WCHAR szTextBuf[256];
+  va_list args;
+  va_start(args, pszFormat);
+
+  StringCchVPrintf(szTextBuf, _countof(szTextBuf), pszFormat, args);
+
+  OutputDebugString(szTextBuf);
+}
+
+inline void ThrowIfError(HRESULT hr) {
+  if (FAILED(hr)) {
+    throw ref new Platform::Exception(hr);
+  }
+}
+
+inline void Throw(HRESULT hr) {
+  assert(FAILED(hr));
+  throw ref new Platform::Exception(hr);
+}
+
+static void AddAttribute(_In_ GUID guidKey, _In_ Windows::Foundation::IPropertyValue ^value, _In_ IMFAttributes *pAttr) {
+  Windows::Foundation::PropertyType type = value->Type;
+  switch (type) {
+  case Windows::Foundation::PropertyType::UInt8Array:
+    {
+      Platform::Array<BYTE>^ arr;
+      value->GetUInt8Array(&arr);
+
+      ThrowIfError(pAttr->SetBlob(guidKey, arr->Data, arr->Length));
+    }
+    break;
+
+  case Windows::Foundation::PropertyType::Double:
+    {
+      ThrowIfError(pAttr->SetDouble(guidKey, value->GetDouble()));
+    }
+    break;
+
+  case Windows::Foundation::PropertyType::Guid:
+    {
+      ThrowIfError(pAttr->SetGUID(guidKey, value->GetGuid()));
+    }
+    break;
+
+  case Windows::Foundation::PropertyType::String:
+    {
+      ThrowIfError(pAttr->SetString(guidKey, value->GetString()->Data()));
+    }
+    break;
+
+  case Windows::Foundation::PropertyType::UInt32:
+    {
+      ThrowIfError(pAttr->SetUINT32(guidKey, value->GetUInt32()));
+    }
+    break;
+
+  case Windows::Foundation::PropertyType::UInt64:
+    {
+      ThrowIfError(pAttr->SetUINT64(guidKey, value->GetUInt64()));
+    }
+    break;
+  }
+}
+
+void ConvertPropertiesToMediaType(
+    _In_ Windows::Media::MediaProperties::IMediaEncodingProperties ^mep,
+    _Outptr_ IMFMediaType **ppMT) {
+    if (mep == nullptr || ppMT == nullptr) {
+      throw ref new Platform::InvalidArgumentException();
+    }
+    Microsoft::WRL::ComPtr<IMFMediaType> spMT;
+    *ppMT = nullptr;
+    ThrowIfError(MFCreateMediaType(&spMT));
+
+    auto it = mep->Properties->First();
+
+    while (it->HasCurrent) {
+      auto currentValue = it->Current;
+      AddAttribute(currentValue->Key, safe_cast<Windows::Foundation::IPropertyValue^>(currentValue->Value), spMT.Get());
+      it->MoveNext();
+    }
+
+    GUID guiMajorType = safe_cast<Windows::Foundation::IPropertyValue^>(mep->Properties->Lookup(MF_MT_MAJOR_TYPE))->GetGuid();
+
+    if (guiMajorType != MFMediaType_Video) {
+      Throw(E_UNEXPECTED);
+    }
+
+    *ppMT = spMT.Detach();
+  }
+
+  DWORD GetStreamId() {
+      return 0;
+  }
+}
 
 namespace webrtc {
 namespace videocapturemodule {
 
-VideoCaptureSinkWinRT::VideoCaptureSinkWinRT()
+VideoCaptureStreamSinkWinRT::VideoCaptureStreamSinkWinRT(DWORD dwIdentifier)
+  : _cRef(1),
+    _critSec(CriticalSectionWrapper::CreateCriticalSection()),
+    _dwIdentifier(dwIdentifier),
+    _state(State_TypeNotSet),
+    _isShutdown(false),
+    _fGetStartTimeFromSample(false),
+    _startTime(0),
+    _workQueueId(0),
+    _pParent(nullptr),
+    _workQueueCB(this, &VideoCaptureStreamSinkWinRT::OnDispatchWorkItem) {
+  ZeroMemory(&_guiCurrentSubtype, sizeof(_guiCurrentSubtype));
+}
+
+VideoCaptureStreamSinkWinRT::~VideoCaptureStreamSinkWinRT() {
+  assert(_isShutdown);
+  if (_critSec) {
+    delete _critSec;
+  }
+}
+
+// IUnknown methods
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::QueryInterface(
+    REFIID riid,
+    void **ppv) {
+  if (ppv == nullptr) {
+    return E_POINTER;
+  }
+  (*ppv) = nullptr;
+
+  HRESULT hr = S_OK;
+  if (riid == IID_IUnknown ||
+    riid == IID_IMFStreamSink ||
+    riid == IID_IMFMediaEventGenerator) {
+    (*ppv) = static_cast<IMFStreamSink*>(this);
+    AddRef();
+  } else if (riid == IID_IMFMediaTypeHandler) {
+    (*ppv) = static_cast<IMFMediaTypeHandler*>(this);
+    AddRef();
+  } else {
+    hr = E_NOINTERFACE;
+  }
+
+  return hr;
+}
+
+IFACEMETHODIMP_(ULONG) VideoCaptureStreamSinkWinRT::AddRef() {
+  return InterlockedIncrement(&_cRef);
+}
+
+IFACEMETHODIMP_(ULONG) VideoCaptureStreamSinkWinRT::Release() {
+  int64 cRef = InterlockedDecrement(&_cRef);
+  if (cRef == 0) {
+    delete this;
+  }
+  return cRef;
+}
+
+// IMFMediaEventGenerator methods.
+// Note: These methods call through to the event queue helper object.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::BeginGetEvent(
+    IMFAsyncCallback *pCallback,
+    IUnknown *punkState) {
+  HRESULT hr = S_OK;
+
+  CriticalSectionScoped cs(_critSec);
+
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = _spEventQueue->BeginGetEvent(pCallback, punkState);
+  }
+
+  return hr;
+}
+
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::EndGetEvent(
+    IMFAsyncResult *pResult,
+    IMFMediaEvent **ppEvent) {
+  HRESULT hr = S_OK;
+
+  CriticalSectionScoped cs(_critSec);
+
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = _spEventQueue->EndGetEvent(pResult, ppEvent);
+  }
+
+  return hr;
+}
+
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetEvent(
+    DWORD dwFlags,
+    IMFMediaEvent **ppEvent) {
+  // NOTE:
+  // GetEvent can block indefinitely, so we don't hold the lock.
+  // This requires some juggling with the event queue pointer.
+
+  HRESULT hr = S_OK;
+
+  Microsoft::WRL::ComPtr<IMFMediaEventQueue> spQueue;
+
+  {
+    CriticalSectionScoped cs(_critSec);
+
+    // Check shutdown
+    if (_isShutdown) {
+      hr = MF_E_SHUTDOWN;
+    }
+
+    // Get the pointer to the event queue.
+    if (SUCCEEDED(hr)) {
+      spQueue = _spEventQueue;
+    }
+  }
+
+  // Now get the event.
+  if (SUCCEEDED(hr)) {
+    hr = spQueue->GetEvent(dwFlags, ppEvent);
+  }
+
+  return hr;
+}
+
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::QueueEvent(
+    MediaEventType met,
+    REFGUID guidExtendedType,
+    HRESULT hrStatus,
+    PROPVARIANT const *pvValue) {
+  HRESULT hr = S_OK;
+
+  CriticalSectionScoped cs(_critSec);
+
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = _spEventQueue->QueueEventParamVar(
+      met, guidExtendedType, hrStatus, pvValue);
+  }
+
+  return hr;
+}
+
+/// IMFStreamSink methods
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaSink(
+    IMFMediaSink **ppMediaSink) {
+  if (ppMediaSink == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    _spSink.Get()->QueryInterface(IID_IMFMediaSink, (void**)ppMediaSink);
+  }
+
+  return hr;
+}
+
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetIdentifier(
+    DWORD *pdwIdentifier) {
+  if (pdwIdentifier == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    *pdwIdentifier = _dwIdentifier;
+  }
+
+  return hr;
+}
+
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeHandler(
+    IMFMediaTypeHandler **ppHandler) {
+  if (ppHandler == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  // This stream object acts as its own type handler, so we QI ourselves.
+  if (SUCCEEDED(hr)) {
+    hr = QueryInterface(IID_IMFMediaTypeHandler, (void**)ppHandler);
+  }
+
+  return hr;
+}
+
+// We received a sample from an upstream component
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::ProcessSample(IMFSample *pSample) {
+  if (pSample == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr = S_OK;
+
+  CriticalSectionScoped cs(_critSec);
+
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  // Validate the operation.
+  if (SUCCEEDED(hr)) {
+    hr = ValidateOperation(OpProcessSample);
+  }
+
+  if (SUCCEEDED(hr)) {
+    // Add the sample to the sample queue.
+    if (SUCCEEDED(hr)) {
+      _sampleQueue.push(pSample);
+    }
+
+    // Unless we are paused, start an async operation to
+    // dispatch the next sample.
+    if (SUCCEEDED(hr)) {
+      if (_state != State_Paused) {
+        // Queue the operation.
+        hr = QueueAsyncOperation(OpProcessSample);
+      }
+    }
+  }
+
+  return hr;
+}
+
+// The client can call PlaceMarker at any time. In response,
+// we need to queue an MEStreamSinkMarker event, but not until
+// *after *we have processed all samples that we have received
+// up to this point.
+//
+// Also, in general you might need to handle specific marker
+// types, although this sink does not.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::PlaceMarker(
+    MFSTREAMSINK_MARKER_TYPE eMarkerType,
+    const PROPVARIANT *pvarMarkerValue,
+    const PROPVARIANT *pvarContextValue) {
+  return(E_NOTIMPL);
+}
+
+// Discards all samples that were not processed yet.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::Flush() {
+  CriticalSectionScoped cs(_critSec);
+  HRESULT hr = S_OK;
+  try {
+    if (_isShutdown) {
+      hr = MF_E_SHUTDOWN;
+    }
+    ThrowIfError(hr);
+
+    // Note: Even though we are flushing data, we still need to send
+    // any marker events that were queued.
+    DropSamplesFromQueue();
+  } catch (Platform::Exception ^exc) {
+    hr = exc->HResult;
+  }
+
+  return hr;
+}
+
+/// IMFMediaTypeHandler methods
+// Check if a media type is supported.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::IsMediaTypeSupported(
+  /* [in] */ IMFMediaType *pMediaType,
+  /* [out] */ IMFMediaType **ppMediaType) {
+  if (pMediaType == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  GUID majorType = GUID_NULL;
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = pMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
+  }
+
+  // First make sure it's video or audio type.
+  if (SUCCEEDED(hr)) {
+    if (majorType != MFMediaType_Video) {
+      hr = MF_E_INVALIDTYPE;
+    }
+  }
+
+  if (SUCCEEDED(hr) && _spCurrentType != nullptr) {
+    GUID guiNewSubtype;
+    if (FAILED(pMediaType->GetGUID(MF_MT_SUBTYPE, &guiNewSubtype)) ||
+      guiNewSubtype != _guiCurrentSubtype) {
+      hr = MF_E_INVALIDTYPE;
+    }
+  }
+
+  // We don't return any "close match" types.
+  if (ppMediaType) {
+    *ppMediaType = nullptr;
+  }
+
+  return hr;
+}
+
+// Return the number of preferred media types.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeCount(
+    DWORD *pdwTypeCount) {
+  if (pdwTypeCount == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    // We've got only one media type
+    *pdwTypeCount = 1;
+  }
+
+  return hr;
+}
+
+
+// Return a preferred media type by index.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeByIndex(
+  /* [in] */ DWORD dwIndex,
+  /* [out] */ IMFMediaType **ppType) {
+  if (ppType == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (dwIndex > 0) {
+    hr = MF_E_NO_MORE_TYPES;
+  } else {
+    *ppType = _spCurrentType.Get();
+    if (*ppType != nullptr) {
+      (*ppType)->AddRef();
+    }
+  }
+
+  return hr;
+}
+
+
+// Set the current media type.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::SetCurrentMediaType(
+    IMFMediaType *pMediaType) {
+  HRESULT hr = S_OK;
+  try {
+    if (pMediaType == nullptr) {
+      Throw(E_INVALIDARG);
+    }
+    CriticalSectionScoped cs(_critSec);
+
+    if (_isShutdown) {
+      hr = MF_E_SHUTDOWN;
+    }
+    ThrowIfError(hr);
+
+    // We don't allow format changes after streaming starts.
+    ThrowIfError(ValidateOperation(OpSetMediaType));
+
+    // We set media type already
+    if (_state >= State_Ready) {
+      ThrowIfError(IsMediaTypeSupported(pMediaType, nullptr));
+    }
+
+    GUID guiMajorType;
+    pMediaType->GetMajorType(&guiMajorType);
+
+    ThrowIfError(MFCreateMediaType(_spCurrentType.ReleaseAndGetAddressOf()));
+    ThrowIfError(pMediaType->CopyAllItems(_spCurrentType.Get()));
+    ThrowIfError(_spCurrentType->GetGUID(MF_MT_SUBTYPE, &_guiCurrentSubtype));
+    if (_state < State_Ready) {
+      _state = State_Ready;
+    } else if (_state > State_Ready) {
+      Microsoft::WRL::ComPtr<IMFMediaType> spType;
+      ThrowIfError(MFCreateMediaType(&spType));
+      ThrowIfError(pMediaType->CopyAllItems(spType.Get()));
+      ProcessFormatChange(spType.Get());
+    }
+  } catch (Platform::Exception ^exc) {
+    hr = exc->HResult;
+  }
+  return hr;
+}
+
+// Return the current media type, if any.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetCurrentMediaType(
+    IMFMediaType **ppMediaType) {
+  if (ppMediaType == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    if (_spCurrentType == nullptr) {
+      hr = MF_E_NOT_INITIALIZED;
+    }
+  }
+
+  if (SUCCEEDED(hr)) {
+    *ppMediaType = _spCurrentType.Get();
+    (*ppMediaType)->AddRef();
+  }
+
+  return hr;
+}
+
+
+// Return the major type GUID.
+IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMajorType(GUID *pguidMajorType) {
+  if (pguidMajorType == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  if (!_spCurrentType) {
+    return MF_E_NOT_INITIALIZED;
+  }
+
+  *pguidMajorType = MFMediaType_Video;
+
+  return S_OK;
+}
+
+
+// private methods
+HRESULT VideoCaptureStreamSinkWinRT::Initialize(
+    VideoCaptureMediaSinkWinRT *pParent, 
+    ISinkCallback ^callback) {
+  assert(pParent != nullptr);
+
+  HRESULT hr = S_OK;
+
+  // Create the event queue helper.
+  hr = MFCreateEventQueue(&_spEventQueue);
+
+  // Allocate a new work queue for async operations.
+  if (SUCCEEDED(hr)) {
+    hr = MFAllocateSerialWorkQueue(
+        MFASYNC_CALLBACK_QUEUE_STANDARD, &_workQueueId);
+  }
+
+  if (SUCCEEDED(hr)) {
+    _spSink = pParent;
+    _pParent = pParent;
+    _callback = callback;
+  }
+
+  return hr;
+}
+
+
+// Called when the presentation clock starts.
+HRESULT VideoCaptureStreamSinkWinRT::Start(MFTIME start) {
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+
+  hr = ValidateOperation(OpStart);
+
+  if (SUCCEEDED(hr)) {
+    if (start != PRESENTATION_CURRENT_POSITION) {
+      _startTime = start;        // Cache the start time.
+      _fGetStartTimeFromSample = false;
+    } else {
+      _fGetStartTimeFromSample = true;
+    }
+    _state = State_Started;
+    hr = QueueAsyncOperation(OpStart);
+  }
+
+  return hr;
+}
+
+// Called when the presentation clock stops.
+HRESULT VideoCaptureStreamSinkWinRT::Stop() {
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+
+  hr = ValidateOperation(OpStop);
+
+  if (SUCCEEDED(hr)) {
+    _state = State_Stopped;
+    hr = QueueAsyncOperation(OpStop);
+  }
+
+  return hr;
+}
+
+// Called when the presentation clock pauses.
+HRESULT VideoCaptureStreamSinkWinRT::Pause() {
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+
+  hr = ValidateOperation(OpPause);
+
+  if (SUCCEEDED(hr)) {
+    _state = State_Paused;
+    hr = QueueAsyncOperation(OpPause);
+  }
+
+  return hr;
+}
+
+// Called when the presentation clock restarts.
+HRESULT VideoCaptureStreamSinkWinRT::Restart() {
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+
+  hr = ValidateOperation(OpRestart);
+
+  if (SUCCEEDED(hr)) {
+    _state = State_Started;
+    hr = QueueAsyncOperation(OpRestart);
+  }
+
+  return hr;
+}
+
+// Class-static matrix of operations vs states.
+// If an entry is TRUE, the operation is valid from that state.
+BOOL VideoCaptureStreamSinkWinRT::ValidStateMatrix
+    [VideoCaptureStreamSinkWinRT::State_Count]
+    [VideoCaptureStreamSinkWinRT::Op_Count] = {
+  // States:    Operations:
+  //            SetType  Start  Restart  Pause  Stop  Sample
+  /* NotSet */  TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
+
+  /* Ready */   TRUE, TRUE, FALSE, TRUE, TRUE, FALSE,
+
+  /* Start */   TRUE, TRUE, FALSE, TRUE, TRUE, TRUE,
+
+  /* Pause */   TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
+
+  /* Stop */    TRUE, TRUE, FALSE, FALSE, TRUE, FALSE,
+};
+
+// Checks if an operation is valid in the current state.
+HRESULT VideoCaptureStreamSinkWinRT::ValidateOperation(StreamOperation op) {
+  assert(!_isShutdown);
+
+  if (ValidStateMatrix[_state][op]) {
+    return S_OK;
+  } else if (_state == State_TypeNotSet) {
+    return MF_E_NOT_INITIALIZED;
+  } else {
+    return MF_E_INVALIDREQUEST;
+  }
+}
+
+// Shuts down the stream sink.
+HRESULT VideoCaptureStreamSinkWinRT::Shutdown() {
+  CriticalSectionScoped cs(_critSec);
+
+  if (!_isShutdown) {
+    if (_spEventQueue) {
+      _spEventQueue->Shutdown();
+    }
+
+    MFUnlockWorkQueue(_workQueueId);
+
+    while (!_sampleQueue.empty())
+      _sampleQueue.pop();
+
+    _spSink.Reset();
+    _spEventQueue.Reset();
+    _spByteStream.Reset();
+    _spCurrentType.Reset();
+
+    _isShutdown = true;
+  }
+
+  return S_OK;
+}
+
+// Puts an async operation on the work queue.
+HRESULT VideoCaptureStreamSinkWinRT::QueueAsyncOperation(StreamOperation op) {
+  HRESULT hr = S_OK;
+  Microsoft::WRL::ComPtr<AsyncOperation> spOp;
+  spOp.Attach(new AsyncOperation(op));  // Created with ref count = 1
+  if (!spOp) {
+    hr = E_OUTOFMEMORY;
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = MFPutWorkItem2(_workQueueId, 0, &_workQueueCB, spOp.Get());
+  }
+
+  return hr;
+}
+
+HRESULT VideoCaptureStreamSinkWinRT::OnDispatchWorkItem(
+    IMFAsyncResult *pAsyncResult) {
+  // Called by work queue thread. Need to hold the critical section.
+  CriticalSectionScoped cs(_critSec);
+
+  try {
+    Microsoft::WRL::ComPtr<IUnknown> spState;
+
+    ThrowIfError(pAsyncResult->GetState(&spState));
+
+    // The state object is a CAsncOperation object.
+    AsyncOperation *pOp = static_cast<AsyncOperation *>(spState.Get());
+    StreamOperation op = pOp->m_op;
+
+    switch (op) {
+    case OpStart:
+    case OpRestart:
+      // Send MEStreamSinkStarted.
+      ThrowIfError(QueueEvent(MEStreamSinkStarted, GUID_NULL, S_OK, nullptr));
+
+      // There might be samples queue from earlier (ie, while paused).
+      bool fRequestMoreSamples;
+      fRequestMoreSamples = DropSamplesFromQueue();
+      if (fRequestMoreSamples) {
+        // If false there is no samples in the queue now so request one
+        ThrowIfError(
+            QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+      }
+      break;
+
+    case OpStop:
+      // Drop samples from queue.
+      DropSamplesFromQueue();
+
+      // Send the event even if the previous call failed.
+      ThrowIfError(QueueEvent(MEStreamSinkStopped, GUID_NULL, S_OK, nullptr));
+      break;
+
+    case OpPause:
+      ThrowIfError(QueueEvent(MEStreamSinkPaused, GUID_NULL, S_OK, nullptr));
+      break;
+
+    case OpProcessSample:
+    case OpSetMediaType:
+      DispatchProcessSample(pOp);
+      break;
+    }
+  } catch (Platform::Exception ^exc) {
+    HandleError(exc->HResult);
+  }
+  return S_OK;
+}
+
+// Complete a ProcessSample request.
+void VideoCaptureStreamSinkWinRT::DispatchProcessSample(AsyncOperation *pOp) {
+  assert(pOp != nullptr);
+  bool fRequestMoreSamples = SendSampleFromQueue();
+
+  // Ask for another sample
+  if (fRequestMoreSamples) {
+    if (pOp->m_op == OpProcessSample) {
+      ThrowIfError(
+          QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+    }
+  }
+}
+
+// Drop samples in the queue
+bool VideoCaptureStreamSinkWinRT::DropSamplesFromQueue() {
+  ProcessSamplesFromQueue(true);
+
+  return true;
+}
+
+// Send sample from the queue
+bool VideoCaptureStreamSinkWinRT::SendSampleFromQueue() {
+  return ProcessSamplesFromQueue(false);
+}
+
+bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
+  bool fNeedMoreSamples = false;
+
+  Microsoft::WRL::ComPtr<IUnknown> spunkSample;
+
+  bool fSendSamples = true;
+
+  if (_sampleQueue.size() == 0) {
+    fNeedMoreSamples = true;
+    fSendSamples = false;
+  } else {
+    spunkSample = _sampleQueue.front();
+    _sampleQueue.pop();
+  }
+
+  while (fSendSamples) {
+    Microsoft::WRL::ComPtr<IMFSample> spSample;
+    bool fProcessingSample = false;
+    assert(spunkSample);
+
+    if (SUCCEEDED(spunkSample.As(&spSample))) {
+      assert(spSample);
+      _callback->OnSample();
+      if (!fFlush) {
+        fProcessingSample = true;
+      }
+    }
+
+    if (_state == State_Started && fProcessingSample) {
+      // If we are still in started state request another sample
+      ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+    }
+
+    if (_sampleQueue.size() == 0) {
+      fNeedMoreSamples = true;
+      fSendSamples = false;
+    } else {
+      spunkSample = _sampleQueue.front();
+      _sampleQueue.pop();
+    }
+  }
+
+  return fNeedMoreSamples;
+}
+
+// Processing format change
+void VideoCaptureStreamSinkWinRT::ProcessFormatChange(
+    IMFMediaType *pMediaType) {
+  assert(pMediaType != nullptr);
+
+  // Add the media type to the sample queue.
+  _sampleQueue.push(pMediaType);
+
+  // Unless we are paused, start an async operation to dispatch the next sample.
+  // Queue the operation.
+  ThrowIfError(QueueAsyncOperation(OpSetMediaType));
+}
+
+VideoCaptureStreamSinkWinRT::AsyncOperation::AsyncOperation(StreamOperation op)
+  : _cRef(1),
+    m_op(op) {
+}
+
+VideoCaptureStreamSinkWinRT::AsyncOperation::~AsyncOperation() {
+  assert(_cRef == 0);
+}
+
+ULONG VideoCaptureStreamSinkWinRT::AsyncOperation::AddRef() {
+  return InterlockedIncrement(&_cRef);
+}
+
+ULONG VideoCaptureStreamSinkWinRT::AsyncOperation::Release() {
+  ULONG cRef = InterlockedDecrement(&_cRef);
+  if (cRef == 0) {
+    delete this;
+  }
+
+  return cRef;
+}
+
+HRESULT VideoCaptureStreamSinkWinRT::AsyncOperation::QueryInterface(
+    REFIID iid,
+    void **ppv) {
+  if (!ppv) {
+    return E_POINTER;
+  }
+  if (iid == IID_IUnknown) {
+    *ppv = static_cast<IUnknown*>(this);
+  } else {
+    *ppv = nullptr;
+    return E_NOINTERFACE;
+  }
+  AddRef();
+  return S_OK;
+}
+
+void VideoCaptureStreamSinkWinRT::HandleError(HRESULT hr) {
+  if (!_isShutdown) {
+    QueueEvent(MEError, GUID_NULL, hr, nullptr);
+  }
+}
+
+VideoCaptureMediaSinkWinRT::VideoCaptureMediaSinkWinRT()
     : _cRef(1),
+      _critSec(CriticalSectionWrapper::CreateCriticalSection()),
       _isShutdown(false),
       _isConnected(false),
       _llStartTime(0) {
 }
 
-VideoCaptureSinkWinRT::~VideoCaptureSinkWinRT() {
+VideoCaptureMediaSinkWinRT::~VideoCaptureMediaSinkWinRT() {
   assert(_isShutdown);
+  if (_critSec) {
+    delete _critSec;
+  }
+}
+
+HRESULT VideoCaptureMediaSinkWinRT::RuntimeClassInitialize(
+    ISinkCallback ^callback,
+    Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties) {
+  try {
+    _callback = callback;
+    const unsigned int streamId = GetStreamId();
+    RemoveStreamSink(streamId);
+    if (encodingProperties != nullptr) {
+      Microsoft::WRL::ComPtr<IMFStreamSink> spStreamSink;
+      Microsoft::WRL::ComPtr<IMFMediaType> spMediaType;
+      ConvertPropertiesToMediaType(encodingProperties, &spMediaType);
+      ThrowIfError(AddStreamSink(streamId, spMediaType.Get(), spStreamSink.GetAddressOf()));
+    }
+  } catch (Platform::Exception ^exc) {
+    _callback = nullptr;
+    return exc->HResult;
+  }
+
+  return S_OK;
 }
 
 ///  IMFMediaSink
-IFACEMETHODIMP VideoCaptureSinkWinRT::GetCharacteristics(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetCharacteristics(
     DWORD *pdwCharacteristics) {
-  return S_OK;
+  if (pdwCharacteristics == NULL) {
+    return E_INVALIDARG;
+  }
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  } else {
+    hr = S_OK;
+  }
+
+  if (SUCCEEDED(hr)) {
+    // Rateless sink.
+    *pdwCharacteristics = MEDIASINK_RATELESS;
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::AddStreamSink(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::AddStreamSink(
     DWORD dwStreamSinkIdentifier,
     IMFMediaType *pMediaType,
     IMFStreamSink **ppStreamSink) {
-  return S_OK;
+  VideoCaptureStreamSinkWinRT *pStream = nullptr;
+  Microsoft::WRL::ComPtr<IMFStreamSink> spMFStream;
+  CriticalSectionScoped cs(_critSec);
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr) && dwStreamSinkIdentifier != GetStreamId()) {
+    hr = MF_E_INVALIDSTREAMNUMBER;
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = GetStreamSinkById(dwStreamSinkIdentifier, &spMFStream);
+  }
+
+  if (SUCCEEDED(hr)) {
+    hr = MF_E_STREAMSINK_EXISTS;
+  } else {
+    hr = S_OK;
+  }
+
+  if (SUCCEEDED(hr)) {
+    pStream = new VideoCaptureStreamSinkWinRT(dwStreamSinkIdentifier);
+    if (pStream == nullptr) {
+      hr = E_OUTOFMEMORY;
+    }
+    spMFStream.Attach(pStream);
+  }
+
+  // Initialize the stream.
+  if (SUCCEEDED(hr)) {
+    hr = pStream->Initialize(this, _callback);
+  }
+
+  if (SUCCEEDED(hr) && pMediaType != nullptr) {
+    hr = pStream->SetCurrentMediaType(pMediaType);
+  }
+
+  if (SUCCEEDED(hr)) {
+    _spStreamSink = spMFStream;
+    *ppStreamSink = spMFStream.Detach();
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::RemoveStreamSink(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::RemoveStreamSink(
     DWORD dwStreamSinkIdentifier) {
-  return S_OK;
+  CriticalSectionScoped cs(_critSec);
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr) && dwStreamSinkIdentifier != GetStreamId()) {
+    hr = MF_E_INVALIDSTREAMNUMBER;
+  }
+
+  if (SUCCEEDED(hr) && _spStreamSink) {
+    Microsoft::WRL::ComPtr<IMFStreamSink> spStream = _spStreamSink;
+    static_cast<VideoCaptureStreamSinkWinRT *>(spStream.Get())->Shutdown();
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::GetStreamSinkCount(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkCount(
     _Out_ DWORD *pcStreamSinkCount) {
-  return S_OK;
+  if (pcStreamSinkCount == NULL) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    *pcStreamSinkCount = 1;
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::GetStreamSinkByIndex(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkByIndex(
     DWORD dwIndex,
     _Outptr_ IMFStreamSink **ppStreamSink) {
-  return S_OK;
+  if (ppStreamSink == NULL) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  if (dwIndex >= 1){
+    return MF_E_INVALIDINDEX;
+  }
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    assert(_spStreamSink);
+    Microsoft::WRL::ComPtr<IMFStreamSink> spResult = _spStreamSink;
+    *ppStreamSink = spResult.Detach();
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::GetStreamSinkById(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkById(
     DWORD dwStreamSinkIdentifier,
     IMFStreamSink **ppStreamSink) {
-  return S_OK;
+  if (ppStreamSink == NULL) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (dwStreamSinkIdentifier != GetStreamId() || _spStreamSink == nullptr){
+    hr = MF_E_INVALIDSTREAMNUMBER;
+  }
+
+  if (SUCCEEDED(hr)) {
+    assert(_spStreamSink);
+    Microsoft::WRL::ComPtr<IMFStreamSink> spResult = _spStreamSink;
+    *ppStreamSink = spResult.Detach();
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::SetPresentationClock(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::SetPresentationClock(
     IMFPresentationClock *pPresentationClock) {
-  return S_OK;
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  // If we already have a clock, remove ourselves from that clock's
+  // state notifications.
+  if (SUCCEEDED(hr)) {
+    if (_spClock) {
+      hr = _spClock->RemoveClockStateSink(this);
+    }
+  }
+
+  // Register ourselves to get state notifications from the new clock.
+  if (SUCCEEDED(hr)) {
+    if (pPresentationClock) {
+      hr = pPresentationClock->AddClockStateSink(this);
+    }
+  }
+
+  if (SUCCEEDED(hr)) {
+    // Release the pointer to the old clock.
+    // Store the pointer to the new clock.
+    _spClock = pPresentationClock;
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::GetPresentationClock(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetPresentationClock(
     IMFPresentationClock **ppPresentationClock) {
-  return S_OK;
+  if (ppPresentationClock == NULL) {
+    return E_INVALIDARG;
+  }
+
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    if (_spClock == NULL) {
+      hr = MF_E_NO_CLOCK;  // There is no presentation clock.
+    } else {
+      // Return the pointer to the caller.
+      *ppPresentationClock = _spClock.Get();
+      (*ppPresentationClock)->AddRef();
+    }
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::Shutdown() {
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::Shutdown() {
+
+  ISinkCallback ^callback;
+  {
+    CriticalSectionScoped cs(_critSec);
+    HRESULT hr = S_OK;
+    if (_isShutdown) {
+      hr = MF_E_SHUTDOWN;
+    }
+
+    if (SUCCEEDED(hr)) {
+      Microsoft::WRL::ComPtr<IMFStreamSink> spMFStream = _spStreamSink;
+      _spClock.Reset();
+      static_cast<VideoCaptureStreamSinkWinRT *>(spMFStream.Get())->Shutdown();
+      _isShutdown = true;
+      callback = _callback;
+    }
+  }
+
+  if (callback != nullptr)
+  {
+    callback->OnShutdown();
+  }
+
   return S_OK;
 }
 
 // IMFClockStateSink
-IFACEMETHODIMP VideoCaptureSinkWinRT::OnClockStart(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockStart(
     MFTIME hnsSystemTime,
     LONGLONG llClockStartOffset) {
-  return S_OK;
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    _llStartTime = llClockStartOffset;
+    static_cast<VideoCaptureStreamSinkWinRT *>(_spStreamSink.Get())->Start(_llStartTime);
+  }
+
+  return hr;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::OnClockStop(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockStop(
     MFTIME hnsSystemTime) {
-  return S_OK;
+  CriticalSectionScoped cs(_critSec);
+
+  HRESULT hr = S_OK;
+  if (_isShutdown) {
+    hr = MF_E_SHUTDOWN;
+  }
+
+  if (SUCCEEDED(hr)) {
+    static_cast<VideoCaptureStreamSinkWinRT *>(_spStreamSink.Get())->Stop();
+  }
+
+  return hr;
 }
 
-
-IFACEMETHODIMP VideoCaptureSinkWinRT::OnClockPause(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockPause(
     MFTIME hnsSystemTime) {
-  return S_OK;
+  return MF_E_INVALID_STATE_TRANSITION;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::OnClockRestart(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockRestart(
     MFTIME hnsSystemTime) {
-  return S_OK;
+  return MF_E_INVALID_STATE_TRANSITION;
 }
 
-IFACEMETHODIMP VideoCaptureSinkWinRT::OnClockSetRate(
+IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockSetRate(
     /* [in] */ MFTIME hnsSystemTime,
     /* [in] */ float flRate) {
   return S_OK;
+}
+
+VideoCaptureMediaSinkProxyWinRT::VideoCaptureMediaSinkProxyWinRT()
+  : _critSec(CriticalSectionWrapper::CreateCriticalSection()),
+    _sampleNumber(1) {
+}
+
+VideoCaptureMediaSinkProxyWinRT::~VideoCaptureMediaSinkProxyWinRT() {
+  CriticalSectionScoped cs(_critSec);
+
+  if (_mediaSink != nullptr)
+  {
+    _mediaSink->Shutdown();
+    _mediaSink = nullptr;
+  }
+
+  if (_critSec) {
+    delete _critSec;
+  }
+}
+
+Windows::Media::IMediaExtension^ VideoCaptureMediaSinkProxyWinRT::GetMFExtensions() {
+  CriticalSectionScoped cs(_critSec);
+
+  if (_mediaSink == nullptr) {
+    Throw(MF_E_NOT_INITIALIZED);
+  }
+
+  Microsoft::WRL::ComPtr<IInspectable> inspectable;
+  ThrowIfError(_mediaSink.As(&inspectable));
+
+  return safe_cast<Windows::Media::IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
+}
+
+
+Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^ 
+    VideoCaptureMediaSinkProxyWinRT::InitializeAsync(
+        Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties) {
+  return Concurrency::create_async([this, encodingProperties]() {
+    CriticalSectionScoped cs(_critSec);
+    CheckShutdown();
+
+    if (_mediaSink != nullptr) {
+      Throw(MF_E_ALREADY_INITIALIZED);
+    }
+
+    // Prepare the MF extension
+    ThrowIfError(Microsoft::WRL::MakeAndInitialize<VideoCaptureMediaSinkWinRT>(
+        &_mediaSink,
+        ref new VideoCaptureSinkCallback(this),
+        encodingProperties));
+
+    Microsoft::WRL::ComPtr<IInspectable> inspectable;
+    ThrowIfError(_mediaSink.As(&inspectable));
+
+    return safe_cast<Windows::Media::IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
+  });
+}
+
+void VideoCaptureMediaSinkProxyWinRT::OnSample() {
+  Trace(TRACE_LEVEL_NORMAL, L"======== ProcessSamplesFromQueue - %04d\n", _sampleNumber++);
+}
+
+void VideoCaptureMediaSinkProxyWinRT::OnShutdown() {
+  CriticalSectionScoped cs(_critSec);
+  if (_shutdown) {
+    return;
+  }
+  _shutdown = true;
+  _mediaSink = nullptr;
+}
+
+void VideoCaptureMediaSinkProxyWinRT::CheckShutdown() {
+  if (_shutdown) {
+    Throw(MF_E_SHUTDOWN);
+  }
 }
 
 }  // namespace videocapturemodule
