@@ -16,15 +16,14 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/interface/native_handle.h"
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
 #include "webrtc/modules/video_capture/include/mock/mock_video_capture.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/video_engine/mock/mock_vie_frame_provider_base.h"
 
@@ -81,6 +80,7 @@ class ViECapturerTest : public ::testing::Test {
   }
 
   virtual void TearDown() {
+    vie_capturer_->DeregisterFrameCallback(mock_frame_callback_.get());
     // ViECapturer accesses |mock_process_thread_| in destructor and should
     // be deleted first.
     vie_capturer_.reset();
@@ -94,7 +94,7 @@ class ViECapturerTest : public ::testing::Test {
     data_callback_->OnIncomingCapturedFrame(0, *frame);
   }
 
-  void AddOutputFrame(I420VideoFrame* frame) {
+  void AddOutputFrame(const I420VideoFrame* frame) {
     if (frame->native_handle() == NULL)
       output_frame_ybuffers_.push_back(frame->buffer(kYPlane));
     // Clone the frames because ViECapturer owns the frames.
@@ -106,27 +106,27 @@ class ViECapturerTest : public ::testing::Test {
     EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
   }
 
-  scoped_ptr<MockVideoCaptureModule> mock_capture_module_;
-  scoped_ptr<MockProcessThread> mock_process_thread_;
-  scoped_ptr<MockViEFrameCallback> mock_frame_callback_;
+  rtc::scoped_ptr<MockVideoCaptureModule> mock_capture_module_;
+  rtc::scoped_ptr<MockProcessThread> mock_process_thread_;
+  rtc::scoped_ptr<MockViEFrameCallback> mock_frame_callback_;
 
   // Used to send input capture frames to ViECapturer.
   VideoCaptureDataCallback* data_callback_;
 
-  scoped_ptr<ViECapturer> vie_capturer_;
+  rtc::scoped_ptr<ViECapturer> vie_capturer_;
 
   // Input capture frames of ViECapturer.
   ScopedVector<I420VideoFrame> input_frames_;
 
   // Indicate an output frame has arrived.
-  scoped_ptr<EventWrapper> output_frame_event_;
+  rtc::scoped_ptr<EventWrapper> output_frame_event_;
 
   // Output delivered frames of ViECaptuer.
   ScopedVector<I420VideoFrame> output_frames_;
 
   // The pointers of Y plane buffers of output frames. This is used to verify
   // the frame are swapped and not copied.
-  std::vector<uint8_t*> output_frame_ybuffers_;
+  std::vector<const uint8_t*> output_frame_ybuffers_;
 };
 
 TEST_F(ViECapturerTest, TestTextureFrames) {
@@ -134,7 +134,8 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
   for (int i = 0 ; i < kNumFrame; ++i) {
     webrtc::RefCountImpl<FakeNativeHandle>* handle =
               new webrtc::RefCountImpl<FakeNativeHandle>();
-    input_frames_.push_back(new TextureVideoFrame(handle, i, i, i, i));
+    // Add one to |i| so that width/height > 0.
+    input_frames_.push_back(new I420VideoFrame(handle, i + 1, i + 1, i, i));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
   }
@@ -145,10 +146,11 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
 TEST_F(ViECapturerTest, TestI420Frames) {
   const int kNumFrame = 4;
   ScopedVector<I420VideoFrame> copied_input_frames;
-  std::vector<uint8_t*> ybuffer_pointers;
+  std::vector<const uint8_t*> ybuffer_pointers;
   for (int i = 0; i < kNumFrame; ++i) {
     input_frames_.push_back(CreateI420VideoFrame(static_cast<uint8_t>(i + 1)));
-    ybuffer_pointers.push_back(input_frames_[i]->buffer(kYPlane));
+    const I420VideoFrame* const_input_frame = input_frames_[i];
+    ybuffer_pointers.push_back(const_input_frame->buffer(kYPlane));
     // Copy input frames because the buffer data will be swapped.
     copied_input_frames.push_back(input_frames_[i]->CloneFrame());
     AddInputFrame(input_frames_[i]);
@@ -159,21 +161,18 @@ TEST_F(ViECapturerTest, TestI420Frames) {
   // Make sure the buffer is swapped and not copied.
   for (int i = 0; i < kNumFrame; ++i)
     EXPECT_EQ(ybuffer_pointers[i], output_frame_ybuffers_[i]);
-  // The pipeline should be filled with frames with allocated buffers. Check
-  // the last input frame has the same allocated size after swapping.
-  EXPECT_EQ(input_frames_.back()->allocated_size(kYPlane),
-            copied_input_frames.back()->allocated_size(kYPlane));
 }
 
 TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
   webrtc::RefCountImpl<FakeNativeHandle>* handle =
       new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames_.push_back(new TextureVideoFrame(handle, 1, 1, 1, 1));
+  input_frames_.push_back(new I420VideoFrame(handle, 1, 1, 1, 1));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
 
   input_frames_.push_back(CreateI420VideoFrame(1));
-  scoped_ptr<I420VideoFrame> copied_input_frame(input_frames_[1]->CloneFrame());
+  rtc::scoped_ptr<I420VideoFrame> copied_input_frame(
+      input_frames_[1]->CloneFrame());
   AddInputFrame(copied_input_frame.get());
   WaitOutputFrame();
 
@@ -182,13 +181,14 @@ TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
 
 TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
   input_frames_.push_back(CreateI420VideoFrame(1));
-  scoped_ptr<I420VideoFrame> copied_input_frame(input_frames_[0]->CloneFrame());
+  rtc::scoped_ptr<I420VideoFrame> copied_input_frame(
+      input_frames_[0]->CloneFrame());
   AddInputFrame(copied_input_frame.get());
   WaitOutputFrame();
 
   webrtc::RefCountImpl<FakeNativeHandle>* handle =
       new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames_.push_back(new TextureVideoFrame(handle, 1, 1, 1, 1));
+  input_frames_.push_back(new I420VideoFrame(handle, 1, 1, 1, 1));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
 

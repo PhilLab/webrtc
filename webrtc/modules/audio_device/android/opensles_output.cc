@@ -25,8 +25,6 @@
   do {                                                           \
     SLresult err = (op);                                         \
     if (err != SL_RESULT_SUCCESS) {                              \
-      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, id_,          \
-                   "OpenSL error: %d", err);                     \
       assert(false);                                             \
       return ret_val;                                            \
     }                                                            \
@@ -43,9 +41,8 @@ enum {
 
 namespace webrtc {
 
-OpenSlesOutput::OpenSlesOutput(const int32_t id)
-    : id_(id),
-      initialized_(false),
+OpenSlesOutput::OpenSlesOutput()
+    : initialized_(false),
       speaker_initialized_(false),
       play_initialized_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -70,9 +67,8 @@ OpenSlesOutput::~OpenSlesOutput() {
 }
 
 int32_t OpenSlesOutput::SetAndroidAudioDeviceObjects(void* javaVM,
-                                                     void* env,
                                                      void* context) {
-  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, context);
   return 0;
 }
 
@@ -340,7 +336,7 @@ void OpenSlesOutput::AllocateBuffers() {
   fifo_.reset(new SingleRwFifo(num_fifo_buffers_needed_));
 
   // Allocate the memory area to be used.
-  play_buf_.reset(new scoped_ptr<int8_t[]>[TotalBuffersUsed()]);
+  play_buf_.reset(new rtc::scoped_ptr<int8_t[]>[TotalBuffersUsed()]);
   int required_buffer_size = fine_buffer_->RequiredBufferSizeBytes();
   for (int i = 0; i < TotalBuffersUsed(); ++i) {
     play_buf_[i].reset(new int8_t[required_buffer_size]);
@@ -468,7 +464,6 @@ bool OpenSlesOutput::HandleUnderrun(int event_id, int event_msg) {
   if (event_id == kNoUnderrun) {
     return false;
   }
-  WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, id_, "Audio underrun");
   assert(event_id == kUnderrun);
   assert(event_msg > 0);
   // Wait for all enqueued buffers to be flushed.

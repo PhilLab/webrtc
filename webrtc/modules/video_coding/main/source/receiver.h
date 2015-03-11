@@ -81,14 +81,16 @@ class VCMReceiver {
 
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
+  void TriggerDecoderShutdown();
+
  private:
   static int32_t GenerateReceiverId();
 
   CriticalSectionWrapper* crit_sect_;
-  Clock* clock_;
+  Clock* const clock_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
-  scoped_ptr<EventWrapper> render_wait_event_;
+  rtc::scoped_ptr<EventWrapper> render_wait_event_;
   VCMReceiverState state_;
   int max_video_delay_ms_;
 

@@ -20,9 +20,18 @@ namespace {
 const int kMinBitrateBps = 500;
 const int kMaxBitrateBps = 512000;
 
+// TODO(tlegrand): Remove this code when we have proper APIs to set the
+// complexity at a higher level.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_ARCH_ARM)
+// If we are on Android, iOS and/or ARM, use a lower complexity setting as
+// default, to save encoder complexity.
+const int kDefaultComplexity = 5;
+#else
+const int kDefaultComplexity = 9;
+#endif
+
 // We always encode at 48 kHz.
 const int kSampleRateHz = 48000;
-
 
 int16_t ClampInt16(size_t x) {
   return static_cast<int16_t>(
@@ -41,15 +50,23 @@ AudioEncoderOpus::Config::Config()
       num_channels(1),
       payload_type(120),
       application(kVoip),
-      bitrate_bps(64000) {
+      bitrate_bps(64000),
+      fec_enabled(false),
+      max_playback_rate_hz(48000),
+      complexity(kDefaultComplexity),
+      dtx_enabled(false) {
 }
 
 bool AudioEncoderOpus::Config::IsOk() const {
   if (frame_size_ms <= 0 || frame_size_ms % 10 != 0)
     return false;
-  if (num_channels <= 0)
+  if (num_channels != 1 && num_channels != 2)
     return false;
   if (bitrate_bps < kMinBitrateBps || bitrate_bps > kMaxBitrateBps)
+    return false;
+  if (complexity < 0 || complexity > 10)
+    return false;
+  if (dtx_enabled && application != kVoip)
     return false;
   return true;
 }
@@ -67,18 +84,41 @@ AudioEncoderOpus::AudioEncoderOpus(const Config& config)
   input_buffer_.reserve(num_10ms_frames_per_packet_ * samples_per_10ms_frame_);
   CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, num_channels_, application_));
   SetTargetBitrate(config.bitrate_bps);
+  if (config.fec_enabled) {
+    CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
+  } else {
+    CHECK_EQ(0, WebRtcOpus_DisableFec(inst_));
+  }
+  CHECK_EQ(0,
+           WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
+  CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, config.complexity));
+  if (config.dtx_enabled) {
+    CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
+  } else {
+    CHECK_EQ(0, WebRtcOpus_DisableDtx(inst_));
+  }
 }
 
 AudioEncoderOpus::~AudioEncoderOpus() {
   CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
 }
 
-int AudioEncoderOpus::sample_rate_hz() const {
+int AudioEncoderOpus::SampleRateHz() const {
   return kSampleRateHz;
 }
 
-int AudioEncoderOpus::num_channels() const {
+int AudioEncoderOpus::NumChannels() const {
   return num_channels_;
+}
+
+size_t AudioEncoderOpus::MaxEncodedBytes() const {
+  // Calculate the number of bytes we expect the encoder to produce,
+  // then multiply by two to give a wide margin for error.
+  int frame_size_ms = num_10ms_frames_per_packet_ * 10;
+  int bytes_per_millisecond = bitrate_bps_ / (1000 * 8) + 1;
+  size_t approx_encoded_bytes =
+      static_cast<size_t>(frame_size_ms * bytes_per_millisecond);
+  return 2 * approx_encoded_bytes;
 }
 
 int AudioEncoderOpus::Num10MsFramesInNextPacket() const {
@@ -90,10 +130,9 @@ int AudioEncoderOpus::Max10MsFramesInAPacket() const {
 }
 
 void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
-  CHECK_EQ(WebRtcOpus_SetBitRate(
-               inst_, std::max(std::min(bits_per_second, kMaxBitrateBps),
-                               kMinBitrateBps)),
-           0);
+  bitrate_bps_ = std::max(std::min(bits_per_second, kMaxBitrateBps),
+                          kMinBitrateBps);
+  CHECK_EQ(WebRtcOpus_SetBitRate(inst_, bitrate_bps_), 0);
 }
 
 void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {
@@ -143,7 +182,7 @@ void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {
   }
 }
 
-bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
@@ -155,7 +194,7 @@ bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
   if (input_buffer_.size() < (static_cast<size_t>(num_10ms_frames_per_packet_) *
                               samples_per_10ms_frame_)) {
     info->encoded_bytes = 0;
-    return true;
+    return;
   }
   CHECK_EQ(input_buffer_.size(),
            static_cast<size_t>(num_10ms_frames_per_packet_) *
@@ -165,13 +204,14 @@ bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
       rtc::CheckedDivExact(CastInt16(input_buffer_.size()),
                            static_cast<int16_t>(num_channels_)),
       ClampInt16(max_encoded_bytes), encoded);
+  CHECK_GE(r, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
-  if (r < 0)
-    return false;
   info->encoded_bytes = r;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
-  return true;
+  // Allows Opus to send empty packets.
+  info->send_even_if_empty = true;
+  info->speech = r > 0;
 }
 
 }  // namespace webrtc

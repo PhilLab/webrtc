@@ -38,15 +38,14 @@ public:
     UdpSocketManagerPosix();
     virtual ~UdpSocketManagerPosix();
 
-    virtual bool Init(int32_t id, uint8_t& numOfWorkThreads) OVERRIDE;
+    bool Init(int32_t id, uint8_t& numOfWorkThreads) override;
 
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
+    bool Start() override;
+    bool Stop() override;
 
-    virtual bool Start() OVERRIDE;
-    virtual bool Stop() OVERRIDE;
+    bool AddSocket(UdpSocketWrapper* s) override;
+    bool RemoveSocket(UdpSocketWrapper* s) override;
 
-    virtual bool AddSocket(UdpSocketWrapper* s) OVERRIDE;
-    virtual bool RemoveSocket(UdpSocketWrapper* s) OVERRIDE;
 private:
     int32_t _id;
     CriticalSectionWrapper* _critSect;

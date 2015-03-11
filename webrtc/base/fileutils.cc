@@ -152,6 +152,10 @@ FilesystemInterface *Filesystem::EnsureDefaultFilesystem() {
   return default_filesystem_;
 }
 
+DirectoryIterator* FilesystemInterface::IterateDirectory() {
+  return new DirectoryIterator();
+}
+
 bool FilesystemInterface::CopyFolder(const Pathname &old_path,
                                      const Pathname &new_path) {
   bool success = true;
@@ -210,6 +214,10 @@ bool FilesystemInterface::DeleteFolderContents(const Pathname &folder) {
   }
   delete di;
   return success;
+}
+
+bool FilesystemInterface::DeleteFolderAndContents(const Pathname& folder) {
+  return DeleteFolderContents(folder) && DeleteEmptyFolder(folder);
 }
 
 bool FilesystemInterface::CleanAppTempFolder() {

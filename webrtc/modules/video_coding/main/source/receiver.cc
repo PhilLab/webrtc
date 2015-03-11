@@ -49,13 +49,11 @@ void VCMReceiver::Reset() {
   } else {
     jitter_buffer_.Flush();
   }
-  render_wait_event_->Reset();
   state_ = kReceiving;
 }
 
 int32_t VCMReceiver::Initialize() {
   Reset();
-  CriticalSectionScoped cs(crit_sect_);
   return VCM_OK;
 }
 
@@ -85,6 +83,11 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
     timing_->IncomingTimestamp(packet.timestamp, clock_->TimeInMilliseconds());
   }
   return VCM_OK;
+}
+
+void VCMReceiver::TriggerDecoderShutdown() {
+  jitter_buffer_.Stop();
+  render_wait_event_->Set();
 }
 
 VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,

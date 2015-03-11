@@ -19,9 +19,9 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
 
   MyObserver my_observer;
 
-  scoped_ptr<test::TraceToStderr> trace_to_stderr;
+  rtc::scoped_ptr<test::TraceToStderr> trace_to_stderr;
   if (!FLAGS_use_log_file) {
     trace_to_stderr.reset(new test::TraceToStderr);
   } else {
@@ -233,6 +233,7 @@ void RunTest(std::string out_path) {
   bool muted = false;
   bool opus_stereo = false;
   bool experimental_ns_enabled = false;
+  bool debug_recording_started = false;
 
 #if defined(WEBRTC_ANDROID)
   std::string resource_path = "/sdcard/";
@@ -258,7 +259,7 @@ void RunTest(std::string out_path) {
     fflush(NULL);
   }
 
-  scoped_ptr<VoiceChannelTransport> voice_channel_transport(
+  rtc::scoped_ptr<VoiceChannelTransport> voice_channel_transport(
       new VoiceChannelTransport(netw, chan));
 
   char ip[64];
@@ -448,6 +449,7 @@ void RunTest(std::string out_path) {
       printf("%i. Set Opus maximum playback rate \n", option_index++);
       printf("%i. Set bit rate (only take effect on codecs that allow the "
              "change) \n", option_index++);
+      printf("%i. Toggle debug recording \n", option_index++);
 
       printf("Select action or %i to stop the call: ", option_index);
       int option_selection;
@@ -778,9 +780,23 @@ void RunTest(std::string out_path) {
         ASSERT_EQ(1, scanf("%i", &cinst.rate));
         res = codec->SetSendCodec(chan, cinst);
         VALIDATE;
+      } else if (option_selection == option_index++) {
+        const char* kDebugFileName = "audio.aecdump";
+        if (debug_recording_started) {
+          apm->StopDebugRecording();
+          printf("Debug recording named %s stopped\n", kDebugFileName);
+        } else {
+          apm->StartDebugRecording(kDebugFileName);
+          printf("Debug recording named %s started\n", kDebugFileName);
+        }
+        debug_recording_started = !debug_recording_started;
       } else {
         break;
       }
+    }
+
+    if (debug_recording_started) {
+      apm->StopDebugRecording();
     }
 
     if (send) {

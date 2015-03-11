@@ -432,14 +432,12 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
         renderer_->SetSink(NULL);
       }
     }
-    virtual void OnData(const void* audio_data,
-                        int bits_per_sample,
-                        int sample_rate,
-                        int number_of_channels,
-                        int number_of_frames) OVERRIDE {}
-    virtual void OnClose() OVERRIDE {
-      renderer_ = NULL;
-    }
+    void OnData(const void* audio_data,
+                int bits_per_sample,
+                int sample_rate,
+                int number_of_channels,
+                int number_of_frames) override {}
+    void OnClose() override { renderer_ = NULL; }
     AudioRenderer* renderer() const { return renderer_; }
 
    private:
@@ -583,8 +581,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return true;
   }
 
-  virtual bool GetStats(const StatsOptions& options,
-                        VideoMediaInfo* info) { return false; }
+  virtual bool GetStats(VideoMediaInfo* info) { return false; }
   virtual bool SendIntraFrame() {
     sent_intra_frame_ = true;
     return true;
@@ -860,7 +857,9 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
 class FakeVideoEngine : public FakeBaseEngine {
  public:
-  FakeVideoEngine() : capture_(false), processor_(NULL) {
+  FakeVideoEngine() : FakeVideoEngine(nullptr) {}
+  explicit FakeVideoEngine(FakeVoiceEngine* voice)
+      : capture_(false), processor_(NULL) {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));

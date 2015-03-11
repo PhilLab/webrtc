@@ -10,13 +10,14 @@
   'targets': [
     {
       # Note this library is missing an implementation for the video capture.
-      # Targets must link with either 'video_capture_module_impl' or
+      # Targets must link with either 'video_capture' or
       # 'video_capture_module_internal_impl' depending on whether they want to
       # use the internal capturer.
       'target_name': 'video_capture_module',
       'type': 'static_library',
       'dependencies': [
         'webrtc_utility',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
@@ -36,7 +37,7 @@
     {
       # Default video capture module implementation that only supports external
       # capture.
-      'target_name': 'video_capture_module_impl',
+      'target_name': 'video_capture',
       'type': 'static_library',
       'dependencies': [
         'video_capture_module',
@@ -55,6 +56,7 @@
           'type': 'static_library',
           'dependencies': [
             'video_capture_module',
+            '<(webrtc_root)/common.gyp:webrtc_common',
           ],
           'conditions': [
             ['OS=="linux"', {

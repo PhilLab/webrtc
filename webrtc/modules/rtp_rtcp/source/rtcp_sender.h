@@ -15,6 +15,7 @@
 #include <sstream>
 #include <string>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -23,7 +24,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -70,7 +70,8 @@ public:
  RTCPSender(int32_t id,
             bool audio,
             Clock* clock,
-            ReceiveStatistics* receive_statistics);
+            ReceiveStatistics* receive_statistics,
+            RtcpPacketTypeCounterObserver* packet_type_counter_observer);
     virtual ~RTCPSender();
 
     int32_t RegisterSendTransport(Transport* outgoingTransport);
@@ -92,8 +93,6 @@ public:
     void SetSSRC(uint32_t ssrc);
 
     void SetRemoteSSRC(uint32_t ssrc);
-
-    int32_t SetCameraDelay(int32_t delayMS);
 
     int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]);
 
@@ -166,8 +165,6 @@ public:
     void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
     void SetTargetBitrate(unsigned int target_bitrate);
-
-    void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
 
 private:
  int32_t SendToNetwork(const uint8_t* dataBuffer, size_t length);
@@ -303,8 +300,6 @@ private:
     std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _csrcCNAMEs
         GUARDED_BY(_criticalSectionRTCPSender);
 
-    int32_t _cameraDelayMS GUARDED_BY(_criticalSectionRTCPSender);
-
     // Sent
     uint32_t _lastSendReport[RTCP_NUMBER_OF_SR] GUARDED_BY(
         _criticalSectionRTCPSender);  // allow packet loss and RTT above 1 sec
@@ -345,6 +340,7 @@ private:
     bool _xrSendVoIPMetric GUARDED_BY(_criticalSectionRTCPSender);
     RTCPVoIPMetric _xrVoIPMetric GUARDED_BY(_criticalSectionRTCPSender);
 
+    RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
     RtcpPacketTypeCounter packet_type_counter_
         GUARDED_BY(_criticalSectionRTCPSender);
 

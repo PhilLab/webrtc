@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 
 AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
@@ -24,16 +26,20 @@ AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
 AudioEncoderCopyRed::~AudioEncoderCopyRed() {
 }
 
-int AudioEncoderCopyRed::sample_rate_hz() const {
-  return speech_encoder_->sample_rate_hz();
+int AudioEncoderCopyRed::SampleRateHz() const {
+  return speech_encoder_->SampleRateHz();
 }
 
-int AudioEncoderCopyRed::rtp_timestamp_rate_hz() const {
-  return speech_encoder_->rtp_timestamp_rate_hz();
+int AudioEncoderCopyRed::RtpTimestampRateHz() const {
+  return speech_encoder_->RtpTimestampRateHz();
 }
 
-int AudioEncoderCopyRed::num_channels() const {
-  return speech_encoder_->num_channels();
+int AudioEncoderCopyRed::NumChannels() const {
+  return speech_encoder_->NumChannels();
+}
+
+size_t AudioEncoderCopyRed::MaxEncodedBytes() const {
+  return 2 * speech_encoder_->MaxEncodedBytes();
 }
 
 int AudioEncoderCopyRed::Num10MsFramesInNextPacket() const {
@@ -54,17 +60,16 @@ void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {
   speech_encoder_->SetProjectedPacketLossRate(fraction);
 }
 
-bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
                                          const int16_t* audio,
                                          size_t max_encoded_bytes,
                                          uint8_t* encoded,
                                          EncodedInfo* info) {
-  if (!speech_encoder_->Encode(rtp_timestamp, audio,
-                               static_cast<size_t>(sample_rate_hz() / 100),
-                               max_encoded_bytes, encoded, info))
-    return false;
-  if (max_encoded_bytes < info->encoded_bytes + secondary_info_.encoded_bytes)
-    return false;
+  speech_encoder_->Encode(rtp_timestamp, audio,
+                          static_cast<size_t>(SampleRateHz() / 100),
+                          max_encoded_bytes, encoded, info);
+  CHECK_GE(max_encoded_bytes,
+           info->encoded_bytes + secondary_info_.encoded_bytes);
   CHECK(info->redundant.empty()) << "Cannot use nested redundant encoders.";
 
   if (info->encoded_bytes > 0) {
@@ -87,6 +92,7 @@ bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
     CHECK(secondary_encoded_);
     memcpy(secondary_encoded_.get(), encoded, info->encoded_bytes);
     secondary_info_ = *info;
+    DCHECK_EQ(info->speech, info->redundant[0].speech);
   }
   // Update main EncodedInfo.
   info->payload_type = red_payload_type_;
@@ -96,7 +102,6 @@ bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
        it != info->redundant.end(); ++it) {
     info->encoded_bytes += it->encoded_bytes;
   }
-  return true;
 }
 
 }  // namespace webrtc

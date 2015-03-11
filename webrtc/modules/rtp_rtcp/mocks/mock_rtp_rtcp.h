@@ -32,8 +32,6 @@ class MockRtpData : public RtpData {
 
 class MockRtpRtcp : public RtpRtcp {
  public:
-  MOCK_METHOD1(ChangeUniqueId,
-      int32_t(const int32_t id));
   MOCK_METHOD1(RegisterDefaultModule,
       int32_t(RtpRtcp* module));
   MOCK_METHOD0(DeRegisterDefaultModule,
@@ -84,7 +82,7 @@ class MockRtpRtcp : public RtpRtcp {
       uint16_t());
   MOCK_METHOD1(SetSequenceNumber, void(const uint16_t seq));
   MOCK_METHOD2(SetRtpStateForSsrc,
-               void(uint32_t ssrc, const RtpState& rtp_state));
+               bool(uint32_t ssrc, const RtpState& rtp_state));
   MOCK_METHOD2(GetRtpStateForSsrc, bool(uint32_t ssrc, RtpState* rtp_state));
   MOCK_CONST_METHOD0(SSRC,
       uint32_t());
@@ -221,8 +219,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(RtpAudioFeedback* messagesCallback));
   MOCK_METHOD1(SetAudioPacketSize,
       int32_t(const uint16_t packetSizeSamples));
-  MOCK_CONST_METHOD1(SendTelephoneEventActive,
-      bool(int8_t& telephoneEvent));
   MOCK_METHOD3(SendTelephoneEventOutband,
       int32_t(const uint8_t key, const uint16_t time_ms, const uint8_t level));
   MOCK_METHOD1(SetSendREDPayloadType,
@@ -235,12 +231,12 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(bool& enable, uint8_t& ID));
   MOCK_METHOD1(SetAudioLevel,
       int32_t(const uint8_t level_dBov));
-  MOCK_METHOD1(SetCameraDelay,
-      int32_t(const int32_t delayMS));
   MOCK_METHOD1(SetTargetSendBitrate,
-      void(const std::vector<uint32_t>& stream_bitrates));
+      void(uint32_t bitrate_bps));
   MOCK_METHOD3(SetGenericFECStatus,
-      int32_t(const bool enable, const uint8_t payloadTypeRED, const uint8_t payloadTypeFEC));
+      int32_t(const bool enable,
+              const uint8_t payloadTypeRED,
+              const uint8_t payloadTypeFEC));
   MOCK_METHOD3(GenericFECStatus,
       int32_t(bool& enable, uint8_t& payloadTypeRED, uint8_t& payloadTypeFEC));
   MOCK_METHOD2(SetFecParameters,

@@ -17,6 +17,7 @@
 
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/typedefs.h"
 
 struct AecCore;
@@ -84,16 +85,6 @@ struct ExperimentalNs {
   bool enabled;
 };
 
-// Coordinates in meters.
-struct Point {
-  Point(float x, float y, float z) {
-    c[0] = x;
-    c[1] = y;
-    c[2] = z;
-  }
-  float c[3];
-};
-
 // Use to enable beamforming. Must be provided through the constructor. It will
 // have no impact if used with AudioProcessing::SetExtraOptions().
 struct Beamforming {
@@ -103,6 +94,15 @@ struct Beamforming {
         array_geometry(array_geometry) {}
   const bool enabled;
   const std::vector<Point> array_geometry;
+};
+
+// Use to enable 48kHz support in audio processing. Must be provided through the
+// constructor. It will have no impact if used with
+// AudioProcessing::SetExtraOptions().
+struct AudioProcessing48kHzSupport {
+  AudioProcessing48kHzSupport() : enabled(false) {}
+  explicit AudioProcessing48kHzSupport(bool enabled) : enabled(enabled) {}
+  bool enabled;
 };
 
 static const int kAudioProcMaxNativeSampleRateHz = 32000;
@@ -487,9 +487,17 @@ class EchoCancellation {
   virtual bool is_delay_logging_enabled() const = 0;
 
   // The delay metrics consists of the delay |median| and the delay standard
-  // deviation |std|. The values are averaged over the time period since the
-  // last call to |GetDelayMetrics()|.
+  // deviation |std|. It also consists of the fraction of delay estimates
+  // |fraction_poor_delays| that can make the echo cancellation perform poorly.
+  // The values are aggregated until the first call to |GetDelayMetrics()| and
+  // afterwards aggregated and updated every second.
+  // Note that if there are several clients pulling metrics from
+  // |GetDelayMetrics()| during a session the first call from any of them will
+  // change to one second aggregation window for all.
+  // TODO(bjornv): Deprecated, remove.
   virtual int GetDelayMetrics(int* median, int* std) = 0;
+  virtual int GetDelayMetrics(int* median, int* std,
+                              float* fraction_poor_delays) = 0;
 
   // Returns a pointer to the low level AEC component.  In case of multiple
   // channels, the pointer to the first one is returned.  A NULL pointer is

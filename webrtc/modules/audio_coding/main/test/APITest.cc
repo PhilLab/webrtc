@@ -411,33 +411,11 @@ bool APITest::PushAudioRunB() {
 
 bool APITest::ProcessRunA() {
   _processEventA->Wait(100);
-  if (_acmA->Process() < 0) {
-    // do not print error message if there is no encoder
-    bool thereIsEncoder;
-    {
-      ReadLockScoped rl(_apiTestRWLock);
-      thereIsEncoder = _thereIsEncoderA;
-    }
-
-    if (thereIsEncoder) {
-      fprintf(stderr, "\n>>>>>      Process Failed at A     <<<<<\n");
-    }
-  }
   return true;
 }
 
 bool APITest::ProcessRunB() {
   _processEventB->Wait(100);
-  if (_acmB->Process() < 0) {
-    bool thereIsEncoder;
-    {
-      ReadLockScoped rl(_apiTestRWLock);
-      thereIsEncoder = _thereIsEncoderB;
-    }
-    if (thereIsEncoder) {
-      fprintf(stderr, "\n>>>>>      Process Failed at B     <<<<<\n");
-    }
-  }
   return true;
 }
 
@@ -785,8 +763,8 @@ void APITest::TestDelay(char side) {
 
   *myMinDelay = (rand() % 1000) + 1;
 
-  ACMNetworkStatistics networkStat;
-  CHECK_ERROR_MT(myACM->NetworkStatistics(&networkStat));
+  NetworkStatistics networkStat;
+  CHECK_ERROR_MT(myACM->GetNetworkStatistics(&networkStat));
 
   if (!_randomTest) {
     fprintf(stdout, "\n\nJitter Statistics at Side %c\n", side);
@@ -803,10 +781,14 @@ void APITest::TestDelay(char side) {
             networkStat.currentDiscardRate);
     fprintf(stdout, "expand rate............. %d\n",
             networkStat.currentExpandRate);
+    fprintf(stdout, "speech expand rate...... %d\n",
+            networkStat.currentSpeechExpandRate);
     fprintf(stdout, "Preemptive rate......... %d\n",
             networkStat.currentPreemptiveRate);
     fprintf(stdout, "Accelerate rate......... %d\n",
             networkStat.currentAccelerateRate);
+    fprintf(stdout, "Secondary decoded rate.. %d\n",
+            networkStat.currentSecondaryDecodedRate);
     fprintf(stdout, "Clock-drift............. %d\n", networkStat.clockDriftPPM);
     fprintf(stdout, "Mean waiting time....... %d\n",
             networkStat.meanWaitingTimeMs);

@@ -58,7 +58,7 @@ class ACMVADCallback {
  public:
   virtual ~ACMVADCallback() {}
 
-  virtual int32_t InFrameType(int16_t frameType) = 0;
+  virtual int32_t InFrameType(FrameType frame_type) = 0;
 };
 
 // Callback class used for reporting receiver statistics
@@ -74,7 +74,7 @@ class ACMVQMonCallback {
       const uint16_t delayMS) = 0;  // average delay in ms
 };
 
-class AudioCodingModule: public Module {
+class AudioCodingModule {
  protected:
   AudioCodingModule() {}
 
@@ -315,9 +315,12 @@ class AudioCodingModule: public Module {
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t Add10MsData()
-  // Add 10MS of raw (PCM) audio data to the encoder. If the sampling
+  // Add 10MS of raw (PCM) audio data and encode it. If the sampling
   // frequency of the audio does not match the sampling frequency of the
-  // current encoder ACM will resample the audio.
+  // current encoder ACM will resample the audio. If an encoded packet was
+  // produced, it will be delivered via the callback object registered using
+  // RegisterTransportCallback, and the return value from this function will
+  // be the number of bytes encoded.
   //
   // Input:
   //   -audio_frame        : the input audio frame, containing raw audio
@@ -326,10 +329,8 @@ class AudioCodingModule: public Module {
   //                         AudioFrame.
   //
   // Return value:
-  //      0   successfully added the frame.
-  //     -1   some error occurred and data is not added.
-  //   < -1   to add the frame to the buffer n samples had to be
-  //          overwritten, -n is the return value in this case.
+  //   >= 0   number of bytes encoded.
+  //     -1   some error occurred.
   //
   virtual int32_t Add10MsData(const AudioFrame& audio_frame) = 0;
 
@@ -905,11 +906,35 @@ class AudioCodingModule: public Module {
   virtual int SetOpusMaxPlaybackRate(int frequency_hz) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
+  // int EnableOpusDtx()
+  // If current send codec is Opus, enables its internal DTX.
+  // Currently, this can be only called when Opus application mode is VOIP.
+  // Use SetOpusApplication() to switch to VOIP mode when necessary.
+  //
+  // Return value:
+  //   -1 if current send codec is not Opus or
+  //      error occurred in enabling DTX.
+  //    0 Opus DTX is enabled successfully.
+  //
+  virtual int EnableOpusDtx() = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int DisableOpusDtx()
+  // If current send codec is Opus, disables its internal DTX.
+  //
+  // Return value:
+  //   -1 if current send codec is not Opus or
+  //      error occurred in disabling DTX.
+  //    0 Opus DTX is disabled successfully.
+  //
+  virtual int DisableOpusDtx() = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
   //   statistics
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t  NetworkStatistics()
+  // int32_t  GetNetworkStatistics()
   // Get network statistics. Note that the internal statistics of NetEq are
   // reset by this call.
   //
@@ -920,8 +945,8 @@ class AudioCodingModule: public Module {
   //   -1 if failed to set the network statistics,
   //    0 if statistics are set successfully.
   //
-  virtual int32_t NetworkStatistics(
-      ACMNetworkStatistics* network_statistics) = 0;
+  virtual int32_t GetNetworkStatistics(
+      NetworkStatistics* network_statistics) = 0;
 
   //
   // Set an initial delay for playout.
@@ -1107,7 +1132,7 @@ class AudioCoding {
 
   // Returns the network statistics. Note that the internal statistics of NetEq
   // are reset by this call. Returns true if successful, false otherwise.
-  virtual bool NetworkStatistics(ACMNetworkStatistics* network_statistics) = 0;
+  virtual bool GetNetworkStatistics(NetworkStatistics* network_statistics) = 0;
 
   // Enables NACK and sets the maximum size of the NACK list. If NACK is already
   // enabled then the maximum NACK list size is modified accordingly. Returns

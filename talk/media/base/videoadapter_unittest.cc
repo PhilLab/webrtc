@@ -100,7 +100,7 @@ class VideoAdapterTest : public testing::Test {
                          const CapturedFrame* captured_frame) {
       WebRtcVideoFrame temp_i420;
       EXPECT_TRUE(temp_i420.Init(captured_frame,
-          captured_frame->width, abs(captured_frame->height)));
+          captured_frame->width, abs(captured_frame->height), true));
       VideoFrame* out_frame = NULL;
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(video_adapter_->AdaptFrame(&temp_i420, &out_frame));
@@ -410,64 +410,6 @@ TEST_F(VideoAdapterTest, AdaptResolutionOnTheFly) {
   // Verify resolution change after adaptation.
   VerifyAdaptedResolution(
       listener_->GetStats(), request_format.width, request_format.height);
-}
-
-// Black the output frame.
-TEST_F(VideoAdapterTest, BlackOutput) {
-  adapter_->SetOutputFormat(capture_format_);
-  EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
-  // Verify that the output frame is not black.
-  rtc::scoped_ptr<VideoFrame> adapted_frame(listener_->CopyAdaptedFrame());
-  EXPECT_NE(16, *adapted_frame->GetYPlane());
-  EXPECT_NE(128, *adapted_frame->GetUPlane());
-  EXPECT_NE(128, *adapted_frame->GetVPlane());
-
-  adapter_->SetBlackOutput(true);
-  int captured_frames = listener_->GetStats().captured_frames;
-  EXPECT_TRUE_WAIT(
-      !capturer_->IsRunning() ||
-          listener_->GetStats().captured_frames >= captured_frames + 10,
-      kWaitTimeout);
-  // Verify that the output frame is black.
-  adapted_frame.reset(listener_->CopyAdaptedFrame());
-  EXPECT_EQ(16, *adapted_frame->GetYPlane());
-  EXPECT_EQ(128, *adapted_frame->GetUPlane());
-  EXPECT_EQ(128, *adapted_frame->GetVPlane());
-
-  // Verify that the elapsed time and timestamp of the black frame increase.
-  int64 elapsed_time = adapted_frame->GetElapsedTime();
-  int64 timestamp = adapted_frame->GetTimeStamp();
-  captured_frames = listener_->GetStats().captured_frames;
-  EXPECT_TRUE_WAIT(
-      !capturer_->IsRunning() ||
-          listener_->GetStats().captured_frames >= captured_frames + 10,
-      kWaitTimeout);
-
-  adapted_frame.reset(listener_->CopyAdaptedFrame());
-  EXPECT_GT(adapted_frame->GetElapsedTime(), elapsed_time);
-  EXPECT_GT(adapted_frame->GetTimeStamp(), timestamp);
-
-  // Change the output size
-  VideoFormat request_format = capture_format_;
-  request_format.width /= 2;
-  request_format.height /= 2;
-  adapter_->SetOutputFormat(request_format);
-  captured_frames = listener_->GetStats().captured_frames;
-  EXPECT_TRUE_WAIT(
-      !capturer_->IsRunning() ||
-          listener_->GetStats().captured_frames >= captured_frames + 10,
-      kWaitTimeout);
-
-  // Verify resolution change after adaptation.
-  VerifyAdaptedResolution(
-      listener_->GetStats(), request_format.width, request_format.height);
-  // Verify that the output frame is black.
-  adapted_frame.reset(listener_->CopyAdaptedFrame());
-  EXPECT_EQ(16, *adapted_frame->GetYPlane());
-  EXPECT_EQ(128, *adapted_frame->GetUPlane());
-  EXPECT_EQ(128, *adapted_frame->GetVPlane());
 }
 
 // Drop all frames.

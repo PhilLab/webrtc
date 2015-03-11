@@ -2,13 +2,26 @@
 # It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
 
-# There are two kinds of suppressions in this file.
-# 1. webrtc stuff
-#
-# 2. libjingle stuff (talk folder)
+# There are three kinds of suppressions in this file.
+# 1. third_party libraries
+# 2. webrtc stuff
+# 3. libjingle stuff (talk folder)
 #-----------------------------------------------------------------------
 
-# 1. webrtc stuff
+# third_party libraries
+
+{
+   libnss_leak_hitting_trusty_machines
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libnss3.so
+   ...
+   fun:NSS_NoDB_Init
+   ...
+}
+
+#-----------------------------------------------------------------------
+# webrtc stuff
 {
    bug_3446
    Memcheck:Uninitialized
@@ -478,7 +491,7 @@
 }
 
 #-----------------------------------------------------------------------
-# 2. libjingle stuff (talk folder)
+# libjingle stuff (talk folder)
 {
    bug_2056_1
    Memcheck:Leak
@@ -611,20 +624,6 @@
    fun:_ZN6webrtc14StatsCollector11UpdateStatsENS_23PeerConnectionInterface16StatsOutputLevelE
    fun:_ZN12_GLOBAL__N_118StatsCollectorTest22TestCertificateReportsERKN3rtc18FakeSSLCertificateERKSt6vectorISsSaISsEES4_S9_
    fun:_ZN12_GLOBAL__N_156StatsCollectorTest_ChainedCertificateReportsCreated_Test8TestBodyEv
-}
-{
-   bug_4143
-   Memcheck:Uninitialized
-   fun:Decode
-   fun:WebRtcIsac_Decode
-   fun:_ZN6webrtc9IsacFloat6DecodeEP16WebRtcISACStructPKhsPsS5_
-   fun:_ZN6webrtc24AudioEncoderDecoderIsacTINS_9IsacFloatEE6DecodeEPKhmPsPNS_12AudioDecoder10SpeechTypeE
-   fun:_ZThn8_N6webrtc24AudioEncoderDecoderIsacTINS_9IsacFloatEE6DecodeEPKhmPsPNS_12AudioDecoder10SpeechTypeE
-   fun:_ZN6webrtc9NetEqImpl10DecodeLoopEPSt4listIPNS_6PacketESaIS3_EEPNS_10OperationsEPNS_12AudioDecoderEPiPNS9_10SpeechTypeE
-   fun:_ZN6webrtc9NetEqImpl6DecodeEPSt4listIPNS_6PacketESaIS3_EEPNS_10OperationsEPiPNS_12AudioDecoder10SpeechTypeE
-   fun:_ZN6webrtc9NetEqImpl16GetAudioInternalEmPsPiS2_
-   fun:_ZN6webrtc9NetEqImpl8GetAudioEmPsPiS2_PNS_15NetEqOutputTypeE
-   fun:_ZN6webrtc35NetEqDecodingTest_DecoderError_Test8TestBodyEv
 }
 {
    bug_4147_1

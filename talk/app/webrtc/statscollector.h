@@ -97,6 +97,9 @@ class StatsCollector {
  private:
   friend class StatsCollectorTest;
 
+  // Overridden in unit tests to fake timing.
+  virtual double GetTimeNow();
+
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
   // Helper method for AddCertificateReports.
@@ -117,9 +120,6 @@ class StatsCollector {
   void ExtractVoiceInfo();
   void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);
   void BuildSsrcToTransportId();
-  webrtc::StatsReport* GetOrCreateReport(const StatsReport::StatsType& type,
-                                         const std::string& id,
-                                         StatsReport::Direction direction);
   webrtc::StatsReport* GetReport(const StatsReport::StatsType& type,
                                  const std::string& id,
                                  StatsReport::Direction direction);
