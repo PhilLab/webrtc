@@ -132,8 +132,13 @@ bool ThreadWindows::Start(unsigned int& id) {
 bool ThreadWindows::Stop() {
   DCHECK(main_thread_.CalledOnValidThread());
   if (thread_) {
+#if defined(WINRT)
+    // TODO (WINRT): QueueUserAPC alternative.
+    stop_ = true;
+#else
     // Set stop_ to |true| on the worker thread.
     QueueUserAPC(&RaiseFlag, thread_, reinterpret_cast<ULONG_PTR>(&stop_));
+#endif
     WaitForSingleObject(thread_, INFINITE);
     CloseHandle(thread_);
     thread_ = nullptr;

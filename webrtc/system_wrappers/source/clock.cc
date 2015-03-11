@@ -204,7 +204,7 @@ protected:
         LARGE_INTEGER counter_ms;
     };
 
-    virtual timeval CurrentTimeVal() const OVERRIDE{
+    virtual timeval CurrentTimeVal() const override{
         const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
 
         FILETIME StartTime;
