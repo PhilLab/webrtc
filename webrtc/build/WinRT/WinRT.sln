@@ -13,14 +13,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_client", "Tools\log
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{DBCE6502-C295-4BF1-BFB1-1D6A8B92990F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gtest_runner", "gtest_runner", "{C924B363-3F93-4D31-A2B7-7FB892B7C55A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtest_runner.Shared", "UnitTests\gtest_runner\gtest_runner.Shared\gtest_runner.Shared.vcxitems", "{B0D23FC4-5612-444D-B89A-2EB4A11D7650}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtest_runner.Windows", "UnitTests\gtest_runner\gtest_runner.Windows\gtest_runner.Windows.vcxproj", "{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtest_runner.WindowsPhone", "UnitTests\gtest_runner\gtest_runner.WindowsPhone\gtest_runner.WindowsPhone.vcxproj", "{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{0DCFE2AE-5FE2-409E-8EE0-175B58CE4155}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gflags", "..\..\..\third_party\gflags\gflags.vcxproj", "{791C7308-AAB1-3EF0-32C2-A350302CDD9A}"
@@ -130,9 +122,6 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		UnitTests\LibTest_runner\LibTest_runner.Shared\LibTest_runner.Shared.vcxitems*{2df6d95b-aeb0-4983-9b82-151c50625222}*SharedItemsImports = 9
-		UnitTests\gtest_runner\gtest_runner.Shared\gtest_runner.Shared.vcxitems*{2e1d496c-31f1-4a40-b5c6-b8ef16321bdd}*SharedItemsImports = 4
-		UnitTests\gtest_runner\gtest_runner.Shared\gtest_runner.Shared.vcxitems*{b0d23fc4-5612-444d-b89a-2eb4a11d7650}*SharedItemsImports = 9
-		UnitTests\gtest_runner\gtest_runner.Shared\gtest_runner.Shared.vcxitems*{cdfb8645-4868-450c-9e16-6cd6dc8deee0}*SharedItemsImports = 4
 		UnitTests\LibTest_runner\LibTest_runner.Shared\LibTest_runner.Shared.vcxitems*{c87480dc-50eb-4f82-ac65-6128e0b0d042}*SharedItemsImports = 4
 		UnitTests\LibTest_runner\LibTest_runner.Shared\LibTest_runner.Shared.vcxitems*{bb89f3f2-ead7-4689-8b30-2c27eaae09e8}*SharedItemsImports = 4
 	EndGlobalSection
@@ -173,38 +162,6 @@ Global
 		{D410E364-B436-4A33-911B-6B998E081C94}.Release|Win32.ActiveCfg = Release|Win32
 		{D410E364-B436-4A33-911B-6B998E081C94}.Release|Win32.Build.0 = Release|Win32
 		{D410E364-B436-4A33-911B-6B998E081C94}.Release|x64.ActiveCfg = Release|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|ARM.ActiveCfg = Debug|ARM
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|ARM.Build.0 = Debug|ARM
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|ARM.Deploy.0 = Debug|ARM
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|Win32.Build.0 = Debug|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|Win32.Deploy.0 = Debug|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|x64.ActiveCfg = Debug|x64
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|x64.Build.0 = Debug|x64
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Debug|x64.Deploy.0 = Debug|x64
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|ARM.ActiveCfg = Release|ARM
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|ARM.Build.0 = Release|ARM
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|ARM.Deploy.0 = Release|ARM
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|Win32.ActiveCfg = Release|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|Win32.Build.0 = Release|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|Win32.Deploy.0 = Release|Win32
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|x64.ActiveCfg = Release|x64
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|x64.Build.0 = Release|x64
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0}.Release|x64.Deploy.0 = Release|x64
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|ARM.ActiveCfg = Debug|ARM
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|ARM.Build.0 = Debug|ARM
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|ARM.Deploy.0 = Debug|ARM
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|Win32.ActiveCfg = Debug|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|Win32.Build.0 = Debug|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|Win32.Deploy.0 = Debug|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Debug|x64.ActiveCfg = Debug|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|ARM.ActiveCfg = Release|ARM
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|ARM.Build.0 = Release|ARM
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|ARM.Deploy.0 = Release|ARM
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|Win32.ActiveCfg = Release|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|Win32.Build.0 = Release|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|Win32.Deploy.0 = Release|Win32
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD}.Release|x64.ActiveCfg = Release|Win32
 		{791C7308-AAB1-3EF0-32C2-A350302CDD9A}.Debug|ARM.ActiveCfg = Debug|Win32
 		{791C7308-AAB1-3EF0-32C2-A350302CDD9A}.Debug|Win32.ActiveCfg = Debug|Win32
 		{791C7308-AAB1-3EF0-32C2-A350302CDD9A}.Debug|Win32.Build.0 = Debug|Win32
@@ -689,10 +646,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D410E364-B436-4A33-911B-6B998E081C94} = {DC2C3F8F-A172-49DB-AB09-58F30CCEC915}
-		{C924B363-3F93-4D31-A2B7-7FB892B7C55A} = {DBCE6502-C295-4BF1-BFB1-1D6A8B92990F}
-		{B0D23FC4-5612-444D-B89A-2EB4A11D7650} = {C924B363-3F93-4D31-A2B7-7FB892B7C55A}
-		{CDFB8645-4868-450C-9E16-6CD6DC8DEEE0} = {C924B363-3F93-4D31-A2B7-7FB892B7C55A}
-		{2E1D496C-31F1-4A40-B5C6-B8EF16321BDD} = {C924B363-3F93-4D31-A2B7-7FB892B7C55A}
 		{0DCFE2AE-5FE2-409E-8EE0-175B58CE4155} = {DBCE6502-C295-4BF1-BFB1-1D6A8B92990F}
 		{791C7308-AAB1-3EF0-32C2-A350302CDD9A} = {0DCFE2AE-5FE2-409E-8EE0-175B58CE4155}
 		{D94ABCBC-157E-B835-7C0A-CA0464781D84} = {0DCFE2AE-5FE2-409E-8EE0-175B58CE4155}
