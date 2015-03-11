@@ -111,6 +111,8 @@
             'mac/portaudio/pa_memorybarrier.h',
             'mac/portaudio/pa_ringbuffer.c',
             'mac/portaudio/pa_ringbuffer.h',
+            'win/audio_device_wasapi_win.cc',
+            'win/audio_device_wasapi_win.h',
             'win/audio_device_core_win.cc',
             'win/audio_device_core_win.h',
             'win/audio_device_wave_win.cc',
@@ -196,6 +198,14 @@
                   ],
                 },
               },
+            }],
+            ['OS=="win" and OS_RUNTIME=="winrt"', {
+                'sources!':[
+                    'win/audio_device_wave_win.cc',
+                    'win/audio_device_wave_win.h',
+                    'win/audio_device_core_win.cc',
+                    'win/audio_device_core_win.h',
+                    ]
             }],
             ['OS=="win"', {
               'link_settings': {
@@ -294,4 +304,3 @@
     }], # include_tests
   ],
 }
-

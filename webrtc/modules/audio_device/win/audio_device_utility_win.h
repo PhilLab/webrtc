@@ -28,7 +28,9 @@ public:
     virtual int32_t Init();
 
 private:
+#if !defined(WINRT)
     BOOL GetOSDisplayString(LPTSTR pszOS);
+#endif  // WINRT
 
 private:
     CriticalSectionWrapper&         _critSect;

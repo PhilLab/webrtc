@@ -67,7 +67,7 @@ AudioDeviceUtilityWindows::~AudioDeviceUtilityWindows()
 
 int32_t AudioDeviceUtilityWindows::Init()
 {
-
+#if !defined(WINRT)
     TCHAR szOS[STRING_MAX_SIZE];
 
     if (GetOSDisplayString(szOS))
@@ -83,14 +83,14 @@ int32_t AudioDeviceUtilityWindows::Init()
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "  OS info: %s", szOS);
 #endif
     }
-
+#endif  // WINRT
     return 0;
 }
 
 // ============================================================================
 //                                 Private Methods
 // ============================================================================
-
+#if !defined(WINRT)
 BOOL AudioDeviceUtilityWindows::GetOSDisplayString(LPTSTR pszOS)
 {
     OSVERSIONINFOEX osvi;
@@ -225,5 +225,5 @@ BOOL AudioDeviceUtilityWindows::GetOSDisplayString(LPTSTR pszOS)
         return FALSE;
    }
 }
-
+#endif  // WINRT
 }  // namespace webrtc
