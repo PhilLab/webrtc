@@ -107,7 +107,7 @@ void TraceLog::StartTracing() {
   is_tracing_ = true;
 }
 
-void TraceLog::StopStracing() {
+void TraceLog::StopTracing() {
   is_tracing_ = false;
 }
 

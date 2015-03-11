@@ -20,7 +20,7 @@ LoggingServer::LoggingServer() {
   thread_ = new Win32Thread();
 #endif
 #if defined(WEBRTC_POSIX)
-  PhysicalSocketserver* pss = new PhysicalSocketServer();
+  PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
 #endif
 }

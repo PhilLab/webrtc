@@ -84,11 +84,6 @@ static const int LOG_DEFAULT = LS_INFO;
 static const int LOG_DEFAULT = LogMessage::NO_LOGGING;
 #endif  // !_DEBUG
 
-// Listens specified port and handles incoming connections.
-// As soon as connection is established between the server and client the
-// logs are written into newly opened socket.
-LoggingServer LogMessage::logging_server_;
-
 // Global lock for log subsystem, only needed to serialize access to streams_.
 CriticalSection LogMessage::crit_;
 
@@ -327,9 +322,6 @@ void LogMessage::ConfigureLogging(const char* params, const char* filename) {
       file_level = current_level;
     } else if (tokens[i] == "debug") {
       debug_level = current_level;
-    } else if (tokens[i] == "socket") {
-      SocketAddress addr(INADDR_ANY, 47002);
-      logging_server_.Listen(addr, current_level);
     }
   }
 

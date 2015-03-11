@@ -662,6 +662,8 @@
         }],
         ['OS=="win" and OS_RUNTIME=="winrt"', {
           'sources!': [
+            'loggingserver.cc',
+            'loggingserver.h',
             'win32regkey.cc',
             'win32regkey.h',
             'win32window.cc',
@@ -673,6 +675,8 @@
             'sec_buffer.h',
             'schanneladapter.cc',
             'schanneladapter.h',
+            'tracelog.cc',
+            'tracelog.h',
             'win32socketserver.cc',
             'win32socketserver.h',
           ],

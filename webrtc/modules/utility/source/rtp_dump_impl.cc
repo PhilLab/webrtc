@@ -16,7 +16,10 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+
+#if defined(WINRT)
 #include "webrtc/system_wrappers/source/trace_win.h"
+#endif
 
 #if defined(_WIN32)
 #include <Windows.h>

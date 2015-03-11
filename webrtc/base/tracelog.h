@@ -35,7 +35,7 @@ class TraceLog : public sigslot::has_slots<> {
     unsigned char flags);
 
   void StartTracing();
-  void StopStracing();
+  void StopTracing();
   bool IsTracing();
 
   void Save(const std::string& file_name);
