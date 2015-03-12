@@ -22,7 +22,6 @@ TraceWindows::TraceWindows()
 }
 
 TraceWindows::~TraceWindows() {
-  StopThread();
 }
 
 

@@ -37,10 +37,13 @@ namespace webrtc {
 class AudioDecoderPcmU : public AudioDecoder {
  public:
   AudioDecoderPcmU() {}
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
   virtual int Init() { return 0; }
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmU);
@@ -49,10 +52,13 @@ class AudioDecoderPcmU : public AudioDecoder {
 class AudioDecoderPcmA : public AudioDecoder {
  public:
   AudioDecoderPcmA() {}
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
   virtual int Init() { return 0; }
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmA);
@@ -86,10 +92,13 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
 class AudioDecoderPcm16B : public AudioDecoder {
  public:
   AudioDecoderPcm16B();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
   virtual int Init() { return 0; }
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16B);
@@ -112,8 +121,11 @@ class AudioDecoderIlbc : public AudioDecoder {
  public:
   AudioDecoderIlbc();
   virtual ~AudioDecoderIlbc();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
   virtual bool HasDecodePlc() const { return true; }
   virtual int DecodePlc(int num_frames, int16_t* decoded);
   virtual int Init();
@@ -129,11 +141,14 @@ class AudioDecoderG722 : public AudioDecoder {
  public:
   AudioDecoderG722();
   virtual ~AudioDecoderG722();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
   virtual bool HasDecodePlc() const { return false; }
   virtual int Init();
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   G722DecInst* dec_state_;
@@ -144,8 +159,11 @@ class AudioDecoderG722Stereo : public AudioDecoder {
  public:
   AudioDecoderG722Stereo();
   virtual ~AudioDecoderG722Stereo();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
   virtual int Init();
 
  private:
@@ -169,12 +187,18 @@ class AudioDecoderOpus : public AudioDecoder {
  public:
   explicit AudioDecoderOpus(int num_channels);
   virtual ~AudioDecoderOpus();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
-  virtual int DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
-                              int16_t* decoded, SpeechType* speech_type);
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type);
+  virtual int DecodeRedundant(const uint8_t* encoded,
+                              size_t encoded_len,
+                              int sample_rate_hz,
+                              int16_t* decoded,
+                              SpeechType* speech_type);
   virtual int Init();
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
   virtual int PacketDurationRedundant(const uint8_t* encoded,
                                       size_t encoded_len) const;
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
@@ -195,8 +219,13 @@ class AudioDecoderCng : public AudioDecoder {
  public:
   explicit AudioDecoderCng();
   virtual ~AudioDecoderCng();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type) { return -1; }
+  virtual int Decode(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int /*sample_rate_hz*/,
+                     int16_t* decoded,
+                     SpeechType* speech_type) {
+    return -1;
+  }
   virtual int Init();
   virtual int IncomingPacket(const uint8_t* payload,
                              size_t payload_len,
@@ -204,7 +233,7 @@ class AudioDecoderCng : public AudioDecoder {
                              uint32_t rtp_timestamp,
                              uint32_t arrival_timestamp) { return -1; }
 
-  virtual CNG_dec_inst* CngDecoderInstance() OVERRIDE { return dec_state_; }
+  CNG_dec_inst* CngDecoderInstance() override { return dec_state_; }
 
  private:
   CNG_dec_inst* dec_state_;

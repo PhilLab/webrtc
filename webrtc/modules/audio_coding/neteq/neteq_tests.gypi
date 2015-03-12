@@ -147,6 +147,7 @@
       'type': 'executable',
       'dependencies': [
         'neteq',
+        'webrtc_opus',
       ],
       'sources': [
         'test/audio_classifier_test.cc',
@@ -164,6 +165,8 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],
       'sources': [
+        'tools/neteq_external_decoder_test.cc',
+        'tools/neteq_external_decoder_test.h',
         'tools/neteq_performance_test.cc',
         'tools/neteq_performance_test.h',
         'tools/neteq_quality_test.cc',
@@ -232,6 +235,7 @@
         'iLBC',
         'iSAC',
         'CNG',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'direct_dependent_settings': {

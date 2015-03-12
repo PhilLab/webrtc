@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/common.h"
@@ -22,11 +23,12 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/modules/video_render/include/video_render.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
 #include "webrtc/video_engine/include/vie_base.h"
@@ -81,18 +83,18 @@ class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
 
   virtual ~CpuOveruseObserverProxy() {}
 
-  virtual void OveruseDetected() OVERRIDE {
+  void OveruseDetected() override {
     CriticalSectionScoped lock(crit_.get());
     overuse_callback_->OnLoadUpdate(LoadObserver::kOveruse);
   }
 
-  virtual void NormalUsage() OVERRIDE {
+  void NormalUsage() override {
     CriticalSectionScoped lock(crit_.get());
     overuse_callback_->OnLoadUpdate(LoadObserver::kUnderuse);
   }
 
  private:
-  const scoped_ptr<CriticalSectionWrapper> crit_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   LoadObserver* overuse_callback_ GUARDED_BY(crit_);
 };
 
@@ -101,29 +103,27 @@ class Call : public webrtc::Call, public PacketReceiver {
   Call(webrtc::VideoEngine* video_engine, const Call::Config& config);
   virtual ~Call();
 
-  virtual PacketReceiver* Receiver() OVERRIDE;
+  PacketReceiver* Receiver() override;
 
-  virtual VideoSendStream* CreateVideoSendStream(
+  VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
-      const VideoEncoderConfig& encoder_config) OVERRIDE;
+      const VideoEncoderConfig& encoder_config) override;
 
-  virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
-      OVERRIDE;
+  void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) override;
 
-  virtual VideoReceiveStream* CreateVideoReceiveStream(
-      const VideoReceiveStream::Config& config) OVERRIDE;
+  VideoReceiveStream* CreateVideoReceiveStream(
+      const VideoReceiveStream::Config& config) override;
 
-  virtual void DestroyVideoReceiveStream(
-      webrtc::VideoReceiveStream* receive_stream) OVERRIDE;
+  void DestroyVideoReceiveStream(
+      webrtc::VideoReceiveStream* receive_stream) override;
 
-  virtual Stats GetStats() const OVERRIDE;
+  Stats GetStats() const override;
 
-  virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
-                                       size_t length) OVERRIDE;
+  DeliveryStatus DeliverPacket(const uint8_t* packet, size_t length) override;
 
-  virtual void SetBitrateConfig(
-      const webrtc::Call::Config::BitrateConfig& bitrate_config) OVERRIDE;
-  virtual void SignalNetworkState(NetworkState state) OVERRIDE;
+  void SetBitrateConfig(
+      const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
+  void SignalNetworkState(NetworkState state) override;
 
  private:
   DeliveryStatus DeliverRtcp(const uint8_t* packet, size_t length);
@@ -134,25 +134,28 @@ class Call : public webrtc::Call, public PacketReceiver {
   // Needs to be held while write-locking |receive_crit_| or |send_crit_|. This
   // ensures that we have a consistent network state signalled to all senders
   // and receivers.
-  scoped_ptr<CriticalSectionWrapper> network_enabled_crit_;
+  rtc::scoped_ptr<CriticalSectionWrapper> network_enabled_crit_;
   bool network_enabled_ GUARDED_BY(network_enabled_crit_);
 
-  scoped_ptr<RWLockWrapper> receive_crit_;
+  rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_
       GUARDED_BY(receive_crit_);
 
-  scoped_ptr<RWLockWrapper> send_crit_;
+  rtc::scoped_ptr<RWLockWrapper> send_crit_;
   std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_crit_);
 
-  scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
+  rtc::scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
   VideoSendStream::RtpStateMap suspended_send_ssrcs_;
 
   VideoEngine* video_engine_;
   ViERTP_RTCP* rtp_rtcp_;
   ViECodec* codec_;
+  ViERender* render_;
   ViEBase* base_;
   int base_channel_id_;
+
+  rtc::scoped_ptr<VideoRender> external_render_;
 
   DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -176,7 +179,9 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       video_engine_(video_engine),
-      base_channel_id_(-1) {
+      base_channel_id_(-1),
+      external_render_(
+          VideoRender::CreateVideoRender(42, NULL, false, kRenderExternal)) {
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
 
@@ -192,6 +197,11 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     overuse_observer_proxy_.reset(
         new CpuOveruseObserverProxy(config.overuse_callback));
   }
+
+  render_ = ViERender::GetInterface(video_engine_);
+  assert(render_ != NULL);
+
+  render_->RegisterVideoRenderModule(*external_render_.get());
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
   assert(rtp_rtcp_ != NULL);
@@ -210,8 +220,12 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 
 Call::~Call() {
   base_->DeleteChannel(base_channel_id_);
+
+  render_->DeRegisterVideoRenderModule(*external_render_.get());
+
   base_->Release();
   codec_->Release();
+  render_->Release();
   rtp_rtcp_->Release();
   webrtc::VideoEngine::Delete(video_engine_);
 }
@@ -221,6 +235,7 @@ PacketReceiver* Call::Receiver() { return this; }
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config) {
+  TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   LOG(LS_INFO) << "CreateVideoSendStream: " << config.ToString();
   assert(config.rtp.ssrcs.size() > 0);
 
@@ -245,6 +260,7 @@ VideoSendStream* Call::CreateVideoSendStream(
 }
 
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
+  TRACE_EVENT0("webrtc", "Call::DestroyVideoSendStream");
   assert(send_stream != NULL);
 
   send_stream->Stop();
@@ -277,6 +293,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 
 VideoReceiveStream* Call::CreateVideoReceiveStream(
     const VideoReceiveStream::Config& config) {
+  TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream =
       new VideoReceiveStream(video_engine_,
@@ -304,6 +321,7 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
 
 void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
+  TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
   assert(receive_stream != NULL);
 
   VideoReceiveStream* receive_stream_impl = NULL;
@@ -356,6 +374,7 @@ Call::Stats Call::GetStats() const {
 
 void Call::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
+  TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
   assert(bitrate_config.min_bitrate_bps >= 0);
   assert(bitrate_config.max_bitrate_bps == -1 ||
          bitrate_config.max_bitrate_bps > 0);

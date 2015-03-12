@@ -14,6 +14,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/md5digest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test.h"
@@ -29,7 +30,6 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -81,13 +81,12 @@ class PacketizationCallbackStub : public AudioPacketizationCallback {
       : num_calls_(0),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
 
-  virtual int32_t SendData(
-      FrameType frame_type,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      size_t payload_len_bytes,
-      const RTPFragmentationHeader* fragmentation) OVERRIDE {
+  int32_t SendData(FrameType frame_type,
+                   uint8_t payload_type,
+                   uint32_t timestamp,
+                   const uint8_t* payload_data,
+                   size_t payload_len_bytes,
+                   const RTPFragmentationHeader* fragmentation) override {
     CriticalSectionScoped lock(crit_sect_.get());
     ++num_calls_;
     last_payload_vec_.assign(payload_data, payload_data + payload_len_bytes);
@@ -112,7 +111,7 @@ class PacketizationCallbackStub : public AudioPacketizationCallback {
  private:
   int num_calls_ GUARDED_BY(crit_sect_);
   std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
-  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
 };
 
 class AudioCodingModuleTest : public ::testing::Test {
@@ -124,9 +123,9 @@ class AudioCodingModuleTest : public ::testing::Test {
 
   ~AudioCodingModuleTest() {}
 
-  void TearDown() OVERRIDE {}
+  void TearDown() override {}
 
-  void SetUp() OVERRIDE {
+  void SetUp() override {
     rtp_utility_->Populate(&rtp_header_);
 
     input_frame_.sample_rate_hz_ = kSampleRateHz;
@@ -188,8 +187,8 @@ class AudioCodingModuleTest : public ::testing::Test {
   }
 
   AudioCoding::Config config_;
-  scoped_ptr<RtpUtility> rtp_utility_;
-  scoped_ptr<AudioCoding> acm_;
+  rtc::scoped_ptr<RtpUtility> rtp_utility_;
+  rtc::scoped_ptr<AudioCoding> acm_;
   PacketizationCallbackStub packet_cb_;
   WebRtcRTPHeader rtp_header_;
   AudioFrame input_frame_;
@@ -308,7 +307,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     config_.clock = fake_clock_.get();
   }
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     AudioCodingModuleTest::SetUp();
     CreateAcm();
     StartThreads();
@@ -321,7 +320,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     ASSERT_TRUE(pull_audio_thread_->Start(thread_id));
   }
 
-  virtual void TearDown() OVERRIDE {
+  void TearDown() override {
     AudioCodingModuleTest::TearDown();
     pull_audio_thread_->Stop();
     send_thread_->Stop();
@@ -404,16 +403,16 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     return true;
   }
 
-  scoped_ptr<ThreadWrapper> send_thread_;
-  scoped_ptr<ThreadWrapper> insert_packet_thread_;
-  scoped_ptr<ThreadWrapper> pull_audio_thread_;
-  const scoped_ptr<EventWrapper> test_complete_;
+  rtc::scoped_ptr<ThreadWrapper> send_thread_;
+  rtc::scoped_ptr<ThreadWrapper> insert_packet_thread_;
+  rtc::scoped_ptr<ThreadWrapper> pull_audio_thread_;
+  const rtc::scoped_ptr<EventWrapper> test_complete_;
   int send_count_;
   int insert_packet_count_;
   int pull_audio_count_ GUARDED_BY(crit_sect_);
-  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
-  scoped_ptr<SimulatedClock> fake_clock_;
+  rtc::scoped_ptr<SimulatedClock> fake_clock_;
 };
 
 TEST_F(AudioCodingModuleMtTest, DoTest) {
@@ -436,7 +435,7 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
 
   ~AcmIsacMtTest() {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     AudioCodingModuleTest::SetUp();
     CreateAcm();
 
@@ -459,7 +458,7 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
     StartThreads();
   }
 
-  virtual void RegisterCodec() OVERRIDE {
+  void RegisterCodec() override {
     static_assert(kSampleRateHz == 16000, "test designed for iSAC 16 kHz");
 
     // Register iSAC codec in ACM, effectively unregistering the PCM16B codec
@@ -469,7 +468,7 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
         acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISAC, kPayloadType));
   }
 
-  virtual void InsertPacket() OVERRIDE {
+  void InsertPacket() override {
     int num_calls = packet_cb_.num_calls();  // Store locally for thread safety.
     if (num_calls > last_packet_number_) {
       // Get the new payload out from the callback handler.
@@ -486,14 +485,14 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
         &last_payload_vec_[0], last_payload_vec_.size(), rtp_header_));
   }
 
-  virtual void InsertAudio() OVERRIDE {
+  void InsertAudio() override {
     memcpy(input_frame_.data_, audio_loop_.GetNextBlock(), kNumSamples10ms);
     AudioCodingModuleTest::InsertAudio();
   }
 
   // This method is the same as AudioCodingModuleMtTest::TestDone(), but here
   // it is using the constants defined in this class (i.e., shorter test run).
-  virtual bool TestDone() OVERRIDE {
+  bool TestDone() override {
     if (packet_cb_.num_calls() > kNumPackets) {
       CriticalSectionScoped lock(crit_sect_.get());
       if (pull_audio_count_ > kNumPullCalls) {
@@ -531,7 +530,7 @@ class AcmReceiverBitExactness : public ::testing::Test {
   void Run(int output_freq_hz, const std::string& checksum_ref) {
     const std::string input_file_name =
         webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
-    scoped_ptr<test::RtpFileSource> packet_source(
+    rtc::scoped_ptr<test::RtpFileSource> packet_source(
         test::RtpFileSource::Create(input_file_name));
 #ifdef WEBRTC_ANDROID
     // Filter out iLBC and iSAC-swb since they are not supported on Android.
@@ -708,7 +707,7 @@ class AcmSenderBitExactness : public ::testing::Test,
   // Returns a pointer to the next packet. Returns NULL if the source is
   // depleted (i.e., the test duration is exceeded), or if an error occurred.
   // Inherited from test::PacketSource.
-  virtual test::Packet* NextPacket() OVERRIDE {
+  test::Packet* NextPacket() override {
     // Get the next packet from AcmSendTest. Ownership of |packet| is
     // transferred to this method.
     test::Packet* packet = send_test_->NextPacket();
@@ -755,8 +754,8 @@ class AcmSenderBitExactness : public ::testing::Test,
                                   codec_frame_size_rtp_timestamps));
   }
 
-  scoped_ptr<test::AcmSendTest> send_test_;
-  scoped_ptr<test::InputAudioFile> audio_source_;
+  rtc::scoped_ptr<test::AcmSendTest> send_test_;
+  rtc::scoped_ptr<test::InputAudioFile> audio_source_;
   uint32_t frame_size_rtp_timestamps_;
   int packet_count_;
   uint8_t payload_type_;
@@ -809,15 +808,14 @@ TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(IsacSwb30ms)) {
   ASSERT_NO_FATAL_FAILURE(
       SetUpTest(acm2::ACMCodecDB::kISACSWB, 1, 104, 960, 960));
   Run(AcmReceiverBitExactness::PlatformChecksum(
-          "98d960600eb4ddb3fcbe11f5057ddfd7",
+          "2b3c387d06f00b7b7aad4c9be56fb83d",
           "",
-          "2f6dfe142f735f1d96f6bd86d2526f42"),
+          "5683b58da0fbf2063c7adc2e6bfb3fb8"),
       AcmReceiverBitExactness::PlatformChecksum(
-          "cc9d2d86a71d6f99f97680a5c27e2762",
+          "bcc2041e7744c7ebd9f701866856849c",
           "",
-          "7b214fc3a5e33d68bf30e77969371f31"),
-      33,
-      test::AcmReceiveTest::kMonoOutput);
+          "ce86106a93419aefb063097108ec94ab"),
+      33, test::AcmReceiveTest::kMonoOutput);
 }
 
 TEST_F(AcmSenderBitExactness, Pcm16_8000khz_10ms) {

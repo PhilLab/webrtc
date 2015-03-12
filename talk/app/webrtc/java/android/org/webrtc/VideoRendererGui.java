@@ -406,6 +406,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
       long now = System.nanoTime();
 
+      int currentProgram = 0;
+
       I420Frame frameFromQueue;
       synchronized (frameToRenderQueue) {
         frameFromQueue = frameToRenderQueue.peek();
@@ -416,6 +418,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         if (rendererType == RendererType.RENDERER_YUV) {
           // YUV textures rendering.
           GLES20.glUseProgram(yuvProgram);
+          currentProgram = yuvProgram;
 
           for (int i = 0; i < 3; ++i) {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
@@ -430,9 +433,16 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
                   frameFromQueue.yuvPlanes[i]);
             }
           }
+          GLES20.glUniform1i(
+            GLES20.glGetUniformLocation(yuvProgram, "y_tex"), 0);
+          GLES20.glUniform1i(
+            GLES20.glGetUniformLocation(yuvProgram, "u_tex"), 1);
+          GLES20.glUniform1i(
+            GLES20.glGetUniformLocation(yuvProgram, "v_tex"), 2);
         } else {
           // External texture rendering.
           GLES20.glUseProgram(oesProgram);
+          currentProgram = oesProgram;
 
           if (frameFromQueue != null) {
             oesTexture = frameFromQueue.textureId;
@@ -452,13 +462,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         }
       }
 
-      if (rendererType == RendererType.RENDERER_YUV) {
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(yuvProgram, "y_tex"), 0);
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(yuvProgram, "u_tex"), 1);
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(yuvProgram, "v_tex"), 2);
-      }
-
-      int posLocation = GLES20.glGetAttribLocation(yuvProgram, "in_pos");
+      int posLocation = GLES20.glGetAttribLocation(currentProgram, "in_pos");
       if (posLocation == -1) {
         throw new RuntimeException("Could not get attrib location for in_pos");
       }
@@ -466,7 +470,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       GLES20.glVertexAttribPointer(
           posLocation, 2, GLES20.GL_FLOAT, false, 0, textureVertices);
 
-      int texLocation = GLES20.glGetAttribLocation(yuvProgram, "in_tc");
+      int texLocation = GLES20.glGetAttribLocation(currentProgram, "in_tc");
       if (texLocation == -1) {
         throw new RuntimeException("Could not get attrib location for in_tc");
       }
@@ -555,9 +559,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
       // Check input frame parameters.
       if (frame.yuvFrame) {
-        if (!(frame.yuvStrides[0] == frame.width &&
-            frame.yuvStrides[1] == frame.width / 2 &&
-            frame.yuvStrides[2] == frame.width / 2)) {
+        if (frame.yuvStrides[0] < frame.width ||
+            frame.yuvStrides[1] < frame.width / 2 ||
+            frame.yuvStrides[2] < frame.width / 2) {
           Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
               frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
           return;
@@ -686,6 +690,19 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         if (yuvImageRenderer == renderer) {
           yuvImageRenderer.setPosition(x, y, width, height, scalingType);
         }
+      }
+    }
+  }
+
+  public static void remove(VideoRenderer.Callbacks renderer) {
+    Log.d(TAG, "VideoRendererGui.remove");
+    if (instance == null) {
+      throw new RuntimeException(
+          "Attempt to remove yuv renderer before setting GLSurfaceView");
+    }
+    synchronized (instance.yuvImageRenderers) {
+      if (!instance.yuvImageRenderers.remove(renderer)) {
+        Log.w(TAG, "Couldn't remove renderer (not present in current list)");
       }
     }
   }

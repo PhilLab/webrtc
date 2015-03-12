@@ -242,21 +242,19 @@ bool RtpHeaderParser::RTCP() const {
     return false;
   }
 
-  const uint8_t V  = _ptrRTPDataBegin[0] >> 6;
+  const uint8_t V = _ptrRTPDataBegin[0] >> 6;
   if (V != kRtcpExpectedVersion) {
     return false;
   }
 
-  const uint8_t  payloadType = _ptrRTPDataBegin[1];
-  bool RTCP = false;
+  const uint8_t payloadType = _ptrRTPDataBegin[1];
   switch (payloadType) {
     case 192:
-      RTCP = true;
-      break;
+      return true;
     case 193:
       // not supported
       // pass through and check for a potential RTP packet
-      break;
+      return false;
     case 195:
     case 200:
     case 201:
@@ -266,10 +264,10 @@ bool RtpHeaderParser::RTCP() const {
     case 205:
     case 206:
     case 207:
-      RTCP = true;
-      break;
+      return true;
+    default:
+      return false;
   }
-  return RTCP;
 }
 
 bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
@@ -374,6 +372,10 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
   // May not be present in packet.
   header.extension.hasAudioLevel = false;
   header.extension.audioLevel = 0;
+
+  // May not be present in packet.
+  header.extension.hasVideoRotation = false;
+  header.extension.videoRotation = 0;
 
   if (X) {
     /* RTP header extension, RFC 3550.
@@ -511,6 +513,21 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           absoluteSendTime += ptr[2];
           header.extension.absoluteSendTime = absoluteSendTime;
           header.extension.hasAbsoluteSendTime = true;
+          break;
+        }
+        case kRtpExtensionVideoRotation: {
+          if (len != 0) {
+            LOG(LS_WARNING)
+                << "Incorrect coordination of video coordination len: " << len;
+            return;
+          }
+          //  0                   1                   2                   3
+          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //  |  ID   | len=0 |V|0 0 0 0 C F R R|      0x00     |     0x00    |
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          header.extension.hasVideoRotation = true;
+          header.extension.videoRotation = ptr[0];
           break;
         }
         default: {

@@ -13,7 +13,7 @@
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 
 namespace webrtc {
 
@@ -36,17 +36,12 @@ class Beamformer : public LappedTransform::Callback {
   // Needs to be called before the Beamformer can be used.
   virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
 
-  // Process one time-domain chunk of audio. The audio can be separated into
-  // two signals by frequency, with the higher half passed in as the second
-  // parameter. Use NULL for |high_pass_split_input| if you only have one
-  // audio signal. The number of frames and channels must correspond to the
-  // ctor parameters. The same signal can be passed in as |input| and |output|.
-  virtual void ProcessChunk(const float* const* input,
-                            const float* const* high_pass_split_input,
-                            int num_input_channels,
-                            int num_frames_per_band,
-                            float* const* output,
-                            float* const* high_pass_split_output);
+  // Process one time-domain chunk of audio. The audio is expected to be split
+  // into frequency bands inside the ChannelBuffer. The number of frames and
+  // channels must correspond to the constructor parameters. The same
+  // ChannelBuffer can be passed in as |input| and |output|.
+  virtual void ProcessChunk(const ChannelBuffer<float>* input,
+                            ChannelBuffer<float>* output);
   // After processing each block |is_target_present_| is set to true if the
   // target signal es present and to false otherwise. This methods can be called
   // to know if the data is target signal or interference and process it
@@ -83,7 +78,7 @@ class Beamformer : public LappedTransform::Callback {
 
   // Prevents the postfilter masks from degenerating too quickly (a cause of
   // musical noise).
-  void ApplyDecay();
+  void ApplyMaskSmoothing();
 
   // The postfilter masks are unreliable at low frequencies. Calculates a better
   // mask by averaging mid-low frequency values.
@@ -94,48 +89,40 @@ class Beamformer : public LappedTransform::Callback {
   // in the time-domain. Further, we average these block-masks over a chunk,
   // resulting in one postfilter mask per audio chunk. This allows us to skip
   // both transforming and blocking the high-frequency signal.
-  void CalculateHighFrequencyMask();
+  void ApplyHighFrequencyCorrection();
 
   // Applies both sets of masks to |input| and store in |output|.
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
 
-  float MicSpacingFromGeometry(const std::vector<Point>& array_geometry);
-  void EstimateTargetPresence(float* mask, int length);
+  void EstimateTargetPresence();
 
   static const int kFftSize = 256;
   static const int kNumFreqBins = kFftSize / 2 + 1;
-  // How many blocks of past masks (including the current block) we save. Saved
-  // masks are used for postprocessing such as removing musical noise.
-  static const int kNumberSavedPostfilterMasks = 2;
 
   // Deals with the fft transform and blocking.
   int chunk_length_;
-  scoped_ptr<LappedTransform> lapped_transform_;
+  rtc::scoped_ptr<LappedTransform> lapped_transform_;
   float window_[kFftSize];
 
   // Parameters exposed to the user.
   const int num_input_channels_;
   int sample_rate_hz_;
-  const float mic_spacing_;
+
+  const std::vector<Point> array_geometry_;
 
   // Calculated based on user-input and constants in the .cc file.
-  float decay_threshold_;
-  int mid_frequency_lower_bin_bound_;
-  int mid_frequency_upper_bin_bound_;
-  int high_frequency_lower_bin_bound_;
-  int high_frequency_upper_bin_bound_;
+  int low_average_start_bin_;
+  int low_average_end_bin_;
+  int high_average_start_bin_;
+  int high_average_end_bin_;
 
-  // Indices into |postfilter_masks_|.
-  int current_block_ix_;
-  int previous_block_ix_;
-
-  // Old masks are saved in this ring buffer for smoothing. Array of length
-  // |kNumberSavedMasks| matrix of size 1 x |kNumFreqBins|.
-  MatrixF postfilter_masks_[kNumberSavedPostfilterMasks];
-  float sorted_mask_[kNumFreqBins];
+  // Old masks are saved for smoothing. Matrix of size 1 x |kNumFreqBins|.
+  float postfilter_mask_[kNumFreqBins];
+  float new_mask_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |1| x |num_channels_|.
   ComplexMatrixF delay_sum_masks_[kNumFreqBins];
+  ComplexMatrixF normalized_delay_sum_masks_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
   // |num_input_channels_|.
@@ -160,8 +147,6 @@ class Beamformer : public LappedTransform::Callback {
   ComplexMatrixF eig_m_;
 
   // For processing the high-frequency input signal.
-  bool high_pass_exists_;
-  int num_blocks_in_this_chunk_;
   float high_pass_postfilter_mask_;
 
   // True when the target signal is present.

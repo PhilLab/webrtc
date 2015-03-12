@@ -779,6 +779,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         delay_estimate_ms(0),
         audio_level(0),
         expand_rate(0),
+        speech_expand_rate(0),
+        secondary_decoded_rate(0),
         decoding_calls_to_silence_generator(0),
         decoding_calls_to_neteq(0),
         decoding_normal(0),
@@ -794,8 +796,12 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int jitter_buffer_preferred_ms;
   int delay_estimate_ms;
   int audio_level;
-  // fraction of synthesized speech inserted through pre-emptive expansion
+  // fraction of synthesized audio inserted through expansion.
   float expand_rate;
+  // fraction of synthesized speech inserted through expansion.
+  float speech_expand_rate;
+  // fraction of data out of secondary decoding, including FEC and RED.
+  float secondary_decoded_rate;
   int decoding_calls_to_silence_generator;
   int decoding_calls_to_neteq;
   int decoding_normal;
@@ -938,8 +944,7 @@ struct BandwidthEstimationInfo {
         actual_enc_bitrate(0),
         retransmit_bitrate(0),
         transmit_bitrate(0),
-        bucket_delay(0),
-        total_received_propagation_delta_ms(0) {
+        bucket_delay(0) {
   }
 
   int available_send_bandwidth;
@@ -949,11 +954,6 @@ struct BandwidthEstimationInfo {
   int retransmit_bitrate;
   int transmit_bitrate;
   int64_t bucket_delay;
-  // The following stats are only valid when
-  // StatsOptions::include_received_propagation_stats is true.
-  int total_received_propagation_delta_ms;
-  std::vector<int> recent_received_propagation_delta_ms;
-  std::vector<int64_t> recent_received_packet_group_arrival_time_ms;
 };
 
 struct VoiceMediaInfo {
@@ -983,12 +983,6 @@ struct DataMediaInfo {
   }
   std::vector<DataSenderInfo> senders;
   std::vector<DataReceiverInfo> receivers;
-};
-
-struct StatsOptions {
-  StatsOptions() : include_received_propagation_stats(false) {}
-
-  bool include_received_propagation_stats;
 };
 
 class VoiceMediaChannel : public MediaChannel {
@@ -1109,13 +1103,7 @@ class VideoMediaChannel : public MediaChannel {
   // |capturer|. If |ssrc| is non zero create a new stream with |ssrc| as SSRC.
   virtual bool SetCapturer(uint32 ssrc, VideoCapturer* capturer) = 0;
   // Gets quality stats for the channel.
-  virtual bool GetStats(const StatsOptions& options, VideoMediaInfo* info) = 0;
-  // This is needed for MediaMonitor to use the same template for voice, video
-  // and data MediaChannels.
-  bool GetStats(VideoMediaInfo* info) {
-    return GetStats(StatsOptions(), info);
-  }
-
+  virtual bool GetStats(VideoMediaInfo* info) = 0;
   // Send an intra frame to the receivers.
   virtual bool SendIntraFrame() = 0;
   // Reuqest each of the remote senders to send an intra frame.

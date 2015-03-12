@@ -49,10 +49,6 @@ public:
     return SetEvent(event_) == 1;
   }
 
-  bool Reset() {
-    return ResetEvent(event_) == 1;
-  }
-
   EventTypeWrapper Wait(unsigned long max_time) {
     unsigned long res = WaitForSingleObject(event_, max_time);
     switch (res) {
@@ -194,10 +190,6 @@ EventWindows::~EventWindows() {
 
 bool EventWindows::Set() {
     return pimpl_->Set();
-}
-
-bool EventWindows::Reset() {
-    return pimpl_->Reset();
 }
 
 EventTypeWrapper EventWindows::Wait(unsigned long max_time) {

@@ -139,10 +139,9 @@ class my_transportation : public Transport
       netw(network) {
   }
 
-  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
-  virtual int SendRTCPPacket(int channel,
-                             const void *data,
-                             size_t len) OVERRIDE;
+  int SendPacket(int channel, const void* data, size_t len) override;
+  int SendRTCPPacket(int channel, const void* data, size_t len) override;
+
  private:
   VoENetwork * netw;
 };
@@ -185,7 +184,6 @@ ThreadTest::~ThreadTest()
 {
     if (_thread)
     {
-        _thread->SetNotAlive();
         if (_thread->Stop())
         {
             delete _thread;
@@ -272,7 +270,6 @@ bool ThreadTest::Process()
             "sending instance started from thread");
 #endif
 
-    _thread->SetNotAlive();
     _thread->Stop();
 
     //res = veData1.jvm->DetachCurrentThread();

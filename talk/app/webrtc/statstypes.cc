@@ -54,7 +54,7 @@ const char* InternalTypeToString(StatsReport::StatsType type) {
     case StatsReport::kStatsReportTypeIceRemoteCandidate:
       return "remotecandidate";
     case StatsReport::kStatsReportTypeTransport:
-      return "googTransport";
+      return "transport";
     case StatsReport::kStatsReportTypeComponent:
       return "googComponent";
     case StatsReport::kStatsReportTypeCandidatePair:
@@ -76,7 +76,6 @@ class BandwidthEstimationId : public StatsReport::Id {
 
 class TypedId : public StatsReport::Id {
  public:
-  static const char kSeparator = '_';
   TypedId(StatsReport::StatsType type, const std::string& id)
       : StatsReport::Id(type), id_(id) {}
 
@@ -93,6 +92,26 @@ class TypedId : public StatsReport::Id {
   const std::string id_;
 };
 
+class TypedIntId : public StatsReport::Id {
+ public:
+  TypedIntId(StatsReport::StatsType type, int id)
+      : StatsReport::Id(type), id_(id) {}
+
+  bool Equals(const Id& other) const override {
+    return Id::Equals(other) &&
+           static_cast<const TypedIntId&>(other).id_ == id_;
+  }
+
+  std::string ToString() const override {
+    return std::string(InternalTypeToString(type_)) +
+           kSeparator +
+           rtc::ToString<int>(id_);
+  }
+
+ protected:
+  const int id_;
+};
+
 class IdWithDirection : public TypedId {
  public:
   IdWithDirection(StatsReport::StatsType type, const std::string& id,
@@ -106,7 +125,7 @@ class IdWithDirection : public TypedId {
 
   std::string ToString() const override {
     std::string ret(TypedId::ToString());
-    ret += '_';
+    ret += kSeparator;
     ret += direction_ == StatsReport::kSend ? "send" : "recv";
     return ret;
   }
@@ -225,6 +244,8 @@ const char* StatsReport::Value::display_name() const {
       return "protocol";
     case kStatsValueNameTransportId:
       return "transportId";
+    case kStatsValueNameSelectedCandidatePairId:
+      return "selectedCandidatePairId";
     case kStatsValueNameSsrc:
       return "ssrc";
     case kStatsValueNameState:
@@ -291,6 +312,8 @@ const char* StatsReport::Value::display_name() const {
       return "googDecodingPLCCNG";
     case kStatsValueNameDer:
       return "googDerBase64";
+    case kStatsValueNameDtlsCipher:
+      return "dtlsCipher";
     case kStatsValueNameEchoCancellationQualityMin:
       return "googEchoCancellationQualityMin";
     case kStatsValueNameEchoDelayMedian:
@@ -364,7 +387,7 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameLocalCandidateType:
       return "googLocalCandidateType";
     case kStatsValueNameLocalCertificateId:
-      return "googLocalCertificateId";
+      return "localCertificateId";
     case kStatsValueNameAdaptationChanges:
       return "googAdaptationChanges";
     case kStatsValueNameNacksReceived:
@@ -379,12 +402,6 @@ const char* StatsReport::Value::display_name() const {
       return "googPreferredJitterBufferMs";
     case kStatsValueNameReadable:
       return "googReadable";
-    case kStatsValueNameRecvPacketGroupArrivalTimeDebug:
-      return "googReceivedPacketGroupArrivalTimeDebug";
-    case kStatsValueNameRecvPacketGroupPropagationDeltaDebug:
-      return "googReceivedPacketGroupPropagationDeltaDebug";
-    case kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug:
-      return "googReceivedPacketGroupPropagationDeltaSumDebug";
     case kStatsValueNameRemoteAddress:
       return "googRemoteAddress";
     case kStatsValueNameRemoteCandidateId:
@@ -392,13 +409,19 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameRemoteCandidateType:
       return "googRemoteCandidateType";
     case kStatsValueNameRemoteCertificateId:
-      return "googRemoteCertificateId";
+      return "remoteCertificateId";
     case kStatsValueNameRetransmitBitrate:
       return "googRetransmitBitrate";
     case kStatsValueNameRtt:
       return "googRtt";
+    case kStatsValueNameSecondaryDecodedRate:
+      return "googSecondaryDecodedRate";
     case kStatsValueNameSendPacketsDiscarded:
       return "packetsDiscardedOnSend";
+    case kStatsValueNameSpeechExpandRate:
+      return "googSpeechExpandRate";
+    case kStatsValueNameSrtpCipher:
+      return "srtpCipher";
     case kStatsValueNameTargetEncBitrate:
       return "googTargetEncBitrate";
     case kStatsValueNameTransmitBitrate:
@@ -421,6 +444,10 @@ const char* StatsReport::Value::display_name() const {
   return nullptr;
 }
 
+const std::string& StatsReport::Value::ToString() const {
+  return value;
+}
+
 StatsReport::StatsReport(scoped_ptr<Id> id) : id_(id.Pass()), timestamp_(0.0) {
   ASSERT(id_.get());
 }
@@ -434,6 +461,11 @@ scoped_ptr<StatsReport::Id> StatsReport::NewBandwidthEstimationId() {
 scoped_ptr<StatsReport::Id> StatsReport::NewTypedId(
     StatsType type, const std::string& id) {
   return scoped_ptr<Id>(new TypedId(type, id)).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewTypedIntId(StatsType type, int id) {
+  return scoped_ptr<Id>(new TypedIntId(type, id)).Pass();
 }
 
 // static
@@ -465,63 +497,26 @@ const char* StatsReport::TypeToString() const {
   return InternalTypeToString(id_->type());
 }
 
-void StatsReport::AddValue(StatsReport::StatsValueName name,
-                           const std::string& value) {
-  values_.push_back(ValuePtr(new Value(name, value)));
+void StatsReport::AddString(StatsReport::StatsValueName name,
+                            const std::string& value) {
+  values_[name] = ValuePtr(new Value(name, value));
 }
 
-void StatsReport::AddValue(StatsReport::StatsValueName name, int64 value) {
-  AddValue(name, rtc::ToString<int64>(value));
+void StatsReport::AddInt64(StatsReport::StatsValueName name, int64 value) {
+  AddString(name, rtc::ToString<int64>(value));
 }
 
-// TODO(tommi): Change the way we store vector values.
-template <typename T>
-void StatsReport::AddValue(StatsReport::StatsValueName name,
-                           const std::vector<T>& value) {
-  std::ostringstream oss;
-  oss << "[";
-  for (size_t i = 0; i < value.size(); ++i) {
-    oss << rtc::ToString<T>(value[i]);
-    if (i != value.size() - 1)
-      oss << ", ";
-  }
-  oss << "]";
-  AddValue(name, oss.str());
+void StatsReport::AddInt(StatsReport::StatsValueName name, int value) {
+  AddString(name, rtc::ToString<int>(value));
 }
 
-// Implementation specializations for the variants of AddValue that we use.
-// TODO(tommi): Converting these ints to strings and copying strings, is not
-// very efficient.  Figure out a way to reduce the string churn.
-template
-void StatsReport::AddValue<std::string>(
-    StatsReport::StatsValueName, const std::vector<std::string>&);
-
-template
-void StatsReport::AddValue<int>(
-    StatsReport::StatsValueName, const std::vector<int>&);
-
-template
-void StatsReport::AddValue<int64_t>(
-    StatsReport::StatsValueName, const std::vector<int64_t>&);
+void StatsReport::AddFloat(StatsReport::StatsValueName name, float value) {
+  AddString(name, rtc::ToString<float>(value));
+}
 
 void StatsReport::AddBoolean(StatsReport::StatsValueName name, bool value) {
   // TODO(tommi): Store bools as bool.
-  AddValue(name, value ? "true" : "false");
-}
-
-void StatsReport::ReplaceValue(StatsReport::StatsValueName name,
-                               const std::string& value) {
-  Values::iterator it = std::find_if(values_.begin(), values_.end(),
-      [&name](const ValuePtr& v)->bool { return v->name == name; });
-  // Values are const once added since they may be used outside of the stats
-  // collection. So we remove it from values_ when replacing and add a new one.
-  if (it != values_.end()) {
-    if ((*it)->value == value)
-      return;
-    values_.erase(it);
-  }
-
-  AddValue(name, value);
+  AddString(name, value ? "true" : "false");
 }
 
 void StatsReport::ResetValues() {
@@ -529,9 +524,8 @@ void StatsReport::ResetValues() {
 }
 
 const StatsReport::Value* StatsReport::FindValue(StatsValueName name) const {
-  Values::const_iterator it = std::find_if(values_.begin(), values_.end(),
-      [&name](const ValuePtr& v)->bool { return v->name == name; });
-  return it == values_.end() ? nullptr : (*it).get();
+  Values::const_iterator it = values_.find(name);
+  return it == values_.end() ? nullptr : it->second.get();
 }
 
 StatsCollection::StatsCollection() {
