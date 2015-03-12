@@ -25,13 +25,13 @@ using namespace Windows::UI::Xaml::Navigation;
 
 MainPage::MainPage()
 {
-	InitializeComponent();
+  InitializeComponent();
   OutputBox->Text = L"Tests results appears here\n";
 }
 
 void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-  SpWStringReporter_t spStringReporter(new CWStringReporter(/*CWStringReporter::kPrintOutput*/));
+  SpWStringReporter_t spStringReporter(new CWStringReporter(CWStringReporter::kPrintOutput));
 
   // Update the UI to indicate test execution is in progress
   ProgressRingCtrl->IsActive = true;
@@ -42,8 +42,8 @@ void LibTest_runner::MainPage::RunAll_Click(Platform::Object^ sender, Windows::U
   create_task([this, ui, sender, spStringReporter]()
   {
     libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
-    //libSrtpTests::TestSolution::Instance().Execute(L"SrtpAesCalcTest");
-    libSrtpTests::TestSolution::Instance().Execute();
+    libSrtpTests::TestSolution::Instance().Execute(L"SrtpCipherDriverTimingTest");
+    //libSrtpTests::TestSolution::Instance().Execute();
     libSrtpTests::TestSolution::Instance().GenerateReport();
   }).then([this, sender, spStringReporter]()
   {
