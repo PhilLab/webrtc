@@ -10,6 +10,6 @@ int libSrtpTests::CSrtpRandGenTest::InterchangeableExecute()
 {
   //TODO: configuration has to be handled
   char* argv[] = { ".", "10" };
-  return srtp_test_rand_gen_main(1, argv);
+  return srtp_test_rand_gen_main(2, argv);
 }
 
