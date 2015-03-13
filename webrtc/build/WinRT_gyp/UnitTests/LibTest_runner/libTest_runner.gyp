@@ -42,7 +42,6 @@
         'MainPage.xaml.h',
         'MainPage.xaml.cpp',
         'Package.appxmanifest',
-        #'gtest_runner_TemporaryKey.pfx',
         'Assets/Logo.scale-100.png',
         'Assets/SmallLogo.scale-100.png',
         'Assets/SplashScreen.scale-100.png',
@@ -104,9 +103,6 @@
           'ExceptionHandling': '1',
         },
         'VCLinkerTool': {
-         #'AdditionalDependencies': [
-         #'ws2_32.lib',
-         # ],
         },
       },
     },
