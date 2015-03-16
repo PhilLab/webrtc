@@ -21,6 +21,7 @@
         '../../../../../webrtc/common_audio/common_audio.gyp:common_audio_unittests',
         '../../../../../webrtc/test/test.gyp:test_support',
         '../../../../../webrtc/test/test.gyp:test_support_main',
+        '../../../../../webrtc/modules/modules.gyp:modules_unittests',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
