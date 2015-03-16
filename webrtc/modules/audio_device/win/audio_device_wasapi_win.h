@@ -78,7 +78,7 @@ class ScopedCOMInitializer {
 };
 
 
-class AudioDeviceWindowsWasapi : public AudioDeviceGeneric, IActivateAudioInterfaceCompletionHandler
+class AudioDeviceWindowsWasapi : public AudioDeviceGeneric, public  IActivateAudioInterfaceCompletionHandler
 {
 public:
     AudioDeviceWindowsWasapi(const int32_t id);
@@ -204,6 +204,12 @@ public:
 public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
+public: //IUnknown interface methods
+  virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID   riid, LPVOID * ppvObj);
+  virtual ULONG STDMETHODCALLTYPE AddRef();
+  virtual ULONG STDMETHODCALLTYPE Release();
+    
+
 private:
     bool KeyPressed() const;
 private:    // thread functions
@@ -212,8 +218,8 @@ private:    // thread functions
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
     DWORD DoCaptureThread();
 
-    static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
-    DWORD DoCaptureThreadPollDMO();
+    //static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
+    //DWORD DoCaptureThreadPollDMO();
 
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
