@@ -323,19 +323,11 @@
 				'audioproc_unittest_proto',
               ],
               'sources!': [ # TODO(WinRT) open files as soon as related components properly compile
-                'audio_coding/main/acm2/audio_coding_module_unittest.cc',
-                'audio_coding/main/acm2/audio_coding_module_unittest_oldapi.cc',
-                'audio_coding/main/acm2/acm_receiver_unittest.cc',                # has 2 failing unittests on WinRT
-                'audio_coding/main/acm2/acm_receiver_unittest_oldapi.cc',         # has 2 failing unittests on WinRT
-                'audio_coding/codecs/cng/cng_unittest.cc',                        # has 11 failing unittests on WinRT
-                'audio_coding/codecs/isac/main/source/isac_unittest.cc',          # has 4 failing unittests on WinRT
-                'audio_coding/codecs/isac/main/source/audio_encoder_isac_red_unittest.cc',  # has 1 failing unittest on WinRT
-                'audio_coding/codecs/opus/opus_unittest.cc',                      # has 22 failing unittests on WinRT
-                'audio_coding/neteq/audio_classifier_unittest.cc',                # has 2 failing unittests on WinRT
-                'audio_coding/neteq/neteq_external_decoder_unittest.cc',
-                'audio_coding/neteq/tools/input_audio_file_unittest.cc',
-                'audio_coding/neteq/neteq_network_stats_unittest.cc',
-                'audio_coding/neteq/neteq_unittest.cc',                           # has 3 failing unittests on WinRT
+                'audio_coding/main/acm2/audio_coding_module_unittest.cc',          # crashes the gtest_runner app
+                'audio_coding/main/acm2/audio_coding_module_unittest_oldapi.cc',   # crashes the gtest_runner app
+                'audio_coding/neteq/neteq_external_decoder_unittest.cc',           # crashes the gtest_runner app
+                'audio_coding/neteq/neteq_network_stats_unittest.cc',              # does not build on WinRT
+                'audio_coding/neteq/neteq_unittest.cc',                            # crashes the gtest_runner app
                 'audio_processing/aec/echo_cancellation_unittest.cc',
                 'audio_processing/aec/system_delay_unittest.cc',
                 'audio_processing/agc/agc_audio_proc_unittest.cc',
@@ -379,11 +371,6 @@
                 'desktop_capture/win/cursor_unittest.cc',
                 'desktop_capture/win/cursor_unittest_resources.h',
                 'desktop_capture/win/cursor_unittest_resources.rc',
-                'media_file/source/media_file_unittest.cc',                          # has 1 failing unittest on WinRT
-                'remote_bitrate_estimator/remote_bitrate_estimators_test.cc',        # has 2 failing unittests on WinRT
-                'remote_bitrate_estimator/test/bwe_test_framework_unittest.cc',      # has 3 failing unittests on WinRT
-                'utility/source/file_player_unittests.cc',                           # has 2 failing unittests on WinRT
-                'utility/source/process_thread_impl_unittest.cc',                    # has 1 failing unittest on WinRT
                 'video_coding/codecs/test/packet_manipulator_unittest.cc',
                 'video_coding/codecs/test/stats_unittest.cc',
                 'video_coding/codecs/test/videoprocessor_unittest.cc',
