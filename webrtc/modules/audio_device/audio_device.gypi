@@ -205,6 +205,8 @@
                     'win/audio_device_wave_win.h',
                     'win/audio_device_core_win.cc',
                     'win/audio_device_core_win.h',
+                    'win/audio_mixer_manager_win.cc',
+                    'win/audio_mixer_manager_win.h',
                     ]
             }],
             ['OS=="win"', {

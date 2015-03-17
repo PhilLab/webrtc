@@ -1485,8 +1485,6 @@ int32_t AudioDeviceWindowsWasapi::SetPlayoutDevice(uint16_t index)
 
     CriticalSectionScoped lock(&_critSect);
 
-    HRESULT hr(S_OK);
-
     assert(_ptrRenderCollection != nullptr);
 
     //  Select an endpoint rendering device given the specified index
@@ -1535,8 +1533,6 @@ int32_t AudioDeviceWindowsWasapi::SetPlayoutDevice(AudioDeviceModule::WindowsDev
 
     // Refresh the list of rendering endpoint devices
     _RefreshDeviceList(DeviceClass::AudioRender);
-
-    HRESULT hr(S_OK);
 
     //  Select an endpoint rendering device given the specified role
     _defaultRenderDevice = nullptr;
@@ -1759,8 +1755,6 @@ int32_t AudioDeviceWindowsWasapi::SetRecordingDevice(uint16_t index)
     }
 
     CriticalSectionScoped lock(&_critSect);
-
-    HRESULT hr(S_OK);
 
     assert(_ptrCaptureCollection != nullptr);
 
@@ -3016,7 +3010,7 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread()
     bool keepPlaying = true;
     HANDLE waitArray[2] = {_hShutdownRenderEvent, _hRenderSamplesReadyEvent};
     HRESULT hr = S_OK;
-    HANDLE hMmTask = NULL;
+    //HANDLE hMmTask = NULL;
 
     LARGE_INTEGER t1;
     LARGE_INTEGER t2;
@@ -4489,8 +4483,8 @@ HRESULT AudioDeviceWindowsWasapi::ActivateCompleted(IActivateAudioInterfaceAsync
   HRESULT hrActivateResult = S_OK;
   IUnknown *punkAudioInterface = nullptr;
   IAudioClient *audioClient = nullptr;
-  IAudioCaptureClient *audioCaptureClient = nullptr;
-  IAudioRenderClient *audioRenderClient = nullptr;
+  //IAudioCaptureClient *audioCaptureClient = nullptr;
+  //IAudioRenderClient *audioRenderClient = nullptr;
   WAVEFORMATEX *mixFormat = nullptr;
 
   if (!_captureDeviceActivated)
