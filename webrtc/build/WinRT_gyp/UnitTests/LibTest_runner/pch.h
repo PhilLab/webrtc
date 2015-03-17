@@ -26,6 +26,7 @@
 #include "TestSolution/TestBase.h"
 #include "TestSolution/TestSolution.h"
 #include "TestSolution/WStringReporter.h"
+#include "TestSolution/XmlReporter.h"
 
 
 // libsrtp tests
