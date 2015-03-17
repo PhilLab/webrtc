@@ -30,24 +30,40 @@
       ],
       'include_dirs': [
         '../../../../../testing/gtest/include',
-        'Generated Files',
       ],
       'sources': [
-        'MainPage.xaml',
-        'MainPage.xaml.h',
-        'MainPage.xaml.cpp',
+        'App.cpp',
         'Package.appxmanifest',
         'gtest_runner_TemporaryKey.pfx',
         'Assets/Logo.scale-100.png',
         'Assets/SmallLogo.scale-100.png',
         'Assets/SplashScreen.scale-100.png',
         'Assets/StoreLogo.scale-100.png',
-        'App.xaml',
-        'App.xaml.h',
-        'App.xaml.cpp',
-        'pch.h',
-        'pch.cpp',
       ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)',
+          'files':[
+            'gtest_runner_mapping.ini',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/gtest_runner_package',
+          'files':[
+            'Generated Manifest\AppxManifest.xml',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/gtest_runner_package/Assets',
+          'files':[
+            'Assets/Logo.scale-100.png',
+            'Assets/SmallLogo.scale-100.png',
+            'Assets/SplashScreen.scale-100.png',
+            'Assets/StoreLogo.scale-100.png',
+          ],
+        },
+      ],
+
       'msvs_disabled_warnings': [
         4453,  # A '[WebHostHidden]' type should not be used on the published surface of a public type that is not '[WebHostHidden]'
       ],
@@ -65,7 +81,25 @@
           'AdditionalDependencies': [
            'ws2_32.lib',
           ],
+          # 2 == /SUBSYSTEM:WINDOWS
+          'SubSystem': '2', 
+          'AdditionalOptions': [
+          ],
         },
+      },
+    },
+    {
+      'target_name': 'gtest_runner_appx',
+      #'product_name': 'gtest_runner',
+      #'product_extension': 'appx',
+      'type': 'none',
+      'dependencies': [
+        'gtest_runner',
+      ],
+      'appx': {
+        'dep': '<(PRODUCT_DIR)/gtest_runner.exe',
+        'map': '<(PRODUCT_DIR)/gtest_runner_mapping.ini',
+        'out': '<(PRODUCT_DIR)/gtest_runner.appx',
       },
     },
   ],

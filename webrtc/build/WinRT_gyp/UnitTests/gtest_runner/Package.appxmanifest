@@ -14,8 +14,8 @@
     <Resource Language="x-generate" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="gtest_runner_Windows.App">
-      <m2:VisualElements DisplayName="gtest_runner.Windows" Square150x150Logo="Assets\Logo.png" Square30x30Logo="Assets\SmallLogo.png" Description="gtest_runner.Windows" ForegroundText="light" BackgroundColor="#464646">
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="gtest_runner.App">
+      <m2:VisualElements DisplayName="gtest_runner" Square150x150Logo="Assets\Logo.png" Square30x30Logo="Assets\SmallLogo.png" Description="gtest_runner" ForegroundText="light" BackgroundColor="#464646">
         <m2:SplashScreen Image="Assets\SplashScreen.png" />
       </m2:VisualElements>
     </Application>
