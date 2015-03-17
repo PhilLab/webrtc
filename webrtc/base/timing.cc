@@ -108,8 +108,12 @@ double Timing::IdleWait(double period) {
     Sleep(DWORD(period * 1.0e3));
   }
 #elif defined(WINRT)
-  // TODO: Look into a higher accuracy wait.
-  Sleep(DWORD(period * 1.0e3));
+  double sec_int, sec_frac = modf(period, &sec_int);
+  struct timeval tv;
+  tv.tv_sec = static_cast<long>(sec_int);
+  tv.tv_usec = static_cast<long>(sec_frac * 1.0e6);
+  select(0, 0, 0, 0, &tv);
+
 #endif
 
   return TimerNow() - start_time;
