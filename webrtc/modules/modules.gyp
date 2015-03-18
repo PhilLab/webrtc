@@ -451,8 +451,7 @@
                 'audio_processing/test/test_utils.h',
               ],
             }],
-            # TODO(WinRT) remove OS_RUNTIME!="winrt" condition after libvpx is fixed
-            ['build_libvpx==1 and OS_RUNTIME!="winrt"', {
+            ['build_libvpx==1', {
               'dependencies': [
                 '<(libvpx_dir)/libvpx.gyp:libvpx',
               ],
