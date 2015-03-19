@@ -307,7 +307,11 @@
             'video_processing/main/test/unit_test/video_processing_unittest.h',
           ],
           'conditions': [
-            ['OS_RUNTIME=="winrt"', { # TODO(WinRT) open dependencies as soon as related components properly compile
+            ['OS_RUNTIME=="winrt"', {
+              'dependencies': [
+                'webrtc_opus_fec_test',
+              ],
+              # TODO(WinRT) open dependencies as soon as related components properly compile
               'dependencies!': [
                 'audio_device'  ,
                 'audio_processing',
