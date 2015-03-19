@@ -2,9 +2,12 @@
 #define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
 
 #include "webrtc/modules/video_capture/video_capture_impl.h"
+#include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 
 namespace webrtc {
 namespace videocapturemodule {
+
+ref class CaptureDevice;
 
 class VideoCaptureWinRT : public VideoCaptureImpl {
  public:
@@ -21,6 +24,9 @@ class VideoCaptureWinRT : public VideoCaptureImpl {
 
  protected:
   virtual ~VideoCaptureWinRT();
+
+ private:
+  CaptureDevice^ device_;
 };
 
 }  // namespace videocapturemodule

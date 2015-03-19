@@ -8,6 +8,9 @@ namespace videocapturemodule {
 
 class DeviceInfoWinRT : public DeviceInfoImpl {
  public:
+  // Factory function.
+   static DeviceInfoWinRT* Create(const int32_t id);
+   
   explicit DeviceInfoWinRT(const int32_t id);
   virtual ~DeviceInfoWinRT();
 
@@ -24,6 +27,10 @@ class DeviceInfoWinRT : public DeviceInfoImpl {
   virtual int32_t DisplayCaptureSettingsDialogBox(
       const char* deviceUniqueIdUTF8, const char* dialogTitleUTF8,
       void* parentWindow, uint32_t positionX, uint32_t positionY);
+
+ protected:
+   virtual int32_t
+       CreateCapabilityMap(const char* deviceUniqueIdUTF8);
 };
 
 }  // namespace videocapturemodule
