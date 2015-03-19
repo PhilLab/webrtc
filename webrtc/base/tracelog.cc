@@ -8,25 +8,14 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
-
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-#include "webrtc/base/win32socketserver.h"
-#endif
-#if defined(WEBRTC_POSIX)
 #include "webrtc/base/physicalsocketserver.h"
-#endif
 
 namespace rtc {
 
 TraceLog::TraceLog() : is_tracing_(false), tw_(NULL) {
   traces_.reserve(16384);
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-  thread_ = new Win32Thread();
-#endif
-#if defined(WEBRTC_POSIX)
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
-#endif
 }
 
 TraceLog::~TraceLog() {
@@ -148,6 +137,9 @@ void TraceLog::Save(const std::string& addr, int port) {
 
   SocketAddress server_addr(addr, port);
   sock->Connect(server_addr);
+
+  // Send wake up signal to update the event list to wait
+  thread_->socketserver()->WakeUp();
 }
 
 void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {

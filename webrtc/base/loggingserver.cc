@@ -5,24 +5,13 @@
 #include "webrtc/base/socketstream.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
-
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-#include "webrtc/base/win32socketserver.h"
-#endif
-#if defined(WEBRTC_POSIX)
 #include "webrtc/base/physicalsocketserver.h"
-#endif
 
 namespace rtc {
 
 LoggingServer::LoggingServer() {
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-  thread_ = new Win32Thread();
-#endif
-#if defined(WEBRTC_POSIX)
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
-#endif
 }
 
 LoggingServer::~LoggingServer() {
@@ -64,6 +53,10 @@ int LoggingServer::Listen(const SocketAddress& addr, int level) {
   // Maximum 5 pending connections are allowed.
   if ((listener_->Bind(addr) != SOCKET_ERROR) &&
     (listener_->Listen(5) != SOCKET_ERROR)) {
+
+    // Send wake up signal to update the event list to wait
+    thread_->socketserver()->WakeUp();
+
     return 0;
   }
 
