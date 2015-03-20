@@ -141,7 +141,7 @@
         ['agc_debug_dump==1', {
           'defines': ['WEBRTC_AGC_DEBUG_DUMP',],
         }],
-        ['enable_protobuf==1', {
+        ['enable_protobuf==1 and not(OS=="win" and OS_RUNTIME=="winrt")', {  #TODO(WinRT) enable if we need this
           'dependencies': ['audioproc_debug_proto'],
           'defines': ['WEBRTC_AUDIOPROC_DEBUG_DUMP'],
         }],

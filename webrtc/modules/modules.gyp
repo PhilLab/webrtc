@@ -314,10 +314,7 @@
               # TODO(WinRT) open dependencies as soon as related components properly compile
               'dependencies!': [
                 'audio_device'  ,
-                'audio_processing',
                 'desktop_capture',
-                # Other dependencies that come based on conditions
-				'audioproc_unittest_proto',
               ],
               'sources!': [ # TODO(WinRT) open files as soon as related components properly compile
                 'audio_coding/main/acm2/audio_coding_module_unittest.cc',          # crashes the gtest_runner app
@@ -325,36 +322,7 @@
                 'audio_coding/neteq/neteq_external_decoder_unittest.cc',           # crashes the gtest_runner app
                 'audio_coding/neteq/neteq_network_stats_unittest.cc',              # does not build on WinRT
                 'audio_coding/neteq/neteq_unittest.cc',                            # crashes the gtest_runner app
-                'audio_processing/aec/echo_cancellation_unittest.cc',
-                'audio_processing/aec/system_delay_unittest.cc',
-                'audio_processing/agc/agc_audio_proc_unittest.cc',
-                'audio_processing/agc/circular_buffer_unittest.cc',
-                'audio_processing/agc/gmm_unittest.cc',
-                'audio_processing/agc/histogram_unittest.cc',
-                'audio_processing/agc/mock_agc.h',
-                'audio_processing/agc/pitch_based_vad_unittest.cc',
-                'audio_processing/agc/pitch_internal_unittest.cc',
-                'audio_processing/agc/pole_zero_filter_unittest.cc',
-                'audio_processing/agc/standalone_vad_unittest.cc',
-                'audio_processing/beamformer/complex_matrix_unittest.cc',
-                'audio_processing/beamformer/covariance_matrix_generator_unittest.cc',
-                'audio_processing/beamformer/matrix_unittest.cc',
-                'audio_processing/beamformer/mock_beamformer.cc',
-                'audio_processing/beamformer/mock_beamformer.h',
-                'audio_processing/beamformer/pcm_utils.cc',
-                'audio_processing/beamformer/pcm_utils.h',
-                'audio_processing/echo_cancellation_impl_unittest.cc',
-                'audio_processing/splitting_filter_unittest.cc',
-                'audio_processing/transient/dyadic_decimator_unittest.cc',
-                'audio_processing/transient/file_utils.cc',
-                'audio_processing/transient/file_utils.h',
-                'audio_processing/transient/file_utils_unittest.cc',
-                'audio_processing/transient/moving_moments_unittest.cc',
-                'audio_processing/transient/transient_detector_unittest.cc',
-                'audio_processing/transient/transient_suppressor_unittest.cc',
-                'audio_processing/transient/wpd_node_unittest.cc',
-                'audio_processing/transient/wpd_tree_unittest.cc',
-                'audio_processing/utility/delay_estimator_unittest.cc',
+                'audio_processing/transient/file_utils_unittest.cc',               # crashes the gtest_runner app
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
                 'desktop_capture/desktop_region_unittest.cc',
                 'desktop_capture/differ_block_unittest.cc',
@@ -377,9 +345,6 @@
                 'desktop_capture/screen_capturer_mock_objects.h',
                 'desktop_capture/screen_capturer_unittest.cc',
                 'desktop_capture/window_capturer_unittest.cc',
-                'audio_processing/audio_processing_impl_unittest.cc',
-                'audio_processing/test/audio_processing_unittest.cc',
-                'audio_processing/test/test_utils.h',
               ],
 			}],
             ['enable_bwe_test_logging==1', {
@@ -408,7 +373,7 @@
             }, {
               'defines': [ 'WEBRTC_AUDIOPROC_FLOAT_PROFILE' ],
             }],
-            ['enable_protobuf==1', {
+            ['enable_protobuf==1 and not(OS=="win" and OS_RUNTIME=="winrt")', {    #TODO(WinRT) enable if we need this
               'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],
               'dependencies': [
                 'audioproc_unittest_proto',
