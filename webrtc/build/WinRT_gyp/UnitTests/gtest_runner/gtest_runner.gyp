@@ -35,10 +35,10 @@
         'App.cpp',
         'Package.appxmanifest',
         'gtest_runner_TemporaryKey.pfx',
-        'Assets/Logo.scale-100.png',
-        'Assets/SmallLogo.scale-100.png',
-        'Assets/SplashScreen.scale-100.png',
-        'Assets/StoreLogo.scale-100.png',
+        'Logo.png',
+        'SmallLogo.png',
+        'SplashScreen.png',
+        'StoreLogo.png',
       ],
       'copies': [
         {
@@ -51,15 +51,20 @@
           'destination': '<(PRODUCT_DIR)/gtest_runner_package',
           'files':[
             'Generated Manifest\AppxManifest.xml',
+            'Logo.png',
+            'SmallLogo.png',
+            'SplashScreen.png',
+            'StoreLogo.png',
           ],
         },
+        # Hack for MSVS to copy to the Appx folder
         {
-          'destination': '<(PRODUCT_DIR)/gtest_runner_package/Assets',
+          'destination': '<(PRODUCT_DIR)/AppX',
           'files':[
-            'Assets/Logo.scale-100.png',
-            'Assets/SmallLogo.scale-100.png',
-            'Assets/SplashScreen.scale-100.png',
-            'Assets/StoreLogo.scale-100.png',
+            'Logo.png',
+            'SmallLogo.png',
+            'SplashScreen.png',
+            'StoreLogo.png',
           ],
         },
       ],
