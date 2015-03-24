@@ -373,7 +373,7 @@
             }, {
               'defines': [ 'WEBRTC_AUDIOPROC_FLOAT_PROFILE' ],
             }],
-            ['enable_protobuf==1 and not(OS=="win" and OS_RUNTIME=="winrt")', {    #TODO(WinRT) enable if we need this
+            ['enable_protobuf==1', {
               'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],
               'dependencies': [
                 'audioproc_unittest_proto',
