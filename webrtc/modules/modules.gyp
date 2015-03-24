@@ -320,7 +320,6 @@
                 'audio_coding/main/acm2/audio_coding_module_unittest.cc',          # crashes the gtest_runner app
                 'audio_coding/main/acm2/audio_coding_module_unittest_oldapi.cc',   # crashes the gtest_runner app
                 'audio_coding/neteq/neteq_external_decoder_unittest.cc',           # crashes the gtest_runner app
-                'audio_coding/neteq/neteq_network_stats_unittest.cc',              # does not build on WinRT
                 'audio_coding/neteq/neteq_unittest.cc',                            # crashes the gtest_runner app
                 'audio_processing/transient/file_utils_unittest.cc',               # crashes the gtest_runner app
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
