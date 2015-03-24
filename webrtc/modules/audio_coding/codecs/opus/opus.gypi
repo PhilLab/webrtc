@@ -19,8 +19,17 @@
            ]
         }, {
           'dependencies': [
-            '<(DEPTH)/third_party/opus/opus.gyp:opus'
+            '<(opus_dir)/opus.gyp:opus'
           ],
+          'export_dependent_settings': [
+            '<(opus_dir)/opus.gyp:opus',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [  # need by Neteq audio classifier.
+              '<(opus_dir)/src/src',
+              '<(opus_dir)/src/celt',
+            ],
+          },
         }],
       ],
       'dependencies': [
@@ -55,6 +64,11 @@
           ],
           'sources': [
             'opus_fec_test.cc',
+          ],
+		  'conditions': [
+            ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'type': 'static_library'
+            }],
           ],
         },
       ],

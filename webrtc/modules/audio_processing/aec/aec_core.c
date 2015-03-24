@@ -39,7 +39,7 @@ static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 // Metrics
 static const int subCountLen = 4;
 static const int countLen = 50;
-static const int kDelayMetricsAggregationWindow = 250;  // One second at 16 kHz.
+static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
 
 // Quantities to control H band scaling for SWB input
 static const int flagHbandCn = 1;  // flag for adding comfort noise in H band
@@ -774,6 +774,7 @@ static void UpdateDelayMetrics(AecCore* self) {
   int i = 0;
   int delay_values = 0;
   int median = 0;
+  int lookahead = WebRtc_lookahead(self->delay_estimator);
   const int kMsPerBlock = PART_LEN / (self->mult * 8);
   int64_t l1_norm = 0;
 
@@ -785,6 +786,7 @@ static void UpdateDelayMetrics(AecCore* self) {
     // not able to estimate the delay.
     self->delay_median = -1;
     self->delay_std = -1;
+    self->fraction_poor_delays = -1;
     return;
   }
 
@@ -799,8 +801,7 @@ static void UpdateDelayMetrics(AecCore* self) {
     }
   }
   // Account for lookahead.
-  self->delay_median = (median - WebRtc_lookahead(self->delay_estimator)) *
-      kMsPerBlock;
+  self->delay_median = (median - lookahead) * kMsPerBlock;
 
   // Calculate the L1 norm, with median value as central moment.
   for (i = 0; i < kHistorySizeBlocks; i++) {
@@ -808,6 +809,17 @@ static void UpdateDelayMetrics(AecCore* self) {
   }
   self->delay_std = (int)((l1_norm + self->num_delay_values / 2) /
       self->num_delay_values) * kMsPerBlock;
+
+  // Determine fraction of delays that are out of bounds, that is, either
+  // negative (anti-causal system) or larger than the AEC filter length.
+  {
+    int num_delays_out_of_bounds = self->num_delay_values;
+    for (i = lookahead; i < lookahead + self->num_partitions; ++i) {
+      num_delays_out_of_bounds -= self->delay_histogram[i];
+    }
+    self->fraction_poor_delays = (float)num_delays_out_of_bounds /
+        self->num_delay_values;
+  }
 
   // Reset histogram.
   memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
@@ -1237,10 +1249,9 @@ static void ProcessBlock(AecCore* aec) {
 
   // Block wise delay estimation used for logging
   if (aec->delay_logging_enabled) {
-    int delay_estimate = 0;
     if (WebRtc_AddFarSpectrumFloat(
             aec->delay_estimator_farend, abs_far_spectrum, PART_LEN1) == 0) {
-      delay_estimate = WebRtc_DelayEstimatorProcessFloat(
+      int delay_estimate = WebRtc_DelayEstimatorProcessFloat(
           aec->delay_estimator, abs_near_spectrum, PART_LEN1);
       if (delay_estimate >= 0) {
         // Update delay estimate buffer.
@@ -1447,8 +1458,12 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
   WebRtcAec_InitAec_mips();
 #endif
 
-#if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
+#if defined(WEBRTC_ARCH_ARM_NEON)
   WebRtcAec_InitAec_neon();
+#elif defined(WEBRTC_DETECT_ARM_NEON)
+  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
+    WebRtcAec_InitAec_neon();
+  }
 #endif
 
   aec_rdft_init();
@@ -1563,6 +1578,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->num_delay_values = 0;
   aec->delay_median = -1;
   aec->delay_std = -1;
+  aec->fraction_poor_delays = -1.0f;
 
   aec->signal_delay_correction = 0;
   aec->previous_delay = -2;  // (-2): Uninitialized.
@@ -1833,7 +1849,8 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
   }
 }
 
-int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
+int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std,
+                                  float* fraction_poor_delays) {
   assert(self != NULL);
   assert(median != NULL);
   assert(std != NULL);
@@ -1849,6 +1866,7 @@ int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
   }
   *median = self->delay_median;
   *std = self->delay_std;
+  *fraction_poor_delays = self->fraction_poor_delays;
 
   return 0;
 }

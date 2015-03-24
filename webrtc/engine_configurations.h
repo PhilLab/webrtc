@@ -114,7 +114,7 @@
 //  VideoEngine Windows
 // ----------------------------------------------------------------------------
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(WINRT)
 #define DIRECT3D9_RENDERING  // Requires DirectX 9.
 #endif
 
@@ -139,7 +139,6 @@
 //  Deprecated
 // ----------------------------------------------------------------------------
 
-// #define WEBRTC_CODEC_G729
 // #define WEBRTC_DTMF_DETECTION
 
 #endif  // WEBRTC_ENGINE_CONFIGURATIONS_H_

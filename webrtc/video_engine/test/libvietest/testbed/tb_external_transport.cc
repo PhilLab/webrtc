@@ -33,9 +33,6 @@
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list
 #endif
 
-const uint8_t kSenderReportPayloadType = 200;
-const uint8_t kReceiverReportPayloadType = 201;
-
 TbExternalTransport::TbExternalTransport(
     webrtc::ViENetwork& vieNetwork,
     int sender_channel,
@@ -86,7 +83,6 @@ TbExternalTransport::TbExternalTransport(
 
 TbExternalTransport::~TbExternalTransport()
 {
-    _thread.SetNotAlive();
     _event.Set();
     if (_thread.Stop())
     {
@@ -231,6 +227,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
     }
 
     VideoPacket* newPacket = new VideoPacket();
+    assert(len <= sizeof(newPacket->packetBuffer));
     memcpy(newPacket->packetBuffer, data, len);
 
     if (_temporalLayers)
@@ -294,6 +291,7 @@ int TbExternalTransport::SendRTCPPacket(int channel,
     _statCrit.Leave();
 
     VideoPacket* newPacket = new VideoPacket();
+    assert(len <= sizeof(newPacket->packetBuffer));
     memcpy(newPacket->packetBuffer, data, len);
     newPacket->length = len;
     newPacket->channel = channel;
@@ -497,8 +495,10 @@ bool TbExternalTransport::ViEExternalTransportProcess()
         // Send to ViE
         if (packet)
         {
-            uint8_t pltype = static_cast<uint8_t>(packet->packetBuffer[1]);
-            if (pltype == kSenderReportPayloadType) {
+            uint8_t packet_type = static_cast<uint8_t>(packet->packetBuffer[1]);
+            const uint8_t kSenderReportPacketType = 200;
+            const uint8_t kReceiverReportPacketType = 201;
+            if (packet_type == kSenderReportPacketType) {
               // Sender report.
               if (receive_channels_) {
                 for (SsrcChannelMap::iterator it = receive_channels_->begin();
@@ -512,7 +512,7 @@ bool TbExternalTransport::ViEExternalTransportProcess()
                                                packet->packetBuffer,
                                                packet->length);
               }
-            } else if (pltype == kReceiverReportPayloadType) {
+            } else if (packet_type == kReceiverReportPacketType) {
               // Receiver report.
               _vieNetwork.ReceivedRTCPPacket(sender_channel_,
                                              packet->packetBuffer,

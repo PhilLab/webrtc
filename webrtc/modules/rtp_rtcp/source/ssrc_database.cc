@@ -15,7 +15,9 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
-#ifdef _WIN32
+#ifdef WINRT
+    #include "webrtc/system_wrappers/source/trace_win.h"
+#elif _WIN32
     #include <windows.h>
     #include <MMSystem.h> //timeGetTime
 
@@ -85,7 +87,9 @@ SSRCDatabase::ReturnSSRC(const uint32_t ssrc)
 SSRCDatabase::SSRCDatabase()
 {
     // we need to seed the random generator, otherwise we get 26500 each time, hardly a random value :)
-#ifdef _WIN32
+#ifdef WINRT
+    srand(TraceWindows::timeGetTime());
+#elif _WIN32
     srand(timeGetTime());
 #else
     struct timeval tv;

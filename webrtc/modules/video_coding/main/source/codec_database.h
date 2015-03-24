@@ -13,11 +13,11 @@
 
 #include <map>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/generic_decoder.h"
 #include "webrtc/modules/video_coding/main/source/generic_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -28,7 +28,7 @@ struct VCMDecoderMapItem {
                     int number_of_cores,
                     bool require_key_frame);
 
-  scoped_ptr<VideoCodec> settings;
+  rtc::scoped_ptr<VideoCodec> settings;
   int number_of_cores;
   bool require_key_frame;
 };
@@ -46,7 +46,7 @@ struct VCMExtDecoderMapItem {
 
 class VCMCodecDataBase {
  public:
-  VCMCodecDataBase();
+  explicit VCMCodecDataBase(VideoEncoderRateObserver* encoder_rate_observer);
   ~VCMCodecDataBase();
 
   // Sender Side
@@ -146,6 +146,8 @@ class VCMCodecDataBase {
   // the encoded frames.
   bool SupportsRenderScheduling() const;
 
+  bool MatchesCurrentResolution(int width, int height) const;
+
  private:
   typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
   typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
@@ -180,6 +182,7 @@ class VCMCodecDataBase {
   uint8_t external_payload_type_;
   VideoEncoder* external_encoder_;
   bool internal_source_;
+  VideoEncoderRateObserver* const encoder_rate_observer_;
   VCMGenericEncoder* ptr_encoder_;
   VCMGenericDecoder* ptr_decoder_;
   bool current_dec_is_external_;

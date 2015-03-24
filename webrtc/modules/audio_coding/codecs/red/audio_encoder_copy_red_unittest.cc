@@ -8,10 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using ::testing::Return;
 using ::testing::_;
@@ -23,7 +26,7 @@ using ::testing::MockFunction;
 namespace webrtc {
 
 namespace {
-static const size_t kMaxEncodedBytes = 1000;
+static const size_t kMockMaxEncodedBytes = 1000;
 static const size_t kMaxNumSamples = 48 * 10 * 2;  // 10 ms @ 48 kHz stereo.
 }
 
@@ -38,14 +41,16 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
     config.payload_type = red_payload_type_;
     config.speech_encoder = &mock_encoder_;
     red_.reset(new AudioEncoderCopyRed(config));
-    memset(encoded_, 0, sizeof(encoded_));
     memset(audio_, 0, sizeof(audio_));
-    EXPECT_CALL(mock_encoder_, num_channels()).WillRepeatedly(Return(1));
-    EXPECT_CALL(mock_encoder_, sample_rate_hz())
+    EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock_encoder_, SampleRateHz())
         .WillRepeatedly(Return(sample_rate_hz_));
+    EXPECT_CALL(mock_encoder_, MaxEncodedBytes())
+        .WillRepeatedly(Return(kMockMaxEncodedBytes));
+    encoded_.resize(red_->MaxEncodedBytes(), 0);
   }
 
-  virtual void TearDown() OVERRIDE {
+  void TearDown() override {
     red_.reset();
     // Don't expect the red_ object to delete the AudioEncoder object. But it
     // will be deleted with the test fixture. This is why we explicitly delete
@@ -56,18 +61,18 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
   void Encode() {
     ASSERT_TRUE(red_.get() != NULL);
     encoded_info_ = AudioEncoder::EncodedInfo();
-    ASSERT_TRUE(red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
-                             kMaxEncodedBytes, encoded_, &encoded_info_));
+    red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
+                 encoded_.size(), &encoded_[0], &encoded_info_);
     timestamp_ += num_audio_samples_10ms;
   }
 
   MockAudioEncoder mock_encoder_;
-  scoped_ptr<AudioEncoderCopyRed> red_;
+  rtc::scoped_ptr<AudioEncoderCopyRed> red_;
   uint32_t timestamp_;
   int16_t audio_[kMaxNumSamples];
   const int sample_rate_hz_;
   size_t num_audio_samples_10ms;
-  uint8_t encoded_[kMaxEncodedBytes];
+  std::vector<uint8_t> encoded_;
   AudioEncoder::EncodedInfo encoded_info_;
   const int red_payload_type_;
 };
@@ -78,7 +83,7 @@ class MockEncodeHelper {
     memset(&info_, 0, sizeof(info_));
   }
 
-  bool Encode(uint32_t timestamp,
+  void Encode(uint32_t timestamp,
               const int16_t* audio,
               size_t max_encoded_bytes,
               uint8_t* encoded,
@@ -90,7 +95,6 @@ class MockEncodeHelper {
     }
     CHECK(info);
     *info = info_;
-    return true;
   }
 
   AudioEncoder::EncodedInfo info_;
@@ -102,13 +106,13 @@ TEST_F(AudioEncoderCopyRedTest, CreateAndDestroy) {
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckSampleRatePropagation) {
-  EXPECT_CALL(mock_encoder_, sample_rate_hz()).WillOnce(Return(17));
-  EXPECT_EQ(17, red_->sample_rate_hz());
+  EXPECT_CALL(mock_encoder_, SampleRateHz()).WillOnce(Return(17));
+  EXPECT_EQ(17, red_->SampleRateHz());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckNumChannelsPropagation) {
-  EXPECT_CALL(mock_encoder_, num_channels()).WillOnce(Return(17));
-  EXPECT_EQ(17, red_->num_channels());
+  EXPECT_CALL(mock_encoder_, NumChannels()).WillOnce(Return(17));
+  EXPECT_EQ(17, red_->NumChannels());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckFrameSizePropagation) {
@@ -140,8 +144,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
   InSequence s;
   MockFunction<void(int check_point_id)> check;
   for (int i = 1; i <= 6; ++i) {
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-        .WillOnce(Return(true));
+    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _));
     EXPECT_CALL(check, Call(i));
     Encode();
     check.Call(i);
@@ -156,7 +159,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOuput) {
   AudioEncoder::EncodedInfo info;
   info.encoded_bytes = kEncodedSize;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   // First call is a special case, since it does not include a secondary
   // payload.
@@ -166,14 +169,14 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOuput) {
   // Next call to the speech encoder will not produce any output.
   info.encoded_bytes = 0;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
   // Final call to the speech encoder will produce output.
   info.encoded_bytes = kEncodedSize;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(2 * kEncodedSize, encoded_info_.encoded_bytes);
   ASSERT_EQ(2u, encoded_info_.redundant.size());
@@ -190,7 +193,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
     AudioEncoder::EncodedInfo info;
     info.encoded_bytes = encode_size;
     EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-        .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+        .WillOnce(SetArgPointee<4>(info));
   }
 
   // First call is a special case, since it does not include a secondary

@@ -22,12 +22,11 @@ TraceWindows::TraceWindows()
 }
 
 TraceWindows::~TraceWindows() {
-  StopThread();
 }
 
 
 #if defined(WINRT)
-DWORD timeGetTime() {
+DWORD TraceWindows::timeGetTime() {
     LARGE_INTEGER freq, t;
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&t);

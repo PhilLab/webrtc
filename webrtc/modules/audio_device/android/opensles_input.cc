@@ -25,8 +25,6 @@
   do {                                                           \
     SLresult err = (op);                                         \
     if (err != SL_RESULT_SUCCESS) {                              \
-      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, id_,          \
-                   "OpenSL error: %d", err);                     \
       assert(false);                                             \
       return ret_val;                                            \
     }                                                            \
@@ -43,10 +41,8 @@ enum {
 
 namespace webrtc {
 
-OpenSlesInput::OpenSlesInput(
-    const int32_t id, PlayoutDelayProvider* delay_provider)
-    : id_(id),
-      delay_provider_(delay_provider),
+OpenSlesInput::OpenSlesInput(PlayoutDelayProvider* delay_provider)
+    : delay_provider_(delay_provider),
       initialized_(false),
       mic_initialized_(false),
       rec_initialized_(false),
@@ -70,7 +66,6 @@ OpenSlesInput::~OpenSlesInput() {
 }
 
 int32_t OpenSlesInput::SetAndroidAudioDeviceObjects(void* javaVM,
-                                                    void* env,
                                                     void* context) {
   return 0;
 }
@@ -289,7 +284,7 @@ void OpenSlesInput::AllocateBuffers() {
   fifo_.reset(new SingleRwFifo(num_fifo_buffers_needed_));
 
   // Allocate the memory area to be used.
-  rec_buf_.reset(new scoped_ptr<int8_t[]>[TotalBuffersUsed()]);
+  rec_buf_.reset(new rtc::scoped_ptr<int8_t[]>[TotalBuffersUsed()]);
   for (int i = 0; i < TotalBuffersUsed(); ++i) {
     rec_buf_[i].reset(new int8_t[buffer_size_bytes()]);
   }
@@ -419,7 +414,6 @@ bool OpenSlesInput::HandleOverrun(int event_id, int event_msg) {
   if (event_id == kNoOverrun) {
     return false;
   }
-  WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, id_, "Audio overrun");
   assert(event_id == kOverrun);
   assert(event_msg > 0);
   // Wait for all enqueued buffers be flushed.

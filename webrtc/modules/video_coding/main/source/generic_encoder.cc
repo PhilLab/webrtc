@@ -43,7 +43,7 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
       return;
     case kVideoCodecGeneric:
       (*rtp)->codec = kRtpVideoGeneric;
-      (*rtp)->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
+      (*rtp)->simulcastIdx = info->codecSpecific.genericCodec.simulcast_idx;
       return;
     default:
       // No codec specific info. Change RTP header pointer to NULL.
@@ -55,17 +55,15 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
 
 //#define DEBUG_ENCODER_BIT_STREAM
 
-VCMGenericEncoder::VCMGenericEncoder(VideoEncoder& encoder, bool internalSource /*= false*/)
-:
-_encoder(encoder),
-_codecType(kVideoCodecUnknown),
-_VCMencodedFrameCallback(NULL),
-_bitRate(0),
-_frameRate(0),
-_internalSource(internalSource)
-{
+VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
+                                     VideoEncoderRateObserver* rate_observer,
+                                     bool internalSource)
+    : encoder_(encoder),
+      rate_observer_(rate_observer),
+      bit_rate_(0),
+      frame_rate_(0),
+      internal_source_(internalSource) {
 }
-
 
 VCMGenericEncoder::~VCMGenericEncoder()
 {
@@ -73,10 +71,13 @@ VCMGenericEncoder::~VCMGenericEncoder()
 
 int32_t VCMGenericEncoder::Release()
 {
-    _bitRate = 0;
-    _frameRate = 0;
-    _VCMencodedFrameCallback = NULL;
-    return _encoder.Release();
+    {
+      rtc::CritScope lock(&rates_lock_);
+      bit_rate_ = 0;
+      frame_rate_ = 0;
+    }
+
+    return encoder_->Release();
 }
 
 int32_t
@@ -84,10 +85,13 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                               int32_t numberOfCores,
                               size_t maxPayloadSize)
 {
-    _bitRate = settings->startBitrate * 1000;
-    _frameRate = settings->maxFramerate;
-    _codecType = settings->codecType;
-    if (_encoder.InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
+    {
+      rtc::CritScope lock(&rates_lock_);
+      bit_rate_ = settings->startBitrate * 1000;
+      frame_rate_ = settings->maxFramerate;
+    }
+
+    if (encoder_->InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
       LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
                        "payload name: " << settings->plName;
       return -1;
@@ -102,33 +106,40 @@ VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
   std::vector<VideoFrameType> video_frame_types(frameTypes.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frameTypes, &video_frame_types);
-  return _encoder.Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+  return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
 }
 
 int32_t
 VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int64_t rtt)
 {
-    return _encoder.SetChannelParameters(packetLoss, rtt);
+    return encoder_->SetChannelParameters(packetLoss, rtt);
 }
 
 int32_t
 VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate)
 {
     uint32_t target_bitrate_kbps = (newBitRate + 500) / 1000;
-    int32_t ret = _encoder.SetRates(target_bitrate_kbps, frameRate);
+    int32_t ret = encoder_->SetRates(target_bitrate_kbps, frameRate);
     if (ret < 0)
     {
         return ret;
     }
-    _bitRate = newBitRate;
-    _frameRate = frameRate;
+
+    {
+      rtc::CritScope lock(&rates_lock_);
+      bit_rate_ = newBitRate;
+      frame_rate_ = frameRate;
+    }
+
+    if (rate_observer_ != nullptr)
+      rate_observer_->OnSetRates(newBitRate, frameRate);
     return VCM_OK;
 }
 
 int32_t
 VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size)
 {
-    int32_t ret = _encoder.CodecConfigParameters(buffer, size);
+    int32_t ret = encoder_->CodecConfigParameters(buffer, size);
     if (ret < 0)
     {
         return ret;
@@ -138,18 +149,20 @@ VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size)
 
 uint32_t VCMGenericEncoder::BitRate() const
 {
-    return _bitRate;
+    rtc::CritScope lock(&rates_lock_);
+    return bit_rate_;
 }
 
 uint32_t VCMGenericEncoder::FrameRate() const
 {
-    return _frameRate;
+    rtc::CritScope lock(&rates_lock_);
+    return frame_rate_;
 }
 
 int32_t
 VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
 {
-    return _encoder.SetPeriodicKeyFrames(enable);
+    return encoder_->SetPeriodicKeyFrames(enable);
 }
 
 int32_t VCMGenericEncoder::RequestFrame(
@@ -158,21 +171,20 @@ int32_t VCMGenericEncoder::RequestFrame(
   std::vector<VideoFrameType> video_frame_types(frame_types.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frame_types, &video_frame_types);
-  return _encoder.Encode(image, NULL, &video_frame_types);
+  return encoder_->Encode(image, NULL, &video_frame_types);
 }
 
 int32_t
 VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
 {
-   _VCMencodedFrameCallback = VCMencodedFrameCallback;
-   _VCMencodedFrameCallback->SetInternalSource(_internalSource);
-   return _encoder.RegisterEncodeCompleteCallback(_VCMencodedFrameCallback);
+    VCMencodedFrameCallback->SetInternalSource(internal_source_);
+    return encoder_->RegisterEncodeCompleteCallback(VCMencodedFrameCallback);
 }
 
 bool
 VCMGenericEncoder::InternalSource() const
 {
-    return _internalSource;
+    return internal_source_;
 }
 
  /***************************
@@ -208,47 +220,40 @@ VCMEncodedFrameCallback::SetTransportCallback(VCMPacketizationCallback* transpor
     return VCM_OK;
 }
 
-int32_t
-VCMEncodedFrameCallback::Encoded(
-    const EncodedImage &encodedImage,
+int32_t VCMEncodedFrameCallback::Encoded(
+    const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
-    const RTPFragmentationHeader* fragmentationHeader)
-{
-    post_encode_callback_->Encoded(encodedImage);
+    const RTPFragmentationHeader* fragmentationHeader) {
+  post_encode_callback_->Encoded(encodedImage, NULL, NULL);
 
-    if (_sendCallback != NULL)
-    {
+  if (_sendCallback == NULL) {
+    return VCM_UNINITIALIZED;
+  }
+
 #ifdef DEBUG_ENCODER_BIT_STREAM
-        if (_bitStreamAfterEncoder != NULL)
-        {
-            fwrite(encodedImage._buffer, 1, encodedImage._length, _bitStreamAfterEncoder);
-        }
+  if (_bitStreamAfterEncoder != NULL) {
+    fwrite(encodedImage._buffer, 1, encodedImage._length,
+           _bitStreamAfterEncoder);
+  }
 #endif
 
-        RTPVideoHeader rtpVideoHeader;
-        RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
-        CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
+  RTPVideoHeader rtpVideoHeader;
+  memset(&rtpVideoHeader, 0, sizeof(RTPVideoHeader));
+  RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
+  CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
 
-        int32_t callbackReturn = _sendCallback->SendData(
-            _payloadType,
-            encodedImage,
-            *fragmentationHeader,
-            rtpVideoHeaderPtr);
-       if (callbackReturn < 0)
-       {
-           return callbackReturn;
-       }
-    }
-    else
-    {
-        return VCM_UNINITIALIZED;
-    }
-    if (_mediaOpt != NULL) {
-      _mediaOpt->UpdateWithEncodedData(encodedImage);
-      if (_internalSource)
-        return _mediaOpt->DropFrame(); // Signal to encoder to drop next frame.
-    }
-    return VCM_OK;
+  int32_t callbackReturn = _sendCallback->SendData(
+      _payloadType, encodedImage, *fragmentationHeader, rtpVideoHeaderPtr);
+  if (callbackReturn < 0) {
+    return callbackReturn;
+  }
+
+  if (_mediaOpt != NULL) {
+    _mediaOpt->UpdateWithEncodedData(encodedImage);
+    if (_internalSource)
+      return _mediaOpt->DropFrame();  // Signal to encoder to drop next frame.
+  }
+  return VCM_OK;
 }
 
 void

@@ -382,7 +382,8 @@ int ViERTP_RTCPImpl::SetNACKStatus(const int video_channel, const bool enable) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
-  vie_encoder->UpdateProtectionMethod(enable);
+  vie_encoder->UpdateProtectionMethod(enable,
+                                      vie_channel->IsSendingFecEnabled());
   return 0;
 }
 
@@ -410,7 +411,7 @@ int ViERTP_RTCPImpl::SetFECStatus(const int video_channel, const bool enable,
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
-  vie_encoder->UpdateProtectionMethod(false);
+  vie_encoder->UpdateProtectionMethod(false, true);
   return 0;
 }
 
@@ -443,7 +444,7 @@ int ViERTP_RTCPImpl::SetHybridNACKFECStatus(
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
-  vie_encoder->UpdateProtectionMethod(enable);
+  vie_encoder->UpdateProtectionMethod(enable, enable);
   return 0;
 }
 
@@ -788,19 +789,6 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetReceiveBandwidthEstimatorStats(
-    const int video_channel,
-    ReceiveBandwidthEstimatorStats* output) const {
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  vie_channel->GetReceiveBandwidthEstimatorStats(output);
-  return 0;
-}
-
 int ViERTP_RTCPImpl::GetPacerQueuingDelayMs(
     const int video_channel, int64_t* delay_ms) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
@@ -1019,4 +1007,18 @@ int ViERTP_RTCPImpl::DeregisterSendFrameCountObserver(
   vie_channel->RegisterSendFrameCountObserver(NULL);
   return 0;
 }
+
+int ViERTP_RTCPImpl::RegisterRtcpPacketTypeCounterObserver(
+    int video_channel,
+    RtcpPacketTypeCounterObserver* observer) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  vie_channel->RegisterRtcpPacketTypeCounterObserver(observer);
+  return 0;
+}
+
 }  // namespace webrtc

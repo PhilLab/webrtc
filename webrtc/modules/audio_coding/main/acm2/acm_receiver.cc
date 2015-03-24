@@ -274,8 +274,9 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
     int codec_id = RtpHeaderToCodecIndex(*header, incoming_payload);
     if (codec_id < 0) {
-      LOG_F(LS_ERROR) << "Payload-type " << header->payloadType
-          << " is not registered.";
+      LOG_F(LS_ERROR) << "Payload-type "
+                      << static_cast<int>(header->payloadType)
+                      << " is not registered.";
       return -1;
     }
     assert(codec_id < ACMCodecDB::kMaxNumCodecs);
@@ -340,8 +341,9 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
   if (neteq_->InsertPacket(rtp_header, incoming_payload, length_payload,
                            receive_timestamp) < 0) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::InsertPacket", header->payloadType) <<
-        " Failed to insert packet";
+    LOG_FERR1(LS_ERROR, "AcmReceiver::InsertPacket",
+              static_cast<int>(header->payloadType))
+        << " Failed to insert packet";
     return -1;
   }
   return 0;
@@ -505,8 +507,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     // First unregister. Then register with new payload-type/channels.
     if (neteq_->RemovePayloadType(decoders_[acm_codec_id].payload_type) !=
         NetEq::kOK) {
-      LOG_F(LS_ERROR) << "Cannot remover payload "
-          << decoders_[acm_codec_id].payload_type;
+      LOG_F(LS_ERROR) << "Cannot remove payload "
+                      << static_cast<int>(decoders_[acm_codec_id].payload_type);
       return -1;
     }
   }
@@ -519,8 +521,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
         audio_decoder, neteq_decoder, payload_type);
   }
   if (ret_val != NetEq::kOK) {
-    LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id, payload_type,
-              channels);
+    LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id,
+              static_cast<int>(payload_type), channels);
     // Registration failed, delete the allocated space and set the pointer to
     // NULL, for the record.
     decoders_[acm_codec_id].registered = false;
@@ -560,7 +562,7 @@ int AcmReceiver::RemoveAllCodecs() {
         decoders_[n].registered = false;
       } else {
         LOG_F(LS_ERROR) << "Cannot remove payload "
-            << decoders_[n].payload_type;
+                        << static_cast<int>(decoders_[n].payload_type);
         ret_val = -1;
       }
     }
@@ -576,7 +578,8 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
     return 0;
   }
   if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::RemoveCodec", payload_type);
+    LOG_FERR1(LS_ERROR, "AcmReceiver::RemoveCodec",
+              static_cast<int>(payload_type));
     return -1;
   }
   CriticalSectionScoped lock(crit_sect_.get());
@@ -606,14 +609,6 @@ int AcmReceiver::last_audio_codec_id() const {
   return last_audio_decoder_;
 }
 
-int AcmReceiver::last_audio_payload_type() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  if (last_audio_decoder_ < 0)
-    return -1;
-  assert(decoders_[last_audio_decoder_].registered);
-  return decoders_[last_audio_decoder_].payload_type;
-}
-
 int AcmReceiver::RedPayloadType() const {
   CriticalSectionScoped lock(crit_sect_.get());
   if (ACMCodecDB::kRED < 0 ||
@@ -636,7 +631,7 @@ int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   return 0;
 }
 
-void AcmReceiver::NetworkStatistics(ACMNetworkStatistics* acm_stat) {
+void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   NetEqNetworkStatistics neteq_stat;
   // NetEq function always returns zero, so we don't check the return value.
   neteq_->NetworkStatistics(&neteq_stat);
@@ -647,8 +642,10 @@ void AcmReceiver::NetworkStatistics(ACMNetworkStatistics* acm_stat) {
   acm_stat->currentPacketLossRate = neteq_stat.packet_loss_rate;
   acm_stat->currentDiscardRate = neteq_stat.packet_discard_rate;
   acm_stat->currentExpandRate = neteq_stat.expand_rate;
+  acm_stat->currentSpeechExpandRate = neteq_stat.speech_expand_rate;
   acm_stat->currentPreemptiveRate = neteq_stat.preemptive_rate;
   acm_stat->currentAccelerateRate = neteq_stat.accelerate_rate;
+  acm_stat->currentSecondaryDecodedRate = neteq_stat.secondary_decoded_rate;
   acm_stat->clockDriftPPM = neteq_stat.clockdrift_ppm;
   acm_stat->addedSamples = neteq_stat.added_zero_samples;
 
@@ -683,7 +680,8 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
   CriticalSectionScoped lock(crit_sect_.get());
   int codec_index = PayloadType2CodecIndex(payload_type);
   if (codec_index < 0) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::DecoderByPayloadType", payload_type);
+    LOG_FERR1(LS_ERROR, "AcmReceiver::DecoderByPayloadType",
+              static_cast<int>(payload_type));
     return -1;
   }
   memcpy(codec, &ACMCodecDB::database_[codec_index], sizeof(CodecInst));

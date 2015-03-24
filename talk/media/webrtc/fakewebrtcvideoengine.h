@@ -680,6 +680,7 @@ class FakeWebRtcVideoEngine
     channels_[channel]->original_channel_id_ = original_channel;
     return 0;
   }
+  WEBRTC_STUB(CreateChannelWithoutDefaultEncoder, (int&, int original_channel));
   WEBRTC_FUNC(CreateReceiveChannel, (int& channel, int original_channel)) {
     return CreateChannel(channel, original_channel);
   }
@@ -698,6 +699,8 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_STUB(GetCpuOveruseMetrics, (int, webrtc::CpuOveruseMetrics*));
+  WEBRTC_VOID_STUB(RegisterCpuOveruseMetricsObserver,
+                   (int, webrtc::CpuOveruseMetricsObserver*));
   WEBRTC_FUNC(SetCpuOveruseOptions,
       (int channel, const webrtc::CpuOveruseOptions& options)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -875,15 +878,14 @@ class FakeWebRtcVideoEngine
   }
   WEBRTC_STUB(StartCapture, (const int, const webrtc::CaptureCapability&));
   WEBRTC_STUB(StopCapture, (const int));
-  WEBRTC_STUB(SetRotateCapturedFrames, (const int,
-      const webrtc::RotateCapturedFrame));
+  WEBRTC_STUB(SetVideoRotation, (const int, const webrtc::VideoRotation));
   WEBRTC_STUB(SetCaptureDelay, (const int, const unsigned int));
   WEBRTC_STUB(NumberOfCapabilities, (const char*, const unsigned int));
   WEBRTC_STUB(GetCaptureCapability, (const char*, const unsigned int,
       const unsigned int, webrtc::CaptureCapability&));
   WEBRTC_STUB(ShowCaptureSettingsDialogBox, (const char*, const unsigned int,
       const char*, void*, const unsigned int, const unsigned int));
-  WEBRTC_STUB(GetOrientation, (const char*, webrtc::RotateCapturedFrame&));
+  WEBRTC_STUB(GetOrientation, (const char*, webrtc::VideoRotation&));
   WEBRTC_STUB(EnableBrightnessAlarm, (const int, const bool));
   WEBRTC_STUB(RegisterObserver, (const int, webrtc::ViECaptureObserver&));
   WEBRTC_STUB(DeregisterObserver, (const int));
@@ -914,9 +916,6 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(SetMTU, (int, unsigned int));
   WEBRTC_STUB(ReceivedBWEPacket, (const int, int64_t, size_t,
       const webrtc::RTPHeader&));
-  virtual bool SetBandwidthEstimationConfig(int, const webrtc::Config&) {
-    return true;
-  }
 
   // webrtc::ViERender
   WEBRTC_STUB(RegisterVideoRenderModule, (webrtc::VideoRender&));
@@ -959,8 +958,6 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(SetExpectedRenderDelay, (int render_id, int render_delay));
   WEBRTC_STUB(ConfigureRender, (int, const unsigned int, const float,
       const float, const float, const float));
-  WEBRTC_STUB(MirrorRenderStream, (const int, const bool, const bool,
-      const bool));
   WEBRTC_FUNC(AddRenderer, (const int render_id,
                             webrtc::RawVideoType video_type,
                             webrtc::ExternalRenderer* renderer)) {
@@ -1220,6 +1217,8 @@ class FakeWebRtcVideoEngine
                     (int, webrtc::FrameCountObserver*));
   WEBRTC_STUB(DeregisterSendFrameCountObserver,
                     (int, webrtc::FrameCountObserver*));
+  WEBRTC_STUB(RegisterRtcpPacketTypeCounterObserver,
+                    (int, webrtc::RtcpPacketTypeCounterObserver*));
 
   WEBRTC_STUB(StartRTPDump, (const int, const char*, webrtc::RTPDirections));
   WEBRTC_STUB(StopRTPDump, (const int, webrtc::RTPDirections));
@@ -1264,7 +1263,7 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_FUNC(RegisterExternalReceiveCodec,
-      (const int channel, const unsigned int pl_type, webrtc::VideoDecoder*,
+      (const int channel, const unsigned char pl_type, webrtc::VideoDecoder*,
        bool, int)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->ext_decoder_pl_types_.insert(pl_type);

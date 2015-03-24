@@ -145,15 +145,13 @@ class MockVideoEncoder : public VideoEncoder {
 
 class MockVideoEncoderFactory : public VideoEncoderFactory {
  public:
-  virtual VideoEncoder* Create() OVERRIDE {
+  VideoEncoder* Create() override {
     MockVideoEncoder* encoder = new MockVideoEncoder();
     encoders_.push_back(encoder);
     return encoder;
   }
 
-  virtual void Destroy(VideoEncoder* encoder) OVERRIDE {
-    delete encoder;
-  }
+  void Destroy(VideoEncoder* encoder) override { delete encoder; }
 
   virtual ~MockVideoEncoderFactory() {}
 
@@ -281,8 +279,8 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test {
   }
 
  protected:
-  scoped_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
-  scoped_ptr<VP8Encoder> adapter_;
+  rtc::scoped_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
+  rtc::scoped_ptr<VP8Encoder> adapter_;
   VideoCodec codec_;
 };
 

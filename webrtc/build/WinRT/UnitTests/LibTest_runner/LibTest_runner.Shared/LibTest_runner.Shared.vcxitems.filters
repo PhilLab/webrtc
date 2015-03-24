@@ -11,13 +11,54 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\TestBase.cpp">
       <Filter>TestSolution</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\ReplayDriverTest.cpp">
-      <Filter>Tests</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RdbxDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.cpp">
-      <Filter>Tests</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\ReplayDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RocDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\RtpwTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpAesCalcTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpCipherDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDatatypesDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpEnvTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpKernelDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpRandGenTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpSha1DriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpStatDriverTest.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\WStringReporter.cpp">
+      <Filter>TestSolution</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)libSrtpTests\LibSrtpTestBase.cpp">
+      <Filter>libsrtp Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.cpp">
+      <Filter>TestSolution</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="$(MSBuildThisFileDirectory)App.xaml" />
@@ -29,7 +70,7 @@
     <Filter Include="TestSolution">
       <UniqueIdentifier>{02425bb4-c42c-4ee8-b6e8-72e9b4189509}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tests">
+    <Filter Include="libsrtp Tests">
       <UniqueIdentifier>{54ad42bb-845a-4170-8ef0-1f7704ad4f0e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -43,12 +84,68 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SafeSingleton.h">
       <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\ReplayDriverTest.h">
-      <Filter>Tests</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TestInserter.h">
+      <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RocDriverTest.h">
-      <Filter>Tests</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\RdbxDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Tests\RtpwTest.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\ReplayDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\RocDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\RtpwTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpAesCalcTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpCipherDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDatatypesDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpEnvTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpKernelDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpRandGenTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpSha1DriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\SrtpStatDriverTest.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\libsrtpTestSolution.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdOutputRedirector.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\WStringReporter.h">
+      <Filter>TestSolution</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\ReportGenerationException.h">
+      <Filter>TestSolution</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\TestsReporterBase.h">
+      <Filter>TestSolution</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libSrtpTests\LibSrtpTestBase.h">
+      <Filter>libsrtp Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestSolution\XmlReporter.h">
+      <Filter>TestSolution</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

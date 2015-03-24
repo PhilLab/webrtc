@@ -94,7 +94,6 @@ AudioDeviceModule* CreateAudioDeviceModule(
 AudioDeviceModule* AudioDeviceModuleImpl::Create(const int32_t id,
                                                  const AudioLayer audioLayer)
 {
-
     // Create the generic ref counted (platform independent) implementation.
     RefCountImpl<AudioDeviceModuleImpl>* audioDevice =
         new RefCountImpl<AudioDeviceModuleImpl>(id, audioLayer);
@@ -222,7 +221,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
     }
 #else
-    const AudioLayer audioLayer(PlatformAudioLayer());
+    AudioLayer audioLayer(PlatformAudioLayer());
 
     // Create the *Windows* implementation of the Audio Device
     //
@@ -290,22 +289,24 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     // Create the *Android OpenSLES* implementation of the Audio Device
     //
 #if defined(WEBRTC_ANDROID)
-    if (audioLayer == kPlatformDefaultAudio)
-    {
-        // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
-#if defined(WEBRTC_ANDROID_OPENSLES)
-        ptrAudioDevice = new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     "Android OpenSLES Audio APIs will be utilized");
-#else
-        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     "Android JNI Audio APIs will be utilized");
+#ifdef WEBRTC_ANDROID_OPENSLES
+    // Force default audio layer to OpenSL ES if the special compiler flag
+    // (enable_android_opensl) has been set to one.
+    if (audioLayer == kPlatformDefaultAudio) {
+      audioLayer =  kAndroidOpenSLESAudio;
+    }
 #endif
+    if (audioLayer == kPlatformDefaultAudio ||
+        audioLayer == kAndroidJavaAudio) {
+        ptrAudioDevice =
+            new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
+    } else if (audioLayer == kAndroidOpenSLESAudio) {
+      // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
+      ptrAudioDevice =
+        new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
     }
 
-    if (ptrAudioDevice != NULL)
-    {
+    if (ptrAudioDevice != NULL) {
         // Create the Android implementation of the Device Utility.
         ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
     }
@@ -479,16 +480,6 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl()
 // ============================================================================
 //                                  Module
 // ============================================================================
-
-// ----------------------------------------------------------------------------
-//  Module::ChangeUniqueId
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    return 0;
-}
 
 // ----------------------------------------------------------------------------
 //  Module::TimeUntilNextProcess

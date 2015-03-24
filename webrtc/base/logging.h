@@ -56,7 +56,6 @@
 #include <utility>
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/loggingserver.h"
 
 namespace rtc {
 
@@ -225,9 +224,6 @@ class LogMessage {
 
   // are we in diagnostic mode (as defined by the app)?
   static bool is_diagnostic_mode_;
-
-  // A TCP logging server.
-  static LoggingServer logging_server_;
 
   DISALLOW_EVIL_CONSTRUCTORS(LogMessage);
 };

@@ -4,10 +4,25 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/socketstream.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+
+#if defined(WEBRTC_WIN) && !defined(WINRT)
+#include "webrtc/base/win32socketserver.h"
+#endif
+#if defined(WEBRTC_POSIX)
+#include "webrtc/base/physicalsocketserver.h"
+#endif
 
 namespace rtc {
 
 LoggingServer::LoggingServer() {
+#if defined(WEBRTC_WIN) && !defined(WINRT)
+  thread_ = new Win32Thread();
+#endif
+#if defined(WEBRTC_POSIX)
+  PhysicalSocketServer* pss = new PhysicalSocketServer();
+  thread_ = new Thread(pss);
+#endif
 }
 
 LoggingServer::~LoggingServer() {
@@ -20,13 +35,23 @@ LoggingServer::~LoggingServer() {
     delete it->first;
     delete it->second;
   }
+
+  tw_->Stop();
+  thread_->Stop();
+
+  delete tw_;
 }
 
 int LoggingServer::Listen(const SocketAddress& addr, int level) {
   level_ = level;
+  tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_);
+  unsigned int id;
+  tw_->Start(id);
+
+  LOG(LS_INFO) << "New thread created with id: " << id;
 
   AsyncSocket* sock =
-    Thread::Current()->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
+    thread_->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
 
   if (!sock) {
     return SOCKET_ERROR;
@@ -86,6 +111,12 @@ void LoggingServer::OnCloseEvent(AsyncSocket* socket, int err) {
       break;
     }
   }
+}
+
+bool LoggingServer::processMessages(void* args) {
+  Thread* t = reinterpret_cast<Thread*>(args);
+  t->Run();
+  return true;
 }
 
 }  // namespace rtc

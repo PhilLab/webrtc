@@ -17,6 +17,7 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
@@ -125,7 +126,8 @@ VideoSendStream::VideoSendStream(
     assert(bitrate_config.max_bitrate_bps >= bitrate_config.start_bitrate_bps);
 
   video_engine_base_ = ViEBase::GetInterface(video_engine);
-  video_engine_base_->CreateChannel(channel_, base_channel);
+  video_engine_base_->CreateChannelWithoutDefaultEncoder(channel_,
+                                                         base_channel);
   assert(channel_ != -1);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);
@@ -208,6 +210,9 @@ VideoSendStream::VideoSendStream(
 
   if (overuse_observer)
     video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
+  // Registered regardless of monitoring, used for stats.
+  video_engine_base_->RegisterCpuOveruseMetricsObserver(channel_,
+                                                        &stats_proxy_);
 
   video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
   video_engine_base_->RegisterSendStatisticsProxy(channel_, &stats_proxy_);
@@ -227,6 +232,7 @@ VideoSendStream::VideoSendStream(
                                                        &stats_proxy_);
   rtp_rtcp_->RegisterSendChannelRtpStatisticsCallback(channel_,
                                                       &stats_proxy_);
+  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, &stats_proxy_);
   rtp_rtcp_->RegisterSendBitrateObserver(channel_, &stats_proxy_);
   rtp_rtcp_->RegisterSendFrameCountObserver(channel_, &stats_proxy_);
 
@@ -240,6 +246,7 @@ VideoSendStream::~VideoSendStream() {
 
   rtp_rtcp_->DeregisterSendFrameCountObserver(channel_, &stats_proxy_);
   rtp_rtcp_->DeregisterSendBitrateObserver(channel_, &stats_proxy_);
+  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, NULL);
   rtp_rtcp_->DeregisterSendChannelRtpStatisticsCallback(channel_,
                                                         &stats_proxy_);
   rtp_rtcp_->DeregisterSendChannelRtcpStatisticsCallback(channel_,
@@ -291,6 +298,7 @@ void VideoSendStream::Stop() {
 
 bool VideoSendStream::ReconfigureVideoEncoder(
     const VideoEncoderConfig& config) {
+  TRACE_EVENT0("webrtc", "VideoSendStream::(Re)configureVideoEncoder");
   LOG(LS_INFO) << "(Re)configureVideoEncoder: " << config.ToString();
   const std::vector<VideoStream>& streams = config.streams;
   assert(!streams.empty());
@@ -440,6 +448,7 @@ VideoSendStream::Stats VideoSendStream::GetStats() {
 }
 
 void VideoSendStream::ConfigureSsrcs() {
+  rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.ssrcs.front());
   for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
     uint32_t ssrc = config_.rtp.ssrcs[i];
     rtp_rtcp_->SetLocalSSRC(

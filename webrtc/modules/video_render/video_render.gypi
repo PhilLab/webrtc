@@ -10,13 +10,14 @@
   'targets': [
     {
       # Note this library is missing an implementation for the video render.
-      # For that targets must link with 'video_render_module_impl' or
+      # For that targets must link with 'video_render' or
       # 'video_render_module_internal_impl' if they want to compile and use
       # the internal render as the default renderer.
       'target_name': 'video_render_module',
       'type': 'static_library',
       'dependencies': [
         'webrtc_utility',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
@@ -36,7 +37,7 @@
     {
       # Default video_render_module implementation that only supports external
       # renders.
-      'target_name': 'video_render_module_impl',
+      'target_name': 'video_render',
       'type': 'static_library',
       'dependencies': [
         'video_render_module',
@@ -56,6 +57,7 @@
           'target_name': 'video_render_module_internal_impl',
           'type': 'static_library',
           'dependencies': [
+            '<(webrtc_root)/common.gyp:webrtc_common',
             'video_render_module',
           ],
           'sources': [
@@ -139,7 +141,7 @@
                 'mac/cocoa_full_screen_window.mm',
               ],
             }],
-            ['OS=="win"', {
+            ['OS=="win" and OS_RUNTIME!="winrt"', {
               'sources': [
                 'windows/i_video_render_win.h',
                 'windows/video_render_direct3d9.h',
@@ -149,6 +151,17 @@
               ],
               'include_dirs': [
                 '<(directx_sdk_path)/Include',
+              ],
+            }],
+            ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'sources': [
+                'windows/i_video_render_win.h',
+                'windows/video_render_windows_impl.h',
+                'windows/video_render_windows_impl.cc',
+                'windows/video_render_source_winrt.h',
+                'windows/video_render_source_winrt.cc',
+                'windows/video_render_winrt.h',
+                'windows/video_render_winrt.cc',
               ],
             }],
           ] # conditions
@@ -163,6 +176,7 @@
           'dependencies': [
             'video_render_module_internal_impl',
             'webrtc_utility',
+            '<(webrtc_root)/common.gyp:webrtc_common',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/common_video/common_video.gyp:common_video',
           ],
@@ -220,4 +234,3 @@
     }], # include_tests==1
   ], # conditions
 }
-
