@@ -52,6 +52,13 @@
             'run_loop.cc',
           ],
         }],
+		['OS_RUNTIME=="winrt"', {
+          'sources!': [
+		    'run_loop.h',
+            'run_loop.cc',
+			'win/run_loop_win.cc',
+          ],
+        }],
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
