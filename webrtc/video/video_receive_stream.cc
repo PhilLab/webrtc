@@ -15,6 +15,7 @@
 
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -101,6 +102,7 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
 
 namespace internal {
 namespace {
+
 VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   VideoCodec codec;
   memset(&codec, 0, sizeof(codec));
@@ -217,7 +219,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   }
 
   stats_proxy_.reset(
-      new ReceiveStatisticsProxy(config_.rtp.local_ssrc, clock_));
+      new ReceiveStatisticsProxy(config_.rtp.remote_ssrc, clock_));
 
   if (rtp_rtcp_->RegisterReceiveChannelRtcpStatisticsCallback(
           channel_, stats_proxy_.get()) != 0) {
@@ -225,6 +227,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   }
 
   if (rtp_rtcp_->RegisterReceiveChannelRtpStatisticsCallback(
+          channel_, stats_proxy_.get()) != 0) {
+    abort();
+  }
+
+  if (rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(
           channel_, stats_proxy_.get()) != 0) {
     abort();
   }
@@ -259,7 +266,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   render_ = ViERender::GetInterface(video_engine);
   assert(render_ != NULL);
 
-  render_->AddRenderCallback(channel_, this);
+  render_->AddRenderer(channel_, kVideoI420, this);
 
   if (voice_engine && config_.audio_channel_id != -1) {
     video_engine_base_->SetVoiceEngine(voice_engine);
@@ -299,6 +306,7 @@ VideoReceiveStream::~VideoReceiveStream() {
                                                            stats_proxy_.get());
   rtp_rtcp_->DeregisterReceiveChannelRtcpStatisticsCallback(channel_,
                                                             stats_proxy_.get());
+  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, NULL);
   codec_->Release();
   network_->Release();
   render_->Release();
@@ -343,8 +351,24 @@ void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
     config_.pre_render_callback->FrameCallback(video_frame);
 }
 
-int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,
-                                        I420VideoFrame& video_frame) {
+int VideoReceiveStream::FrameSizeChange(unsigned int width,
+                                        unsigned int height,
+                                        unsigned int number_of_streams) {
+  return 0;
+}
+
+int VideoReceiveStream::DeliverFrame(unsigned char* buffer,
+                                     size_t buffer_size,
+                                     uint32_t timestamp,
+                                     int64_t ntp_time_ms,
+                                     int64_t render_time_ms,
+                                     void* handle) {
+  CHECK(false) << "Renderer should be configured as kVideoI420 and never "
+                  "receive callbacks on DeliverFrame.";
+  return 0;
+}
+
+int VideoReceiveStream::DeliverI420Frame(const I420VideoFrame& video_frame) {
   if (config_.renderer != NULL)
     config_.renderer->RenderFrame(
         video_frame,
@@ -353,6 +377,12 @@ int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,
   stats_proxy_->OnRenderedFrame();
 
   return 0;
+}
+
+bool VideoReceiveStream::IsTextureSupported() {
+  if (config_.renderer == NULL)
+    return false;
+  return config_.renderer->IsTextureSupported();
 }
 
 void VideoReceiveStream::SignalNetworkState(Call::NetworkState state) {

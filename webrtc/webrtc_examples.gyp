@@ -16,6 +16,7 @@
           'type': 'loadable_module',
           'dependencies': [
             '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
+            '<(webrtc_root)/common.gyp:webrtc_common',
             '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
             '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
@@ -30,6 +31,11 @@
             'examples/android/media_demo/jni/voice_engine_jni.cc',
             'examples/android/media_demo/jni/media_codec_video_decoder.cc',
           ],
+          'variables': {
+            # This library uses native JNI exports; tell GYP so that the
+            # required symbols will be kept.
+            'use_native_jni_exports': 1,
+          },
           'link_settings': {
             'libraries': [
               '-llog',
@@ -69,7 +75,7 @@
               'outputs': ['<(PRODUCT_DIR)/WebRTCDemo-debug.apk'],
               'action': [
                 'bash', '-ec',
-                'rm -fr <(_outputs) <(android_webrtc_demo_root)/{bin,libs} && '
+                'rm -fr <(_outputs) <(android_webrtc_demo_root)/{bin,libs,gen,obj} && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
                 'mkdir -p <(android_webrtc_demo_root)/libs/<(android_app_abi) && '
                 'cp <(PRODUCT_DIR)/lib.java/audio_device_module_java.jar <(android_webrtc_demo_root)/libs/ &&'
@@ -133,7 +139,7 @@
               'outputs': ['<(PRODUCT_DIR)/OpenSlDemo-debug.apk'],
               'action': [
                 'bash', '-ec',
-                'rm -fr <(_outputs) <(android_opensl_demo_root)/{bin,libs} && '
+                'rm -fr <(_outputs) <(android_opensl_demo_root)/{bin,libs,gen,obj} && '
                 'mkdir -p <(android_opensl_demo_root)/libs/<(android_app_abi) && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
                 '<(android_strip) -o <(android_opensl_demo_root)/libs/<(android_app_abi)/libopensl-demo-jni.so <(PRODUCT_DIR)/libopensl-demo-jni.so && '

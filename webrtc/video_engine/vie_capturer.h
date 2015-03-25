@@ -13,6 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -20,7 +22,7 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -39,6 +41,7 @@ class ThreadWrapper;
 class ViEEffectFilter;
 class ViEEncoder;
 struct ViEPicture;
+class RegistrableCpuOveruseMetricsObserver;
 
 class ViECapturer
     : public ViEFrameProviderBase,
@@ -64,8 +67,6 @@ class ViECapturer
 
   // Implements ViEFrameProviderBase.
   int FrameCallbackChanged();
-  virtual int DeregisterFrameCallback(const ViEFrameCallback* callbackObject);
-  bool IsFrameCallbackRegistered(const ViEFrameCallback* callbackObject);
 
   // Implements ExternalCapture.
   virtual int IncomingFrame(unsigned char* video_frame,
@@ -78,7 +79,7 @@ class ViECapturer
   virtual int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                 unsigned long long capture_time = 0);  // NOLINT
 
-  virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
+  void SwapFrame(I420VideoFrame* frame) override;
 
   // Start/Stop.
   int32_t Start(
@@ -90,7 +91,7 @@ class ViECapturer
   int32_t SetCaptureDelay(int32_t delay_ms);
 
   // Sets rotation of the incoming captured frame.
-  int32_t SetRotateCapturedFrames(const RotateCapturedFrame rotation);
+  int32_t SetVideoRotation(const VideoRotation rotation);
 
   // Effect filter.
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
@@ -107,6 +108,7 @@ class ViECapturer
 
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
   void SetCpuOveruseOptions(const CpuOveruseOptions& options);
+  void RegisterCpuOveruseMetricsObserver(CpuOveruseMetricsObserver* observer);
   void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
 
  protected:
@@ -146,21 +148,20 @@ class ViECapturer
   bool ViECaptureProcess();
 
   void DeliverI420Frame(I420VideoFrame* video_frame);
-  void DeliverCodedFrame(VideoFrame* video_frame);
 
  private:
   bool SwapCapturedAndDeliverFrameIfAvailable();
 
   // Never take capture_cs_ before deliver_cs_!
-  scoped_ptr<CriticalSectionWrapper> capture_cs_;
-  scoped_ptr<CriticalSectionWrapper> deliver_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> deliver_cs_;
   VideoCaptureModule* capture_module_;
   VideoCaptureExternal* external_capture_module_;
   ProcessThread& module_process_thread_;
   const int capture_id_;
 
   // Frame used in IncomingFrameI420.
-  scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
   I420VideoFrame incoming_frame_;
 
   // Capture thread.
@@ -168,8 +169,10 @@ class ViECapturer
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
-  scoped_ptr<I420VideoFrame> captured_frame_;
-  scoped_ptr<I420VideoFrame> deliver_frame_;
+  volatile int stop_;
+
+  rtc::scoped_ptr<I420VideoFrame> captured_frame_;
+  rtc::scoped_ptr<I420VideoFrame> deliver_frame_;
 
   // Image processing.
   ViEEffectFilter* effect_filter_;
@@ -181,12 +184,15 @@ class ViECapturer
   Brightness reported_brightness_level_;
 
   // Statistics observer.
-  scoped_ptr<CriticalSectionWrapper> observer_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> observer_cs_;
   ViECaptureObserver* observer_ GUARDED_BY(observer_cs_.get());
 
   CaptureCapability requested_capability_;
 
-  scoped_ptr<OveruseFrameDetector> overuse_detector_;
+  // Must be declared before overuse_detector_ where it's registered.
+  const rtc::scoped_ptr<RegistrableCpuOveruseMetricsObserver>
+      cpu_overuse_metrics_observer_;
+  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 
 }  // namespace webrtc

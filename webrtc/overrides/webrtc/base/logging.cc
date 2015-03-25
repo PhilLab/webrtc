@@ -14,6 +14,7 @@
 #include <CoreServices/CoreServices.h>
 #endif  // OS_MACOSX
 
+#include <algorithm>
 #include <iomanip>
 
 #include "base/atomicops.h"
@@ -155,12 +156,17 @@ DiagnosticLogMessage::DiagnosticLogMessage(const char* file,
 }
 
 DiagnosticLogMessage::~DiagnosticLogMessage() {
-  print_stream_ << extra_;
-  const std::string& str = print_stream_.str();
-  if (log_to_chrome_)
-    LOG_LAZY_STREAM_DIRECT(file_name_, line_, severity_) << str;
-  if (g_logging_delegate_function && severity_ <= LS_INFO) {
-    g_logging_delegate_function(str);
+  const bool call_delegate =
+      g_logging_delegate_function && severity_ <= LS_INFO;
+
+  if (call_delegate || log_to_chrome_) {
+    print_stream_ << extra_;
+    const std::string& str = print_stream_.str();
+    if (log_to_chrome_)
+      LOG_LAZY_STREAM_DIRECT(file_name_, line_, severity_) << str;
+    if (g_logging_delegate_function && severity_ <= LS_INFO) {
+      g_logging_delegate_function(str);
+    }
   }
 }
 
@@ -198,7 +204,7 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
     while (len > 0) {
       memset(asc_line, ' ', sizeof(asc_line));
       memset(hex_line, ' ', sizeof(hex_line));
-      size_t line_len = _min(len, LINE_SIZE);
+      size_t line_len = std::min(len, LINE_SIZE);
       for (size_t i = 0; i < line_len; ++i) {
         unsigned char ch = udata[i];
         asc_line[i] = isprint(ch) ? ch : '.';

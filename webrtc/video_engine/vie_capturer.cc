@@ -10,7 +10,6 @@
 
 #include "webrtc/video_engine/vie_capturer.h"
 
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -32,6 +31,31 @@ namespace webrtc {
 
 const int kThreadWaitTimeMs = 100;
 
+class RegistrableCpuOveruseMetricsObserver : public CpuOveruseMetricsObserver {
+ public:
+  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override {
+    rtc::CritScope lock(&crit_);
+    if (observer_)
+      observer_->CpuOveruseMetricsUpdated(metrics);
+    metrics_ = metrics;
+  }
+
+  CpuOveruseMetrics GetCpuOveruseMetrics() const {
+    rtc::CritScope lock(&crit_);
+    return metrics_;
+  }
+
+  void Set(CpuOveruseMetricsObserver* observer) {
+    rtc::CritScope lock(&crit_);
+    observer_ = observer;
+  }
+
+ private:
+  mutable rtc::CriticalSection crit_;
+  CpuOveruseMetricsObserver* observer_ GUARDED_BY(crit_) = nullptr;
+  CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
+};
+
 ViECapturer::ViECapturer(int capture_id,
                          int engine_id,
                          const Config& config,
@@ -45,10 +69,12 @@ ViECapturer::ViECapturer(int capture_id,
       capture_id_(capture_id),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       capture_thread_(*ThreadWrapper::CreateThread(ViECaptureThreadFunction,
-                                                   this, kHighPriority,
+                                                   this,
+                                                   kHighPriority,
                                                    "ViECaptureThread")),
       capture_event_(*EventWrapper::Create()),
       deliver_event_(*EventWrapper::Create()),
+      stop_(0),
       effect_filter_(NULL),
       image_proc_module_(NULL),
       image_proc_module_ref_counter_(0),
@@ -58,7 +84,10 @@ ViECapturer::ViECapturer(int capture_id,
       reported_brightness_level_(Normal),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       observer_(NULL),
-      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock())) {
+      cpu_overuse_metrics_observer_(new RegistrableCpuOveruseMetricsObserver()),
+      overuse_detector_(
+          new OveruseFrameDetector(Clock::GetRealTimeClock(),
+                                   cpu_overuse_metrics_observer_.get())) {
   unsigned int t_id = 0;
   if (!capture_thread_.Start(t_id)) {
     assert(false);
@@ -70,12 +99,8 @@ ViECapturer::~ViECapturer() {
   module_process_thread_.DeRegisterModule(overuse_detector_.get());
 
   // Stop the thread.
-  deliver_cs_->Enter();
-  capture_cs_->Enter();
-  capture_thread_.SetNotAlive();
+  rtc::AtomicOps::Increment(&stop_);
   capture_event_.Set();
-  capture_cs_->Leave();
-  deliver_cs_->Leave();
 
   // Stop the camera input.
   if (capture_module_) {
@@ -123,10 +148,7 @@ int32_t ViECapturer::Init(VideoCaptureModule* capture_module) {
   capture_module_ = capture_module;
   capture_module_->RegisterCaptureDataCallback(*this);
   capture_module_->AddRef();
-  if (module_process_thread_.RegisterModule(capture_module_) != 0) {
-    return -1;
-  }
-
+  module_process_thread_.RegisterModule(capture_module_);
   return 0;
 }
 
@@ -162,9 +184,7 @@ int32_t ViECapturer::Init(const char* device_unique_idUTF8,
   }
   capture_module_->AddRef();
   capture_module_->RegisterCaptureDataCallback(*this);
-  if (module_process_thread_.RegisterModule(capture_module_) != 0) {
-    return -1;
-  }
+  module_process_thread_.RegisterModule(capture_module_);
 
   return 0;
 }
@@ -249,8 +269,13 @@ void ViECapturer::SetCpuOveruseOptions(const CpuOveruseOptions& options) {
   overuse_detector_->SetOptions(options);
 }
 
+void ViECapturer::RegisterCpuOveruseMetricsObserver(
+    CpuOveruseMetricsObserver* observer) {
+  cpu_overuse_metrics_observer_->Set(observer);
+}
+
 void ViECapturer::GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const {
-  overuse_detector_->GetCpuOveruseMetrics(metrics);
+  *metrics = cpu_overuse_metrics_observer_->GetCpuOveruseMetrics();
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
@@ -258,24 +283,8 @@ int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
   return 0;
 }
 
-int32_t ViECapturer::SetRotateCapturedFrames(
-  const RotateCapturedFrame rotation) {
-  VideoCaptureRotation converted_rotation = kCameraRotate0;
-  switch (rotation) {
-    case RotateCapturedFrame_0:
-      converted_rotation = kCameraRotate0;
-      break;
-    case RotateCapturedFrame_90:
-      converted_rotation = kCameraRotate90;
-      break;
-    case RotateCapturedFrame_180:
-      converted_rotation = kCameraRotate180;
-      break;
-    case RotateCapturedFrame_270:
-      converted_rotation = kCameraRotate270;
-      break;
-  }
-  return capture_module_->SetCaptureRotation(converted_rotation);
+int32_t ViECapturer::SetVideoRotation(const VideoRotation rotation) {
+  return capture_module_->SetCaptureRotation(rotation);
 }
 
 int ViECapturer::IncomingFrame(unsigned char* video_frame,
@@ -454,6 +463,9 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 bool ViECapturer::ViECaptureProcess() {
   int64_t capture_time = -1;
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
+    if (rtc::AtomicOps::Load(&stop_))
+      return false;
+
     overuse_detector_->FrameProcessingStarted();
     int64_t encode_start_time = -1;
     deliver_cs_->Enter();
@@ -524,7 +536,7 @@ void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
   if (effect_filter_) {
     size_t length =
         CalcBufferSize(kI420, video_frame->width(), video_frame->height());
-    scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
+    rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
     ExtractBuffer(*video_frame, length, video_buffer.get());
     effect_filter_->Transform(length,
                               video_buffer.get(),
@@ -535,17 +547,6 @@ void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
   }
   // Deliver the captured frame to all observers (channels, renderer or file).
   ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
-}
-
-int ViECapturer::DeregisterFrameCallback(
-    const ViEFrameCallback* callbackObject) {
-  return ViEFrameProviderBase::DeregisterFrameCallback(callbackObject);
-}
-
-bool ViECapturer::IsFrameCallbackRegistered(
-    const ViEFrameCallback* callbackObject) {
-  CriticalSectionScoped cs(provider_cs_.get());
-  return ViEFrameProviderBase::IsFrameCallbackRegistered(callbackObject);
 }
 
 bool ViECapturer::CaptureCapabilityFixed() {
@@ -604,18 +605,7 @@ bool ViECapturer::SwapCapturedAndDeliverFrameIfAvailable() {
   if (captured_frame_ == NULL)
     return false;
 
-  if (captured_frame_->native_handle() != NULL) {
-    deliver_frame_.reset(captured_frame_.release());
-    return true;
-  }
-
-  if (captured_frame_->IsZeroSize())
-    return false;
-
-  if (deliver_frame_ == NULL)
-    deliver_frame_.reset(new I420VideoFrame());
-  deliver_frame_->SwapFrame(captured_frame_.get());
-  captured_frame_->ResetSize();
+  deliver_frame_.reset(captured_frame_.release());
   return true;
 }
 

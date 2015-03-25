@@ -59,8 +59,8 @@ class StatisticsProxy : public RtcpStatisticsCallback {
      ssrc_(ssrc) {}
   virtual ~StatisticsProxy() {}
 
-  virtual void StatisticsUpdated(const RtcpStatistics& statistics,
-                                 uint32_t ssrc) OVERRIDE {
+  void StatisticsUpdated(const RtcpStatistics& statistics,
+                         uint32_t ssrc) override {
     if (ssrc != ssrc_)
       return;
 
@@ -71,7 +71,7 @@ class StatisticsProxy : public RtcpStatisticsCallback {
     }
   }
 
-  virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE {}
+  void CNameChanged(const char* cname, uint32_t ssrc) override {}
 
   void ResetStatistics() {
     CriticalSectionScoped cs(stats_lock_.get());
@@ -87,27 +87,63 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   // StatisticsUpdated calls are triggered from threads in the RTP module,
   // while GetStats calls can be triggered from the public voice engine API,
   // hence synchronization is needed.
-  scoped_ptr<CriticalSectionWrapper> stats_lock_;
+  rtc::scoped_ptr<CriticalSectionWrapper> stats_lock_;
   const uint32_t ssrc_;
   ChannelStatistics stats_;
 };
 
-class VoEBitrateObserver : public BitrateObserver {
+class VoERtcpObserver : public RtcpBandwidthObserver {
  public:
-  explicit VoEBitrateObserver(Channel* owner)
-      : owner_(owner) {}
-  virtual ~VoEBitrateObserver() {}
+  explicit VoERtcpObserver(Channel* owner) : owner_(owner) {}
+  virtual ~VoERtcpObserver() {}
 
-  // Implements BitrateObserver.
-  virtual void OnNetworkChanged(const uint32_t bitrate_bps,
-                                const uint8_t fraction_lost,
-                                const int64_t rtt) OVERRIDE {
-    // |fraction_lost| has a scale of 0 - 255.
-    owner_->OnNetworkChanged(bitrate_bps, fraction_lost, rtt);
+  void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
+    // Not used for Voice Engine.
+  }
+
+  void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
+                                    int64_t rtt,
+                                    int64_t now_ms) override {
+    // TODO(mflodman): Do we need to aggregate reports here or can we jut send
+    // what we get? I.e. do we ever get multiple reports bundled into one RTCP
+    // report for VoiceEngine?
+    if (report_blocks.empty())
+      return;
+
+    int fraction_lost_aggregate = 0;
+    int total_number_of_packets = 0;
+
+    // If receiving multiple report blocks, calculate the weighted average based
+    // on the number of packets a report refers to.
+    for (ReportBlockList::const_iterator block_it = report_blocks.begin();
+         block_it != report_blocks.end(); ++block_it) {
+      // Find the previous extended high sequence number for this remote SSRC,
+      // to calculate the number of RTP packets this report refers to. Ignore if
+      // we haven't seen this SSRC before.
+      std::map<uint32_t, uint32_t>::iterator seq_num_it =
+          extended_max_sequence_number_.find(block_it->sourceSSRC);
+      int number_of_packets = 0;
+      if (seq_num_it != extended_max_sequence_number_.end()) {
+        number_of_packets = block_it->extendedHighSeqNum - seq_num_it->second;
+      }
+      fraction_lost_aggregate += number_of_packets * block_it->fractionLost;
+      total_number_of_packets += number_of_packets;
+
+      extended_max_sequence_number_[block_it->sourceSSRC] =
+          block_it->extendedHighSeqNum;
+    }
+    int weighted_fraction_lost = 0;
+    if (total_number_of_packets > 0) {
+      weighted_fraction_lost = (fraction_lost_aggregate +
+          total_number_of_packets / 2) / total_number_of_packets;
+    }
+    owner_->OnIncomingFractionLoss(weighted_fraction_lost);
   }
 
  private:
   Channel* owner_;
+  // Maps remote side ssrc to extended highest sequence number received.
+  std::map<uint32_t, uint32_t> extended_max_sequence_number_;
 };
 
 int32_t
@@ -159,14 +195,13 @@ Channel::SendData(FrameType frameType,
 }
 
 int32_t
-Channel::InFrameType(int16_t frameType)
+Channel::InFrameType(FrameType frame_type)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::InFrameType(frameType=%d)", frameType);
+                 "Channel::InFrameType(frame_type=%d)", frame_type);
 
     CriticalSectionScoped cs(&_callbackCritSect);
-    // 1 indicates speech
-    _sendFrameType = (frameType == 1) ? 1 : 0;
+    _sendFrameType = (frame_type == kAudioFrameSpeech);
     return 0;
 }
 
@@ -788,12 +823,7 @@ Channel::Channel(int32_t channelId,
     _rxAgcIsEnabled(false),
     _rxNsIsEnabled(false),
     restored_packet_in_use_(false),
-    bitrate_controller_(
-        BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                   true)),
-    rtcp_bandwidth_observer_(
-        bitrate_controller_->CreateRtcpBandwidthObserver()),
-    send_bitrate_observer_(new VoEBitrateObserver(this)),
+    rtcp_observer_(new VoERtcpObserver(this)),
     network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock()))
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -808,7 +838,7 @@ Channel::Channel(int32_t channelId,
     configuration.outgoing_transport = this;
     configuration.audio_messages = this;
     configuration.receive_statistics = rtp_receive_statistics_.get();
-    configuration.bandwidth_callback = rtcp_bandwidth_observer_.get();
+    configuration.bandwidth_callback = rtcp_observer_.get();
 
     _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
 
@@ -882,12 +912,8 @@ Channel::~Channel()
                      " (Audio coding module)");
     }
     // De-register modules in process thread
-    if (_moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get()) == -1)
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "~Channel() failed to deregister RTP/RTCP module");
-    }
+    _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
+
     // End of modules shutdown
 
     // Delete other objects
@@ -923,16 +949,8 @@ Channel::Init()
 
     // --- Add modules to process thread (for periodic schedulation)
 
-    const bool processThreadFail =
-        ((_moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get()) != 0) ||
-        false);
-    if (processThreadFail)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_CANNOT_INIT_CHANNEL, kTraceError,
-            "Channel::Init() modules not registered");
-        return -1;
-    }
+    _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get());
+
     // --- ACM initialization
 
     if ((audio_coding_->InitializeReceiver() == -1) ||
@@ -1321,28 +1339,16 @@ Channel::SetSendCodec(const CodecInst& codec)
         return -1;
     }
 
-    bitrate_controller_->SetBitrateObserver(send_bitrate_observer_.get(),
-                                            codec.rate, 0, 0);
-
     return 0;
 }
 
-void
-Channel::OnNetworkChanged(const uint32_t bitrate_bps,
-                          const uint8_t fraction_lost,  // 0 - 255.
-                          const int64_t rtt) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-      "Channel::OnNetworkChanged(bitrate_bps=%d, fration_lost=%d, rtt=%" PRId64
-      ")", bitrate_bps, fraction_lost, rtt);
-  // |fraction_lost| from BitrateObserver is short time observation of packet
-  // loss rate from past. We use network predictor to make a more reasonable
-  // loss rate estimation.
+void Channel::OnIncomingFractionLoss(int fraction_lost) {
   network_predictor_->UpdatePacketLossRate(fraction_lost);
-  uint8_t loss_rate = network_predictor_->GetLossRate();
+  uint8_t average_fraction_loss = network_predictor_->GetLossRate();
+
   // Normalizes rate to 0 - 100.
-  if (audio_coding_->SetPacketLossRate(100 * loss_rate / 255) != 0) {
-    _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
-        kTraceError, "OnNetworkChanged() failed to set packet loss rate");
+  if (audio_coding_->SetPacketLossRate(
+      100 * average_fraction_loss / 255) != 0) {
     assert(false);  // This should not happen.
   }
 }
@@ -1352,6 +1358,7 @@ Channel::SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetVADStatus(mode=%d)", mode);
+    assert(!(disableDTX && enableVAD));  // disableDTX mode is deprecated.
     // To disable VAD, DTX must be disabled too
     disableDTX = ((enableVAD == false) ? true : disableDTX);
     if (audio_coding_->SetVAD(!disableDTX, enableVAD, mode) != 0)
@@ -1492,7 +1499,7 @@ Channel::GetRecPayloadType(CodecInst& codec)
     }
     codec.pltype = payloadType;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetRecPayloadType() => pltype=%u", codec.pltype);
+                 "Channel::GetRecPayloadType() => pltype=%d", codec.pltype);
     return 0;
 }
 
@@ -3551,7 +3558,10 @@ Channel::EncodeAndSend()
 
     // The ACM resamples internally.
     _audioFrame.timestamp_ = _timeStamp;
-    if (audio_coding_->Add10MsData((AudioFrame&)_audioFrame) != 0)
+    // This call will trigger AudioPacketizationCallback::SendData if encoding
+    // is done and payload is ready for packetization and transmission.
+    // Otherwise, it will return without invoking the callback.
+    if (audio_coding_->Add10MsData((AudioFrame&)_audioFrame) < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::EncodeAndSend() ACM encoding failed");
@@ -3559,12 +3569,7 @@ Channel::EncodeAndSend()
     }
 
     _timeStamp += _audioFrame.samples_per_channel_;
-
-    // --- Encode if complete frame is ready
-
-    // This call will trigger AudioPacketizationCallback::SendData if encoding
-    // is done and payload is ready for packetization and transmission.
-    return audio_coding_->Process();
+    return 0;
 }
 
 int Channel::RegisterExternalMediaProcessing(
@@ -3665,12 +3670,7 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetNetworkStatistics()");
-    ACMNetworkStatistics acm_stats;
-    int return_value = audio_coding_->NetworkStatistics(&acm_stats);
-    if (return_value >= 0) {
-      memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
-    }
-    return return_value;
+    return audio_coding_->GetNetworkStatistics(&stats);
 }
 
 void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
@@ -3830,7 +3830,7 @@ Channel::GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const
 int32_t
 Channel::MixOrReplaceAudioWithFile(int mixingFrequency)
 {
-    scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
+  rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
     int fileSamples(0);
 
     {
@@ -3900,7 +3900,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 {
     assert(mixingFrequency <= 48000);
 
-    scoped_ptr<int16_t[]> fileBuffer(new int16_t[960]);
+    rtc::scoped_ptr<int16_t[]> fileBuffer(new int16_t[960]);
     int fileSamples(0);
 
     {

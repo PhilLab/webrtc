@@ -123,7 +123,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
   virtual void OnComplete(const StatsReports& reports) {
     ASSERT(!called_);
     called_ = true;
-    memset(&stats_, sizeof(stats_), 0);
+    stats_.Clear();
     stats_.number_of_reports = reports.size();
     for (const auto* r : reports) {
       if (r->type() == StatsReport::kStatsReportTypeSsrc) {
@@ -138,6 +138,11 @@ class MockStatsObserver : public webrtc::StatsObserver {
       } else if (r->type() == StatsReport::kStatsReportTypeBwe) {
         GetIntValue(r, StatsReport::kStatsValueNameAvailableReceiveBandwidth,
             &stats_.available_receive_bandwidth);
+      } else if (r->type() == StatsReport::kStatsReportTypeComponent) {
+        GetStringValue(r, StatsReport::kStatsValueNameDtlsCipher,
+            &stats_.dtls_cipher);
+        GetStringValue(r, StatsReport::kStatsValueNameSrtpCipher,
+            &stats_.srtp_cipher);
       }
     }
   }
@@ -170,27 +175,58 @@ class MockStatsObserver : public webrtc::StatsObserver {
     return stats_.available_receive_bandwidth;
   }
 
+  std::string DtlsCipher() const {
+    ASSERT(called_);
+    return stats_.dtls_cipher;
+  }
+
+  std::string SrtpCipher() const {
+    ASSERT(called_);
+    return stats_.srtp_cipher;
+  }
+
  private:
   bool GetIntValue(const StatsReport* report,
                    StatsReport::StatsValueName name,
                    int* value) {
-    for (const auto& v : report->values()) {
-      if (v->name == name) {
-        *value = rtc::FromString<int>(v->value);
-        return true;
-      }
+    const StatsReport::Value* v = report->FindValue(name);
+    if (v) {
+      // TODO(tommi): We should really just be using an int here :-/
+      *value = rtc::FromString<int>(v->ToString());
     }
-    return false;
+    return v != nullptr;
+  }
+
+  bool GetStringValue(const StatsReport* report,
+                      StatsReport::StatsValueName name,
+                      std::string* value) {
+    const StatsReport::Value* v = report->FindValue(name);
+    if (v)
+      *value = v->ToString();
+    return v != nullptr;
   }
 
   bool called_;
   struct {
+    void Clear() {
+      number_of_reports = 0;
+      audio_output_level = 0;
+      audio_input_level = 0;
+      bytes_received = 0;
+      bytes_sent = 0;
+      available_receive_bandwidth = 0;
+      dtls_cipher.clear();
+      srtp_cipher.clear();
+    }
+
     size_t number_of_reports;
     int audio_output_level;
     int audio_input_level;
     int bytes_received;
     int bytes_sent;
     int available_receive_bandwidth;
+    std::string dtls_cipher;
+    std::string srtp_cipher;
   } stats_;
 };
 

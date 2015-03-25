@@ -554,7 +554,9 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
     return;
   }
 
-  if (!has_received_packet_) {
+  // We are only interested in the first rtp packet because that
+  // indicates the media has started flowing.
+  if (!has_received_packet_ && !rtcp) {
     has_received_packet_ = true;
     signaling_thread()->Post(this, MSG_FIRSTPACKETRECEIVED);
   }
@@ -1773,10 +1775,9 @@ void VideoChannel::ChangeState() {
   LOG(LS_INFO) << "Changing video state, recv=" << recv << " send=" << send;
 }
 
-bool VideoChannel::GetStats(
-    const StatsOptions& options, VideoMediaInfo* stats) {
-  return InvokeOnWorker(Bind(&VideoMediaChannel::GetStats,
-                             media_channel(), options, stats));
+bool VideoChannel::GetStats(VideoMediaInfo* stats) {
+  return InvokeOnWorker(
+      Bind(&VideoMediaChannel::GetStats, media_channel(), stats));
 }
 
 void VideoChannel::StartMediaMonitor(int cms) {

@@ -55,12 +55,12 @@ class RtpRtcp : public Module {
     int32_t id;
     bool audio;
     Clock* clock;
-    RtpRtcp* default_module;
     ReceiveStatistics* receive_statistics;
     Transport* outgoing_transport;
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
     RtcpRttStats* rtt_stats;
+    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer;
     RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
     PacedSender* paced_sender;
@@ -195,7 +195,8 @@ class RtpRtcp : public Module {
     */
     virtual void SetSequenceNumber(uint16_t seq) = 0;
 
-    virtual void SetRtpStateForSsrc(uint32_t ssrc,
+    // Returns true if the ssrc matched this module, false otherwise.
+    virtual bool SetRtpStateForSsrc(uint32_t ssrc,
                                     const RtpState& rtp_state) = 0;
     virtual bool GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) = 0;
 
@@ -456,13 +457,6 @@ class RtpRtcp : public Module {
     virtual int32_t RemoveRTCPReportBlock(uint32_t SSRC) = 0;
 
     /*
-    *   Get number of sent and received RTCP packet types.
-    */
-    virtual void GetRtcpPacketTypeCounters(
-        RtcpPacketTypeCounter* packets_sent,
-        RtcpPacketTypeCounter* packets_received) const = 0;
-
-    /*
     *   (APP) Application specific data
     *
     *   return -1 on failure else 0
@@ -571,16 +565,6 @@ class RtpRtcp : public Module {
     virtual int32_t SetAudioPacketSize(uint16_t packetSizeSamples) = 0;
 
     /*
-    *   SendTelephoneEventActive
-    *
-    *   return true if we currently send a telephone event and 100 ms after an
-    *   event is sent used to prevent the telephone event tone to be recorded
-    *   by the microphone and send inband just after the tone has ended.
-    */
-    virtual bool SendTelephoneEventActive(
-        int8_t& telephoneEvent) const = 0;
-
-    /*
     *   Send a TelephoneEvent tone using RFC 2833 (4733)
     *
     *   return -1 on failure else 0
@@ -621,17 +605,9 @@ class RtpRtcp : public Module {
     ***************************************************************************/
 
     /*
-    *   Set the estimated camera delay in MS
-    *
-    *   return -1 on failure else 0
-    */
-     virtual int32_t SetCameraDelay(int32_t delayMS) = 0;
-
-    /*
     *   Set the target send bitrate
     */
-    virtual void SetTargetSendBitrate(
-        const std::vector<uint32_t>& stream_bitrates) = 0;
+    virtual void SetTargetSendBitrate(uint32_t bitrate_bps) = 0;
 
     /*
     *   Turn on/off generic FEC

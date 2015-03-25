@@ -75,6 +75,7 @@
         'examples/peerconnection/server/utils.h',
       ],
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         'libjingle.gyp:libjingle',
       ],
       # TODO(ronghuawu): crbug.com/167187 fix size_t to int truncations.
@@ -186,11 +187,11 @@
             'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.m',
           ],
           'include_dirs': [
-            'examples/objc/APPRTCDemo',
+            'examples/objc/AppRTCDemo',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
-              'examples/objc/APPRTCDemo',
+              'examples/objc/AppRTCDemo',
             ],
           },
           'export_dependent_settings': [
@@ -355,18 +356,20 @@
                 'examples/android/res/drawable-xhdpi/ic_action_return_from_full_screen.png',
                 'examples/android/res/drawable-xhdpi/ic_loopback_call.png',
                 'examples/android/res/drawable-xhdpi/ic_launcher.png',
+                'examples/android/res/layout/activity_call.xml',
                 'examples/android/res/layout/activity_connect.xml',
-                'examples/android/res/layout/activity_fullscreen.xml',
-                'examples/android/res/layout/fragment_menubar.xml',
+                'examples/android/res/layout/fragment_call.xml',
                 'examples/android/res/menu/connect_menu.xml',
                 'examples/android/res/values/arrays.xml',
                 'examples/android/res/values/strings.xml',
                 'examples/android/res/xml/preferences.xml',
                 'examples/android/src/org/appspot/apprtc/AppRTCAudioManager.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCClient.java',
-                'examples/android/src/org/appspot/apprtc/AppRTCDemoActivity.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCProximitySensor.java',
+                'examples/android/src/org/appspot/apprtc/CallActivity.java',
+                'examples/android/src/org/appspot/apprtc/CallFragment.java',
                 'examples/android/src/org/appspot/apprtc/ConnectActivity.java',
+                'examples/android/src/org/appspot/apprtc/CpuMonitor.java',
                 'examples/android/src/org/appspot/apprtc/PeerConnectionClient.java',
                 'examples/android/src/org/appspot/apprtc/RoomParametersFetcher.java',
                 'examples/android/src/org/appspot/apprtc/SettingsActivity.java',
@@ -382,22 +385,23 @@
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
               ],
               'variables': {
+                'apprtc_demo_root': 'examples/android',
                 'ant_log': '../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd examples/android below.
               },
               'action': [
                 'bash', '-ec',
-                'rm -fr <(_outputs) examples/android/{bin,libs} && '
+                'rm -fr <(_outputs) <(apprtc_demo_root)/{bin,libs,gen,obj} && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
-                'mkdir -p examples/android/libs/<(android_app_abi) && '
-                'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
-                'cp examples/android/third_party/autobanh/autobanh.jar examples/android/libs/ &&'
-                '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so &&'
-                'cd examples/android && '
+                'mkdir -p <(apprtc_demo_root)/libs/<(android_app_abi) && '
+                'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar <(apprtc_demo_root)/libs/ &&'
+                'cp <(apprtc_demo_root)/third_party/autobanh/autobanh.jar <(apprtc_demo_root)/libs/ &&'
+                '<(android_strip) -o <(apprtc_demo_root)/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so &&'
+                'cd <(apprtc_demo_root) && '
                 '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
                 'ant debug > <(ant_log) 2>&1 || '
                 '  { cat <(ant_log) ; exit 1; } } && '
                 'cd - > /dev/null && '
-                'cp examples/android/bin/AppRTCDemo-debug.apk <(_outputs)'
+                'cp <(apprtc_demo_root)/bin/AppRTCDemo-debug.apk <(_outputs)'
               ],
             },
           ],
@@ -431,17 +435,19 @@
                 '<(PRODUCT_DIR)/AppRTCDemoTest-debug.apk',
               ],
               'variables': {
+                'android_webrtc_demo_test_root': 'examples/androidtests',
                 'ant_log': '../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd examples/androidtests below.
               },
               'action': [
                 'bash', '-ec',
+                'rm -fr <(_outputs) <(android_webrtc_demo_test_root)/{bin,libs,gen} && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
-                'cd examples/androidtests && '
+                'cd <(android_webrtc_demo_test_root) && '
                 '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
                 'ant debug > <(ant_log) 2>&1 || '
                 '  { cat <(ant_log) ; exit 1; } } && '
                 'cd - > /dev/null && '
-                'cp examples/androidtests/bin/AppRTCDemoTest-debug.apk <(_outputs)'
+                'cp <(android_webrtc_demo_test_root)/bin/AppRTCDemoTest-debug.apk <(_outputs)'
               ],
             },
           ],

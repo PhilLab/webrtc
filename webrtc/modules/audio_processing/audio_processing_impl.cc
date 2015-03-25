@@ -18,7 +18,7 @@
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/beamformer.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
 #include "webrtc/modules/audio_processing/echo_control_mobile_impl.h"
@@ -75,60 +75,49 @@ class GainControlForNewAgc : public GainControl, public VolumeCallbacks {
   }
 
   // GainControl implementation.
-  virtual int Enable(bool enable) OVERRIDE {
+  int Enable(bool enable) override {
     return real_gain_control_->Enable(enable);
   }
-  virtual bool is_enabled() const OVERRIDE {
-    return real_gain_control_->is_enabled();
-  }
-  virtual int set_stream_analog_level(int level) OVERRIDE {
+  bool is_enabled() const override { return real_gain_control_->is_enabled(); }
+  int set_stream_analog_level(int level) override {
     volume_ = level;
     return AudioProcessing::kNoError;
   }
-  virtual int stream_analog_level() OVERRIDE {
-    return volume_;
-  }
-  virtual int set_mode(Mode mode) OVERRIDE { return AudioProcessing::kNoError; }
-  virtual Mode mode() const OVERRIDE { return GainControl::kAdaptiveAnalog; }
-  virtual int set_target_level_dbfs(int level) OVERRIDE {
+  int stream_analog_level() override { return volume_; }
+  int set_mode(Mode mode) override { return AudioProcessing::kNoError; }
+  Mode mode() const override { return GainControl::kAdaptiveAnalog; }
+  int set_target_level_dbfs(int level) override {
     return AudioProcessing::kNoError;
   }
-  virtual int target_level_dbfs() const OVERRIDE {
+  int target_level_dbfs() const override {
     return real_gain_control_->target_level_dbfs();
   }
-  virtual int set_compression_gain_db(int gain) OVERRIDE {
+  int set_compression_gain_db(int gain) override {
     return AudioProcessing::kNoError;
   }
-  virtual int compression_gain_db() const OVERRIDE {
+  int compression_gain_db() const override {
     return real_gain_control_->compression_gain_db();
   }
-  virtual int enable_limiter(bool enable) OVERRIDE {
-    return AudioProcessing::kNoError;
-  }
-  virtual bool is_limiter_enabled() const OVERRIDE {
+  int enable_limiter(bool enable) override { return AudioProcessing::kNoError; }
+  bool is_limiter_enabled() const override {
     return real_gain_control_->is_limiter_enabled();
   }
-  virtual int set_analog_level_limits(int minimum,
-                                      int maximum) OVERRIDE {
+  int set_analog_level_limits(int minimum, int maximum) override {
     return AudioProcessing::kNoError;
   }
-  virtual int analog_level_minimum() const OVERRIDE {
+  int analog_level_minimum() const override {
     return real_gain_control_->analog_level_minimum();
   }
-  virtual int analog_level_maximum() const OVERRIDE {
+  int analog_level_maximum() const override {
     return real_gain_control_->analog_level_maximum();
   }
-  virtual bool stream_is_saturated() const OVERRIDE {
+  bool stream_is_saturated() const override {
     return real_gain_control_->stream_is_saturated();
   }
 
   // VolumeCallbacks implementation.
-  virtual void SetMicVolume(int volume) OVERRIDE {
-    volume_ = volume;
-  }
-  virtual int GetMicVolume() OVERRIDE {
-    return volume_;
-  }
+  void SetMicVolume(int volume) override { volume_ = volume; }
+  int GetMicVolume() override { return volume_; }
 
  private:
   GainControl* real_gain_control_;
@@ -191,7 +180,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled),
       beamformer_enabled_(config.Get<Beamforming>().enabled),
       beamformer_(beamformer),
-      array_geometry_(config.Get<Beamforming>().array_geometry) {
+      array_geometry_(config.Get<Beamforming>().array_geometry),
+      supports_48kHz_(config.Get<AudioProcessing48kHzSupport>().enabled) {
   echo_cancellation_ = new EchoCancellationImpl(this, crit_);
   component_list_.push_back(echo_cancellation_);
 
@@ -353,7 +343,9 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
   // We process at the closest native rate >= min(input rate, output rate)...
   int min_proc_rate = std::min(fwd_in_format_.rate(), fwd_out_format_.rate());
   int fwd_proc_rate;
-  if (min_proc_rate > kSampleRate16kHz) {
+  if (supports_48kHz_ && min_proc_rate > kSampleRate32kHz) {
+    fwd_proc_rate = kSampleRate48kHz;
+  } else if (min_proc_rate > kSampleRate16kHz) {
     fwd_proc_rate = kSampleRate32kHz;
   } else if (min_proc_rate > kSampleRate8kHz) {
     fwd_proc_rate = kSampleRate16kHz;
@@ -591,14 +583,14 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     audioproc::Stream* msg = event_msg_->mutable_stream();
     msg->set_delay(stream_delay_ms_);
     msg->set_drift(echo_cancellation_->stream_drift_samples());
-    msg->set_level(gain_control_->stream_analog_level());
+    msg->set_level(gain_control()->stream_analog_level());
     msg->set_keypress(key_pressed_);
   }
 #endif
 
   AudioBuffer* ca = capture_audio_.get();  // For brevity.
   if (use_new_agc_ && gain_control_->is_enabled()) {
-    agc_manager_->AnalyzePreProcess(ca->data(0),
+    agc_manager_->AnalyzePreProcess(ca->channels()[0],
                                     ca->num_channels(),
                                     fwd_proc_format_.samples_per_channel());
   }
@@ -610,12 +602,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
 #ifdef WEBRTC_BEAMFORMER
   if (beamformer_enabled_) {
-    beamformer_->ProcessChunk(ca->split_channels_const_f(kBand0To8kHz),
-                              ca->split_channels_const_f(kBand8To16kHz),
-                              ca->num_channels(),
-                              ca->samples_per_split_channel(),
-                              ca->split_channels_f(kBand0To8kHz),
-                              ca->split_channels_f(kBand8To16kHz));
+    beamformer_->ProcessChunk(ca->split_data_f(), ca->split_data_f());
     ca->set_num_channels(1);
   }
 #endif
@@ -636,7 +623,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
       gain_control_->is_enabled() &&
       (!beamformer_enabled_ || beamformer_->is_target_present())) {
     agc_manager_->Process(ca->split_bands_const(0)[kBand0To8kHz],
-                          ca->samples_per_split_channel(),
+                          ca->num_frames_per_band(),
                           split_rate_);
   }
   RETURN_ON_ERR(gain_control_->ProcessCaptureAudio(ca));
@@ -651,13 +638,13 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     float voice_probability =
         agc_manager_.get() ? agc_manager_->voice_probability() : 1.f;
 
-    transient_suppressor_->Suppress(ca->data_f(0),
-                                    ca->samples_per_channel(),
+    transient_suppressor_->Suppress(ca->channels_f()[0],
+                                    ca->num_frames(),
                                     ca->num_channels(),
                                     ca->split_bands_const_f(0)[kBand0To8kHz],
-                                    ca->samples_per_split_channel(),
+                                    ca->num_frames_per_band(),
                                     ca->keyboard_data(),
-                                    ca->samples_per_keyboard_channel(),
+                                    ca->num_keyboard_frames(),
                                     voice_probability,
                                     key_pressed_);
   }

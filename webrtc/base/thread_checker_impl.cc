@@ -19,39 +19,55 @@
 #endif
 
 namespace rtc {
-namespace {
+
 PlatformThreadId CurrentThreadId() {
+  PlatformThreadId ret;
+#if defined(WEBRTC_WIN)
+  ret = GetCurrentThreadId();
+#elif defined(WEBRTC_POSIX)
+#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
+  ret = pthread_mach_thread_np(pthread_self());
+#elif defined(WEBRTC_LINUX)
+  ret =  syscall(__NR_gettid);
+#elif defined(WEBRTC_ANDROID)
+  ret = gettid();
+#else
+  // Default implementation for nacl and solaris.
+  ret = reinterpret_cast<pid_t>(pthread_self());
+#endif
+#endif  // defined(WEBRTC_POSIX)
+  DCHECK(ret);
+  return ret;
+}
+
+PlatformThreadRef CurrentThreadRef() {
 #if defined(WEBRTC_WIN)
   return GetCurrentThreadId();
 #elif defined(WEBRTC_POSIX)
-  // Pthreads doesn't have the concept of a thread ID, so we have to reach down
-  // into the kernel.
-#if defined(WEBRTC_MAC)
-  return pthread_mach_thread_np(pthread_self());
-#elif defined(WEBRTC_LINUX)
-  return syscall(__NR_gettid);
-#elif defined(WEBRTC_ANDROID)
-  return gettid();
-#else
-  // Default implementation for nacl and solaris.
-  return reinterpret_cast<pid_t>(pthread_self());
+  return pthread_self();
 #endif
-#endif  // defined(WEBRTC_POSIX)
 }
-}  // namespace
 
-ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadId()) {
+bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
+#if defined(WEBRTC_WIN)
+  return a == b;
+#elif defined(WEBRTC_POSIX)
+  return pthread_equal(a, b);
+#endif
+}
+
+ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadRef()) {
 }
 
 ThreadCheckerImpl::~ThreadCheckerImpl() {
 }
 
 bool ThreadCheckerImpl::CalledOnValidThread() const {
+  const PlatformThreadRef current_thread = CurrentThreadRef();
   CritScope scoped_lock(&lock_);
-  const PlatformThreadId current_thread = CurrentThreadId();
   if (!valid_thread_)  // Set if previously detached.
     valid_thread_ = current_thread;
-  return valid_thread_ == current_thread;
+  return IsThreadRefEqual(valid_thread_, current_thread);
 }
 
 void ThreadCheckerImpl::DetachFromThread() {

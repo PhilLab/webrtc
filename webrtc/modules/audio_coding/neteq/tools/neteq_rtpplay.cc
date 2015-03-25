@@ -23,6 +23,7 @@
 
 #include "google/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -31,7 +32,6 @@
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
@@ -183,214 +183,102 @@ std::string CodecName(webrtc::NetEqDecoder codec) {
   }
 }
 
+void RegisterPayloadType(NetEq* neteq,
+                         webrtc::NetEqDecoder codec,
+                         google::int32 flag) {
+  if (neteq->RegisterPayloadType(codec, static_cast<uint8_t>(flag))) {
+    std::cerr << "Cannot register payload type " << flag << " as "
+              << CodecName(codec) << std::endl;
+    exit(1);
+  }
+}
+
 // Registers all decoders in |neteq|.
 void RegisterPayloadTypes(NetEq* neteq) {
   assert(neteq);
-  int error;
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCMu, FLAGS_pcmu);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_pcmu <<
-        " as " << CodecName(webrtc::kDecoderPCMu).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCMa, FLAGS_pcma);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_pcma <<
-        " as " << CodecName(webrtc::kDecoderPCMa).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderILBC, FLAGS_ilbc);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_ilbc <<
-        " as " << CodecName(webrtc::kDecoderILBC).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderISAC, FLAGS_isac);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_isac <<
-        " as " << CodecName(webrtc::kDecoderISAC).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderISACswb, FLAGS_isac_swb);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_isac_swb <<
-        " as " << CodecName(webrtc::kDecoderISACswb).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderOpus, FLAGS_opus);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_opus << " as "
-              << CodecName(webrtc::kDecoderOpus).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16B, FLAGS_pcm16b);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_pcm16b <<
-        " as " << CodecName(webrtc::kDecoderPCM16B).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16Bwb,
-                                      FLAGS_pcm16b_wb);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_pcm16b_wb <<
-        " as " << CodecName(webrtc::kDecoderPCM16Bwb).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16Bswb32kHz,
-                                      FLAGS_pcm16b_swb32);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_pcm16b_swb32 <<
-        " as " << CodecName(webrtc::kDecoderPCM16Bswb32kHz).c_str() <<
-        std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16Bswb48kHz,
-                                      FLAGS_pcm16b_swb48);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_pcm16b_swb48 <<
-        " as " << CodecName(webrtc::kDecoderPCM16Bswb48kHz).c_str() <<
-        std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderG722, FLAGS_g722);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_g722 <<
-        " as " << CodecName(webrtc::kDecoderG722).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderAVT, FLAGS_avt);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_avt <<
-        " as " << CodecName(webrtc::kDecoderAVT).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderRED, FLAGS_red);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_red <<
-        " as " << CodecName(webrtc::kDecoderRED).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGnb, FLAGS_cn_nb);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_cn_nb <<
-        " as " << CodecName(webrtc::kDecoderCNGnb).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGwb, FLAGS_cn_wb);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_cn_wb <<
-        " as " << CodecName(webrtc::kDecoderCNGwb).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGswb32kHz,
-                                      FLAGS_cn_swb32);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_cn_swb32 <<
-        " as " << CodecName(webrtc::kDecoderCNGswb32kHz).c_str() << std::endl;
-    exit(1);
-  }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGswb48kHz,
-                                     FLAGS_cn_swb48);
-  if (error) {
-    std::cerr << "Cannot register payload type " << FLAGS_cn_swb48 <<
-        " as " << CodecName(webrtc::kDecoderCNGswb48kHz).c_str() << std::endl;
-    exit(1);
-  }
+  RegisterPayloadType(neteq, webrtc::kDecoderPCMu, FLAGS_pcmu);
+  RegisterPayloadType(neteq, webrtc::kDecoderPCMa, FLAGS_pcma);
+  RegisterPayloadType(neteq, webrtc::kDecoderILBC, FLAGS_ilbc);
+  RegisterPayloadType(neteq, webrtc::kDecoderISAC, FLAGS_isac);
+  RegisterPayloadType(neteq, webrtc::kDecoderISACswb, FLAGS_isac_swb);
+  RegisterPayloadType(neteq, webrtc::kDecoderOpus, FLAGS_opus);
+  RegisterPayloadType(neteq, webrtc::kDecoderPCM16B, FLAGS_pcm16b);
+  RegisterPayloadType(neteq, webrtc::kDecoderPCM16Bwb, FLAGS_pcm16b_wb);
+  RegisterPayloadType(neteq, webrtc::kDecoderPCM16Bswb32kHz,
+                      FLAGS_pcm16b_swb32);
+  RegisterPayloadType(neteq, webrtc::kDecoderPCM16Bswb48kHz,
+                      FLAGS_pcm16b_swb48);
+  RegisterPayloadType(neteq, webrtc::kDecoderG722, FLAGS_g722);
+  RegisterPayloadType(neteq, webrtc::kDecoderAVT, FLAGS_avt);
+  RegisterPayloadType(neteq, webrtc::kDecoderRED, FLAGS_red);
+  RegisterPayloadType(neteq, webrtc::kDecoderCNGnb, FLAGS_cn_nb);
+  RegisterPayloadType(neteq, webrtc::kDecoderCNGwb, FLAGS_cn_wb);
+  RegisterPayloadType(neteq, webrtc::kDecoderCNGswb32kHz, FLAGS_cn_swb32);
+  RegisterPayloadType(neteq, webrtc::kDecoderCNGswb48kHz, FLAGS_cn_swb48);
+}
+
+void PrintCodecMappingEntry(webrtc::NetEqDecoder codec, google::int32 flag) {
+  std::cout << CodecName(codec) << ": " << flag << std::endl;
 }
 
 void PrintCodecMapping() {
-  std::cout << CodecName(webrtc::kDecoderPCMu).c_str() << ": " << FLAGS_pcmu <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderPCMa).c_str() << ": " << FLAGS_pcma <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderILBC).c_str() << ": " << FLAGS_ilbc <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderISAC).c_str() << ": " << FLAGS_isac <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderISACswb).c_str() << ": " <<
-      FLAGS_isac_swb << std::endl;
-  std::cout << CodecName(webrtc::kDecoderOpus).c_str() << ": " << FLAGS_opus
-            << std::endl;
-  std::cout << CodecName(webrtc::kDecoderPCM16B).c_str() << ": " <<
-      FLAGS_pcm16b << std::endl;
-  std::cout << CodecName(webrtc::kDecoderPCM16Bwb).c_str() << ": " <<
-      FLAGS_pcm16b_wb << std::endl;
-  std::cout << CodecName(webrtc::kDecoderPCM16Bswb32kHz).c_str() << ": " <<
-      FLAGS_pcm16b_swb32 << std::endl;
-  std::cout << CodecName(webrtc::kDecoderPCM16Bswb48kHz).c_str() << ": " <<
-      FLAGS_pcm16b_swb48 << std::endl;
-  std::cout << CodecName(webrtc::kDecoderG722).c_str() << ": " << FLAGS_g722 <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderAVT).c_str() << ": " << FLAGS_avt <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderRED).c_str() << ": " << FLAGS_red <<
-      std::endl;
-  std::cout << CodecName(webrtc::kDecoderCNGnb).c_str() << ": " <<
-      FLAGS_cn_nb << std::endl;
-  std::cout << CodecName(webrtc::kDecoderCNGwb).c_str() << ": " <<
-      FLAGS_cn_wb << std::endl;
-  std::cout << CodecName(webrtc::kDecoderCNGswb32kHz).c_str() << ": " <<
-      FLAGS_cn_swb32 << std::endl;
-  std::cout << CodecName(webrtc::kDecoderCNGswb48kHz).c_str() << ": " <<
-      FLAGS_cn_swb48 << std::endl;
+  PrintCodecMappingEntry(webrtc::kDecoderPCMu, FLAGS_pcmu);
+  PrintCodecMappingEntry(webrtc::kDecoderPCMa, FLAGS_pcma);
+  PrintCodecMappingEntry(webrtc::kDecoderILBC, FLAGS_ilbc);
+  PrintCodecMappingEntry(webrtc::kDecoderISAC, FLAGS_isac);
+  PrintCodecMappingEntry(webrtc::kDecoderISACswb, FLAGS_isac_swb);
+  PrintCodecMappingEntry(webrtc::kDecoderOpus, FLAGS_opus);
+  PrintCodecMappingEntry(webrtc::kDecoderPCM16B, FLAGS_pcm16b);
+  PrintCodecMappingEntry(webrtc::kDecoderPCM16Bwb, FLAGS_pcm16b_wb);
+  PrintCodecMappingEntry(webrtc::kDecoderPCM16Bswb32kHz, FLAGS_pcm16b_swb32);
+  PrintCodecMappingEntry(webrtc::kDecoderPCM16Bswb48kHz, FLAGS_pcm16b_swb48);
+  PrintCodecMappingEntry(webrtc::kDecoderG722, FLAGS_g722);
+  PrintCodecMappingEntry(webrtc::kDecoderAVT, FLAGS_avt);
+  PrintCodecMappingEntry(webrtc::kDecoderRED, FLAGS_red);
+  PrintCodecMappingEntry(webrtc::kDecoderCNGnb, FLAGS_cn_nb);
+  PrintCodecMappingEntry(webrtc::kDecoderCNGwb, FLAGS_cn_wb);
+  PrintCodecMappingEntry(webrtc::kDecoderCNGswb32kHz, FLAGS_cn_swb32);
+  PrintCodecMappingEntry(webrtc::kDecoderCNGswb48kHz, FLAGS_cn_swb48);
 }
 
-bool IsComfortNosie(uint8_t payload_type) {
-  if (payload_type == FLAGS_cn_nb ||
-      payload_type == FLAGS_cn_wb ||
-      payload_type == FLAGS_cn_swb32 ||
-      payload_type == FLAGS_cn_swb48) {
-    return true;
-  } else {
-    return false;
-  }
+bool IsComfortNoise(uint8_t payload_type) {
+  return payload_type == FLAGS_cn_nb || payload_type == FLAGS_cn_wb ||
+      payload_type == FLAGS_cn_swb32 || payload_type == FLAGS_cn_swb48;
 }
 
 int CodecSampleRate(uint8_t payload_type) {
-  if (payload_type == FLAGS_pcmu ||
-      payload_type == FLAGS_pcma ||
-      payload_type == FLAGS_ilbc ||
-      payload_type == FLAGS_pcm16b ||
-      payload_type == FLAGS_cn_nb) {
+  if (payload_type == FLAGS_pcmu || payload_type == FLAGS_pcma ||
+      payload_type == FLAGS_ilbc || payload_type == FLAGS_pcm16b ||
+      payload_type == FLAGS_cn_nb)
     return 8000;
-  } else if (payload_type == FLAGS_isac ||
-      payload_type == FLAGS_pcm16b_wb ||
-      payload_type == FLAGS_g722 ||
-      payload_type == FLAGS_cn_wb) {
+  if (payload_type == FLAGS_isac || payload_type == FLAGS_pcm16b_wb ||
+      payload_type == FLAGS_g722 || payload_type == FLAGS_cn_wb)
     return 16000;
-  } else if (payload_type == FLAGS_isac_swb ||
-      payload_type == FLAGS_pcm16b_swb32 ||
-      payload_type == FLAGS_cn_swb32) {
+  if (payload_type == FLAGS_isac_swb || payload_type == FLAGS_pcm16b_swb32 ||
+      payload_type == FLAGS_cn_swb32)
     return 32000;
-  } else if (payload_type == FLAGS_opus || payload_type == FLAGS_pcm16b_swb48 ||
-             payload_type == FLAGS_cn_swb48) {
+  if (payload_type == FLAGS_opus || payload_type == FLAGS_pcm16b_swb48 ||
+      payload_type == FLAGS_cn_swb48)
     return 48000;
-  } else if (payload_type == FLAGS_avt ||
-      payload_type == FLAGS_red) {
-      return 0;
-  } else {
-    return -1;
-  }
+  if (payload_type == FLAGS_avt || payload_type == FLAGS_red)
+    return 0;
+  return -1;
 }
 
 int CodecTimestampRate(uint8_t payload_type) {
-  if (payload_type == FLAGS_g722) {
-    return 8000;
-  } else {
-    return CodecSampleRate(payload_type);
-  }
+  return (payload_type == FLAGS_g722) ? 8000 : CodecSampleRate(payload_type);
 }
 
 size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
-                      webrtc::scoped_ptr<int16_t[]>* replacement_audio,
-                      webrtc::scoped_ptr<uint8_t[]>* payload,
+                      rtc::scoped_ptr<int16_t[]>* replacement_audio,
+                      rtc::scoped_ptr<uint8_t[]>* payload,
                       size_t* payload_mem_size_bytes,
                       size_t* frame_size_samples,
                       WebRtcRTPHeader* rtp_header,
                       const webrtc::test::Packet* next_packet) {
   size_t payload_len = 0;
   // Check for CNG.
-  if (IsComfortNosie(rtp_header->header.payloadType)) {
+  if (IsComfortNoise(rtp_header->header.payloadType)) {
     // If CNG, simply insert a zero-energy one-byte payload.
     if (*payload_mem_size_bytes < 1) {
       (*payload).reset(new uint8_t[1]);
@@ -442,16 +330,18 @@ size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
     // Change payload type to PCM16.
     switch (CodecSampleRate(rtp_header->header.payloadType)) {
       case 8000:
-        rtp_header->header.payloadType = FLAGS_pcm16b;
+        rtp_header->header.payloadType = static_cast<uint8_t>(FLAGS_pcm16b);
         break;
       case 16000:
-        rtp_header->header.payloadType = FLAGS_pcm16b_wb;
+        rtp_header->header.payloadType = static_cast<uint8_t>(FLAGS_pcm16b_wb);
         break;
       case 32000:
-        rtp_header->header.payloadType = FLAGS_pcm16b_swb32;
+        rtp_header->header.payloadType =
+            static_cast<uint8_t>(FLAGS_pcm16b_swb32);
         break;
       case 48000:
-        rtp_header->header.payloadType = FLAGS_pcm16b_swb48;
+        rtp_header->header.payloadType =
+            static_cast<uint8_t>(FLAGS_pcm16b_swb48);
         break;
       default:
         std::cerr << "Payload type " <<
@@ -494,7 +384,7 @@ int main(int argc, char* argv[]) {
   }
 
   printf("Input file: %s\n", argv[1]);
-  webrtc::scoped_ptr<webrtc::test::RtpFileSource> file_source(
+  rtc::scoped_ptr<webrtc::test::RtpFileSource> file_source(
       webrtc::test::RtpFileSource::Create(argv[1]));
   assert(file_source.get());
 
@@ -507,7 +397,7 @@ int main(int argc, char* argv[]) {
 
   // Check if a replacement audio file was provided, and if so, open it.
   bool replace_payload = false;
-  webrtc::scoped_ptr<webrtc::test::InputAudioFile> replacement_audio_file;
+  rtc::scoped_ptr<webrtc::test::InputAudioFile> replacement_audio_file;
   if (!FLAGS_replacement_audio_file.empty()) {
     replacement_audio_file.reset(
         new webrtc::test::InputAudioFile(FLAGS_replacement_audio_file));
@@ -515,7 +405,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Read first packet.
-  webrtc::scoped_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
+  rtc::scoped_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
   if (!packet) {
     printf(
         "Warning: input file is empty, or the filters did not match any "
@@ -537,7 +427,7 @@ int main(int argc, char* argv[]) {
   // for wav files.)
   // Check output file type.
   std::string output_file_name = argv[2];
-  webrtc::scoped_ptr<webrtc::test::AudioSink> output;
+  rtc::scoped_ptr<webrtc::test::AudioSink> output;
   if (output_file_name.size() >= 4 &&
       output_file_name.substr(output_file_name.size() - 4) == ".wav") {
     // Open a wav file.
@@ -564,11 +454,11 @@ int main(int argc, char* argv[]) {
 
 
   // Set up variables for audio replacement if needed.
-  webrtc::scoped_ptr<webrtc::test::Packet> next_packet;
+  rtc::scoped_ptr<webrtc::test::Packet> next_packet;
   bool next_packet_available = false;
   size_t input_frame_size_timestamps = 0;
-  webrtc::scoped_ptr<int16_t[]> replacement_audio;
-  webrtc::scoped_ptr<uint8_t[]> payload;
+  rtc::scoped_ptr<int16_t[]> replacement_audio;
+  rtc::scoped_ptr<uint8_t[]> payload;
   size_t payload_mem_size_bytes = 0;
   if (replace_payload) {
     // Initially assume that the frame size is 30 ms at the initial sample rate.

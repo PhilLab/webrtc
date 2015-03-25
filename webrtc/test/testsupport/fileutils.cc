@@ -23,8 +23,14 @@
 #else
 #include <unistd.h>
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #define GET_CURRENT_DIR getcwd
+#endif
+
+#ifdef WINRT
+#include <objbase.h>
+
+#include "webrtc/base/pathutils.h"
 #endif
 
 #include <sys/stat.h>  // To check for directory existence.
@@ -176,9 +182,19 @@ std::string WorkingDir() {
 // Largely copied from talk/base/{unixfilesystem,win32filesystem}.cc.
 std::string TempFilename(const std::string &dir, const std::string &prefix) {
 #if defined(WINRT)
-  // TODO (winrt): Find a way to generate temporary filenames in a sync fashion.
-  assert(false);
-  return "";
+  rtc::Pathname fullpath = dir;
+  GUID g;
+  CoCreateGuid(&g);
+  wchar_t filename[MAX_PATH];
+
+  // printf format for the filename, consists of prefix followed by guid.
+  wchar_t* maskForFN = L"%s_%08x_%04x_%04x_%02x%02x_%02x%02x%02x%02x%02x%02x";
+  swprintf(filename, maskForFN, ToUtf16(prefix).c_str(), g.Data1, g.Data2, g.Data3,
+    UINT(g.Data4[0]), UINT(g.Data4[1]), UINT(g.Data4[2]), UINT(g.Data4[3]),
+    UINT(g.Data4[4]), UINT(g.Data4[5]), UINT(g.Data4[6]), UINT(g.Data4[7]));
+
+  fullpath.AppendPathname(ToUtf8(filename));
+  return fullpath.pathname();
 #elif defined(WIN32)
   wchar_t filename[MAX_PATH];
   if (::GetTempFileName(ToUtf16(dir).c_str(),
@@ -188,7 +204,7 @@ std::string TempFilename(const std::string &dir, const std::string &prefix) {
   return "";
 #else
   int len = dir.size() + prefix.size() + 2 + 6;
-  scoped_ptr<char[]> tempname(new char[len]);
+  rtc::scoped_ptr<char[]> tempname(new char[len]);
 
   snprintf(tempname.get(), len, "%s/%sXXXXXX", dir.c_str(),
            prefix.c_str());

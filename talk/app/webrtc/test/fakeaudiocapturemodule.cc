@@ -112,11 +112,6 @@ int32_t FakeAudioCaptureModule::Process() {
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::ChangeUniqueId(const int32_t /*id*/) {
-  ASSERT(false);
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::ActiveAudioLayer(
     AudioLayer* /*audio_layer*/) const {
   ASSERT(false);
@@ -709,20 +704,12 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
     }
     ResetRecBuffer();
     uint32_t nSamplesOut = 0;
-#ifdef USE_WEBRTC_DEV_BRANCH
     int64_t elapsed_time_ms = 0;
-#else
-    uint32_t rtp_timestamp = 0;
-#endif
     int64_t ntp_time_ms = 0;
     if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,
                                          kNumberOfChannels, kSamplesPerSecond,
                                          rec_buffer_, nSamplesOut,
-#ifdef USE_WEBRTC_DEV_BRANCH
                                          &elapsed_time_ms, &ntp_time_ms) != 0) {
-#else
-                                         &rtp_timestamp, &ntp_time_ms) != 0) {
-#endif
       ASSERT(false);
     }
     ASSERT(nSamplesOut == kNumberSamples);
