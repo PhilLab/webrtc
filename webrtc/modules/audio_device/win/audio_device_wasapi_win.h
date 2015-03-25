@@ -20,6 +20,7 @@
 #include <Audioclient.h>     // WASAPI
 #include <Audiopolicy.h>
 #include <Mmdeviceapi.h>     // MMDevice
+#include <avrt.h>            // Avrt
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
 #include <mfapi.h>
@@ -32,6 +33,9 @@ using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
 using Windows::Media::Devices::AudioDeviceRole;
 using Windows::Media::Devices::MediaDevice;
+
+// Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
+#pragma comment( lib, "avrt.lib" )
 
 namespace webrtc {
 

@@ -56,6 +56,19 @@
 // REFERENCE_TIME time units per millisecond
 #define REFTIMES_PER_MILLISEC  10000
 
+#define MAXERRORLENGTH 256
+
+#pragma comment (lib,"Mmdevapi.lib") 
+#pragma comment (lib,"MFuuid.lib")
+#pragma comment (lib,"MFReadWrite.lib") 
+#pragma comment (lib,"Mfplat.lib")
+#pragma comment (lib,"uuid.lib")
+#pragma comment (lib,"ole32.lib")
+
+using namespace concurrency;
+using namespace Windows::Foundation;
+
+
 #if defined(WINRT)
 #define WaitForSingleObject(a, b) WaitForSingleObjectEx(a, b, FALSE)
 #define InitializeCriticalSection(a) InitializeCriticalSectionEx(a, 0, 0)
@@ -256,7 +269,7 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _newMicLevel(0)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id, "%s created", __FUNCTION__);
-    assert(_comInit.succeeded());
+    //assert(_comInit.succeeded());
 #ifndef WINRT
     // Try to load the Avrt DLL
     if (!_avrtLibrary)
@@ -479,6 +492,11 @@ int32_t AudioDeviceWindowsWasapi::Init()
     //
     _EnumerateEndpointDevicesAll();
 
+    while (!_ptrCaptureCollection && !_ptrRenderCollection)
+    {
+      Sleep(200);
+    }
+
     _initialized = true;
 
     return 0;
@@ -589,7 +607,7 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker()
     //}
 
     SAFE_RELEASE(_ptrRenderSimpleVolume);
-    ret = _ptrClientOut->GetService(IID_ISimpleAudioVolume, (void**)&_ptrRenderSimpleVolume);
+    ret = _ptrClientOut->GetService(__uuidof(ISimpleAudioVolume), (void**)&_ptrRenderSimpleVolume);
     if (ret != 0 || _ptrRenderSimpleVolume == NULL)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -652,7 +670,7 @@ int32_t AudioDeviceWindowsWasapi::InitMicrophone()
         return -1;
     }
 
-    ret = _ptrClientIn->GetService(IID_IAudioEndpointVolume, (void**)&_ptrCaptureVolume);
+    ret = _ptrClientIn->GetService(__uuidof(IAudioEndpointVolume), (void**)&_ptrCaptureVolume);
     if (ret != 0 || _ptrCaptureVolume == NULL)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -703,7 +721,7 @@ int32_t AudioDeviceWindowsWasapi::SpeakerVolumeIsAvailable(bool& available)
     HRESULT hr = S_OK;
     ISimpleAudioVolume* pVolume = NULL;
 
-    hr = _ptrClientOut->GetService(IID_ISimpleAudioVolume, (void**)&pVolume);
+    hr = _ptrClientOut->GetService(__uuidof(ISimpleAudioVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     float volume(0.0f);
@@ -898,7 +916,7 @@ int32_t AudioDeviceWindowsWasapi::SpeakerMuteIsAvailable(bool& available)
     IAudioEndpointVolume* pVolume = NULL;
 
     // Query the speaker system mute state.
-    hr = _ptrClientOut->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientOut->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     BOOL mute;
@@ -941,7 +959,7 @@ int32_t AudioDeviceWindowsWasapi::SetSpeakerMute(bool enable)
     IAudioEndpointVolume* pVolume = NULL;
 
     // Set the speaker system mute state.
-    hr = _ptrClientOut->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientOut->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     const BOOL mute(enable);
@@ -979,7 +997,7 @@ int32_t AudioDeviceWindowsWasapi::SpeakerMute(bool& enabled) const
     IAudioEndpointVolume* pVolume = NULL;
 
     // Query the speaker system mute state.
-    hr = _ptrClientOut->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientOut->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     BOOL mute;
@@ -1016,7 +1034,7 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneMuteIsAvailable(bool& available)
     IAudioEndpointVolume* pVolume = NULL;
 
     // Query the microphone system mute state.
-    hr = _ptrClientIn->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientIn->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     BOOL mute;
@@ -1056,7 +1074,7 @@ int32_t AudioDeviceWindowsWasapi::SetMicrophoneMute(bool enable)
     IAudioEndpointVolume* pVolume = NULL;
 
     // Set the microphone system mute state.
-    hr = _ptrClientIn->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientIn->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     const BOOL mute(enable);
@@ -1088,7 +1106,7 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneMute(bool& enabled) const
     IAudioEndpointVolume* pVolume = NULL;
 
     // Query the microphone system mute state.
-    hr = _ptrClientIn->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientIn->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     BOOL mute;
@@ -1287,7 +1305,7 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneVolumeIsAvailable(bool& available)
     HRESULT hr = S_OK;
     IAudioEndpointVolume* pVolume = NULL;
 
-    hr = _ptrClientIn->GetService(IID_IAudioEndpointVolume, (void**)&pVolume);
+    hr = _ptrClientIn->GetService(__uuidof(IAudioEndpointVolume), (void**)&pVolume);
     EXIT_ON_ERROR(hr);
 
     float volume(0.0f);
@@ -1454,7 +1472,7 @@ int16_t AudioDeviceWindowsWasapi::PlayoutDevices()
 
     CriticalSectionScoped lock(&_critSect);
 
-    if (_RefreshDeviceList(DeviceClass::AudioRender) != -1)
+    if (_initialized)
     {
       return (_DeviceListCount(DeviceClass::AudioRender));
     }
@@ -1725,7 +1743,7 @@ int16_t AudioDeviceWindowsWasapi::RecordingDevices()
 
     CriticalSectionScoped lock(&_critSect);
 
-    if (_RefreshDeviceList(DeviceClass::AudioCapture) != -1)
+    if (_initialized)
     {
       return (_DeviceListCount(DeviceClass::AudioCapture));
     }
@@ -3890,14 +3908,14 @@ int32_t AudioDeviceWindowsWasapi::_RefreshDeviceList(DeviceClass cls)
         .then([this](DeviceInformationCollection^ interfaces)
       {
         _ptrCollection = interfaces;
-        std::for_each(begin(interfaces), end(interfaces),
-          [this](DeviceInformation^ deviceInterface)
-        {
-          //DisplayDeviceInterface(deviceInterface);
+        //std::for_each(begin(interfaces), end(interfaces),
+        //  [this](DeviceInformation^ deviceInterface)
+        //{
+        //  //DisplayDeviceInterface(deviceInterface);
 
-        });
+        //});
 
-      });
+      }, task_continuation_context::use_arbitrary());
     }
     catch (Platform::InvalidArgumentException^)
     {
@@ -4232,17 +4250,41 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
     {
 
       Concurrency::task<DeviceInformationCollection^>(DeviceInformation::FindAllAsync(DeviceClass::AudioCapture))
-        .then([this](DeviceInformationCollection^ interfaces)
+        .then([this](concurrency::task<DeviceInformationCollection^> getDevicesTask)
       {
-        _ptrCaptureCollection = interfaces;
-        std::for_each(begin(interfaces), end(interfaces),
-          [this](DeviceInformation^ deviceInterface)
-        {
-          //DisplayDeviceInterface(deviceInterface);
-          
-        });
+        _ptrCaptureCollection = getDevicesTask.get();
+        //std::for_each(begin(interfaces), end(interfaces),
+        //  [this](DeviceInformation^ deviceInterface)
+        //{
+        //  //DisplayDeviceInterface(deviceInterface);
+        //  
+        //});
 
-      });
+      }, task_continuation_context::use_arbitrary());
+
+      ////Call the *Async method that starts the operation.
+      //IAsyncOperation<DeviceInformationCollection^>^ deviceOp = DeviceInformation::FindAllAsync();
+      ////_ptrCaptureCollection = DeviceInformation::FindAllAsync();
+
+      //// Explicit construction. (Not recommended)
+      //// Pass the IAsyncOperation to a task constructor.
+      //// task<DeviceInformationCollection^> deviceEnumTask(deviceOp);
+
+      ////// Recommended:
+      //auto deviceEnumTask = create_task(deviceOp);
+      //deviceEnumTask.wait();
+
+      ////// Call the task’s .then member function, and provide
+      ////// the lambda to be invoked when the async operation completes.
+      //deviceEnumTask.then([this](DeviceInformationCollection^ devices)
+      //{
+      //  for (int i = 0; i < (int)devices->Size; i++)
+      //  {
+      //    DeviceInformation^ di = devices->GetAt(i);
+      //    _ptrCaptureCollection = devices;
+      //    // Do something with di...			
+      //  }
+      //}); // end lambda
     }
     catch (Platform::InvalidArgumentException^)
     {
@@ -4258,17 +4300,17 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
     {
 
       Concurrency::task<DeviceInformationCollection^>(DeviceInformation::FindAllAsync(DeviceClass::AudioRender))
-        .then([this](DeviceInformationCollection^ interfaces)
+        .then([this](concurrency::task<DeviceInformationCollection^> getDevicesTask)
       {
-        _ptrRenderCollection = interfaces;
-        std::for_each(begin(interfaces), end(interfaces),
-          [this](DeviceInformation^ deviceInterface)
-        {
-          //DisplayDeviceInterface(deviceInterface);
+        _ptrRenderCollection = getDevicesTask.get();
+        //std::for_each(begin(interfaces), end(interfaces),
+        //  [this](DeviceInformation^ deviceInterface)
+        //{
+        //  //DisplayDeviceInterface(deviceInterface);
 
-        });
+        //});
 
-      });
+      }, task_continuation_context::use_arbitrary());
     }
     catch (Platform::InvalidArgumentException^)
     {
@@ -4280,10 +4322,19 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
 
     EXIT_ON_ERROR(hr);
 
+    while (true)
+    {
+      if (_ptrCaptureCollection && _ptrRenderCollection)
+      {
+        break;
+      }
+      Sleep(100);
+    }
+
 
     // Retrieve a count of the devices in the device collections.
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#rendering endpoint devices (counting all): %u", _ptrRenderCollection->Size);
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#capturing endpoint devices (counting all): %u", _ptrCaptureCollection->Size);
+   // WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#rendering endpoint devices (counting all): %u", _ptrRenderCollection->Size);
+    //WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#capturing endpoint devices (counting all): %u", _ptrCaptureCollection->Size);
 
     // Each loop prints the name of an endpoint device.
 //    for (ULONG i = 0; i < count; i++)
@@ -4619,6 +4670,46 @@ exit:
   // Need to return S_OK
   return S_OK;
 }
+// ----------------------------------------------------------------------------
+//  _TraceCOMError
+// ----------------------------------------------------------------------------
+
+void AudioDeviceWindowsWasapi::_TraceCOMError(HRESULT hr) const
+{
+  TCHAR buf[MAXERRORLENGTH];
+  TCHAR errorText[MAXERRORLENGTH];
+
+  const DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS;
+  const DWORD dwLangID = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+
+  // Gets the system's human readable message string for this HRESULT.
+  // All error message in English by default.
+  DWORD messageLength = ::FormatMessageW(dwFlags,
+    0,
+    hr,
+    dwLangID,
+    errorText,
+    MAXERRORLENGTH,
+    NULL);
+
+  assert(messageLength <= MAXERRORLENGTH);
+
+  // Trims tailing white space (FormatMessage() leaves a trailing cr-lf.).
+  for (; messageLength && ::isspace(errorText[messageLength - 1]);
+    --messageLength)
+  {
+    errorText[messageLength - 1] = '\0';
+  }
+
+  WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+    "Core Audio method failed (hr=0x%x)", hr);
+  StringCchPrintf(buf, MAXERRORLENGTH, TEXT("Error details: "));
+  StringCchCat(buf, MAXERRORLENGTH, errorText);
+  WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "%s", WideToUTF8(buf));
+}
+
+
 // ----------------------------------------------------------------------------
 //  _SetThreadName
 // ----------------------------------------------------------------------------
