@@ -16,7 +16,7 @@
       'target_name': 'winrt_all',
       'type': 'none',
       'dependencies': [
-        'UnitTests/LibTest_runner/libTest_runner.gyp:*',
+#        'UnitTests/LibTest_runner/libTest_runner.gyp:*',
         'UnitTests/gtest_runner/gtest_runner.gyp:*',
       ],
     },

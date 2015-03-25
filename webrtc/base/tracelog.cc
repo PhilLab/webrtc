@@ -8,25 +8,13 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
-
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-#include "webrtc/base/win32socketserver.h"
-#endif
-#if defined(WEBRTC_POSIX)
 #include "webrtc/base/physicalsocketserver.h"
-#endif
 
 namespace rtc {
 
-TraceLog::TraceLog() : is_tracing_(false), tw_(NULL) {
-  traces_.reserve(16384);
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-  thread_ = new Win32Thread();
-#endif
-#if defined(WEBRTC_POSIX)
+TraceLog::TraceLog() : is_tracing_(false), offset_(0), tw_(NULL) {
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
-#endif
 }
 
 TraceLog::~TraceLog() {
@@ -55,7 +43,7 @@ void TraceLog::Add(char phase,
     << "\"name\": \"" << name << "\", "
     << "\"cat\": \"" << category_group_enabled << "\", "
     << "\"ph\": \"" << phase << "\", "
-    << "\"ts\": " << rtc::Time() << ", "
+    << "\"ts\": " << rtc::TimeMicros() << ", "
     << "\"pid\": " << 0 << ", "
     << "\"tid\": " << webrtc::ThreadWrapper::GetThreadId() << ", "
     << "\"args\": {";
@@ -95,20 +83,30 @@ void TraceLog::Add(char phase,
     }
   }
 
-  t << "}" << "}";
+  t << "}" << "},";
 
   CritScope lock(&critical_section_);
-  traces_.push_back(t.str());
+  oss_ << t.str();
 }
 
 void TraceLog::StartTracing() {
-  CritScope lock(&critical_section_);
-  traces_.clear();
-  is_tracing_ = true;
+  if (!is_tracing_) {
+    CritScope lock(&critical_section_);
+    oss_.clear();
+    oss_.str("");
+    oss_ << "{ \"traceEvents\": [";
+    is_tracing_ = true;
+  }
 }
 
 void TraceLog::StopTracing() {
-  is_tracing_ = false;
+  if (is_tracing_) {
+    CritScope lock(&critical_section_);
+    long pos = oss_.tellp();
+    oss_.seekp(pos - 1);
+    oss_ << "]}";
+    is_tracing_ = false;
+  }
 }
 
 bool TraceLog::IsTracing() {
@@ -117,22 +115,17 @@ bool TraceLog::IsTracing() {
 
 void TraceLog::Save(const std::string& file_name) {
   std::ofstream file;
-  file.open(file_name);
-  file << "{ \"traceEvents\": [";
-
-  int traces_size = traces_.size();
-  for (int i = 0; i < traces_size; ++i) {
-    file << traces_[i];
-    if (i < traces_size - 1) {
-      file << ", ";
-    }
-  }
-
-  file << "]}";
+  file.open(file_name.c_str());
+  file << oss_.str();
   file.close();
 }
 
 void TraceLog::Save(const std::string& addr, int port) {
+  if (offset_) {
+    // Sending the data still is in progress.
+    return;
+  }
+
   if (tw_ == NULL) {
     tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages, thread_);
     unsigned int id;
@@ -148,6 +141,9 @@ void TraceLog::Save(const std::string& addr, int port) {
 
   SocketAddress server_addr(addr, port);
   sock->Connect(server_addr);
+
+  // Send wake up signal to update the event list to wait
+  thread_->socketserver()->WakeUp();
 }
 
 void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {
@@ -160,6 +156,7 @@ void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {
     << "Port: " << addr.port() << ", "
     << "Error: " << err;
 
+  offset_ = 0;
   thread_->Dispose(socket);
 }
 
@@ -167,36 +164,28 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   if (!socket)
     return;
 
-  std::ostringstream oss;
-  oss << "{ \"traceEvents\": [";
-
-  int traces_size = traces_.size();
-  for (int i = 0; i < traces_size; ++i) {
-    oss << traces_[i];
-    if (i < traces_size - 1) {
-      oss << ", ";
-    }
-  }
-
-  oss << "]}";
-
-  const std::string& tmp = oss.str();
+  const std::string& tmp = oss_.str();
   size_t tmp_size = tmp.size();
   const char* data = tmp.c_str();
 
-  unsigned int offset = 0;
   int sent_size = 0;
-  while (offset < tmp_size) {
-    sent_size = socket->Send((const void*) (data + offset), tmp_size - offset);
+  while (offset_ < tmp_size) {
+    sent_size = socket->Send((const void*) (data + offset_), tmp_size - offset_);
     if (sent_size == -1) {
+      if (!IsBlockingError(socket->GetError())) {
+        offset_ = 0;
+        socket->Close();
+      }
       break;
     } else {
-      offset += sent_size;
+      offset_ += sent_size;
     }
   }
 
-  socket->Close();
-  thread_->Dispose(socket);
+  if (tmp_size == offset_) {
+    offset_ = 0;
+    socket->Close();
+  }
 }
 
 bool TraceLog::processMessages(void* args) {
