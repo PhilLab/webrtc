@@ -1,8 +1,8 @@
 #ifndef WEBRTC_BASE_TRACELOG_H_
 #define WEBRTC_BASE_TRACELOG_H_
 
-#include <vector>
 #include <string>
+#include <sstream>
 
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/criticalsection.h"
@@ -19,7 +19,7 @@ class Thread;
 // and send them to remote host. To start aggregating traces
 // call StartTracing method. Before saving the data locally or
 // remotely make sure you have called StopTracing method.
-class TraceLog : public sigslot::has_slots<> {
+class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
  public:
   TraceLog();
   virtual ~TraceLog();
@@ -50,7 +50,8 @@ class TraceLog : public sigslot::has_slots<> {
 
  private:
   bool is_tracing_;
-  std::vector<std::string> traces_;
+  unsigned int offset_;
+  std::ostringstream oss_;
   CriticalSection critical_section_;
   Thread* thread_;
   webrtc::ThreadWrapper* tw_;
