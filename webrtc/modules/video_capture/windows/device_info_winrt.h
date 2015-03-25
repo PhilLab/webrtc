@@ -29,6 +29,15 @@ class DeviceInfoWinRT : public DeviceInfoImpl {
       void* parentWindow, uint32_t positionX, uint32_t positionY);
 
  protected:
+
+  int32_t GetDeviceInfo(uint32_t deviceNumber,
+      char* deviceNameUTF8,
+      uint32_t deviceNameLength,
+      char* deviceUniqueIdUTF8,
+      uint32_t deviceUniqueIdUTF8Length,
+      char* productUniqueIdUTF8,
+      uint32_t productUniqueIdUTF8Length);
+
    virtual int32_t
        CreateCapabilityMap(const char* deviceUniqueIdUTF8);
 };

@@ -26,6 +26,7 @@ class VideoCaptureWinRT : public VideoCaptureImpl {
   virtual ~VideoCaptureWinRT();
 
  private:
+  Platform::String^ device_id_;
   CaptureDevice^ device_;
 };
 

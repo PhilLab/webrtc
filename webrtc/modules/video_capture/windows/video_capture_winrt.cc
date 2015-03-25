@@ -1,5 +1,6 @@
 #include "webrtc/modules/video_capture/windows/video_capture_winrt.h"
 
+#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
 
 #include <ppltasks.h>
@@ -46,7 +47,8 @@ ref class CaptureDevice sealed {
 
   CaptureDevice();
 
-  Concurrency::task<void> InitializeAsync();
+  Concurrency::task<void> InitializeAsync(
+      Platform::String^ deviceId);
 
   void CleanupSink();
 
@@ -83,14 +85,16 @@ CaptureDevice::CaptureDevice()
   : media_capture_(nullptr) {
 }
 
-Concurrency::task<void> CaptureDevice::InitializeAsync() {
+Concurrency::task<void> CaptureDevice::InitializeAsync(
+    Platform::String^ deviceId) {
   try {
+    auto settings = ref new Windows::Media::Capture::MediaCaptureInitializationSettings();
     auto media_capture = ref new Windows::Media::Capture::MediaCapture();
     media_capture_ = media_capture;
     media_capture_failed_event_registration_token_ = media_capture->Failed +=
         ref new Windows::Media::Capture::MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
-
-    return Concurrency::create_task(media_capture->InitializeAsync());
+    settings->VideoDeviceId = deviceId;
+    return Concurrency::create_task(media_capture->InitializeAsync(settings));
   } catch (Platform::Exception^ e) {
     DoCleanup();
     throw e;
@@ -205,11 +209,59 @@ VideoCaptureWinRT::VideoCaptureWinRT(const int32_t id)
 VideoCaptureWinRT::~VideoCaptureWinRT() {
 }
 
-int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_id) {
+int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) {
+
+  const int32_t device_unique_id_length =
+    (int32_t)strlen((char*)device_unique_id);
+  if (device_unique_id_length > kVideoCaptureUniqueNameLength)
+  {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+      "Device name too long");
+    return -1;
+  }
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
+    "Init called for device %s", device_unique_id);
+
+  device_id_ = nullptr;
+
+  auto findAllTask = Concurrency::create_task(
+      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
+          Windows::Devices::Enumeration::DeviceClass::VideoCapture)).then(
+              [this,
+              device_unique_id,
+              device_unique_id_length](Concurrency::task<Windows::Devices::Enumeration::DeviceInformationCollection^> findTask) {
+    try {
+      Windows::Devices::Enumeration::DeviceInformationCollection^ devInfoCollection = findTask.get();
+      if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+          "No video capture device found");
+      }
+      for (unsigned int i = 0; i < devInfoCollection->Size; i++) {
+        auto devInfo = devInfoCollection->GetAt(i);
+        Platform::String^ deviceUniqueId = devInfo->Id;
+        char currentDeviceUniqueIdUTF8[256];
+        currentDeviceUniqueIdUTF8[0] = 0;
+        WideCharToMultiByte(CP_UTF8, 0, deviceUniqueId->Begin(), -1,
+          currentDeviceUniqueIdUTF8,
+          sizeof(currentDeviceUniqueIdUTF8), NULL,
+          NULL);
+        if (strncmp(currentDeviceUniqueIdUTF8,
+          (const char*)device_unique_id,
+          device_unique_id_length) == 0) {
+          device_id_ = devInfo->Id;
+          break;
+        }
+      }
+    }
+    catch (Platform::Exception^ e) {
+    }
+  });
+
+  findAllTask.wait();
 
   CaptureDevice^ device = ref new CaptureDevice();
 
-  device->InitializeAsync().then([this, device](Concurrency::task<void> asyncInfo)
+  device->InitializeAsync(device_id_).then([this, device](Concurrency::task<void> asyncInfo)
   {
     try
     {
@@ -220,6 +272,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_id) {
       if (device_)
       {
         device_->CleanupAsync().then([this](){});
+        device_id_ = nullptr;
         device_ = nullptr;
       }
       return Concurrency::create_task([]{});
@@ -258,7 +311,7 @@ int32_t VideoCaptureWinRT::StartCapture(
   mediaEncodingProfile->Container = nullptr;
   mediaEncodingProfile->Video =
     Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
-    Windows::Media::MediaProperties::MediaEncodingSubtypes::Nv12, 640, 480);
+    Windows::Media::MediaProperties::MediaEncodingSubtypes::Nv12, capability.width, capability.height);
  
   device_->StartCaptureAsync(mediaEncodingProfile).then([this](Concurrency::task<void> asyncInfo)
   {

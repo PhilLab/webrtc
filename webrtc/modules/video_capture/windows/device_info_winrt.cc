@@ -1,5 +1,11 @@
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 
+#include "webrtc/system_wrappers/interface/trace.h"
+
+#include <windows.media.h>
+
+#include <ppltasks.h>
+
 namespace webrtc {
 namespace videocapturemodule {
 
@@ -24,7 +30,8 @@ int32_t DeviceInfoWinRT::Init() {
 }
 
 uint32_t DeviceInfoWinRT::NumberOfDevices() {
-  return 1;
+  ReadLockScoped cs(_apiLock);
+  return GetDeviceInfo(255, 0, 0, 0, 0, 0, 0);
 }
 
 int32_t DeviceInfoWinRT::GetDeviceName(
@@ -35,11 +42,88 @@ int32_t DeviceInfoWinRT::GetDeviceName(
     uint32_t deviceUniqueIdUTF8Length,
     char* productUniqueIdUTF8,
     uint32_t productUniqueIdUTF8Length) {
-  deviceNameUTF8[0] = 'a';
-  deviceNameUTF8[1] = 0;
-  deviceUniqueIdUTF8[0] = 'a';
-  deviceUniqueIdUTF8[1] = 0;
-  return 0;
+  const int32_t result = GetDeviceInfo(
+      deviceNumber,
+      deviceNameUTF8,
+      deviceNameLength,
+      deviceUniqueIdUTF8,
+      deviceUniqueIdUTF8Length,
+      productUniqueIdUTF8,
+      productUniqueIdUTF8Length);
+  return result > (int32_t)deviceNumber ? 0 : -1;
+}
+
+int32_t DeviceInfoWinRT::GetDeviceInfo(
+    uint32_t deviceNumber,
+    char* deviceNameUTF8,
+    uint32_t deviceNameLength,
+    char* deviceUniqueIdUTF8,
+    uint32_t deviceUniqueIdUTF8Length,
+    char* productUniqueIdUTF8,
+    uint32_t productUniqueIdUTF8Length) {
+
+  int deviceCount = 0;
+  int* deviceCountPtr = &deviceCount;
+  auto findAllTask = Concurrency::create_task(
+      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
+          Windows::Devices::Enumeration::DeviceClass::VideoCapture)).then(
+              [this,
+              deviceNumber,
+              deviceNameUTF8,
+              deviceNameLength,
+              deviceUniqueIdUTF8,
+              deviceUniqueIdUTF8Length,
+              productUniqueIdUTF8,
+              productUniqueIdUTF8Length,
+              deviceCountPtr](Concurrency::task<Windows::Devices::Enumeration::DeviceInformationCollection^> findTask) {
+    try {
+      Windows::Devices::Enumeration::DeviceInformationCollection^ devInfoCollection = findTask.get();
+      if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+          "No video capture device found");
+      }
+      *deviceCountPtr = devInfoCollection->Size;
+      for (unsigned int i = 0; i < devInfoCollection->Size; i++) {
+        if (i == static_cast<int>(deviceNumber))
+        {
+          auto devInfo = devInfoCollection->GetAt(i);
+          Platform::String^ deviceName = devInfo->Name;
+          Platform::String^ deviceUniqueId = devInfo->Id;
+          int convResult = 0;
+          convResult = WideCharToMultiByte(CP_UTF8, 0,
+            deviceName->Data(), -1,
+            (char*)deviceNameUTF8,
+            deviceNameLength, NULL,
+            NULL);
+          if (convResult == 0)
+          {
+            WEBRTC_TRACE(webrtc::kTraceError,
+              webrtc::kTraceVideoCapture, _id,
+              "Failed to convert device name to UTF8. %d",
+              GetLastError());
+          }
+          convResult = WideCharToMultiByte(CP_UTF8, 0,
+            deviceUniqueId->Data(), -1,
+            (char*)deviceUniqueIdUTF8,
+            deviceUniqueIdUTF8Length, NULL,
+            NULL);
+          if (convResult == 0)
+          {
+            WEBRTC_TRACE(webrtc::kTraceError,
+              webrtc::kTraceVideoCapture, _id,
+              "Failed to convert device unique ID to UTF8. %d",
+              GetLastError());
+          }
+          productUniqueIdUTF8[0] = 0;
+        }
+      }
+    } catch (Platform::Exception^ e) {
+    }
+  });
+
+  findAllTask.wait();
+
+  return deviceCount;
 }
 
 int32_t DeviceInfoWinRT::DisplayCaptureSettingsDialogBox(
@@ -53,6 +137,83 @@ int32_t DeviceInfoWinRT::DisplayCaptureSettingsDialogBox(
 
 int32_t DeviceInfoWinRT::CreateCapabilityMap(
   const char* deviceUniqueIdUTF8) {
+
+  _captureCapabilities.clear();
+
+  const int32_t deviceUniqueIdUTF8Length =
+    (int32_t)strlen((char*)deviceUniqueIdUTF8);
+  if (deviceUniqueIdUTF8Length > kVideoCaptureUniqueNameLength)
+  {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+      "Device name too long");
+    return -1;
+  }
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
+    "CreateCapabilityMap called for device %s", deviceUniqueIdUTF8);
+
+  auto findAllTask = Concurrency::create_task(
+      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
+          Windows::Devices::Enumeration::DeviceClass::VideoCapture)).then(
+              [this,
+              deviceUniqueIdUTF8,
+              deviceUniqueIdUTF8Length](Concurrency::task<Windows::Devices::Enumeration::DeviceInformationCollection^> findTask) {
+    try {
+      Windows::Devices::Enumeration::DeviceInformationCollection^ devInfoCollection = findTask.get();
+      if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+          "No video capture device found");
+      }
+      Windows::Devices::Enumeration::DeviceInformation^ chosenDevInfo = nullptr;
+      for (unsigned int i = 0; i < devInfoCollection->Size; i++) {
+        auto devInfo = devInfoCollection->GetAt(i);
+        Platform::String^ deviceUniqueId = devInfo->Id;
+        char currentDeviceUniqueIdUTF8[256];
+        currentDeviceUniqueIdUTF8[0] = 0;
+        WideCharToMultiByte(CP_UTF8, 0, deviceUniqueId->Data(), -1,
+          currentDeviceUniqueIdUTF8,
+          sizeof(currentDeviceUniqueIdUTF8), NULL,
+          NULL);
+        if (strncmp(currentDeviceUniqueIdUTF8,
+          (const char*)deviceUniqueIdUTF8,
+          deviceUniqueIdUTF8Length) == 0) {
+          chosenDevInfo = devInfo;
+          break;
+        }
+      }
+      if (chosenDevInfo != nullptr) {
+        auto settings = ref new Windows::Media::Capture::MediaCaptureInitializationSettings();
+        auto mediaCapture = ref new Windows::Media::Capture::MediaCapture();
+        Platform::Agile<Windows::Media::Capture::MediaCapture> mediaCaptureAgile(mediaCapture);
+        settings->VideoDeviceId = chosenDevInfo->Id;
+        auto initializeTask = Concurrency::create_task(mediaCapture->InitializeAsync(settings))
+          .then([this, mediaCaptureAgile](Concurrency::task<void> initTask)
+        {
+          try {
+            initTask.get();
+            auto streamProperties = mediaCaptureAgile->VideoDeviceController->GetAvailableMediaStreamProperties(
+              Windows::Media::Capture::MediaStreamType::VideoRecord);
+            for (unsigned int i = 0; i < streamProperties->Size; i++)
+            {
+              Windows::Media::MediaProperties::IVideoEncodingProperties^ prop = 
+                  static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(streamProperties->GetAt(i));
+              VideoCaptureCapability capability;
+              capability.width = prop->Width;
+              capability.height = prop->Height;
+              capability.maxFPS = prop->FrameRate->Numerator;
+              _captureCapabilities.push_back(capability);
+            }
+          }
+          catch (Platform::Exception ^ e) {
+          }
+        });
+        initializeTask.wait();
+      }
+    } catch (Platform::Exception^ e) {
+    }
+  });
+
+  findAllTask.wait();
+
   return 0;
 }
 
