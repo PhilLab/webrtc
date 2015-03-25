@@ -52,11 +52,11 @@
             'run_loop.cc',
           ],
         }],
-		['OS_RUNTIME=="winrt"', {
+        ['OS_RUNTIME=="winrt"', {
           'sources!': [
-		    'run_loop.h',
+          'run_loop.h',
             'run_loop.cc',
-			'win/run_loop_win.cc',
+            'win/run_loop_win.cc',
           ],
         }],
       ],
