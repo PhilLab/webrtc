@@ -16,7 +16,8 @@
       'target_name': 'winrt_all',
       'type': 'none',
       'dependencies': [
-        'UnitTests/gtest_runner/gtest_runner.gyp:*'
+        'UnitTests/gtest_runner/gtest_runner.gyp:*',
+        '<(webrtc_root)/modules/video_capture/test/winrt/video_capture_test_winrt.gyp:*',
       ],
     },
   ],
