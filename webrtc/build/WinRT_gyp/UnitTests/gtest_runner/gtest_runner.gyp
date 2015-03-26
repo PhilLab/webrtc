@@ -108,7 +108,7 @@
         },
       ],
       'appx': {
-        'dep': '<(PRODUCT_DIR)/gtest_runner.exe',
+        'dep': '<(PRODUCT_DIR)/gtest_runner_package/gtest_runner.exe',
         'dir': '<(PRODUCT_DIR)/gtest_runner_package',
         'out': '<(PRODUCT_DIR)/gtest_runner.appx',
       },
