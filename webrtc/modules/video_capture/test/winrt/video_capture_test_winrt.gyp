@@ -74,7 +74,7 @@
            'mfuuid.lib',
           ],
           # 2 == /SUBSYSTEM:WINDOWS
-          'SubSystem': '2', 
+          'SubSystem': '2',
           'AdditionalOptions': [
           ],
         },
@@ -88,9 +88,18 @@
       'dependencies': [
         'video_capture_test_winrt',
       ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/video_capture_test_winrt_package',
+          'files':[
+            '<(PRODUCT_DIR)/video_capture_test_winrt.exe',
+          ],
+        },
+      ],
       'appx': {
-        'dep': '<(PRODUCT_DIR)/video_capture_test_winrt.exe',
-        'map': '<(PRODUCT_DIR)/video_capture_test_winrt_mapping.ini',
+        'dep': '<(PRODUCT_DIR)/video_capture_test_winrt_package/video_capture_test_winrt.exe',
+        'dir': '<(PRODUCT_DIR)/video_capture_test_winrt_package',
+        'cert': 'video_capture_test_winrt_TemporaryKey.pfx',
         'out': '<(PRODUCT_DIR)/video_capture_test_winrt.appx',
       },
     },

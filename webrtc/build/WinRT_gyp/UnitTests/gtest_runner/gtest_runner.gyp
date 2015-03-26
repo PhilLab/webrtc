@@ -93,8 +93,6 @@
     },
     {
       'target_name': 'gtest_runner_appx',
-      #'product_name': 'gtest_runner',
-      #'product_extension': 'appx',
       'type': 'none',
       'dependencies': [
         'gtest_runner',
@@ -110,6 +108,7 @@
       'appx': {
         'dep': '<(PRODUCT_DIR)/gtest_runner_package/gtest_runner.exe',
         'dir': '<(PRODUCT_DIR)/gtest_runner_package',
+        'cert': 'gtest_runner_TemporaryKey.pfx',
         'out': '<(PRODUCT_DIR)/gtest_runner.appx',
       },
     },
