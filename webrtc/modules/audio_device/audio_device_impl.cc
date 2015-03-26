@@ -16,12 +16,16 @@
 #include <assert.h>
 #include <string.h>
 
-#if defined(_WIN32)
+#if defined(_WIN32) 
     #include "audio_device_utility_win.h"
-    #include "audio_device_wave_win.h"
+#if defined (WINRT)
+  #include "audio_device_wasapi_win.h"
+#else
+#include "audio_device_wave_win.h"
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_core_win.h"
  #endif
+#endif  // WINRT
 #elif defined(WEBRTC_ANDROID)
     #include <stdlib.h>
     #include "audio_device_utility_android.h"
@@ -228,12 +232,24 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         || (audioLayer == kPlatformDefaultAudio)
 #endif
         )
+#if !defined(WINRT)
     {
         // create *Windows Wave Audio* implementation
         ptrAudioDevice = new AudioDeviceWindowsWave(Id());
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Windows Wave APIs will be utilized");
     }
+#endif  // WINRT
 #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
+#if defined(WINRT)
+    if (audioLayer == kWindowsWasapiAudio)
+    {
+      WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "attempting to use the Windows Wasapi Audio APIs...");
+
+        // create *Windows Core Audio* implementation
+      ptrAudioDevice = new AudioDeviceWindowsWasapi(Id());
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Windows Wasapi Audio APIs will be utilized");
+    }
+#else
     if ((audioLayer == kWindowsCoreAudio) ||
         (audioLayer == kPlatformDefaultAudio)
         )
@@ -258,6 +274,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
             }
         }
     }
+#endif // defined(WINRT)
 #endif // defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     if (ptrAudioDevice != NULL)
     {
@@ -568,6 +585,10 @@ int32_t AudioDeviceModuleImpl::ActiveAudioLayer(AudioLayer* audioLayer) const
     else if (*audioLayer == AudioDeviceModule::kWindowsCoreAudio)
     {
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kWindowsCoreAudio");
+    }
+    else if (*audioLayer == AudioDeviceModule::kWindowsWasapiAudio)
+    {
+      WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kWindowsWasapiAudio");
     }
     else if (*audioLayer == AudioDeviceModule::kLinuxAlsaAudio)
     {
@@ -2014,11 +2035,15 @@ AudioDeviceModule::AudioLayer AudioDeviceModuleImpl::PlatformAudioLayer() const
     case kWindowsWaveAudio:
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
                      "output: kWindowsWaveAudio");
-        break;
+        break; 
     case kWindowsCoreAudio:
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
                      "output: kWindowsCoreAudio");
         break;
+    case kWindowsWasapiAudio:
+      WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+        "output: kWindowsWasapiAudio");
+      break;
     case kLinuxAlsaAudio:
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
                      "output: kLinuxAlsaAudio");

@@ -24,13 +24,35 @@
 #include <stdio.h>
 #include <mmsystem.h>
 
+#if defined(WINRT)
+#include <iostream>
+#endif  // WINRT
+
 namespace webrtc
 {
 
 void AudioDeviceUtility::WaitForKey()
 {
+#if defined(WINRT)
+  std::cin.get();
+#else
 	_getch();
+#endif  // WINRT
 }
+
+#if defined(WINRT)
+DWORD timeGetTime() {
+  LARGE_INTEGER freq, t;
+  QueryPerformanceFrequency(&freq);
+  QueryPerformanceCounter(&t);
+
+  t.QuadPart = t.QuadPart /* ticks */
+    * 1000 /* ms/s */
+    / freq.QuadPart /* ticks/s */;
+  return t.LowPart;
+}
+#endif  // WINRT
+
 
 uint32_t AudioDeviceUtility::GetTimeInMS()
 {

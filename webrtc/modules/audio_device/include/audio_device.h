@@ -27,11 +27,13 @@ class AudioDeviceModule : public RefCountedModule {
     kPlatformDefaultAudio = 0,
     kWindowsWaveAudio = 1,
     kWindowsCoreAudio = 2,
-    kLinuxAlsaAudio = 3,
-    kLinuxPulseAudio = 4,
-    kAndroidJavaAudio = 5,
-    kAndroidOpenSLESAudio = 6,
-    kDummyAudio = 7
+    kWindowsWasapiAudio = 3,
+    kLinuxAlsaAudio = 4,
+    kLinuxPulseAudio = 5,
+    kAndroidJavaAudio = 6,
+    kAndroidOpenSLESAudio = 7,
+    kDummyAudio = 8
+
   };
 
   enum WindowsDeviceType {
