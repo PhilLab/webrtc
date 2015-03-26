@@ -1,3 +1,13 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #include "webrtc/modules/video_capture/windows/video_capture_winrt.h"
 
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -6,6 +16,17 @@
 #include <ppltasks.h>
 
 extern Windows::UI::Xaml::Controls::CaptureElement^ g_capturePreview;
+
+using Windows::Devices::Enumeration::DeviceClass;
+using Windows::Devices::Enumeration::DeviceInformation;
+using Windows::Devices::Enumeration::DeviceInformationCollection;
+using Windows::Media::Capture::MediaCapture;
+using Windows::Media::Capture::MediaCaptureFailedEventArgs;
+using Windows::Media::Capture::MediaCaptureFailedEventHandler;
+using Windows::Media::IMediaExtension;
+using Windows::Media::MediaProperties::MediaEncodingProfile;
+using Windows::Media::MediaProperties::VideoEncodingProperties;
+using Windows::Media::MediaProperties::MediaEncodingSubtypes;
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -57,13 +78,13 @@ ref class CaptureDevice sealed {
   Concurrency::task<void> CleanupAsync();
 
   Concurrency::task<void> StartCaptureAsync(
-      Windows::Media::MediaProperties::MediaEncodingProfile^ mediaEncodingProfile);
+      MediaEncodingProfile^ mediaEncodingProfile);
 
   Concurrency::task<void> StopCaptureAsync();
 
   void OnCaptureFailed(
-      Windows::Media::Capture::MediaCapture^ sender,
-      Windows::Media::Capture::MediaCaptureFailedEventArgs^ errorEventArgs) {
+      MediaCapture^ sender,
+      MediaCaptureFailedEventArgs^ errorEventArgs) {
       // Forward the error to listeners.
       Failed(this, ref new CaptureFailedEventArgs(errorEventArgs->Code, errorEventArgs->Message));
   }
@@ -92,7 +113,7 @@ Concurrency::task<void> CaptureDevice::InitializeAsync(
     auto media_capture = ref new Windows::Media::Capture::MediaCapture();
     media_capture_ = media_capture;
     media_capture_failed_event_registration_token_ = media_capture->Failed +=
-        ref new Windows::Media::Capture::MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
+        ref new MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
     settings->VideoDeviceId = deviceId;
     return Concurrency::create_task(media_capture->InitializeAsync(settings));
   } catch (Platform::Exception^ e) {
@@ -153,7 +174,7 @@ Concurrency::task<void> CaptureDevice::CleanupAsync()
 }
 
 Concurrency::task<void> CaptureDevice::StartCaptureAsync(
-    Windows::Media::MediaProperties::MediaEncodingProfile^ mediaEncodingProfile)
+    MediaEncodingProfile^ mediaEncodingProfile)
 {
   // We cannot start recording twice.
   if (media_sink_ && capture_started_) {
@@ -167,7 +188,7 @@ Concurrency::task<void> CaptureDevice::StartCaptureAsync(
   media_sink_ = ref new VideoCaptureMediaSinkProxyWinRT();
 
   return Concurrency::create_task(media_sink_->InitializeAsync(mediaEncodingProfile->Video)).
-     then([this, mediaEncodingProfile](Windows::Media::IMediaExtension^ mediaExtension)
+     then([this, mediaEncodingProfile](IMediaExtension^ mediaExtension)
   {
     return Concurrency::create_task(media_capture_->StartRecordToCustomSinkAsync(mediaEncodingProfile, mediaExtension)).then([this](Concurrency::task<void>& asyncInfo)
     {
@@ -225,13 +246,13 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
   device_id_ = nullptr;
 
   auto findAllTask = Concurrency::create_task(
-      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
-          Windows::Devices::Enumeration::DeviceClass::VideoCapture)).then(
+      DeviceInformation::FindAllAsync(
+          DeviceClass::VideoCapture)).then(
               [this,
               device_unique_id,
-              device_unique_id_length](Concurrency::task<Windows::Devices::Enumeration::DeviceInformationCollection^> findTask) {
+              device_unique_id_length](Concurrency::task<DeviceInformationCollection^> findTask) {
     try {
-      Windows::Devices::Enumeration::DeviceInformationCollection^ devInfoCollection = findTask.get();
+      DeviceInformationCollection^ devInfoCollection = findTask.get();
       if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
           "No video capture device found");
@@ -305,13 +326,13 @@ int32_t VideoCaptureWinRT::StartCapture(
     return Concurrency::create_task([]{});
   });
 
-  Windows::Media::MediaProperties::MediaEncodingProfile^ mediaEncodingProfile =
-    ref new Windows::Media::MediaProperties::MediaEncodingProfile();
+  MediaEncodingProfile^ mediaEncodingProfile =
+    ref new MediaEncodingProfile();
   mediaEncodingProfile->Audio = nullptr;
   mediaEncodingProfile->Container = nullptr;
   mediaEncodingProfile->Video =
-    Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
-    Windows::Media::MediaProperties::MediaEncodingSubtypes::Nv12, capability.width, capability.height);
+    VideoEncodingProperties::CreateUncompressed(
+    MediaEncodingSubtypes::Nv12, capability.width, capability.height);
  
   device_->StartCaptureAsync(mediaEncodingProfile).then([this](Concurrency::task<void> asyncInfo)
   {

@@ -1,3 +1,13 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
 
 #include <ppltasks.h>
@@ -10,6 +20,12 @@
 #include <windows.foundation.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+
+using Microsoft::WRL::ComPtr;
+using Windows::Foundation::IPropertyValue;
+using Windows::Foundation::PropertyType;
+using Windows::Media::IMediaExtension;
+using Windows::Media::MediaProperties::IMediaEncodingProperties;
 
 namespace {
 
@@ -45,10 +61,10 @@ inline void Throw(HRESULT hr) {
   throw ref new Platform::Exception(hr);
 }
 
-static void AddAttribute(_In_ GUID guidKey, _In_ Windows::Foundation::IPropertyValue ^value, _In_ IMFAttributes *pAttr) {
-  Windows::Foundation::PropertyType type = value->Type;
+static void AddAttribute(_In_ GUID guidKey, _In_ IPropertyValue ^value, _In_ IMFAttributes *pAttr) {
+  PropertyType type = value->Type;
   switch (type) {
-  case Windows::Foundation::PropertyType::UInt8Array:
+  case PropertyType::UInt8Array:
     {
       Platform::Array<BYTE>^ arr;
       value->GetUInt8Array(&arr);
@@ -57,31 +73,31 @@ static void AddAttribute(_In_ GUID guidKey, _In_ Windows::Foundation::IPropertyV
     }
     break;
 
-  case Windows::Foundation::PropertyType::Double:
+  case PropertyType::Double:
     {
       ThrowIfError(pAttr->SetDouble(guidKey, value->GetDouble()));
     }
     break;
 
-  case Windows::Foundation::PropertyType::Guid:
+  case PropertyType::Guid:
     {
       ThrowIfError(pAttr->SetGUID(guidKey, value->GetGuid()));
     }
     break;
 
-  case Windows::Foundation::PropertyType::String:
+  case PropertyType::String:
     {
       ThrowIfError(pAttr->SetString(guidKey, value->GetString()->Data()));
     }
     break;
 
-  case Windows::Foundation::PropertyType::UInt32:
+  case PropertyType::UInt32:
     {
       ThrowIfError(pAttr->SetUINT32(guidKey, value->GetUInt32()));
     }
     break;
 
-  case Windows::Foundation::PropertyType::UInt64:
+  case PropertyType::UInt64:
     {
       ThrowIfError(pAttr->SetUINT64(guidKey, value->GetUInt64()));
     }
@@ -90,12 +106,12 @@ static void AddAttribute(_In_ GUID guidKey, _In_ Windows::Foundation::IPropertyV
 }
 
 void ConvertPropertiesToMediaType(
-    _In_ Windows::Media::MediaProperties::IMediaEncodingProperties ^mep,
+    _In_ IMediaEncodingProperties ^mep,
     _Outptr_ IMFMediaType **ppMT) {
     if (mep == nullptr || ppMT == nullptr) {
       throw ref new Platform::InvalidArgumentException();
     }
-    Microsoft::WRL::ComPtr<IMFMediaType> spMT;
+    ComPtr<IMFMediaType> spMT;
     *ppMT = nullptr;
     ThrowIfError(MFCreateMediaType(&spMT));
 
@@ -103,11 +119,11 @@ void ConvertPropertiesToMediaType(
 
     while (it->HasCurrent) {
       auto currentValue = it->Current;
-      AddAttribute(currentValue->Key, safe_cast<Windows::Foundation::IPropertyValue^>(currentValue->Value), spMT.Get());
+      AddAttribute(currentValue->Key, safe_cast<IPropertyValue^>(currentValue->Value), spMT.Get());
       it->MoveNext();
     }
 
-    GUID guiMajorType = safe_cast<Windows::Foundation::IPropertyValue^>(mep->Properties->Lookup(MF_MT_MAJOR_TYPE))->GetGuid();
+    GUID guiMajorType = safe_cast<IPropertyValue^>(mep->Properties->Lookup(MF_MT_MAJOR_TYPE))->GetGuid();
 
     if (guiMajorType != MFMediaType_Video) {
       Throw(E_UNEXPECTED);
@@ -229,7 +245,7 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetEvent(
 
   HRESULT hr = S_OK;
 
-  Microsoft::WRL::ComPtr<IMFMediaEventQueue> spQueue;
+  ComPtr<IMFMediaEventQueue> spQueue;
 
   {
     CriticalSectionScoped cs(_critSec);
@@ -536,7 +552,7 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::SetCurrentMediaType(
     if (_state < State_Ready) {
       _state = State_Ready;
     } else if (_state > State_Ready) {
-      Microsoft::WRL::ComPtr<IMFMediaType> spType;
+      ComPtr<IMFMediaType> spType;
       ThrowIfError(MFCreateMediaType(&spType));
       ThrowIfError(pMediaType->CopyAllItems(spType.Get()));
       ProcessFormatChange(spType.Get());
@@ -748,7 +764,7 @@ HRESULT VideoCaptureStreamSinkWinRT::Shutdown() {
 // Puts an async operation on the work queue.
 HRESULT VideoCaptureStreamSinkWinRT::QueueAsyncOperation(StreamOperation op) {
   HRESULT hr = S_OK;
-  Microsoft::WRL::ComPtr<AsyncOperation> spOp;
+  ComPtr<AsyncOperation> spOp;
   spOp.Attach(new AsyncOperation(op));  // Created with ref count = 1
   if (!spOp) {
     hr = E_OUTOFMEMORY;
@@ -767,7 +783,7 @@ HRESULT VideoCaptureStreamSinkWinRT::OnDispatchWorkItem(
   CriticalSectionScoped cs(_critSec);
 
   try {
-    Microsoft::WRL::ComPtr<IUnknown> spState;
+    ComPtr<IUnknown> spState;
 
     ThrowIfError(pAsyncResult->GetState(&spState));
 
@@ -843,7 +859,7 @@ bool VideoCaptureStreamSinkWinRT::SendSampleFromQueue() {
 bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
   bool fNeedMoreSamples = false;
 
-  Microsoft::WRL::ComPtr<IUnknown> spunkSample;
+  ComPtr<IUnknown> spunkSample;
 
   bool fSendSamples = true;
 
@@ -856,7 +872,7 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
   }
 
   while (fSendSamples) {
-    Microsoft::WRL::ComPtr<IMFSample> spSample;
+    ComPtr<IMFSample> spSample;
     bool fProcessingSample = false;
     assert(spunkSample);
 
@@ -959,14 +975,14 @@ VideoCaptureMediaSinkWinRT::~VideoCaptureMediaSinkWinRT() {
 
 HRESULT VideoCaptureMediaSinkWinRT::RuntimeClassInitialize(
     ISinkCallback ^callback,
-    Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties) {
+    IMediaEncodingProperties ^encodingProperties) {
   try {
     _callback = callback;
     const unsigned int streamId = GetStreamId();
     RemoveStreamSink(streamId);
     if (encodingProperties != nullptr) {
-      Microsoft::WRL::ComPtr<IMFStreamSink> spStreamSink;
-      Microsoft::WRL::ComPtr<IMFMediaType> spMediaType;
+      ComPtr<IMFStreamSink> spStreamSink;
+      ComPtr<IMFMediaType> spMediaType;
       ConvertPropertiesToMediaType(encodingProperties, &spMediaType);
       ThrowIfError(AddStreamSink(streamId, spMediaType.Get(), spStreamSink.GetAddressOf()));
     }
@@ -1006,7 +1022,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::AddStreamSink(
     IMFMediaType *pMediaType,
     IMFStreamSink **ppStreamSink) {
   VideoCaptureStreamSinkWinRT *pStream = nullptr;
-  Microsoft::WRL::ComPtr<IMFStreamSink> spMFStream;
+  ComPtr<IMFStreamSink> spMFStream;
   CriticalSectionScoped cs(_critSec);
   HRESULT hr = S_OK;
   if (_isShutdown) {
@@ -1065,7 +1081,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::RemoveStreamSink(
   }
 
   if (SUCCEEDED(hr) && _spStreamSink) {
-    Microsoft::WRL::ComPtr<IMFStreamSink> spStream = _spStreamSink;
+    ComPtr<IMFStreamSink> spStream = _spStreamSink;
     static_cast<VideoCaptureStreamSinkWinRT *>(spStream.Get())->Shutdown();
   }
 
@@ -1112,7 +1128,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkByIndex(
 
   if (SUCCEEDED(hr)) {
     assert(_spStreamSink);
-    Microsoft::WRL::ComPtr<IMFStreamSink> spResult = _spStreamSink;
+    ComPtr<IMFStreamSink> spResult = _spStreamSink;
     *ppStreamSink = spResult.Detach();
   }
 
@@ -1138,7 +1154,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkById(
 
   if (SUCCEEDED(hr)) {
     assert(_spStreamSink);
-    Microsoft::WRL::ComPtr<IMFStreamSink> spResult = _spStreamSink;
+    ComPtr<IMFStreamSink> spResult = _spStreamSink;
     *ppStreamSink = spResult.Detach();
   }
 
@@ -1215,7 +1231,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::Shutdown() {
     }
 
     if (SUCCEEDED(hr)) {
-      Microsoft::WRL::ComPtr<IMFStreamSink> spMFStream = _spStreamSink;
+      ComPtr<IMFStreamSink> spMFStream = _spStreamSink;
       _spClock.Reset();
       static_cast<VideoCaptureStreamSinkWinRT *>(spMFStream.Get())->Shutdown();
       _isShutdown = true;
@@ -1301,23 +1317,23 @@ VideoCaptureMediaSinkProxyWinRT::~VideoCaptureMediaSinkProxyWinRT() {
   }
 }
 
-Windows::Media::IMediaExtension^ VideoCaptureMediaSinkProxyWinRT::GetMFExtensions() {
+IMediaExtension^ VideoCaptureMediaSinkProxyWinRT::GetMFExtensions() {
   CriticalSectionScoped cs(_critSec);
 
   if (_mediaSink == nullptr) {
     Throw(MF_E_NOT_INITIALIZED);
   }
 
-  Microsoft::WRL::ComPtr<IInspectable> inspectable;
+  ComPtr<IInspectable> inspectable;
   ThrowIfError(_mediaSink.As(&inspectable));
 
-  return safe_cast<Windows::Media::IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
+  return safe_cast<IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
 }
 
 
-Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^ 
+Windows::Foundation::IAsyncOperation<IMediaExtension^>^ 
     VideoCaptureMediaSinkProxyWinRT::InitializeAsync(
-        Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties) {
+        IMediaEncodingProperties ^encodingProperties) {
   return Concurrency::create_async([this, encodingProperties]() {
     CriticalSectionScoped cs(_critSec);
     CheckShutdown();
@@ -1332,10 +1348,10 @@ Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^
         ref new VideoCaptureSinkCallback(this),
         encodingProperties));
 
-    Microsoft::WRL::ComPtr<IInspectable> inspectable;
+    ComPtr<IInspectable> inspectable;
     ThrowIfError(_mediaSink.As(&inspectable));
 
-    return safe_cast<Windows::Media::IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
+    return safe_cast<IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
   });
 }
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -20,41 +20,79 @@
       ],
       'include_dirs': [
         '../../../../../..',
-        'Generated Files',
       ],
       'sources': [
-		'MainPage.xaml',
-		'MainPage.xaml.h',
-		'MainPage.xaml.cpp',
-		'Package.appxmanifest',
-		'video_capture_test_winrt_TemporaryKey.pfx',
-		'Assets/Logo.scale-100.png',
-		'Assets/SmallLogo.scale-100.png',
-		'Assets/SplashScreen.scale-100.png',
-		'Assets/StoreLogo.scale-100.png',
-		'App.xaml',
-		'App.xaml.h',
-		'App.xaml.cpp',
-		'pch.h',
-		'pch.cpp',
-	  ],
-	  'msvs_package_certificate': {
-		'KeyFile': 'video_capture_test_winrt_TemporaryKey.pfx',
-		'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
-	  },
-	  'msvs_settings': {
-		'VCCLCompilerTool': {
-		  # ExceptionHandling must match _HAS_EXCEPTIONS above.
-		  'ExceptionHandling': '1',
-		},
-		'VCLinkerTool': {
-		  'UseLibraryDependencyInputs': "true",
-		  'AdditionalDependencies': [
-		   'mfplat.lib',
-		   'mfuuid.lib',
-		  ],
-		},
-	  },
+        'App.cpp',
+        'Package.appxmanifest',
+        'video_capture_test_winrt_TemporaryKey.pfx',
+        'Logo.png',
+        'SmallLogo.png',
+        'SplashScreen.png',
+        'StoreLogo.png',
+      ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)',
+          'files':[
+            'video_capture_test_winrt_mapping.ini',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/video_capture_test_winrt_package',
+          'files':[
+            'Generated Manifest\AppxManifest.xml',
+            'Logo.png',
+            'SmallLogo.png',
+            'SplashScreen.png',
+            'StoreLogo.png',
+          ],
+        },
+        # Hack for MSVS to copy to the Appx folder
+        {
+          'destination': '<(PRODUCT_DIR)/AppX',
+          'files':[
+            'Logo.png',
+            'SmallLogo.png',
+            'SplashScreen.png',
+            'StoreLogo.png',
+          ],
+        },
+      ],
+      'msvs_package_certificate': {
+        'KeyFile': 'video_capture_test_winrt_TemporaryKey.pfx',
+        'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
+      },
+      'msvs_settings': {
+        'VCCLCompilerTool': {
+          # ExceptionHandling must match _HAS_EXCEPTIONS above.
+          'ExceptionHandling': '1',
+        },
+        'VCLinkerTool': {
+          'UseLibraryDependencyInputs': "true",
+          'AdditionalDependencies': [
+           'mfplat.lib',
+           'mfuuid.lib',
+          ],
+          # 2 == /SUBSYSTEM:WINDOWS
+          'SubSystem': '2', 
+          'AdditionalOptions': [
+          ],
+        },
+      },
+    },
+    {
+      'target_name': 'video_capture_test_winrt_appx',
+      #'product_name': 'video_capture_test_winrt',
+      #'product_extension': 'appx',
+      'type': 'none',
+      'dependencies': [
+        'video_capture_test_winrt',
+      ],
+      'appx': {
+        'dep': '<(PRODUCT_DIR)/video_capture_test_winrt.exe',
+        'map': '<(PRODUCT_DIR)/video_capture_test_winrt_mapping.ini',
+        'out': '<(PRODUCT_DIR)/video_capture_test_winrt.appx',
+      },
     },
   ],
 }

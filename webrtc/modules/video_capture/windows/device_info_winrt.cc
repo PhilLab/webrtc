@@ -1,3 +1,13 @@
+/*
+*  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -5,6 +15,14 @@
 #include <windows.media.h>
 
 #include <ppltasks.h>
+
+using Windows::Devices::Enumeration::DeviceClass;
+using Windows::Devices::Enumeration::DeviceInformation;
+using Windows::Devices::Enumeration::DeviceInformationCollection;
+using Windows::Media::Capture::MediaCapture;
+using Windows::Media::Capture::MediaCaptureInitializationSettings;
+using Windows::Media::Capture::MediaStreamType;
+using Windows::Media::MediaProperties::IVideoEncodingProperties;
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -65,8 +83,8 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
   int deviceCount = 0;
   int* deviceCountPtr = &deviceCount;
   auto findAllTask = Concurrency::create_task(
-      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
-          Windows::Devices::Enumeration::DeviceClass::VideoCapture)).then(
+      DeviceInformation::FindAllAsync(
+          DeviceClass::VideoCapture)).then(
               [this,
               deviceNumber,
               deviceNameUTF8,
@@ -75,9 +93,9 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
               deviceUniqueIdUTF8Length,
               productUniqueIdUTF8,
               productUniqueIdUTF8Length,
-              deviceCountPtr](Concurrency::task<Windows::Devices::Enumeration::DeviceInformationCollection^> findTask) {
+              deviceCountPtr](Concurrency::task<DeviceInformationCollection^> findTask) {
     try {
-      Windows::Devices::Enumeration::DeviceInformationCollection^ devInfoCollection = findTask.get();
+      DeviceInformationCollection^ devInfoCollection = findTask.get();
       if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
           "No video capture device found");
@@ -152,18 +170,18 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
     "CreateCapabilityMap called for device %s", deviceUniqueIdUTF8);
 
   auto findAllTask = Concurrency::create_task(
-      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
-          Windows::Devices::Enumeration::DeviceClass::VideoCapture)).then(
+      DeviceInformation::FindAllAsync(
+          DeviceClass::VideoCapture)).then(
               [this,
               deviceUniqueIdUTF8,
-              deviceUniqueIdUTF8Length](Concurrency::task<Windows::Devices::Enumeration::DeviceInformationCollection^> findTask) {
+              deviceUniqueIdUTF8Length](Concurrency::task<DeviceInformationCollection^> findTask) {
     try {
-      Windows::Devices::Enumeration::DeviceInformationCollection^ devInfoCollection = findTask.get();
+      DeviceInformationCollection^ devInfoCollection = findTask.get();
       if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
           "No video capture device found");
       }
-      Windows::Devices::Enumeration::DeviceInformation^ chosenDevInfo = nullptr;
+      DeviceInformation^ chosenDevInfo = nullptr;
       for (unsigned int i = 0; i < devInfoCollection->Size; i++) {
         auto devInfo = devInfoCollection->GetAt(i);
         Platform::String^ deviceUniqueId = devInfo->Id;
@@ -181,9 +199,9 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
         }
       }
       if (chosenDevInfo != nullptr) {
-        auto settings = ref new Windows::Media::Capture::MediaCaptureInitializationSettings();
-        auto mediaCapture = ref new Windows::Media::Capture::MediaCapture();
-        Platform::Agile<Windows::Media::Capture::MediaCapture> mediaCaptureAgile(mediaCapture);
+        auto settings = ref new MediaCaptureInitializationSettings();
+        auto mediaCapture = ref new MediaCapture();
+        Platform::Agile<MediaCapture> mediaCaptureAgile(mediaCapture);
         settings->VideoDeviceId = chosenDevInfo->Id;
         auto initializeTask = Concurrency::create_task(mediaCapture->InitializeAsync(settings))
           .then([this, mediaCaptureAgile](Concurrency::task<void> initTask)
@@ -191,11 +209,11 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
           try {
             initTask.get();
             auto streamProperties = mediaCaptureAgile->VideoDeviceController->GetAvailableMediaStreamProperties(
-              Windows::Media::Capture::MediaStreamType::VideoRecord);
+              MediaStreamType::VideoRecord);
             for (unsigned int i = 0; i < streamProperties->Size; i++)
             {
-              Windows::Media::MediaProperties::IVideoEncodingProperties^ prop = 
-                  static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(streamProperties->GetAt(i));
+              IVideoEncodingProperties^ prop = 
+                  static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
               VideoCaptureCapability capability;
               capability.width = prop->Width;
               capability.height = prop->Height;

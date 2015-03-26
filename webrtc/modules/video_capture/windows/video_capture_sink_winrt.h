@@ -1,8 +1,17 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_SINK_WINRT_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_SINK_WINRT_H_
 
 #include <wrl\implements.h>
-//#include <wrl\ftm.h>
 
 #include <mfidl.h>
 
@@ -215,9 +224,8 @@ class VideoCaptureStreamSinkWinRT :
 class VideoCaptureMediaSinkWinRT
     : public Microsoft::WRL::RuntimeClass<
         Microsoft::WRL::RuntimeClassFlags<
-            Microsoft::WRL::RuntimeClassType::WinRtClassicComMix >,
+             Microsoft::WRL::RuntimeClassType::WinRtClassicComMix >,
         ABI::Windows::Media::IMediaExtension,
-//        Microsoft::WRL::FtmBase,
         IMFMediaSink,
         IMFClockStateSink> {
  public:
