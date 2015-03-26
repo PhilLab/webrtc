@@ -49,6 +49,8 @@
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+            '../../../../../data/',
+            '../../../../../resources/',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -59,6 +61,8 @@
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+            '../../../../../data/',
+            '../../../../../resources/',
           ],
         },
       ],

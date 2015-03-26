@@ -317,11 +317,6 @@
                 'desktop_capture',
               ],
               'sources!': [ # TODO(WinRT) open files as soon as related components properly compile
-                'audio_coding/main/acm2/audio_coding_module_unittest.cc',          # crashes the gtest_runner app
-                'audio_coding/main/acm2/audio_coding_module_unittest_oldapi.cc',   # crashes the gtest_runner app
-                'audio_coding/neteq/neteq_external_decoder_unittest.cc',           # crashes the gtest_runner app
-                'audio_coding/neteq/neteq_unittest.cc',                            # crashes the gtest_runner app
-                'audio_processing/transient/file_utils_unittest.cc',               # crashes the gtest_runner app
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
                 'desktop_capture/desktop_region_unittest.cc',
                 'desktop_capture/differ_block_unittest.cc',
@@ -335,7 +330,6 @@
                 'desktop_capture/win/cursor_unittest.cc',
                 'desktop_capture/win/cursor_unittest_resources.h',
                 'desktop_capture/win/cursor_unittest_resources.rc',
-                'video_coding/main/source/video_sender_unittest.cc',             # crashes the gtest_runner app
                 # Files included in the project based on a condition
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
                 'desktop_capture/mouse_cursor_monitor_unittest.cc',
