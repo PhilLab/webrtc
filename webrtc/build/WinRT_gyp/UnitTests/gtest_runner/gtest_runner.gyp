@@ -42,12 +42,6 @@
       ],
       'copies': [
         {
-          'destination': '<(PRODUCT_DIR)',
-          'files':[
-            'gtest_runner_mapping.ini',
-          ],
-        },
-        {
           'destination': '<(PRODUCT_DIR)/gtest_runner_package',
           'files':[
             'Generated Manifest\AppxManifest.xml',
@@ -87,7 +81,7 @@
            'ws2_32.lib',
           ],
           # 2 == /SUBSYSTEM:WINDOWS
-          'SubSystem': '2', 
+          'SubSystem': '2',
           'AdditionalOptions': [
           ],
         },
@@ -101,9 +95,17 @@
       'dependencies': [
         'gtest_runner',
       ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/gtest_runner_package',
+          'files':[
+            '<(PRODUCT_DIR)/gtest_runner.exe',
+          ],
+        },
+      ],
       'appx': {
         'dep': '<(PRODUCT_DIR)/gtest_runner.exe',
-        'map': '<(PRODUCT_DIR)/gtest_runner_mapping.ini',
+        'dir': '<(PRODUCT_DIR)/gtest_runner_package',
         'out': '<(PRODUCT_DIR)/gtest_runner.appx',
       },
     },
