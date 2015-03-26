@@ -213,18 +213,13 @@
                 'defines!': [
                     '_HAS_EXCEPTIONS=0',
                     ]
-            }],
-            ['OS=="win" and OS_RUNTIME!="winrt"', {
-              'sources!':[
-                  'win/audio_device_wave_win.cc',
-                  'win/audio_device_wave_win.h',
-                  ],
+            },{
+               'sources!':[
+                    'win/audio_device_wasapi_win.cc',
+                    'win/audio_device_wasapi_win.h',
+                ],
             }],
             ['OS=="win"', {
-              'sources!':[
-                  'win/audio_device_wave_win.cc',
-                  'win/audio_device_wave_win.h',
-                  ],
               'link_settings': {
                 'libraries': [
                   # Required for the built-in WASAPI AEC.
