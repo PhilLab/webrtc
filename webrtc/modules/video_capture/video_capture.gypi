@@ -119,6 +119,7 @@
               'sources': [
                 'windows/device_info_winrt.cc',
                 'windows/device_info_winrt.h',
+                'windows/video_capture_factory_windows.cc',
                 'windows/video_capture_sink_winrt.cc',
                 'windows/video_capture_sink_winrt.h',
                 'windows/video_capture_winrt.cc',
