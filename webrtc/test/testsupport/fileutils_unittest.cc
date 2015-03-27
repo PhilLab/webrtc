@@ -18,8 +18,11 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(WINRT)
 #define chdir _chdir
+static const char* kPathDelimiter = "\\";
+#elif defined(WINRT)
+#define chdir(d) 0
 static const char* kPathDelimiter = "\\";
 #else
 static const char* kPathDelimiter = "/";
