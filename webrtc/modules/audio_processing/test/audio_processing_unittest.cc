@@ -1214,7 +1214,8 @@ TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
   }
 }
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
+// TODO(WinRT) Investigate if we can enable this test
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WINRT)
 TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   const int kSampleRateHz = 16000;
   const int kSamplesPerChannel =

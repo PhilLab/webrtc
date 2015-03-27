@@ -57,6 +57,9 @@ const char* kPathDelimiter = "/";
 
 #ifdef WEBRTC_ANDROID
 const char* kRootDirName = "/sdcard/";
+#elif WINRT
+const char* kProjectRootFileName = "";
+const char* kFallbackPath = "./";
 #else
 // The file we're looking for to identify the project root dir.
 const char* kProjectRootFileName = "DEPS";
@@ -119,6 +122,9 @@ std::string ProjectRootPath() {
   if (path == kFallbackPath) {
     return kCannotFindProjectRootDir;
   }
+#ifdef WINRT
+  return path + kPathDelimiter;
+#endif
   if (relative_dir_path_set) {
     path = path + kPathDelimiter + relative_dir_path;
   }
@@ -161,8 +167,13 @@ std::string OutputPath() {
 
 #if defined(WINRT)
 std::string WorkingDir() {
-  // TODO (winrt): Is working directory relevant on WinRT?
-  return kFallbackPath;
+  // Consider the app installation location as the working directory for WinRT
+  Windows::Storage::StorageFolder^ installedLocation =
+    Windows::ApplicationModel::Package::Current->InstalledLocation;
+  const wchar_t* installLocPtr = installedLocation->Path->Data();
+  std::wstring installLocWstr = installLocPtr;
+  std::string installLocStr(installLocWstr.begin(), installLocWstr.end());
+  return installLocStr.empty() ? kFallbackPath : installLocStr;
 }
 #else
 std::string WorkingDir() {

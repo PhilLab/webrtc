@@ -1,10 +1,23 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
 
 #include "webrtc/modules/video_capture/video_capture_impl.h"
+#include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 
 namespace webrtc {
 namespace videocapturemodule {
+
+ref class CaptureDevice;
 
 class VideoCaptureWinRT : public VideoCaptureImpl {
  public:
@@ -21,6 +34,10 @@ class VideoCaptureWinRT : public VideoCaptureImpl {
 
  protected:
   virtual ~VideoCaptureWinRT();
+
+ private:
+  Platform::String^ device_id_;
+  CaptureDevice^ device_;
 };
 
 }  // namespace videocapturemodule
