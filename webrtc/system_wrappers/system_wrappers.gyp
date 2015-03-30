@@ -170,7 +170,7 @@
             'WEBRTC_CLOCK_TYPE_REALTIME',
           ],
         }],
-        ['OS=="win"', {
+        ['OS=="win" and winrt_platform!="win_phone"', {
           'link_settings': {
             'libraries': [ '-lwinmm.lib', ],
           },
