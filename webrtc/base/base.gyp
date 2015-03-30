@@ -683,7 +683,7 @@
             'win32socketserver.h',
           ],
         }],
-        ['OS=="win"', {
+        ['OS=="win" and winrt_platform!="win_phone"', {
           'link_settings': {
             'libraries': [
               '-lcrypt32.lib',
@@ -696,7 +696,8 @@
           'defines': [
             '_CRT_NONSTDC_NO_DEPRECATE',
           ],
-        }, {
+        }],
+				['OS!="win"', {
           'sources/': [
             ['exclude', 'win32[a-z0-9]*\\.(h|cc)$'],
           ],
