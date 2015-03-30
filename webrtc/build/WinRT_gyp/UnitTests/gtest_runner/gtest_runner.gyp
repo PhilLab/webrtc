@@ -23,6 +23,7 @@
         '../../../../../webrtc/test/test.gyp:test_support_main',
         '../../../../../webrtc/modules/modules.gyp:modules_unittests',
         '../../../../../webrtc/common_video/common_video_unittests.gyp:common_video_unittests',
+        '../../../../../webrtc/voice_engine/voice_engine.gyp:voice_engine_unittests',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
