@@ -244,3 +244,9 @@ source_set("gtest_prod") {
     "test/testsupport/gtest_prod_util.h",
   ]
 }
+
+group("winrt_tests") {
+  deps = [
+    "//webrtc/build/WinRT_gyp/UnitTests/gtest_runner",
+  ]
+}
