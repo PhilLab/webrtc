@@ -38,9 +38,9 @@ using ::testing::WithArg;
 
 namespace webrtc {
 
-bool EqualFrames(const I420VideoFrame& frame1,
+bool EqualFramesVie(const I420VideoFrame& frame1,
                  const I420VideoFrame& frame2);
-bool EqualTextureFrames(const I420VideoFrame& frame1,
+bool EqualTextureFramesVie(const I420VideoFrame& frame1,
                         const I420VideoFrame& frame2);
 bool EqualBufferFrames(const I420VideoFrame& frame1,
                        const I420VideoFrame& frame2);
@@ -195,14 +195,14 @@ TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
 }
 
-bool EqualFrames(const I420VideoFrame& frame1,
+bool EqualFramesVie(const I420VideoFrame& frame1,
                  const I420VideoFrame& frame2) {
   if (frame1.native_handle() != NULL || frame2.native_handle() != NULL)
-    return EqualTextureFrames(frame1, frame2);
+    return EqualTextureFramesVie(frame1, frame2);
   return EqualBufferFrames(frame1, frame2);
 }
 
-bool EqualTextureFrames(const I420VideoFrame& frame1,
+bool EqualTextureFramesVie(const I420VideoFrame& frame1,
                         const I420VideoFrame& frame2) {
   return ((frame1.native_handle() == frame2.native_handle()) &&
           (frame1.width() == frame2.width()) &&
@@ -237,7 +237,7 @@ bool EqualFramesVector(const ScopedVector<I420VideoFrame>& frames1,
   if (frames1.size() != frames2.size())
     return false;
   for (size_t i = 0; i < frames1.size(); ++i) {
-    if (!EqualFrames(*frames1[i], *frames2[i]))
+    if (!EqualFramesVie(*frames1[i], *frames2[i]))
       return false;
   }
   return true;
