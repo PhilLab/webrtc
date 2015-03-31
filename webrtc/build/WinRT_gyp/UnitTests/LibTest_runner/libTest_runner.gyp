@@ -81,7 +81,7 @@
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
         'libSrtpTests/libsrtpTestSolution.h',
-        'gtest_runner_TemporaryKey.pfx',
+        '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
@@ -120,7 +120,7 @@
       'msvs_disabled_warnings': [
       ],
       'msvs_package_certificate': {
-        'KeyFile': 'gtest_runner_TemporaryKey.pfx',
+        'KeyFile': '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
         'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
       },
       'msvs_settings': {
@@ -152,7 +152,7 @@
         'dep': '<(PRODUCT_DIR)/libTest_runner_package/libTest_runner.exe',
         'dir': '<(PRODUCT_DIR)/libTest_runner_package',
         'out': '<(PRODUCT_DIR)/libTest_runner.appx',
-        'cert': 'gtest_runner_TemporaryKey.pfx'
+        'cert': '..\gtest_runner\gtest_runner_TemporaryKey.pfx'
       },
     },
   ],
