@@ -34,12 +34,23 @@
       ],
       'sources': [
         'App.cpp',
-        'Package.appxmanifest',
         'gtest_runner_TemporaryKey.pfx',
         'Logo.png',
         'SmallLogo.png',
         'SplashScreen.png',
         'StoreLogo.png',
+      ],
+      'conditions': [
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+          'sources': [
+            'Package.phone.appxmanifest',
+          ],
+        }],
+          ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+          'sources': [
+            'Package.appxmanifest',
+          ],
+        }],
       ],
       'copies': [
         {
