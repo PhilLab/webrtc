@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "common.h"
 #include "RtpwTest.h"
 
 //test entry point declaration

@@ -35,22 +35,11 @@
          '_HAS_EXCEPTIONS=1',
       ],
       'include_dirs': [
-        'Generated Files',
+        '.',
       ],
       'sources': [
-        'MainPage.xaml',
-        'MainPage.xaml.h',
-        'MainPage.xaml.cpp',
-        'Package.appxmanifest',
-        'Assets/Logo.scale-100.png',
-        'Assets/SmallLogo.scale-100.png',
-        'Assets/SplashScreen.scale-100.png',
-        'Assets/StoreLogo.scale-100.png',
-        'App.xaml',
-        'App.xaml.h',
-        'App.xaml.cpp',
-        'pch.h',
-        'pch.cpp',
+        'App.cpp',
+        'common.h',
         'Helpers/SafeSingleton.h',
         'Helpers/StdOutputRedirector.h',
         'Helpers/TestInserter.h',
@@ -92,10 +81,47 @@
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
         'libSrtpTests/libsrtpTestSolution.h',
+        '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
+      ],
+      'conditions': [
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+          'sources': [
+            'Package.phone.appxmanifest',
+          ],
+        }],
+          ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+          'sources': [
+            'Package.appxmanifest',
+          ],
+        }],
+      ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package',
+          'files':[
+					  'Generated Manifest\AppxManifest.xml',
+            'Logo.png',
+            'SmallLogo.png',
+            'SplashScreen.png',
+            'StoreLogo.png',
+          ],
+        },
+        # Hack for MSVS to copy to the Appx folder
+        {
+          'destination': '<(PRODUCT_DIR)/AppX',
+          'files':[
+            'Logo.png',
+            'SmallLogo.png',
+            'SplashScreen.png',
+            'StoreLogo.png',
+          ],
+        },
       ],
       'msvs_disabled_warnings': [
       ],
       'msvs_package_certificate': {
+        'KeyFile': '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
+        'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
       },
       'msvs_settings': {
         'VCCLCompilerTool': {
@@ -104,6 +130,29 @@
         },
         'VCLinkerTool': {
         },
+      },
+    },
+    {	
+      'target_name': 'libTest_runner_appx',
+      'product_name': 'libTest_runner',
+      'product_extension': 'appx',
+      'type': 'none',
+      'dependencies': [
+        'libTest_runner',
+      ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package',
+          'files':[
+            '<(PRODUCT_DIR)/libTest_runner.exe',
+          ],
+        },
+      ],
+      'appx': {
+        'dep': '<(PRODUCT_DIR)/libTest_runner_package/libTest_runner.exe',
+        'dir': '<(PRODUCT_DIR)/libTest_runner_package',
+        'out': '<(PRODUCT_DIR)/libTest_runner.appx',
+        'cert': '..\gtest_runner\gtest_runner_TemporaryKey.pfx'
       },
     },
   ],

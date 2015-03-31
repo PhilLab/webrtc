@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "common.h"
 #include "SrtpSha1DriverTest.h"
 
 //test entry point declaration

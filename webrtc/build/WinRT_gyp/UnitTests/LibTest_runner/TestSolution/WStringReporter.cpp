@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "common.h"
 
 namespace LibTest_runner
 {
