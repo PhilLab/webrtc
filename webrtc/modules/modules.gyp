@@ -311,9 +311,9 @@
               'dependencies': [
                 'webrtc_opus_fec_test',
               ],
-              # TODO(WinRT) remove this section when desktop_capture is ported
               'dependencies!': [
-                'desktop_capture',
+                'desktop_capture', # TODO(WinRT) remove when desktop_capture is ported
+                '<(webrtc_root)/modules/modules.gyp:video_capture',
               ],
               'sources!': [ # TODO(WinRT) remove this section when desktop_capture is ported
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
