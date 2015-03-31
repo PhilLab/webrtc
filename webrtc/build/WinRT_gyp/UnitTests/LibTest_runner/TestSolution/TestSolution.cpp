@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "common.h"
 #include "TestSolution.h"
 
 #pragma warning ( push )

@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "common.h"
 #include "LibSrtpTestBase.h"
 
 extern "C" void getopt_reset();

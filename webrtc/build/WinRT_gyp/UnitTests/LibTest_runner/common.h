@@ -1,5 +1,5 @@
 ﻿//
-// pch.h
+// common.h
 // Header for standard system include files.
 //
 
@@ -7,8 +7,6 @@
 
 #include <collection.h>
 #include <ppltasks.h>
-
-#include "App.xaml.h"
 
 // STL includes
 #include <string>
