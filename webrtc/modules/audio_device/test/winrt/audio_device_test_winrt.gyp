@@ -23,7 +23,6 @@
       'sources': [
         'App.cpp',
         'Package.appxmanifest',
-        'audio_device_test_winrt_TemporaryKey.pfx',
         'Logo.png',
         'SmallLogo.png',
         'SplashScreen.png',
@@ -52,7 +51,7 @@
         },
       ],
       'msvs_package_certificate': {
-        'KeyFile': '<(webrtc_root)build/WinRT_gyp/UnitTests/gtest_runner/gtest_runner_TemporaryKey.pfx',
+        'KeyFile': '<(webrtc_root)/build/WinRT_gyp/UnitTests/gtest_runner/gtest_runner_TemporaryKey.pfx',
         'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
       },
       'msvs_settings': {
@@ -91,7 +90,7 @@
       'appx': {
         'dep': '<(PRODUCT_DIR)/audio_device_test_winrt_package/audio_device_test_winrt.exe',
         'dir': '<(PRODUCT_DIR)/audio_device_test_winrt_package',
-        'cert': '<(webrtc_root)build/WinRT_gyp/UnitTests/gtest_runner/gtest_runner_TemporaryKey.pfx',
+        'cert': '<(webrtc_root)/build/WinRT_gyp/UnitTests/gtest_runner/gtest_runner_TemporaryKey.pfx',
         'out': '<(PRODUCT_DIR)/audio_device_test_winrt.appx',
       },
     },
