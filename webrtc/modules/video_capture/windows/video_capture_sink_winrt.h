@@ -25,9 +25,23 @@ class CriticalSectionWrapper;
 namespace videocapturemodule {
 class VideoCaptureMediaSinkWinRT;
 
+public ref class MediaSampleEventArgs sealed
+{
+internal:
+  MediaSampleEventArgs(Microsoft::WRL::ComPtr<IMFMediaBuffer> spMediaSample) : 
+      _spMediaSample(spMediaSample) { }
+
+  Microsoft::WRL::ComPtr<IMFMediaBuffer> GetMediaSample() {
+    return _spMediaSample;
+  }
+
+private:
+  Microsoft::WRL::ComPtr<IMFMediaBuffer> _spMediaSample;
+};
+
 interface class ISinkCallback
 {
-  void OnSample();
+  void OnSample(MediaSampleEventArgs^ args);
   void OnShutdown();
 };
 
@@ -54,7 +68,6 @@ class VideoCaptureStreamSinkWinRT :
     OpPause,
     OpStop,
     OpProcessSample,
-
     Op_Count                // Number of operations
   };
 
@@ -295,13 +308,15 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
   Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^ 
       InitializeAsync(Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties);
 
+  event Windows::Foundation::EventHandler<MediaSampleEventArgs^>^ MediaSampleEvent;
+
  private:
   ref class VideoCaptureSinkCallback sealed : ISinkCallback
   {
    public:
-    virtual void OnSample()
+    virtual void OnSample(MediaSampleEventArgs^ args)
     {
-      _parent->OnSample();
+      _parent->OnSample(args);
     }
 
     virtual void OnShutdown()
@@ -319,7 +334,7 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
     VideoCaptureMediaSinkProxyWinRT ^_parent;
   };
 
-  void OnSample();
+  void OnSample(MediaSampleEventArgs^ args);
 
   void OnShutdown();
 

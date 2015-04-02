@@ -80,9 +80,9 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
     char* productUniqueIdUTF8,
     uint32_t productUniqueIdUTF8Length) {
 
-  int deviceCount = 0;
+  int deviceCount = -1;
   int* deviceCountPtr = &deviceCount;
-  auto findAllTask = Concurrency::create_task(
+  Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
@@ -132,14 +132,17 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
               "Failed to convert device unique ID to UTF8. %d",
               GetLastError());
           }
-          productUniqueIdUTF8[0] = 0;
+          if (productUniqueIdUTF8 != NULL)
+            productUniqueIdUTF8[0] = 0;
         }
       }
     } catch (Platform::Exception^ e) {
     }
-  });
+  }, Concurrency::task_continuation_context::use_arbitrary());
 
-  findAllTask.wait();
+  while (deviceCount == -1) {
+    Sleep(100);
+  }
 
   return deviceCount;
 }
@@ -169,12 +172,15 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
     "CreateCapabilityMap called for device %s", deviceUniqueIdUTF8);
 
-  auto findAllTask = Concurrency::create_task(
+  bool finished = false;
+  bool* finishedPtr = &finished;
+  Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
               deviceUniqueIdUTF8,
-              deviceUniqueIdUTF8Length](Concurrency::task<DeviceInformationCollection^> findTask) {
+              deviceUniqueIdUTF8Length,
+              finishedPtr](Concurrency::task<DeviceInformationCollection^> findTask) {
     try {
       DeviceInformationCollection^ devInfoCollection = findTask.get();
       if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
@@ -226,13 +232,16 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
         });
         initializeTask.wait();
       }
+      *finishedPtr = true;
     } catch (Platform::Exception^ e) {
     }
-  });
+  }, Concurrency::task_continuation_context::use_arbitrary());
 
-  findAllTask.wait();
+  while (finished) {
+    Sleep(100);
+  }
 
-  return 0;
+  return _captureCapabilities.size();
 }
 
 }  // namespace videocapturemodule

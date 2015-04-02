@@ -3,17 +3,74 @@
 
 #include <Map>
 
-// WebRtc includes
-#include "webrtc/modules/video_render/windows/i_video_render_win.h"
+#include <windows.ui.xaml.controls.h>
 
-// Added
+#include <wrl\implements.h>
+
+#include "webrtc/modules/video_render/windows/i_video_render_win.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/windows/video_render_source_winrt.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
 class Trace;
 class ThreadWrapper;
+
+class VideoChannelWinRT : public VideoRenderCallback
+{
+public:
+  VideoChannelWinRT(Windows::UI::Xaml::Controls::MediaElement^ mediaElement, CriticalSectionWrapper* critSect, Trace* trace);
+
+  virtual ~VideoChannelWinRT();
+
+  // Inherited from VideoRencerCallback, called from VideoAPI class.
+  // Called when the incomming frame size and/or number of streams in mix changes
+  virtual int FrameSizeChange(int width, int height, int numberOfStreams);
+
+  // A new frame is delivered.
+  virtual int DeliverFrame(const I420VideoFrame& videoFrame);
+  virtual int32_t RenderFrame(const uint32_t streamId,
+    I420VideoFrame& videoFrame);
+
+  // Called to check if the video frame is updated.
+  int IsUpdated(bool& isUpdated);
+  // Called after the video frame has been render to the screen
+  int RenderOffFrame();
+  //
+  void SetStreamSettings(uint16_t streamId,
+    uint32_t zOrder,
+    float startWidth,
+    float startHeight,
+    float stopWidth,
+    float stopHeight);
+  int GetStreamSettings(uint16_t streamId,
+    uint32_t& zOrder,
+    float& startWidth,
+    float& startHeight,
+    float& stopWidth,
+    float& stopHeight);
+
+private:
+  //critical section passed from the owner
+  CriticalSectionWrapper* _critSect;
+
+  Windows::UI::Xaml::Controls::MediaElement^ _mediaElement;
+  Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> _renderMediaSource;
+
+  bool _bufferIsUpdated;
+  // the frame size
+  int _width;
+  int _height;
+  //sream settings
+  //TODO support multiple streams in one channel
+  uint16_t _streamId;
+  uint32_t _zOrder;
+  float _startWidth;
+  float _startHeight;
+  float _stopWidth;
+  float _stopHeight;
+};
 
 class VideoRenderWinRT : IVideoRenderWin {
  public:
@@ -123,18 +180,19 @@ class VideoRenderWinRT : IVideoRenderWin {
   bool ScreenUpdateProcess();
 
  private:
-  int InitDevice();
-  int CloseDevice();
-
   CriticalSectionWrapper& _refCritsect;
   Trace* _trace;
   ThreadWrapper* _screenUpdateThread;
   EventWrapper* _screenUpdateEvent;
 
+  VideoChannelWinRT* _channel;
+
   void* _hWnd;
   bool _fullScreen;
   int _winWidth;
   int _winHeight;
+
+  //static Windows::Media::MediaExtensionManager^ mediaExtensionManager;
 };
 
 }  // namespace webrtc

@@ -878,7 +878,12 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
 
     if (SUCCEEDED(spunkSample.As(&spSample))) {
       assert(spSample);
-      _callback->OnSample();
+      ComPtr<IMFMediaBuffer> spMediaBuffer;
+      HRESULT hr = spSample->GetBufferByIndex(0, &spMediaBuffer);
+      if (FAILED(hr)) {
+        break;
+      }
+      _callback->OnSample(ref new MediaSampleEventArgs(spMediaBuffer));
       if (!fFlush) {
         fProcessingSample = true;
       }
@@ -1355,8 +1360,9 @@ Windows::Foundation::IAsyncOperation<IMediaExtension^>^
   });
 }
 
-void VideoCaptureMediaSinkProxyWinRT::OnSample() {
+void VideoCaptureMediaSinkProxyWinRT::OnSample(MediaSampleEventArgs^ args) {
   Trace(TRACE_LEVEL_NORMAL, L"======== ProcessSamplesFromQueue - %04d\n", _sampleNumber++);
+  MediaSampleEvent(this, args);
 }
 
 void VideoCaptureMediaSinkProxyWinRT::OnShutdown() {
