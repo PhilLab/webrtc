@@ -31,6 +31,11 @@
 #define WEBRTC_ARCH_X86
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
+#elif defined(_M_ARM)
+#define WEBRTC_ARCH_ARM
+#define WEBRTC_ARCH_ARM_FAMILY
+#define WEBRTC_ARCH_32_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
 #elif defined(__ARMEL__)
 // TODO(ajm): We'd prefer to control platform defines here, but this is
 // currently provided by the Android makefiles. Commented to avoid duplicate
