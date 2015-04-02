@@ -30,6 +30,8 @@
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_rand_gen',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_env',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_sha1_driver',
+        '../../../../modules/modules.gyp:video_coding_test',
+        '../../../../modules/modules.gyp:video_capture',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -81,6 +83,8 @@
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
         'libSrtpTests/libsrtpTestSolution.h',
+        'videoCodingTests/VideoCodingTest.h',
+        'videoCodingTests/VideoCodingTest.cpp',
         '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
       ],
       'conditions': [
@@ -106,6 +110,12 @@
             'StoreLogo.png',
           ],
         },
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package/resources',
+          'files':[
+            '../../../../../resources/foreman_cif.yuv',
+          ],
+        },
         # Hack for MSVS to copy to the Appx folder
         {
           'destination': '<(PRODUCT_DIR)/AppX',
@@ -114,6 +124,12 @@
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/AppX/resources',
+          'files':[
+            '../../../../../resources/foreman_cif.yuv',
           ],
         },
       ],
