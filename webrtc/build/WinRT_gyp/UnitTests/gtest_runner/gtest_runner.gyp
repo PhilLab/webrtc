@@ -39,29 +39,46 @@
         'gtest_runner_TemporaryKey.pfx',
         'Logo.png',
         'SmallLogo.png',
-        'SplashScreen.png',
         'StoreLogo.png',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
           'sources': [
             'Package.phone.appxmanifest',
+            'Logo71x71.png',
+            'Logo44x44.png',
+            'SplashScreen480x800.png',
           ],
         }],
           ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
           'sources': [
             'Package.appxmanifest',
+            'SplashScreen.png',
           ],
         }],
       ],
       'copies': [
         {
           'destination': '<(PRODUCT_DIR)/gtest_runner_package',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Generated Manifest Phone\AppxManifest.xml',								
+                 'Logo71x71.png',
+                 'Logo44x44.png',
+                 'SplashScreen480x800.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'Generated Manifest\AppxManifest.xml',								
+                'SplashScreen.png',
+              ],
+            }],
+          ],
           'files':[
-            'Generated Manifest\AppxManifest.xml',
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
             '../../../../../data/',
             '../../../../../resources/',
@@ -70,10 +87,23 @@
         # Hack for MSVS to copy to the Appx folder
         {
           'destination': '<(PRODUCT_DIR)/AppX',
+          'conditions': [
+              ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+                'files': [	
+                   'Logo71x71.png',
+                   'Logo44x44.png',	
+                   'SplashScreen480x800.png',							
+                ],
+            }],
+             ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+                'files': [
+                  'SplashScreen.png',
+                ],
+            }],
+          ],
           'files':[
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
             '../../../../../data/',
             '../../../../../resources/',

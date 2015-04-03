@@ -7,10 +7,10 @@
 
     For more information on package manifest files, see http://go.microsoft.com/fwlink/?LinkID=241727
   -->
-  <Identity Name="LibTestRunner" Publisher="CN=WebRTC" Version="1.0.0.0" ProcessorArchitecture="x86" />
-  <mp:PhoneIdentity PhoneProductId="5fbcb7fa-54a7-4722-8e48-a029619cda97" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="GTestRunner" Publisher="CN=WebRTC" Version="1.0.0.0" ProcessorArchitecture="x86" />
+  <mp:PhoneIdentity PhoneProductId="79F175DE-2A85-42D7-9565-55B2020F238E" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>LibTest_runner</DisplayName>
+    <DisplayName>gtest_runner</DisplayName>
     <PublisherDisplayName>WebRTC</PublisherDisplayName>
     <Logo>StoreLogo.png</Logo>
   </Properties>
@@ -22,8 +22,8 @@
     <Resource Language="EN-US" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="libTest_runner.exe" EntryPoint="LibTest_runner_Windows.App">
-      <m3:VisualElements DisplayName="LibTest_runner.Windows" Description="LibTest_runner.Windows" BackgroundColor="#464646" ForegroundText="light" Square150x150Logo="Logo.png" Square44x44Logo="Logo44x44.png">
+    <Application Id="App" Executable="gtest_runner.exe" EntryPoint="gtest_runner.App">
+      <m3:VisualElements DisplayName="gtest_runner" Description="gtest_runner" BackgroundColor="#464646" ForegroundText="light" Square150x150Logo="Logo.png" Square44x44Logo="Logo44x44.png">
         <m3:DefaultTile Square71x71Logo="Logo71x71.png"></m3:DefaultTile>
         <m3:SplashScreen Image="SplashScreen480x800.png" />
       </m3:VisualElements>
@@ -41,7 +41,7 @@
     <build:Item Name="VisualStudioEdition" Value="Microsoft Visual Studio Premium 2013" />
     <build:Item Name="OperatingSystem" Version="6.3.9600.16384 (winblue_rtm.130821-1623)" />
     <build:Item Name="Microsoft.Build.AppxPackage.dll" Version="12.0.31101.0" />
-    <build:Item Name="ProjectGUID" Value="{23C69D26-07FC-B7DD-268F-83BD7B2A0AEB}" />
+    <build:Item Name="ProjectGUID" Value="{90D72864-27C5-2BD1-A1FF-0A2F7E78EC3D}" />
     <build:Item Name="Microsoft.Windows.UI.Xaml.Build.Tasks.dll" Version="12.0.30501.0" />
     <build:Item Name="MakePri.exe" Version="6.3.9600.17298 (winblue.141024-1500)" />
   </build:Metadata>
