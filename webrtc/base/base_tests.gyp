@@ -130,7 +130,7 @@
               'linuxfdwalk_unittest.cc',
             ],
           }],
-          ['OS=="win"', {
+          ['OS=="win" and OS_RUNTIME!="winrt"', {
             'sources': [
               'win32_unittest.cc',
               'win32regkey_unittest.cc',
@@ -147,6 +147,16 @@
               'socket_unittest.cc',
               'win32socketserver_unittest.cc',
               'win32windowpicker_unittest.cc',
+            ],
+          }],
+          ['OS=="win" and OS_RUNTIME=="winrt"', {
+            'sources': [
+              'win32_unittest.cc',
+            ],
+            'sources!': [
+              # TODO(winrt) enable when TestUdpReadyToSendIPv6 is fixed.
+              'physicalsocketserver_unittest.cc',
+              'socket_unittest.cc',
             ],
           }],
           ['OS=="mac"', {
@@ -180,16 +190,6 @@
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
-      ],
-      'conditions': [
-        ['OS=="win" and OS_RUNTIME=="winrt"', {
-            'sources!': [
-                'win32regkey_unittest.cc',
-                'win32toolhelp_unittest.cc',
-                'winfirewall_unittest.cc',
-                'win32window_unittest.cc',
-            ],
-        }]
       ],
     },
   ],

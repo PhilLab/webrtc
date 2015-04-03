@@ -16,7 +16,7 @@
       'target_name': 'gtest_runner',
       'type': 'executable',
       'dependencies': [
-        '../../../../../webrtc/base/base_tests.gyp:rtc_base_unittests',
+        '../../../../../webrtc/webrtc.gyp:rtc_unittests',
         '../../../../../webrtc/system_wrappers/system_wrappers_tests.gyp:system_wrappers_unittests',
         '../../../../../webrtc/common_audio/common_audio.gyp:common_audio_unittests',
         '../../../../../webrtc/test/test.gyp:test_support',
