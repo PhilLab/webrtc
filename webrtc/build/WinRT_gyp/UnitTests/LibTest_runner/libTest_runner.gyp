@@ -103,11 +103,13 @@
         {
           'destination': '<(PRODUCT_DIR)/libTest_runner_package',
           'files':[
-					  'Generated Manifest\AppxManifest.xml',
+            'Generated Manifest\AppxManifest.xml',
             'Logo.png',
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+            'Logo71x71.png',
+            'Logo44x44.png',
           ],
         },
         {
@@ -124,6 +126,8 @@
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+            'Logo71x71.png',
+            'Logo44x44.png',
           ],
         },
         {
