@@ -1,0 +1,17 @@
+﻿<Page
+    x:Class="audio_device_test_winrt.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:audio_device_test_winrt"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Button Content="TestDeviceEnumeration" HorizontalAlignment="Left" Margin="175,99,0,0" VerticalAlignment="Top" Click="Button_Click"/>
+    <Button Content="TestDeviceSelection" HorizontalAlignment="Left" Margin="175,166,0,0" VerticalAlignment="Top" Click="Button_Click_1" Width="190"/>
+    <Button Content="TestAudioTransport" HorizontalAlignment="Left" Margin="175,238,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_2"/>
+    <Button Content="TestLoopback" HorizontalAlignment="Left" Margin="175,309,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_3"/>
+
+  </Grid>
+</Page>

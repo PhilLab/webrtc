@@ -232,6 +232,8 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         || (audioLayer == kPlatformDefaultAudio)
 #endif
         )
+    {
+    }
 #if !defined(WINRT)
     {
         // create *Windows Wave Audio* implementation

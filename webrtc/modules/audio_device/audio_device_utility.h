@@ -21,6 +21,7 @@ class AudioDeviceUtility
  public:
   static uint32_t GetTimeInMS();
   static void WaitForKey();
+  static void TestOutput(const char* szFormat, ...);
   static bool StringCompare(const char* str1,
                             const char* str2,
                             const uint32_t length);

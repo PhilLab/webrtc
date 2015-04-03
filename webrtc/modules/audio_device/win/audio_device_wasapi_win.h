@@ -19,11 +19,13 @@
                              // (must be before audioclient.h)
 #include <Audioclient.h>     // WASAPI
 #include <Audiopolicy.h>
+#include <wrl\implements.h>
 #include <Mmdeviceapi.h>     // MMDevice
 #include <avrt.h>            // Avrt
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
 #include <mfapi.h>
+#include<ppltasks.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
@@ -33,6 +35,9 @@ using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
 using Windows::Media::Devices::AudioDeviceRole;
 using Windows::Media::Devices::MediaDevice;
+
+using namespace Microsoft::WRL;
+using namespace concurrency;
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment( lib, "avrt.lib" )
@@ -45,6 +50,8 @@ const float MAX_CORE_MICROPHONE_VOLUME = 255.0f;
 const float MIN_CORE_MICROPHONE_VOLUME = 0.0f;
 const uint16_t CORE_SPEAKER_VOLUME_STEP_SIZE = 1;
 const uint16_t CORE_MICROPHONE_VOLUME_STEP_SIZE = 1;
+
+class AudioDeviceWindowsWasapi;
 
 // Utility class which initializes COM in the constructor (STA or MTA),
 // and uninitializes COM in the destructor.
@@ -82,11 +89,24 @@ class ScopedCOMInitializer {
 };
 
 
-class AudioDeviceWindowsWasapi : public AudioDeviceGeneric, public  IActivateAudioInterfaceCompletionHandler
+class AudioInterfaceActivator : public RuntimeClass < RuntimeClassFlags< ClassicCom >, FtmBase, IActivateAudioInterfaceCompletionHandler >
+{
+  task_completion_event<void> m_ActivateCompleted;
+  STDMETHODIMP ActivateCompleted(IActivateAudioInterfaceAsyncOperation  *pAsyncOp);
+
+  static AudioDeviceWindowsWasapi* m_AudioDevice;
+public:
+  static task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId);
+  static void SetAudioDevice(AudioDeviceWindowsWasapi* device);
+};
+
+class AudioDeviceWindowsWasapi : public AudioDeviceGeneric/*, public  IActivateAudioInterfaceCompletionHandler*/
 {
 public:
     AudioDeviceWindowsWasapi(const int32_t id);
     ~AudioDeviceWindowsWasapi();
+
+    friend class  AudioInterfaceActivator;
 
     // Retrieve the currently utilized audio layer
     virtual int32_t ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const;
@@ -271,7 +291,7 @@ private:
     HRESULT _InitializeAudioDeviceOutAsync();
 
     // IActivateAudioInterfaceCompletionHandler
-    STDMETHOD(ActivateCompleted)(IActivateAudioInterfaceAsyncOperation *operation);
+    STDMETHOD(ActivatorActivateCompleted)(IActivateAudioInterfaceAsyncOperation *operation);
 
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
@@ -298,6 +318,8 @@ private:  // MMDevice
     DeviceInformationCollection^ _ptrCaptureCollection;
     DeviceInformationCollection^ _ptrRenderCollection;
     DeviceInformationCollection^ _ptrCollection;
+    AudioInterfaceActivator*     _ptrActivator;
+
 //    IMMDeviceEnumerator*                    _ptrEnumerator;
 //    IMMDeviceCollection*                    _ptrRenderCollection;
 //    IMMDeviceCollection*                    _ptrCaptureCollection;
@@ -309,7 +331,8 @@ private:  // WASAPI
     IAudioClient*                           _ptrClientIn;
     IAudioRenderClient*                     _ptrRenderClient;
     IAudioCaptureClient*                    _ptrCaptureClient;
-    IAudioEndpointVolume*                   _ptrCaptureVolume;
+    //IAudioEndpointVolume*                   _ptrCaptureVolume;
+    ISimpleAudioVolume*                   _ptrCaptureVolume;
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
 
     //// DirectX Media Object (DMO) for the built-in AEC.

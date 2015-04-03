@@ -35,6 +35,7 @@ void AudioDeviceUtility::WaitForKey()
 {
 #if defined(WINRT)
   std::cin.get();
+  //System("pause")
 #else
 	_getch();
 #endif  // WINRT
@@ -50,6 +51,22 @@ DWORD timeGetTime() {
     * 1000 /* ms/s */
     / freq.QuadPart /* ticks/s */;
   return t.LowPart;
+}
+#endif  // WINRT
+#if defined(WINRT)
+void AudioDeviceUtility::TestOutput(const char* szFormat, ...)
+{
+  char szBuff[1024];
+  va_list arg;
+  va_start(arg, szFormat);
+  _vsnprintf_s(szBuff, sizeof(szBuff), szFormat, arg);
+  va_end(arg);
+
+  wchar_t wtext[1024];
+  mbstowcs(wtext, szBuff, strlen(szBuff) + 1);//Plus null
+  LPWSTR ptr = wtext;
+
+  OutputDebugString(ptr);
 }
 #endif  // WINRT
 
