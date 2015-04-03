@@ -19,7 +19,7 @@
       <m3:VisualElements DisplayName="LibTest_runner.Windows" Description="LibTest_runner.Windows" BackgroundColor="#464646" ForegroundText="light" Square150x150Logo="Logo.png" Square44x44Logo="Logo44x44.png">
         <m3:DefaultTile Square71x71Logo="Logo71x71.png">
         </m3:DefaultTile>
-        <m3:SplashScreen Image="SplashScreen.png" />
+        <m3:SplashScreen Image="SplashScreen480x800.png" />
       </m3:VisualElements>
     </Application>
   </Applications>
