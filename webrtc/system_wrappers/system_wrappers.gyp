@@ -216,7 +216,13 @@
       ]
     }, {
       'target_name': 'system_wrappers_default',
-      'type': 'static_library',
+      'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'type': 'none',
+        }, {
+          'type': 'static_library',
+        }],
+      ],
       'dependencies': [
         'field_trial_default',
         'metrics_default',
