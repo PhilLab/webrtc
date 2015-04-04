@@ -22,11 +22,13 @@
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/typedefs.h"
 
+
 // Sets the default pause time if using sleep as pause
 #define DEFAULT_PAUSE_TIME 5000
-
 #if defined(USE_SLEEP_AS_PAUSE)
 #define PAUSE(a) SleepMs(a);
+#elif defined(WINRT)
+#define PAUSE(a)  WinRTTestManager::waitForUserInput(a)
 #else
 #define PAUSE(a) AudioDeviceUtility::WaitForKey();
 #endif
@@ -214,13 +216,20 @@ public:
   rtc::scoped_ptr<ProcessThread> _processThread;
   AudioEventObserver* _audioEventObserver;
   AudioTransportImpl* _audioTransport;
+
+#ifdef WINRT
+  static void waitForUserInput(int ms);
+  static void userSignalToContinue();
+#endif
 private:
   // Paths to where the resource files to be used for this test are located.
   std::string _playoutFile48;
   std::string _playoutFile44;
   std::string _playoutFile16;
   std::string _playoutFile8;
-
+#ifdef WINRT
+  static HANDLE _semhandle;
+#endif
 };
 
 

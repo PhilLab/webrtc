@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 #include "WinRTTestManager.h"
 
 #include "webrtc/modules/audio_device/audio_device_config.h"
@@ -22,14 +23,21 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
-const char* RecordedMicrophoneFile = "recorded_microphone_mono_48.pcm";
-const char* RecordedMicrophoneVolumeFile =
-"recorded_microphone_volume_mono_48.pcm";
-const char* RecordedMicrophoneMuteFile = "recorded_microphone_mute_mono_48.pcm";
-const char* RecordedMicrophoneBoostFile =
-"recorded_microphone_boost_mono_48.pcm";
-const char* RecordedMicrophoneAGCFile = "recorded_microphone_AGC_mono_48.pcm";
-const char* RecordedSpeakerFile = "recorded_speaker_48.pcm";
+std::string  RecordedMicrophoneFile = "recorded_microphone_mono_48.pcm";
+std::string  RecordedMicrophoneVolumeFile = "recorded_microphone_volume_mono_48.pcm";
+std::string  RecordedMicrophoneMuteFile = "recorded_microphone_mute_mono_48.pcm";
+std::string  RecordedMicrophoneBoostFile = "recorded_microphone_boost_mono_48.pcm";
+std::string  RecordedMicrophoneAGCFile = "recorded_microphone_AGC_mono_48.pcm";
+std::string  RecordedSpeakerFile = "recorded_speaker_48.pcm";
+
+#ifdef WINRT
+#include <time.h>
+HANDLE  WinRTTestManager::_semhandle = CreateSemaphoreEx(NULL, 0, 1, NULL, 0, SEMAPHORE_ALL_ACCESS);
+#endif
+
+std::string getRecordOutputFilePath(const std::string& filename) {
+  return webrtc::test::OutputPath() + filename;
+}
 
 // Helper functions
 #if !defined(WEBRTC_IOS)
@@ -39,7 +47,7 @@ char* GetFilename(char* filename)
 }
 const char* GetFilename(const char* filename)
 {
-  return filename;
+  return  filename;
 }
 char* GetResource(char* resource)
 {
@@ -111,7 +119,7 @@ AudioTransportImpl::~AudioTransportImpl()
 int32_t AudioTransportImpl::SetFilePlayout(bool enable, const char* fileName)
 {
   _playFromFile = enable;
-  if (enable)
+  if (enable && fileName)
   {
     return (_playFile.OpenFile(fileName, true, true, false));
   }
@@ -594,13 +602,14 @@ _audioDevice(NULL),
 _audioEventObserver(NULL),
 _audioTransport(NULL)
 {
-  _playoutFile48 = webrtc::test::ResourcePath("audio_device\\audio_short48",
+
+  _playoutFile48 = webrtc::test::ResourcePath("audio_short48",
     "pcm");
-  _playoutFile44 = webrtc::test::ResourcePath("audio_device\\audio_short44",
+  _playoutFile44 = webrtc::test::ResourcePath("audio_short44",
     "pcm");
-  _playoutFile16 = webrtc::test::ResourcePath("audio_device\\audio_short16",
+  _playoutFile16 = webrtc::test::ResourcePath("audio_short16",
     "pcm");
-  _playoutFile8 = webrtc::test::ResourcePath("audio_device\\audio_short8",
+  _playoutFile8 = webrtc::test::ResourcePath("audio_short8",
     "pcm");
 }
 
@@ -1074,6 +1083,12 @@ int32_t WinRTTestManager::TestAudioTransport()
   TEST_LOG(" Audio Transport test:\n");
   TEST_LOG("=======================================\n");
 
+  std::wstring filePathW = Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data();
+  std::string filePath;
+  filePath.assign(filePathW.begin(), filePathW.end());
+
+  TEST_LOG(filePath.c_str());
+
   if (_audioDevice == NULL)
   {
     return -1;
@@ -1172,10 +1187,10 @@ int32_t WinRTTestManager::TestAudioTransport()
       Sleep(10000);
     }
 
-    //EXPECT_EQ(0, audioDevice->StopPlayout());
-    //EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+    EXPECT_EQ(0, audioDevice->StopPlayout());
+    EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
 
-    //_audioTransport->SetFilePlayout(false);
+    _audioTransport->SetFilePlayout(false);
   }
 
   bool enabled(false);
@@ -1192,8 +1207,7 @@ int32_t WinRTTestManager::TestAudioTransport()
       EXPECT_EQ(0, audioDevice->SetMicrophoneVolume(maxVolume));
     }
 
-    EXPECT_TRUE(audioDevice->StartRawInputFileRecording(
-      GetFilename(RecordedMicrophoneFile)) == 0);
+    EXPECT_TRUE(audioDevice->StartRawInputFileRecording(GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str())) == 0);
     EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
 
     EXPECT_EQ(0, audioDevice->InitRecording());
@@ -1222,9 +1236,9 @@ int32_t WinRTTestManager::TestAudioTransport()
     {
       EXPECT_EQ(0, audioDevice->SetRecordingChannel(AudioDeviceModule::kChannelBoth));
     }
-    //EXPECT_EQ(0, audioDevice->StopRecording());
-    //EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
-    //EXPECT_EQ(0, audioDevice->StopRawInputFileRecording());
+    EXPECT_EQ(0, audioDevice->StopRecording());
+    EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+    EXPECT_EQ(0, audioDevice->StopRawInputFileRecording());
   }
 
   if (recIsAvailable && playIsAvailable)
@@ -1233,7 +1247,7 @@ int32_t WinRTTestManager::TestAudioTransport()
     // Play out the recorded file
 
     _audioTransport->SetFilePlayout(true,
-      GetFilename(RecordedMicrophoneFile));
+      GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str()));
 
     EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
     EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
@@ -1254,8 +1268,8 @@ int32_t WinRTTestManager::TestAudioTransport()
       Sleep(10000);
     }
 
-    //EXPECT_EQ(0, audioDevice->StopPlayout());
-    //EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+    EXPECT_EQ(0, audioDevice->StopPlayout());
+    EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
 
     _audioTransport->SetFilePlayout(false);
   }
@@ -1431,7 +1445,7 @@ int32_t WinRTTestManager::TestLoopback()
         "> Press any key to stop...\n \n",
         recSamplesPerSecRec, nRecChannels, playSamplesPerSec,
         nPlayChannels);
-      //PAUSE(30000);
+      PAUSE(30000);
       Sleep(30000);
     }
 
@@ -1533,7 +1547,7 @@ int32_t WinRTTestManager::TestMicrophoneAGC()
 
   if (fileRecording)
   {
-    EXPECT_EQ(0, audioDevice->StartRawInputFileRecording(RecordedMicrophoneAGCFile));
+    EXPECT_EQ(0, audioDevice->StartRawInputFileRecording(getRecordOutputFilePath(RecordedMicrophoneAGCFile).c_str()));
   }
   EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
   EXPECT_EQ(0, audioDevice->RecordingIsAvailable(&available));
@@ -1592,3 +1606,20 @@ int32_t WinRTTestManager::TestMicrophoneAGC()
 
   return 0;
 }
+
+#ifdef WINRT
+void WinRTTestManager::waitForUserInput(int ms){
+
+  SYSTEMTIME st;
+  GetLocalTime(&st);
+
+  TEST_LOG("waiting at %dh:%dm:%ds", st.wHour, st.wMinute,st.wSecond);
+  WaitForSingleObjectEx(_semhandle, ms, FALSE);
+  GetLocalTime(&st);
+  TEST_LOG("wake up  at %dh:%dm:%ds", st.wHour, st.wMinute, st.wSecond);
+}
+
+void WinRTTestManager::userSignalToContinue(){
+  ReleaseSemaphore(_semhandle, 1, NULL);
+}
+#endif

@@ -12,6 +12,7 @@
     <Button Content="TestDeviceSelection" HorizontalAlignment="Left" Margin="175,166,0,0" VerticalAlignment="Top" Click="Button_Click_1" Width="190"/>
     <Button Content="TestAudioTransport" HorizontalAlignment="Left" Margin="175,238,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_2"/>
     <Button Content="TestLoopback" HorizontalAlignment="Left" Margin="175,309,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_3"/>
+    <Button Content="Skip" HorizontalAlignment="Left" Margin="582,238,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_Skip"/>
 
   </Grid>
 </Page>

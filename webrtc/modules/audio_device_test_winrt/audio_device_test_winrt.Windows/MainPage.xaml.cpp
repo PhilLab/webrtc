@@ -7,6 +7,8 @@
 #include "MainPage.xaml.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
+#include <ppltasks.h>
+using namespace concurrency;
 
 using namespace audio_device_test_winrt;
 
@@ -47,15 +49,34 @@ void audio_device_test_winrt::MainPage::Button_Click_1(Platform::Object^ sender,
 
 void audio_device_test_winrt::MainPage::Button_Click_2(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-  WinRTTestManager *mManager = new WinRTTestManager();
-  mManager->Init();
-  mManager->TestAudioTransport();
+  TestTransportAsync();
 }
 
+Windows::Foundation::IAsyncAction^  audio_device_test_winrt::MainPage::TestTransportAsync() {
+  return create_async([this]
+  {
+    WinRTTestManager *mManager = new WinRTTestManager();
+    mManager->Init();
+    mManager->TestAudioTransport();
+
+  });
+}
 
 void audio_device_test_winrt::MainPage::Button_Click_3(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-  WinRTTestManager *mManager = new WinRTTestManager();
-  mManager->Init();
-  mManager->TestLoopback();
+  TestLoopBackAsync();
+}
+
+
+Windows::Foundation::IAsyncAction^ audio_device_test_winrt::MainPage::TestLoopBackAsync(){
+  return create_async([this]
+  {
+    WinRTTestManager *mManager = new WinRTTestManager();
+    mManager->Init();
+    mManager->TestLoopback();
+  });
+}
+
+void audio_device_test_winrt::MainPage::Button_Click_Skip(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e){
+  WinRTTestManager::userSignalToContinue();
 }

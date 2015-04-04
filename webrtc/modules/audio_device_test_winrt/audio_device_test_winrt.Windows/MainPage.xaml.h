@@ -6,6 +6,7 @@
 #pragma once
 
 #include "MainPage.g.h"
+#include <ppltasks.h>
 
 namespace audio_device_test_winrt
 {
@@ -22,5 +23,10 @@ namespace audio_device_test_winrt
     void Button_Click_1(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     void Button_Click_2(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     void Button_Click_3(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+    void Button_Click_Skip(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+
+    Windows::Foundation::IAsyncAction^ TestTransportAsync();
+    Windows::Foundation::IAsyncAction^ TestLoopBackAsync();
+
   };
 }
