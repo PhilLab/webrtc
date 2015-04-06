@@ -236,7 +236,7 @@ int32_t AudioConferenceMixerImpl::Process() {
             lowFreq = 32000;
         }
         if(lowFreq <= 0) {
-            CriticalSectionScoped cs(_crit.get());
+            CriticalSectionScoped css(_crit.get());
             _processCalls--;
             return 0;
         } else {
@@ -264,7 +264,7 @@ int32_t AudioConferenceMixerImpl::Process() {
             default:
                 assert(false);
 
-                CriticalSectionScoped cs(_crit.get());
+                CriticalSectionScoped css(_crit.get());
                 _processCalls--;
                 return -1;
             }
