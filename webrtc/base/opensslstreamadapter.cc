@@ -649,8 +649,8 @@ void OpenSSLStreamAdapter::OnEvent(StreamInterface* stream, int events,
       events_to_signal |= SE_OPEN;
     } else {
       state_ = SSL_CONNECTING;
-      if (int err = BeginSSL()) {
-        Error("BeginSSL", err, true);
+      if (int error = BeginSSL()) {
+        Error("BeginSSL", error, true);
         return;
       }
     }
