@@ -37,7 +37,12 @@ public:
   int IsUpdated(bool& isUpdated);
   // Called after the video frame has been render to the screen
   int RenderOffFrame();
-  //
+
+  Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> GetMediaSource();
+  webrtc::I420VideoFrame& GetVideoFrame();
+  int GetWidth();
+  int GetHeight();
+
   void SetStreamSettings(uint16_t streamId,
     uint32_t zOrder,
     float startWidth,
@@ -57,6 +62,8 @@ private:
 
   Windows::UI::Xaml::Controls::MediaElement^ _mediaElement;
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> _renderMediaSource;
+
+  webrtc::I420VideoFrame _videoFrame;
 
   bool _bufferIsUpdated;
   // the frame size

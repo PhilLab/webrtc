@@ -25,12 +25,6 @@
 
 using Microsoft::WRL::ComPtr;
 
-#define SET_SAMPLE_ATTRIBUTE(flag, mask, pSample, flagName) \
-if ((StspSampleFlag_##flagName & mask) == StspSampleFlag_##flagName) \
-{ \
-  ThrowIfError(pSample->SetUINT32(MFSampleExtension_##flagName, (StspSampleFlag_##flagName & flag) == StspSampleFlag_##flagName)); \
-}
-
 namespace webrtc {
 
 enum {
@@ -698,6 +692,7 @@ void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMF
     if (_eSourceState == SourceState_Started)
     {
       // Put sample on the list
+      pSample->AddRef();
       _samples.push_back(pSample);
       // Deliver samples
       DeliverSamples();
@@ -753,7 +748,7 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
 
     pStreamDescription->guiMajorType = MFMediaType_Video;
     pStreamDescription->guiSubType = MFVideoFormat_I420;
-//    pStreamDescription->guiSubType = MFVideoFormat_H264;
+    //pStreamDescription->guiSubType = MFVideoFormat_ARGB32;
     pStreamDescription->dwStreamId = 1;
 
     _fVideo = (pStreamDescription->guiMajorType == MFMediaType_Video);
@@ -762,8 +757,13 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
     ThrowIfError(MFCreateMediaType(&spMediaType));
 
     ThrowIfError(spMediaType->SetGUID(MF_MT_MAJOR_TYPE, pStreamDescription->guiMajorType));
-
     ThrowIfError(spMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
+    ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, 640));
+    ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_FRAME_RATE, 30, 1));
+    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, 640, 480));
+    ThrowIfError(spMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
+    ThrowIfError(spMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE)); 
+    ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
 
     // Now we can create MF stream descriptor.
     ThrowIfError(MFCreateStreamDescriptor(pStreamDescription->dwStreamId, 1, spMediaType.GetAddressOf(), &spSD));
@@ -804,6 +804,8 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
 
     if (SUCCEEDED(spEntry.As(&spSample)))
     {
+      DWORD pcbTotalLength;
+      spSample->GetTotalLength(&pcbTotalLength);
       fDrop = ShouldDropSample(spSample.Get());
 
       if (!fDrop)
@@ -857,16 +859,7 @@ void VideoRenderMediaStreamWinRT::SetSampleAttributes(SampleHeader *pSampleHeade
   ThrowIfError(pSample->SetSampleTime(pSampleHeader->ullTimestamp));
   ThrowIfError(pSample->SetSampleDuration(pSampleHeader->ullDuration));
 
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, BottomFieldFirst);
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, CleanPoint);
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, DerivedFromTopField);
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, Discontinuity);
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, Interlaced);
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, RepeatFirstField);
-  SET_SAMPLE_ATTRIBUTE(pSampleHeader->dwFlags, pSampleHeader->dwFlagMasks, pSample, SingleField);
-
-  DWORD cbTotalLen;
-  pSample->GetTotalLength(&cbTotalLen);
+  ThrowIfError(pSample->SetUINT32(MFSampleExtension_CleanPoint, TRUE));
 }
 
 bool VideoRenderMediaStreamWinRT::ShouldDropSample(IMFSample *pSample)
@@ -928,8 +921,9 @@ void VideoRenderMediaStreamWinRT::CleanSampleQueue()
     }
   }
 
-  while (!_samples.empty())
+  while (!_samples.empty()) {
     _samples.pop_front();
+  }
 
   if (spSample != nullptr)
   {
@@ -1086,7 +1080,8 @@ VideoRenderMediaSourceWinRT::VideoRenderMediaSourceWinRT(void)
   : _critSec(CriticalSectionWrapper::CreateCriticalSection()),
     _cRef(1),
     _eSourceState(SourceState_Invalid),
-    _flRate(1.0f) {
+    _flRate(1.0f),
+    _hnsCurrentSampleTime(0) {
   OpQueue<VideoRenderMediaSourceWinRT, VideoRenderSourceOperation>::m_critSec = _critSec;
 }
 
@@ -1273,8 +1268,6 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Pause() {
 IFACEMETHODIMP VideoRenderMediaSourceWinRT::Shutdown() {
   CriticalSectionScoped cs(_critSec);
 
-  Trace(TRACE_LEVEL_NORMAL, L"======== Shutdown()\n");
-
   HRESULT hr = S_OK;
   if (_eSourceState == SourceState_Shutdown) {
     hr = MF_E_SHUTDOWN;
@@ -1359,7 +1352,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Start(
   if (SUCCEEDED(hr))
   {
     // Queue asynchronous operation
-    hr = QueueOperation(spStartOp.Get());
+    hr = QueueOperation(spStartOp.Detach());
   }
 
   return hr;
@@ -1495,9 +1488,11 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
 {
   if (_eSourceState == SourceState_Started)
   {
-   // Convert packet to MF sample
-    ComPtr<IMFSample> spSample;
+    Trace(TRACE_LEVEL_NORMAL, L"======== ProcessVideoFrame - %015d\n", videoFrame.render_time_ms());
+    // Convert packet to MF sample
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
+    ComPtr<IMFSample> spSample;
+    ComPtr<IMFMediaBuffer> spMediaBuffer;
 
     ThrowIfError(GetStreamById(1, &spStream));
 
@@ -1505,16 +1500,15 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
     {
       HRESULT hr = MFCreateSample(&spSample);
 
-      ComPtr<IMFMediaBuffer> spMediaBuffer;
-
       if (SUCCEEDED(hr))
       {
-        hr = MFCreateMemoryBuffer(640 * 480 * 3, &spMediaBuffer);
+        hr = MFCreateMemoryBuffer(640 * 480 + 2 * 320 * 240, &spMediaBuffer);
         BYTE* buffer;
         DWORD maxLength;
         DWORD currentLength;
         spMediaBuffer->Lock(&buffer, &maxLength, &currentLength);
-        std::memcpy(buffer, videoFrame.buffer(kYPlane), videoFrame.allocated_size(kYPlane) * 3);
+        std::memcpy(buffer, videoFrame.buffer(kYPlane), videoFrame.allocated_size(kYPlane) * 3 / 2);
+        spMediaBuffer->SetCurrentLength(videoFrame.allocated_size(kYPlane) * 3 / 2);
         spMediaBuffer->Unlock();
       }
 
@@ -1526,7 +1520,12 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
       if (SUCCEEDED(hr))
       {
         // Forward sample to a proper stream.
-        SampleHeader sampleHead = {};
+        SampleHeader sampleHead;
+        sampleHead.dwStreamId = 1;
+        sampleHead.ullDuration = 1 / 30 * 10000000;
+        //sampleHead.ullTimestamp = videoFrame.render_time_ms() * 10000;
+        sampleHead.ullTimestamp = _hnsCurrentSampleTime;
+        _hnsCurrentSampleTime += sampleHead.ullDuration;
         spStream->ProcessSample(&sampleHead, spSample.Get());
       }
     }

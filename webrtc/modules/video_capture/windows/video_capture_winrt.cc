@@ -235,7 +235,9 @@ Concurrency::task<void> CaptureDevice::StopCaptureAsync()
 
 void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
   if (incoming_frame_callback_) {
-    Microsoft::WRL::ComPtr<IMFMediaBuffer> mediaSample = args->GetMediaSample();
+    Microsoft::WRL::ComPtr<IMFSample> spMediaSample = args->GetMediaSample();
+    ComPtr<IMFMediaBuffer> spMediaBuffer;
+    HRESULT hr = spMediaSample->GetBufferByIndex(0, &spMediaBuffer);
     uint8_t* videoFrame;
     size_t videoFrameLength;
     VideoCaptureCapability frameInfo;
@@ -245,10 +247,13 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     int64_t captureTime = 0;
     DWORD maxLength;
     DWORD currentLength;
-    HRESULT hr = mediaSample->Lock(&videoFrame, &maxLength, &currentLength);
+    hr = spMediaBuffer->Lock(&videoFrame, &maxLength, &currentLength);
     videoFrameLength = currentLength;
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) {
       incoming_frame_callback_->OnIncomingFrame(videoFrame, videoFrameLength, frameInfo, captureTime);
+      spMediaBuffer->Unlock();
+      spMediaSample.Get()->Release();
+    }
   }
 }
 

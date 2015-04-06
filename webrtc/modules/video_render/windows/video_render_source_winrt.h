@@ -395,18 +395,6 @@ struct StreamDescription
   GUID guiMajorType;
   GUID guiSubType;
   DWORD dwStreamId;
-  UINT32 cbAttributesSize;
-};
-
-enum SampleFlags
-{
-  StspSampleFlag_BottomFieldFirst,
-  StspSampleFlag_CleanPoint,
-  StspSampleFlag_DerivedFromTopField,
-  StspSampleFlag_Discontinuity,
-  StspSampleFlag_Interlaced,
-  StspSampleFlag_RepeatFirstField,
-  StspSampleFlag_SingleField,
 };
 
 struct SampleHeader
@@ -414,8 +402,6 @@ struct SampleHeader
   DWORD dwStreamId;
   LONGLONG ullTimestamp;
   LONGLONG ullDuration;
-  DWORD dwFlags;
-  DWORD dwFlagMasks;
 };
 
 class VideoRenderMediaStreamWinRT :
@@ -741,6 +727,7 @@ class VideoRenderMediaSourceWinRT :
   Microsoft::WRL::ComPtr<IMFMediaStream> _spStream;
 
   float _flRate;
+  LONGLONG _hnsCurrentSampleTime;
 };
 
 #if 0

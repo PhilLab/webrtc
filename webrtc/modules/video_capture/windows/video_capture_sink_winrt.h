@@ -28,15 +28,15 @@ class VideoCaptureMediaSinkWinRT;
 public ref class MediaSampleEventArgs sealed
 {
 internal:
-  MediaSampleEventArgs(Microsoft::WRL::ComPtr<IMFMediaBuffer> spMediaSample) : 
+  MediaSampleEventArgs(Microsoft::WRL::ComPtr<IMFSample> spMediaSample) :
       _spMediaSample(spMediaSample) { }
 
-  Microsoft::WRL::ComPtr<IMFMediaBuffer> GetMediaSample() {
+  Microsoft::WRL::ComPtr<IMFSample> GetMediaSample() {
     return _spMediaSample;
   }
 
 private:
-  Microsoft::WRL::ComPtr<IMFMediaBuffer> _spMediaSample;
+  Microsoft::WRL::ComPtr<IMFSample> _spMediaSample;
 };
 
 interface class ISinkCallback
@@ -122,7 +122,6 @@ class VideoCaptureStreamSinkWinRT :
   // Used to queue asynchronous operations. When we call MFPutWorkItem, we use this
   // object for the callback state (pState). Then, when the callback is invoked,
   // we can use the object to determine which asynchronous operation to perform.
-
   class AsyncOperation : public IUnknown {
    public:
     explicit AsyncOperation(StreamOperation op);

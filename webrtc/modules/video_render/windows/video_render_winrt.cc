@@ -85,6 +85,25 @@ int VideoChannelWinRT::GetStreamSettings(uint16_t streamId,
   stopHeight = _stopHeight;
   return 0;
 }
+Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> VideoChannelWinRT::GetMediaSource()
+{
+  return _renderMediaSource;
+}
+
+webrtc::I420VideoFrame& VideoChannelWinRT::GetVideoFrame()
+{
+  return _videoFrame;
+}
+
+int VideoChannelWinRT::GetWidth()
+{
+  return _width;
+}
+
+int VideoChannelWinRT::GetHeight()
+{
+  return _height;
+}
 
 // Called from video engine when a the frame size changed
 int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStreams)
@@ -129,7 +148,7 @@ int VideoChannelWinRT::DeliverFrame(const I420VideoFrame& videoFrame) {
     return -1;
   }
 
-  _renderMediaSource->ProcessVideoFrame(videoFrame);
+  _videoFrame.CopyFrame(videoFrame);
 
   _bufferIsUpdated = true;
   return 0;
@@ -221,6 +240,31 @@ int32_t VideoRenderWinRT::ChangeWindow(void* window) {
 }
 
 int VideoRenderWinRT::UpdateRenderSurface() {
+  CriticalSectionScoped cs(&_refCritsect);
+
+  // Check if there are any updated buffers
+  bool updated = false;
+  _channel->IsUpdated(updated);
+  //nothing is updated, return
+  if (!updated)
+    return -1;
+
+  DWORD width, height;
+
+  width = _channel->GetWidth();
+  height = _channel->GetHeight();
+
+  uint32_t zOrder;
+  float startWidth, startHeight, stopWidth, stopHeight;
+  _channel->GetStreamSettings(0, zOrder, startWidth,
+    startHeight, stopWidth,
+    stopHeight);
+
+  _channel->GetMediaSource()->ProcessVideoFrame(_channel->GetVideoFrame());
+
+  //Notice channel that this frame as been rendered
+  _channel->RenderOffFrame();
+
   return 0;
 }
 
