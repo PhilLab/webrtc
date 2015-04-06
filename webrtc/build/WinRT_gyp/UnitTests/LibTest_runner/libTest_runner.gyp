@@ -92,6 +92,15 @@
           'sources': [
             'Package.phone.appxmanifest',
           ],
+          #TODO(winrt) fix video coding test for Windows Phone
+          'dependencies!': [
+            '../../../../modules/modules.gyp:video_coding_test',
+            '../../../../modules/modules.gyp:video_capture',
+          ],
+          'sources!': [
+            'videoCodingTests/VideoCodingTest.h',
+            'videoCodingTests/VideoCodingTest.cpp',
+          ],
         }],
           ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
           'sources': [
