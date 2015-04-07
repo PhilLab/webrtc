@@ -36,6 +36,12 @@
 #define DISABLED_ON_WIN(test) test
 #endif
 
+#if defined(WEBRTC_ANDROID) || defined(WINRT)
+#define DISABLED_ON_ANDROID_AND_WINRT(test) DISABLED_##test
+#else
+#define DISABLED_ON_ANDROID_AND_WINRT(test) test
+#endif
+
 #ifdef WEBRTC_ANDROID
 #define DISABLED_ON_ANDROID(test) DISABLED_##test
 #else
