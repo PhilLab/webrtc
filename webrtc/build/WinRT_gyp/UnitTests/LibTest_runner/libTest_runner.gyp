@@ -85,12 +85,18 @@
         'libSrtpTests/libsrtpTestSolution.h',
         'videoCodingTests/VideoCodingTest.h',
         'videoCodingTests/VideoCodingTest.cpp',
+        'Logo.png',
+        'SmallLogo.png',
+        'StoreLogo.png',
         '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-          'sources': [
+          'sources': [	
             'Package.phone.appxmanifest',
+            'Logo71x71.png',
+            'Logo44x44.png',
+            'SplashScreen480x800.png',
           ],
           #TODO(winrt) fix video coding test for Windows Phone
           'dependencies!': [
@@ -105,17 +111,32 @@
           ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
           'sources': [
             'Package.appxmanifest',
+            'SplashScreen.png',
           ],
         }],
       ],
       'copies': [
         {
           'destination': '<(PRODUCT_DIR)/libTest_runner_package',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Generated Manifest Phone\AppxManifest.xml',								
+                 'Logo71x71.png',
+                 'Logo44x44.png',
+                 'SplashScreen480x800.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'Generated Manifest\AppxManifest.xml',								
+                'SplashScreen.png',
+              ],
+            }],
+          ],
           'files':[
-					  'Generated Manifest\AppxManifest.xml',
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
           ],
         },
@@ -127,11 +148,24 @@
         },
         # Hack for MSVS to copy to the Appx folder
         {
-          'destination': '<(PRODUCT_DIR)/AppX',
+          'destination': '<(PRODUCT_DIR)/LibTestAppX',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Logo71x71.png',
+                 'Logo44x44.png',	
+                 'SplashScreen480x800.png',							
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'SplashScreen.png',
+              ],
+            }],
+          ],
           'files':[
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
           ],
         },
