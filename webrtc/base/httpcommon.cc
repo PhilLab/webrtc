@@ -387,7 +387,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
   tm *tm_for_timezone = localtime(&gmt);
   *seconds = gmt + tm_for_timezone->tm_gmtoff;
 #else
-  *seconds = gmt - timezone;
+  *seconds = gmt - _timezone;
 #endif
   return true;
 }
