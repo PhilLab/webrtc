@@ -662,8 +662,8 @@ void OpenSSLStreamAdapter::OnEvent(StreamInterface* stream, int events,
     if (state_ == SSL_NONE) {
       events_to_signal |= events & (SE_READ|SE_WRITE);
     } else if (state_ == SSL_CONNECTING) {
-      if (int err = ContinueSSL()) {
-        Error("ContinueSSL", err, true);
+      if (int error = ContinueSSL()) {
+        Error("ContinueSSL", error, true);
         return;
       }
     } else if (state_ == SSL_CONNECTED) {
