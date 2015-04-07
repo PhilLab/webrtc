@@ -60,6 +60,7 @@ int32_t DeviceInfoWinRT::GetDeviceName(
     uint32_t deviceUniqueIdUTF8Length,
     char* productUniqueIdUTF8,
     uint32_t productUniqueIdUTF8Length) {
+  ReadLockScoped cs(_apiLock);
   const int32_t result = GetDeviceInfo(
       deviceNumber,
       deviceNameUTF8,
@@ -82,7 +83,7 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
 
   int deviceCount = -1;
   int* deviceCountPtr = &deviceCount;
-  Concurrency::create_task(
+  auto findAllAsyncTask = Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
@@ -140,9 +141,7 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
     }
   }, Concurrency::task_continuation_context::use_arbitrary());
 
-  while (deviceCount == -1) {
-    Sleep(100);
-  }
+  findAllAsyncTask.wait();
 
   return deviceCount;
 }
@@ -174,7 +173,7 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
 
   bool finished = false;
   bool* finishedPtr = &finished;
-  Concurrency::create_task(
+  auto findAllAsyncTask = Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
@@ -237,9 +236,7 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
     }
   }, Concurrency::task_continuation_context::use_arbitrary());
 
-  while (finished) {
-    Sleep(100);
-  }
+  findAllAsyncTask.wait();
 
   return _captureCapabilities.size();
 }

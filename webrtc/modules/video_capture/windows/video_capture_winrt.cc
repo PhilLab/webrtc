@@ -15,8 +15,6 @@
 
 #include <ppltasks.h>
 
-extern Windows::UI::Xaml::Controls::CaptureElement^ g_capturePreview;
-
 using Microsoft::WRL::ComPtr;
 using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
@@ -280,7 +278,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
 
   device_id_ = nullptr;
 
-  Concurrency::create_task(
+  auto findAllAsyncTask = Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
@@ -313,9 +311,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
     }
   }, Concurrency::task_continuation_context::use_arbitrary());
 
-  while (device_id_ != nullptr) {
-    Sleep(100);
-  }
+  findAllAsyncTask.wait();
 
   CaptureDevice^ device = ref new CaptureDevice(this);
 
@@ -346,8 +342,6 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
 
 int32_t VideoCaptureWinRT::StartCapture(
     const VideoCaptureCapability& capability) {
-
-  g_capturePreview->Source = device_->MediaCapture.Get();
 
   Concurrency::create_task(device_->MediaCapture.Get()->StartPreviewAsync()).then([this](Concurrency::task<void> asyncInfo)
   {

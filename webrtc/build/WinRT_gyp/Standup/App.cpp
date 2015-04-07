@@ -2,6 +2,13 @@
 #include <ppltasks.h>
 #include <string>
 
+#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/video_frame.h"
+
 using namespace Platform;
 using namespace concurrency;
 using namespace Windows::ApplicationModel::Activation;
@@ -14,11 +21,61 @@ bool autoClose = false;
 
 namespace StandupWinRT
 {
+  class TestCaptureCallback : public webrtc::VideoCaptureDataCallback
+  {
+  public:
+
+    virtual ~TestCaptureCallback() {};
+
+    TestCaptureCallback(webrtc::VideoRenderCallback* rendererCallback) :
+      _rendererCallback(rendererCallback)
+    {
+
+    }
+
+    virtual void OnIncomingCapturedFrame(const int32_t id,
+      webrtc::I420VideoFrame& videoFrame)
+    {
+      _rendererCallback->RenderFrame(1, videoFrame);
+    }
+
+    virtual void OnCaptureDelayChanged(const int32_t id,
+      const int32_t delay)
+    {
+
+    }
+
+  private:
+    webrtc::VideoRenderCallback* _rendererCallback;
+  };
+
+  class TestTraceCallback : public webrtc::TraceCallback
+  {
+  public:
+
+    virtual void Print(webrtc::TraceLevel level, const char* message, int length)
+    {
+      WCHAR szTextBuf[1024];
+      int cTextBufSize = MultiByteToWideChar(CP_UTF8, 0, message, length + 2, NULL, 0);
+      MultiByteToWideChar(CP_UTF8, 0, message, length + 2, szTextBuf, cTextBufSize);
+      szTextBuf[cTextBufSize - 3] = L'\r';
+      szTextBuf[cTextBufSize - 2] = L'\n';
+      szTextBuf[cTextBufSize - 1] = 0;
+      OutputDebugString(szTextBuf);
+    }
+  };
+
   ref class App sealed : public Windows::UI::Xaml::Application
   {
   public:
-    App()
+    App() :
+      traceCallback_(new TestTraceCallback()),
+      started_(false)
     {
+      dispatcher_ = Window::Current->Dispatcher;
+      webrtc::Trace::CreateTrace();
+      webrtc::Trace::SetTraceCallback(traceCallback_);
+      webrtc::Trace::set_level_filter(webrtc::kTraceAll);
     }
 
   private:
@@ -30,6 +87,13 @@ namespace StandupWinRT
 
     Button^ startStopButton_;
     Button^ switchCameraButton_;
+
+    webrtc::VideoCaptureModule* vcpm_;
+    webrtc::VideoRender* vrm_;
+    webrtc::VideoCaptureDataCallback* captureCallback_;
+    webrtc::TraceCallback* traceCallback_;
+    Windows::UI::Core::CoreDispatcher^ dispatcher_;
+    bool started_;
 
   protected:
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
@@ -145,7 +209,61 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
-  // TODO: Start and stop the audio/video.
+  if (!started_) {
+    Concurrency::create_task([this]() {
+      webrtc::VideoCaptureModule::DeviceInfo* dev_info =
+        webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
+
+      char device_name[128];
+      char device_unique_name[512];
+
+      dev_info->GetDeviceName(0,
+        device_name,
+        sizeof(device_name),
+        device_unique_name,
+        sizeof(device_unique_name));
+
+      webrtc::VideoCaptureModule* vcpm_ =
+        webrtc::VideoCaptureFactory::Create(0, device_unique_name);
+
+      vcpm_->AddRef();
+
+      webrtc::VideoCaptureCapability capability;
+      dev_info->GetCapability(device_unique_name, 0, capability);
+
+      delete dev_info;
+
+      IInspectable* videoRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
+
+      vrm_ = webrtc::VideoRender::CreateVideoRender(1, videoRendererPtr, false);
+
+      webrtc::VideoRenderCallback* rendererCallback = vrm_->AddIncomingRenderStream(1, 0, 0.0, 0.0, 1.0, 1.0);
+
+      captureCallback_ = new TestCaptureCallback(rendererCallback);
+
+      vcpm_->RegisterCaptureDataCallback(*captureCallback_);
+
+      vcpm_->StartCapture(capability);
+
+      vrm_->StartRender(1);
+
+      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+        startStopButton_->Content = "Stop";
+      })));
+    });
+  }
+  else
+  {
+    Concurrency::create_task([this]() {
+      vcpm_->StopCapture();
+      vcpm_->Release();
+      delete (TestCaptureCallback*)captureCallback_;
+
+      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+        startStopButton_->Content = "Start";
+      })));
+    });
+  }
 }
 
 
