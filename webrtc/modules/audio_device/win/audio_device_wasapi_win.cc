@@ -2787,8 +2787,8 @@ int32_t AudioDeviceWindowsWasapi::StopRecording()
 
     ResetEvent(_hShutdownCaptureEvent); // Must be manually reset.
     // Ensure that the thread has released these interfaces properly.
-    assert(err == -1 || _ptrClientIn == NULL);
-    assert(err == -1 || _ptrCaptureClient == NULL);
+    //assert(err == -1 || _ptrClientIn == NULL);
+    //assert(err == -1 || _ptrCaptureClient == NULL);
 
     _recIsInitialized = false;
     _recording = false;
@@ -2968,8 +2968,8 @@ int32_t AudioDeviceWindowsWasapi::StopPlayout()
         // this event might be caught by the new render thread within same VoE instance.
         ResetEvent(_hShutdownRenderEvent);
 
-        SAFE_RELEASE(_ptrClientOut);
-        SAFE_RELEASE(_ptrRenderClient);
+        //SAFE_RELEASE(_ptrClientOut);
+        //SAFE_RELEASE(_ptrRenderClient);
 
         _playIsInitialized = false;
         _playing = false;
@@ -4058,8 +4058,8 @@ Exit:
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_Capturing thread is now terminated properly");
     }
 
-    SAFE_RELEASE(_ptrClientIn);
-    SAFE_RELEASE(_ptrCaptureClient);
+    //SAFE_RELEASE(_ptrClientIn);
+    //SAFE_RELEASE(_ptrCaptureClient);
 
     _UnLock();
 

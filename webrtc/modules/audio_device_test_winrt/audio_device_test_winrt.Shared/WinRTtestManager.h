@@ -24,7 +24,7 @@
 
 
 // Sets the default pause time if using sleep as pause
-#define DEFAULT_PAUSE_TIME 5000
+#define DEFAULT_PAUSE_TIME 10000
 #if defined(USE_SLEEP_AS_PAUSE)
 #define PAUSE(a) SleepMs(a);
 #elif defined(WINRT)
@@ -199,11 +199,11 @@ public:
   int32_t TestDeviceEnumeration();
   int32_t TestDeviceSelection();
   int32_t TestAudioTransport();
-  /*int32_t TestSpeakerVolume();
+  int32_t TestSpeakerVolume();
   int32_t TestMicrophoneVolume();
   int32_t TestSpeakerMute();
   int32_t TestMicrophoneMute();
-  int32_t TestMicrophoneBoost();
+  /*int32_t TestMicrophoneBoost();
   */int32_t TestLoopback();/*
   int32_t TestDeviceRemoval();
   int32_t TestExtra();*/

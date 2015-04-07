@@ -13,6 +13,11 @@
     <Button Content="TestAudioTransport" HorizontalAlignment="Left" Margin="175,238,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_2"/>
     <Button Content="TestLoopback" HorizontalAlignment="Left" Margin="175,309,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_3"/>
     <Button Content="Skip" HorizontalAlignment="Left" Margin="582,238,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_Skip"/>
+    <Button Content="TestSpeakerVolume" HorizontalAlignment="Left" Margin="175,378,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.538,0.789" Width="190" Click="Button_Click_4"/>
+    <Button Content="TestMicrophoneVolume" HorizontalAlignment="Left" Margin="175,448,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_5"/>
+    <Button Content="TestSpeakerMute" HorizontalAlignment="Left" Margin="175,524,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_6"/>
+    <Button Content="TestMicrophoneMute" HorizontalAlignment="Left" Margin="175,595,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_7"/>
+    <Button Content="TestMicrophoneAGC" HorizontalAlignment="Left" Margin="175,661,0,0" VerticalAlignment="Top" Width="190" Click="Button_Click_8"/>
 
   </Grid>
 </Page>

@@ -605,6 +605,8 @@ _audioTransport(NULL)
 
   _playoutFile48 = webrtc::test::ResourcePath("audio_short48",
     "pcm");
+  //_playoutFile48 = webrtc::test::ResourcePath("recorded_microphone_mono_48",
+  //    "pcm");
   _playoutFile44 = webrtc::test::ResourcePath("audio_short44",
     "pcm");
   _playoutFile16 = webrtc::test::ResourcePath("audio_short16",
@@ -1184,7 +1186,7 @@ int32_t WinRTTestManager::TestAudioTransport()
         "> Press any key to stop playing...\n \n",
         samplesPerSec);
       PAUSE(DEFAULT_PAUSE_TIME);
-      Sleep(10000);
+      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StopPlayout());
@@ -1207,7 +1209,9 @@ int32_t WinRTTestManager::TestAudioTransport()
       EXPECT_EQ(0, audioDevice->SetMicrophoneVolume(maxVolume));
     }
 
-    EXPECT_TRUE(audioDevice->StartRawInputFileRecording(GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str())) == 0);
+    std::string recordingFile = filePath + "\\" + RecordedMicrophoneFile;
+    //EXPECT_TRUE(audioDevice->StartRawInputFileRecording(GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str())) == 0);
+    EXPECT_TRUE(audioDevice->StartRawInputFileRecording(GetFilename(recordingFile.c_str())) == 0);
     EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
 
     EXPECT_EQ(0, audioDevice->InitRecording());
@@ -1228,7 +1232,7 @@ int32_t WinRTTestManager::TestAudioTransport()
         "> Speak into the microphone to ensure that your voice is"
         " recorded.\n> Press any key to stop recording...\n \n");
       PAUSE(DEFAULT_PAUSE_TIME);
-      Sleep(10000);
+      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StereoRecording(&enabled));
@@ -1246,8 +1250,11 @@ int32_t WinRTTestManager::TestAudioTransport()
     // ==========================
     // Play out the recorded file
 
+    /*_audioTransport->SetFilePlayout(true,
+      GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str()));*/
+    std::string recordingFile = filePath + "\\" + RecordedMicrophoneFile;
     _audioTransport->SetFilePlayout(true,
-      GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str()));
+      GetFilename(recordingFile.c_str()));
 
     EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
     EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
@@ -1265,7 +1272,7 @@ int32_t WinRTTestManager::TestAudioTransport()
         "audio quality is OK.\n"
         "> Press any key to stop listening...\n \n");
       PAUSE(DEFAULT_PAUSE_TIME);
-      Sleep(10000);
+      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StopPlayout());
@@ -1320,7 +1327,7 @@ int32_t WinRTTestManager::TestAudioTransport()
         "played out in loopback.\n> Press any key to stop...\n \n",
         playSamplesPerSec);
       PAUSE(DEFAULT_PAUSE_TIME);
-      Sleep(10000);
+      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StopRecording());
@@ -1446,7 +1453,7 @@ int32_t WinRTTestManager::TestLoopback()
         recSamplesPerSecRec, nRecChannels, playSamplesPerSec,
         nPlayChannels);
       PAUSE(30000);
-      Sleep(30000);
+      //Sleep(30000);
     }
 
     EXPECT_EQ(0, audioDevice->StopRecording());
@@ -1471,6 +1478,12 @@ int32_t WinRTTestManager::TestMicrophoneAGC()
   TEST_LOG("\n=======================================\n");
   TEST_LOG(" Microphone AGC test:\n");
   TEST_LOG("=======================================\n");
+
+  std::wstring filePathW = Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data();
+  std::string filePath;
+  filePath.assign(filePathW.begin(), filePathW.end());
+
+  TEST_LOG(filePath.c_str());
 
   if (_audioDevice == NULL)
   {
@@ -1545,9 +1558,10 @@ int32_t WinRTTestManager::TestMicrophoneAGC()
   // by the emulated AGC (implemented by our audio transport).
   // Also, start playing out the input to enable real-time verification.
 
+  std::string recordingFile = filePath + "\\" + RecordedMicrophoneAGCFile;
   if (fileRecording)
   {
-    EXPECT_EQ(0, audioDevice->StartRawInputFileRecording(getRecordOutputFilePath(RecordedMicrophoneAGCFile).c_str()));
+    EXPECT_EQ(0, audioDevice->StartRawInputFileRecording(recordingFile.c_str()));
   }
   EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
   EXPECT_EQ(0, audioDevice->RecordingIsAvailable(&available));
@@ -1600,6 +1614,502 @@ int32_t WinRTTestManager::TestMicrophoneAGC()
 
   // restore volume setting
   EXPECT_EQ(0, audioDevice->SetMicrophoneVolume(startVolume));
+
+  TEST_LOG("\n");
+  PRINT_TEST_RESULTS;
+
+  return 0;
+}
+
+int32_t WinRTTestManager::TestSpeakerVolume()
+{
+  TEST_LOG("\n=======================================\n");
+  TEST_LOG(" Speaker Volume test:\n");
+  TEST_LOG("=======================================\n");
+
+  if (_audioDevice == NULL)
+  {
+    return -1;
+  }
+
+  RESET_TEST;
+
+  AudioDeviceModule* audioDevice = _audioDevice;
+
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+
+  if (SelectPlayoutDevice() == -1)
+  {
+    TEST_LOG("\nERROR: Device selection failed!\n \n");
+    return -1;
+  }
+
+  bool available(false);
+  uint32_t startVolume(0);
+  uint32_t samplesPerSec(0);
+
+  EXPECT_EQ(0, audioDevice->SpeakerVolumeIsAvailable(&available));
+  if (available)
+  {
+    _audioTransport->SetSpeakerVolume(true);
+  }
+  else
+  {
+    TEST_LOG("\nERROR: Volume control is not available for the selected "
+      "device!\n \n");
+    return -1;
+  }
+
+  // store initial volume setting
+  EXPECT_EQ(0, audioDevice->InitSpeaker());
+  EXPECT_EQ(0, audioDevice->SpeakerVolume(&startVolume));
+
+  // start at volume 0
+  EXPECT_EQ(0, audioDevice->SetSpeakerVolume(0));
+
+  // ======================================
+  // Start playing out an existing PCM file
+
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
+  EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
+  if (available)
+  {
+    EXPECT_EQ(0, audioDevice->InitPlayout());
+    EXPECT_EQ(0, audioDevice->PlayoutSampleRate(&samplesPerSec));
+    if (48000 == samplesPerSec) {
+      _audioTransport->SetFilePlayout(
+        true, GetResource(_playoutFile48.c_str()));
+    }
+    else if (44100 == samplesPerSec || samplesPerSec == 44000) {
+      _audioTransport->SetFilePlayout(
+        true, GetResource(_playoutFile44.c_str()));
+    }
+    else if (samplesPerSec == 16000) {
+      _audioTransport->SetFilePlayout(
+        true, GetResource(_playoutFile16.c_str()));
+    }
+    else if (samplesPerSec == 8000) {
+      _audioTransport->SetFilePlayout(
+        true, GetResource(_playoutFile8.c_str()));
+    }
+    else {
+      TEST_LOG("\nERROR: Sample rate (%d) is not supported!\n \n",
+        samplesPerSec);
+      return -1;
+    }
+    EXPECT_EQ(0, audioDevice->StartPlayout());
+  }
+
+  EXPECT_TRUE(audioDevice->Playing());
+  if (audioDevice->Playing())
+  {
+    TEST_LOG("\n> Listen to the file being played out and verify that the "
+      "selected speaker volume is varied between [~0] and [~MAX].\n"
+      "> The file shall be played out with an increasing volume level "
+      "correlated to the speaker volume.\n"
+      "> Press any key to stop playing...\n \n");
+    PAUSE(10000);
+  }
+
+  EXPECT_EQ(0, audioDevice->StopPlayout());
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+
+  _audioTransport->SetSpeakerVolume(false);
+  _audioTransport->SetFilePlayout(false);
+
+  // restore volume setting
+  EXPECT_EQ(0, audioDevice->SetSpeakerVolume(startVolume));
+
+  TEST_LOG("\n");
+  PRINT_TEST_RESULTS;
+
+  return 0;
+}
+
+int32_t WinRTTestManager::TestMicrophoneVolume()
+{
+  TEST_LOG("\n=======================================\n");
+  TEST_LOG(" Microphone Volume test:\n");
+  TEST_LOG("=======================================\n");
+
+  std::wstring filePathW = Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data();
+  std::string filePath;
+  filePath.assign(filePathW.begin(), filePathW.end());
+
+  TEST_LOG(filePath.c_str());
+
+  if (_audioDevice == NULL)
+  {
+    return -1;
+  }
+
+  RESET_TEST;
+
+  AudioDeviceModule* audioDevice = _audioDevice;
+
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+
+  if (SelectRecordingDevice() == -1)
+  {
+    TEST_LOG("\nERROR: Device selection failed!\n \n");
+    return -1;
+  }
+
+  bool available(false);
+  EXPECT_EQ(0, audioDevice->MicrophoneVolumeIsAvailable(&available));
+  if (available)
+  {
+    _audioTransport->SetMicrophoneVolume(true);
+  }
+  else
+  {
+    TEST_LOG("\nERROR: Volume control is not available for the selected "
+      "device!\n \n");
+    return -1;
+  }
+
+  if (SelectPlayoutDevice() == -1)
+  {
+    TEST_LOG("\nERROR: Device selection failed!\n \n");
+    return -1;
+  }
+
+  EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
+  if (available)
+  {
+    _audioTransport->SetFullDuplex(true);
+  }
+  else
+  {
+    TEST_LOG("\nERROR: Playout is not available for the selected "
+      "device!\n \n");
+    return -1;
+  }
+
+  TEST_LOG("\nEnable recording of microphone input to file (%s) during this"
+    " test (Y/N)?\n: ",
+    RecordedMicrophoneVolumeFile);
+  char ch;
+  bool fileRecording(false);
+  //EXPECT_TRUE(scanf(" %c", &ch) > 0);
+  //ch = toupper(ch);
+  //if (ch == 'Y')
+  //{
+    fileRecording = true;
+  //}
+
+  uint32_t startVolume(0);
+  bool enabled(false);
+
+  // store initial volume setting
+  EXPECT_EQ(0, audioDevice->InitMicrophone());
+  EXPECT_EQ(0, audioDevice->MicrophoneVolume(&startVolume));
+
+  // start at volume 0
+  EXPECT_EQ(0, audioDevice->SetMicrophoneVolume(0));
+
+  // ======================================================================
+  // Start recording from the microphone while the mic volume is changed
+  // continuously.
+  // Also, start playing out the input to enable real-time verification.
+
+  std::string recordingFile = filePath + "\\" + RecordedMicrophoneVolumeFile;
+  if (fileRecording)
+  {
+    EXPECT_EQ(0, audioDevice->StartRawInputFileRecording(recordingFile.c_str()));
+  }
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
+  EXPECT_EQ(0, audioDevice->RecordingIsAvailable(&available));
+  if (available)
+  {
+    EXPECT_EQ(0, audioDevice->InitRecording());
+    EXPECT_EQ(0, audioDevice->StereoRecording(&enabled));
+    if (enabled)
+    {
+      // ensures a mono file
+      EXPECT_EQ(0, audioDevice->SetRecordingChannel(AudioDeviceModule::kChannelRight));
+    }
+    EXPECT_EQ(0, audioDevice->StartRecording());
+  }
+  EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
+  if (available)
+  {
+    EXPECT_EQ(0, audioDevice->InitPlayout());
+    EXPECT_EQ(0, audioDevice->StartPlayout());
+  }
+
+  EXPECT_TRUE(audioDevice->Recording());
+  EXPECT_TRUE(audioDevice->Playing());
+  if (audioDevice->Recording() && audioDevice->Playing())
+  {
+    TEST_LOG("\n> Speak into the microphone and verify that the selected "
+      "microphone volume is varied between [~0] and [~MAX].\n"
+      "> You should hear your own voice with an increasing volume level"
+      " correlated to the microphone volume.\n"
+      "> After a finalized test (and if file recording was enabled) "
+      "verify the recorded result off line.\n"
+      "> Press any key to stop...\n \n");
+    PAUSE(DEFAULT_PAUSE_TIME);
+  }
+
+  if (fileRecording)
+  {
+    EXPECT_EQ(0, audioDevice->StopRawInputFileRecording());
+  }
+  EXPECT_EQ(0, audioDevice->StopRecording());
+  EXPECT_EQ(0, audioDevice->StopPlayout());
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+  EXPECT_EQ(0, audioDevice->StereoRecordingIsAvailable(&available));
+
+  _audioTransport->SetMicrophoneVolume(false);
+  _audioTransport->SetFullDuplex(false);
+
+  // restore volume setting
+  EXPECT_EQ(0, audioDevice->SetMicrophoneVolume(startVolume));
+
+  TEST_LOG("\n");
+  PRINT_TEST_RESULTS;
+
+  return 0;
+}
+
+int32_t WinRTTestManager::TestSpeakerMute()
+{
+  TEST_LOG("\n=======================================\n");
+  TEST_LOG(" Speaker Mute test:\n");
+  TEST_LOG("=======================================\n");
+
+  if (_audioDevice == NULL)
+  {
+    return -1;
+  }
+
+  RESET_TEST;
+
+  AudioDeviceModule* audioDevice = _audioDevice;
+
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+
+  if (SelectPlayoutDevice() == -1)
+  {
+    TEST_LOG("\nERROR: Device selection failed!\n \n");
+    return -1;
+  }
+
+  bool available(false);
+  bool startMute(false);
+  uint32_t samplesPerSec(0);
+
+  EXPECT_EQ(0, audioDevice->SpeakerMuteIsAvailable(&available));
+  if (available)
+  {
+    _audioTransport->SetSpeakerMute(true);
+  }
+  else
+  {
+    TEST_LOG(
+      "\nERROR: Mute control is not available for the selected"
+      " device!\n \n");
+    return -1;
+  }
+
+  // store initial mute setting
+  EXPECT_EQ(0, audioDevice->InitSpeaker());
+  EXPECT_EQ(0, audioDevice->SpeakerMute(&startMute));
+
+  // start with no mute
+  EXPECT_EQ(0, audioDevice->SetSpeakerMute(false));
+
+  // ======================================
+  // Start playing out an existing PCM file
+
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
+  EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
+  if (available)
+  {
+    EXPECT_EQ(0, audioDevice->InitPlayout());
+    EXPECT_EQ(0, audioDevice->PlayoutSampleRate(&samplesPerSec));
+    if (48000 == samplesPerSec)
+      _audioTransport->SetFilePlayout(true, _playoutFile48.c_str());
+    else if (44100 == samplesPerSec || 44000 == samplesPerSec)
+      _audioTransport->SetFilePlayout(true, _playoutFile44.c_str());
+    else
+    {
+      TEST_LOG("\nERROR: Sample rate (%d) is not supported!\n \n",
+        samplesPerSec);
+      return -1;
+    }
+    EXPECT_EQ(0, audioDevice->StartPlayout());
+  }
+
+  EXPECT_TRUE(audioDevice->Playing());
+  if (audioDevice->Playing())
+  {
+    TEST_LOG("\n> Listen to the file being played out and verify that the"
+      " selected speaker mute control is toggled between [MUTE ON] and"
+      " [MUTE OFF].\n> You should only hear the file during the"
+      " 'MUTE OFF' periods.\n"
+      "> Press any key to stop playing...\n \n");
+    PAUSE(DEFAULT_PAUSE_TIME);
+  }
+
+  EXPECT_EQ(0, audioDevice->StopPlayout());
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+
+  _audioTransport->SetSpeakerMute(false);
+  _audioTransport->SetFilePlayout(false);
+
+  // restore mute setting
+  EXPECT_EQ(0, audioDevice->SetSpeakerMute(startMute));
+
+  TEST_LOG("\n");
+  PRINT_TEST_RESULTS;
+
+  return 0;
+}
+
+int32_t WinRTTestManager::TestMicrophoneMute()
+{
+  TEST_LOG("\n=======================================\n");
+  TEST_LOG(" Microphone Mute test:\n");
+  TEST_LOG("=======================================\n");
+
+  std::wstring filePathW = Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data();
+  std::string filePath;
+  filePath.assign(filePathW.begin(), filePathW.end());
+
+  TEST_LOG(filePath.c_str());
+
+  if (_audioDevice == NULL)
+  {
+    return -1;
+  }
+
+  RESET_TEST;
+
+  AudioDeviceModule* audioDevice = _audioDevice;
+
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+
+  if (SelectRecordingDevice() == -1)
+  {
+    TEST_LOG("\nERROR: Device selection failed!\n \n");
+    return -1;
+  }
+
+  bool available(false);
+  EXPECT_EQ(0, audioDevice->MicrophoneMuteIsAvailable(&available));
+  if (available)
+  {
+    _audioTransport->SetMicrophoneMute(true);
+  }
+  else
+  {
+    TEST_LOG("\nERROR: Mute control is not available for the selected"
+      " device!\n \n");
+    return -1;
+  }
+
+  if (SelectPlayoutDevice() == -1)
+  {
+    TEST_LOG("\nERROR: Device selection failed!\n \n");
+    return -1;
+  }
+
+  EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
+  if (available)
+  {
+    _audioTransport->SetFullDuplex(true);
+  }
+  else
+  {
+    TEST_LOG("\nERROR: Playout is not available for the selected "
+      "device!\n \n");
+    return -1;
+  }
+
+  TEST_LOG("\nEnable recording of microphone input to file (%s) during this "
+    "test (Y/N)?\n: ",
+    RecordedMicrophoneMuteFile);
+  char ch;
+  bool fileRecording(false);
+  //EXPECT_TRUE(scanf(" %c", &ch) > 0);
+  //ch = toupper(ch);
+  //if (ch == 'Y')
+  //{
+    fileRecording = true;
+  //}
+
+  bool startMute(false);
+  bool enabled(false);
+
+  // store initial volume setting
+  EXPECT_EQ(0, audioDevice->InitMicrophone());
+  EXPECT_EQ(0, audioDevice->MicrophoneMute(&startMute));
+
+  // start at no mute
+  EXPECT_EQ(0, audioDevice->SetMicrophoneMute(false));
+
+  // ==================================================================
+  // Start recording from the microphone while the mic mute is toggled
+  // continuously.
+  // Also, start playing out the input to enable real-time verification.
+
+  std::string recordingFile = filePath + "\\" + RecordedMicrophoneMuteFile;
+  if (fileRecording)
+  {
+    EXPECT_EQ(0, audioDevice->StartRawInputFileRecording(recordingFile.c_str()));
+  }
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
+  EXPECT_EQ(0, audioDevice->RecordingIsAvailable(&available));
+  if (available)
+  {
+    EXPECT_EQ(0, audioDevice->InitRecording());
+    EXPECT_EQ(0, audioDevice->StereoRecording(&enabled));
+    if (enabled)
+    {
+      // ensure file recording in mono
+      EXPECT_EQ(0, audioDevice->SetRecordingChannel(AudioDeviceModule::kChannelLeft));
+    }
+    EXPECT_EQ(0, audioDevice->StartRecording());
+  }
+  EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
+  if (available)
+  {
+    EXPECT_EQ(0, audioDevice->InitPlayout());
+    EXPECT_EQ(0, audioDevice->StartPlayout());
+  }
+
+  EXPECT_TRUE(audioDevice->Recording());
+  EXPECT_TRUE(audioDevice->Playing());
+  if (audioDevice->Recording() && audioDevice->Playing())
+  {
+    TEST_LOG("\n> Speak into the microphone and verify that the selected "
+      "microphone mute control is toggled between [MUTE ON] and [MUTE OFF]."
+      "\n> You should only hear your own voice in loopback during the"
+      " 'MUTE OFF' periods.\n> After a finalized test (and if file "
+      "recording was enabled) verify the recorded result off line.\n"
+      "> Press any key to stop...\n \n");
+    PAUSE(DEFAULT_PAUSE_TIME);
+  }
+
+  if (fileRecording)
+  {
+    EXPECT_EQ(0, audioDevice->StopRawInputFileRecording());
+  }
+  EXPECT_EQ(0, audioDevice->StopRecording());
+  EXPECT_EQ(0, audioDevice->StopPlayout());
+  EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+
+  _audioTransport->SetMicrophoneMute(false);
+  _audioTransport->SetFullDuplex(false);
+
+  // restore volume setting
+  EXPECT_EQ(0, audioDevice->SetMicrophoneMute(startMute));
 
   TEST_LOG("\n");
   PRINT_TEST_RESULTS;
