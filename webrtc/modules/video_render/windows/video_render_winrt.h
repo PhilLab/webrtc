@@ -110,13 +110,16 @@ class VideoRenderWinRT : IVideoRenderWin {
   virtual int32_t DeleteChannel(const uint32_t streamId);
 
   virtual int32_t GetStreamSettings(
-      const uint32_t channel,
-      const uint16_t streamId,
-      uint32_t& zOrder,
-      float& left,
-      float& top,
-      float& right,
-      float& bottom);
+    const uint32_t channel,
+    const uint16_t streamId,
+    uint32_t& zOrder,
+    float& left,
+    float& top,
+    float& right,
+    float& bottom) {
+    // TODO (WinRT) This is a dummy body to be fixed
+    return 1;
+  }
 
   /**************************************************************************
   *

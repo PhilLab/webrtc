@@ -9,7 +9,13 @@
   'targets': [
     {
       'target_name': 'video_coding_test',
-      'type': 'executable',
+      'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'type': 'static_library',
+        }, {
+          'type': 'executable',
+        }],
+      ],
       'dependencies': [
          'rtp_rtcp',
          'video_processing',

@@ -33,7 +33,7 @@ static int32_t gVoiceEngineInstanceCounter = 0;
 
 VoiceEngine* GetVoiceEngine(const Config* config, bool owns_config)
 {
-#if (defined _WIN32)
+#if (defined _WIN32) && (!defined WINRT)
   HMODULE hmod = LoadLibrary(TEXT("VoiceEngineTestingDynamic.dll"));
 
   if (hmod) {

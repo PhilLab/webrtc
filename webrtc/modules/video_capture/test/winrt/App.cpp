@@ -36,8 +36,10 @@ namespace video_capture_test_winrt
     }
 
   private:
-    TextBox^ outputTextBox_;
     ProgressRing^ progressRing_;
+    Button^ firstButton_;
+    Button^ secondButton_;
+    Button^ thirdButton_;
 
   protected:
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
@@ -46,12 +48,44 @@ namespace video_capture_test_winrt
       layoutRoot->VerticalAlignment = VerticalAlignment::Center;
       layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;
 
-      outputTextBox_ = ref new TextBox();
-      outputTextBox_->Width = 640;
-      outputTextBox_->Height = 480;
-      outputTextBox_->AcceptsReturn = true;
-      outputTextBox_->PlaceholderText = "Test outputs appears here!";
-      layoutRoot->Children->Append(outputTextBox_);
+      auto containerStack = ref new StackPanel();
+      containerStack->Orientation = Orientation::Vertical;
+
+      auto buttonStack = ref new StackPanel();
+      buttonStack->Orientation = Orientation::Horizontal;
+      buttonStack->HorizontalAlignment = HorizontalAlignment::Center;
+      
+      firstButton_ = ref new Button();
+      firstButton_->Width = 200;
+      firstButton_->Height = 60;
+      firstButton_->Content = "1";
+      firstButton_->Click += ref new RoutedEventHandler(this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+      buttonStack->Children->Append(firstButton_);
+
+      secondButton_= ref new Button();
+      secondButton_->Width = 200;
+      secondButton_->Height = 60;
+      secondButton_->Content = "2";
+      secondButton_->Click += ref new RoutedEventHandler(this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+      buttonStack->Children->Append(secondButton_);
+
+      thirdButton_ = ref new Button();
+      thirdButton_->Width = 200;
+      thirdButton_->Height = 60;
+      thirdButton_->Content = "3";
+      thirdButton_->Click += ref new RoutedEventHandler(this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+
+      buttonStack->Children->Append(thirdButton_);
+
+      containerStack->Children->Append(buttonStack);
+
+      g_capturePreview = ref new CaptureElement();
+      g_capturePreview->Height = 640;
+      g_capturePreview->Width = 480;
+
+      containerStack->Children->Append(g_capturePreview);
+
+      layoutRoot->Children->Append(containerStack);
 
       progressRing_ = ref new ProgressRing();
       progressRing_->Width = 50;
@@ -60,14 +94,25 @@ namespace video_capture_test_winrt
 
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
-      RunCaptureTest();
+      //RunCaptureTest();
+    }
+
+    void button1_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+    {
+    }
+
+    void button2_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+    {
+    }
+
+    void button3_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+    {
     }
 
     void RunCaptureTest()
     {
       // Update the UI to indicate test execution is in progress
       progressRing_->IsActive = true;
-      outputTextBox_->PlaceholderText = "Executing test cases. Please wait...";
 
       // Capture stdout
       setvbuf(stdout, stdout_buffer, _IOFBF, sizeof(stdout_buffer));

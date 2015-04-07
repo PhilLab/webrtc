@@ -231,7 +231,7 @@ TEST_F(AudioCodingModuleTestOldApi, DISABLED_ON_ANDROID(InitializedToZero)) {
 // Apply an initial playout delay. Calls to AudioCodingModule::PlayoutData10ms()
 // should result in generating silence, check the associated field.
 TEST_F(AudioCodingModuleTestOldApi,
-       DISABLED_ON_ANDROID(SilenceGeneratorCalled)) {
+       DISABLED_ON_ANDROID_AND_WINRT(SilenceGeneratorCalled)) {
   RegisterCodec();
   AudioDecodingCallStats stats;
   const int kInitialDelay = 100;

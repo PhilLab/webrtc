@@ -30,27 +30,18 @@
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_rand_gen',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_env',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_sha1_driver',
+        '../../../../modules/modules.gyp:video_coding_test',
+        '../../../../modules/modules.gyp:video_capture',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
       ],
       'include_dirs': [
-        'Generated Files',
+        '.',
       ],
       'sources': [
-        'MainPage.xaml',
-        'MainPage.xaml.h',
-        'MainPage.xaml.cpp',
-        'Package.appxmanifest',
-        'Assets/Logo.scale-100.png',
-        'Assets/SmallLogo.scale-100.png',
-        'Assets/SplashScreen.scale-100.png',
-        'Assets/StoreLogo.scale-100.png',
-        'App.xaml',
-        'App.xaml.h',
-        'App.xaml.cpp',
-        'pch.h',
-        'pch.cpp',
+        'App.cpp',
+        'common.h',
         'Helpers/SafeSingleton.h',
         'Helpers/StdOutputRedirector.h',
         'Helpers/TestInserter.h',
@@ -92,10 +83,104 @@
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
         'libSrtpTests/libsrtpTestSolution.h',
+        'videoCodingTests/VideoCodingTest.h',
+        'videoCodingTests/VideoCodingTest.cpp',
+        'Logo.png',
+        'SmallLogo.png',
+        'StoreLogo.png',
+        '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
+      ],
+      'conditions': [
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+          'sources': [	
+            'Package.phone.appxmanifest',
+            'Logo71x71.png',
+            'Logo44x44.png',
+            'SplashScreen480x800.png',
+          ],
+          #TODO(winrt) fix video coding test for Windows Phone
+          'dependencies!': [
+            '../../../../modules/modules.gyp:video_coding_test',
+            '../../../../modules/modules.gyp:video_capture',
+          ],
+          'sources!': [
+            'videoCodingTests/VideoCodingTest.h',
+            'videoCodingTests/VideoCodingTest.cpp',
+          ],
+        }],
+          ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+          'sources': [
+            'Package.appxmanifest',
+            'SplashScreen.png',
+          ],
+        }],
+      ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Generated Manifest Phone\AppxManifest.xml',								
+                 'Logo71x71.png',
+                 'Logo44x44.png',
+                 'SplashScreen480x800.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'Generated Manifest\AppxManifest.xml',								
+                'SplashScreen.png',
+              ],
+            }],
+          ],
+          'files':[
+            'Logo.png',
+            'SmallLogo.png',
+            'StoreLogo.png',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package/resources',
+          'files':[
+            '../../../../../resources/foreman_cif.yuv',
+          ],
+        },
+        # Hack for MSVS to copy to the Appx folder
+        {
+          'destination': '<(PRODUCT_DIR)/LibTestAppX',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Logo71x71.png',
+                 'Logo44x44.png',	
+                 'SplashScreen480x800.png',							
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'SplashScreen.png',
+              ],
+            }],
+          ],
+          'files':[
+            'Logo.png',
+            'SmallLogo.png',
+            'StoreLogo.png',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/AppX/resources',
+          'files':[
+            '../../../../../resources/foreman_cif.yuv',
+          ],
+        },
       ],
       'msvs_disabled_warnings': [
       ],
       'msvs_package_certificate': {
+        'KeyFile': '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
+        'Thumbprint': 'E3AA95A6CD6D9DF6D0B7C68EBA246B558824F8C1',
       },
       'msvs_settings': {
         'VCCLCompilerTool': {
@@ -104,6 +189,29 @@
         },
         'VCLinkerTool': {
         },
+      },
+    },
+    {	
+      'target_name': 'libTest_runner_appx',
+      'product_name': 'libTest_runner',
+      'product_extension': 'appx',
+      'type': 'none',
+      'dependencies': [
+        'libTest_runner',
+      ],
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package',
+          'files':[
+            '<(PRODUCT_DIR)/libTest_runner.exe',
+          ],
+        },
+      ],
+      'appx': {
+        'dep': '<(PRODUCT_DIR)/libTest_runner_package/libTest_runner.exe',
+        'dir': '<(PRODUCT_DIR)/libTest_runner_package',
+        'out': '<(PRODUCT_DIR)/libTest_runner.appx',
+        'cert': '..\gtest_runner\gtest_runner_TemporaryKey.pfx'
       },
     },
   ],

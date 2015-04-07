@@ -18,6 +18,7 @@
 #if defined(_WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include "webrtc/base/win32.h"
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 #include <arpa/inet.h>
 #include <ctype.h>
@@ -791,7 +792,7 @@ int32_t UdpTransportImpl::SetToS(int32_t DSCP, bool useSetSockOpt)
 
     if (useSetSockOpt)
     {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WINRT)
         OSVERSIONINFO OsVersion;
         OsVersion.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
         GetVersionEx(&OsVersion);
@@ -2327,6 +2328,47 @@ uint32_t UdpTransport::InetAddrIPV4(const char* ip)
 {
     return ::inet_addr(ip);
 }
+
+// Ascii versions since the symbol doesn't exist on WinRT
+#if defined(WINRT)
+INT WSAStringToAddressA(
+  _In_    LPSTR               AddressString,
+  _In_    INT                 AddressFamily,
+  _In_opt_ LPWSAPROTOCOL_INFO lpProtocolInfo,
+  _Out_writes_bytes_to_(*lpAddressLength, *lpAddressLength) LPSOCKADDR lpAddress,
+  _Inout_ LPINT               lpAddressLength)
+{
+  std::wstring AddressStringW = ::rtc::ToUtf16(AddressString);
+  return WSAStringToAddressW(
+    (LPWSTR)AddressStringW.c_str(),
+    AddressFamily,
+    lpProtocolInfo,
+    lpAddress,
+    lpAddressLength);
+}
+
+_WINSOCK_DEPRECATED_BY("WSAAddressToStringW()")
+INT WSAAddressToStringA(
+  _In_reads_bytes_(dwAddressLength) LPSOCKADDR lpsaAddress,
+  _In_     DWORD               dwAddressLength,
+  _In_opt_ LPWSAPROTOCOL_INFO  lpProtocolInfo,
+  _Out_writes_to_(*lpdwAddressStringLength,*lpdwAddressStringLength) LPSTR lpszAddressString,
+  _Inout_  LPDWORD             lpdwAddressStringLength
+  )
+{
+  std::wstring buff;
+  buff.resize((std::wstring::size_type)lpdwAddressStringLength, (wchar_t)0);
+  int ret = WSAAddressToStringW(
+    lpsaAddress,
+    dwAddressLength,
+    lpProtocolInfo,
+    (LPWSTR)buff.data(),
+    lpdwAddressStringLength);
+  std::string buff8 = ::rtc::ToUtf8(buff);
+  strcpy_s((char*)lpszAddressString, (rsize_t)lpdwAddressStringLength, buff8.c_str());
+  return ret;
+}
+#endif
 
 int32_t UdpTransport::InetPresentationToNumeric(int32_t af,
                                                 const char* src,
