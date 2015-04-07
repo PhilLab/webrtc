@@ -122,7 +122,7 @@
             '<(DEPTH)/third_party/openmax_dl/dl/dl.gyp:openmax_dl',
           ],
         }],
-        ['target_arch=="ia32" or target_arch=="x64"', {
+        ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone"', {
           'dependencies': ['common_audio_sse2',],
         }],
         ['target_arch=="arm"', {
