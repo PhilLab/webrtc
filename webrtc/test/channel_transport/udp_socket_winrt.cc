@@ -151,8 +151,12 @@ int32_t UdpSocketWinRT::SendTo(const int8_t* buf, size_t len,
                                const SocketAddress& to)
 {
     int size = sizeof(sockaddr);
+
+    // since it's winsock2, which expects int, disable warning for this line
+#pragma warning (disable:4267)
     int retVal = sendto(_socket, (const char*)buf, len, 0,
                         reinterpret_cast<const sockaddr*>(&to), size);
+#pragma warning (default:4267)
     if(retVal == SOCKET_ERROR)
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
