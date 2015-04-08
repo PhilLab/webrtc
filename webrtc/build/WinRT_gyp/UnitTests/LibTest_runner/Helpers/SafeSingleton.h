@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <assert.h>
+
 namespace LibTest_runner
 {
 
