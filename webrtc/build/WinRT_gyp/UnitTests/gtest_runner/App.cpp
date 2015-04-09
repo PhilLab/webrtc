@@ -17,6 +17,8 @@ static char stdout_buffer[1024 * 1024] = { 0 };
 
 bool autoClose = false;
 
+Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+
 namespace gtest_runner
 {
   ref class GTestApp sealed : public Windows::UI::Xaml::Application
