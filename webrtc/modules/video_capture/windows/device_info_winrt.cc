@@ -60,6 +60,7 @@ int32_t DeviceInfoWinRT::GetDeviceName(
     uint32_t deviceUniqueIdUTF8Length,
     char* productUniqueIdUTF8,
     uint32_t productUniqueIdUTF8Length) {
+  ReadLockScoped cs(_apiLock);
   const int32_t result = GetDeviceInfo(
       deviceNumber,
       deviceNameUTF8,
@@ -80,9 +81,9 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
     char* productUniqueIdUTF8,
     uint32_t productUniqueIdUTF8Length) {
 
-  int deviceCount = 0;
+  int deviceCount = -1;
   int* deviceCountPtr = &deviceCount;
-  auto findAllTask = Concurrency::create_task(
+  auto findAllAsyncTask = Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
@@ -132,14 +133,15 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
               "Failed to convert device unique ID to UTF8. %d",
               GetLastError());
           }
-          productUniqueIdUTF8[0] = 0;
+          if (productUniqueIdUTF8 != NULL)
+            productUniqueIdUTF8[0] = 0;
         }
       }
     } catch (Platform::Exception^ e) {
     }
   });
 
-  findAllTask.wait();
+  findAllAsyncTask.wait();
 
   return deviceCount;
 }
@@ -169,12 +171,15 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
     "CreateCapabilityMap called for device %s", deviceUniqueIdUTF8);
 
-  auto findAllTask = Concurrency::create_task(
+  bool finished = false;
+  bool* finishedPtr = &finished;
+  auto findAllAsyncTask = Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
               deviceUniqueIdUTF8,
-              deviceUniqueIdUTF8Length](Concurrency::task<DeviceInformationCollection^> findTask) {
+              deviceUniqueIdUTF8Length,
+              finishedPtr](Concurrency::task<DeviceInformationCollection^> findTask) {
     try {
       DeviceInformationCollection^ devInfoCollection = findTask.get();
       if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
@@ -226,13 +231,14 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
         });
         initializeTask.wait();
       }
+      *finishedPtr = true;
     } catch (Platform::Exception^ e) {
     }
   });
 
-  findAllTask.wait();
+  findAllAsyncTask.wait();
 
-  return 0;
+  return _captureCapabilities.size();
 }
 
 }  // namespace videocapturemodule

@@ -17,8 +17,6 @@ static char stdout_buffer[1024 * 1024] = { 0 };
 
 bool autoClose = false;
 
-Windows::UI::Xaml::Controls::CaptureElement^ g_capturePreview;
-
 namespace gtest_runner
 {
   ref class GTestApp sealed : public Windows::UI::Xaml::Application

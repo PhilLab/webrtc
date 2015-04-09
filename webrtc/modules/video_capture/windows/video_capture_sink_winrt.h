@@ -25,9 +25,23 @@ class CriticalSectionWrapper;
 namespace videocapturemodule {
 class VideoCaptureMediaSinkWinRT;
 
+public ref class MediaSampleEventArgs sealed
+{
+internal:
+  MediaSampleEventArgs(Microsoft::WRL::ComPtr<IMFSample> spMediaSample) :
+      _spMediaSample(spMediaSample) { }
+
+  Microsoft::WRL::ComPtr<IMFSample> GetMediaSample() {
+    return _spMediaSample;
+  }
+
+private:
+  Microsoft::WRL::ComPtr<IMFSample> _spMediaSample;
+};
+
 interface class ISinkCallback
 {
-  void OnSample();
+  void OnSample(MediaSampleEventArgs^ args);
   void OnShutdown();
 };
 
@@ -54,7 +68,6 @@ class VideoCaptureStreamSinkWinRT :
     OpPause,
     OpStop,
     OpProcessSample,
-
     Op_Count                // Number of operations
   };
 
@@ -109,7 +122,6 @@ class VideoCaptureStreamSinkWinRT :
   // Used to queue asynchronous operations. When we call MFPutWorkItem, we use this
   // object for the callback state (pState). Then, when the callback is invoked,
   // we can use the object to determine which asynchronous operation to perform.
-
   class AsyncOperation : public IUnknown {
    public:
     explicit AsyncOperation(StreamOperation op);
@@ -295,13 +307,15 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
   Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^ 
       InitializeAsync(Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties);
 
+  event Windows::Foundation::EventHandler<MediaSampleEventArgs^>^ MediaSampleEvent;
+
  private:
   ref class VideoCaptureSinkCallback sealed : ISinkCallback
   {
    public:
-    virtual void OnSample()
+    virtual void OnSample(MediaSampleEventArgs^ args)
     {
-      _parent->OnSample();
+      _parent->OnSample(args);
     }
 
     virtual void OnShutdown()
@@ -319,7 +333,7 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
     VideoCaptureMediaSinkProxyWinRT ^_parent;
   };
 
-  void OnSample();
+  void OnSample(MediaSampleEventArgs^ args);
 
   void OnShutdown();
 

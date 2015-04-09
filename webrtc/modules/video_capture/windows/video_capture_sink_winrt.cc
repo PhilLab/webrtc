@@ -374,6 +374,7 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::ProcessSample(IMFSample *pSample) {
   if (SUCCEEDED(hr)) {
     // Add the sample to the sample queue.
     if (SUCCEEDED(hr)) {
+      pSample->AddRef();
       _sampleQueue.push(pSample);
     }
 
@@ -747,8 +748,11 @@ HRESULT VideoCaptureStreamSinkWinRT::Shutdown() {
 
     MFUnlockWorkQueue(_workQueueId);
 
-    while (!_sampleQueue.empty())
+    while (!_sampleQueue.empty()) {
+      IUnknown* pSample = _sampleQueue.front();
       _sampleQueue.pop();
+      pSample->Release();
+    }
 
     _spSink.Reset();
     _spEventQueue.Reset();
@@ -878,7 +882,13 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
 
     if (SUCCEEDED(spunkSample.As(&spSample))) {
       assert(spSample);
-      _callback->OnSample();
+      ComPtr<IMFMediaBuffer> spMediaBuffer;
+      HRESULT hr = spSample->GetBufferByIndex(0, &spMediaBuffer);
+      if (FAILED(hr)) {
+        break;
+      }
+      
+      _callback->OnSample(ref new MediaSampleEventArgs(spSample));
       if (!fFlush) {
         fProcessingSample = true;
       }
@@ -1355,8 +1365,9 @@ Windows::Foundation::IAsyncOperation<IMediaExtension^>^
   });
 }
 
-void VideoCaptureMediaSinkProxyWinRT::OnSample() {
+void VideoCaptureMediaSinkProxyWinRT::OnSample(MediaSampleEventArgs^ args) {
   Trace(TRACE_LEVEL_NORMAL, L"======== ProcessSamplesFromQueue - %04d\n", _sampleNumber++);
+  MediaSampleEvent(this, args);
 }
 
 void VideoCaptureMediaSinkProxyWinRT::OnShutdown() {

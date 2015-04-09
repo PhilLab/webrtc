@@ -163,6 +163,7 @@
                 'windows/video_render_winrt.h',
                 'windows/video_render_winrt.cc',
               ],
+              'defines': [ 'WINRT_MF_RENDERING=1' ],
             }],
           ] # conditions
         },
