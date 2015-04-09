@@ -20,6 +20,9 @@
         '../../../../webrtc/video_engine/video_engine.gyp:video_engine_core',
         '../../../../webrtc/modules/modules.gyp:video_capture_module_internal_impl',
         '../../../../webrtc/modules/modules.gyp:video_render_module_internal_impl',
+        '../../../../webrtc/system_wrappers/system_wrappers.gyp:metrics_default',
+        '../../../../webrtc/test/test.gyp:channel_transport',
+        '../../../../webrtc/test/test.gyp:field_trial',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
