@@ -27,6 +27,8 @@ using Windows::Media::MediaProperties::MediaEncodingProfile;
 using Windows::Media::MediaProperties::VideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
 
+extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+
 namespace webrtc {
 namespace videocapturemodule {
 
@@ -121,7 +123,13 @@ Concurrency::task<void> CaptureDevice::InitializeAsync(
     media_capture_failed_event_registration_token_ = media_capture->Failed +=
         ref new MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
     //settings->VideoDeviceId = deviceId;
-    return Concurrency::create_task(media_capture->InitializeAsync());
+    Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+    Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this]() {
+      media_capture_->InitializeAsync();
+    });
+    Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
+    return Concurrency::create_task(action);
   } catch (Platform::Exception^ e) {
     DoCleanup();
     throw e;
@@ -309,13 +317,13 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
     }
     catch (Platform::Exception^ e) {
     }
-  }, Concurrency::task_continuation_context::use_arbitrary());
+  });
 
   findAllAsyncTask.wait();
 
   CaptureDevice^ device = ref new CaptureDevice(this);
 
-  device->InitializeAsync(device_id_).then([this, device](Concurrency::task<void> asyncInfo)
+  auto initializeAsyncTask = device->InitializeAsync(device_id_).then([this, device](Concurrency::task<void> asyncInfo)
   {
     try
     {
@@ -337,25 +345,13 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
     return Concurrency::create_task([]{});
   });
 
+  initializeAsyncTask.wait();
+
   return 0;
 }
 
 int32_t VideoCaptureWinRT::StartCapture(
     const VideoCaptureCapability& capability) {
-
-  Concurrency::create_task(device_->MediaCapture.Get()->StartPreviewAsync()).then([this](Concurrency::task<void> asyncInfo)
-  {
-    try
-    {
-      asyncInfo.get();
-    }
-    catch (Platform::Exception^ e)
-    {
-      return Concurrency::create_task([]{});
-    }
-
-    return Concurrency::create_task([]{});
-  });
 
   MediaEncodingProfile^ mediaEncodingProfile =
     ref new MediaEncodingProfile();

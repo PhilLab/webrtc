@@ -5,6 +5,8 @@
 
 #include <windows.media.core.h>
 
+#include <ppltasks.h>
+
 // WebRtc include files
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -15,6 +17,8 @@
 using Microsoft::WRL::ComPtr;
 using Windows::Media::Core::IMediaSource;
 using Windows::UI::Xaml::Controls::MediaElement;
+
+extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace webrtc {
 
@@ -47,8 +51,14 @@ VideoChannelWinRT::VideoChannelWinRT(
 
   IMediaSource^ mediaSource = safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(inspectable.Get()));
 
-  _mediaElement->SetMediaStreamSource(mediaSource);
-  _mediaElement->Play();
+  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+  Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+  Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, mediaSource]() {
+    _mediaElement->SetMediaStreamSource(mediaSource);
+    _mediaElement->Play();
+  });
+  Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
+  Concurrency::create_task(action).wait();
 }
 
   VideoChannelWinRT::~VideoChannelWinRT()
@@ -324,17 +334,6 @@ int32_t VideoRenderWinRT::DeleteChannel(const uint32_t streamId) {
 
   delete _channel;
   
-  return 0;
-}
-
-int32_t VideoRenderWinRT::GetStreamSettings(
-    const uint32_t channel,
-    const uint16_t streamId,
-    uint32_t& zOrder,
-    float& left,
-    float& top,
-    float& right,
-    float& bottom) {
   return 0;
 }
 

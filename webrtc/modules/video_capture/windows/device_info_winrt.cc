@@ -139,7 +139,7 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(
       }
     } catch (Platform::Exception^ e) {
     }
-  }, Concurrency::task_continuation_context::use_arbitrary());
+  });
 
   findAllAsyncTask.wait();
 
@@ -234,7 +234,7 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
       *finishedPtr = true;
     } catch (Platform::Exception^ e) {
     }
-  }, Concurrency::task_continuation_context::use_arbitrary());
+  });
 
   findAllAsyncTask.wait();
 

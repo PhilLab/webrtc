@@ -18,6 +18,7 @@ using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 
 bool autoClose = false;
+Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace StandupWinRT
 {
@@ -72,7 +73,6 @@ namespace StandupWinRT
       traceCallback_(new TestTraceCallback()),
       started_(false)
     {
-      dispatcher_ = Window::Current->Dispatcher;
       webrtc::Trace::CreateTrace();
       webrtc::Trace::SetTraceCallback(traceCallback_);
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
@@ -98,6 +98,8 @@ namespace StandupWinRT
   protected:
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
     {
+      g_windowDispatcher = dispatcher_ = Window::Current->Dispatcher;
+
       auto layoutRoot = ref new Grid();
       layoutRoot->Margin = ThicknessHelper::FromUniformLength(32);
 
@@ -153,6 +155,7 @@ namespace StandupWinRT
           border->Margin = ThicknessHelper::FromUniformLength(8);
           grid->Children->Append(border);
           Grid::SetColumn(border, index);
+          elem = surface;
         };
 
         makeRenderSurface(localMedia_, 0);
@@ -227,7 +230,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         webrtc::VideoCaptureFactory::Create(0, device_unique_name);
 
       vcpm_->AddRef();
-
+      
       webrtc::VideoCaptureCapability capability;
       dev_info->GetCapability(device_unique_name, 0, capability);
 

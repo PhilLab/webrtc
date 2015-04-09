@@ -826,6 +826,7 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
           ThrowIfError(spSample->SetUINT32(MFSampleExtension_Discontinuity, TRUE));
           _fDiscontinuity = false;
         }
+        Trace(TRACE_LEVEL_NORMAL, L"======== DeliverSamples()\n");
 
         // Send a sample event.
         ThrowIfError(_spEventQueue->QueueEventParamUnk(MEMediaSample, GUID_NULL, S_OK, spSample.Get()));
