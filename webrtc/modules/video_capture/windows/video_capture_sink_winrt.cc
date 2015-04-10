@@ -1366,7 +1366,14 @@ Windows::Foundation::IAsyncOperation<IMediaExtension^>^
 }
 
 void VideoCaptureMediaSinkProxyWinRT::OnSample(MediaSampleEventArgs^ args) {
-  Trace(TRACE_LEVEL_NORMAL, L"======== ProcessSamplesFromQueue - %04d\n", _sampleNumber++);
+  Microsoft::WRL::ComPtr<IMFSample> spSample = args->GetMediaSample();
+  DWORD pcbTotalLength;
+  LONGLONG phnsSampleTime;
+  LONGLONG phnsSampleDuration;
+  spSample->GetTotalLength(&pcbTotalLength);
+  spSample->GetSampleTime(&phnsSampleTime);
+  spSample->GetSampleDuration(&phnsSampleDuration);
+  Trace(TRACE_LEVEL_NORMAL, L"======== ProcessSamplesFromQueue - %d %d %d\n", pcbTotalLength, phnsSampleTime, phnsSampleDuration);
   MediaSampleEvent(this, args);
 }
 

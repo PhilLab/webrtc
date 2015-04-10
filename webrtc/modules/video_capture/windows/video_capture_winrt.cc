@@ -250,9 +250,10 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     frameInfo.width = 640;
     frameInfo.height = 480;
     frameInfo.rawType = kVideoNV12;
-    int64_t captureTime = 0;
+    int64_t captureTime;
     DWORD maxLength;
     DWORD currentLength;
+    hr = spMediaSample->GetSampleTime(&captureTime);
     hr = spMediaBuffer->Lock(&videoFrame, &maxLength, &currentLength);
     videoFrameLength = currentLength;
     if (SUCCEEDED(hr)) {

@@ -25,7 +25,6 @@
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 
 using namespace Platform;
@@ -231,6 +230,7 @@ namespace StandupWinRT
     }
 
     virtual ~App() {
+
       int error;
       if (voiceBase_) {
         error = voiceBase_->Release();
@@ -469,9 +469,12 @@ namespace StandupWinRT
         auto makeRenderSurface = [grid](MediaElement^& elem, int index) {
           auto surface = ref new MediaElement();
           auto border = ref new Border();
+          surface->Width = 640;
+          surface->Height = 480;
           border->BorderBrush = ref new SolidColorBrush(ColorHelper::FromArgb(255, 0, 0, 255));
           border->BorderThickness = ThicknessHelper::FromUniformLength(2);
           border->Margin = ThicknessHelper::FromUniformLength(8);
+          border->Child = surface;
           grid->Children->Append(border);
           Grid::SetColumn(border, index);
           elem = surface;
@@ -539,7 +542,9 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   int error;
-  if (!startedVideo_) {
+
+  if (!started_) {
+
     voiceChannel_ = voiceBase_->CreateChannel();
     if (voiceChannel_ < 0) {
       webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
@@ -835,6 +840,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       return;
     }
 
+    started_ = true;
+
   } else {
 
     error = voiceBase_->StopSend(voiceChannel_);
@@ -942,6 +949,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
     vcpm_ = NULL;
 
     captureId_ = -1;
+
+    started_ = false;
   }
 }
 
@@ -966,11 +975,9 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
         device_unique_name,
         sizeof(device_unique_name));
 
-      webrtc::VideoCaptureModule* vcpm_ =
-        webrtc::VideoCaptureFactory::Create(0, device_unique_name);
-
+      vcpm_ = webrtc::VideoCaptureFactory::Create(0, device_unique_name);
       vcpm_->AddRef();
-      
+
       webrtc::VideoCaptureCapability capability;
       dev_info->GetCapability(device_unique_name, 0, capability);
 
@@ -990,20 +997,26 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       vrm_->StartRender(1);
 
+      startedVideo_ = true;
+
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopButton_->Content = "Stop";
+        startStopVideoButton_->Content = "Stop Video";
       })));
     });
   }
   else
   {
     Concurrency::create_task([this]() {
+
+      vrm_->StopRender(1);
       vcpm_->StopCapture();
       vcpm_->Release();
       delete (TestCaptureCallback*)captureCallback_;
 
+      startedVideo_ = false;
+
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopButton_->Content = "Start";
+        startStopVideoButton_->Content = "Start Video";
       })));
     });
   }

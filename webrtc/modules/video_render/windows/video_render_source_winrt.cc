@@ -805,7 +805,11 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
     if (SUCCEEDED(spEntry.As(&spSample)))
     {
       DWORD pcbTotalLength;
+      LONGLONG phnsSampleTime;
+      LONGLONG phnsSampleDuration;
       spSample->GetTotalLength(&pcbTotalLength);
+      spSample->GetSampleTime(&phnsSampleTime);
+      spSample->GetSampleDuration(&phnsSampleDuration);
       fDrop = ShouldDropSample(spSample.Get());
 
       if (!fDrop)
@@ -826,7 +830,8 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
           ThrowIfError(spSample->SetUINT32(MFSampleExtension_Discontinuity, TRUE));
           _fDiscontinuity = false;
         }
-        Trace(TRACE_LEVEL_NORMAL, L"======== DeliverSamples()\n");
+
+        Trace(TRACE_LEVEL_NORMAL, L"======== DeliverSamples - %d %d %d\n", pcbTotalLength, phnsSampleTime, phnsSampleDuration);
 
         // Send a sample event.
         ThrowIfError(_spEventQueue->QueueEventParamUnk(MEMediaSample, GUID_NULL, S_OK, spSample.Get()));
@@ -1523,8 +1528,8 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
         // Forward sample to a proper stream.
         SampleHeader sampleHead;
         sampleHead.dwStreamId = 1;
-        sampleHead.ullDuration = 1 / 30 * 10000000;
-        //sampleHead.ullTimestamp = videoFrame.render_time_ms() * 10000;
+        sampleHead.ullDuration = 10000000 / 30;
+        //sampleHead.ullTimestamp = videoFrame.render_time_ms();
         sampleHead.ullTimestamp = _hnsCurrentSampleTime;
         _hnsCurrentSampleTime += sampleHead.ullDuration;
         spStream->ProcessSample(&sampleHead, spSample.Get());
