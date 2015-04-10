@@ -5,6 +5,7 @@
 #include "webrtc/base/win32.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/gunit.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 using namespace Platform;
 using namespace concurrency;
@@ -19,6 +20,7 @@ bool autoClose = false;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
+
 namespace gtest_runner
 {
   ref class GTestApp sealed : public Windows::UI::Xaml::Application
@@ -26,11 +28,17 @@ namespace gtest_runner
   public:
     GTestApp()
     {
+      progressTimer  = ref new DispatcherTimer;
+      progressTimer->Tick += ref new Windows::Foundation::EventHandler<Object^>(this, &GTestApp::progressUpdate);
+      Windows::Foundation::TimeSpan t;
+      t.Duration = 10* 10*1000*1000; //10sec
+      progressTimer->Interval = t;
     }
 
   private:
     TextBox^ outputTextBox_;
     ProgressRing^ progressRing_;
+    DispatcherTimer^ progressTimer;
 
   protected:
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
@@ -54,10 +62,13 @@ namespace gtest_runner
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
       RunAllTests();
+
+      progressTimer->Start();
     }
 
     void RunAllTests()
     {
+
       testing::FLAGS_gtest_output = "xml";
 
       // Update the UI to indicate test execution is in progress
@@ -90,6 +101,36 @@ namespace gtest_runner
         // Exit the app
         GTestApp::Current->Exit();
       }, ui);
+
+    }
+
+    void progressUpdate(Platform::Object^ sender, Platform::Object^ e) {
+
+      if (!::testing::UnitTest::GetInstance()->current_test_case())
+        return;
+
+      std::ostringstream stringStream;
+
+      SYSTEMTIME st;
+      GetLocalTime(&st);
+
+      std::string currentTestCase = ::testing::UnitTest::GetInstance()->current_test_case()->name();
+      //FixMe:
+      // Test count is not thread safe. fortunately. we will add check it when we fixed the threading issue.
+      //int total = ::testing::UnitTest::GetInstance()->test_to_run_count();
+      //int finished = ::testing::UnitTest::GetInstance()->successful_test_count() + ::testing::UnitTest::GetInstance()->failed_test_count();
+
+      stringStream << "Executing test cases. Please wait...\n"
+        << "Current Test case:" << currentTestCase << "\n"
+        //<< finished << "/" << total << "test suite finished" << "\n"
+        << "\n" << "Last Status updated at " << st.wHour << ":"<<st.wMinute<<":"<<st.wSecond;
+
+      std::string s_str = stringStream.str();
+      std::wstring wid_str = std::wstring(s_str.begin(), s_str.end());
+
+
+      outputTextBox_->Text = ref new Platform::String(wid_str.c_str());
+
     }
   };
 
