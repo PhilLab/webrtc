@@ -100,7 +100,7 @@ public:
   static void SetAudioDevice(AudioDeviceWindowsWasapi* device);
 };
 
-class AudioDeviceWindowsWasapi : public AudioDeviceGeneric/*, public  IActivateAudioInterfaceCompletionHandler*/
+class AudioDeviceWindowsWasapi : public AudioDeviceGeneric
 {
 public:
     AudioDeviceWindowsWasapi(const int32_t id);
@@ -289,9 +289,6 @@ private:
 
     HRESULT _InitializeAudioDeviceInAsync();
     HRESULT _InitializeAudioDeviceOutAsync();
-
-    // IActivateAudioInterfaceCompletionHandler
-    STDMETHOD(ActivatorActivateCompleted)(IActivateAudioInterfaceAsyncOperation *operation);
 
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.

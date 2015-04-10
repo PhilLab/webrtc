@@ -203,10 +203,10 @@ public:
   int32_t TestMicrophoneVolume();
   int32_t TestSpeakerMute();
   int32_t TestMicrophoneMute();
-  /*int32_t TestMicrophoneBoost();
-  */int32_t TestLoopback();/*
+  int32_t TestMicrophoneBoost();
+  int32_t TestLoopback();
   int32_t TestDeviceRemoval();
-  int32_t TestExtra();*/
+  int32_t TestExtra();
   int32_t TestMicrophoneAGC();
   int32_t SelectPlayoutDevice();
   int32_t SelectRecordingDevice();

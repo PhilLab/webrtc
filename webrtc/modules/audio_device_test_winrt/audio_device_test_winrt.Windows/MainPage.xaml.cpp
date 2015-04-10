@@ -155,3 +155,33 @@ void audio_device_test_winrt::MainPage::Button_Click_8(Platform::Object^ sender,
 {
   TestMicrophoneAGCAsync();
 }
+
+Windows::Foundation::IAsyncAction^ audio_device_test_winrt::MainPage::TestDeviceRemovalAsync()
+{
+  return create_async([this]
+  {
+    WinRTTestManager *mManager = new WinRTTestManager();
+    mManager->Init();
+    mManager->TestDeviceRemoval();
+  });
+}
+
+void audio_device_test_winrt::MainPage::Button_Click_9(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+  TestDeviceRemovalAsync();
+}
+
+Windows::Foundation::IAsyncAction^ audio_device_test_winrt::MainPage::TestExtraAsync()
+{
+  return create_async([this]
+  {
+    WinRTTestManager *mManager = new WinRTTestManager();
+    mManager->Init();
+    mManager->TestExtra();
+  });
+}
+
+void audio_device_test_winrt::MainPage::Button_Click_10(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+  TestExtraAsync();
+}

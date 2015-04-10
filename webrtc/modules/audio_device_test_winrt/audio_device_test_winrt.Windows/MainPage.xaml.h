@@ -32,11 +32,15 @@ namespace audio_device_test_winrt
     Windows::Foundation::IAsyncAction^ TestSpeakerMuteAsync();
     Windows::Foundation::IAsyncAction^ TestMicrophoneMuteAsync();
     Windows::Foundation::IAsyncAction^ TestMicrophoneAGCAsync();
+    Windows::Foundation::IAsyncAction^ TestDeviceRemovalAsync();
+    Windows::Foundation::IAsyncAction^ TestExtraAsync();
 
     void Button_Click_4(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     void Button_Click_5(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     void Button_Click_6(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     void Button_Click_7(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     void Button_Click_8(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+    void Button_Click_9(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+    void Button_Click_10(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
   };
 }

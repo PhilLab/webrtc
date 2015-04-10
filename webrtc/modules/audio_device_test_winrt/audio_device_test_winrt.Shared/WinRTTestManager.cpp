@@ -605,8 +605,6 @@ _audioTransport(NULL)
 
   _playoutFile48 = webrtc::test::ResourcePath("audio_short48",
     "pcm");
-  //_playoutFile48 = webrtc::test::ResourcePath("recorded_microphone_mono_48",
-  //    "pcm");
   _playoutFile44 = webrtc::test::ResourcePath("audio_short44",
     "pcm");
   _playoutFile16 = webrtc::test::ResourcePath("audio_short16",
@@ -1186,7 +1184,6 @@ int32_t WinRTTestManager::TestAudioTransport()
         "> Press any key to stop playing...\n \n",
         samplesPerSec);
       PAUSE(DEFAULT_PAUSE_TIME);
-      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StopPlayout());
@@ -1232,7 +1229,6 @@ int32_t WinRTTestManager::TestAudioTransport()
         "> Speak into the microphone to ensure that your voice is"
         " recorded.\n> Press any key to stop recording...\n \n");
       PAUSE(DEFAULT_PAUSE_TIME);
-      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StereoRecording(&enabled));
@@ -1253,8 +1249,7 @@ int32_t WinRTTestManager::TestAudioTransport()
     /*_audioTransport->SetFilePlayout(true,
       GetFilename(getRecordOutputFilePath(RecordedMicrophoneFile).c_str()));*/
     std::string recordingFile = filePath + "\\" + RecordedMicrophoneFile;
-    _audioTransport->SetFilePlayout(true,
-      GetFilename(recordingFile.c_str()));
+    _audioTransport->SetFilePlayout(true, GetFilename(recordingFile.c_str()));
 
     EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
     EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&available));
@@ -1327,7 +1322,6 @@ int32_t WinRTTestManager::TestAudioTransport()
         "played out in loopback.\n> Press any key to stop...\n \n",
         playSamplesPerSec);
       PAUSE(DEFAULT_PAUSE_TIME);
-      //Sleep(10000);
     }
 
     EXPECT_EQ(0, audioDevice->StopRecording());
@@ -2110,6 +2104,222 @@ int32_t WinRTTestManager::TestMicrophoneMute()
 
   // restore volume setting
   EXPECT_EQ(0, audioDevice->SetMicrophoneMute(startMute));
+
+  TEST_LOG("\n");
+  PRINT_TEST_RESULTS;
+
+  return 0;
+}
+
+int32_t WinRTTestManager::TestDeviceRemoval()
+{
+  TEST_LOG("\n=======================================\n");
+  TEST_LOG(" Device removal test:\n");
+  TEST_LOG("=======================================\n");
+
+  if (_audioDevice == NULL)
+  {
+    return -1;
+  }
+
+  RESET_TEST;
+
+  AudioDeviceModule* audioDevice = _audioDevice;
+
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+
+  bool recIsAvailable(false);
+  bool playIsAvailable(false);
+  uint8_t nPlayChannels(0);
+  uint8_t nRecChannels(0);
+  uint8_t loopCount(0);
+
+  while (loopCount < 2)
+  {
+    if (SelectRecordingDevice() == -1)
+    {
+      TEST_LOG("\nERROR: Device selection failed!\n \n");
+      return -1;
+    }
+
+    EXPECT_EQ(0, audioDevice->RecordingIsAvailable(&recIsAvailable));
+    if (!recIsAvailable)
+    {
+      TEST_LOG("\nERROR: Recording is not available for the selected device!\n \n");
+      return -1;
+    }
+
+    if (SelectPlayoutDevice() == -1)
+    {
+      TEST_LOG("\nERROR: Device selection failed!\n \n");
+      return -1;
+    }
+
+    EXPECT_EQ(0, audioDevice->PlayoutIsAvailable(&playIsAvailable));
+    if (recIsAvailable && playIsAvailable)
+    {
+      _audioTransport->SetFullDuplex(true);
+    }
+    else if (!playIsAvailable)
+    {
+      TEST_LOG("\nERROR: Playout is not available for the selected device!\n \n");
+      return -1;
+    }
+
+    bool available(false);
+    bool enabled(false);
+
+    if (recIsAvailable && playIsAvailable)
+    {
+      uint32_t playSamplesPerSec(0);
+      uint32_t recSamplesPerSecRec(0);
+
+      EXPECT_EQ(0, audioDevice->RegisterAudioCallback(_audioTransport));
+
+      _audioTransport->SetFullDuplex(true);
+
+      EXPECT_EQ(0, audioDevice->StereoRecordingIsAvailable(&available));
+      if (available)
+      {
+        EXPECT_EQ(0, audioDevice->SetStereoRecording(true));
+      }
+
+      EXPECT_EQ(0, audioDevice->StereoPlayoutIsAvailable(&available));
+      if (available)
+      {
+        EXPECT_EQ(0, audioDevice->SetStereoPlayout(true));
+      }
+
+      EXPECT_EQ(0, audioDevice->MicrophoneVolumeIsAvailable(&available));
+      if (available)
+      {
+        uint32_t maxVolume(0);
+        EXPECT_EQ(0, audioDevice->MaxMicrophoneVolume(&maxVolume));
+        EXPECT_EQ(0, audioDevice->SetMicrophoneVolume(maxVolume));
+      }
+
+      EXPECT_EQ(0, audioDevice->InitRecording());
+      EXPECT_EQ(0, audioDevice->InitPlayout());
+      EXPECT_EQ(0, audioDevice->PlayoutSampleRate(&playSamplesPerSec));
+      EXPECT_EQ(0, audioDevice->RecordingSampleRate(&recSamplesPerSecRec));
+      EXPECT_EQ(0, audioDevice->StereoPlayout(&enabled));
+      enabled ? nPlayChannels = 2 : nPlayChannels = 1;
+      EXPECT_EQ(0, audioDevice->StereoRecording(&enabled));
+      enabled ? nRecChannels = 2 : nRecChannels = 1;
+      EXPECT_EQ(0, audioDevice->StartRecording());
+      EXPECT_EQ(0, audioDevice->StartPlayout());
+
+      AudioDeviceModule::AudioLayer audioLayer;
+      EXPECT_EQ(0, audioDevice->ActiveAudioLayer(&audioLayer));
+
+      if (audioLayer == AudioDeviceModule::kLinuxPulseAudio)
+      {
+        TEST_LOG("\n \n> PulseAudio loopback audio is now active.\n"
+          "> Rec : fs=%u, #channels=%u.\n"
+          "> Play: fs=%u, #channels=%u.\n"
+          "> Speak into the microphone and verify that your voice is"
+          " played out in loopback.\n"
+          "> Unplug the device and make sure that your voice is played"
+          " out in loop back on the built-in soundcard.\n"
+          "> Then press any key...\n",
+          recSamplesPerSecRec, nRecChannels, playSamplesPerSec,
+          nPlayChannels);
+
+        PAUSE(DEFAULT_PAUSE_TIME);
+      }
+      else if (audioDevice->Playing() && audioDevice->Recording())
+      {
+        if (loopCount < 1)
+        {
+          TEST_LOG("\n \n> Loopback audio is now active.\n"
+            "> Rec : fs=%u, #channels=%u.\n"
+            "> Play: fs=%u, #channels=%u.\n"
+            "> Speak into the microphone and verify that your voice"
+            " is played out in loopback.\n"
+            "> Unplug the device and wait for the error message...\n",
+            recSamplesPerSecRec, nRecChannels,
+            playSamplesPerSec, nPlayChannels);
+
+          _audioEventObserver->_error
+            = (AudioDeviceObserver::ErrorCode) (-1);
+          while (_audioEventObserver->_error
+            == (AudioDeviceObserver::ErrorCode) (-1))
+          {
+            SleepMs(500);
+          }
+        }
+        else
+        {
+          TEST_LOG("\n \n> Loopback audio is now active.\n"
+            "> Rec : fs=%u, #channels=%u.\n"
+            "> Play: fs=%u, #channels=%u.\n"
+            "> Speak into the microphone and verify that your voice"
+            " is played out in loopback.\n"
+            "> Press any key to stop...\n",
+            recSamplesPerSecRec, nRecChannels,
+            playSamplesPerSec, nPlayChannels);
+
+          PAUSE(DEFAULT_PAUSE_TIME);
+        }
+      }
+
+      EXPECT_EQ(0, audioDevice->StopRecording());
+      EXPECT_EQ(0, audioDevice->StopPlayout());
+      EXPECT_EQ(0, audioDevice->RegisterAudioCallback(NULL));
+
+      _audioTransport->SetFullDuplex(false);
+
+      if (loopCount < 1)
+      {
+        TEST_LOG("\n \n> Stopped!\n");
+        TEST_LOG("> Now reinsert device if you want to enumerate it.\n");
+        TEST_LOG("> Press any key when done.\n");
+        PAUSE(DEFAULT_PAUSE_TIME);
+      }
+
+      loopCount++;
+    }
+  }  // loopCount
+
+  EXPECT_EQ(0, audioDevice->Terminate());
+  EXPECT_FALSE(audioDevice->Initialized());
+
+  TEST_LOG("\n");
+  PRINT_TEST_RESULTS;
+
+  return 0;
+}
+
+int32_t WinRTTestManager::TestExtra()
+{
+  TEST_LOG("\n=======================================\n");
+  TEST_LOG(" Extra test:\n");
+  TEST_LOG("=======================================\n");
+
+  if (_audioDevice == NULL)
+  {
+    return -1;
+  }
+
+  RESET_TEST;
+
+  AudioDeviceModule* audioDevice = _audioDevice;
+
+  //EXPECT_EQ(0, audioDevice->Init());
+  //EXPECT_TRUE(audioDevice->Initialized());
+
+  //EXPECT_EQ(0, audioDevice->Terminate());
+  //EXPECT_FALSE(audioDevice->Initialized());
+  EXPECT_FALSE(audioDevice->Initialized());
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+  EXPECT_EQ(0, audioDevice->Terminate());
+  EXPECT_FALSE(audioDevice->Initialized());
+  EXPECT_EQ(0, audioDevice->Init());
+  EXPECT_TRUE(audioDevice->Initialized());
+  EXPECT_EQ(0, audioDevice->Terminate());
+  EXPECT_FALSE(audioDevice->Initialized());
 
   TEST_LOG("\n");
   PRINT_TEST_RESULTS;

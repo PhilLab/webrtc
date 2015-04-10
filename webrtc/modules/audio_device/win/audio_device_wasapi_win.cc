@@ -294,6 +294,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         goto exit;
       }
       m_AudioDevice->_ptrClientIn = audioClient;
+      m_AudioDevice->_captureDeviceActivated = true;
     }
     else
     {
@@ -304,6 +305,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         goto exit;
       }
       m_AudioDevice->_ptrClientOut = audioClient;
+      m_AudioDevice->_renderDeviceActivated = true;
     }
   }
 
@@ -335,7 +337,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
   //    goto exit;
   //  }
   //}
-  m_AudioDevice->_captureDeviceActivated = true;
+  
 exit:
   SAFE_RELEASE(punkAudioInterface);
 
@@ -548,6 +550,13 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _playChannelsPrioList[0] = 2;    // stereo is prio 1
     _playChannelsPrioList[1] = 1;    // mono is prio 2
 
+    _EnumerateEndpointDevicesAll();
+
+    while (!_ptrCaptureCollection && !_ptrRenderCollection)
+    {
+      Sleep(200);
+    }
+
 }
 
 // ----------------------------------------------------------------------------
@@ -710,16 +719,26 @@ int32_t AudioDeviceWindowsWasapi::Init()
     _recWarning = 0;
     _recError = 0;
 
+    _InitializeAudioDeviceInAsync();
 
-    // Enumerate all audio rendering and capturing endpoint devices.
-    // Note that, some of these will not be able to select by the user.
-    // The complete collection is for internal use only.
-    //
-    _EnumerateEndpointDevicesAll();
-
-    while (!_ptrCaptureCollection && !_ptrRenderCollection)
+    while (true)
     {
-      Sleep(200);
+      if (_ptrCaptureClient && _ptrClientIn)
+      {
+        break;
+      }
+      Sleep(100);
+    }
+
+    _InitializeAudioDeviceOutAsync();
+
+    while (true)
+    {
+      if (_ptrRenderClient && _ptrClientOut)
+      {
+        break;
+      }
+      Sleep(100);
     }
 
     _initialized = true;
@@ -745,6 +764,8 @@ int32_t AudioDeviceWindowsWasapi::Terminate()
     _microphoneIsInitialized = false;
     _playing = false;
     _recording = false;
+    _captureDeviceActivated = false;
+    _renderDeviceActivated = false;
 
     //SAFE_RELEASE(_ptrRenderCollection);
     //SAFE_RELEASE(_ptrCaptureCollection);
@@ -4514,7 +4535,6 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
 
     HRESULT hr = S_OK;
     IPropertyStore *pProps = NULL;
-    //IAudioEndpointVolume* pEndpointVolume = NULL;
     LPWSTR pwszID = NULL;
 
     // Generate a collection of audio endpoint devices in the system.
@@ -4526,38 +4546,9 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
         .then([this](concurrency::task<DeviceInformationCollection^> getDevicesTask)
       {
         _ptrCaptureCollection = getDevicesTask.get();
-        //std::for_each(begin(interfaces), end(interfaces),
-        //  [this](DeviceInformation^ deviceInterface)
-        //{
-        //  //DisplayDeviceInterface(deviceInterface);
-        //  
-        //});
 
       }, task_continuation_context::use_arbitrary());
 
-      ////Call the *Async method that starts the operation.
-      //IAsyncOperation<DeviceInformationCollection^>^ deviceOp = DeviceInformation::FindAllAsync();
-      ////_ptrCaptureCollection = DeviceInformation::FindAllAsync();
-
-      //// Explicit construction. (Not recommended)
-      //// Pass the IAsyncOperation to a task constructor.
-      //// task<DeviceInformationCollection^> deviceEnumTask(deviceOp);
-
-      ////// Recommended:
-      //auto deviceEnumTask = create_task(deviceOp);
-      //deviceEnumTask.wait();
-
-      ////// Call the task’s .then member function, and provide
-      ////// the lambda to be invoked when the async operation completes.
-      //deviceEnumTask.then([this](DeviceInformationCollection^ devices)
-      //{
-      //  for (int i = 0; i < (int)devices->Size; i++)
-      //  {
-      //    DeviceInformation^ di = devices->GetAt(i);
-      //    _ptrCaptureCollection = devices;
-      //    // Do something with di...			
-      //  }
-      //}); // end lambda
     }
     catch (Platform::InvalidArgumentException^)
     {
@@ -4576,12 +4567,6 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
         .then([this](concurrency::task<DeviceInformationCollection^> getDevicesTask)
       {
         _ptrRenderCollection = getDevicesTask.get();
-        //std::for_each(begin(interfaces), end(interfaces),
-        //  [this](DeviceInformation^ deviceInterface)
-        //{
-        //  //DisplayDeviceInterface(deviceInterface);
-
-        //});
 
       }, task_continuation_context::use_arbitrary());
     }
@@ -4594,169 +4579,6 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
     }
 
     EXIT_ON_ERROR(hr);
-
-    while (true)
-    {
-      if (_ptrCaptureCollection && _ptrRenderCollection)
-      {
-        break;
-      }
-      Sleep(100);
-    }
-
-
-    _InitializeAudioDeviceInAsync();
-
-    while (true)
-    {
-      if (_ptrCaptureClient && _ptrClientIn)
-      {
-        break;
-      }
-      Sleep(100);
-    }
-
-    _InitializeAudioDeviceOutAsync();
-
-    while (true)
-    {
-      if (_ptrRenderClient && _ptrClientOut)
-      {
-        break;
-      }
-      Sleep(100);
-    }
-
-    // Retrieve a count of the devices in the device collections.
-   // WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#rendering endpoint devices (counting all): %u", _ptrRenderCollection->Size);
-    //WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#capturing endpoint devices (counting all): %u", _ptrCaptureCollection->Size);
-
-    // Each loop prints the name of an endpoint device.
-//    for (ULONG i = 0; i < count; i++)
-//    {
-//        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Endpoint %d:", i);
-//
-//        // Get pointer to endpoint number i.
-//        // Output: IMMDevice interface.
-//        hr = pCollection->Item(
-//                            i,
-//                            &pEndpoint);
-//        CONTINUE_ON_ERROR(hr);
-//
-//        // use the IMMDevice interface of the specified endpoint device...
-//
-//        // Get the endpoint ID string (uniquely identifies the device among all audio endpoint devices)
-//        hr = pEndpoint->GetId(&pwszID);
-//        CONTINUE_ON_ERROR(hr);
-//        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "ID string    : %S", pwszID);
-//
-//        // Retrieve an interface to the device's property store.
-//        // Output: IPropertyStore interface.
-//        hr = pEndpoint->OpenPropertyStore(
-//                          STGM_READ,
-//                          &pProps);
-//        CONTINUE_ON_ERROR(hr);
-//
-//        // use the IPropertyStore interface...
-//
-//        PROPVARIANT varName;
-//        // Initialize container for property value.
-//        PropVariantInit(&varName);
-//
-//        // Get the endpoint's friendly-name property.
-//        // Example: "Speakers (Realtek High Definition Audio)"
-//        hr = pProps->GetValue(
-//                       PKEY_Device_FriendlyName,
-//                       &varName);
-//        CONTINUE_ON_ERROR(hr);
-//        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "friendly name: \"%S\"", varName.pwszVal);
-//
-//        // Get the endpoint's current device state
-//        DWORD dwState;
-//        hr = pEndpoint->GetState(&dwState);
-//        CONTINUE_ON_ERROR(hr);
-//        if (dwState & DEVICE_STATE_ACTIVE)
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "state (0x%x)  : *ACTIVE*", dwState);
-//        if (dwState & DEVICE_STATE_DISABLED)
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "state (0x%x)  : DISABLED", dwState);
-//        if (dwState & DEVICE_STATE_NOTPRESENT)
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "state (0x%x)  : NOTPRESENT", dwState);
-//        if (dwState & DEVICE_STATE_UNPLUGGED)
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "state (0x%x)  : UNPLUGGED", dwState);
-//
-//        // Check the hardware volume capabilities.
-//        DWORD dwHwSupportMask = 0;
-//        hr = pEndpoint->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL,
-//                               NULL, (void**)&pEndpointVolume);
-//        CONTINUE_ON_ERROR(hr);
-//        hr = pEndpointVolume->QueryHardwareSupport(&dwHwSupportMask);
-//        CONTINUE_ON_ERROR(hr);
-//        if (dwHwSupportMask & ENDPOINT_HARDWARE_SUPPORT_VOLUME)
-//            // The audio endpoint device supports a hardware volume control
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "hwmask (0x%x) : HARDWARE_SUPPORT_VOLUME", dwHwSupportMask);
-//        if (dwHwSupportMask & ENDPOINT_HARDWARE_SUPPORT_MUTE)
-//            // The audio endpoint device supports a hardware mute control
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "hwmask (0x%x) : HARDWARE_SUPPORT_MUTE", dwHwSupportMask);
-//        if (dwHwSupportMask & ENDPOINT_HARDWARE_SUPPORT_METER)
-//            // The audio endpoint device supports a hardware peak meter
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "hwmask (0x%x) : HARDWARE_SUPPORT_METER", dwHwSupportMask);
-//
-//        // Check the channel count (#channels in the audio stream that enters or leaves the audio endpoint device)
-//        UINT nChannelCount(0);
-//        hr = pEndpointVolume->GetChannelCount(
-//                                &nChannelCount);
-//        CONTINUE_ON_ERROR(hr);
-//        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#channels    : %u", nChannelCount);
-//
-//        if (dwHwSupportMask & ENDPOINT_HARDWARE_SUPPORT_VOLUME)
-//        {
-//            // Get the volume range.
-//            float fLevelMinDB(0.0);
-//            float fLevelMaxDB(0.0);
-//            float fVolumeIncrementDB(0.0);
-//            hr = pEndpointVolume->GetVolumeRange(
-//                                    &fLevelMinDB,
-//                                    &fLevelMaxDB,
-//                                    &fVolumeIncrementDB);
-//            CONTINUE_ON_ERROR(hr);
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "volume range : %4.2f (min), %4.2f (max), %4.2f (inc) [dB]",
-//                fLevelMinDB, fLevelMaxDB, fVolumeIncrementDB);
-//
-//            // The volume range from vmin = fLevelMinDB to vmax = fLevelMaxDB is divided
-//            // into n uniform intervals of size vinc = fVolumeIncrementDB, where
-//            // n = (vmax ?vmin) / vinc.
-//            // The values vmin, vmax, and vinc are measured in decibels. The client can set
-//            // the volume level to one of n + 1 discrete values in the range from vmin to vmax.
-//            int n = (int)((fLevelMaxDB-fLevelMinDB)/fVolumeIncrementDB);
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#intervals   : %d", n);
-//
-//            // Get information about the current step in the volume range.
-//            // This method represents the volume level of the audio stream that enters or leaves
-//            // the audio endpoint device as an index or "step" in a range of discrete volume levels.
-//            // Output value nStepCount is the number of steps in the range. Output value nStep
-//            // is the step index of the current volume level. If the number of steps is n = nStepCount,
-//            // then step index nStep can assume values from 0 (minimum volume) to n ?1 (maximum volume).
-//            UINT nStep(0);
-//            UINT nStepCount(0);
-//            hr = pEndpointVolume->GetVolumeStepInfo(
-//                                    &nStep,
-//                                    &nStepCount);
-//            CONTINUE_ON_ERROR(hr);
-//            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "volume steps : %d (nStep), %d (nStepCount)", nStep, nStepCount);
-//        }
-//Next:
-//        if (FAILED(hr)) {
-//          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-//                       "Error when logging device information");
-//        }
-//        CoTaskMemFree(pwszID);
-//        pwszID = NULL;
-//        PropVariantClear(&varName);
-//        SAFE_RELEASE(pProps);
-//        SAFE_RELEASE(pEndpoint);
-//        SAFE_RELEASE(pEndpointVolume);
-//    }
-    //SAFE_RELEASE(pCollection);
     return 0;
 
 Exit:
@@ -4778,20 +4600,8 @@ Exit:
 //
 HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceInAsync()
 {
-  //IActivateAudioInterfaceAsyncOperation *asyncOp;
   HRESULT hr = S_OK;
 
-  // Get a string representing the Default Audio Capture Device
-  //_deviceIdStringIn = MediaDevice::GetDefaultAudioCaptureId(AudioDeviceRole::Default);
-
-  // This call must be made on the main UI thread.  Async operation will call back to 
-  // IActivateAudioInterfaceCompletionHandler::ActivateCompleted, which must be an agile interface implementation
-  //hr = ActivateAudioInterfaceAsync(_deviceIdStringIn->Data(), __uuidof(IAudioClient2), nullptr, this, &asyncOp);
-  
-  /*if (FAILED(hr))
-  {
-    m_DeviceStateChanged->SetState(DeviceState::DeviceStateInError, hr, true);
-  }*/
 
   AudioInterfaceActivator::SetAudioDevice(this);
   auto defaultCaptureDeviceId = MediaDevice::GetDefaultAudioCaptureId(AudioDeviceRole::Default);
@@ -4812,34 +4622,17 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceInAsync()
         rawIsSupported = safe_cast<bool>(device->Properties->Lookup(rawProcessingSupportedKey));
       }
 
-      //auto renderer = ref new AudioRenderer(renderClient, rawIsSupported);
-      //renderer->Initialize();
-      //return renderer;
     });
 
   }, task_continuation_context::use_arbitrary());
 
   _deviceIdStringIn = defaultCaptureDeviceId;
-
-  //SAFE_RELEASE(asyncOp);
   return hr;
 }
 
 HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOutAsync()
 {
-  //IActivateAudioInterfaceAsyncOperation *asyncOp;
   HRESULT hr = S_OK;
-
-  // Get a string representing the Default Audio Capture Device
-  //_deviceIdStringOut = MediaDevice::GetDefaultAudioRenderId(AudioDeviceRole::Default);
-
-  // This call must be made on the main UI thread.  Async operation will call back to 
-  // IActivateAudioInterfaceCompletionHandler::ActivateCompleted, which must be an agile interface implementation
-  //hr = ActivateAudioInterfaceAsync(_deviceIdStringOut->Data(), __uuidof(IAudioClient2), nullptr, this, &asyncOp);
-  /*if (FAILED(hr))
-  {
-  m_DeviceStateChanged->SetState(DeviceState::DeviceStateInError, hr, true);
-  }*/
 
   auto defaultRenderDeviceId = MediaDevice::GetDefaultAudioRenderId(AudioDeviceRole::Default);
   AudioInterfaceActivator::SetAudioDevice(this);
@@ -4859,169 +4652,16 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOutAsync()
       {
         rawIsSupported = safe_cast<bool>(device->Properties->Lookup(rawProcessingSupportedKey));
       }
-
-      //auto renderer = ref new AudioRenderer(renderClient, rawIsSupported);
-      //renderer->Initialize();
-      //return renderer;
     });
 
   }, task_continuation_context::use_arbitrary());
 
   _deviceIdStringOut = defaultRenderDeviceId;
 
-  //SAFE_RELEASE(asyncOp);
   return hr;
 }
 
 
-//
-//  ActivateCompleted()
-//
-//  Callback implementation of ActivateAudioInterfaceAsync function.  This will be called on MTA thread
-//  when results of the activation are available.
-//
-HRESULT AudioDeviceWindowsWasapi::ActivatorActivateCompleted(IActivateAudioInterfaceAsyncOperation *operation)
-{
-  HRESULT hr = S_OK;
-  HRESULT hrActivateResult = S_OK;
-  IUnknown *punkAudioInterface = nullptr;
-  IAudioClient *audioClient = nullptr;
-  //IAudioCaptureClient *audioCaptureClient = nullptr;
-  //IAudioRenderClient *audioRenderClient = nullptr;
-  WAVEFORMATEX *mixFormat = nullptr;
-
-  if (!_captureDeviceActivated)
-  {
-    audioClient = _ptrClientIn;
-    mixFormat = _mixFormatIn;
-  }
-  else
-  {
-    audioClient = _ptrClientOut;
-    mixFormat = _mixFormatOut;
-  }
-  
-
-  // Check for a successful activation result
-  hr = operation->GetActivateResult(&hrActivateResult, &punkAudioInterface);
-  if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult))
-  {
-    // Get the pointer for the Audio Client
-    punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
-    if (nullptr == audioClient)
-    {
-      hr = E_FAIL;
-      goto exit;
-    }
-
-    hr = audioClient->GetMixFormat(&mixFormat);
-    if (FAILED(hr))
-    {
-      goto exit;
-    }
-
-    // convert from Float to PCM and from WAVEFORMATEXTENSIBLE to WAVEFORMATEX
-    if ((mixFormat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT) ||
-      ((mixFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) &&
-      (reinterpret_cast<WAVEFORMATEXTENSIBLE *>(mixFormat)->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)))
-    {
-      mixFormat->wFormatTag = WAVE_FORMAT_PCM;
-      mixFormat->wBitsPerSample = 16;
-      mixFormat->nBlockAlign = mixFormat->nChannels * 2;    // (nChannels * wBitsPerSample) / 8
-      mixFormat->nAvgBytesPerSec = mixFormat->nSamplesPerSec * mixFormat->nBlockAlign;
-      mixFormat->cbSize = 0;
-    }
-
-    // Initialize the AudioClient in Shared Mode with the user specified buffer
-    hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-      AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-      200000,
-      0,
-      mixFormat,
-      nullptr);
-    if (FAILED(hr))
-    {
-      goto exit;
-    }
-
-    //// Get the maximum size of the AudioClient Buffer
-    //hr = audioClient->GetBufferSize(&m_BufferFrames);
-    //if (FAILED(hr))
-    //{
-    //  goto exit;
-    //}
-    if (!_captureDeviceActivated)
-    {
-      // Get the capture client
-      hr = audioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&_ptrCaptureClient);
-      if (FAILED(hr))
-      {
-        goto exit;
-      }
-      _ptrClientIn = audioClient;
-    }
-    else
-    {
-      // Get the render client
-      hr = audioClient->GetService(__uuidof(IAudioRenderClient), (void**)&_ptrRenderClient);
-      if (FAILED(hr))
-      {
-        goto exit;
-      }
-      _ptrClientOut = audioClient;
-    }
-  }
-
-  //  // Create Async callback for sample events
-  //  hr = MFCreateAsyncResult(nullptr, &m_xSampleReady, nullptr, &m_SampleReadyAsyncResult);
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-
-  //  // Sets the event handle that the system signals when an audio buffer is ready to be processed by the client
-  //  hr = audioClient->SetEventHandle(m_SampleReadyEvent);
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-
-  //  // Create the visualization array
-  //  hr = InitializeScopeData();
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-
-  //  // Creates the WAV file.  If successful, will set the Initialized event
-  //  hr = CreateWAVFile();
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-  //}
-  _captureDeviceActivated = true;
-exit:
-  SAFE_RELEASE(punkAudioInterface);
-
-  if (FAILED(hr))
-  {
-    //m_DeviceStateChanged->SetState(DeviceState::DeviceStateInError, hr, true);
-    SAFE_RELEASE(audioClient);
-    if (!_captureDeviceActivated)
-    {
-      SAFE_RELEASE(_ptrCaptureClient);
-    }
-    else
-    {
-      SAFE_RELEASE(_ptrRenderClient);
-    }
-    //SAFE_RELEASE(m_SampleReadyAsyncResult);
-  }
-
-  // Need to return S_OK
-  return S_OK;
-}
 // ----------------------------------------------------------------------------
 //  _TraceCOMError
 // ----------------------------------------------------------------------------
