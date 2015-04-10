@@ -24,8 +24,6 @@ static char stdout_buffer[1024 * 1024] = { 0 };
 
 bool autoClose = false;
 
-Windows::UI::Xaml::Controls::CaptureElement^ g_capturePreview;
-
 namespace video_capture_test_winrt
 {
   ref class VideoCaptureTestWinRT sealed : public Windows::UI::Xaml::Application
@@ -78,12 +76,6 @@ namespace video_capture_test_winrt
       buttonStack->Children->Append(thirdButton_);
 
       containerStack->Children->Append(buttonStack);
-
-      g_capturePreview = ref new CaptureElement();
-      g_capturePreview->Height = 640;
-      g_capturePreview->Width = 480;
-
-      containerStack->Children->Append(g_capturePreview);
 
       layoutRoot->Children->Append(containerStack);
 

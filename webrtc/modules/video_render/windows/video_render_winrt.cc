@@ -3,6 +3,10 @@
 // System include files
 #include <windows.h>
 
+#include <windows.media.core.h>
+
+#include <ppltasks.h>
+
 // WebRtc include files
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -10,7 +14,174 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
+using Microsoft::WRL::ComPtr;
+using Windows::Media::Core::IMediaSource;
+using Windows::UI::Xaml::Controls::MediaElement;
+
+extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+
 namespace webrtc {
+
+/*
+*
+*    VideoChannelWinRT
+*
+*/
+VideoChannelWinRT::VideoChannelWinRT(
+    Windows::UI::Xaml::Controls::MediaElement^ mediaElement,
+    CriticalSectionWrapper* critSect,
+    Trace* trace) :
+    _mediaElement(mediaElement),
+    _width(0),
+    _height(0),
+    _bufferIsUpdated(false),
+    _critSect(critSect),
+    _streamId(0),
+    _zOrder(0),
+    _startWidth(0),
+    _startHeight(0),
+    _stopWidth(0),
+    _stopHeight(0)
+{
+
+  VideoRenderMediaSourceWinRT::CreateInstance(&_renderMediaSource);
+
+  ComPtr<IInspectable> inspectable;
+  _renderMediaSource.As(&inspectable);
+
+  IMediaSource^ mediaSource = safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(inspectable.Get()));
+
+  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+  Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+  Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, mediaSource]() {
+    _mediaElement->SetMediaStreamSource(mediaSource);
+    _mediaElement->Play();
+  });
+  Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
+  Concurrency::create_task(action).wait();
+}
+
+  VideoChannelWinRT::~VideoChannelWinRT()
+{
+}
+
+void VideoChannelWinRT::SetStreamSettings(uint16_t streamId,
+    uint32_t zOrder,
+    float startWidth,
+    float startHeight,
+    float stopWidth,
+    float stopHeight)
+{
+  _streamId = streamId;
+  _zOrder = zOrder;
+  _startWidth = startWidth;
+  _startHeight = startHeight;
+  _stopWidth = stopWidth;
+  _stopHeight = stopHeight;
+}
+
+int VideoChannelWinRT::GetStreamSettings(uint16_t streamId,
+    uint32_t& zOrder,
+    float& startWidth,
+    float& startHeight,
+    float& stopWidth,
+    float& stopHeight)
+{
+  streamId = _streamId;
+  zOrder = _zOrder;
+  startWidth = _startWidth;
+  startHeight = _startHeight;
+  stopWidth = _stopWidth;
+  stopHeight = _stopHeight;
+  return 0;
+}
+Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> VideoChannelWinRT::GetMediaSource()
+{
+  return _renderMediaSource;
+}
+
+webrtc::I420VideoFrame& VideoChannelWinRT::GetVideoFrame()
+{
+  return _videoFrame;
+}
+
+int VideoChannelWinRT::GetWidth()
+{
+  return _width;
+}
+
+int VideoChannelWinRT::GetHeight()
+{
+  return _height;
+}
+
+// Called from video engine when a the frame size changed
+int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStreams)
+{
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
+    "FrameSizeChange, wifth: %d, height: %d, streams: %d", width,
+    height, numberOfStreams);
+
+  CriticalSectionScoped cs(_critSect);
+  _width = width;
+  _height = height;
+
+  return 0;
+}
+
+int32_t VideoChannelWinRT::RenderFrame(const uint32_t streamId,
+  I420VideoFrame& videoFrame)
+{
+  CriticalSectionScoped cs(_critSect);
+  if (_width != videoFrame.width() || _height != videoFrame.height())
+  {
+    if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
+    {
+      return -1;
+    }
+  }
+  return DeliverFrame(videoFrame);
+}
+
+// Called from video engine when a new frame should be rendered.
+int VideoChannelWinRT::DeliverFrame(const I420VideoFrame& videoFrame) {
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
+    "DeliverFrame to VideoChannelWinRT");
+
+  CriticalSectionScoped cs(_critSect);
+
+  // FIXME if _bufferIsUpdated is still true (not be renderred), do we want to
+  // update the texture? probably not
+  if (_bufferIsUpdated) {
+    WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
+      "Last frame hasn't been rendered yet. Drop this frame.");
+    return -1;
+  }
+
+  _videoFrame.CopyFrame(videoFrame);
+
+  _bufferIsUpdated = true;
+  return 0;
+}
+
+// Called by channel owner to indicate the frame has been rendered off
+int VideoChannelWinRT::RenderOffFrame()
+{
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
+    "Frame has been rendered to the screen.");
+  CriticalSectionScoped cs(_critSect);
+  _bufferIsUpdated = false;
+  return 0;
+}
+
+// Called by channel owner to check if the buffer is updated
+int VideoChannelWinRT::IsUpdated(bool& isUpdated)
+{
+  CriticalSectionScoped cs(_critSect);
+  isUpdated = _bufferIsUpdated;
+  return 0;
+}
+
 /*
  *
  *    VideoRenderWinRT
@@ -25,19 +196,53 @@ VideoRenderWinRT::VideoRenderWinRT(Trace* trace,
     _fullScreen(fullScreen),
     _screenUpdateThread(NULL),
     _screenUpdateEvent(NULL),
+    _channel(NULL),
     _winWidth(0),
     _winHeight(0) {
+  _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
+    this, kRealtimePriority);
+  _screenUpdateEvent = EventWrapper::Create();
 }
 
 VideoRenderWinRT::~VideoRenderWinRT() {
-}
+  ThreadWrapper* tmpPtr = _screenUpdateThread;
+  _screenUpdateThread = NULL;
+  if (tmpPtr)
+  {
+    _screenUpdateEvent->Set();
+    _screenUpdateEvent->StopTimer();
 
-int VideoRenderWinRT::InitDevice() {
-  return 0;
+    if (tmpPtr->Stop())
+    {
+      delete tmpPtr;
+    }
+  }
+  delete _screenUpdateEvent;
+
+  delete &_refCritsect;
 }
 
 int32_t VideoRenderWinRT::Init() {
-  return -1;
+
+  CriticalSectionScoped cs(&_refCritsect);
+
+  //mediaExtensionManager = ref new Windows::Media::MediaExtensionManager();
+  //mediaExtensionManager->RegisterSchemeHandler("WebRTC.VideoRender.VideoRenderSchemeHandler", "webrtc:");
+
+  // Start rendering thread...
+  if (!_screenUpdateThread)
+  {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Thread not created");
+    return -1;
+  }
+  unsigned int threadId;
+  _screenUpdateThread->Start(threadId);
+
+  // Start the event triggering the render process
+  unsigned int monitorFreq = 60;
+  _screenUpdateEvent->StartTimer(true, 1000 / monitorFreq);
+
+  return 0;
 }
 
 int32_t VideoRenderWinRT::ChangeWindow(void* window) {
@@ -45,6 +250,31 @@ int32_t VideoRenderWinRT::ChangeWindow(void* window) {
 }
 
 int VideoRenderWinRT::UpdateRenderSurface() {
+  CriticalSectionScoped cs(&_refCritsect);
+
+  // Check if there are any updated buffers
+  bool updated = false;
+  _channel->IsUpdated(updated);
+  //nothing is updated, return
+  if (!updated)
+    return -1;
+
+  DWORD width, height;
+
+  width = _channel->GetWidth();
+  height = _channel->GetHeight();
+
+  uint32_t zOrder;
+  float startWidth, startHeight, stopWidth, stopHeight;
+  _channel->GetStreamSettings(0, zOrder, startWidth,
+    startHeight, stopWidth,
+    stopHeight);
+
+  _channel->GetMediaSource()->ProcessVideoFrame(_channel->GetVideoFrame());
+
+  //Notice channel that this frame as been rendered
+  _channel->RenderOffFrame();
+
   return 0;
 }
 
@@ -54,19 +284,26 @@ int VideoRenderWinRT::UpdateRenderSurface() {
  *
  */
 bool VideoRenderWinRT::ScreenUpdateThreadProc(void* obj) {
-  return false;
+  return static_cast<VideoRenderWinRT*> (obj)->ScreenUpdateProcess();
 }
 
 bool VideoRenderWinRT::ScreenUpdateProcess() {
-  return false;
-}
+  _screenUpdateEvent->Wait(100);
 
-int VideoRenderWinRT::CloseDevice() {
-  return 0;
-}
+  if (!_screenUpdateThread)
+  {
+    //stop the thread
+    return false;
+  }
 
-int32_t VideoRenderWinRT::DeleteChannel(const uint32_t streamId) {
-  return -1;
+  HRESULT hr = S_OK;
+
+  if (SUCCEEDED(hr))
+  {
+    UpdateRenderSurface();
+  }
+
+  return true;
 }
 
 VideoRenderCallback* VideoRenderWinRT::CreateChannel(
@@ -76,14 +313,37 @@ VideoRenderCallback* VideoRenderWinRT::CreateChannel(
     const float top,
     const float right,
     const float bottom) {
-  return NULL;
+
+  CriticalSectionScoped cs(&_refCritsect);
+
+  ComPtr<IInspectable> mediaElementPtr((IInspectable*)_hWnd);
+
+  MediaElement^ mediaElement = safe_cast<MediaElement^>(reinterpret_cast<Platform::Object^>(mediaElementPtr.Get()));
+
+  VideoChannelWinRT* pChannel = new VideoChannelWinRT(mediaElement, &_refCritsect, _trace);
+  pChannel->SetStreamSettings(0, zOrder, left, top, right, bottom);
+
+  // store channel
+  _channel = pChannel;
+
+  return pChannel;
+}
+
+int32_t VideoRenderWinRT::DeleteChannel(const uint32_t streamId) {
+  CriticalSectionScoped cs(&_refCritsect);
+
+  delete _channel;
+  
+  return 0;
 }
 
 int32_t VideoRenderWinRT::StartRender() {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
 int32_t VideoRenderWinRT::StopRender() {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
@@ -98,11 +358,13 @@ int32_t VideoRenderWinRT::SetCropping(
     const float top,
     const float right,
     const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
 int32_t VideoRenderWinRT::SetTransparentBackground(
     const bool enable) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
@@ -115,6 +377,7 @@ int32_t VideoRenderWinRT::SetText(const uint8_t textId,
     const float top,
     const float rigth,
     const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
@@ -126,6 +389,7 @@ int32_t VideoRenderWinRT::SetBitmap(
     const float top,
     const float right,
     const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 

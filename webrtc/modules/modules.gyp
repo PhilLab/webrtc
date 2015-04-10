@@ -170,8 +170,6 @@
             'audio_processing/beamformer/complex_matrix_unittest.cc',
             'audio_processing/beamformer/covariance_matrix_generator_unittest.cc',
             'audio_processing/beamformer/matrix_unittest.cc',
-            'audio_processing/beamformer/mock_beamformer.cc',
-            'audio_processing/beamformer/mock_beamformer.h',
             'audio_processing/beamformer/pcm_utils.cc',
             'audio_processing/beamformer/pcm_utils.h',
             'audio_processing/echo_cancellation_impl_unittest.cc',
@@ -330,7 +328,7 @@
                 'desktop_capture/win/cursor_unittest_resources.h',
                 'desktop_capture/win/cursor_unittest_resources.rc',
               ],
-			}],
+      }],
             ['enable_bwe_test_logging==1', {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
             }, {
@@ -375,6 +373,12 @@
             ['build_libvpx==1', {
               'dependencies': [
                 '<(libvpx_dir)/libvpx.gyp:libvpx',
+              ],
+            }],
+            ['rtc_use_openmax_dl==1', {
+              'sources': [
+                'audio_processing/beamformer/mock_beamformer.cc',
+                'audio_processing/beamformer/mock_beamformer.h',
               ],
             }],
             ['OS=="android"', {

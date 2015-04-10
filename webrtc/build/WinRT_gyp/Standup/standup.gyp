@@ -18,6 +18,8 @@
       'dependencies': [
         '../../../../webrtc/voice_engine/voice_engine.gyp:voice_engine',
         '../../../../webrtc/video_engine/video_engine.gyp:video_engine_core',
+        '../../../../webrtc/modules/modules.gyp:video_capture_module_internal_impl',
+        '../../../../webrtc/modules/modules.gyp:video_render_module_internal_impl',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -75,6 +77,10 @@
           'ExceptionHandling': '1',
         },
         'VCLinkerTool': {
+          'AdditionalDependencies': [
+           'mfplat.lib',
+           'mfuuid.lib',
+          ],
         },
       },
     },

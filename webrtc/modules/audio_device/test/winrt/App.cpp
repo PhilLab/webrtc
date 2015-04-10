@@ -23,8 +23,6 @@ static char stdout_buffer[1024 * 1024] = { 0 };
 
 bool autoClose = false;
 
-Windows::UI::Xaml::Controls::CaptureElement^ g_capturePreview;
-
 namespace audio_device_test_winrt
 {
   ref class AudioDeviceTestWinRT sealed : public Windows::UI::Xaml::Application

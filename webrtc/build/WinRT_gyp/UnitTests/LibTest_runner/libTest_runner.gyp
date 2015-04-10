@@ -30,6 +30,8 @@
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_rand_gen',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_env',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_sha1_driver',
+        '../../../../modules/modules.gyp:video_coding_test',
+        '../../../../modules/modules.gyp:video_capture',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -81,39 +83,96 @@
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
         'libSrtpTests/libsrtpTestSolution.h',
+        'videoCodingTests/VideoCodingTest.h',
+        'videoCodingTests/VideoCodingTest.cpp',
+        'Logo.png',
+        'SmallLogo.png',
+        'StoreLogo.png',
         '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-          'sources': [
+          'sources': [	
             'Package.phone.appxmanifest',
+            'Logo71x71.png',
+            'Logo44x44.png',
+            'SplashScreen480x800.png',
+          ],
+          #TODO(winrt) fix video coding test for Windows Phone
+          'dependencies!': [
+            '../../../../modules/modules.gyp:video_coding_test',
+            '../../../../modules/modules.gyp:video_capture',
+          ],
+          'sources!': [
+            'videoCodingTests/VideoCodingTest.h',
+            'videoCodingTests/VideoCodingTest.cpp',
           ],
         }],
           ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
           'sources': [
             'Package.appxmanifest',
+            'SplashScreen.png',
           ],
         }],
       ],
       'copies': [
         {
           'destination': '<(PRODUCT_DIR)/libTest_runner_package',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Generated Manifest Phone\AppxManifest.xml',								
+                 'Logo71x71.png',
+                 'Logo44x44.png',
+                 'SplashScreen480x800.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'Generated Manifest\AppxManifest.xml',								
+                'SplashScreen.png',
+              ],
+            }],
+          ],
           'files':[
-					  'Generated Manifest\AppxManifest.xml',
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/libTest_runner_package/resources',
+          'files':[
+            '../../../../../resources/foreman_cif.yuv',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
         {
-          'destination': '<(PRODUCT_DIR)/AppX',
+          'destination': '<(PRODUCT_DIR)/LibTestAppX',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [	
+                 'Logo71x71.png',
+                 'Logo44x44.png',	
+                 'SplashScreen480x800.png',							
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'SplashScreen.png',
+              ],
+            }],
+          ],
           'files':[
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/AppX/resources',
+          'files':[
+            '../../../../../resources/foreman_cif.yuv',
           ],
         },
       ],
