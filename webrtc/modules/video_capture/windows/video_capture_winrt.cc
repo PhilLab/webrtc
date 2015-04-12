@@ -117,19 +117,21 @@ CaptureDevice::CaptureDevice(IncomingFrameCallback* incoming_frame_callback)
 Concurrency::task<void> CaptureDevice::InitializeAsync(
     Platform::String^ deviceId) {
   try {
-    //auto settings = ref new Windows::Media::Capture::MediaCaptureInitializationSettings();
     auto media_capture = ref new Windows::Media::Capture::MediaCapture();
     media_capture_ = media_capture;
     media_capture_failed_event_registration_token_ = media_capture->Failed +=
         ref new MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
-    //settings->VideoDeviceId = deviceId;
     Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
     Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
-    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this]() {
-      media_capture_->InitializeAsync();
+    Concurrency::task<void> initializeAsyncActionTask;
+    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, &initializeAsyncActionTask]() {
+      initializeAsyncActionTask = Concurrency::create_task(media_capture_->InitializeAsync());
     });
     Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
-    return Concurrency::create_task(action);
+    auto actionTask = Concurrency::create_task(action);
+    actionTask.wait();
+    initializeAsyncActionTask.wait();
+    return actionTask;
   } catch (Platform::Exception^ e) {
     DoCleanup();
     throw e;
@@ -204,10 +206,10 @@ Concurrency::task<void> CaptureDevice::StartCaptureAsync(
   media_sink_video_sample_event_registration_token_ = media_sink_->MediaSampleEvent += 
     ref new Windows::Foundation::EventHandler<MediaSampleEventArgs^>(this, &CaptureDevice::OnMediaSample);
 
-  return Concurrency::create_task(media_sink_->InitializeAsync(mediaEncodingProfile->Video)).
+  auto initializeAsyncTask = Concurrency::create_task(media_sink_->InitializeAsync(mediaEncodingProfile->Video)).
      then([this, mediaEncodingProfile](IMediaExtension^ mediaExtension)
   {
-    return Concurrency::create_task(media_capture_->StartRecordToCustomSinkAsync(mediaEncodingProfile, mediaExtension)).then([this](Concurrency::task<void>& asyncInfo)
+    auto startRecordToCustomSinkAsyncTask = Concurrency::create_task(media_capture_->StartRecordToCustomSinkAsync(mediaEncodingProfile, mediaExtension)).then([this](Concurrency::task<void>& asyncInfo)
     {
       try
       {
@@ -220,7 +222,15 @@ Concurrency::task<void> CaptureDevice::StartCaptureAsync(
         throw;
       }
     });
+
+    startRecordToCustomSinkAsyncTask.wait();
+
+    return startRecordToCustomSinkAsyncTask;
   });
+
+  initializeAsyncTask.wait();
+
+  return initializeAsyncTask;
 }
 
 Concurrency::task<void> CaptureDevice::StopCaptureAsync()
