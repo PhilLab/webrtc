@@ -495,8 +495,9 @@ enum AudioLayers
     kAudioPlatformDefault = 0,
     kAudioWindowsWave = 1,
     kAudioWindowsCore = 2,
-    kAudioLinuxAlsa = 3,
-    kAudioLinuxPulse = 4
+    kAudioWindowsWasapi = 3,
+    kAudioLinuxAlsa = 4,
+    kAudioLinuxPulse = 5
 };
 
 // TODO(henrika): to be removed.

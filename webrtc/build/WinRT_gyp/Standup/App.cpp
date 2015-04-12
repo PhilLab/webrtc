@@ -162,6 +162,13 @@ namespace StandupWinRT
         return;
       }
 
+      error = voiceHardware_->SetAudioDeviceLayer(webrtc::kAudioWindowsWasapi);
+      if (error < 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to set audio device layer type. Error: %d", voiceBase_->LastError());
+        return;
+      }
+
       error = voiceBase_->Init();
       if (error < 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
