@@ -27,6 +27,9 @@
 
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 
+#define VOICE
+#define VIDEO
+
 using namespace Platform;
 using namespace concurrency;
 using namespace Windows::ApplicationModel::Activation;
@@ -97,10 +100,13 @@ namespace StandupWinRT
       captureId_(-1),
       videoChannel_(-1)
     {
+      int error;
+
       webrtc::Trace::CreateTrace();
       webrtc::Trace::SetTraceCallback(traceCallback_);
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
 
+#ifdef VOICE
       voiceEngine_ = webrtc::VoiceEngine::Create();
       if (voiceEngine_ == NULL) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
@@ -156,7 +162,7 @@ namespace StandupWinRT
         return;
       }
 
-      int error = voiceBase_->Init();
+      error = voiceBase_->Init();
       if (error < 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to initialize voice base. Error: %d", voiceBase_->LastError());
@@ -166,7 +172,8 @@ namespace StandupWinRT
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "An error has occured during voice base init. Error: %d", voiceBase_->LastError());
       }
-
+#endif
+#ifdef VIDEO
       videoEngine_ = webrtc::VideoEngine::Create();
       if (videoEngine_ == NULL) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
@@ -220,18 +227,21 @@ namespace StandupWinRT
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "An error has occured during video base init. Error: %d", videoBase_->LastError());
       }
-
+#ifdef VOICE
       error = videoBase_->SetVoiceEngine(voiceEngine_);
       if (error < 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to set voice engine for video base. Error: %d", videoBase_->LastError());
         return;
       }
+#endif
+#endif
     }
 
     virtual ~App() {
 
       int error;
+#ifdef VOICE
       if (voiceBase_) {
         error = voiceBase_->Release();
         if (error < 0) {
@@ -309,7 +319,8 @@ namespace StandupWinRT
           "Failed to delete voice engine.");
         return;
       }
-
+#endif
+#ifdef VIDEO
       if (videoBase_) {
         error = videoBase_->Release();
         if (error < 0) {
@@ -369,6 +380,7 @@ namespace StandupWinRT
           "Failed to delete video engine.");
         return;
       }
+#endif
     }
 
   private:
@@ -511,7 +523,7 @@ namespace StandupWinRT
         startStopVideoButton_->Content = "Start Video";
         startStopVideoButton_->Margin = ThicknessHelper::FromLengths(40, 0, 0, 0);
         startStopVideoButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartStopVideoClick);
-        startStopVideoButton_->IsEnabled = false;
+        startStopVideoButton_->IsEnabled = true;
         stackPanel->Children->Append(startStopVideoButton_);
       }
 
@@ -541,415 +553,443 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
-  int error;
-
   if (!started_) {
+#ifdef VOICE
+    Concurrency::create_task([this]() {
+      int error;
+      voiceChannel_ = voiceBase_->CreateChannel();
+      if (voiceChannel_ < 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Could not create voice channel. Error: %d", voiceBase_->LastError());
+          voiceChannel_ = -1;
+          return Concurrency::task<void>();
+      }
 
-    voiceChannel_ = voiceBase_->CreateChannel();
-    if (voiceChannel_ < 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Could not create voice channel. Error: %d", voiceBase_->LastError());
-        voiceChannel_ = -1;
-      return;
-    }
+      voiceTransport_ = new webrtc::test::VoiceChannelTransport(voiceNetwork_, voiceChannel_);
+      if (voiceTransport_ == NULL) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Could not create voice channel transport.");
+        return Concurrency::task<void>();
+      }
 
-    voiceTransport_ = new webrtc::test::VoiceChannelTransport(voiceNetwork_, voiceChannel_);
-    if (voiceTransport_ == NULL) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Could not create voice channel transport.");
-      return;
-    }
-
-    webrtc::EcModes ecMode = webrtc::kEcAec;
-    error = voiceAudioProcessing_->SetEcStatus(true, ecMode);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to set acoustic echo canceller status. Error: %d", voiceBase_->LastError());
-      return;
-    }
-    if (ecMode == webrtc::kEcAecm) {
-      error = voiceAudioProcessing_->SetAecmMode(webrtc::kAecmSpeakerphone);
+      webrtc::EcModes ecMode = webrtc::kEcAec;
+      error = voiceAudioProcessing_->SetEcStatus(true, ecMode);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-          "Failed to set acoustic echo canceller mobile mode. Error: %d", voiceBase_->LastError());
-        return;
+          "Failed to set acoustic echo canceller status. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
       }
-    }
-
-    error = voiceAudioProcessing_->SetAgcStatus(true, webrtc::kAgcAdaptiveDigital);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to set automatic gain control status. Error: %d", voiceBase_->LastError());
-      return;
-    }
-
-    error = voiceAudioProcessing_->SetNsStatus(true, webrtc::kNsLowSuppression);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to set noise suppression status. Error: %d", voiceBase_->LastError());
-      return;
-    }
-
-    error = voiceVolumeControl_->SetInputMute(-1, false);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to set microphone mute. Error: %d", voiceBase_->LastError());
-      return;
-    }
-
-    webrtc::CodecInst cinst;
-    memset(&cinst, 0, sizeof(webrtc::CodecInst));
-    for (int idx = 0; idx < voiceCodec_->NumOfCodecs(); idx++) {
-      error = voiceCodec_->GetCodec(idx, cinst);
-      if (error != 0) {
-        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-          "Failed to get voice codec. Error: %d", voiceBase_->LastError());
-        return;
-      }
-      if (strcmp(cinst.plname, "OPUS") == 0) {
-        strcpy(cinst.plname, "OPUS");
-        cinst.pltype = 110;
-        cinst.rate = 20000;
-        cinst.pacsize = 320; // 20ms
-        cinst.plfreq = 16000;
-        cinst.channels = 1;
-        error = voiceCodec_->SetSendCodec(voiceChannel_, cinst);
+      if (ecMode == webrtc::kEcAecm) {
+        error = voiceAudioProcessing_->SetAecmMode(webrtc::kAecmSpeakerphone);
         if (error != 0) {
           webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-            "Failed to set send voice codec. Error: %d", voiceBase_->LastError());
-          return;
+            "Failed to set acoustic echo canceller mobile mode. Error: %d", voiceBase_->LastError());
+          return Concurrency::task<void>();
         }
-        break;
       }
-    }
 
-    error = voiceTransport_->SetSendDestination("127.0.0.1", 20010);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to set send destination for voice channel.");
-      return;
-    }
+      error = voiceAudioProcessing_->SetAgcStatus(true, webrtc::kAgcAdaptiveDigital);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to set automatic gain control status. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = voiceTransport_->SetLocalReceiver(20010);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to set local receiver for voice channel.");
-      return;
-    }
+      error = voiceAudioProcessing_->SetNsStatus(true, webrtc::kNsLowSuppression);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to set noise suppression status. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = voiceBase_->StartSend(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to start sending voice. Error: %d", voiceBase_->LastError());
-      return;
-    }
+      error = voiceVolumeControl_->SetInputMute(-1, false);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to set microphone mute. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = voiceBase_->StartReceive(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to start receiving voice. Error: %d", voiceBase_->LastError());
-      return;
-    }
+      webrtc::CodecInst cinst;
+      memset(&cinst, 0, sizeof(webrtc::CodecInst));
+      for (int idx = 0; idx < voiceCodec_->NumOfCodecs(); idx++) {
+        error = voiceCodec_->GetCodec(idx, cinst);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+            "Failed to get voice codec. Error: %d", voiceBase_->LastError());
+          return Concurrency::task<void>();
+        }
+        if (strcmp(cinst.plname, "OPUS") == 0) {
+          strcpy(cinst.plname, "OPUS");
+          cinst.pltype = 110;
+          cinst.rate = 20000;
+          cinst.pacsize = 320; // 20ms
+          cinst.plfreq = 16000;
+          cinst.channels = 1;
+          error = voiceCodec_->SetSendCodec(voiceChannel_, cinst);
+          if (error != 0) {
+            webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+              "Failed to set send voice codec. Error: %d", voiceBase_->LastError());
+            return Concurrency::task<void>();
+          }
+          break;
+        }
+      }
 
-    error = voiceBase_->StartPlayout(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to start playout. Error: %d", voiceBase_->LastError());
-      return;
-    }
+      error = voiceTransport_->SetSendDestination("127.0.0.1", 20010);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to set send destination for voice channel.");
+        return Concurrency::task<void>();
+      }
 
-    const unsigned int KMaxDeviceNameLength = 128;
-    const unsigned int KMaxUniqueIdLength = 256;
-    char deviceName[KMaxDeviceNameLength];
-    memset(deviceName, 0, KMaxDeviceNameLength);
-    char uniqueId[KMaxUniqueIdLength];
-    memset(uniqueId, 0, KMaxUniqueIdLength);
-    uint32_t captureIdx = 0;
+      error = voiceTransport_->SetLocalReceiver(20010);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to set local receiver for voice channel.");
+        return Concurrency::task<void>();
+      }
 
-    webrtc::VideoCaptureModule::DeviceInfo *devInfo = webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
-    if (devInfo == NULL) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to create video capture device info.");
-      return;
-    }
+      error = voiceBase_->StartSend(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to start sending voice. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = devInfo->GetDeviceName(captureIdx, deviceName,
-      KMaxDeviceNameLength, uniqueId,
-      KMaxUniqueIdLength);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to get video device name.");
-      return;
-    }
+      error = voiceBase_->StartReceive(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to start receiving voice. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    strcpy(deviceUniqueId_, uniqueId);
+      error = voiceBase_->StartPlayout(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to start playout. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    vcpm_ = webrtc::VideoCaptureFactory::Create(1, uniqueId);
-    if (vcpm_ == NULL) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to create video capture module.");
-      return;
-    }
+      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+        startStopVideoButton_->Content = "Stop";
+      })));
+    });
+#endif
+#ifdef VIDEO
+    Concurrency::create_task([this]() {
+      int error;
+      const unsigned int KMaxDeviceNameLength = 128;
+      const unsigned int KMaxUniqueIdLength = 256;
+      char deviceName[KMaxDeviceNameLength];
+      memset(deviceName, 0, KMaxDeviceNameLength);
+      char uniqueId[KMaxUniqueIdLength];
+      memset(uniqueId, 0, KMaxUniqueIdLength);
+      uint32_t captureIdx = 0;
 
-    error = videoCapture_->AllocateCaptureDevice(*vcpm_, captureId_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to allocate video capture device. Error: %d", videoBase_->LastError());
-      return;
-    }
-    vcpm_->AddRef();
-    delete devInfo;
+      webrtc::VideoCaptureModule::DeviceInfo *devInfo = webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
+      if (devInfo == NULL) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to create video capture device info.");
+        return Concurrency::task<void>();
+      }
 
-    int width = 640, height = 480, maxFramerate = 30, maxBitrate = 512;
-
-    webrtc::CaptureCapability capability;
-    capability.width = width;
-    capability.height = height;
-    capability.maxFPS = maxFramerate;
-    capability.rawType = webrtc::kVideoI420;
-    error = videoCapture_->StartCapture(captureId_, capability);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to start capturing. Error: %d", videoBase_->LastError());
-        return;
-    }
-
-    IInspectable* captureRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
-
-    error = videoRender_->AddRenderer(captureId_, captureRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
-    if (0 != error) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to add renderer for video capture. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    error = videoRender_->StartRender(captureId_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to start rendering video capture. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    error = videoBase_->CreateChannel(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Could not create video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    videoTransport_ = new webrtc::test::VideoChannelTransport(videoNetwork_, videoChannel_);
-      if (videoTransport_ == NULL) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Could not create video channel transport.");
-      return;
-    }
-
-    error = videoCapture_->ConnectCaptureDevice(captureId_, videoChannel_);
-    if (0 != error) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to connect capture device to video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    error = videoRtpRtcp_->SetRTCPStatus(videoChannel_, webrtc::kRtcpCompound_RFC4585);
-    if (0 != error) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to set video RTCP status. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    error = videoRtpRtcp_->SetKeyFrameRequestMethod(videoChannel_, webrtc::kViEKeyFrameRequestPliRtcp);
-    if (0 != error) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to set key frame request method. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    error = videoRtpRtcp_->SetTMMBRStatus(videoChannel_, true);
-    if (0 != error) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to set temporary max media bit rate status. Error: %d", videoBase_->LastError());
-      return;
-    }
-
-    webrtc::VideoCodec videoCodec;
-    memset(&videoCodec, 0, sizeof(webrtc::VideoCodec));
-    for (int idx = 0; idx < videoCodec_->NumberOfCodecs(); idx++) {
-      error = videoCodec_->GetCodec(idx, videoCodec);
+      error = devInfo->GetDeviceName(captureIdx, deviceName,
+        KMaxDeviceNameLength, uniqueId,
+        KMaxUniqueIdLength);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-          "Failed to get video codec. Error: %d", videoBase_->LastError());
-        return;
+          "Failed to get video device name.");
+        return Concurrency::task<void>();
       }
-      if (videoCodec.codecType == webrtc::kVideoCodecVP8) {
-        videoCodec.width = width;
-        videoCodec.height = height;
-        videoCodec.maxFramerate = maxFramerate;
-        videoCodec.maxBitrate = maxBitrate;
-        error = videoCodec_->SetSendCodec(videoChannel_, videoCodec);
+
+      strcpy(deviceUniqueId_, uniqueId);
+
+      vcpm_ = webrtc::VideoCaptureFactory::Create(1, uniqueId);
+      if (vcpm_ == NULL) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to create video capture module.");
+        return Concurrency::task<void>();
+      }
+
+      error = videoCapture_->AllocateCaptureDevice(*vcpm_, captureId_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to allocate video capture device. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      vcpm_->AddRef();
+      delete devInfo;
+
+      int width = 640, height = 480, maxFramerate = 30, maxBitrate = 512;
+
+      webrtc::CaptureCapability capability;
+      capability.width = width;
+      capability.height = height;
+      capability.maxFPS = maxFramerate;
+      capability.rawType = webrtc::kVideoI420;
+      error = videoCapture_->StartCapture(captureId_, capability);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to start capturing. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      IInspectable* captureRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
+
+      error = videoRender_->AddRenderer(captureId_, captureRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
+      if (0 != error) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to add renderer for video capture. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      error = videoRender_->StartRender(captureId_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to start rendering video capture. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      error = videoBase_->CreateChannel(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Could not create video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      videoTransport_ = new webrtc::test::VideoChannelTransport(videoNetwork_, videoChannel_);
+        if (videoTransport_ == NULL) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Could not create video channel transport.");
+        return Concurrency::task<void>();
+        }
+
+      error = videoCapture_->ConnectCaptureDevice(captureId_, videoChannel_);
+      if (0 != error) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to connect capture device to video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      error = videoRtpRtcp_->SetRTCPStatus(videoChannel_, webrtc::kRtcpCompound_RFC4585);
+      if (0 != error) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to set video RTCP status. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      error = videoRtpRtcp_->SetKeyFrameRequestMethod(videoChannel_, webrtc::kViEKeyFrameRequestPliRtcp);
+      if (0 != error) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to set key frame request method. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      error = videoRtpRtcp_->SetTMMBRStatus(videoChannel_, true);
+      if (0 != error) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to set temporary max media bit rate status. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+
+      webrtc::VideoCodec videoCodec;
+      memset(&videoCodec, 0, sizeof(webrtc::VideoCodec));
+      for (int idx = 0; idx < videoCodec_->NumberOfCodecs(); idx++) {
+        error = videoCodec_->GetCodec(idx, videoCodec);
         if (error != 0) {
           webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to set send video codec. Error: %d", videoBase_->LastError());
-          return;
+            "Failed to get video codec. Error: %d", videoBase_->LastError());
+          return Concurrency::task<void>();
         }
-        break;
+        if (videoCodec.codecType == webrtc::kVideoCodecVP8) {
+          videoCodec.width = width;
+          videoCodec.height = height;
+          videoCodec.maxFramerate = maxFramerate;
+          videoCodec.maxBitrate = maxBitrate;
+          error = videoCodec_->SetSendCodec(videoChannel_, videoCodec);
+          if (error != 0) {
+            webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+              "Failed to set send video codec. Error: %d", videoBase_->LastError());
+            return Concurrency::task<void>();
+          }
+          break;
+        }
       }
-    }
 
-    error = videoTransport_->SetSendDestination("127.0.0.1", 20000);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to set send destination for video channel.");
-      return;
-    }
+      error = videoTransport_->SetSendDestination("127.0.0.1", 20000);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to set send destination for video channel.");
+        return Concurrency::task<void>();
+      }
 
-    error = videoTransport_->SetLocalReceiver(20000);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to set local receiver for video channel.");
-      return;
-    }
+      error = videoTransport_->SetLocalReceiver(20000);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to set local receiver for video channel.");
+        return Concurrency::task<void>();
+      }
 
-    error = videoBase_->StartSend(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to start sending video. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoBase_->StartSend(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to start sending video. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoBase_->StartReceive(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to start receiving video. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoBase_->StartReceive(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to start receiving video. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    IInspectable* channelRendererPtr = reinterpret_cast<IInspectable*>(remoteMedia_);
+      IInspectable* channelRendererPtr = reinterpret_cast<IInspectable*>(remoteMedia_);
 
-    error = videoRender_->AddRenderer(videoChannel_, channelRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
-    if (0 != error) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to add renderer for video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoRender_->AddRenderer(videoChannel_, channelRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
+      if (0 != error) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to add renderer for video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoRender_->StartRender(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to start rendering video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoRender_->StartRender(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to start rendering video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
+      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+        startStopVideoButton_->Content = "Stop";
+      })));
+    });
+#endif
     started_ = true;
 
   } else {
+#ifdef VOICE
+    Concurrency::create_task([this]() {
+      int error;
+      error = voiceBase_->StopSend(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to stop sending voice. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      error = voiceBase_->StopPlayout(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to stop playout. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      error = voiceBase_->StopReceive(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to stop receiving voice. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      if (voiceTransport_)
+        delete voiceTransport_;
+      error = voiceBase_->DeleteChannel(voiceChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+          "Failed to delete voice channel. Error: %d", voiceBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = voiceBase_->StopSend(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to stop sending voice. Error: %d", voiceBase_->LastError());
-      return;
-    }
-    error = voiceBase_->StopPlayout(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to stop playout. Error: %d", voiceBase_->LastError());
-      return;
-    }
-    error = voiceBase_->StopReceive(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to stop receiving voice. Error: %d", voiceBase_->LastError());
-      return;
-    }
-    if (voiceTransport_)
-      delete voiceTransport_;
-    error = voiceBase_->DeleteChannel(voiceChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-        "Failed to delete voice channel. Error: %d", voiceBase_->LastError());
-      return;
-    }
+      voiceChannel_ = -1;
 
-    voiceChannel_ = -1;
+      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+        startStopVideoButton_->Content = "Stop";
+      })));
+    });
+#endif
+#ifdef VIDEO
+    Concurrency::create_task([this]() {
+      int error;
+      error = videoRender_->StopRender(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to stop rendering video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoRender_->StopRender(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to stop rendering video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoRender_->RemoveRenderer(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to remove renderer for video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoRender_->RemoveRenderer(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to remove renderer for video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoBase_->StopSend(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to stop sending video. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      error = videoBase_->StopReceive(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to stop receiving video. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      error = videoCapture_->DisconnectCaptureDevice(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to disconnect capture device from video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      if (videoTransport_)
+        delete videoTransport_;
+      error = videoBase_->DeleteChannel(videoChannel_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to delete video channel. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoBase_->StopSend(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to stop sending video. Error: %d", videoBase_->LastError());
-      return;
-    }
-    error = videoBase_->StopReceive(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to stop receiving video. Error: %d", videoBase_->LastError());
-      return;
-    }
-    error = videoCapture_->DisconnectCaptureDevice(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to disconnect capture device from video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
-    if (videoTransport_)
-      delete videoTransport_;
-    error = videoBase_->DeleteChannel(videoChannel_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to delete video channel. Error: %d", videoBase_->LastError());
-      return;
-    }
+      videoChannel_ = -1;
 
-    videoChannel_ = -1;
+      error = videoRender_->StopRender(captureId_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to stop rendering video capture. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
+      error = videoRender_->RemoveRenderer(captureId_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to remove renderer for video capture. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoRender_->StopRender(captureId_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to stop rendering video capture. Error: %d", videoBase_->LastError());
-      return;
-    }
-    error = videoRender_->RemoveRenderer(captureId_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to remove renderer for video capture. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoCapture_->StopCapture(captureId_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to stop video capturing. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoCapture_->StopCapture(captureId_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to stop video capturing. Error: %d", videoBase_->LastError());
-      return;
-    }
+      error = videoCapture_->ReleaseCaptureDevice(captureId_);
+      if (error != 0) {
+        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+          "Failed to release video capture device. Error: %d", videoBase_->LastError());
+        return Concurrency::task<void>();
+      }
 
-    error = videoCapture_->ReleaseCaptureDevice(captureId_);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to release video capture device. Error: %d", videoBase_->LastError());
-      return;
-    }
+      if (vcpm_ != NULL)
+        vcpm_->Release();
 
-    if (vcpm_ != NULL)
-      vcpm_->Release();
+      vcpm_ = NULL;
 
-    vcpm_ = NULL;
+      captureId_ = -1;
 
-    captureId_ = -1;
-
+      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+        startStopVideoButton_->Content = "Stop";
+      })));
+    });
+#endif
     started_ = false;
   }
 }
