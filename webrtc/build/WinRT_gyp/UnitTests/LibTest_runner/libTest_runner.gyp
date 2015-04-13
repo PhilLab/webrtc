@@ -99,6 +99,10 @@
             'SplashScreen480x800.png',
             'resources',
           ],
+          'forcePackage': [
+            'resources',
+          ],
+
         }],
         ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
           'sources': [
@@ -117,6 +121,7 @@
                 'Logo71x71.png',
                 'Logo44x44.png',
                 'SplashScreen480x800.png',
+                'resources',
               ],
             }],
             ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
