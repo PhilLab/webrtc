@@ -309,7 +309,7 @@ bool UdpSocketManagerWinRTImpl::Run(ThreadObj obj)
 bool UdpSocketManagerWinRTImpl::AddSocket(UdpSocketWrapper* s)
 {
     UdpSocketWinRT* sl = static_cast<UdpSocketWinRT*>(s);
-    if(sl->GetFd() == INVALID_SOCKET || !(sl->GetFd() < FD_SETSIZE))
+    if(sl->GetFd() == INVALID_SOCKET)// || !(sl->GetFd() < FD_SETSIZE))
     {
         return false;
     }
