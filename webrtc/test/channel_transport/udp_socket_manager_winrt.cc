@@ -259,20 +259,20 @@ bool UdpSocketManagerWinRTImpl::Process()
 
     UpdateSocketMap();
 
-    SOCKET maxFd = 0;
+    int nFd = _socketMap.size();
     for (std::map<SOCKET, UdpSocketWinRT*>::iterator it = _socketMap.begin();
          it != _socketMap.end();
          ++it) {
       doSelect = true;
-      if (it->first > maxFd)
-        maxFd = it->first;
       FD_SET(it->first, &_readFds);
     }
+
+
 
     int num = 0;
     if (doSelect)
     {
-        num = select(maxFd+1, &_readFds, NULL, NULL, &timeout);
+        num = select(nFd, &_readFds, NULL, NULL, &timeout);
 
         if (num == SOCKET_ERROR)
         {
@@ -308,8 +308,9 @@ bool UdpSocketManagerWinRTImpl::Run(ThreadObj obj)
 
 bool UdpSocketManagerWinRTImpl::AddSocket(UdpSocketWrapper* s)
 {
+
     UdpSocketWinRT* sl = static_cast<UdpSocketWinRT*>(s);
-    if(sl->GetFd() == INVALID_SOCKET)// || !(sl->GetFd() < FD_SETSIZE))
+    if (sl->GetFd() == INVALID_SOCKET || _socketMap.size() >= FD_SETSIZE)
     {
         return false;
     }
