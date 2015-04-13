@@ -240,8 +240,14 @@
       'targets': [
         {
           'target_name': 'audio_device_tests',
-         'type': 'executable',
-         'dependencies': [
+          'conditions': [
+            ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'type': 'static_library',
+            }, {
+              'type': 'executable',
+            }],
+          ],
+          'dependencies': [
             'audio_device',
             'webrtc_utility',
             '<(webrtc_root)/test/test.gyp:test_support_main',
