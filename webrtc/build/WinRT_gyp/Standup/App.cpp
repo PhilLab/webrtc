@@ -26,6 +26,7 @@
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 
 #include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/test/field_trial.h"
 
 #define VOICE
 #define VIDEO
@@ -102,6 +103,7 @@ namespace StandupWinRT
     {
       int error;
 
+      webrtc::test::InitFieldTrialsFromString("");
       webrtc::Trace::CreateTrace();
       webrtc::Trace::SetTraceCallback(traceCallback_);
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
