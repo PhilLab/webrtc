@@ -680,7 +680,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Stop";
       })));
     });
 #endif
@@ -870,7 +870,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Stop";
       })));
     });
 #endif
@@ -910,7 +910,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       voiceChannel_ = -1;
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Start";
       })));
     });
 #endif
@@ -995,7 +995,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       captureId_ = -1;
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Start";
       })));
     });
 #endif
