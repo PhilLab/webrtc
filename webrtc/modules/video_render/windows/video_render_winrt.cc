@@ -100,6 +100,16 @@ Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> VideoChannelWinRT::GetMediaS
   return _renderMediaSource;
 }
 
+void VideoChannelWinRT::Lock()
+{
+  _critSect->Enter();
+}
+
+void VideoChannelWinRT::Unlock()
+{
+  _critSect->Leave();
+}
+
 webrtc::I420VideoFrame& VideoChannelWinRT::GetVideoFrame()
 {
   return _videoFrame;
@@ -119,7 +129,7 @@ int VideoChannelWinRT::GetHeight()
 int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStreams)
 {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
-    "FrameSizeChange, wifth: %d, height: %d, streams: %d", width,
+    "FrameSizeChange, width: %d, height: %d, streams: %d", width,
     height, numberOfStreams);
 
   CriticalSectionScoped cs(_critSect);
@@ -132,7 +142,6 @@ int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStream
 int32_t VideoChannelWinRT::RenderFrame(const uint32_t streamId,
   I420VideoFrame& videoFrame)
 {
-  CriticalSectionScoped cs(_critSect);
   if (_width != videoFrame.width() || _height != videoFrame.height())
   {
     if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
@@ -226,9 +235,6 @@ int32_t VideoRenderWinRT::Init() {
 
   CriticalSectionScoped cs(&_refCritsect);
 
-  //mediaExtensionManager = ref new Windows::Media::MediaExtensionManager();
-  //mediaExtensionManager->RegisterSchemeHandler("WebRTC.VideoRender.VideoRenderSchemeHandler", "webrtc:");
-
   // Start rendering thread...
   if (!_screenUpdateThread)
   {
@@ -270,7 +276,12 @@ int VideoRenderWinRT::UpdateRenderSurface() {
     startHeight, stopWidth,
     stopHeight);
 
+  _channel->Lock();
+  const uint8_t* buf = _channel->GetVideoFrame().buffer(kYPlane);
+  int siz = _channel->GetVideoFrame().allocated_size(kYPlane);
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "UpdateRenderSurface - %d, %d", buf, siz);
   _channel->GetMediaSource()->ProcessVideoFrame(_channel->GetVideoFrame());
+  _channel->Unlock();
 
   //Notice channel that this frame as been rendered
   _channel->RenderOffFrame();

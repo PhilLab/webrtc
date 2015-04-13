@@ -1508,13 +1508,34 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
 
       if (SUCCEEDED(hr))
       {
-        hr = MFCreateMemoryBuffer(640 * 480 + 2 * 320 * 240, &spMediaBuffer);
+        DWORD cbMaxLength = videoFrame.width() * videoFrame.height() * 3 / 2;
+        hr = MFCreateMemoryBuffer(cbMaxLength, &spMediaBuffer);
         BYTE* buffer;
         DWORD maxLength;
         DWORD currentLength;
         spMediaBuffer->Lock(&buffer, &maxLength, &currentLength);
-        std::memcpy(buffer, videoFrame.buffer(kYPlane), videoFrame.allocated_size(kYPlane) * 3 / 2);
-        spMediaBuffer->SetCurrentLength(videoFrame.allocated_size(kYPlane) * 3 / 2);
+        uint8_t* y_buffer = (uint8_t*)videoFrame.buffer(kYPlane);
+        for (int i = 0; i < videoFrame.height(); i++)
+        {
+          std::memcpy(buffer, y_buffer, videoFrame.width());
+          buffer += videoFrame.width();
+          y_buffer += videoFrame.stride(kYPlane);
+        }
+        uint8_t* u_buffer = (uint8_t*)videoFrame.buffer(kUPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++)
+        {
+          std::memcpy(buffer, u_buffer, videoFrame.width() / 2);
+          buffer += videoFrame.width() / 2;
+          u_buffer += videoFrame.stride(kUPlane);
+        }
+        uint8_t* v_buffer = (uint8_t*)videoFrame.buffer(kVPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++)
+        {
+          std::memcpy(buffer, v_buffer, videoFrame.width() / 2);
+          buffer += videoFrame.width() / 2;
+          v_buffer += videoFrame.stride(kVPlane);
+        }
+        spMediaBuffer->SetCurrentLength(videoFrame.width() * videoFrame.height() * 3 / 2);
         spMediaBuffer->Unlock();
       }
 

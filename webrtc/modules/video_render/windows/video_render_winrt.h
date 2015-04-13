@@ -39,6 +39,8 @@ public:
   int RenderOffFrame();
 
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> GetMediaSource();
+  void Lock();
+  void Unlock();
   webrtc::I420VideoFrame& GetVideoFrame();
   int GetWidth();
   int GetHeight();
