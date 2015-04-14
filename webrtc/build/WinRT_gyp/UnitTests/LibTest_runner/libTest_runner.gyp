@@ -91,7 +91,7 @@
         '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
       ],
       'forcePackage': [
-            '../../../../../resources/foreman_cif.yuv',
+            'resources',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
@@ -132,12 +132,7 @@
             'Logo.png',
             'SmallLogo.png',
             'StoreLogo.png',
-          ],
-        },
-        {
-          'destination': '<(PRODUCT_DIR)/libTest_runner_package/resources',
-          'files': [
-            '../../../../../resources/foreman_cif.yuv',
+            'resources'
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -161,12 +156,7 @@
             'Logo.png',
             'SmallLogo.png',
             'StoreLogo.png',
-          ],
-        },
-        {
-          'destination': '<(PRODUCT_DIR)/AppX/resources',
-          'files': [
-            '../../../../../resources/foreman_cif.yuv',
+            'resources',
           ],
         },
       ],
