@@ -41,12 +41,11 @@
         'SmallLogo.png',
         'StoreLogo.png',
       ],
+      'forcePackage': [
+            '../../../../../resources/',
+            '../../../../../data/',
+      ],
       'conditions': [
-        ['OS_RUNTIME=="winrt"', {
-          'forcePackage': [
-          '../../../../../resources/',
-          '../../../../../data/',
-        ],}],
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
           'sources': [
             'Package.phone.appxmanifest',
