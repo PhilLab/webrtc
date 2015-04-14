@@ -90,6 +90,9 @@
         'StoreLogo.png',
         '..\gtest_runner\gtest_runner_TemporaryKey.pfx',
       ],
+      'forcePackage': [
+            'resources',
+      ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
           'sources': [
@@ -97,7 +100,6 @@
             'Logo71x71.png',
             'Logo44x44.png',
             'SplashScreen480x800.png',
-            'resources',
           ],
         }],
         ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
@@ -130,16 +132,7 @@
             'Logo.png',
             'SmallLogo.png',
             'StoreLogo.png',
-          ],
-        },
-        {
-          'destination': '<(PRODUCT_DIR)/libTest_runner_package/resources',
-          'conditions': [
-            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
-              'files': [
-                '../../../../../resources/foreman_cif.yuv',
-              ],
-            }],
+            'resources'
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -163,16 +156,7 @@
             'Logo.png',
             'SmallLogo.png',
             'StoreLogo.png',
-          ],
-        },
-        {
-          'destination': '<(PRODUCT_DIR)/AppX/resources',
-          'conditions': [
-            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
-              'files': [
-                '../../../../../resources/foreman_cif.yuv',
-              ],
-            }],
+            'resources',
           ],
         },
       ],

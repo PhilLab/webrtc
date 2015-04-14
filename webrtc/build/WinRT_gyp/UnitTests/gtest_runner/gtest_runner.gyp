@@ -44,6 +44,10 @@
         'SmallLogo.png',
         'StoreLogo.png',
       ],
+      'forcePackage': [
+            '../../../../../resources/',
+            '../../../../../data/',
+      ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
           'sources': [
@@ -113,7 +117,6 @@
           ],
         },
       ],
-
       'msvs_disabled_warnings': [
         4453,  # A '[WebHostHidden]' type should not be used on the published surface of a public type that is not '[WebHostHidden]'
       ],
