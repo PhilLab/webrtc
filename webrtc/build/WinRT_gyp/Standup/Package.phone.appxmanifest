@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
 
-  <Identity Name="LibTestRunner"
+  <Identity Name="StandupWinRT"
             Publisher="CN=WebRTC"
             Version="1.0.0.0" />
 
@@ -25,12 +25,12 @@
   <Applications>
     <Application Id="App"
         Executable="$targetnametoken$.exe"
-        EntryPoint="LibTest_runner_Windows.App">
+        EntryPoint="StandupWinRT.App">
         <m2:VisualElements
-            DisplayName="LibTest_runner.Windows"
+            DisplayName="StandupWinRT"
             Square150x150Logo="Logo.png"
             Square30x30Logo="SmallLogo.png"
-            Description="LibTest_runner.Windows"
+            Description="StandupWinRT"
             ForegroundText="light"
             BackgroundColor="#464646">
             <m2:SplashScreen Image="SplashScreen.png" />

@@ -32,6 +32,7 @@
 #elif defined(WINRT)
 #define TEST_LOG AudioDeviceUtility::TestOutput
 #define TEST_LOG_ERROR(...) fprintf(stderr, __VA_ARGS__)
+#define ADM_AUDIO_LAYER AudioDeviceModule::kWindowsWasapiAudio
 #else
 #define TEST_LOG printf
 #define TEST_LOG_ERROR(...) fprintf(stderr, __VA_ARGS__)

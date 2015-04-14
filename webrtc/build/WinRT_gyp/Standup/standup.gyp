@@ -49,26 +49,54 @@
       'copies': [
         {
           'destination': '<(PRODUCT_DIR)/standup_package',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'files': [
+                 'Generated Manifest Phone\AppxManifest.xml',
+                 'Logo71x71.png',
+                 'Logo44x44.png',
+                 'SplashScreen480x800.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+              'files': [
+                'Generated Manifest\AppxManifest.xml',
+                'SplashScreen.png',
+              ],
+            }],
+          ],
           'files':[
-            'Generated Manifest\AppxManifest.xml',
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
         {
           'destination': '<(PRODUCT_DIR)/AppX',
+          'conditions': [
+              ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+                'files': [
+                   'Logo71x71.png',
+                   'Logo44x44.png',
+                   'SplashScreen480x800.png',
+                ],
+            }],
+             ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+                'files': [
+                  'SplashScreen.png',
+                ],
+            }],
+          ],
           'files':[
             'Logo.png',
             'SmallLogo.png',
-            'SplashScreen.png',
             'StoreLogo.png',
           ],
         },
       ],
       'msvs_disabled_warnings': [
+        4453,  # A '[WebHostHidden]' type should not be used on the published surface of a public type that is not '[WebHostHidden]'
       ],
       'msvs_package_certificate': {
         'KeyFile': '..\UnitTests\gtest_runner\gtest_runner_TemporaryKey.pfx',
