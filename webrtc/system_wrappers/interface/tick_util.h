@@ -166,7 +166,7 @@ inline TickTime TickTime::Now() {
 inline int64_t TickTime::MillisecondTimestamp() {
   int64_t ticks = TickTime::Now().Ticks();
 #if _WIN32
-#ifdef USE_QUERY_PERFORMANCE_COUNTER
+#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
   return (ticks * 1000) / qpfreq.QuadPart;
