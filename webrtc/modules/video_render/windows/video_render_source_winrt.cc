@@ -739,7 +739,7 @@ HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
 #define HARDCODED_FRAME_HEIGHT 720
 #else
 #define HARDCODED_FRAME_WIDTH 640
-#define HARDCODED_FRAME_HEIGHT HARDCODED_FRAME_HEIGHT
+#define HARDCODED_FRAME_HEIGHT 480
 #endif
 
 void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription)
