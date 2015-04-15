@@ -689,6 +689,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Stop";
+        startStopVideoButton_->IsEnabled = false;
       })));
     });
 #endif
@@ -879,6 +880,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Stop";
+        startStopVideoButton_->IsEnabled = false;
       })));
     });
 #endif
@@ -919,6 +921,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Start";
+        startStopVideoButton_->IsEnabled = true;
       })));
     });
 #endif
@@ -1004,6 +1007,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Start";
+        startStopVideoButton_->IsEnabled = true;
       })));
     });
 #endif
@@ -1058,6 +1062,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopVideoButton_->Content = "Stop Video";
+        startStopButton_->IsEnabled = false;
       })));
     });
   }
@@ -1074,6 +1079,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopVideoButton_->Content = "Start Video";
+        startStopButton_->IsEnabled = true;
       })));
     });
   }
