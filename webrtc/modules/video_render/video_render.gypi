@@ -165,6 +165,11 @@
               ],
               'defines': [ 'WINRT_MF_RENDERING=1' ],
             }],
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'defines!': [
+                 'WINAPI_FAMILY=WINAPI_FAMILY_APP',
+              ],
+            }],
           ] # conditions
         },
       ],

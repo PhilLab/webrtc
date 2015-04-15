@@ -42,6 +42,14 @@ using namespace Windows::UI::Xaml::Media;
 bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#define HARDCODED_FRAME_WIDTH 1280
+#define HARDCODED_FRAME_HEIGHT 720
+#else
+#define HARDCODED_FRAME_WIDTH 640
+#define HARDCODED_FRAME_HEIGHT 480
+#endif
+
 namespace StandupWinRT
 {
   class TestCaptureCallback : public webrtc::VideoCaptureDataCallback
@@ -490,8 +498,8 @@ namespace StandupWinRT
         auto makeRenderSurface = [grid](MediaElement^& elem, int index) {
           auto surface = ref new MediaElement();
           auto border = ref new Border();
-          surface->Width = 640;
-          surface->Height = 480;
+          surface->Width = HARDCODED_FRAME_WIDTH;
+          surface->Height = HARDCODED_FRAME_HEIGHT;
           border->BorderBrush = ref new SolidColorBrush(ColorHelper::FromArgb(255, 0, 0, 255));
           border->BorderThickness = ThicknessHelper::FromUniformLength(2);
           border->Margin = ThicknessHelper::FromUniformLength(8);
@@ -729,7 +737,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       vcpm_->AddRef();
       delete devInfo;
 
-      int width = 640, height = 480, maxFramerate = 30, maxBitrate = 512;
+      int width = HARDCODED_FRAME_WIDTH, height = HARDCODED_FRAME_HEIGHT, maxFramerate = 30, maxBitrate = 512;
 
       webrtc::CaptureCapability capability;
       capability.width = width;

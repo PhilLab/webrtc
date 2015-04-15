@@ -249,6 +249,14 @@ Concurrency::task<void> CaptureDevice::StopCaptureAsync()
   return Concurrency::create_task([](){});
 }
 
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#define HARDCODED_FRAME_WIDTH 1280
+#define HARDCODED_FRAME_HEIGHT 720
+#else
+#define HARDCODED_FRAME_WIDTH 640
+#define HARDCODED_FRAME_HEIGHT 480
+#endif
+
 void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
   if (incoming_frame_callback_) {
     Microsoft::WRL::ComPtr<IMFSample> spMediaSample = args->GetMediaSample();
@@ -257,8 +265,8 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     uint8_t* videoFrame;
     size_t videoFrameLength;
     VideoCaptureCapability frameInfo;
-    frameInfo.width = 640;
-    frameInfo.height = 480;
+    frameInfo.width = HARDCODED_FRAME_WIDTH;
+    frameInfo.height = HARDCODED_FRAME_HEIGHT;
     frameInfo.rawType = kVideoNV12;
     int64_t captureTime;
     DWORD maxLength;
@@ -370,7 +378,7 @@ int32_t VideoCaptureWinRT::StartCapture(
   mediaEncodingProfile->Container = nullptr;
   mediaEncodingProfile->Video =
     VideoEncodingProperties::CreateUncompressed(
-    MediaEncodingSubtypes::Nv12, /*capability.width*/ 640, /*capability.height*/ 480);
+    MediaEncodingSubtypes::Nv12, /*capability.width*/ HARDCODED_FRAME_WIDTH, /*capability.height*/ HARDCODED_FRAME_HEIGHT);
  
   device_->StartCaptureAsync(mediaEncodingProfile).then([this](Concurrency::task<void> asyncInfo)
   {

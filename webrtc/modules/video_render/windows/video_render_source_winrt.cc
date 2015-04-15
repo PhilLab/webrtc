@@ -734,6 +734,14 @@ HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
   return hr;
 }
 
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#define HARDCODED_FRAME_WIDTH 1280
+#define HARDCODED_FRAME_HEIGHT 720
+#else
+#define HARDCODED_FRAME_WIDTH 640
+#define HARDCODED_FRAME_HEIGHT HARDCODED_FRAME_HEIGHT
+#endif
+
 void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription)
 {
   // Create the media event queue.
@@ -758,9 +766,9 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
 
     ThrowIfError(spMediaType->SetGUID(MF_MT_MAJOR_TYPE, pStreamDescription->guiMajorType));
     ThrowIfError(spMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
-    ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, 640));
+    ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, HARDCODED_FRAME_WIDTH));
     ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_FRAME_RATE, 30, 1));
-    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, 640, 480));
+    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, HARDCODED_FRAME_WIDTH, 480));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE)); 
     ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
