@@ -1,3 +1,13 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #include "webrtc/modules/video_render/windows/video_render_winrt.h"
 
 // System include files
@@ -23,10 +33,10 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc {
 
 /*
-*
-*    VideoChannelWinRT
-*
-*/
+ *
+ *    VideoChannelWinRT
+ *
+ */
 VideoChannelWinRT::VideoChannelWinRT(
     Windows::UI::Xaml::Controls::MediaElement^ mediaElement,
     CriticalSectionWrapper* critSect,
@@ -95,6 +105,7 @@ int VideoChannelWinRT::GetStreamSettings(uint16_t streamId,
   stopHeight = _stopHeight;
   return 0;
 }
+
 Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> VideoChannelWinRT::GetMediaSource()
 {
   return _renderMediaSource;
@@ -260,6 +271,8 @@ int VideoRenderWinRT::UpdateRenderSurface() {
 
   // Check if there are any updated buffers
   bool updated = false;
+  if (_channel == NULL)
+    return -1;
   _channel->IsUpdated(updated);
   //nothing is updated, return
   if (!updated)
@@ -341,9 +354,11 @@ VideoRenderCallback* VideoRenderWinRT::CreateChannel(
 }
 
 int32_t VideoRenderWinRT::DeleteChannel(const uint32_t streamId) {
+
   CriticalSectionScoped cs(&_refCritsect);
 
   delete _channel;
+  _channel = NULL;
   
   return 0;
 }
@@ -406,6 +421,7 @@ int32_t VideoRenderWinRT::SetBitmap(
 
 int32_t VideoRenderWinRT::GetGraphicsMemory(uint64_t& totalMemory,
     uint64_t& availableMemory) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
@@ -417,6 +433,7 @@ int32_t VideoRenderWinRT::ConfigureRenderer(
     const float top,
     const float right,
     const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 

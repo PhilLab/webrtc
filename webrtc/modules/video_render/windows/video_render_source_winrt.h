@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_WINDOWS_VIDEO_RENDER_SOURCE_WINRT_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_WINDOWS_VIDEO_RENDER_SOURCE_WINRT_H_
 
-#include <wrl\implements.h>
+#include <wrl/implements.h>
 
 #include <mfidl.h>
 
@@ -484,7 +484,6 @@ private:
 
   DWORD _dwId;
   bool _fActive;
-  bool _fVideo;
   float _flRate;
 
   MF_QUALITY_DROP_MODE _eDropMode;

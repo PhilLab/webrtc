@@ -120,7 +120,6 @@ VideoRenderMediaStreamWinRT::VideoRenderMediaStreamWinRT(VideoRenderMediaSourceW
     _eSourceState(SourceState_Invalid),
     _fActive(false),
     _flRate(1.0f),
-    _fVideo(false),
     _eDropMode(MF_DROP_MODE_NONE),
     _fDiscontinuity(false),
     _fDropTime(false),
@@ -748,10 +747,7 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
 
     pStreamDescription->guiMajorType = MFMediaType_Video;
     pStreamDescription->guiSubType = MFVideoFormat_I420;
-    //pStreamDescription->guiSubType = MFVideoFormat_ARGB32;
     pStreamDescription->dwStreamId = 1;
-
-    _fVideo = (pStreamDescription->guiMajorType == MFMediaType_Video);
 
     // Create a media type object.
     ThrowIfError(MFCreateMediaType(&spMediaType));
