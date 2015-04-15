@@ -768,7 +768,7 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
     ThrowIfError(spMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, HARDCODED_FRAME_WIDTH));
     ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_FRAME_RATE, 30, 1));
-    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, HARDCODED_FRAME_WIDTH, 480));
+    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, HARDCODED_FRAME_WIDTH, HARDCODED_FRAME_HEIGHT));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE)); 
     ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
