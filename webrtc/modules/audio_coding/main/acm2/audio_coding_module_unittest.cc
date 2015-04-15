@@ -790,6 +790,7 @@ TEST_F(AcmSenderBitExactness, MAYBE_IsacWb30ms) {
 #else
 #define MAYBE_IsacWb60ms IsacWb60ms
 #endif
+
 TEST_F(AcmSenderBitExactness, MAYBE_IsacWb60ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest(acm2::ACMCodecDB::kISAC, 1, 103, 960, 960));
   Run(AcmReceiverBitExactness::PlatformChecksum(
@@ -804,7 +805,13 @@ TEST_F(AcmSenderBitExactness, MAYBE_IsacWb60ms) {
       test::AcmReceiveTest::kMonoOutput);
 }
 
-TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(IsacSwb30ms)) {
+#if defined(WEBRTC_ANDROID) || !defined(WEBRTC_CODEC_ISAC)
+#define MAYBE_IsacSwb30ms DISABLED_IsacSwb30ms
+#else
+#define MAYBE_IsacSwb30ms IsacSwb30ms
+#endif
+
+TEST_F(AcmSenderBitExactness, MAYBE_IsacSwb30ms) {
   ASSERT_NO_FATAL_FAILURE(
       SetUpTest(acm2::ACMCodecDB::kISACSWB, 1, 104, 960, 960));
   Run(AcmReceiverBitExactness::PlatformChecksum(

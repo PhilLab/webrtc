@@ -953,7 +953,13 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacWb60ms) {
       test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IsacSwb30ms)) {
+#if defined(WEBRTC_ANDROID) || !defined(WEBRTC_CODEC_ISAC)
+#define MAYBE_IsacSwb30ms DISABLED_IsacSwb30ms
+#else
+#define MAYBE_IsacSwb30ms IsacSwb30ms
+#endif
+
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacSwb30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 32000, 1, 104, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "2b3c387d06f00b7b7aad4c9be56fb83d",
