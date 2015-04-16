@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_SINK_WINRT_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_SINK_WINRT_H_
 
-#include <wrl\implements.h>
+#include <wrl/implements.h>
 
 #include <mfidl.h>
 
@@ -302,7 +302,7 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
   VideoCaptureMediaSinkProxyWinRT();
   virtual ~VideoCaptureMediaSinkProxyWinRT();
 
-  Windows::Media::IMediaExtension^ GetMFExtensions();
+  Windows::Media::IMediaExtension^ GetMFExtension();
 
   Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^ 
       InitializeAsync(Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties);
@@ -330,7 +330,7 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
     }
 
    private:
-    VideoCaptureMediaSinkProxyWinRT ^_parent;
+    VideoCaptureMediaSinkProxyWinRT^ _parent;
   };
 
   void OnSample(MediaSampleEventArgs^ args);
@@ -343,7 +343,6 @@ public ref class VideoCaptureMediaSinkProxyWinRT sealed
   CriticalSectionWrapper* _critSec;
   Microsoft::WRL::ComPtr<IMFMediaSink> _mediaSink;
   bool _shutdown;
-  int _sampleNumber;
 };
 
 }  // namespace videocapturemodule

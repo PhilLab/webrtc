@@ -1,3 +1,13 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_WINDOWS_VIDEO_RENDER_WINRT_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_WINDOWS_VIDEO_RENDER_WINRT_H_
 
@@ -5,7 +15,7 @@
 
 #include <windows.ui.xaml.controls.h>
 
-#include <wrl\implements.h>
+#include <wrl/implements.h>
 
 #include "webrtc/modules/video_render/windows/i_video_render_win.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
@@ -39,6 +49,8 @@ public:
   int RenderOffFrame();
 
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> GetMediaSource();
+  void Lock();
+  void Unlock();
   webrtc::I420VideoFrame& GetVideoFrame();
   int GetWidth();
   int GetHeight();
@@ -201,8 +213,6 @@ class VideoRenderWinRT : IVideoRenderWin {
   bool _fullScreen;
   int _winWidth;
   int _winHeight;
-
-  //static Windows::Media::MediaExtensionManager^ mediaExtensionManager;
 };
 
 }  // namespace webrtc

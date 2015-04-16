@@ -120,7 +120,6 @@ VideoRenderMediaStreamWinRT::VideoRenderMediaStreamWinRT(VideoRenderMediaSourceW
     _eSourceState(SourceState_Invalid),
     _fActive(false),
     _flRate(1.0f),
-    _fVideo(false),
     _eDropMode(MF_DROP_MODE_NONE),
     _fDiscontinuity(false),
     _fDropTime(false),
@@ -734,6 +733,14 @@ HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
   return hr;
 }
 
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#define HARDCODED_FRAME_WIDTH 1280
+#define HARDCODED_FRAME_HEIGHT 720
+#else
+#define HARDCODED_FRAME_WIDTH 640
+#define HARDCODED_FRAME_HEIGHT 480
+#endif
+
 void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription)
 {
   // Create the media event queue.
@@ -748,19 +755,16 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
 
     pStreamDescription->guiMajorType = MFMediaType_Video;
     pStreamDescription->guiSubType = MFVideoFormat_I420;
-    //pStreamDescription->guiSubType = MFVideoFormat_ARGB32;
     pStreamDescription->dwStreamId = 1;
-
-    _fVideo = (pStreamDescription->guiMajorType == MFMediaType_Video);
 
     // Create a media type object.
     ThrowIfError(MFCreateMediaType(&spMediaType));
 
     ThrowIfError(spMediaType->SetGUID(MF_MT_MAJOR_TYPE, pStreamDescription->guiMajorType));
     ThrowIfError(spMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
-    ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, 640));
+    ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, HARDCODED_FRAME_WIDTH));
     ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_FRAME_RATE, 30, 1));
-    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, 640, 480));
+    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, HARDCODED_FRAME_WIDTH, HARDCODED_FRAME_HEIGHT));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
     ThrowIfError(spMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE)); 
     ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
@@ -1508,13 +1512,34 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
 
       if (SUCCEEDED(hr))
       {
-        hr = MFCreateMemoryBuffer(640 * 480 + 2 * 320 * 240, &spMediaBuffer);
+        DWORD cbMaxLength = videoFrame.width() * videoFrame.height() * 3 / 2;
+        hr = MFCreateMemoryBuffer(cbMaxLength, &spMediaBuffer);
         BYTE* buffer;
         DWORD maxLength;
         DWORD currentLength;
         spMediaBuffer->Lock(&buffer, &maxLength, &currentLength);
-        std::memcpy(buffer, videoFrame.buffer(kYPlane), videoFrame.allocated_size(kYPlane) * 3 / 2);
-        spMediaBuffer->SetCurrentLength(videoFrame.allocated_size(kYPlane) * 3 / 2);
+        uint8_t* y_buffer = (uint8_t*)videoFrame.buffer(kYPlane);
+        for (int i = 0; i < videoFrame.height(); i++)
+        {
+          std::memcpy(buffer, y_buffer, videoFrame.width());
+          buffer += videoFrame.width();
+          y_buffer += videoFrame.stride(kYPlane);
+        }
+        uint8_t* u_buffer = (uint8_t*)videoFrame.buffer(kUPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++)
+        {
+          std::memcpy(buffer, u_buffer, videoFrame.width() / 2);
+          buffer += videoFrame.width() / 2;
+          u_buffer += videoFrame.stride(kUPlane);
+        }
+        uint8_t* v_buffer = (uint8_t*)videoFrame.buffer(kVPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++)
+        {
+          std::memcpy(buffer, v_buffer, videoFrame.width() / 2);
+          buffer += videoFrame.width() / 2;
+          v_buffer += videoFrame.stride(kVPlane);
+        }
+        spMediaBuffer->SetCurrentLength(videoFrame.width() * videoFrame.height() * 3 / 2);
         spMediaBuffer->Unlock();
       }
 
@@ -1776,132 +1801,4 @@ bool VideoRenderMediaSourceWinRT::IsRateSupported(float flRate, float *pflAdjust
   }
   return false;
 }
-
-#if 0
-ActivatableClass(VideoRenderSchemeHandlerWinRT);
-
-VideoRenderSchemeHandlerWinRT::VideoRenderSchemeHandlerWinRT(void)
-{
-}
-
-VideoRenderSchemeHandlerWinRT::~VideoRenderSchemeHandlerWinRT(void)
-{
-}
-
-// IMediaExtension methods
-IFACEMETHODIMP VideoRenderSchemeHandlerWinRT::SetProperties(ABI::Windows::Foundation::Collections::IPropertySet *pConfiguration)
-{
-  return S_OK;
-}
-
-// IMFSchemeHandler methods
-IFACEMETHODIMP VideoRenderSchemeHandlerWinRT::BeginCreateObject(
-    _In_ LPCWSTR pwszURL,
-    _In_ DWORD dwFlags,
-    _In_ IPropertyStore *pProps,
-    _COM_Outptr_opt_  IUnknown **ppIUnknownCancelCookie,
-    _In_ IMFAsyncCallback *pCallback,
-    _In_ IUnknown *punkState)
-{
-  HRESULT hr = S_OK;
-  ComPtr<VideoRenderMediaSourceWinRT> spSource;
-
-  try
-  {
-    if (ppIUnknownCancelCookie != nullptr)
-    {
-      *ppIUnknownCancelCookie = nullptr;
-    }
-
-    if (pwszURL == nullptr || pCallback == nullptr)
-    {
-      Throw(E_INVALIDARG);
-    }
-
-    if ((dwFlags & MF_RESOLUTION_MEDIASOURCE) == 0)
-    {
-      Throw(E_INVALIDARG);
-    }
-
-    ComPtr<IMFAsyncResult> spResult;
-    ThrowIfError(VideoRenderMediaSourceWinRT::CreateInstance(&spSource));
-
-    ComPtr<IUnknown> spSourceUnk;
-    ThrowIfError(spSource.As(&spSourceUnk));
-    ThrowIfError(MFCreateAsyncResult(spSourceUnk.Get(), pCallback, punkState, &spResult));
-    /*
-    ComPtr<VideoRenderSchemeHandlerWinRT> spThis = this;
-    Concurrency::create_task([this, spThis, spResult, spSource](concurrency::task<void>& createObjectTask)
-    {
-      try
-      {
-        if (spResult == nullptr)
-        {
-          ThrowIfError(MF_E_UNEXPECTED);
-        }
-
-        createObjectTask.get();
-      }
-      catch (Platform::Exception ^exc)
-      {
-        if (spResult != nullptr)
-        {
-          spResult->SetStatus(exc->HResult);
-        }
-      }
-
-      if (spResult != nullptr)
-      {
-        MFInvokeCallback(spResult.Get());
-      }
-
-    });
-    */
-  }
-  catch (Platform::Exception ^exc)
-  {
-    if (spSource != nullptr)
-    {
-      spSource->Shutdown();
-    }
-    hr = exc->HResult;
-  }
-
-  return hr;
-}
-
-IFACEMETHODIMP VideoRenderSchemeHandlerWinRT::EndCreateObject(
-    _In_ IMFAsyncResult *pResult,
-    _Out_  MF_OBJECT_TYPE *pObjectType,
-    _Out_  IUnknown **ppObject)
-{
-  if (pResult == nullptr || pObjectType == nullptr || ppObject == nullptr)
-  {
-    return E_INVALIDARG;
-  }
-
-  HRESULT hr = pResult->GetStatus();
-  *pObjectType = MF_OBJECT_INVALID;
-  *ppObject = nullptr;
-
-  if (SUCCEEDED(hr))
-  {
-    ComPtr<IUnknown> punkSource;
-    hr = pResult->GetObject(&punkSource);
-    if (SUCCEEDED(hr))
-    {
-      *pObjectType = MF_OBJECT_MEDIASOURCE;
-      *ppObject = punkSource.Detach();
-    }
-  }
-
-  return hr;
-}
-
-IFACEMETHODIMP VideoRenderSchemeHandlerWinRT::CancelObjectCreation(
-    _In_ IUnknown *pIUnknownCancelCookie)
-{
-  return E_NOTIMPL;
-}
-#endif
 }  // namespace webrtc

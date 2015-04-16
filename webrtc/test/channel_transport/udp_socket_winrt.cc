@@ -72,7 +72,7 @@ UdpSocketWinRT::~UdpSocketWinRT()
 {
     if(_socket != INVALID_SOCKET)
     {
-        close(_socket);
+        closesocket(_socket);
         _socket = INVALID_SOCKET;
     }
     if(_readyForDeletionCond)
@@ -257,7 +257,7 @@ void UdpSocketWinRT::ReadyForDeletion()
         _cs->Leave();
         return;
     }
-    close(_socket);
+    closesocket(_socket);
     _socket = INVALID_SOCKET;
     _readyForDeletion = true;
     _readyForDeletionCond->Wake();

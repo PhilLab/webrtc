@@ -851,7 +851,6 @@ void VideoCaptureStreamSinkWinRT::DispatchProcessSample(AsyncOperation *pOp) {
 // Drop samples in the queue
 bool VideoCaptureStreamSinkWinRT::DropSamplesFromQueue() {
   ProcessSamplesFromQueue(true);
-
   return true;
 }
 
@@ -1309,12 +1308,10 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockSetRate(
 }
 
 VideoCaptureMediaSinkProxyWinRT::VideoCaptureMediaSinkProxyWinRT()
-  : _critSec(CriticalSectionWrapper::CreateCriticalSection()),
-    _sampleNumber(1) {
+  : _critSec(CriticalSectionWrapper::CreateCriticalSection()) {
 }
 
 VideoCaptureMediaSinkProxyWinRT::~VideoCaptureMediaSinkProxyWinRT() {
-  CriticalSectionScoped cs(_critSec);
 
   if (_mediaSink != nullptr)
   {
@@ -1327,7 +1324,7 @@ VideoCaptureMediaSinkProxyWinRT::~VideoCaptureMediaSinkProxyWinRT() {
   }
 }
 
-IMediaExtension^ VideoCaptureMediaSinkProxyWinRT::GetMFExtensions() {
+IMediaExtension^ VideoCaptureMediaSinkProxyWinRT::GetMFExtension() {
   CriticalSectionScoped cs(_critSec);
 
   if (_mediaSink == nullptr) {

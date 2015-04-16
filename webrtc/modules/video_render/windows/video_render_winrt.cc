@@ -1,3 +1,13 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #include "webrtc/modules/video_render/windows/video_render_winrt.h"
 
 // System include files
@@ -23,10 +33,10 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc {
 
 /*
-*
-*    VideoChannelWinRT
-*
-*/
+ *
+ *    VideoChannelWinRT
+ *
+ */
 VideoChannelWinRT::VideoChannelWinRT(
     Windows::UI::Xaml::Controls::MediaElement^ mediaElement,
     CriticalSectionWrapper* critSect,
@@ -95,9 +105,20 @@ int VideoChannelWinRT::GetStreamSettings(uint16_t streamId,
   stopHeight = _stopHeight;
   return 0;
 }
+
 Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> VideoChannelWinRT::GetMediaSource()
 {
   return _renderMediaSource;
+}
+
+void VideoChannelWinRT::Lock()
+{
+  _critSect->Enter();
+}
+
+void VideoChannelWinRT::Unlock()
+{
+  _critSect->Leave();
 }
 
 webrtc::I420VideoFrame& VideoChannelWinRT::GetVideoFrame()
@@ -119,7 +140,7 @@ int VideoChannelWinRT::GetHeight()
 int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStreams)
 {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
-    "FrameSizeChange, wifth: %d, height: %d, streams: %d", width,
+    "FrameSizeChange, width: %d, height: %d, streams: %d", width,
     height, numberOfStreams);
 
   CriticalSectionScoped cs(_critSect);
@@ -132,7 +153,6 @@ int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStream
 int32_t VideoChannelWinRT::RenderFrame(const uint32_t streamId,
   I420VideoFrame& videoFrame)
 {
-  CriticalSectionScoped cs(_critSect);
   if (_width != videoFrame.width() || _height != videoFrame.height())
   {
     if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
@@ -226,9 +246,6 @@ int32_t VideoRenderWinRT::Init() {
 
   CriticalSectionScoped cs(&_refCritsect);
 
-  //mediaExtensionManager = ref new Windows::Media::MediaExtensionManager();
-  //mediaExtensionManager->RegisterSchemeHandler("WebRTC.VideoRender.VideoRenderSchemeHandler", "webrtc:");
-
   // Start rendering thread...
   if (!_screenUpdateThread)
   {
@@ -254,6 +271,8 @@ int VideoRenderWinRT::UpdateRenderSurface() {
 
   // Check if there are any updated buffers
   bool updated = false;
+  if (_channel == NULL)
+    return -1;
   _channel->IsUpdated(updated);
   //nothing is updated, return
   if (!updated)
@@ -270,7 +289,12 @@ int VideoRenderWinRT::UpdateRenderSurface() {
     startHeight, stopWidth,
     stopHeight);
 
+  _channel->Lock();
+  const uint8_t* buf = _channel->GetVideoFrame().buffer(kYPlane);
+  int siz = _channel->GetVideoFrame().allocated_size(kYPlane);
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "UpdateRenderSurface - %d, %d", buf, siz);
   _channel->GetMediaSource()->ProcessVideoFrame(_channel->GetVideoFrame());
+  _channel->Unlock();
 
   //Notice channel that this frame as been rendered
   _channel->RenderOffFrame();
@@ -330,9 +354,11 @@ VideoRenderCallback* VideoRenderWinRT::CreateChannel(
 }
 
 int32_t VideoRenderWinRT::DeleteChannel(const uint32_t streamId) {
+
   CriticalSectionScoped cs(&_refCritsect);
 
   delete _channel;
+  _channel = NULL;
   
   return 0;
 }
@@ -395,6 +421,7 @@ int32_t VideoRenderWinRT::SetBitmap(
 
 int32_t VideoRenderWinRT::GetGraphicsMemory(uint64_t& totalMemory,
     uint64_t& availableMemory) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 
@@ -406,6 +433,7 @@ int32_t VideoRenderWinRT::ConfigureRenderer(
     const float top,
     const float right,
     const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
   return 0;
 }
 

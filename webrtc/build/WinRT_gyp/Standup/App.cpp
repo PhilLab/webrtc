@@ -26,6 +26,7 @@
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 
 #include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/test/field_trial.h"
 
 #define VOICE
 #define VIDEO
@@ -40,6 +41,14 @@ using namespace Windows::UI::Xaml::Media;
 
 bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#define HARDCODED_FRAME_WIDTH 1280
+#define HARDCODED_FRAME_HEIGHT 720
+#else
+#define HARDCODED_FRAME_WIDTH 640
+#define HARDCODED_FRAME_HEIGHT 480
+#endif
 
 namespace StandupWinRT
 {
@@ -102,6 +111,7 @@ namespace StandupWinRT
     {
       int error;
 
+      webrtc::test::InitFieldTrialsFromString("");
       webrtc::Trace::CreateTrace();
       webrtc::Trace::SetTraceCallback(traceCallback_);
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
@@ -488,8 +498,8 @@ namespace StandupWinRT
         auto makeRenderSurface = [grid](MediaElement^& elem, int index) {
           auto surface = ref new MediaElement();
           auto border = ref new Border();
-          surface->Width = 640;
-          surface->Height = 480;
+          surface->Width = HARDCODED_FRAME_WIDTH;
+          surface->Height = HARDCODED_FRAME_HEIGHT;
           border->BorderBrush = ref new SolidColorBrush(ColorHelper::FromArgb(255, 0, 0, 255));
           border->BorderThickness = ThicknessHelper::FromUniformLength(2);
           border->Margin = ThicknessHelper::FromUniformLength(8);
@@ -678,7 +688,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Stop";
+        startStopVideoButton_->IsEnabled = false;
       })));
     });
 #endif
@@ -727,7 +738,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       vcpm_->AddRef();
       delete devInfo;
 
-      int width = 640, height = 480, maxFramerate = 30, maxBitrate = 512;
+      int width = HARDCODED_FRAME_WIDTH, height = HARDCODED_FRAME_HEIGHT, maxFramerate = 30, maxBitrate = 512;
 
       webrtc::CaptureCapability capability;
       capability.width = width;
@@ -868,7 +879,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Stop";
+        startStopVideoButton_->IsEnabled = false;
       })));
     });
 #endif
@@ -908,7 +920,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       voiceChannel_ = -1;
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Start";
+        startStopVideoButton_->IsEnabled = true;
       })));
     });
 #endif
@@ -993,7 +1006,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       captureId_ = -1;
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopVideoButton_->Content = "Stop";
+        startStopButton_->Content = "Start";
+        startStopVideoButton_->IsEnabled = true;
       })));
     });
 #endif
@@ -1048,6 +1062,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopVideoButton_->Content = "Stop Video";
+        startStopButton_->IsEnabled = false;
       })));
     });
   }
@@ -1064,6 +1079,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopVideoButton_->Content = "Start Video";
+        startStopButton_->IsEnabled = true;
       })));
     });
   }

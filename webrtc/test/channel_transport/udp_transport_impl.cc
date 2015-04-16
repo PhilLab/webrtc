@@ -2357,7 +2357,7 @@ INT WSAAddressToStringA(
   )
 {
   std::wstring buff;
-  buff.resize((std::wstring::size_type)lpdwAddressStringLength, (wchar_t)0);
+  buff.resize((std::wstring::size_type)(*lpdwAddressStringLength), (wchar_t)0);
   int ret = WSAAddressToStringW(
     lpsaAddress,
     dwAddressLength,
@@ -2365,7 +2365,7 @@ INT WSAAddressToStringA(
     (LPWSTR)buff.data(),
     lpdwAddressStringLength);
   std::string buff8 = ::rtc::ToUtf8(buff);
-  strcpy_s((char*)lpszAddressString, (rsize_t)lpdwAddressStringLength, buff8.c_str());
+  strcpy_s((char*)lpszAddressString, (rsize_t)(*lpdwAddressStringLength), buff8.c_str());
   return ret;
 }
 #endif
