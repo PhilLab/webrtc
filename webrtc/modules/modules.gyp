@@ -398,7 +398,8 @@
           # Disable warnings to enable Win64 build, issue 1323.
           'msvs_disabled_warnings': [
             4267,  # size_t to int truncation.
-            4456, 4457, 4458, 4459 # local members hides previously defined memebers or function members or class members
+            4456, 4457, 4458, 4459, # local members hides previously defined memebers or function members or class members
+			4311, 4312, 4302,
           ],
         },
         {
