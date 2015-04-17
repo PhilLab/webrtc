@@ -402,7 +402,8 @@ namespace StandupWinRT
 
   private:
     TextBox^ ipTextBox_;
-    TextBox^ portTextBox_;
+    TextBox^ videoPortTextBox_;
+    TextBox^ audioPortTextBox_;
 
     MediaElement^ localMedia_;
     MediaElement^ remoteMedia_;
@@ -473,13 +474,22 @@ namespace StandupWinRT
         stackPanel->Children->Append(ipTextBox_);
 
         label = ref new TextBlock();
-        label->Text = "Port: ";
+        label->Text = "Video Port: ";
         label->VerticalAlignment = VerticalAlignment::Center;
         label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
         stackPanel->Children->Append(label);
 
-        portTextBox_ = ref new TextBox();
-        stackPanel->Children->Append(portTextBox_);
+        videoPortTextBox_ = ref new TextBox();
+        stackPanel->Children->Append(videoPortTextBox_);
+
+        label = ref new TextBlock();
+        label->Text = "Audio Port: ";
+        label->VerticalAlignment = VerticalAlignment::Center;
+        label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
+        stackPanel->Children->Append(label);
+
+        audioPortTextBox_ = ref new TextBox();
+        stackPanel->Children->Append(audioPortTextBox_);
       }
 
       // Second row
@@ -571,8 +581,23 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   if (!started_) {
+
 #ifdef VOICE
     Concurrency::create_task([this]() {
+      size_t convertedChars = 0;
+      size_t  sizeInBytes = ((ipTextBox_->Text->Length() + 1) * 2);
+      errno_t err = 0;
+      char *ip = (char *)malloc(sizeInBytes);
+
+      err = wcstombs_s(&convertedChars,
+        ip, sizeInBytes,
+        ipTextBox_->Text->Data(), sizeInBytes);
+
+      if (err != 0) {
+        ip = "127.0.0.1";
+        ipTextBox_->Text = "127.0.0.1";
+      }
+
       int error;
       voiceChannel_ = voiceBase_->CreateChannel();
       if (voiceChannel_ < 0) {
@@ -652,14 +677,14 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         }
       }
 
-      error = voiceTransport_->SetSendDestination("127.0.0.1", 20010);
+      error = voiceTransport_->SetSendDestination(ip, _wtoi(videoPortTextBox_->Text->Data()));
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to set send destination for voice channel.");
         return Concurrency::task<void>();
       }
 
-      error = voiceTransport_->SetLocalReceiver(20010);
+      error = voiceTransport_->SetLocalReceiver(_wtoi(videoPortTextBox_->Text->Data()));
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to set local receiver for voice channel.");
@@ -695,6 +720,21 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 #endif
 #ifdef VIDEO
     Concurrency::create_task([this]() {
+
+      size_t convertedChars = 0;
+      size_t sizeInBytes = ((ipTextBox_->Text->Length() + 1) * 2);
+      errno_t err = 0;
+      char *ip = (char *)malloc(sizeInBytes);
+
+      err = wcstombs_s(&convertedChars,
+        ip, sizeInBytes,
+        ipTextBox_->Text->Data(), sizeInBytes);
+
+      if (err != 0) {
+        ip = "127.0.0.1";
+        ipTextBox_->Text = "127.0.0.1";
+      }
+
       int error;
       const unsigned int KMaxDeviceNameLength = 128;
       const unsigned int KMaxUniqueIdLength = 256;
@@ -834,14 +874,14 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         }
       }
 
-      error = videoTransport_->SetSendDestination("127.0.0.1", 20000);
+      error = videoTransport_->SetSendDestination(ip, _wtoi(videoPortTextBox_->Text->Data()));
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to set send destination for video channel.");
         return Concurrency::task<void>();
       }
 
-      error = videoTransport_->SetLocalReceiver(20000);
+      error = videoTransport_->SetLocalReceiver(_wtoi(videoPortTextBox_->Text->Data()));
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to set local receiver for video channel.");
