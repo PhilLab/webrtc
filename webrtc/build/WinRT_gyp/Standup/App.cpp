@@ -565,6 +565,22 @@ namespace StandupWinRT
 
 }
 
+static char* GetIP(String^ stringIP) {
+  size_t convertedChars = 0;
+  size_t  sizeInBytes = ((stringIP->Length() + 1) * 2);
+  errno_t err = 0;
+  char *ip = (char *)malloc(sizeInBytes);
+
+  err = wcstombs_s(&convertedChars,
+    ip, sizeInBytes,
+    stringIP->Data(), sizeInBytes);
+
+  if (err != 0) {
+    ip = "127.0.0.1";
+  }
+  return ip;
+}
+
 int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 {
   (void)args; // Unused parameter
@@ -584,20 +600,6 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
 #ifdef VOICE
     Concurrency::create_task([this]() {
-      size_t convertedChars = 0;
-      size_t  sizeInBytes = ((ipTextBox_->Text->Length() + 1) * 2);
-      errno_t err = 0;
-      char *ip = (char *)malloc(sizeInBytes);
-
-      err = wcstombs_s(&convertedChars,
-        ip, sizeInBytes,
-        ipTextBox_->Text->Data(), sizeInBytes);
-
-      if (err != 0) {
-        ip = "127.0.0.1";
-        ipTextBox_->Text = "127.0.0.1";
-      }
-
       int error;
       voiceChannel_ = voiceBase_->CreateChannel();
       if (voiceChannel_ < 0) {
@@ -677,7 +679,10 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         }
       }
 
+      const char *ip = (char*)GetIP(ipTextBox_->Text);
       error = voiceTransport_->SetSendDestination(ip, _wtoi(audioPortTextBox_->Text->Data()));
+      free((void *)ip);
+
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to set send destination for voice channel.");
@@ -720,21 +725,6 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 #endif
 #ifdef VIDEO
     Concurrency::create_task([this]() {
-
-      size_t convertedChars = 0;
-      size_t sizeInBytes = ((ipTextBox_->Text->Length() + 1) * 2);
-      errno_t err = 0;
-      char *ip = (char *)malloc(sizeInBytes);
-
-      err = wcstombs_s(&convertedChars,
-        ip, sizeInBytes,
-        ipTextBox_->Text->Data(), sizeInBytes);
-
-      if (err != 0) {
-        ip = "127.0.0.1";
-        ipTextBox_->Text = "127.0.0.1";
-      }
-
       int error;
       const unsigned int KMaxDeviceNameLength = 128;
       const unsigned int KMaxUniqueIdLength = 256;
@@ -873,8 +863,9 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
           break;
         }
       }
-
+      const char *ip = GetIP(ipTextBox_->Text);
       error = videoTransport_->SetSendDestination(ip, _wtoi(videoPortTextBox_->Text->Data()));
+      free((void *)ip);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to set send destination for video channel.");
