@@ -1261,6 +1261,7 @@ void ViEChannel::GetSendStreamDataCounters(
   }
 }
 
+#pragma warning (disable : 4456)
 void ViEChannel::GetReceiveStreamDataCounters(
     StreamDataCounters* rtp_counters,
     StreamDataCounters* rtx_counters) const {

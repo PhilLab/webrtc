@@ -351,6 +351,7 @@ bool UdpSocketManagerWinRTImpl::RemoveSocket(UdpSocketWrapper* s)
     return false;
 }
 
+#pragma warning (disable : 4456)
 void UdpSocketManagerWinRTImpl::UpdateSocketMap()
 {
     // Remove items in remove list.

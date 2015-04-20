@@ -43,9 +43,14 @@
              'WINAPI_FAMILY=WINAPI_FAMILY_APP',
           ],
         }],
-          ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+          ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone" and winrt_platform!="win10"', {
           'sources': [
             'Package.appxmanifest',
+          ],
+        }],
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+          'sources': [
+            'Package.win10.appxmanifest',
           ],
         }],
       ],
@@ -61,7 +66,7 @@
                  'SplashScreen480x800.png',
               ],
             }],
-            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone" and winrt_platform!="win10"', {
               'files': [
                 'Generated Manifest\AppxManifest.xml',
                 'SplashScreen.png',
