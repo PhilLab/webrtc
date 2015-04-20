@@ -782,4 +782,11 @@ source_set("neteq") {
     "../../system_wrappers",
     rtc_opus_dir,
   ]
+
+  defines = []
+
+  if (rtc_include_opus) {
+    defines += [ "WEBRTC_CODEC_OPUS" ]
+    deps += [ ":webrtc_opus" ]
+  }
 }
