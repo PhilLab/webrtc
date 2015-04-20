@@ -677,14 +677,14 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         }
       }
 
-      error = voiceTransport_->SetSendDestination(ip, _wtoi(videoPortTextBox_->Text->Data()));
+      error = voiceTransport_->SetSendDestination(ip, _wtoi(audioPortTextBox_->Text->Data()));
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to set send destination for voice channel.");
         return Concurrency::task<void>();
       }
 
-      error = voiceTransport_->SetLocalReceiver(_wtoi(videoPortTextBox_->Text->Data()));
+      error = voiceTransport_->SetLocalReceiver(_wtoi(audioPortTextBox_->Text->Data()));
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to set local receiver for voice channel.");
