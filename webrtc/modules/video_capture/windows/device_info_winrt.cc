@@ -24,6 +24,8 @@ using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaStreamType;
 using Windows::Media::MediaProperties::IVideoEncodingProperties;
 
+extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+
 namespace webrtc {
 namespace videocapturemodule {
 
@@ -208,28 +210,45 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
         auto mediaCapture = ref new MediaCapture();
         Platform::Agile<MediaCapture> mediaCaptureAgile(mediaCapture);
         settings->VideoDeviceId = chosenDevInfo->Id;
-        auto initializeTask = Concurrency::create_task(mediaCapture->InitializeAsync(settings))
-          .then([this, mediaCaptureAgile](Concurrency::task<void> initTask)
-        {
-          try {
-            initTask.get();
-            auto streamProperties = mediaCaptureAgile->VideoDeviceController->GetAvailableMediaStreamProperties(
-              MediaStreamType::VideoRecord);
-            for (unsigned int i = 0; i < streamProperties->Size; i++)
-            {
-              IVideoEncodingProperties^ prop = 
+        Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+        Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+        Concurrency::task<void> initializeAsyncTask;
+        Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler(
+            [this,
+            &initializeAsyncTask,
+            mediaCaptureAgile,
+            settings]() {
+          initializeAsyncTask = Concurrency::create_task(mediaCaptureAgile->InitializeAsync(settings))
+            .then([this, mediaCaptureAgile](Concurrency::task<void> initTask)
+          {
+            try {
+              initTask.get();
+              auto streamProperties = mediaCaptureAgile->VideoDeviceController->GetAvailableMediaStreamProperties(
+                  MediaStreamType::VideoRecord);
+              for (unsigned int i = 0; i < streamProperties->Size; i++)
+              {
+                IVideoEncodingProperties^ prop =
                   static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
-              VideoCaptureCapability capability;
-              capability.width = prop->Width;
-              capability.height = prop->Height;
-              capability.maxFPS = prop->FrameRate->Numerator;
-              _captureCapabilities.push_back(capability);
+                VideoCaptureCapability capability;
+                capability.width = prop->Width;
+                capability.height = prop->Height;
+                capability.maxFPS = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
+                capability.rawType = kVideoNV12;
+                _captureCapabilities.push_back(capability);
+              }
+            } catch (Platform::Exception^ e) {
+              int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
+              std::string message(messageSize, 0);
+              WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
+              WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                "Failed to get media stream properties. %s", message.c_str());
             }
-          }
-          catch (Platform::Exception ^ e) {
-          }
+          });
         });
-        initializeTask.wait();
+        Windows::Foundation::IAsyncAction^ dispatcherAction = dispatcher->RunAsync(priority, handler);
+        auto dispatcherTask = Concurrency::create_task(dispatcherAction);
+        dispatcherTask.wait();
+        initializeAsyncTask.wait();
       }
       *finishedPtr = true;
     } catch (Platform::Exception^ e) {

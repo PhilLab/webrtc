@@ -734,11 +734,11 @@ HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
 }
 
 #if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
-#define HARDCODED_FRAME_WIDTH 1280
-#define HARDCODED_FRAME_HEIGHT 720
-#else
 #define HARDCODED_FRAME_WIDTH 640
 #define HARDCODED_FRAME_HEIGHT 480
+#else
+#define HARDCODED_FRAME_WIDTH 800
+#define HARDCODED_FRAME_HEIGHT 600
 #endif
 
 void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription)

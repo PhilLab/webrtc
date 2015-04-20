@@ -20,6 +20,7 @@ using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
 using Windows::Media::Capture::MediaCapture;
+using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaCaptureFailedEventArgs;
 using Windows::Media::Capture::MediaCaptureFailedEventHandler;
 using Windows::Media::IMediaExtension;
@@ -69,19 +70,20 @@ ref class CaptureDevice sealed {
 
   CaptureDevice(IncomingFrameCallback* incoming_frame_callback);
 
-  Concurrency::task<void> InitializeAsync(
-      Platform::String^ deviceId);
+  void Initialize(Platform::String^ deviceId);
 
   void CleanupSink();
 
   void DoCleanup();
 
-  Concurrency::task<void> CleanupAsync();
+  void Cleanup();
 
-  Concurrency::task<void> StartCaptureAsync(
+  void StartCapture(
       MediaEncodingProfile^ mediaEncodingProfile);
 
-  Concurrency::task<void> StopCaptureAsync();
+  void StopCapture();
+
+  bool CaptureStarted() { return capture_started_; }
 
   void OnCaptureFailed(
       MediaCapture^ sender,
@@ -106,32 +108,42 @@ private:
   IncomingFrameCallback* incoming_frame_callback_;
 
   bool capture_started_;
+  int32_t frame_width_;
+  int32_t frame_height_;
+  int32_t max_fps_;
 };
 
 CaptureDevice::CaptureDevice(IncomingFrameCallback* incoming_frame_callback)
   : media_capture_(nullptr),
     media_sink_(nullptr),
-    incoming_frame_callback_(incoming_frame_callback) {
+    incoming_frame_callback_(incoming_frame_callback),
+    capture_started_(false),
+    frame_width_(0),
+    frame_height_(0),
+    max_fps_(0) {
 }
 
-Concurrency::task<void> CaptureDevice::InitializeAsync(
-    Platform::String^ deviceId) {
+void CaptureDevice::Initialize(Platform::String^ deviceId) {
   try {
+    auto settings = ref new MediaCaptureInitializationSettings();
     auto media_capture = ref new Windows::Media::Capture::MediaCapture();
     media_capture_ = media_capture;
+    settings->VideoDeviceId = deviceId;
     media_capture_failed_event_registration_token_ = media_capture->Failed +=
         ref new MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
     Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
     Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
-    Concurrency::task<void> initializeAsyncActionTask;
-    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, &initializeAsyncActionTask]() {
-      initializeAsyncActionTask = Concurrency::create_task(media_capture_->InitializeAsync());
+    Concurrency::task<void> initializeAsyncTask;
+    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler(
+        [this,
+        &initializeAsyncTask,
+        settings]() {
+      initializeAsyncTask = Concurrency::create_task(media_capture_->InitializeAsync(/*settings*/));
     });
-    Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
-    auto actionTask = Concurrency::create_task(action);
-    actionTask.wait();
-    initializeAsyncActionTask.wait();
-    return actionTask;
+    Windows::Foundation::IAsyncAction^ dispatcherAction = dispatcher->RunAsync(priority, handler);
+    auto dispatcherTask = Concurrency::create_task(dispatcherAction);
+    dispatcherTask.wait();
+    initializeAsyncTask.wait();
   } catch (Platform::Exception^ e) {
     DoCleanup();
     throw e;
@@ -162,36 +174,33 @@ Platform::Agile<Windows::Media::Capture::MediaCapture>
   return media_capture_;
 }
 
-Concurrency::task<void> CaptureDevice::CleanupAsync()
+void CaptureDevice::Cleanup()
 {
   Windows::Media::Capture::MediaCapture ^mediaCapture = media_capture_.Get();
-  if (mediaCapture == nullptr && !media_sink_)
-  {
-    return Concurrency::create_task([](){});
+  if (mediaCapture == nullptr && !media_sink_) {
+    return;
   }
 
-  if (mediaCapture != nullptr)
-  {
+  if (mediaCapture != nullptr) {
     mediaCapture->Failed -= media_capture_failed_event_registration_token_;
   }
 
-  if (mediaCapture != nullptr && capture_started_)
-  {
-    return Concurrency::create_task(
+  if (mediaCapture != nullptr && capture_started_) {
+    auto stopRecorAsyncTask = Concurrency::create_task(
         mediaCapture->StopRecordAsync()).then([this](Concurrency::task<void>&)
     {
       DoCleanup();
     });
+
+    stopRecorAsyncTask.wait();
   }
   else
   {
     DoCleanup();
   }
-  return Concurrency::create_task([](){});
 }
 
-Concurrency::task<void> CaptureDevice::StartCaptureAsync(
-    MediaEncodingProfile^ mediaEncodingProfile)
+void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile)
 {
   // We cannot start recording twice.
   if (media_sink_ && capture_started_) {
@@ -200,6 +209,10 @@ Concurrency::task<void> CaptureDevice::StartCaptureAsync(
 
   // Release sink if there is one already.
   CleanupSink();
+
+  frame_width_ = mediaEncodingProfile->Video->Width;
+  frame_height_ = mediaEncodingProfile->Video->Height;
+  max_fps_ = (int)((float)mediaEncodingProfile->Video->FrameRate->Numerator / (float)mediaEncodingProfile->Video->FrameRate->Denominator);
 
   // Create new sink
   media_sink_ = ref new VideoCaptureMediaSinkProxyWinRT();
@@ -229,33 +242,20 @@ Concurrency::task<void> CaptureDevice::StartCaptureAsync(
   });
 
   initializeAsyncTask.wait();
-
-  return initializeAsyncTask;
 }
 
-Concurrency::task<void> CaptureDevice::StopCaptureAsync()
+void CaptureDevice::StopCapture()
 {
   if (capture_started_)
   {
-    return Concurrency::create_task(media_capture_.Get()->StopRecordAsync()).then([this]()
+    auto stopRecordAsyncTask = Concurrency::create_task(media_capture_.Get()->StopRecordAsync()).then([this]()
     {
       CleanupSink();
     });
-  }
-  else
-  {
-    // If recording not started just do nothing
-  }
-  return Concurrency::create_task([](){});
-}
 
-#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
-#define HARDCODED_FRAME_WIDTH 1280
-#define HARDCODED_FRAME_HEIGHT 720
-#else
-#define HARDCODED_FRAME_WIDTH 640
-#define HARDCODED_FRAME_HEIGHT 480
-#endif
+    stopRecordAsyncTask.wait();
+  }
+}
 
 void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
   if (incoming_frame_callback_) {
@@ -265,8 +265,9 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     uint8_t* videoFrame;
     size_t videoFrameLength;
     VideoCaptureCapability frameInfo;
-    frameInfo.width = HARDCODED_FRAME_WIDTH;
-    frameInfo.height = HARDCODED_FRAME_HEIGHT;
+    frameInfo.width = frame_width_;
+    frameInfo.height = frame_height_;
+    frameInfo.maxFPS = max_fps_;
     frameInfo.rawType = kVideoNV12;
     int64_t captureTime;
     DWORD maxLength;
@@ -333,8 +334,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
           break;
         }
       }
-    }
-    catch (Platform::Exception^ e) {
+    } catch (Platform::Exception^ e) {
     }
   });
 
@@ -342,29 +342,22 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
 
   CaptureDevice^ device = ref new CaptureDevice(this);
 
-  auto initializeAsyncTask = device->InitializeAsync(device_id_).then([this, device](Concurrency::task<void> asyncInfo)
+  try
   {
-    try
-    {
-      asyncInfo.get();
-    }
-    catch (Platform::Exception^ e)
-    {
-      if (device_)
-      {
-        device_->CleanupAsync().then([this](){});
-        device_id_ = nullptr;
-        device_ = nullptr;
-      }
-      return Concurrency::create_task([]{});
-    }
+    device->Initialize(device_id_);
 
     device_ = device;
-
-    return Concurrency::create_task([]{});
-  });
-
-  initializeAsyncTask.wait();
+  }
+  catch (Platform::Exception^ e)
+  {
+    if (device_)
+    {
+      device_->Cleanup();
+      device_id_ = nullptr;
+      device_ = nullptr;
+      return -1;
+    }
+  }
 
   return 0;
 }
@@ -378,31 +371,27 @@ int32_t VideoCaptureWinRT::StartCapture(
   mediaEncodingProfile->Container = nullptr;
   mediaEncodingProfile->Video =
     VideoEncodingProperties::CreateUncompressed(
-    MediaEncodingSubtypes::Nv12, /*capability.width*/ HARDCODED_FRAME_WIDTH, /*capability.height*/ HARDCODED_FRAME_HEIGHT);
- 
-  device_->StartCaptureAsync(mediaEncodingProfile).then([this](Concurrency::task<void> asyncInfo)
-  {
-    try
-    {
-      asyncInfo.get();
-    }
-    catch (Platform::Exception^ e)
-    {
-      return Concurrency::create_task([]{});
-    }
+      MediaEncodingSubtypes::Nv12, capability.width, capability.height);
 
-    return Concurrency::create_task([]{});
-  });
+  try
+  {
+    device_->StartCapture(mediaEncodingProfile);
+  }
+  catch (Platform::Exception^ e)
+  {
+    return -1;
+  }
 
   return 0;
 }
 
 int32_t VideoCaptureWinRT::StopCapture() {
-  return -1;
+  device_->StopCapture();
+  return 0;
 }
 
 bool VideoCaptureWinRT::CaptureStarted() {
-  return false;
+  return device_->CaptureStarted();
 }
 
 int32_t VideoCaptureWinRT::CaptureSettings(
