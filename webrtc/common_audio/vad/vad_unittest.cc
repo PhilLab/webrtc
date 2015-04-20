@@ -128,23 +128,23 @@ TEST_F(VadTest, ValidRatesFrameLengths) {
   // loop through some sampling rates and frame lengths from negative values to
   // values larger than possible.
   const int kNumRates = 12;
-  const int kRates[kNumRates] = {
+  const int kRatesTest[kNumRates] = {
     -8000, -4000, 0, 4000, 8000, 8001, 15999, 16000, 32000, 48000, 48001, 96000
   };
 
   const int kNumFrameLengths = 13;
-  const int kFrameLengths[kNumFrameLengths] = {
+  const int kFrameLengthsTest[kNumFrameLengths] = {
     -10, 0, 80, 81, 159, 160, 240, 320, 480, 640, 960, 1440, 2000
   };
 
   for (int i = 0; i < kNumRates; i++) {
     for (int j = 0; j < kNumFrameLengths; j++) {
-      if (ValidRatesAndFrameLengths(kRates[i], kFrameLengths[j])) {
-        EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(kRates[i],
-                                                       kFrameLengths[j]));
+      if (ValidRatesAndFrameLengths(kRatesTest[i], kFrameLengthsTest[j])) {
+        EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(kRatesTest[i],
+			kFrameLengthsTest[j]));
       } else {
-        EXPECT_EQ(-1, WebRtcVad_ValidRateAndFrameLength(kRates[i],
-                                                        kFrameLengths[j]));
+        EXPECT_EQ(-1, WebRtcVad_ValidRateAndFrameLength(kRatesTest[i],
+			kFrameLengthsTest[j]));
       }
     }
   }

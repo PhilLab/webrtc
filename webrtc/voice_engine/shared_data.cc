@@ -79,9 +79,9 @@ int SharedData::NumOfSendingChannels() {
   ChannelManager::Iterator it(&_channelManager);
   int sending_channels = 0;
 
-  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
-       it.Increment()) {
-    if (it.GetChannel()->Sending())
+  for (ChannelManager::Iterator iter(&_channelManager); iter.IsValid();
+       iter.Increment()) {
+    if (iter.GetChannel()->Sending())
       ++sending_channels;
   }
 
@@ -92,9 +92,9 @@ int SharedData::NumOfPlayingChannels() {
   ChannelManager::Iterator it(&_channelManager);
   int playout_channels = 0;
 
-  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
-       it.Increment()) {
-    if (it.GetChannel()->Playing())
+  for (ChannelManager::Iterator iter(&_channelManager); iter.IsValid();
+       iter.Increment()) {
+    if (iter.GetChannel()->Playing())
       ++playout_channels;
   }
 

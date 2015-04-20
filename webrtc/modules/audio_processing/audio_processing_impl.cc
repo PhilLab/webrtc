@@ -300,9 +300,9 @@ int AudioProcessingImpl::InitializeLocked() {
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
-    int err = WriteInitMessage();
-    if (err != kNoError) {
-      return err;
+    int error = WriteInitMessage();
+    if (error != kNoError) {
+      return error;
     }
   }
 #endif

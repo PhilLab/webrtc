@@ -15,6 +15,7 @@ import glob
 import os
 import shlex
 import sys
+import pipes
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir, os.pardir))
@@ -73,6 +74,11 @@ if __name__ == '__main__':
   vs2013_runtime_dll_dirs = None
   if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
     vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
+  else:
+    gyp_defines_dict = gyp.NameValueListToDict(gyp.ShlexEnv('GYP_DEFINES'))
+    gyp_defines_dict['windows_sdk_path'] = os.environ['WINDOWSSDKDIR']
+    os.environ['GYP_DEFINES'] = ' '.join('%s=%s' % (k, pipes.quote(str(v)))
+         for k, v in gyp_defines_dict.iteritems())
 
   # Enforce gyp syntax checking. This adds about 20% execution time.
   args.append('--check')
@@ -106,3 +112,4 @@ if __name__ == '__main__':
         (x86_runtime, x64_runtime))
 
   sys.exit(gyp_rc)
+

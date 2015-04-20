@@ -141,20 +141,20 @@ int32_t RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
                                      _payloadTypeFEC,
                                      _rtpSender.IncrementSequenceNumber(),
                                      rtp_header_length);
-      StorageType storage = kDontRetransmit;
+      StorageType storageType = kDontRetransmit;
       if (_retransmissionSettings & kRetransmitFECPackets) {
-        storage = kAllowRetransmission;
+        storageType = kAllowRetransmission;
       }
       TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                            "Video::PacketFec", "timestamp", capture_timestamp,
                            "seqnum", _rtpSender.SequenceNumber());
       // Sending FEC packet with RED header.
-      int packet_success =
+      packet_success =
           _rtpSender.SendToNetwork(red_packet->data(),
                                    red_packet->length() - rtp_header_length,
                                    rtp_header_length,
                                    capture_time_ms,
-                                   storage,
+                                   storageType,
                                    PacedSender::kNormalPriority);
 
       ret |= packet_success;

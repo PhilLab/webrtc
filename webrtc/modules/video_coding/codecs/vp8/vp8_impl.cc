@@ -588,7 +588,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
       vpx_img_alloc(&raw_images_[i], VPX_IMG_FMT_I420,
                     inst->simulcastStream[stream_idx].width,
                     inst->simulcastStream[stream_idx].height, kVp832ByteAlign);
-      int stream_bitrate = GetStreamBitrate(stream_idx,
+      stream_bitrate = GetStreamBitrate(stream_idx,
                                             inst->startBitrate,
                                             &send_stream);
       SetStreamState(send_stream, stream_idx);
