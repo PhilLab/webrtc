@@ -352,12 +352,6 @@
                 '<(libvpx_dir)/libvpx.gyp:libvpx',
               ],
             }],
-            ['rtc_use_openmax_dl==1', {
-              'sources': [
-                'audio_processing/beamformer/mock_beamformer.cc',
-                'audio_processing/beamformer/mock_beamformer.h',
-              ],
-            }],
             ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',

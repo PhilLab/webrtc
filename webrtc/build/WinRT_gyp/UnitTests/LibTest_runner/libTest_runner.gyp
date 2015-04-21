@@ -30,7 +30,6 @@
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_rand_gen',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_env',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_sha1_driver',
-        '../../../../modules/modules.gyp:video_coding_test',
         '../../../../modules/modules.gyp:video_capture',
       ],
       'defines': [
@@ -83,8 +82,6 @@
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
         'libSrtpTests/libsrtpTestSolution.h',
-        'videoCodingTests/VideoCodingTest.h',
-        'videoCodingTests/VideoCodingTest.cpp',
         'Logo.png',
         'SmallLogo.png',
         'StoreLogo.png',
@@ -140,9 +137,9 @@
           'destination': '<(PRODUCT_DIR)/AppX',
           'conditions': [
             ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-              'files': [	
+              'files': [
                  'Logo71x71.png',
-                 'Logo44x44.png',	
+                 'Logo44x44.png',
                  'SplashScreen480x800.png',
               ],
             }],
@@ -175,7 +172,7 @@
         },
       },
     },
-    {	
+    {
       'target_name': 'libTest_runner_appx',
       'product_name': 'libTest_runner',
       'product_extension': 'appx',
