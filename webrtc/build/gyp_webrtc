@@ -78,7 +78,7 @@ if __name__ == '__main__':
     gyp_defines_dict = gyp.NameValueListToDict(gyp.ShlexEnv('GYP_DEFINES'))
     winSdkDir = os.environ.get('WINDOWSSDKDIR')
     if winSdkDir != None:
-        gyp_defines_dict['windows_sdk_path'] = os.environ['WINDOWSSDKDIR']
+        gyp_defines_dict['windows_sdk_path'] = winSdkDir
         os.environ['GYP_DEFINES'] = ' '.join('%s=%s' % (k, pipes.quote(str(v)))
             for k, v in gyp_defines_dict.iteritems())
 
