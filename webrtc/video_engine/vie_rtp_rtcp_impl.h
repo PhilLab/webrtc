@@ -90,6 +90,12 @@ class ViERTP_RTCPImpl
   virtual int SetReceiveAbsoluteSendTimeStatus(int video_channel,
                                                bool enable,
                                                int id);
+  virtual int SetSendVideoRotationStatus(int video_channel,
+                                         bool enable,
+                                         int id);
+  virtual int SetReceiveVideoRotationStatus(int video_channel,
+                                            bool enable,
+                                            int id);
   virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable);
   virtual int SetTransmissionSmoothingStatus(int video_channel, bool enable);
   virtual int SetMinTransmitBitrate(int video_channel,
@@ -105,10 +111,12 @@ class ViERTP_RTCPImpl
   virtual int GetRtpStatistics(const int video_channel,
                                StreamDataCounters& sent,
                                StreamDataCounters& received) const;
-  virtual int GetRtcpPacketTypeCounters(
+  virtual int GetSendRtcpPacketTypeCounter(
       int video_channel,
-      RtcpPacketTypeCounter* packets_sent,
-      RtcpPacketTypeCounter* packets_received) const;
+      RtcpPacketTypeCounter* packet_counter) const;
+  virtual int GetReceiveRtcpPacketTypeCounter(
+      int video_channel,
+      RtcpPacketTypeCounter* packet_counter) const;
   virtual int GetBandwidthUsage(const int video_channel,
                                 unsigned int& total_bitrate_sent,
                                 unsigned int& video_bitrate_sent,
@@ -135,9 +143,9 @@ class ViERTP_RTCPImpl
   virtual int DeregisterSendChannelRtcpStatisticsCallback(
       int channel, RtcpStatisticsCallback* callback);
   virtual int RegisterReceiveChannelRtcpStatisticsCallback(
-        int channel, RtcpStatisticsCallback* callback);
-    virtual int DeregisterReceiveChannelRtcpStatisticsCallback(
-        int channel, RtcpStatisticsCallback* callback);
+      int channel, RtcpStatisticsCallback* callback);
+  virtual int DeregisterReceiveChannelRtcpStatisticsCallback(
+      int channel, RtcpStatisticsCallback* callback);
   virtual int RegisterSendChannelRtpStatisticsCallback(
       int channel, StreamDataCountersCallback* callback);
   virtual int DeregisterSendChannelRtpStatisticsCallback(

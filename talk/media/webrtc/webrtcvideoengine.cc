@@ -323,6 +323,11 @@ WebRtcSimulcastEncoderFactory::codecs() const {
   return factory_->codecs();
 }
 
+bool WebRtcSimulcastEncoderFactory::EncoderTypeHasInternalSource(
+    webrtc::VideoCodecType type) const {
+  return factory_->EncoderTypeHasInternalSource(type);
+}
+
 void WebRtcSimulcastEncoderFactory::DestroyVideoEncoder(
     webrtc::VideoEncoder* encoder) {
   // Check first to see if the encoder wasn't wrapped in a
@@ -420,7 +425,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     WebRtcVideoFrame cricket_frame(
         webrtc_frame.video_frame_buffer(),
         elapsed_time_ms * rtc::kNumNanosecsPerMillisec,
-        webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec);
+        webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec,
+        webrtc_frame.rotation());
     return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
   }
 
@@ -1156,6 +1162,9 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
+                         kRtpVideoRotationHeaderExtensionDefaultId));
 }
 
 WebRtcVideoEngine::~WebRtcVideoEngine() {
@@ -1623,10 +1632,13 @@ void WebRtcVideoEngine::DestroyExternalDecoder(webrtc::VideoDecoder* decoder) {
 }
 
 webrtc::VideoEncoder* WebRtcVideoEngine::CreateExternalEncoder(
-    webrtc::VideoCodecType type) {
+    webrtc::VideoCodecType type,
+    bool* internal_source) {
+  ASSERT(internal_source != NULL);
   if (!encoder_factory_) {
     return NULL;
   }
+  *internal_source = encoder_factory_->EncoderTypeHasInternalSource(type);
   return encoder_factory_->CreateVideoEncoder(type);
 }
 
@@ -1912,8 +1924,9 @@ bool WebRtcVideoMediaChannel::MaybeRegisterExternalEncoder(
     return true;
   }
 
+  bool internal_source;
   webrtc::VideoEncoder* encoder =
-      engine()->CreateExternalEncoder(codec.codecType);
+      engine()->CreateExternalEncoder(codec.codecType, &internal_source);
   if (!encoder) {
     // No external encoder created, so nothing to do.
     return true;
@@ -1921,7 +1934,7 @@ bool WebRtcVideoMediaChannel::MaybeRegisterExternalEncoder(
 
   const int channel_id = send_channel->channel_id();
   if (engine()->vie()->ext_codec()->RegisterExternalSendCodec(
-          channel_id, codec.plType, encoder, false) != 0) {
+          channel_id, codec.plType, encoder, internal_source) != 0) {
     LOG_RTCERR2(RegisterExternalSendCodec, channel_id, codec.plName);
     engine()->DestroyExternalEncoder(encoder);
     return false;
@@ -2630,18 +2643,15 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
 
       webrtc::CpuOveruseMetrics metrics;
       engine()->vie()->base()->GetCpuOveruseMetrics(channel_id, &metrics);
-      sinfo.capture_jitter_ms = metrics.capture_jitter_ms;
       sinfo.avg_encode_ms = metrics.avg_encode_time_ms;
       sinfo.encode_usage_percent = metrics.encode_usage_percent;
-      sinfo.capture_queue_delay_ms_per_s = metrics.capture_queue_delay_ms_per_s;
 
-      webrtc::RtcpPacketTypeCounter rtcp_sent;
-      webrtc::RtcpPacketTypeCounter rtcp_received;
-      if (engine()->vie()->rtp()->GetRtcpPacketTypeCounters(
-          channel_id, &rtcp_sent, &rtcp_received) == 0) {
-        sinfo.firs_rcvd = rtcp_received.fir_packets;
-        sinfo.plis_rcvd = rtcp_received.pli_packets;
-        sinfo.nacks_rcvd = rtcp_received.nack_packets;
+      webrtc::RtcpPacketTypeCounter rtcp_counter;
+      if (engine()->vie()->rtp()->GetSendRtcpPacketTypeCounter(
+          channel_id, &rtcp_counter) == 0) {
+        sinfo.firs_rcvd = rtcp_counter.fir_packets;
+        sinfo.plis_rcvd = rtcp_counter.pli_packets;
+        sinfo.nacks_rcvd = rtcp_counter.nack_packets;
       } else {
         sinfo.firs_rcvd = -1;
         sinfo.plis_rcvd = -1;
@@ -2742,13 +2752,12 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
         channel->render_adapter()->capture_start_ntp_time_ms();
     channel->decoder_observer()->ExportTo(&rinfo);
 
-    webrtc::RtcpPacketTypeCounter rtcp_sent;
-    webrtc::RtcpPacketTypeCounter rtcp_received;
-    if (engine()->vie()->rtp()->GetRtcpPacketTypeCounters(
-        channel->channel_id(), &rtcp_sent, &rtcp_received) == 0) {
-      rinfo.firs_sent = rtcp_sent.fir_packets;
-      rinfo.plis_sent = rtcp_sent.pli_packets;
-      rinfo.nacks_sent = rtcp_sent.nack_packets;
+    webrtc::RtcpPacketTypeCounter rtcp_counter;
+    if (engine()->vie()->rtp()->GetReceiveRtcpPacketTypeCounter(
+        channel->channel_id(), &rtcp_counter) == 0) {
+      rinfo.firs_sent = rtcp_counter.fir_packets;
+      rinfo.plis_sent = rtcp_counter.pli_packets;
+      rinfo.nacks_sent = rtcp_counter.nack_packets;
     } else {
       rinfo.firs_sent = -1;
       rinfo.plis_sent = -1;
@@ -2825,6 +2834,10 @@ bool WebRtcVideoMediaChannel::SetCapturer(uint32 ssrc,
     QueueBlackFrame(ssrc, timestamp,
                     VideoFormat::FpsToInterval(send_codec_->maxFramerate));
   }
+
+  capturer->SetApplyRotation(
+      !FindHeaderExtension(send_extensions_, kRtpVideoRotationHeaderExtension));
+
   return true;
 }
 
@@ -2840,7 +2853,7 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   // any multiplexed streams, just send it to the default channel. Otherwise,
   // send it to the specific decoder instance for that stream.
   uint32 ssrc = 0;
-  if (!GetRtpSsrc(packet->data(), packet->length(), &ssrc))
+  if (!GetRtpSsrc(packet->data(), packet->size(), &ssrc))
     return;
   int processing_channel_id = GetRecvChannelId(ssrc);
   if (processing_channel_id == kChannelIdUnset) {
@@ -2856,9 +2869,7 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   }
 
   engine()->vie()->network()->ReceivedRTPPacket(
-      processing_channel_id,
-      packet->data(),
-      packet->length(),
+      processing_channel_id, packet->data(), packet->size(),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -2870,12 +2881,12 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
 // correct receiver reports.
 
   uint32 ssrc = 0;
-  if (!GetRtcpSsrc(packet->data(), packet->length(), &ssrc)) {
+  if (!GetRtcpSsrc(packet->data(), packet->size(), &ssrc)) {
     LOG(LS_WARNING) << "Failed to parse SSRC from received RTCP packet";
     return;
   }
   int type = 0;
-  if (!GetRtcpType(packet->data(), packet->length(), &type)) {
+  if (!GetRtcpType(packet->data(), packet->size(), &type)) {
     LOG(LS_WARNING) << "Failed to parse type from received RTCP packet";
     return;
   }
@@ -2885,9 +2896,7 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
     int recv_channel_id = GetRecvChannelId(ssrc);
     if (recv_channel_id != kChannelIdUnset && !IsDefaultChannelId(recv_channel_id)) {
       engine_->vie()->network()->ReceivedRTCPPacket(
-          recv_channel_id,
-          packet->data(),
-          packet->length());
+          recv_channel_id, packet->data(), packet->size());
     }
   }
   // SR may continue RR and any RR entry may correspond to any one of the send
@@ -2897,10 +2906,8 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
        iter != send_channels_.end(); ++iter) {
     WebRtcVideoChannelSendInfo* send_channel = iter->second;
     int channel_id = send_channel->channel_id();
-    engine_->vie()->network()->ReceivedRTCPPacket(
-        channel_id,
-        packet->data(),
-        packet->length());
+    engine_->vie()->network()->ReceivedRTCPPacket(channel_id, packet->data(),
+                                                  packet->size());
   }
 }
 
@@ -2928,6 +2935,8 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
   const RtpHeaderExtension* send_time_extension =
       FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+  const RtpHeaderExtension* cvo_extension =
+      FindHeaderExtension(extensions, kRtpVideoRotationHeaderExtension);
 
   // Loop through all receive channels and enable/disable the extensions.
   for (RecvChannelMap::iterator channel_it = recv_channels_.begin();
@@ -2941,6 +2950,10 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
     if (!SetHeaderExtension(
         &webrtc::ViERTP_RTCP::SetReceiveAbsoluteSendTimeStatus, channel_id,
         send_time_extension)) {
+      return false;
+    }
+    if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetReceiveVideoRotationStatus,
+                            channel_id, cvo_extension)) {
       return false;
     }
   }
@@ -2959,6 +2972,8 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
   const RtpHeaderExtension* send_time_extension =
       FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+  const RtpHeaderExtension* cvo_extension =
+      FindHeaderExtension(extensions, kRtpVideoRotationHeaderExtension);
 
   // Loop through all send channels and enable/disable the extensions.
   for (SendChannelMap::iterator channel_it = send_channels_.begin();
@@ -2974,6 +2989,10 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
         send_time_extension)) {
       return false;
     }
+    if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendVideoRotationStatus,
+                            channel_id, cvo_extension)) {
+      return false;
+    }
   }
 
   if (send_time_extension) {
@@ -2983,6 +3002,14 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
     MediaChannel::SetOption(NetworkInterface::ST_RTP,
                             rtc::Socket::OPT_RTP_SENDTIME_EXTN_ID,
                             send_time_extension->id);
+  }
+
+  // For now assume that all streams want the same CVO setting.
+  // TODO(guoweis): Remove the need for this assumption.
+  for (const auto& kv : send_channels_) {
+    if (kv.second->video_capturer()) {
+      kv.second->video_capturer()->SetApplyRotation(!cvo_extension);
+    }
   }
 
   send_extensions_ = extensions;
@@ -3276,18 +3303,8 @@ bool WebRtcVideoMediaChannel::SendFrame(
     frame_out = processed_frame.get();
   }
 
-  webrtc::ViEVideoFrameI420 frame_i420;
-  // TODO(ronghuawu): Update the webrtc::ViEVideoFrameI420
-  // to use const unsigned char*
-  frame_i420.y_plane = const_cast<unsigned char*>(frame_out->GetYPlane());
-  frame_i420.u_plane = const_cast<unsigned char*>(frame_out->GetUPlane());
-  frame_i420.v_plane = const_cast<unsigned char*>(frame_out->GetVPlane());
-  frame_i420.y_pitch = frame_out->GetYPitch();
-  frame_i420.u_pitch = frame_out->GetUPitch();
-  frame_i420.v_pitch = frame_out->GetVPitch();
-  frame_i420.width = static_cast<uint16>(frame_out->GetWidth());
-  frame_i420.height = static_cast<uint16>(frame_out->GetHeight());
-
+  webrtc::I420VideoFrame webrtc_frame(frame_out->GetVideoFrameBuffer(), 0, 0,
+                                      frame_out->GetVideoRotation());
   int64 timestamp_ntp_ms = 0;
   // TODO(justinlin): Reenable after Windows issues with clock drift are fixed.
   // Currently reverted to old behavior of discarding capture timestamp.
@@ -3308,9 +3325,9 @@ bool WebRtcVideoMediaChannel::SendFrame(
         rtc::UnixTimestampNanosecsToNtpMillisecs(frame_timestamp);
   }
 #endif
-
-  return send_channel->external_capture()->IncomingFrameI420(
-      frame_i420, timestamp_ntp_ms) == 0;
+  webrtc_frame.set_ntp_time_ms(timestamp_ntp_ms);
+  send_channel->external_capture()->IncomingFrame(webrtc_frame);
+  return true;
 }
 
 bool WebRtcVideoMediaChannel::CreateChannel(uint32 ssrc_key,
@@ -3493,6 +3510,11 @@ bool WebRtcVideoMediaChannel::ConfigureReceiving(int channel_id,
       receive_extensions_, kRtpAbsoluteSenderTimeHeaderExtension)) {
     return false;
   }
+  if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetReceiveVideoRotationStatus,
+                          channel_id, receive_extensions_,
+                          kRtpVideoRotationHeaderExtension)) {
+    return false;
+  }
 
   if (receiver_report_ssrc_ != kSsrcUnset) {
     if (engine()->vie()->rtp()->SetLocalSSRC(
@@ -3600,6 +3622,12 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
 
   if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendAbsoluteSendTimeStatus,
       channel_id, send_extensions_, kRtpAbsoluteSenderTimeHeaderExtension)) {
+    return false;
+  }
+
+  if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendVideoRotationStatus,
+                          channel_id, send_extensions_,
+                          kRtpVideoRotationHeaderExtension)) {
     return false;
   }
 
@@ -4095,14 +4123,16 @@ void WebRtcVideoMediaChannel::OnMessage(rtc::Message* msg) {
 
 int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
                                         size_t len) {
-  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                     kMaxRtpPacketLen);
   return MediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
 }
 
 int WebRtcVideoMediaChannel::SendRTCPPacket(int channel,
                                             const void* data,
                                             size_t len) {
-  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                     kMaxRtpPacketLen);
   return MediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
 }
 

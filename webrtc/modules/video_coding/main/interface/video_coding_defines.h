@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_
 
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -46,6 +46,7 @@ namespace webrtc {
 enum { kDefaultStartBitrateKbps = 300 };
 
 enum VCMVideoProtection {
+  kProtectionNone,
   kProtectionNack,                // Both send-side and receive-side
   kProtectionNackSender,          // Send-side only
   kProtectionNackReceiver,        // Receive-side only
@@ -53,7 +54,6 @@ enum VCMVideoProtection {
   kProtectionNackFEC,
   kProtectionKeyOnLoss,
   kProtectionKeyOnKeyLoss,
-  kProtectionPeriodicKeyFrames
 };
 
 enum VCMTemporalDecimation {

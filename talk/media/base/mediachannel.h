@@ -156,6 +156,7 @@ struct AudioOptions {
     adjust_agc_delta.SetFrom(change.adjust_agc_delta);
     experimental_agc.SetFrom(change.experimental_agc);
     experimental_aec.SetFrom(change.experimental_aec);
+    delay_agnostic_aec.SetFrom(change.delay_agnostic_aec);
     experimental_ns.SetFrom(change.experimental_ns);
     aec_dump.SetFrom(change.aec_dump);
     tx_agc_target_dbov.SetFrom(change.tx_agc_target_dbov);
@@ -184,6 +185,7 @@ struct AudioOptions {
         conference_mode == o.conference_mode &&
         experimental_agc == o.experimental_agc &&
         experimental_aec == o.experimental_aec &&
+        delay_agnostic_aec == o.delay_agnostic_aec &&
         experimental_ns == o.experimental_ns &&
         adjust_agc_delta == o.adjust_agc_delta &&
         aec_dump == o.aec_dump &&
@@ -214,6 +216,7 @@ struct AudioOptions {
     ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
     ost << ToStringIfSet("experimental_aec", experimental_aec);
+    ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("aec_dump", aec_dump);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
@@ -252,6 +255,7 @@ struct AudioOptions {
   Settable<int> adjust_agc_delta;
   Settable<bool> experimental_agc;
   Settable<bool> experimental_aec;
+  Settable<bool> delay_agnostic_aec;
   Settable<bool> experimental_ns;
   Settable<bool> aec_dump;
   // Note that tx_agc_* only applies to non-experimental AGC.
@@ -828,10 +832,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
         preferred_bitrate(0),
         adapt_reason(0),
         adapt_changes(0),
-        capture_jitter_ms(0),
         avg_encode_ms(0),
-        encode_usage_percent(0),
-        capture_queue_delay_ms_per_s(0) {
+        encode_usage_percent(0) {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
@@ -849,10 +851,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int preferred_bitrate;
   int adapt_reason;
   int adapt_changes;
-  int capture_jitter_ms;
   int avg_encode_ms;
   int encode_usage_percent;
-  int capture_queue_delay_ms_per_s;
   VariableInfo<int> adapt_frame_drops;
   VariableInfo<int> effects_frame_drops;
   VariableInfo<double> capturer_frame_time;

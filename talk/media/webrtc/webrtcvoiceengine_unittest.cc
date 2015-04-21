@@ -168,7 +168,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
   }
   void DeliverPacket(const void* data, int len) {
-    rtc::Buffer packet(data, len);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len);
     channel_->OnPacketReceived(&packet, rtc::PacketTime());
   }
   virtual void TearDown() {
@@ -1402,6 +1402,53 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateOnTwoStreams) {
             voe_.GetMaxEncodingBandwidth(channel_num));
 }
 
+// Test that with usedtx=0, Opus DTX is off.
+TEST_F(WebRtcVoiceEngineTestFake, DisableOpusDtxOnOpus) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].params["usedtx"] = "0";
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_FALSE(voe_.GetOpusDtx(channel_num));
+}
+
+// Test that with usedtx=1, Opus DTX is on.
+TEST_F(WebRtcVoiceEngineTestFake, EnableOpusDtxOnOpus) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].params["usedtx"] = "1";
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(voe_.GetOpusDtx(channel_num));
+  EXPECT_FALSE(voe_.GetVAD(channel_num));  // Opus DTX should not affect VAD.
+}
+
+// Test that usedtx=1 works with stereo Opus.
+TEST_F(WebRtcVoiceEngineTestFake, EnableOpusDtxOnOpusStereo) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].params["usedtx"] = "1";
+  codecs[0].params["stereo"] = "1";
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(voe_.GetOpusDtx(channel_num));
+  EXPECT_FALSE(voe_.GetVAD(channel_num));   // Opus DTX should not affect VAD.
+}
+
+// Test that usedtx=1 does not work with non Opus.
+TEST_F(WebRtcVoiceEngineTestFake, CannotEnableOpusDtxOnNonOpus) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kIsacCodec);
+  codecs[0].params["usedtx"] = "1";
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_FALSE(voe_.GetOpusDtx(channel_num));
+}
+
 // Test that we can switch back and forth between Opus and ISAC with CN.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsIsacOpusSwitching) {
   EXPECT_TRUE(SetupEngine());
@@ -1477,6 +1524,41 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBitrate) {
   EXPECT_EQ(111, gcodec.pltype);
   EXPECT_STREQ("opus", gcodec.plname);
   EXPECT_EQ(32000, gcodec.rate);
+}
+
+// Test that we could set packet size specified in kCodecParamPTime.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsPTimeAsPacketSize) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].SetParam(cricket::kCodecParamPTime, 40);  // Value within range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(1920, gcodec.pacsize);  // Opus gets 40ms.
+
+  codecs[0].SetParam(cricket::kCodecParamPTime, 5);  // Value below range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(480, gcodec.pacsize);  // Opus gets 10ms.
+
+  codecs[0].SetParam(cricket::kCodecParamPTime, 80);  // Value beyond range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(2880, gcodec.pacsize);  // Opus gets 60ms.
+
+  codecs[0] = kIsacCodec;  // Also try Isac, and with unsupported size.
+  codecs[0].SetParam(cricket::kCodecParamPTime, 40);  // Value within range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(480, gcodec.pacsize);  // Isac gets 30ms as the next smallest value.
+
+  codecs[0] = kG722CodecSdp;  // Try G722 @8kHz as negotiated in SDP.
+  codecs[0].SetParam(cricket::kCodecParamPTime, 40);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(640, gcodec.pacsize);  // G722 gets 40ms @16kHz as defined in VoE.
 }
 
 // Test that we fail if no codecs are specified.
@@ -1613,7 +1695,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNNoMatch) {
   EXPECT_STREQ("PCMU", gcodec.plname);
   EXPECT_TRUE(voe_.GetVAD(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
-   // Set ISAC(16K) and CN(8K). VAD should not be activated.
+  // Set ISAC(16K) and CN(8K). VAD should not be activated.
   codecs[0] = kIsacCodec;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
@@ -2833,6 +2915,33 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(typing_detection_enabled);
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
   EXPECT_EQ(ns_mode, webrtc::kNsHighSuppression);
+
+  // Turn on delay agnostic aec and make sure nothing change w.r.t. echo
+  // control.
+  options.delay_agnostic_aec.Set(true);
+  ASSERT_TRUE(engine_.SetOptions(options));
+  voe_.GetEcStatus(ec_enabled, ec_mode);
+  voe_.GetEcMetricsStatus(ec_metrics_enabled);
+  voe_.GetAecmMode(aecm_mode, cng_enabled);
+  EXPECT_TRUE(ec_enabled);
+  EXPECT_TRUE(ec_metrics_enabled);
+  EXPECT_EQ(ec_mode, webrtc::kEcConference);
+
+  // Turn off echo cancellation and delay agnostic aec.
+  options.delay_agnostic_aec.Set(false);
+  options.experimental_aec.Set(false);
+  options.echo_cancellation.Set(false);
+  ASSERT_TRUE(engine_.SetOptions(options));
+  voe_.GetEcStatus(ec_enabled, ec_mode);
+  EXPECT_FALSE(ec_enabled);
+  // Turning delay agnostic aec back on should also turn on echo cancellation.
+  options.delay_agnostic_aec.Set(true);
+  ASSERT_TRUE(engine_.SetOptions(options));
+  voe_.GetEcStatus(ec_enabled, ec_mode);
+  voe_.GetEcMetricsStatus(ec_metrics_enabled);
+  EXPECT_TRUE(ec_enabled);
+  EXPECT_TRUE(ec_metrics_enabled);
+  EXPECT_EQ(ec_mode, webrtc::kEcConference);
 
   // Turn off AGC
   options.auto_gain_control.Set(false);

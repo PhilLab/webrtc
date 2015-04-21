@@ -14,42 +14,62 @@
 #include <list>
 #include <sstream>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 
 namespace webrtc {
 namespace testing {
 namespace bwe {
 
-PacketSender::PacketSender(PacketProcessorListener* listener,
-                           VideoSource* source,
-                           BandwidthEstimatorType estimator)
-    : PacketProcessor(listener, source->flow_id(), kSender),
+std::list<FeedbackPacket*> GetFeedbackPackets(Packets* in_out,
+                                              int64_t end_time_ms,
+                                              int flow_id) {
+  std::list<FeedbackPacket*> fb_packets;
+  for (auto it = in_out->begin(); it != in_out->end();) {
+    if ((*it)->send_time_us() > 1000 * end_time_ms)
+      break;
+    if ((*it)->GetPacketType() == Packet::kFeedback &&
+        flow_id == (*it)->flow_id()) {
+      fb_packets.push_back(static_cast<FeedbackPacket*>(*it));
+      it = in_out->erase(it);
+    } else {
+      ++it;
+    }
+  }
+  return fb_packets;
+}
+
+VideoSender::VideoSender(PacketProcessorListener* listener,
+                         VideoSource* source,
+                         BandwidthEstimatorType estimator_type)
+    : PacketSender(listener, source->flow_id()),
       // For Packet::send_time_us() to be comparable with timestamps from
-      // clock_, the clock of the PacketSender and the Source must be aligned.
+      // clock_, the clock of the VideoSender and the Source must be aligned.
       // We assume that both start at time 0.
       clock_(0),
       source_(source),
-      bwe_(CreateBweSender(estimator,
+      bwe_(CreateBweSender(estimator_type,
                            source_->bits_per_second() / 1000,
                            this,
                            &clock_)) {
   modules_.push_back(bwe_.get());
 }
 
-PacketSender::~PacketSender() {
+VideoSender::~VideoSender() {
 }
 
-void PacketSender::RunFor(int64_t time_ms, Packets* in_out) {
+void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   std::list<FeedbackPacket*> feedbacks =
-      GetFeedbackPackets(in_out, now_ms + time_ms);
+      GetFeedbackPackets(in_out, now_ms + time_ms, source_->flow_id());
   ProcessFeedbackAndGeneratePackets(time_ms, &feedbacks, in_out);
 }
 
-void PacketSender::ProcessFeedbackAndGeneratePackets(
+void VideoSender::ProcessFeedbackAndGeneratePackets(
     int64_t time_ms,
     std::list<FeedbackPacket*>* feedbacks,
-    Packets* generated) {
+    Packets* packets) {
   do {
     // Make sure to at least run Process() below every 100 ms.
     int64_t time_to_run_ms = std::min<int64_t>(time_ms, 100);
@@ -60,7 +80,10 @@ void PacketSender::ProcessFeedbackAndGeneratePackets(
       time_to_run_ms =
           std::max<int64_t>(std::min(time_ms, time_until_feedback_ms), 0);
     }
-    source_->RunFor(time_to_run_ms, generated);
+    Packets generated;
+    source_->RunFor(time_to_run_ms, &generated);
+    bwe_->OnPacketsSent(generated);
+    packets->merge(generated, DereferencingComparator<Packet>);
     clock_.AdvanceTimeMilliseconds(time_to_run_ms);
     if (!feedbacks->empty()) {
       bwe_->GiveFeedback(*feedbacks->front());
@@ -73,42 +96,20 @@ void PacketSender::ProcessFeedbackAndGeneratePackets(
   assert(feedbacks->empty());
 }
 
-int PacketSender::GetFeedbackIntervalMs() const {
+int VideoSender::GetFeedbackIntervalMs() const {
   return bwe_->GetFeedbackIntervalMs();
 }
 
-std::list<FeedbackPacket*> PacketSender::GetFeedbackPackets(
-    Packets* in_out,
-    int64_t end_time_ms) {
-  std::list<FeedbackPacket*> fb_packets;
-  for (auto it = in_out->begin(); it != in_out->end();) {
-    if ((*it)->send_time_us() > 1000 * end_time_ms)
-      break;
-    if ((*it)->GetPacketType() == Packet::kFeedback &&
-        source()->flow_id() == (*it)->flow_id()) {
-      fb_packets.push_back(static_cast<FeedbackPacket*>(*it));
-      it = in_out->erase(it);
-    } else {
-      ++it;
-    }
-  }
-  return fb_packets;
-}
-
-void PacketSender::OnNetworkChanged(uint32_t target_bitrate_bps,
-                                    uint8_t fraction_lost,
-                                    int64_t rtt) {
+void VideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
+                                   uint8_t fraction_lost,
+                                   int64_t rtt) {
   source_->SetBitrateBps(target_bitrate_bps);
-  std::stringstream ss;
-  ss << "SendEstimate_" << source_->flow_id() << "#1";
-  BWE_TEST_LOGGING_PLOT(ss.str(), clock_.TimeInMilliseconds(),
-                        target_bitrate_bps / 1000);
 }
 
 PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
                                    VideoSource* source,
                                    BandwidthEstimatorType estimator)
-    : PacketSender(listener, source, estimator),
+    : VideoSender(listener, source, estimator),
       pacer_(&clock_,
              this,
              source->bits_per_second() / 1000,
@@ -129,8 +130,10 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   int64_t end_time_ms = clock_.TimeInMilliseconds() + time_ms;
   // Run process periodically to allow the packets to be paced out.
   std::list<FeedbackPacket*> feedbacks =
-      GetFeedbackPackets(in_out, end_time_ms);
+      GetFeedbackPackets(in_out, end_time_ms, source_->flow_id());
   int64_t last_run_time_ms = -1;
+  BWE_TEST_LOGGING_CONTEXT("Sender");
+  BWE_TEST_LOGGING_CONTEXT(source_->flow_id());
   do {
     int64_t time_until_process_ms = TimeUntilNextProcess(modules_);
     int64_t time_until_feedback_ms = time_ms;
@@ -222,6 +225,7 @@ void PacedVideoSender::QueuePackets(Packets* batch,
   }
   Packets to_transfer;
   to_transfer.splice(to_transfer.begin(), queue_, queue_.begin(), it);
+  bwe_->OnPacketsSent(to_transfer);
   batch->merge(to_transfer, DereferencingComparator<Packet>);
 }
 
@@ -254,10 +258,72 @@ size_t PacedVideoSender::TimeToSendPadding(size_t bytes) {
 void PacedVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
                                         uint8_t fraction_lost,
                                         int64_t rtt) {
-  PacketSender::OnNetworkChanged(target_bitrate_bps, fraction_lost, rtt);
+  VideoSender::OnNetworkChanged(target_bitrate_bps, fraction_lost, rtt);
   pacer_.UpdateBitrate(
       target_bitrate_bps / 1000,
       PacedSender::kDefaultPaceMultiplier * target_bitrate_bps / 1000, 0);
+}
+
+void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
+  BWE_TEST_LOGGING_CONTEXT("Sender");
+  BWE_TEST_LOGGING_CONTEXT(*flow_ids().begin());
+  std::list<FeedbackPacket*> feedbacks =
+      GetFeedbackPackets(in_out, now_ms_ + time_ms, *flow_ids().begin());
+  // The number of packets which are sent in during time_ms depends on the
+  // number of packets in_flight_ and the max number of packets in flight
+  // (cwnd_). Therefore SendPackets() isn't directly dependent on time_ms.
+  for (FeedbackPacket* fb : feedbacks) {
+    UpdateCongestionControl(fb);
+    SendPackets(in_out);
+  }
+  SendPackets(in_out);
+  now_ms_ += time_ms;
+}
+
+void TcpSender::SendPackets(Packets* in_out) {
+  int cwnd = ceil(cwnd_);
+  int packets_to_send = std::max(cwnd - in_flight_, 0);
+  if (packets_to_send > 0) {
+    Packets generated = GeneratePackets(packets_to_send);
+    in_flight_ += static_cast<int>(generated.size());
+    in_out->merge(generated, DereferencingComparator<Packet>);
+  }
+}
+
+void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
+  const TcpFeedback* tcp_fb = static_cast<const TcpFeedback*>(fb);
+  DCHECK(!tcp_fb->acked_packets().empty());
+  ack_received_ = true;
+
+  in_flight_ -= static_cast<int>(tcp_fb->acked_packets().size());
+  DCHECK_GE(in_flight_, 0);
+
+  if (LossEvent(tcp_fb->acked_packets())) {
+    cwnd_ /= 2.0f;
+    in_slow_start_ = false;
+  } else if (in_slow_start_) {
+    cwnd_ += tcp_fb->acked_packets().size();
+  } else {
+    cwnd_ += 1.0f / cwnd_;
+  }
+
+  last_acked_seq_num_ =
+      LatestSequenceNumber(tcp_fb->acked_packets().back(), last_acked_seq_num_);
+}
+
+bool TcpSender::LossEvent(const std::vector<uint16_t>& acked_packets) {
+  uint16_t expected = acked_packets.back() - last_acked_seq_num_;
+  uint16_t missing = expected - static_cast<uint16_t>(acked_packets.size());
+  return missing > 0;
+}
+
+Packets TcpSender::GeneratePackets(size_t num_packets) {
+  Packets generated;
+  for (size_t i = 0; i < num_packets; ++i) {
+    generated.push_back(new MediaPacket(*flow_ids().begin(), 1000 * now_ms_,
+                                        1200, next_sequence_number_++));
+  }
+  return generated;
 }
 }  // namespace bwe
 }  // namespace testing

@@ -16,6 +16,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -68,11 +69,11 @@ void Loopback::Run() {
   test::DirectTransport transport(pipe_config);
   Call::Config call_config(&transport);
 
-  call_config.stream_bitrates.min_bitrate_bps =
+  call_config.bitrate_config.min_bitrate_bps =
       static_cast<int>(config_.min_bitrate_kbps) * 1000;
-  call_config.stream_bitrates.start_bitrate_bps =
+  call_config.bitrate_config.start_bitrate_bps =
       static_cast<int>(config_.start_bitrate_kbps) * 1000;
-  call_config.stream_bitrates.max_bitrate_bps =
+  call_config.bitrate_config.max_bitrate_bps =
       static_cast<int>(config_.max_bitrate_kbps) * 1000;
   rtc::scoped_ptr<Call> call(Call::Create(call_config));
 
@@ -95,7 +96,7 @@ void Loopback::Run() {
     encoder.reset(VideoEncoder::Create(VideoEncoder::kVp9));
   } else {
     // Codec not supported.
-    assert(false && "Codec not supported!");
+    RTC_NOTREACHED() << "Codec not supported!";
     return;
   }
   send_config.encoder_settings.encoder = encoder.get();

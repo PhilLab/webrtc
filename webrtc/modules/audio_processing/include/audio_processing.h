@@ -25,7 +25,10 @@ struct AecCore;
 namespace webrtc {
 
 class AudioFrame;
+
+template<typename T>
 class Beamformer;
+
 class EchoCancellation;
 class EchoControlMobile;
 class GainControl;
@@ -69,12 +72,21 @@ struct ReportedDelay {
   bool enabled;
 };
 
-// Must be provided through AudioProcessing::Create(Confg&). It will have no
-// impact if used with AudioProcessing::SetExtraOptions().
+// Use to enable experimental gain control (AGC). At startup the experimental
+// AGC moves the microphone volume up to |startup_min_volume| if the current
+// microphone volume is set too low. The value is clamped to its operating range
+// [12, 255]. Here, 255 maps to 100%.
+//
+// Must be provided through AudioProcessing::Create(Confg&).
+static const int kAgcStartupMinVolume = 85;
 struct ExperimentalAgc {
-  ExperimentalAgc() : enabled(true) {}
-  explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
+  ExperimentalAgc() : enabled(true), startup_min_volume(kAgcStartupMinVolume) {}
+  ExperimentalAgc(bool enabled)
+      : enabled(enabled), startup_min_volume(kAgcStartupMinVolume) {}
+  ExperimentalAgc(bool enabled, int startup_min_volume)
+      : enabled(enabled), startup_min_volume(startup_min_volume) {}
   bool enabled;
+  int startup_min_volume;
 };
 
 // Use to enable experimental noise suppression. It can be set in the
@@ -201,7 +213,8 @@ class AudioProcessing {
   // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const Config& config);
   // Only for testing.
-  static AudioProcessing* Create(const Config& config, Beamformer* beamformer);
+  static AudioProcessing* Create(const Config& config,
+                                 Beamformer<float>* beamformer);
   virtual ~AudioProcessing() {}
 
   // Initializes internal states, while retaining all user settings. This

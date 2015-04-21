@@ -177,26 +177,18 @@ private:
     static bool Run(void* ptr);
     bool Process();
 private:
-    ThreadWrapper* _thread;
+    rtc::scoped_ptr<ThreadWrapper> _thread;
 };
 
 ThreadTest::~ThreadTest()
 {
     if (_thread)
-    {
-        if (_thread->Stop())
-        {
-            delete _thread;
-            _thread = NULL;
-        }
-    }
+        _thread->Stop();
 }
 
-ThreadTest::ThreadTest() :
-    _thread(NULL)
+ThreadTest::ThreadTest()
 {
-    _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,
-                                          "ThreadTest thread");
+    _thread = ThreadWrapper::CreateThread(Run, this, "ThreadTest thread");
 }
 
 bool ThreadTest::Run(void* ptr)
@@ -281,8 +273,7 @@ int ThreadTest::RunTest()
 {
     if (_thread)
     {
-        unsigned int id;
-        _thread->Start(id);
+        _thread->Start();
     }
     return 0;
 }

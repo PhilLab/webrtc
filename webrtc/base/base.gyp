@@ -29,10 +29,14 @@
       'target_name': 'rtc_base_approved',
       'type': 'static_library',
       'sources': [
+        'buffer.cc',
+        'buffer.h',
         'checks.cc',
         'checks.h',
         'event.cc',
         'event.h',
+        'event_tracer.cc',
+        'event_tracer.h',
         'exp_filter.cc',
         'exp_filter.h',
         'md5.cc',
@@ -54,6 +58,7 @@
         'thread_checker_impl.h',
         'timeutils.cc',
         'timeutils.h',
+        'trace_event.h',
       ],
     },
     {
@@ -97,8 +102,6 @@
         'basictypes.h',
         'bind.h',
         'bind.h.pump',
-        'buffer.cc',
-        'buffer.h',
         'bytebuffer.cc',
         'bytebuffer.h',
         'byteorder.h',
@@ -111,6 +114,7 @@
         'cpumonitor.h',
         'crc32.cc',
         'crc32.h',
+        'criticalsection.cc',
         'criticalsection.h',
         'cryptstring.cc',
         'cryptstring.h',
@@ -271,7 +275,6 @@
         'sslstreamadapterhelper.h',
         'stream.cc',
         'stream.h',
-        'stringdigest.h',
         'systeminfo.cc',
         'systeminfo.h',
         'task.cc',
@@ -432,7 +435,6 @@
             'sharedexclusivelock.h',
             'sslconfig.h',
             'sslroots.h',
-            'stringdigest.h',
             'testbase64.h',
             'testclient.cc',
             'testclient.h',
@@ -545,7 +547,7 @@
               'conditions': [
                 # On some platforms, the rest of NSS is bundled. On others,
                 # it's pulled from the system.
-                ['OS == "mac" or OS == "ios" or OS == "win"', {
+                ['OS == "mac" or OS == "ios"', {
                   'dependencies': [
                     '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
                     '<(DEPTH)/third_party/nss/nss.gyp:nspr',

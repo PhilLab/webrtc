@@ -50,6 +50,7 @@
 
 using cricket::kRtpTimestampOffsetHeaderExtension;
 using cricket::kRtpAbsoluteSenderTimeHeaderExtension;
+using cricket::kRtpVideoRotationHeaderExtension;
 
 static const cricket::VideoCodec kVP8Codec720p(100, "VP8", 1280, 720, 30, 0);
 static const cricket::VideoCodec kVP8Codec360p(100, "VP8", 640, 360, 30, 0);
@@ -1005,6 +1006,14 @@ TEST_F(WebRtcVideoEngineTestFake, RecvAbsoluteSendTimeHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension);
 }
 
+// Test support for Coordination of Video Orientation (CVO) header extension.
+TEST_F(WebRtcVideoEngineTestFake, SendVideoRotationHeaderExtensions) {
+  TestSetSendRtpHeaderExtensions(kRtpVideoRotationHeaderExtension);
+}
+TEST_F(WebRtcVideoEngineTestFake, RecvVideoRotationHeaderExtensions) {
+  TestSetRecvRtpHeaderExtensions(kRtpVideoRotationHeaderExtension);
+}
+
 TEST_F(WebRtcVideoEngineTestFake, LeakyBucketTest) {
   EXPECT_TRUE(SetupEngine());
 
@@ -1952,6 +1961,7 @@ TEST_F(WebRtcVideoEngineTestFake, DontRegisterEncoderIfFactoryIsNotGiven) {
 
 TEST_F(WebRtcVideoEngineTestFake, RegisterEncoderIfFactoryIsGiven) {
   encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory_.set_encoders_have_internal_sources(false);
   engine_.SetExternalEncoderFactory(&encoder_factory_);
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
@@ -1964,6 +1974,29 @@ TEST_F(WebRtcVideoEngineTestFake, RegisterEncoderIfFactoryIsGiven) {
       cricket::StreamParams::CreateLegacy(kSsrc)));
 
   EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
+  EXPECT_FALSE(vie_.ExternalEncoderHasInternalSource(channel_num, 100));
+  EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
+
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+}
+
+TEST_F(WebRtcVideoEngineTestFake, RegisterEncoderWithInternalSource) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory_.set_encoders_have_internal_sources(true);
+  engine_.SetExternalEncoderFactory(&encoder_factory_);
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVP8Codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  EXPECT_TRUE(
+      channel_->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+
+  ASSERT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
+  EXPECT_TRUE(vie_.ExternalEncoderHasInternalSource(channel_num, 100));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
 
   // Remove stream previously added to free the external encoder instance.
@@ -2466,7 +2499,13 @@ TEST_F(WebRtcVideoMediaChannelTest, AddRemoveRecvStreams) {
   Base::AddRemoveRecvStreams();
 }
 
-TEST_F(WebRtcVideoMediaChannelTest, AddRemoveRecvStreamAndRender) {
+// Flaky on Linux and Windows. See webrtc:4452.
+#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
+#define MAYBE_AddRemoveRecvStreamAndRender DISABLED_AddRemoveRecvStreamAndRender
+#else
+#define MAYBE_AddRemoveRecvStreamAndRender AddRemoveRecvStreamAndRender
+#endif
+TEST_F(WebRtcVideoMediaChannelTest, MAYBE_AddRemoveRecvStreamAndRender) {
   Base::AddRemoveRecvStreamAndRender();
 }
 

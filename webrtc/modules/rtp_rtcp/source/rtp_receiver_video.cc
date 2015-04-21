@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
@@ -82,6 +83,14 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
 
   rtp_header->frameType = parsed_payload.frame_type;
   rtp_header->type = parsed_payload.type;
+  rtp_header->type.Video.rotation = kVideoRotation_0;
+
+  // Retrieve the video rotation information.
+  if (rtp_header->header.extension.hasVideoRotation) {
+    rtp_header->type.Video.rotation = ConvertCVOByteToVideoRotation(
+        rtp_header->header.extension.videoRotation);
+  }
+
   return data_callback_->OnReceivedPayloadData(parsed_payload.payload,
                                                parsed_payload.payload_length,
                                                rtp_header) == 0

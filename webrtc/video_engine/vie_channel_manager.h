@@ -59,6 +59,8 @@ class ViEChannelManager: private ViEManagerBase {
                     bool sender,
                     bool disable_default_encoder);
 
+  ChannelGroup* GetChannelGroup(int channel_id);
+
   // Deletes a channel.
   int DeleteChannel(int channel_id);
 
@@ -85,6 +87,15 @@ class ViEChannelManager: private ViEManagerBase {
                                  uint32_t* estimated_bandwidth) const;
   bool GetEstimatedReceiveBandwidth(int channel_id,
                                     uint32_t* estimated_bandwidth) const;
+
+  bool GetPacerQueuingDelayMs(int channel_id, int64_t* delay_ms) const;
+
+  bool SetBitrateConfig(int channel_id,
+                        int min_bitrate_bps,
+                        int start_bitrate_bps,
+                        int max_bitrate_bps);
+
+  bool ReAllocateBitrates(int channel_id);
 
  private:
   // Used by ViEChannelScoped, forcing a manager user to use scoped.

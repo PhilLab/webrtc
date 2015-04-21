@@ -81,9 +81,7 @@ int AudioCodingModule::Codec(const char* payload_name,
 
 // Checks the validity of the parameters of the given codec
 bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
-  int mirror_id;
-
-  int codec_number = acm2::ACMCodecDB::CodecNumber(codec, &mirror_id);
+  int codec_number = acm2::ACMCodecDB::CodecNumber(codec);
 
   if (codec_number < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, -1,
@@ -92,6 +90,17 @@ bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   } else {
     return true;
   }
+}
+
+AudioCoding::Config::Config()
+    : neteq_config(),
+      clock(Clock::GetRealTimeClock()),
+      transport(nullptr),
+      vad_callback(nullptr),
+      play_dtmf(true),
+      initial_playout_delay_ms(0),
+      playout_channels(1),
+      playout_frequency_hz(32000) {
 }
 
 AudioCoding* AudioCoding::Create(const Config& config) {

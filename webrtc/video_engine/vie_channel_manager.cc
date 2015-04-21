@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -134,6 +135,13 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   return 0;
 }
 
+ChannelGroup* ViEChannelManager::GetChannelGroup(int channel_id) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  DCHECK(group);
+  return group;
+}
+
 int ViEChannelManager::DeleteChannel(int channel_id) {
   ChannelGroup* group = NULL;
   {
@@ -224,7 +232,7 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   ViEChannel* channel = ViEChannelPtr(channel_id);
   assert(channel);
 
-  group->SetChannelRembStatus(channel_id, sender, receiver, channel);
+  group->SetChannelRembStatus(sender, receiver, channel);
   return true;
 }
 
@@ -285,6 +293,31 @@ bool ViEChannelManager::GetEstimatedReceiveBandwidth(
       &ssrcs, estimated_bandwidth) || ssrcs.empty()) {
     *estimated_bandwidth = 0;
   }
+  return true;
+}
+
+bool ViEChannelManager::GetPacerQueuingDelayMs(int channel_id,
+                                               int64_t* delay_ms) const {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group)
+    return false;
+  *delay_ms = group->GetPacerQueuingDelayMs();
+  return true;
+}
+
+bool ViEChannelManager::SetBitrateConfig(int channel_id,
+                                         int min_bitrate_bps,
+                                         int start_bitrate_bps,
+                                         int max_bitrate_bps) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group)
+    return false;
+  BitrateController* bitrate_controller = group->GetBitrateController();
+  if (start_bitrate_bps > 0)
+    bitrate_controller->SetStartBitrate(start_bitrate_bps);
+  bitrate_controller->SetMinMaxBitrate(min_bitrate_bps, max_bitrate_bps);
   return true;
 }
 

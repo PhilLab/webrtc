@@ -73,6 +73,15 @@ hooks = [
     'action': ['python', 'src/setup_links.py'],
   },
   {
+     # Pull sanitizer-instrumented third-party libraries if requested via
+     # GYP_DEFINES. This could be done as part of sync_chromium.py above
+     # but then we would need to run all the Chromium hooks each time,
+     # which will slow things down a lot.
+     'name': 'instrumented_libraries',
+     'pattern': '\\.sha1',
+     'action': ['python', 'src/third_party/instrumented_libraries/scripts/download_binaries.py'],
+   },
+  {
     # Download test resources, i.e. video and audio files from Google Storage.
     'pattern': '.',
     'action': ['download_from_google_storage',

@@ -670,7 +670,7 @@ class VideoMediaChannelTest : public testing::Test,
   static bool ParseRtpPacket(const rtc::Buffer* p, bool* x, int* pt,
                              int* seqnum, uint32* tstamp, uint32* ssrc,
                              std::string* payload) {
-    rtc::ByteBuffer buf(p->data(), p->length());
+    rtc::ByteBuffer buf(*p);
     uint8 u08 = 0;
     uint16 u16 = 0;
     uint32 u32 = 0;
@@ -730,10 +730,10 @@ class VideoMediaChannelTest : public testing::Test,
     int count = 0;
     for (int i = start_index; i < stop_index; ++i) {
       rtc::scoped_ptr<const rtc::Buffer> p(GetRtcpPacket(i));
-      rtc::ByteBuffer buf(p->data(), p->length());
+      rtc::ByteBuffer buf(*p);
       size_t total_len = 0;
       // The packet may be a compound RTCP packet.
-      while (total_len < p->length()) {
+      while (total_len < p->size()) {
         // Read FMT, type and length.
         uint8 fmt = 0;
         uint8 type = 0;
@@ -844,17 +844,6 @@ class VideoMediaChannelTest : public testing::Test,
         EXPECT_TRUE(WaitAndSendFrame(1000 / fps));
         EXPECT_FRAME_WAIT(frame + i * fps, codec.width, codec.height, kTimeout);
       }
-      cricket::VideoMediaInfo info;
-      EXPECT_TRUE(channel_->GetStats(&info));
-      // For webrtc, |framerate_sent| and |framerate_rcvd| depend on periodic
-      // callbacks (1 sec).
-      // Received |fraction_lost| and |packets_lost| are from sent RTCP packet.
-      // One sent packet needed (sent about once per second).
-      // |framerate_input|, |framerate_decoded| and |framerate_output| are using
-      // RateTracker. RateTracker needs to be called twice (with >1 second in
-      // b/w calls) before a framerate is calculated.
-      // Therefore insert frames (and call GetStats each sec) for a few seconds
-      // before testing stats.
     }
     rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(0));
     EXPECT_EQ(codec.id, GetPayloadType(p.get()));

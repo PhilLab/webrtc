@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/video_frame.h"
 
 #include <string.h>
 
 #include <algorithm>  // swap
 
+#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 
 namespace webrtc {
 
-I420VideoFrame::I420VideoFrame()
-    : timestamp_(0),
-      ntp_time_ms_(0),
-      render_time_ms_(0),
-      rotation_(kVideoRotation_0) {
+I420VideoFrame::I420VideoFrame() {
+  // Intentionally using Reset instead of initializer list so that any missed
+  // fields in Reset will be caught by memory checkers.
+  Reset();
 }
 
 I420VideoFrame::I420VideoFrame(
@@ -37,26 +37,31 @@ I420VideoFrame::I420VideoFrame(
       rotation_(rotation) {
 }
 
-I420VideoFrame::I420VideoFrame(NativeHandle* handle,
+I420VideoFrame::I420VideoFrame(void* native_handle,
                                int width,
                                int height,
                                uint32_t timestamp,
-                               int64_t render_time_ms)
-    : video_frame_buffer_(
-          new rtc::RefCountedObject<TextureBuffer>(handle, width, height)),
-      timestamp_(timestamp),
-      ntp_time_ms_(0),
-      render_time_ms_(render_time_ms),
-      rotation_(kVideoRotation_0) {
+                               int64_t render_time_ms,
+                               VideoRotation rotation,
+                               const rtc::Callback0<void>& no_longer_used)
+    : I420VideoFrame(new rtc::RefCountedObject<TextureBuffer>(native_handle,
+                                                              width,
+                                                              height,
+                                                              no_longer_used),
+                     timestamp,
+                     render_time_ms,
+                     rotation) {
 }
 
 int I420VideoFrame::CreateEmptyFrame(int width, int height,
                                      int stride_y, int stride_u, int stride_v) {
   const int half_width = (width + 1) / 2;
-  if (width <= 0 || height <= 0 || stride_y < width || stride_u < half_width ||
-      stride_v < half_width) {
-    return -1;
-  }
+  DCHECK_GT(width, 0);
+  DCHECK_GT(height, 0);
+  DCHECK_GE(stride_y, width);
+  DCHECK_GE(stride_u, half_width);
+  DCHECK_GE(stride_v, half_width);
+
   // Creating empty frame - reset all values.
   timestamp_ = 0;
   ntp_time_ms_ = 0;
@@ -81,21 +86,20 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   return 0;
 }
 
-int I420VideoFrame::CreateFrame(int size_y, const uint8_t* buffer_y,
-                                int size_u, const uint8_t* buffer_u,
-                                int size_v, const uint8_t* buffer_v,
+int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
+                                const uint8_t* buffer_u,
+                                const uint8_t* buffer_v,
                                 int width, int height,
-                                int stride_y, int stride_u, int stride_v) {
-  return CreateFrame(size_y, buffer_y, size_u, buffer_u, size_v, buffer_v,
+                                int stride_y,
+                                int stride_u,
+                                int stride_v) {
+  return CreateFrame(buffer_y, buffer_u, buffer_v,
                      width, height, stride_y, stride_u, stride_v,
                      kVideoRotation_0);
 }
 
-int I420VideoFrame::CreateFrame(int size_y,
-                                const uint8_t* buffer_y,
-                                int size_u,
+int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
                                 const uint8_t* buffer_u,
-                                int size_v,
                                 const uint8_t* buffer_v,
                                 int width,
                                 int height,
@@ -107,11 +111,7 @@ int I420VideoFrame::CreateFrame(int size_y,
   const int expected_size_y = height * stride_y;
   const int expected_size_u = half_height * stride_u;
   const int expected_size_v = half_height * stride_v;
-  CHECK_GE(size_y, expected_size_y);
-  CHECK_GE(size_u, expected_size_u);
-  CHECK_GE(size_v, expected_size_v);
-  if (CreateEmptyFrame(width, height, stride_y, stride_u, stride_v) < 0)
-    return -1;
+  CreateEmptyFrame(width, height, stride_y, stride_u, stride_v);
   memcpy(buffer(kYPlane), buffer_y, expected_size_y);
   memcpy(buffer(kUPlane), buffer_u, expected_size_u);
   memcpy(buffer(kVPlane), buffer_v, expected_size_v);
@@ -119,19 +119,32 @@ int I420VideoFrame::CreateFrame(int size_y,
   return 0;
 }
 
+int I420VideoFrame::CreateFrame(const uint8_t* buffer,
+                                int width,
+                                int height,
+                                VideoRotation rotation) {
+  const int stride_y = width;
+  const int stride_uv = (width + 1) / 2;
+
+  const uint8_t* buffer_y = buffer;
+  const uint8_t* buffer_u = buffer_y + stride_y * height;
+  const uint8_t* buffer_v = buffer_u + stride_uv * ((height + 1) / 2);
+  return CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
+                     stride_uv, stride_uv, rotation);
+}
+
 int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
-  if (videoFrame.native_handle()) {
+  if (videoFrame.IsZeroSize()) {
+    video_frame_buffer_ = nullptr;
+  } else if (videoFrame.native_handle()) {
     video_frame_buffer_ = videoFrame.video_frame_buffer();
   } else {
-    int ret = CreateFrame(
-        videoFrame.allocated_size(kYPlane), videoFrame.buffer(kYPlane),
-        videoFrame.allocated_size(kUPlane), videoFrame.buffer(kUPlane),
-        videoFrame.allocated_size(kVPlane), videoFrame.buffer(kVPlane),
-        videoFrame.width(), videoFrame.height(), videoFrame.stride(kYPlane),
-        videoFrame.stride(kUPlane), videoFrame.stride(kVPlane));
-    if (ret < 0)
-      return ret;
+    CreateFrame(videoFrame.buffer(kYPlane), videoFrame.buffer(kUPlane),
+                videoFrame.buffer(kVPlane), videoFrame.width(),
+                videoFrame.height(), videoFrame.stride(kYPlane),
+                videoFrame.stride(kUPlane), videoFrame.stride(kVPlane));
   }
+
   timestamp_ = videoFrame.timestamp_;
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
   render_time_ms_ = videoFrame.render_time_ms_;
@@ -139,21 +152,20 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   return 0;
 }
 
-I420VideoFrame* I420VideoFrame::CloneFrame() const {
-  rtc::scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
-  if (new_frame->CopyFrame(*this) == -1) {
-    // CopyFrame failed.
-    return NULL;
-  }
-  return new_frame.release();
+void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
+  video_frame_buffer_ = videoFrame.video_frame_buffer();
+  timestamp_ = videoFrame.timestamp_;
+  ntp_time_ms_ = videoFrame.ntp_time_ms_;
+  render_time_ms_ = videoFrame.render_time_ms_;
+  rotation_ = videoFrame.rotation_;
 }
 
-void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
-  video_frame_buffer_.swap(videoFrame->video_frame_buffer_);
-  std::swap(timestamp_, videoFrame->timestamp_);
-  std::swap(ntp_time_ms_, videoFrame->ntp_time_ms_);
-  std::swap(render_time_ms_, videoFrame->render_time_ms_);
-  std::swap(rotation_, videoFrame->rotation_);
+void I420VideoFrame::Reset() {
+  video_frame_buffer_ = nullptr;
+  timestamp_ = 0;
+  ntp_time_ms_ = 0;
+  render_time_ms_ = 0;
+  rotation_ = kVideoRotation_0;
 }
 
 uint8_t* I420VideoFrame::buffer(PlaneType type) {
@@ -194,6 +206,11 @@ void* I420VideoFrame::native_handle() const {
 rtc::scoped_refptr<VideoFrameBuffer> I420VideoFrame::video_frame_buffer()
     const {
   return video_frame_buffer_;
+}
+
+void I420VideoFrame::set_video_frame_buffer(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer) {
+  video_frame_buffer_ = buffer;
 }
 
 }  // namespace webrtc

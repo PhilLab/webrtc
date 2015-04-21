@@ -953,12 +953,12 @@ Channel::Init()
 
     // --- ACM initialization
 
-    if ((audio_coding_->InitializeReceiver() == -1) ||
+    if ((audio_coding_->InitializeReceiver() == -1)
 #ifdef WEBRTC_CODEC_AVT
         // out-of-band Dtmf tones are played out by default
-        (audio_coding_->SetDtmfPlayoutStatus(true) == -1) ||
+        || (audio_coding_->SetDtmfPlayoutStatus(true) == -1)
 #endif
-        (audio_coding_->InitializeSender() == -1))
+       )
     {
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
@@ -1560,6 +1560,19 @@ int Channel::SetOpusMaxPlaybackRate(int frequency_hz) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
         "SetOpusMaxPlaybackRate() failed to set maximum playback rate");
+    return -1;
+  }
+  return 0;
+}
+
+int Channel::SetOpusDtx(bool enable_dtx) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetOpusDtx(%d)", enable_dtx);
+  int ret = enable_dtx ? audio_coding_->EnableOpusDtx(true)
+                       : audio_coding_->DisableOpusDtx();
+  if (ret != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError, "SetOpusDtx() failed");
     return -1;
   }
   return 0;

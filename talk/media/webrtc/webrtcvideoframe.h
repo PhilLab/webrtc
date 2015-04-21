@@ -44,12 +44,14 @@ class WebRtcVideoFrame : public VideoFrame {
   WebRtcVideoFrame();
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
                    int64_t elapsed_time_ns,
-                   int64_t time_stamp_ns);
-  WebRtcVideoFrame(webrtc::NativeHandle* handle,
-                   int width,
-                   int height,
+                   int64_t time_stamp_ns,
+                   webrtc::VideoRotation rotation);
+
+  // TODO(guoweis): Remove this when chrome code base is updated.
+  WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
                    int64_t elapsed_time_ns,
                    int64_t time_stamp_ns);
+
   ~WebRtcVideoFrame();
 
   // Creates a frame from a raw sample with FourCC "format" and size "w" x "h".
@@ -104,6 +106,8 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual int32 GetUPitch() const;
   virtual int32 GetVPitch() const;
   virtual void* GetNativeHandle() const;
+  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
+      const;
 
   virtual size_t GetPixelWidth() const { return pixel_width_; }
   virtual size_t GetPixelHeight() const { return pixel_height_; }
@@ -124,6 +128,11 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                     size_t size, int stride_rgb) const;
 
+  const VideoFrame* GetCopyWithRotationApplied() const override;
+
+ protected:
+  void SetRotation(webrtc::VideoRotation rotation) { rotation_ = rotation; }
+
  private:
   virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
                                        size_t pixel_height,
@@ -137,6 +146,10 @@ class WebRtcVideoFrame : public VideoFrame {
   int64_t elapsed_time_ns_;
   int64_t time_stamp_ns_;
   webrtc::VideoRotation rotation_;
+
+  // This is mutable as the calculation is expensive but once calculated, it
+  // remains const.
+  mutable rtc::scoped_ptr<VideoFrame> rotated_frame_;
 };
 
 }  // namespace cricket

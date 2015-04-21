@@ -139,9 +139,10 @@ int FakeVideoSendStream::GetLastHeight() const {
   return last_frame_.height();
 }
 
-void FakeVideoSendStream::SwapFrame(webrtc::I420VideoFrame* frame) {
+void FakeVideoSendStream::IncomingCapturedFrame(
+    const webrtc::I420VideoFrame& frame) {
   ++num_swapped_frames_;
-  last_frame_.SwapFrame(frame);
+  last_frame_.ShallowCopy(frame);
 }
 
 void FakeVideoSendStream::SetStats(
@@ -217,16 +218,11 @@ FakeCall::FakeCall(const webrtc::Call::Config& config)
       network_state_(kNetworkUp),
       num_created_send_streams_(0),
       num_created_receive_streams_(0) {
-  SetVideoCodecs(GetDefaultVideoCodecs());
 }
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
   EXPECT_EQ(0u, video_receive_streams_.size());
-}
-
-void FakeCall::SetVideoCodecs(const std::vector<webrtc::VideoCodec> codecs) {
-  codecs_ = codecs;
 }
 
 webrtc::Call::Config FakeCall::GetConfig() const {
@@ -239,48 +235,6 @@ std::vector<FakeVideoSendStream*> FakeCall::GetVideoSendStreams() {
 
 std::vector<FakeVideoReceiveStream*> FakeCall::GetVideoReceiveStreams() {
   return video_receive_streams_;
-}
-
-webrtc::VideoCodec FakeCall::GetEmptyVideoCodec() {
-  webrtc::VideoCodec codec;
-  codec.minBitrate = 300;
-  codec.startBitrate = 800;
-  codec.maxBitrate = 1500;
-  codec.maxFramerate = 10;
-  codec.width = 640;
-  codec.height = 480;
-  codec.qpMax = 56;
-
-  return codec;
-}
-
-webrtc::VideoCodec FakeCall::GetVideoCodecVp8() {
-  webrtc::VideoCodec vp8_codec = GetEmptyVideoCodec();
-  vp8_codec.codecType = webrtc::kVideoCodecVP8;
-  rtc::strcpyn(
-      vp8_codec.plName, ARRAY_SIZE(vp8_codec.plName), kVp8Codec.name.c_str());
-  vp8_codec.plType = kVp8Codec.id;
-
-  return vp8_codec;
-}
-
-webrtc::VideoCodec FakeCall::GetVideoCodecVp9() {
-  webrtc::VideoCodec vp9_codec = GetEmptyVideoCodec();
-  // TODO(pbos): Add a correct codecType when webrtc has one.
-  vp9_codec.codecType = webrtc::kVideoCodecVP8;
-  rtc::strcpyn(
-      vp9_codec.plName, ARRAY_SIZE(vp9_codec.plName), kVp9Codec.name.c_str());
-  vp9_codec.plType = kVp9Codec.id;
-
-  return vp9_codec;
-}
-
-std::vector<webrtc::VideoCodec> FakeCall::GetDefaultVideoCodecs() {
-  std::vector<webrtc::VideoCodec> codecs;
-  codecs.push_back(GetVideoCodecVp8());
-  //    codecs.push_back(GetVideoCodecVp9());
-
-  return codecs;
 }
 
 webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
@@ -367,7 +321,7 @@ webrtc::Call::Stats FakeCall::GetStats() const {
 
 void FakeCall::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
-  config_.stream_bitrates = bitrate_config;
+  config_.bitrate_config = bitrate_config;
 }
 
 void FakeCall::SignalNetworkState(webrtc::Call::NetworkState state) {
@@ -576,6 +530,82 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
   FAIL() << "Absolute Sender Time extension not in header-extension list.";
 }
 
+TEST_F(WebRtcVideoEngine2Test, SupportsVideoRotationHeaderExtension) {
+  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
+  ASSERT_FALSE(extensions.empty());
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    if (extensions[i].uri == kRtpVideoRotationHeaderExtension) {
+      EXPECT_EQ(kRtpVideoRotationHeaderExtensionDefaultId, extensions[i].id);
+      return;
+    }
+  }
+  FAIL() << "Video Rotation extension not in header-extension list.";
+}
+
+TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeCapturer) {
+  // Allocate the capturer first to prevent early destruction before channel's
+  // dtor is called.
+  cricket::FakeVideoCapturer capturer;
+
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+  EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(kSsrc)));
+
+  // Add CVO extension.
+  const int id = 1;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(
+      cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+  EXPECT_TRUE(channel->SetSendRtpHeaderExtensions(extensions));
+
+  // Set capturer.
+  EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer));
+
+  // Verify capturer has turned off applying rotation.
+  EXPECT_FALSE(capturer.GetApplyRotation());
+
+  // Verify removing header extension turns on applying rotation.
+  extensions.clear();
+  EXPECT_TRUE(channel->SetSendRtpHeaderExtensions(extensions));
+  EXPECT_TRUE(capturer.GetApplyRotation());
+}
+
+TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
+  cricket::FakeVideoCapturer capturer;
+
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+  EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(kSsrc)));
+
+  // Set capturer.
+  EXPECT_TRUE(channel->SetCapturer(kSsrc, &capturer));
+
+  // Add CVO extension.
+  const int id = 1;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(
+      cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+  EXPECT_TRUE(channel->SetSendRtpHeaderExtensions(extensions));
+
+  // Verify capturer has turned off applying rotation.
+  EXPECT_FALSE(capturer.GetApplyRotation());
+
+  // Verify removing header extension turns on applying rotation.
+  extensions.clear();
+  EXPECT_TRUE(channel->SetSendRtpHeaderExtensions(extensions));
+  EXPECT_TRUE(capturer.GetApplyRotation());
+}
+
 TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
   engine_.Init(rtc::Thread::Current());
   rtc::scoped_ptr<VideoMediaChannel> channel(
@@ -633,6 +663,19 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
   // Remove stream previously added to free the external encoder instance.
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
   EXPECT_EQ(0u, encoder_factory.encoders().size());
+}
+
+TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp9Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  EXPECT_TRUE(
+      channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
 }
 
 VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
@@ -1058,11 +1101,11 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
     EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
     EXPECT_EQ(expected_min_bitrate_bps,
-              fake_call_->GetConfig().stream_bitrates.min_bitrate_bps);
+              fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
     EXPECT_EQ(expected_start_bitrate_bps,
-              fake_call_->GetConfig().stream_bitrates.start_bitrate_bps);
+              fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
     EXPECT_EQ(expected_max_bitrate_bps,
-              fake_call_->GetConfig().stream_bitrates.max_bitrate_bps);
+              fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   }
 
   void TestSetSendRtpHeaderExtensions(const std::string& cricket_ext,
@@ -1231,21 +1274,34 @@ TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
                                  webrtc::RtpExtension::kAbsSendTime);
 }
 
+// Test support for video rotation header extension.
+TEST_F(WebRtcVideoChannel2Test, SendVideoRotationHeaderExtensions) {
+  TestSetSendRtpHeaderExtensions(kRtpVideoRotationHeaderExtension,
+                                 webrtc::RtpExtension::kVideoRotation);
+}
+TEST_F(WebRtcVideoChannel2Test, RecvVideoRotationHeaderExtensions) {
+  TestSetRecvRtpHeaderExtensions(kRtpVideoRotationHeaderExtension,
+                                 webrtc::RtpExtension::kVideoRotation);
+}
+
 TEST_F(WebRtcVideoChannel2Test, IdenticalSendExtensionsDoesntRecreateStream) {
   const int kTOffsetId = 1;
   const int kAbsSendTimeId = 2;
+  const int kVideoRotationId = 3;
   std::vector<cricket::RtpHeaderExtension> extensions;
   extensions.push_back(cricket::RtpHeaderExtension(
       kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
   extensions.push_back(cricket::RtpHeaderExtension(
       kRtpTimestampOffsetHeaderExtension, kTOffsetId));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpVideoRotationHeaderExtension, kVideoRotationId));
 
   EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
   FakeVideoSendStream* send_stream =
       AddSendStream(cricket::StreamParams::CreateLegacy(123));
 
   EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
-  ASSERT_EQ(2u, send_stream->GetConfig().rtp.extensions.size());
+  ASSERT_EQ(3u, send_stream->GetConfig().rtp.extensions.size());
 
   // Setting the same extensions (even if in different order) shouldn't
   // reallocate the stream.
@@ -1264,18 +1320,21 @@ TEST_F(WebRtcVideoChannel2Test, IdenticalSendExtensionsDoesntRecreateStream) {
 TEST_F(WebRtcVideoChannel2Test, IdenticalRecvExtensionsDoesntRecreateStream) {
   const int kTOffsetId = 1;
   const int kAbsSendTimeId = 2;
+  const int kVideoRotationId = 3;
   std::vector<cricket::RtpHeaderExtension> extensions;
   extensions.push_back(cricket::RtpHeaderExtension(
       kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
   extensions.push_back(cricket::RtpHeaderExtension(
       kRtpTimestampOffsetHeaderExtension, kTOffsetId));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpVideoRotationHeaderExtension, kVideoRotationId));
 
   EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
   FakeVideoReceiveStream* send_stream =
       AddRecvStream(cricket::StreamParams::CreateLegacy(123));
 
   EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
-  ASSERT_EQ(2u, send_stream->GetConfig().rtp.extensions.size());
+  ASSERT_EQ(3u, send_stream->GetConfig().rtp.extensions.size());
 
   // Setting the same extensions (even if in different order) shouldn't
   // reallocate the stream.
@@ -1334,7 +1393,7 @@ TEST_F(WebRtcVideoChannel2Test,
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
-  const int kIncorrectIds[] = {-2, -1, 15, 16};
+  const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
   for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
     std::vector<cricket::RtpHeaderExtension> extensions;
     extensions.push_back(cricket::RtpHeaderExtension(
@@ -1345,7 +1404,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
-  const int kIncorrectIds[] = {-2, -1, 15, 16};
+  const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
   for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
     std::vector<cricket::RtpHeaderExtension> extensions;
     extensions.push_back(cricket::RtpHeaderExtension(
@@ -1673,9 +1732,9 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
   codecs.push_back(codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-  if (enable_overuse) {
+  if (!enable_overuse) {
     VideoOptions options;
-    options.cpu_overuse_detection.Set(true);
+    options.cpu_overuse_detection.Set(false);
     channel_->SetOptions(options);
   }
 
@@ -1875,6 +1934,13 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithBitrates) {
                                      200000);
 }
 
+TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithHighMaxBitrate) {
+  SetSendCodecsShouldWorkForBitrates("", 0, "", -1, "10000", 10000000);
+  std::vector<webrtc::VideoStream> streams = AddSendStream()->GetVideoStreams();
+  ASSERT_EQ(1u, streams.size());
+  EXPECT_EQ(10000000, streams[0].max_bitrate_bps);
+}
+
 TEST_F(WebRtcVideoChannel2Test,
        SetSendCodecsWithoutBitratesUsesCorrectDefaults) {
   SetSendCodecsShouldWorkForBitrates(
@@ -1897,20 +1963,72 @@ TEST_F(WebRtcVideoChannel2Test,
   SetSendCodecsShouldWorkForBitrates("100", 100000, "150", 150000, "200",
                                      200000);
   channel_->SetMaxSendBandwidth(300000);
-  EXPECT_EQ(100000, fake_call_->GetConfig().stream_bitrates.min_bitrate_bps)
+  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps)
       << "Setting max bitrate should keep previous min bitrate.";
-  EXPECT_EQ(-1, fake_call_->GetConfig().stream_bitrates.start_bitrate_bps)
+  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.start_bitrate_bps)
       << "Setting max bitrate should not reset start bitrate.";
-  EXPECT_EQ(300000, fake_call_->GetConfig().stream_bitrates.max_bitrate_bps);
+  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetMaxSendBandwidthShouldBeRemovable) {
   channel_->SetMaxSendBandwidth(300000);
-  EXPECT_EQ(300000, fake_call_->GetConfig().stream_bitrates.max_bitrate_bps);
+  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   // <= 0 means disable (infinite) max bitrate.
   channel_->SetMaxSendBandwidth(0);
-  EXPECT_EQ(-1, fake_call_->GetConfig().stream_bitrates.max_bitrate_bps)
+  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.max_bitrate_bps)
       << "Setting zero max bitrate did not reset start bitrate.";
+}
+
+TEST_F(WebRtcVideoChannel2Test, SetMaxSendBitrateCanIncreaseSenderBitrate) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  channel_->SetSend(true);
+
+  FakeVideoSendStream* stream = AddSendStream();
+
+  std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
+  int initial_max_bitrate_bps = streams[0].max_bitrate_bps;
+  EXPECT_GT(initial_max_bitrate_bps, 0);
+
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(initial_max_bitrate_bps * 2));
+  streams = stream->GetVideoStreams();
+  EXPECT_EQ(initial_max_bitrate_bps * 2, streams[0].max_bitrate_bps);
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       SetMaxSendBitrateCanIncreaseSimulcastSenderBitrate) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  channel_->SetSend(true);
+
+  FakeVideoSendStream* stream = AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
+
+  // Send a frame to make sure this scales up to >1 stream (simulcast).
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
+  ASSERT_GT(streams.size(), 1u)
+      << "Without simulcast this test doesn't make sense.";
+  int initial_max_bitrate_bps = 0;
+  for (auto& video_stream : streams)
+    initial_max_bitrate_bps += video_stream.max_bitrate_bps;
+  EXPECT_GT(initial_max_bitrate_bps, 0);
+
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(initial_max_bitrate_bps * 2));
+  streams = stream->GetVideoStreams();
+  int increased_max_bitrate_bps = 0;
+  for (auto& video_stream : streams)
+    increased_max_bitrate_bps += video_stream.max_bitrate_bps;
+  EXPECT_EQ(initial_max_bitrate_bps * 2, increased_max_bitrate_bps);
+
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], nullptr));
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMaxQuantization) {
@@ -2138,6 +2256,18 @@ TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
 
   channel_->OnReadyToSend(true);
   EXPECT_EQ(webrtc::Call::kNetworkUp, fake_call_->GetNetworkState());
+}
+
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsSentCodecName) {
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  AddSendStream();
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(kVp8Codec.name, info.senders[0].codec_name);
 }
 
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsCpuOveruseMetrics) {
@@ -2392,37 +2522,79 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
             recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
 }
 
+TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithMissingSsrcsForRtx) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
+  const std::vector<uint32> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
+
+  StreamParams sp =
+      cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs);
+  sp.ssrcs = ssrcs;  // Without RTXs, this is the important part.
+
+  EXPECT_FALSE(channel_->AddSendStream(sp));
+  EXPECT_FALSE(channel_->AddRecvStream(sp));
+}
+
+TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithOverlappingRtxSsrcs) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
+  const std::vector<uint32> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
+
+  StreamParams sp =
+      cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs);
+
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+
+  // The RTX SSRC is already used in previous streams, using it should fail.
+  sp = cricket::StreamParams::CreateLegacy(rtx_ssrcs[0]);
+  EXPECT_FALSE(channel_->AddSendStream(sp));
+  EXPECT_FALSE(channel_->AddRecvStream(sp));
+
+  // After removing the original stream this should be fine to add (makes sure
+  // that RTX ssrcs are not forever taken).
+  EXPECT_TRUE(channel_->RemoveSendStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->RemoveRecvStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       RejectsAddingStreamsWithOverlappingSimulcastSsrcs) {
+  static const uint32 kFirstStreamSsrcs[] = {1, 2, 3};
+  static const uint32 kOverlappingStreamSsrcs[] = {4, 3, 5};
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
+
+  StreamParams sp =
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kFirstStreamSsrcs));
+
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+
+  // One of the SSRCs is already used in previous streams, using it should fail.
+  sp = cricket::CreateSimStreamParams("cname",
+                                      MAKE_VECTOR(kOverlappingStreamSsrcs));
+  EXPECT_FALSE(channel_->AddSendStream(sp));
+  EXPECT_FALSE(channel_->AddRecvStream(sp));
+
+  // After removing the original stream this should be fine to add (makes sure
+  // that RTX ssrcs are not forever taken).
+  EXPECT_TRUE(channel_->RemoveSendStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->RemoveRecvStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+}
+
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
  public:
-  WebRtcVideoEngine2SimulcastTest()
-      : engine_(nullptr), engine_codecs_(engine_.codecs()) {
-    assert(!engine_codecs_.empty());
-
-    bool codec_set = false;
-    for (size_t i = 0; i < engine_codecs_.size(); ++i) {
-      if (engine_codecs_[i].name == "red") {
-        default_red_codec_ = engine_codecs_[i];
-      } else if (engine_codecs_[i].name == "ulpfec") {
-        default_ulpfec_codec_ = engine_codecs_[i];
-      } else if (engine_codecs_[i].name == "rtx") {
-        default_rtx_codec_ = engine_codecs_[i];
-      } else if (!codec_set) {
-        default_codec_ = engine_codecs_[i];
-        codec_set = true;
-      }
-    }
-
-    assert(codec_set);
-  }
+  WebRtcVideoEngine2SimulcastTest() : engine_(nullptr) {}
 
  protected:
   WebRtcVideoEngine2 engine_;
-  VideoCodec default_codec_;
-  VideoCodec default_red_codec_;
-  VideoCodec default_ulpfec_codec_;
-  VideoCodec default_rtx_codec_;
-  // TODO(pbos): Remove engine_codecs_ unless used a lot.
-  std::vector<VideoCodec> engine_codecs_;
 };
 
 class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,

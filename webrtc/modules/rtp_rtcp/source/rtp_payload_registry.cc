@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
@@ -101,27 +102,17 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
         payload_name, payload_name_length, frequency, channels, rate);
   }
 
-  RtpUtility::Payload* payload = NULL;
+  RtpUtility::Payload* payload = rtp_payload_strategy_->CreatePayloadType(
+      payload_name, payload_type, frequency, channels, rate);
 
-  // Save the RED payload type. Used in both audio and video.
+  payload_type_map_[payload_type] = payload;
+  *created_new_payload = true;
+
   if (RtpUtility::StringCompare(payload_name, "red", 3)) {
     red_payload_type_ = payload_type;
-    payload = new RtpUtility::Payload;
-    memset(payload, 0, sizeof(*payload));
-    payload->audio = false;
-    strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
-  } else if (RtpUtility::StringCompare(payload_name, "ulpfec", 3)) {
+  } else if (RtpUtility::StringCompare(payload_name, "ulpfec", 6)) {
     ulpfec_payload_type_ = payload_type;
-    payload = new RtpUtility::Payload;
-    memset(payload, 0, sizeof(*payload));
-    payload->audio = false;
-    strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
-  } else {
-    *created_new_payload = true;
-    payload = rtp_payload_strategy_->CreatePayloadType(
-        payload_name, payload_type, frequency, channels, rate);
   }
-  payload_type_map_[payload_type] = payload;
 
   // Successful set of payload type, clear the value of last received payload
   // type since it might mean something else.
@@ -260,9 +251,9 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
   *packet_length -= kRtxHeaderSize;
 
   // Replace the SSRC and the sequence number with the originals.
-  RtpUtility::AssignUWord16ToBuffer(*restored_packet + 2,
-                                    original_sequence_number);
-  RtpUtility::AssignUWord32ToBuffer(*restored_packet + 8, original_ssrc);
+  ByteWriter<uint16_t>::WriteBigEndian(*restored_packet + 2,
+                                       original_sequence_number);
+  ByteWriter<uint32_t>::WriteBigEndian(*restored_packet + 8, original_ssrc);
 
   CriticalSectionScoped cs(crit_sect_.get());
 
@@ -432,13 +423,15 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
       const uint8_t channels,
       const uint32_t rate) const override {
     RtpVideoCodecTypes videoType = kRtpVideoGeneric;
+
     if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {
       videoType = kRtpVideoVp8;
     } else if (RtpUtility::StringCompare(payloadName, "H264", 4)) {
       videoType = kRtpVideoH264;
     } else if (RtpUtility::StringCompare(payloadName, "I420", 4)) {
       videoType = kRtpVideoGeneric;
-    } else if (RtpUtility::StringCompare(payloadName, "ULPFEC", 6)) {
+    } else if (RtpUtility::StringCompare(payloadName, "ULPFEC", 6) ||
+        RtpUtility::StringCompare(payloadName, "RED", 3)) {
       videoType = kRtpVideoNone;
     } else {
       videoType = kRtpVideoGeneric;
