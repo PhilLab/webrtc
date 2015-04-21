@@ -8,7 +8,7 @@
     For more information on package manifest files, see http://go.microsoft.com/fwlink/?LinkID=241727
   -->
   <Identity Name="LibTestRunner" Publisher="CN=WebRTC" Version="1.0.0.0" ProcessorArchitecture="x86" />
-  <mp:PhoneIdentity PhoneProductId="5fbcb7fa-54a7-4722-8e48-a029619cda97" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <mp:PhoneIdentity PhoneProductId="2823f98f-b0da-4343-b2d2-bf2019f46773" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>LibTest_runner</DisplayName>
     <PublisherDisplayName>WebRTC</PublisherDisplayName>
