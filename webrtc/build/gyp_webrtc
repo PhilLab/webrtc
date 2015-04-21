@@ -76,9 +76,11 @@ if __name__ == '__main__':
     vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
   else:
     gyp_defines_dict = gyp.NameValueListToDict(gyp.ShlexEnv('GYP_DEFINES'))
-    gyp_defines_dict['windows_sdk_path'] = os.environ['WINDOWSSDKDIR']
-    os.environ['GYP_DEFINES'] = ' '.join('%s=%s' % (k, pipes.quote(str(v)))
-         for k, v in gyp_defines_dict.iteritems())
+    winSdkDir = os.environ.get('WINDOWSSDKDIR')
+    if winSdkDir != None:
+        gyp_defines_dict['windows_sdk_path'] = os.environ['WINDOWSSDKDIR']
+        os.environ['GYP_DEFINES'] = ' '.join('%s=%s' % (k, pipes.quote(str(v)))
+            for k, v in gyp_defines_dict.iteritems())
 
   # Enforce gyp syntax checking. This adds about 20% execution time.
   args.append('--check')
