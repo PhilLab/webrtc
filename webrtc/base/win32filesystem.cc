@@ -33,6 +33,7 @@
 // best approach; IEIsProtectedModeProcess is another possible solution.
 
 #if defined(WINRT)
+#undef GetFileAttributes
 DWORD WINAPI GetFileAttributes(LPCTSTR lpFileName) {
   WIN32_FILE_ATTRIBUTE_DATA attributes;
   BOOL ret = GetFileAttributesEx(lpFileName, GetFileExInfoStandard, &attributes);

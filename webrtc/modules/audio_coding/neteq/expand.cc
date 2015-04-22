@@ -887,22 +887,22 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
         bgn_mute_factor > 0) {
       // Fade BGN to zero.
       // Calculate muting slope, approximately -2^18 / fs_hz.
-      int16_t mute_slope;
+      int16_t mute_Slope;
       if (fs_hz_ == 8000) {
-        mute_slope = -32;
+		  mute_Slope = -32;
       } else if (fs_hz_ == 16000) {
-        mute_slope = -16;
+		  mute_Slope = -16;
       } else if (fs_hz_ == 32000) {
-        mute_slope = -8;
+		  mute_Slope = -8;
       } else {
-        mute_slope = -5;
+		  mute_Slope = -5;
       }
       // Use UnmuteSignal function with negative slope.
-      // |bgn_mute_factor| is in Q14. |mute_slope| is in Q20.
+      // |bgn_mute_factor| is in Q14. |muteSlope| is in Q20.
       DspHelper::UnmuteSignal(noise_samples,
                               num_noise_samples,
                               &bgn_mute_factor,
-                              mute_slope,
+							  mute_Slope,
                               noise_samples);
     } else if (bgn_mute_factor < 16384) {
       // If mode is kBgnOn, or if kBgnFade has started fading,

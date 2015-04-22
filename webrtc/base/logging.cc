@@ -11,7 +11,7 @@
 #if defined(WEBRTC_WIN)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#define snprintf _snprintf
+#define rtc_base_snprintf _snprintf
 #undef ERROR  // wingdi.h
 
 #if defined(WINRT)
@@ -69,7 +69,7 @@ std::string ErrorName(int err, const ConstantLabel * err_table) {
   }
 
   char buffer[16];
-  snprintf(buffer, sizeof(buffer), "0x%08x", err);
+  rtc_base_snprintf(buffer, sizeof(buffer), "0x%08x", err);
   return buffer;
 }
 

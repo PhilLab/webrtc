@@ -187,7 +187,6 @@ UdpSocketManagerWinRTImpl::UdpSocketManagerWinRTImpl()
 {
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
     _thread = ThreadWrapper::CreateThread(UdpSocketManagerWinRTImpl::Run, this,
-                                          kRealtimePriority,
                                           "UdpSocketManagerWinRTImplThread");
     FD_ZERO(&_readFds);
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
@@ -196,11 +195,6 @@ UdpSocketManagerWinRTImpl::UdpSocketManagerWinRTImpl()
 
 UdpSocketManagerWinRTImpl::~UdpSocketManagerWinRTImpl()
 {
-    if(_thread != NULL)
-    {
-        delete _thread;
-    }
-
     if (_critSectList != NULL)
     {
         UpdateSocketMap();
@@ -224,15 +218,17 @@ UdpSocketManagerWinRTImpl::~UdpSocketManagerWinRTImpl()
 
 bool UdpSocketManagerWinRTImpl::Start()
 {
-    unsigned int id = 0;
-    if (_thread == NULL)
+    if (!_thread)
     {
         return false;
     }
 
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Start UdpSocketManagerWinRT");
-    return _thread->Start(id);
+    if (!_thread->Start())
+        return false;
+    _thread->SetPriority(kRealtimePriority);
+    return true;
 }
 
 bool UdpSocketManagerWinRTImpl::Stop()
@@ -299,7 +295,7 @@ bool UdpSocketManagerWinRTImpl::Process()
     return true;
 }
 
-bool UdpSocketManagerWinRTImpl::Run(ThreadObj obj)
+bool UdpSocketManagerWinRTImpl::Run(void* obj)
 {
     UdpSocketManagerWinRTImpl* mgr =
         static_cast<UdpSocketManagerWinRTImpl*>(obj);

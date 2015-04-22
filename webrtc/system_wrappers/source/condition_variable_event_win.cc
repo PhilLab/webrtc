@@ -87,6 +87,7 @@ Vanderbilt University to appear in their names.
 #include "webrtc/system_wrappers/source/critical_section_win.h"
 
 #ifdef WINRT
+#undef CreateEvent
 #define InitializeCriticalSection(a) InitializeCriticalSectionEx(a, 0, 0)
 #define CreateEvent(lpEventAttributes, bManualReset, bInitialState, lpName) CreateEventEx(lpEventAttributes, lpName, (bManualReset?CREATE_EVENT_MANUAL_RESET:0) | (bInitialState?CREATE_EVENT_INITIAL_SET:0), EVENT_ALL_ACCESS)
 #define WaitForMultipleObjects(a, b, c, d) WaitForMultipleObjectsEx(a, b, c, d, FALSE)

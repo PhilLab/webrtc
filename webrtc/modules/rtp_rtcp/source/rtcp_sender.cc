@@ -667,7 +667,7 @@ int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer, int& pos) {
 
     pos += length;
     SDESLength += length;
-    uint16_t padding = 0;
+    padding = 0;
 
     // We must have a zero field even if we have an even multiple of 4 bytes
     if((pos % 4) == 0){

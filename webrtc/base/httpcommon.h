@@ -361,8 +361,8 @@ struct HttpData {
     return headers_.upper_bound(ToString(header));
   }
 
-  void setContent(const std::string& content_type, StreamInterface* document);
-  void setDocumentAndLength(StreamInterface* document);
+  void setContent(const std::string& content_type, StreamInterface* siDocument);
+  void setDocumentAndLength(StreamInterface* siDocument);
 
   virtual size_t formatLeader(char* buffer, size_t size) const = 0;
   virtual HttpError parseLeader(const char* line, size_t len) = 0;
@@ -389,7 +389,7 @@ struct HttpRequestData : public HttpData {
   HttpError parseLeader(const char* line, size_t len) override;
 
   bool getAbsoluteUri(std::string* uri) const;
-  bool getRelativeUri(std::string* host, std::string* path) const;
+  bool getRelativeUri(std::string* host, std::string* ppath) const;
 };
 
 struct HttpResponseData : public HttpData {
@@ -401,12 +401,12 @@ struct HttpResponseData : public HttpData {
   void copy(const HttpResponseData& src);
 
   // Convenience methods
-  void set_success(uint32 scode = HC_OK);
-  void set_success(const std::string& content_type, StreamInterface* document,
-                   uint32 scode = HC_OK);
+  void set_success(uint32 code = HC_OK);
+  void set_success(const std::string& content_type, StreamInterface* siDocument,
+                   uint32 code = HC_OK);
   void set_redirect(const std::string& location,
-                    uint32 scode = HC_MOVED_TEMPORARILY);
-  void set_error(uint32 scode);
+                    uint32 code = HC_MOVED_TEMPORARILY);
+  void set_error(uint32 code);
 
   size_t formatLeader(char* buffer, size_t size) const override;
   HttpError parseLeader(const char* line, size_t len) override;

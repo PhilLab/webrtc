@@ -519,7 +519,7 @@
             '-lX11',
           ],
         }],
-        ['OS=="win"', {
+        ['OS=="win" and OS_RUNTIME!="winrt"', {
           'sources': [
             'media/devices/gdivideorenderer.cc',
             'media/devices/gdivideorenderer.h',
@@ -537,6 +537,13 @@
               ],
             },
           },
+        }],
+        # TODO (winrt) Enable when compile issue is fixed
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources!': [
+            'media/sctp/sctpdataengine.cc',
+            'media/sctp/sctpdataengine.h',
+          ],
         }],
         ['OS=="mac"', {
           'sources': [

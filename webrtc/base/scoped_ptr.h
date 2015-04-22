@@ -496,7 +496,9 @@ class scoped_ptr<T[], D> {
   explicit scoped_ptr(element_type* array) : impl_(array) {}
 
   // Constructor.  Allows construction from a nullptr.
+#if !defined(WINRT) // Currently getting compile error about unknown pointer size.
   scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+#endif
 
   // Constructor.  Allows construction from a scoped_ptr rvalue.
   scoped_ptr(scoped_ptr&& other) : impl_(&other.impl_) {}

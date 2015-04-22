@@ -71,6 +71,7 @@ using namespace Windows::Foundation;
 
 
 #if defined(WINRT)
+#undef CreateEvent
 #define WaitForSingleObject(a, b) WaitForSingleObjectEx(a, b, FALSE)
 #define InitializeCriticalSection(a) InitializeCriticalSectionEx(a, 0, 0)
 #define CreateEvent(lpEventAttributes, bManualReset, bInitialState, lpName) CreateEventEx(lpEventAttributes, lpName, (bManualReset?CREATE_EVENT_MANUAL_RESET:0) | (bInitialState?CREATE_EVENT_INITIAL_SET:0), EVENT_ALL_ACCESS)
