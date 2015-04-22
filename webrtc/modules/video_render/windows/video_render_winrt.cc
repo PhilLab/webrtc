@@ -65,7 +65,6 @@ VideoChannelWinRT::VideoChannelWinRT(
   Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
   Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, mediaSource]() {
     _mediaElement->SetMediaStreamSource(mediaSource);
-    _mediaElement->Play();
   });
   Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
   Concurrency::create_task(action).wait();
@@ -146,6 +145,22 @@ int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStream
   CriticalSectionScoped cs(_critSect);
   _width = width;
   _height = height;
+
+  _renderMediaSource->FrameSizeChange(width, height);
+
+  ComPtr<IInspectable> inspectable;
+  _renderMediaSource.As(&inspectable);
+
+  IMediaSource^ mediaSource = safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(inspectable.Get()));
+
+  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+  Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+  Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, mediaSource]() {
+    _mediaElement->SetMediaStreamSource(mediaSource);
+    _mediaElement->Play();
+  });
+  Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
+  Concurrency::create_task(action).wait();
 
   return 0;
 }
@@ -278,21 +293,10 @@ int VideoRenderWinRT::UpdateRenderSurface() {
   if (!updated)
     return -1;
 
-  DWORD width, height;
-
-  width = _channel->GetWidth();
-  height = _channel->GetHeight();
-
-  uint32_t zOrder;
-  float startWidth, startHeight, stopWidth, stopHeight;
-  _channel->GetStreamSettings(0, zOrder, startWidth,
-    startHeight, stopWidth,
-    stopHeight);
-
   _channel->Lock();
   const uint8_t* buf = _channel->GetVideoFrame().buffer(kYPlane);
   int siz = _channel->GetVideoFrame().allocated_size(kYPlane);
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "UpdateRenderSurface - %d, %d", buf, siz);
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1, "UpdateRenderSurface - %d, %d", buf, siz);
   _channel->GetMediaSource()->ProcessVideoFrame(_channel->GetVideoFrame());
   _channel->Unlock();
 
@@ -312,6 +316,7 @@ bool VideoRenderWinRT::ScreenUpdateThreadProc(void* obj) {
 }
 
 bool VideoRenderWinRT::ScreenUpdateProcess() {
+
   _screenUpdateEvent->Wait(100);
 
   if (!_screenUpdateThread)

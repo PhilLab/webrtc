@@ -43,11 +43,17 @@ bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 #if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
-#define HARDCODED_FRAME_WIDTH 1280
-#define HARDCODED_FRAME_HEIGHT 720
+#define PREFERRED_FRAME_WIDTH 640
+#define PREFERRED_FRAME_HEIGHT 480
+#define PREFERRED_MAX_FPS 30
+#define CAPTURE_DEVICE_INDEX 0
+#define MAX_BITRATE 500
 #else
-#define HARDCODED_FRAME_WIDTH 640
-#define HARDCODED_FRAME_HEIGHT 480
+#define PREFERRED_FRAME_WIDTH 800
+#define PREFERRED_FRAME_HEIGHT 600
+#define PREFERRED_MAX_FPS 30
+#define CAPTURE_DEVICE_INDEX 0
+#define MAX_BITRATE 1000
 #endif
 
 namespace StandupWinRT
@@ -517,8 +523,8 @@ namespace StandupWinRT
         auto makeRenderSurface = [grid](MediaElement^& elem, int index) {
           auto surface = ref new MediaElement();
           auto border = ref new Border();
-          surface->Width = HARDCODED_FRAME_WIDTH;
-          surface->Height = HARDCODED_FRAME_HEIGHT;
+          surface->Width = PREFERRED_FRAME_WIDTH;
+          surface->Height = PREFERRED_FRAME_HEIGHT;
           border->BorderBrush = ref new SolidColorBrush(ColorHelper::FromArgb(255, 0, 0, 255));
           border->BorderThickness = ThicknessHelper::FromUniformLength(2);
           border->Margin = ThicknessHelper::FromUniformLength(8);
@@ -740,16 +746,26 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       memset(deviceName, 0, KMaxDeviceNameLength);
       char uniqueId[KMaxUniqueIdLength];
       memset(uniqueId, 0, KMaxUniqueIdLength);
-      uint32_t captureIdx = 0;
+      uint32_t captureIdx = CAPTURE_DEVICE_INDEX;
 
-      webrtc::VideoCaptureModule::DeviceInfo *devInfo = webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
-      if (devInfo == NULL) {
-        webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-          "Failed to create video capture device info.");
-        return Concurrency::task<void>();
+      int devicesNumber = videoCapture_->NumberOfCaptureDevices();
+
+      for (int i = 0; i < devicesNumber; i++) {
+
+        error = videoCapture_->GetCaptureDevice(captureIdx, deviceName,
+          KMaxDeviceNameLength, uniqueId,
+          KMaxUniqueIdLength);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to get video device name.");
+          return Concurrency::task<void>();
+        }
+
+        webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+          "Capture device - index: %d, name: %s, unique ID: %s", i, deviceName, uniqueId);
       }
 
-      error = devInfo->GetDeviceName(captureIdx, deviceName,
+      error = videoCapture_->GetCaptureDevice(captureIdx, deviceName,
         KMaxDeviceNameLength, uniqueId,
         KMaxUniqueIdLength);
       if (error != 0) {
@@ -759,6 +775,9 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       strcpy(deviceUniqueId_, uniqueId);
+
+      webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+        "Selected capture device - index: %d, name: %s, unique ID: %s", captureIdx, deviceName, uniqueId);
 
       vcpm_ = webrtc::VideoCaptureFactory::Create(1, uniqueId);
       if (vcpm_ == NULL) {
@@ -774,15 +793,53 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
       vcpm_->AddRef();
-      delete devInfo;
 
-      int width = HARDCODED_FRAME_WIDTH, height = HARDCODED_FRAME_HEIGHT, maxFramerate = 30, maxBitrate = 512;
-
+      int capabilitiesNumber = videoCapture_->NumberOfCapabilities(uniqueId, KMaxUniqueIdLength);
       webrtc::CaptureCapability capability;
-      capability.width = width;
-      capability.height = height;
-      capability.maxFPS = maxFramerate;
-      capability.rawType = webrtc::kVideoI420;
+      int minWidthDiff = INT_MAX;
+      int minHeightDiff = INT_MAX;
+      int minFpsDiff = INT_MAX;
+
+      for (int i = 0; i < capabilitiesNumber; i++) {
+
+        webrtc::CaptureCapability deviceCapability;
+
+        error = videoCapture_->GetCaptureCapability(uniqueId, KMaxUniqueIdLength, i, deviceCapability);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to get capture capability.");
+          return Concurrency::task<void>();
+        }
+
+        int widthDiff = abs((int)(deviceCapability.width - PREFERRED_FRAME_WIDTH));
+        if (widthDiff < minWidthDiff) {
+          capability = deviceCapability;
+          minWidthDiff = widthDiff;
+        }
+        else if (widthDiff == minWidthDiff) {
+          int heightDiff = abs((int)(deviceCapability.height - PREFERRED_FRAME_HEIGHT));
+          if (heightDiff < minHeightDiff) {
+            capability = deviceCapability;
+            minHeightDiff = heightDiff;
+          }
+          else if (heightDiff == minHeightDiff) {
+            int fpsDiff = abs((int)(deviceCapability.maxFPS - PREFERRED_MAX_FPS));
+            if (fpsDiff < minFpsDiff) {
+              capability = deviceCapability;
+              minFpsDiff = fpsDiff;
+            }
+          }
+        }
+
+        webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+          "Capture capability - index: %d, width: %d, height: %d, max fps: %d", 
+            i, deviceCapability.width, deviceCapability.height, deviceCapability.maxFPS);
+      }
+
+      webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+        "Selected capture capability - width: %d, height: %d, max fps: %d",
+          capability.width, capability.height, capability.maxFPS);
+
       error = videoCapture_->StartCapture(captureId_, capability);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
@@ -858,10 +915,10 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
           return Concurrency::task<void>();
         }
         if (videoCodec.codecType == webrtc::kVideoCodecVP8) {
-          videoCodec.width = width;
-          videoCodec.height = height;
-          videoCodec.maxFramerate = maxFramerate;
-          videoCodec.maxBitrate = maxBitrate;
+          videoCodec.width = PREFERRED_FRAME_WIDTH;
+          videoCodec.height = PREFERRED_FRAME_HEIGHT;
+          videoCodec.maxFramerate = PREFERRED_MAX_FPS;
+          videoCodec.maxBitrate = MAX_BITRATE;
           error = videoCodec_->SetSendCodec(videoChannel_, videoCodec);
           if (error != 0) {
             webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
@@ -1078,9 +1135,6 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       vcpm_ = webrtc::VideoCaptureFactory::Create(0, device_unique_name);
       vcpm_->AddRef();
 
-      webrtc::VideoCaptureCapability capability;
-      dev_info->GetCapability(device_unique_name, 0, capability);
-
       delete dev_info;
 
       IInspectable* videoRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
@@ -1092,6 +1146,12 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       captureCallback_ = new TestCaptureCallback(rendererCallback);
 
       vcpm_->RegisterCaptureDataCallback(*captureCallback_);
+
+      webrtc::VideoCaptureCapability capability;
+      capability.width = PREFERRED_FRAME_WIDTH;
+      capability.height = PREFERRED_FRAME_HEIGHT;
+      capability.maxFPS = PREFERRED_MAX_FPS;
+      capability.rawType = webrtc::kVideoI420;
 
       vcpm_->StartCapture(capability);
 
