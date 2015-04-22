@@ -73,6 +73,12 @@
                 'SplashScreen.png',
               ],
             }],
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+              'files': [
+                'Generated Manifest Win10\AppxManifest.xml',
+                'SplashScreen.png',
+              ],
+            }],
           ],
           'files':[
             'Logo.png',
