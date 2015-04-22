@@ -116,6 +116,11 @@ namespace StandupWinRT
       webrtc::Trace::SetTraceCallback(traceCallback_);
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
 
+      //provide some default values if user want to test on local machine 
+      remoteIpAddress_ = "127.0.0.1";
+      audioPort_ = 20000;
+      videoPort_ = 20100;
+
 #ifdef VOICE
       voiceEngine_ = webrtc::VoiceEngine::Create();
       if (voiceEngine_ == NULL) {
@@ -419,6 +424,10 @@ namespace StandupWinRT
     bool started_;
     bool startedVideo_;
 
+    int audioPort_;
+    int videoPort_;
+    std::string remoteIpAddress_;
+
     int voiceChannel_;
     webrtc::test::VoiceChannelTransport* voiceTransport_;
     webrtc::VoiceEngine* voiceEngine_;
@@ -561,23 +570,22 @@ namespace StandupWinRT
     void OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnSwitchCameraClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnStartStopVideoClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+  private:
+
+    /**
+     * initialize transport information provided by user input.
+     * WARNING: this function has be called from Main UI thread.
+     */
+    void initializeTranportInfo();
 };
 
 }
 
-static char* GetIP(String^ stringIP) {
-  size_t convertedChars = 0;
-  size_t  sizeInBytes = ((stringIP->Length() + 1) * 2);
-  errno_t err = 0;
-  char *ip = (char *)malloc(sizeInBytes);
+static std::string GetIP(String^ stringIP) {
 
-  err = wcstombs_s(&convertedChars,
-    ip, sizeInBytes,
-    stringIP->Data(), sizeInBytes);
-
-  if (err != 0) {
-    ip = "127.0.0.1";
-  }
+  std::wstring ipW(stringIP->Begin());
+  std::string ip(ipW.begin(),ipW.end());
+  //ToDo, trim the string
   return ip;
 }
 
@@ -597,6 +605,8 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   if (!started_) {
+
+    initializeTranportInfo();
 
 #ifdef VOICE
     Concurrency::create_task([this]() {
@@ -679,9 +689,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         }
       }
 
-      const char *ip = (char*)GetIP(ipTextBox_->Text);
-      error = voiceTransport_->SetSendDestination(ip, _wtoi(audioPortTextBox_->Text->Data()));
-      free((void *)ip);
+      error = voiceTransport_->SetSendDestination(remoteIpAddress_.c_str(), audioPort_);
 
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
@@ -689,7 +697,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      error = voiceTransport_->SetLocalReceiver(_wtoi(audioPortTextBox_->Text->Data()));
+      error = voiceTransport_->SetLocalReceiver(audioPort_);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Failed to set local receiver for voice channel.");
@@ -863,16 +871,15 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
           break;
         }
       }
-      const char *ip = GetIP(ipTextBox_->Text);
-      error = videoTransport_->SetSendDestination(ip, _wtoi(videoPortTextBox_->Text->Data()));
-      free((void *)ip);
+
+      error = videoTransport_->SetSendDestination(remoteIpAddress_.c_str(), videoPort_);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to set send destination for video channel.");
         return Concurrency::task<void>();
       }
 
-      error = videoTransport_->SetLocalReceiver(_wtoi(videoPortTextBox_->Text->Data()));
+      error = videoTransport_->SetLocalReceiver(videoPort_);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to set local receiver for video channel.");
@@ -1054,6 +1061,7 @@ void StandupWinRT::App::OnSwitchCameraClick(Platform::Object ^sender, Windows::U
 void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   if (!startedVideo_) {
+    initializeTranportInfo();
     Concurrency::create_task([this]() {
       webrtc::VideoCaptureModule::DeviceInfo* dev_info =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
@@ -1114,4 +1122,24 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       })));
     });
   }
+}
+
+void StandupWinRT::App::initializeTranportInfo(){
+
+  std::string userIp = GetIP(ipTextBox_->Text);
+  if (!userIp.empty()) {
+    remoteIpAddress_ = userIp;
+  }
+  int userInputVideoPort = _wtoi(videoPortTextBox_->Text->Data());
+  if (userInputVideoPort > 0)
+  {
+    videoPort_ = userInputVideoPort;
+  }
+
+  int userInputAudioPort = _wtoi(audioPortTextBox_->Text->Data());
+  if (userInputAudioPort > 0)
+  {
+    audioPort_ = userInputAudioPort;
+  }
+
 }
