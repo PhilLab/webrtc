@@ -34,7 +34,6 @@ public:
 
   virtual ~VideoChannelWinRT();
 
-  // Inherited from VideoRencerCallback, called from VideoAPI class.
   // Called when the incomming frame size and/or number of streams in mix changes
   virtual int FrameSizeChange(int width, int height, int numberOfStreams);
 

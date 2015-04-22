@@ -45,13 +45,13 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 #if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
 #define PREFERRED_FRAME_WIDTH 640
 #define PREFERRED_FRAME_HEIGHT 480
-#define PREFERRED_FPS 30
+#define PREFERRED_MAX_FPS 30
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 500
 #else
 #define PREFERRED_FRAME_WIDTH 800
 #define PREFERRED_FRAME_HEIGHT 600
-#define PREFERRED_FPS 30
+#define PREFERRED_MAX_FPS 30
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 1000
 #endif
@@ -785,7 +785,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
             minHeightDiff = heightDiff;
           }
           else if (heightDiff == minHeightDiff) {
-            int fpsDiff = abs((int)(deviceCapability.maxFPS - PREFERRED_FPS));
+            int fpsDiff = abs((int)(deviceCapability.maxFPS - PREFERRED_MAX_FPS));
             if (fpsDiff < minFpsDiff) {
               capability = deviceCapability;
               minFpsDiff = fpsDiff;
@@ -879,7 +879,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         if (videoCodec.codecType == webrtc::kVideoCodecVP8) {
           videoCodec.width = PREFERRED_FRAME_WIDTH;
           videoCodec.height = PREFERRED_FRAME_HEIGHT;
-          videoCodec.maxFramerate = PREFERRED_FPS;
+          videoCodec.maxFramerate = PREFERRED_MAX_FPS;
           videoCodec.maxBitrate = MAX_BITRATE;
           error = videoCodec_->SetSendCodec(videoChannel_, videoCodec);
           if (error != 0) {
@@ -1096,8 +1096,6 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       vcpm_ = webrtc::VideoCaptureFactory::Create(0, device_unique_name);
       vcpm_->AddRef();
 
-      webrtc::VideoCaptureCapability capability;
-
       delete dev_info;
 
       IInspectable* videoRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
@@ -1109,6 +1107,12 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       captureCallback_ = new TestCaptureCallback(rendererCallback);
 
       vcpm_->RegisterCaptureDataCallback(*captureCallback_);
+
+      webrtc::VideoCaptureCapability capability;
+      capability.width = PREFERRED_FRAME_WIDTH;
+      capability.height = PREFERRED_FRAME_HEIGHT;
+      capability.maxFPS = PREFERRED_MAX_FPS;
+      capability.rawType = webrtc::kVideoI420;
 
       vcpm_->StartCapture(capability);
 

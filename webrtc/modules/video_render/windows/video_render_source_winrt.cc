@@ -674,7 +674,7 @@ HRESULT VideoRenderMediaStreamWinRT::Shutdown()
   return hr;
 }
 
-// Processes media sample received from the header
+// Processes media sample
 void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMFSample *pSample)
 {
   assert(pSample);
@@ -700,6 +700,34 @@ void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMF
     {
       Throw(MF_E_UNEXPECTED);
     }
+  }
+  catch (Platform::Exception ^exc)
+  {
+    HandleError(exc->HResult);
+  }
+}
+
+void VideoRenderMediaStreamWinRT::ProcessFormatChange(StreamDescription *pStreamDescription)
+{
+  assert(pStreamDescription);
+
+  try
+  {
+    if (_eSourceState == SourceState_Shutdown) {
+      Throw(MF_E_SHUTDOWN);
+    }
+
+    ComPtr<IMFMediaType> spMediaType;
+    ComPtr<IMFMediaTypeHandler> spMediaTypeHandler;
+
+    // Create a media type object.
+    ThrowIfError(MFCreateMediaType(&spMediaType));
+    SetMediaTypeAttributes(pStreamDescription, spMediaType.Get());
+
+    ThrowIfError(_spStreamDescriptor->GetMediaTypeHandler(&spMediaTypeHandler));
+
+    // Set current media type
+    ThrowIfError(spMediaTypeHandler->SetCurrentMediaType(spMediaType.Get()));
   }
   catch (Platform::Exception ^exc)
   {
@@ -733,14 +761,6 @@ HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
   return hr;
 }
 
-#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
-#define HARDCODED_FRAME_WIDTH 640
-#define HARDCODED_FRAME_HEIGHT 480
-#else
-#define HARDCODED_FRAME_WIDTH 800
-#define HARDCODED_FRAME_HEIGHT 600
-#endif
-
 void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription)
 {
   // Create the media event queue.
@@ -753,21 +773,9 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
     ComPtr<IMFStreamDescriptor> spSD;
     ComPtr<IMFMediaTypeHandler> spMediaTypeHandler;
 
-    pStreamDescription->guiMajorType = MFMediaType_Video;
-    pStreamDescription->guiSubType = MFVideoFormat_I420;
-    pStreamDescription->dwStreamId = 1;
-
     // Create a media type object.
     ThrowIfError(MFCreateMediaType(&spMediaType));
-
-    ThrowIfError(spMediaType->SetGUID(MF_MT_MAJOR_TYPE, pStreamDescription->guiMajorType));
-    ThrowIfError(spMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
-    ThrowIfError(spMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, HARDCODED_FRAME_WIDTH));
-    ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_FRAME_RATE, 30, 1));
-    ThrowIfError(MFSetAttributeSize(spMediaType.Get(), MF_MT_FRAME_SIZE, HARDCODED_FRAME_WIDTH, HARDCODED_FRAME_HEIGHT));
-    ThrowIfError(spMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
-    ThrowIfError(spMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE)); 
-    ThrowIfError(MFSetAttributeRatio(spMediaType.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
+    SetMediaTypeAttributes(pStreamDescription, spMediaType.Get());
 
     // Now we can create MF stream descriptor.
     ThrowIfError(MFCreateStreamDescriptor(pStreamDescription->dwStreamId, 1, spMediaType.GetAddressOf(), &spSD));
@@ -835,8 +843,6 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
           _fDiscontinuity = false;
         }
 
-        Trace(TRACE_LEVEL_NORMAL, L"======== DeliverSamples - %d %d %d\n", pcbTotalLength, phnsSampleTime, phnsSampleDuration);
-
         // Send a sample event.
         ThrowIfError(_spEventQueue->QueueEventParamUnk(MEMediaSample, GUID_NULL, S_OK, spSample.Get()));
       }
@@ -862,6 +868,19 @@ void VideoRenderMediaStreamWinRT::HandleError(HRESULT hErrorCode)
     // Send MEError to the client
     hErrorCode = QueueEvent(MEError, GUID_NULL, hErrorCode, nullptr);
   }
+}
+void VideoRenderMediaStreamWinRT::SetMediaTypeAttributes(StreamDescription *pStreamDescription, IMFMediaType *pMediaType)
+{
+  ThrowIfError(pMediaType->SetGUID(MF_MT_MAJOR_TYPE, pStreamDescription->guiMajorType));
+  ThrowIfError(pMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
+  ThrowIfError(pMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, pStreamDescription->dwFrameWidth));
+  ThrowIfError(MFSetAttributeRatio(pMediaType, MF_MT_FRAME_RATE, pStreamDescription->dwFrameRateNumerator,
+    pStreamDescription->dwFrameRateDenominator));
+  ThrowIfError(MFSetAttributeSize(pMediaType, MF_MT_FRAME_SIZE, pStreamDescription->dwFrameWidth,
+    pStreamDescription->dwFrameHeight));
+  ThrowIfError(pMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
+  ThrowIfError(pMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
+  ThrowIfError(MFSetAttributeRatio(pMediaType, MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
 }
 
 void VideoRenderMediaStreamWinRT::SetSampleAttributes(SampleHeader *pSampleHeader, IMFSample *pSample)
@@ -1380,7 +1399,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Stop() {
   if (SUCCEEDED(hr))
   {
     // Queue asynchronous stop
-    hr = QueueOperation(spStopOp.Get());
+    hr = QueueOperation(spStopOp.Detach());
   }
 
   return hr;
@@ -1437,7 +1456,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::SetRate(BOOL fThin, float flRate) {
   if (SUCCEEDED(hr))
   {
     // Queue asynchronous stop
-    hr = QueueOperation(spSetRateOp.Get());
+    hr = QueueOperation(spSetRateOp.Detach());
   }
 
   return hr;
@@ -1567,6 +1586,31 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
   }
 }
 
+void VideoRenderMediaSourceWinRT::FrameSizeChange(int width, int height)
+{
+  if (_eSourceState == SourceState_Started)
+  {
+    Trace(TRACE_LEVEL_NORMAL, L"======== FrameSizeChange - width: %d, height: %d\n", width, height);
+    // Convert packet to MF sample
+    ComPtr<VideoRenderMediaStreamWinRT> spStream;
+
+    ThrowIfError(GetStreamById(1, &spStream));
+
+    StreamDescription description;
+    description.guiMajorType = MFMediaType_Video;
+    description.guiSubType = MFVideoFormat_I420;
+    description.dwFrameWidth = width;
+    description.dwFrameHeight = height;
+    description.dwFrameRateNumerator = 30;
+    description.dwFrameRateDenominator = 1;
+    description.dwStreamId = 1;
+
+    spStream->ProcessFormatChange(&description);
+
+    InitPresentationDescription();
+  }
+}
+
 _Acquires_lock_(_critSec)
 HRESULT VideoRenderMediaSourceWinRT::Lock()
 {
@@ -1591,7 +1635,15 @@ void VideoRenderMediaSourceWinRT::Initialize()
 
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
 
+    // Dummy stream description. Stream format will be set by first incoming sample.
     StreamDescription description;
+    description.guiMajorType = MFMediaType_Video;
+    description.guiSubType = MFVideoFormat_I420;
+    description.dwFrameWidth = 320;
+    description.dwFrameHeight = 240;
+    description.dwFrameRateNumerator = 30;
+    description.dwFrameRateDenominator = 1;
+    description.dwStreamId = 1;
 
     ThrowIfError(VideoRenderMediaStreamWinRT::CreateInstance(&description, this, &spStream));
 
@@ -1639,17 +1691,17 @@ void VideoRenderMediaSourceWinRT::InitPresentationDescription()
 {
   ComPtr<IMFPresentationDescriptor> spPresentationDescriptor;
 
-  IMFStreamDescriptor *stream = nullptr;
+  IMFStreamDescriptor *pStreamDescriptor = nullptr;
 
-  ThrowIfError(_spStream->GetStreamDescriptor(&stream));
+  ThrowIfError(_spStream->GetStreamDescriptor(&pStreamDescriptor));
 
-  ThrowIfError(MFCreatePresentationDescriptor(1, &stream, &spPresentationDescriptor));
+  ThrowIfError(MFCreatePresentationDescriptor(1, &pStreamDescriptor, &spPresentationDescriptor));
 
   ThrowIfError(spPresentationDescriptor->SelectStream(0));
 
   _spPresentationDescriptor = spPresentationDescriptor;
 
-  stream->Release();
+  pStreamDescriptor->Release();
 }
 
 HRESULT VideoRenderMediaSourceWinRT::ValidatePresentationDescriptor(IMFPresentationDescriptor *pPD)
@@ -1684,7 +1736,7 @@ HRESULT VideoRenderMediaSourceWinRT::ValidatePresentationDescriptor(IMFPresentat
   return hr;
 }
 
-void VideoRenderMediaSourceWinRT::SelectStreams(IMFPresentationDescriptor *pPD)
+void VideoRenderMediaSourceWinRT::SelectStream(IMFPresentationDescriptor *pPD)
 {
   ComPtr<IMFStreamDescriptor> spSD;
   ComPtr<VideoRenderMediaStreamWinRT> spStream;
@@ -1726,7 +1778,7 @@ void VideoRenderMediaSourceWinRT::DoStart(VideoRenderSourceStartOperation *pOp)
 
   try
   {
-    SelectStreams(spPD.Get());
+    SelectStream(spPD.Get());
 
     _eSourceState = SourceState_Starting;
 
@@ -1753,6 +1805,7 @@ void VideoRenderMediaSourceWinRT::DoStop(VideoRenderSourceOperation *pOp)
       ThrowIfError(pStream->Flush());
       ThrowIfError(pStream->Stop());
     }
+    _eSourceState = SourceState_Stopped;
   }
   catch (Platform::Exception ^exc)
   {
