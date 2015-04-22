@@ -67,6 +67,15 @@
         'media/webrtc/fakewebrtcvideoengine.h',
         'media/webrtc/fakewebrtcvoiceengine.h',
       ],
+      'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          # avoid duplicate inclusion 
+          'sources!': [
+            'media/base/testutils.cc',
+            'media/base/testutils.h',
+          ],
+        }],
+      ],
     },  # target libjingle_unittest_main
     {
       'target_name': 'libjingle_media_unittest',
@@ -108,6 +117,15 @@
         'media/webrtc/webrtcvoiceengine_unittest.cc',
       ],
       'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'type': 'static_library',
+          # TODO (winrt) enable when compile issue is fixed
+          'sources!': [
+            'media/sctp/sctpdataengine_unittest.cc',
+          ],
+        }, {
+          'type': 'executable',
+        }],
         ['OS=="win"', {
           'conditions': [
             ['use_openssl==0', {

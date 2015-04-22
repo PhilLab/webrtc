@@ -23,6 +23,7 @@
         '../../../../webrtc/system_wrappers/system_wrappers.gyp:metrics_default',
         '../../../../webrtc/test/test.gyp:channel_transport',
         '../../../../webrtc/test/test.gyp:field_trial',
+        '../../../../webrtc/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',

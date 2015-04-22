@@ -14,7 +14,11 @@
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#if defined (WINRT)
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 
 namespace webrtc {
 
@@ -177,7 +181,11 @@ void ScreenshareLayers::CalculateFramerate(uint32_t timestamp) {
 
 bool ScreenshareLayers::TargetBitrateExperimentEnabled() {
   std::string group =
+#if defined (WINRT)
+    field_trial::FindFullNameFieldTrialDefault("WebRTC-ScreencastTargetBitrateOvershoot");
+#else
       field_trial::FindFullName("WebRTC-ScreencastTargetBitrateOvershoot");
+#endif
   return group == "Enabled";
 }
 

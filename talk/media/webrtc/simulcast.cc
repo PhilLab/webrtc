@@ -33,7 +33,11 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"  // For webrtc::VideoCodec
+#if defined(WINRT)
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 namespace cricket {
 
 struct SimulcastFormat {
@@ -420,7 +424,11 @@ ScreenshareLayerConfig::ScreenshareLayerConfig(int tl0_bitrate, int tl1_bitrate)
 
 ScreenshareLayerConfig ScreenshareLayerConfig::GetDefault() {
   std::string group =
-      webrtc::field_trial::FindFullName(kScreencastLayerFieldTrialName);
+#if defined(WINRT)
+    webrtc::field_trial::FindFullNameFieldTrialDefault(kScreencastLayerFieldTrialName);
+#else
+    webrtc::field_trial::FindFullName(kScreencastLayerFieldTrialName);
+#endif
 
   ScreenshareLayerConfig config(kScreenshareDefaultTl0BitrateKbps,
                                 kScreenshareDefaultTl1BitrateKbps);

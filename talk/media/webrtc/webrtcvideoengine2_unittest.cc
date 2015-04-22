@@ -437,6 +437,8 @@ class WebRtcVideoEngine2VoiceTest : public WebRtcVideoEngine2Test {
   WebRtcVideoEngine2VoiceTest() : WebRtcVideoEngine2Test(&voice_engine_) {}
 };
 
+// TODO (winrt) Enable when the known issue with the mic access is fixed
+#ifndef WINRT
 TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
   FakeCallFactory call_factory;
   engine_.SetCallFactory(&call_factory);
@@ -472,6 +474,7 @@ TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
   EXPECT_EQ(-1, receive_streams[1]->GetConfig().audio_channel_id)
       << "AV sync should only be set up for the first receive channel.";
 }
+#endif
 
 TEST_F(WebRtcVideoEngine2Test, FindCodec) {
   const std::vector<cricket::VideoCodec>& c = engine_.codecs();

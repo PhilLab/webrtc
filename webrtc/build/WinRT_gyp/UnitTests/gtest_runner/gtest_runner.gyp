@@ -16,6 +16,7 @@
       'target_name': 'gtest_runner',
       'type': 'executable',
       'dependencies': [
+        '../../../../../talk/libjingle_tests.gyp:libjingle_media_unittest',
         '../../../../../webrtc/common_audio/common_audio.gyp:common_audio_unittests',
         '../../../../../webrtc/common_video/common_video_unittests.gyp:common_video_unittests',
         # TODO(winrt) uncomment when the issue with microphone access is fixed
@@ -47,6 +48,7 @@
       'forcePackage': [
             '../../../../../resources/',
             '../../../../../data/',
+            '../../../../../talk/media/testdata/',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
@@ -89,6 +91,7 @@
             'StoreLogo.png',
             '../../../../../data/',
             '../../../../../resources/',
+            '../../../../../talk/media/testdata/',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -114,6 +117,7 @@
             'StoreLogo.png',
             '../../../../../data/',
             '../../../../../resources/',
+            '../../../../../talk/media/testdata/',
           ],
         },
       ],
