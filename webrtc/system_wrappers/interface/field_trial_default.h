@@ -20,6 +20,9 @@ namespace field_trial {
 // Note: trials_string must never be destroyed.
 void InitFieldTrialsFromString(const char* trials_string);
 
+#if defined(WINRT)
+std::string FindFullNameFieldTrialDefault(const std::string& name);
+#endif
 }  // namespace field_trial
 }  // namespace webrtc
 

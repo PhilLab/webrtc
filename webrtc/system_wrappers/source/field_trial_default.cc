@@ -19,7 +19,11 @@ namespace field_trial {
 
 static const char *trials_init_string = NULL;
 
+#if defined(WINRT)
+std::string FindFullNameFieldTrialDefault(const std::string& name) {
+#else
 std::string FindFullName(const std::string& name) {
+#endif
   if (trials_init_string == NULL)
     return std::string();
 
