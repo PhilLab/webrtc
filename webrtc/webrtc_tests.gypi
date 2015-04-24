@@ -30,6 +30,12 @@
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'msvs_disabled_warnings': [ 
+                                     #warning: declaration of '' hides previous local declaration, hides class member declaration
+                                     4456, 
+                                    ],
+        }],
       ],
     },
     {

@@ -144,6 +144,7 @@
             'vie_codec_unittest.cc',
             'vie_remb_unittest.cc',
           ],
+          'msvs_disabled_warnings': [ 4267, ],
           'conditions': [
             ['OS=="android"', {
               'dependencies': [
