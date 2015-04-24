@@ -64,6 +64,8 @@ int PingTask::ProcessStart() {
     return STATE_ERROR;
   }
 
+//Disabled warning: Declaration of 'stanza' hides previous local declaration
+#pragma warning (disable: 4456)
   // Send a ping if it's time.
   if (now >= next_ping_time_) {
     rtc::scoped_ptr<buzz::XmlElement> stanza(
