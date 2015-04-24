@@ -66,6 +66,19 @@
         'media/webrtc/fakewebrtcvideoengine.h',
         'media/webrtc/fakewebrtcvoiceengine.h',
       ],
+      'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          # avoid duplicate inclusion 
+          'sources!': [
+            'media/base/testutils.cc',
+            'media/base/testutils.h',
+          ],
+          'msvs_disabled_warnings': [ 
+                                     #warning: declaration of '' hides previous local declaration, hides class member declaration
+                                     4458, 
+                                    ],
+        }],
+      ],
     },  # target libjingle_unittest_main
     {
       'target_name': 'libjingle_media_unittest',
@@ -107,6 +120,21 @@
         'media/webrtc/webrtcvoiceengine_unittest.cc',
       ],
       'conditions': [
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'type': 'static_library',
+          # TODO (winrt) enable when compile issue is fixed
+          'sources!': [
+            'media/sctp/sctpdataengine_unittest.cc',
+          ],
+          'msvs_disabled_warnings': [ 
+                                     #warning: declaration of '' hides previous local declaration, hides class member declaration
+                                     4456, 4457, 4458, 4459,
+                                     #warning: conversion from 'size_t' to 'unsigned char', possible loss of data
+                                     4267,
+                                     ],
+        }, {
+          'type': 'executable',
+        }],
         ['OS=="win"', {
           'conditions': [
             ['use_openssl==0', {

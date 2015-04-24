@@ -544,6 +544,12 @@
             'media/sctp/sctpdataengine.cc',
             'media/sctp/sctpdataengine.h',
           ],
+          'msvs_disabled_warnings': [ 
+                                     #warning: declaration of '' hides previous local declaration, hides class member declaration
+                                     4456, 4457, 4458, 
+                                     #warning: conversion from 'size_t' to 'unsigned char', possible loss of data
+                                     4267,
+                                     ],
         }],
         ['OS=="mac"', {
           'sources': [

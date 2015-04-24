@@ -222,10 +222,33 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     shared_->set_audio_device(AudioDeviceModuleImpl::Create(
         VoEId(shared_->instance_id(), -1), shared_->audio_device_layer()));
 
-    if (shared_->audio_device() == nullptr) {
-      shared_->SetLastError(VE_NO_MEMORY, kTraceCritical,
-                            "Init() failed to create the ADM");
-      return -1;
+    // Create an internal ADM if the user has not added an external
+    // ADM implementation as input to Init().
+    if (external_adm == NULL)
+    {
+        // Create the internal ADM implementation.
+#if defined (WINRT)
+      // Use AudioDeviceModule::kWindowsWasapiAudio for WinRT
+      shared_->set_audio_device(AudioDeviceModuleImpl::Create(
+        VoEId(shared_->instance_id(), -1), AudioDeviceModule::kWindowsWasapiAudio));
+#else
+      shared_->set_audio_device(AudioDeviceModuleImpl::Create(
+        VoEId(shared_->instance_id(), -1), shared_->audio_device_layer()));
+#endif
+
+        if (shared_->audio_device() == nullptr)
+        {
+            shared_->SetLastError(VE_NO_MEMORY, kTraceCritical,
+                "Init() failed to create the ADM");
+            return -1;
+        }
+    }
+    else
+    {
+        // Use the already existing external ADM implementation.
+        shared_->set_audio_device(external_adm);
+        WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(shared_->instance_id(), -1),
+            "An external ADM implementation will be used in VoiceEngine");
     }
   } else {
     // Use the already existing external ADM implementation.

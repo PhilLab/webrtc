@@ -3230,6 +3230,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {
 
 // Tests for the actual WebRtc VoE library.
 
+// TODO (winrt) Enable when the known issue with the mic access is fixed
+#ifndef WINRT
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   cricket::WebRtcVoiceEngine engine;
@@ -3243,6 +3245,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
   engine.Terminate();
 }
+#endif
 
 // Tests that the logging from the library is cleartext.
 TEST(WebRtcVoiceEngineTest, DISABLED_HasUnencryptedLogging) {
@@ -3348,6 +3351,8 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   engine.Terminate();
 }
 
+// TODO (winrt) Enable when the known issue with the mic access is fixed
+#ifndef WINRT
 // Tests that VoE supports at least 32 channels
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::WebRtcVoiceEngine engine;
@@ -3381,8 +3386,10 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   cricket::WebRtcVoiceMediaChannel channel(&engine);
   EXPECT_TRUE(channel.SetRecvCodecs(engine.codecs()));
 }
+#endif
 
-#ifdef WIN32
+// TODO (winrt) do we need this test?
+#if defined(WIN32) && !defined(WINRT)
 // Test our workarounds to WebRtc VoE' munging of the coinit count
 TEST(WebRtcVoiceEngineTest, CoInitialize) {
   cricket::WebRtcVoiceEngine* engine = new cricket::WebRtcVoiceEngine();

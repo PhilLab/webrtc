@@ -259,12 +259,19 @@ std::string GetTestFilePath(const std::string& filename) {
 #ifdef ENABLE_WEBRTC
   rtc::Pathname path = rtc::GetExecutablePath();
   EXPECT_FALSE(path.empty());
+#ifndef WINRT
   path.AppendPathname("../../talk/");
+#endif
 #else
   rtc::Pathname path = testing::GetTalkDirectory();
   EXPECT_FALSE(path.empty());  // must be run from inside "talk"
 #endif
+#if defined (WINRT)
+  // For WINRT files are located under <app_installaction_locations>/testdata
+  path.AppendFolder("testdata/");
+#else
   path.AppendFolder("media/testdata/");
+#endif
   path.SetFilename(filename);
   return path.pathname();
 }

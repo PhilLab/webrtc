@@ -515,6 +515,8 @@ void TurnServer::OnAllocationDestroyed(TurnServerAllocation* allocation) {
     allocations_.erase(it);
 }
 
+//Disabled Declaration of 'socket' hides function parameter
+#pragma warning (disable: 4457)
 void TurnServer::DestroyInternalSocket(rtc::AsyncPacketSocket* socket) {
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   if (iter != server_sockets_.end()) {

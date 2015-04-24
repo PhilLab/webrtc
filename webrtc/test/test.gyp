@@ -175,6 +175,15 @@
         'test_suite.cc',
         'test_suite.h',
       ],
+      'conditions': [
+        # On WinRT with all tests linking to a single app, there are
+        # duplicate symbols in histogram and metrics_default.
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'dependencies!': [
+            'histogram',
+          ],
+        }],
+      ],
     },
     {
       # Depend on this target when you want to have test_support and a special

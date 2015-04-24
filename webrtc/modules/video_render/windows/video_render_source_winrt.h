@@ -395,6 +395,10 @@ struct StreamDescription
   GUID guiMajorType;
   GUID guiSubType;
   DWORD dwStreamId;
+  DWORD dwFrameWidth;
+  DWORD dwFrameHeight;
+  DWORD dwFrameRateNumerator;
+  DWORD dwFrameRateDenominator;
 };
 
 struct SampleHeader
@@ -449,6 +453,7 @@ public:
   HRESULT Flush();
   HRESULT Shutdown();
   void ProcessSample(SampleHeader *pSampleHeader, IMFSample *pSample);
+  void ProcessFormatChange(StreamDescription *pStreamDescription);
   HRESULT SetActive(bool fActive);
   bool IsActive() const { return _fActive; }
   SourceState GetState() const { return _eSourceState; }
@@ -465,6 +470,7 @@ private:
 private:
   void Initialize(StreamDescription *pStreamDescription);
   void DeliverSamples();
+  void SetMediaTypeAttributes(StreamDescription *pStreamDescription, IMFMediaType *pMediaType);
   void SetSampleAttributes(SampleHeader *pSampleHeader, IMFSample *pSample);
   void HandleError(HRESULT hErrorCode);
 
@@ -690,6 +696,7 @@ class VideoRenderMediaSourceWinRT :
   __override HRESULT ValidateOperation(_In_ VideoRenderSourceOperation *pOp);
 
   void ProcessVideoFrame(const I420VideoFrame& videoFrame);
+  void FrameSizeChange(int width, int height);
 
   _Acquires_lock_(_critSec)
   HRESULT Lock();
@@ -707,7 +714,7 @@ class VideoRenderMediaSourceWinRT :
   HRESULT GetStreamById(DWORD dwId, VideoRenderMediaStreamWinRT **ppStream);
   void InitPresentationDescription();
   HRESULT ValidatePresentationDescriptor(IMFPresentationDescriptor *pPD);
-  void SelectStreams(IMFPresentationDescriptor *pPD);
+  void SelectStream(IMFPresentationDescriptor *pPD);
 
   void DoStart(VideoRenderSourceStartOperation *pOp);
   void DoStop(VideoRenderSourceOperation *pOp);
@@ -719,10 +726,9 @@ class VideoRenderMediaSourceWinRT :
   ULONG _cRef;
   CriticalSectionWrapper* _critSec;
   SourceState _eSourceState;
+
   Microsoft::WRL::ComPtr<IMFMediaEventQueue> _spEventQueue;
-
   Microsoft::WRL::ComPtr<IMFPresentationDescriptor> _spPresentationDescriptor;
-
   Microsoft::WRL::ComPtr<IMFMediaStream> _spStream;
 
   float _flRate;

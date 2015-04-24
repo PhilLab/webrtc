@@ -67,7 +67,11 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/vp8_factory.h"
+#if defined(WINRT)
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 
 namespace {
 
@@ -263,7 +267,11 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
   }
   if (CodecNameMatches(codec_name, kVp9CodecName)) {
     const std::string group_name =
-        webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
+#if defined(WINRT)
+      webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-SupportVP9");
+#else
+      webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
+#endif
     return group_name == "Enabled" || group_name == "EnabledByFlag";
   }
   return false;
