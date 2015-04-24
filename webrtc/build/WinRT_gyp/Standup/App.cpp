@@ -49,8 +49,8 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 500
 #else
-#define PREFERRED_FRAME_WIDTH 800
-#define PREFERRED_FRAME_HEIGHT 600
+#define PREFERRED_FRAME_WIDTH 640
+#define PREFERRED_FRAME_HEIGHT 480
 #define PREFERRED_MAX_FPS 30
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 1000
@@ -811,6 +811,13 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
           return Concurrency::task<void>();
         }
 
+        webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+          "Capture capability - index: %d, width: %d, height: %d, max fps: %d",
+          i, deviceCapability.width, deviceCapability.height, deviceCapability.maxFPS);
+
+        if (deviceCapability.rawType == webrtc::kVideoMJPEG)
+          continue;
+
         int widthDiff = abs((int)(deviceCapability.width - PREFERRED_FRAME_WIDTH));
         if (widthDiff < minWidthDiff) {
           capability = deviceCapability;
@@ -830,10 +837,6 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
             }
           }
         }
-
-        webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
-          "Capture capability - index: %d, width: %d, height: %d, max fps: %d", 
-            i, deviceCapability.width, deviceCapability.height, deviceCapability.maxFPS);
       }
 
       webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
@@ -1151,7 +1154,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       capability.width = PREFERRED_FRAME_WIDTH;
       capability.height = PREFERRED_FRAME_HEIGHT;
       capability.maxFPS = PREFERRED_MAX_FPS;
-      capability.rawType = webrtc::kVideoI420;
+      capability.rawType = webrtc::kVideoNV12;
 
       vcpm_->StartCapture(capability);
 

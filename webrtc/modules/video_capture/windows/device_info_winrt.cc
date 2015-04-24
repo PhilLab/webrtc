@@ -23,6 +23,7 @@ using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaStreamType;
 using Windows::Media::MediaProperties::IVideoEncodingProperties;
+using Windows::Media::MediaProperties::MediaEncodingSubtypes;
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -233,7 +234,22 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
                 capability.width = prop->Width;
                 capability.height = prop->Height;
                 capability.maxFPS = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
-                capability.rawType = kVideoNV12;
+                if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Yv12->Data()) == 0)
+                  capability.rawType = kVideoYV12;
+                else if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Yuy2->Data()) == 0)
+                  capability.rawType = kVideoYUY2;
+                else if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Iyuv->Data()) == 0)
+                  capability.rawType = kVideoIYUV;
+                else if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Rgb24->Data()) == 0)
+                  capability.rawType = kVideoRGB24;
+                else if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Rgb32->Data()) == 0)
+                  capability.rawType = kVideoARGB;
+                else if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Mjpg->Data()) == 0)
+                  capability.rawType = kVideoMJPEG;
+                else if (_wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Nv12->Data()) == 0)
+                  capability.rawType = kVideoNV12;
+                else
+                  capability.rawType = kVideoUnknown;
                 _captureCapabilities.push_back(capability);
               }
             } catch (Platform::Exception^ e) {
