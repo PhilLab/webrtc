@@ -691,7 +691,6 @@ void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMF
     if (_eSourceState == SourceState_Started)
     {
       // Put sample on the list
-      pSample->AddRef();
       _samples.push_back(pSample);
       // Deliver samples
       DeliverSamples();
@@ -940,10 +939,10 @@ void VideoRenderMediaStreamWinRT::CleanSampleQueue()
   ComPtr<IMFSample> spSample;
 
   // For video streams leave first key frame.
-  std::deque<IUnknown*>::iterator iter = _samples.begin();
+  std::deque<ComPtr<IUnknown> >::iterator iter = _samples.begin();
   while (iter != _samples.end()) {
     IUnknown **entry = spEntry.ReleaseAndGetAddressOf();
-    *entry = *iter;
+    *entry = iter->Get();
     if (SUCCEEDED(spEntry.As(&spSample)) && MFGetAttributeUINT32(spSample.Get(), MFSampleExtension_CleanPoint, 0))
     {
       break;
@@ -956,7 +955,7 @@ void VideoRenderMediaStreamWinRT::CleanSampleQueue()
 
   if (spSample != nullptr)
   {
-    _samples.push_back(spSample.Get());
+    _samples.push_back(spSample);
   }
 }
 

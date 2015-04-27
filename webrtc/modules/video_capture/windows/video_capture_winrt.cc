@@ -278,7 +278,6 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     if (SUCCEEDED(hr)) {
       incoming_frame_callback_->OnIncomingFrame(videoFrame, videoFrameLength, frameInfo, captureTime);
       spMediaBuffer->Unlock();
-      spMediaSample.Get()->Release();
     }
   }
 }

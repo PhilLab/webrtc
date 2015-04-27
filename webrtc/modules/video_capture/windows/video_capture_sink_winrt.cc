@@ -374,7 +374,6 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::ProcessSample(IMFSample *pSample) {
   if (SUCCEEDED(hr)) {
     // Add the sample to the sample queue.
     if (SUCCEEDED(hr)) {
-      pSample->AddRef();
       _sampleQueue.push(pSample);
     }
 
@@ -749,9 +748,7 @@ HRESULT VideoCaptureStreamSinkWinRT::Shutdown() {
     MFUnlockWorkQueue(_workQueueId);
 
     while (!_sampleQueue.empty()) {
-      IUnknown* pSample = _sampleQueue.front();
       _sampleQueue.pop();
-      pSample->Release();
     }
 
     _spSink.Reset();
