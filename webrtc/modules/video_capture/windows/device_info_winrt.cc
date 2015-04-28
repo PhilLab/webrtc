@@ -251,6 +251,12 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
                 else
                   capability.rawType = kVideoUnknown;
                 _captureCapabilities.push_back(capability);
+                int subtypeSize = WideCharToMultiByte(CP_UTF8, 0, prop->Subtype->Data(), wcslen(prop->Subtype->Data()), NULL, 0, NULL, NULL);
+                std::string subtype(subtypeSize, 0);
+                WideCharToMultiByte(CP_UTF8, 0, prop->Subtype->Data(), wcslen(prop->Subtype->Data()), &subtype[0], subtypeSize, NULL, NULL);
+                WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
+                  "Capture media stream properties: index: %d, width: %d, height: %d, frame rate: %d/%d, subtype: %s", 
+                  i, prop->Width, prop->Height, prop->FrameRate->Numerator, prop->FrameRate->Denominator, subtype.c_str());
               }
             } catch (Platform::Exception^ e) {
               int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
