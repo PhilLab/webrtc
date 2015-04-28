@@ -38,6 +38,8 @@ using namespace Windows::UI;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
+using namespace Windows::Storage;
+using namespace Windows::Foundation;
 
 bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
@@ -467,6 +469,8 @@ namespace StandupWinRT
       auto layoutRoot = ref new Grid();
       layoutRoot->Margin = ThicknessHelper::FromUniformLength(32);
 
+      auto settings = ApplicationData::Current->LocalSettings->Values;
+
       // First row (ip and port fields)
       {
         auto row = ref new RowDefinition();
@@ -486,6 +490,7 @@ namespace StandupWinRT
 
         ipTextBox_ = ref new TextBox();
         ipTextBox_->Width = 150;
+        ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
         stackPanel->Children->Append(ipTextBox_);
 
         label = ref new TextBlock();
@@ -495,6 +500,7 @@ namespace StandupWinRT
         stackPanel->Children->Append(label);
 
         videoPortTextBox_ = ref new TextBox();
+        videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
         stackPanel->Children->Append(videoPortTextBox_);
 
         label = ref new TextBlock();
@@ -504,6 +510,7 @@ namespace StandupWinRT
         stackPanel->Children->Append(label);
 
         audioPortTextBox_ = ref new TextBox();
+        audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
         stackPanel->Children->Append(audioPortTextBox_);
       }
 
@@ -583,6 +590,7 @@ namespace StandupWinRT
      * WARNING: this function has be called from Main UI thread.
      */
     void initializeTranportInfo();
+    void SaveSettings();
 };
 
 }
@@ -613,6 +621,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
   if (!started_) {
 
     initializeTranportInfo();
+    SaveSettings();
 
 #ifdef VOICE
     Concurrency::create_task([this]() {
@@ -1119,6 +1128,8 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 {
   if (!startedVideo_) {
     initializeTranportInfo();
+    SaveSettings();
+
     Concurrency::create_task([this]() {
       webrtc::VideoCaptureModule::DeviceInfo* dev_info =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
@@ -1202,4 +1213,13 @@ void StandupWinRT::App::initializeTranportInfo(){
     audioPort_ = userInputAudioPort;
   }
 
+}
+
+void StandupWinRT::App::SaveSettings()
+{
+  auto settings = ApplicationData::Current->LocalSettings;
+  auto values = settings->Values;
+  values->Insert("remote_ip", ipTextBox_->Text);
+  values->Insert("audio_port", audioPortTextBox_->Text);
+  values->Insert("video_port", videoPortTextBox_->Text);
 }
