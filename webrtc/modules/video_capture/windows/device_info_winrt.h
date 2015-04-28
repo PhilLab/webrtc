@@ -22,7 +22,7 @@
 namespace webrtc {
 namespace videocapturemodule {
 
-public ref class MediaCaptureDevicesWinRT sealed
+private ref class MediaCaptureDevicesWinRT sealed
 {
  private:
   MediaCaptureDevicesWinRT();

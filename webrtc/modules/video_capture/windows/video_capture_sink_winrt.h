@@ -25,7 +25,7 @@ class CriticalSectionWrapper;
 namespace videocapturemodule {
 class VideoCaptureMediaSinkWinRT;
 
-public ref class MediaSampleEventArgs sealed
+private ref class MediaSampleEventArgs sealed
 {
 internal:
   MediaSampleEventArgs(Microsoft::WRL::ComPtr<IMFSample> spMediaSample) :
@@ -296,7 +296,7 @@ class VideoCaptureMediaSinkWinRT
   Microsoft::WRL::ComPtr<IMFPresentationClock> _spClock;
 };
 
-public ref class VideoCaptureMediaSinkProxyWinRT sealed
+private ref class VideoCaptureMediaSinkProxyWinRT sealed
 {
  public:
   VideoCaptureMediaSinkProxyWinRT();
