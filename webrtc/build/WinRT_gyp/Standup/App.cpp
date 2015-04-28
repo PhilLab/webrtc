@@ -635,9 +635,9 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 	  stopEvent_.reset();
       initializeTranportInfo();
 
-#ifdef VOICE
     Concurrency::create_task([this]() {
       int error;
+#ifdef VOICE
       voiceChannel_ = voiceBase_->CreateChannel();
       if (voiceChannel_ < 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
@@ -992,12 +992,13 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
+#endif
+
       Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Stop";
         startStopVideoButton_->IsEnabled = false;
       })));
 
-#endif
     
 	  started_ = true;
 	  stopEvent_.wait();
@@ -1110,6 +1111,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       vcpm_ = NULL;
 
       captureId_ = -1;
+#endif
 
 	  started_ = false;
 
@@ -1118,7 +1120,6 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         startStopVideoButton_->IsEnabled = true;
       })));
     });
-#endif
   }
 }
 
