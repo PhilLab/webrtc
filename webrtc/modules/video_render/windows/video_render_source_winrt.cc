@@ -1543,10 +1543,27 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
           buffer += videoFrame.width();
           y_buffer += videoFrame.stride(kYPlane);
         }
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+        // I420 to NV12 conversion
+        uint8_t* u_buffer = (uint8_t*)videoFrame.buffer(kUPlane);
+        uint8_t* v_buffer = (uint8_t*)videoFrame.buffer(kVPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++)
+        {
+          for (int j = 0; j < videoFrame.width() / 2; j++)
+          {
+            buffer[2*j+0] = u_buffer[j];
+            buffer[2*j+1] = v_buffer[j];
+          }
+          buffer += videoFrame.width();
+          u_buffer += videoFrame.stride(kUPlane);
+          v_buffer += videoFrame.stride(kVPlane);
+        }
+#else
         uint8_t* u_buffer = (uint8_t*)videoFrame.buffer(kUPlane);
         for (int i = 0; i < videoFrame.height() / 2; i++)
         {
           std::memcpy(buffer, u_buffer, videoFrame.width() / 2);
+          std::memset(buffer, 0, videoFrame.width() / 2);
           buffer += videoFrame.width() / 2;
           u_buffer += videoFrame.stride(kUPlane);
         }
@@ -1554,9 +1571,11 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
         for (int i = 0; i < videoFrame.height() / 2; i++)
         {
           std::memcpy(buffer, v_buffer, videoFrame.width() / 2);
+          std::memset(buffer, 0, videoFrame.width() / 2);
           buffer += videoFrame.width() / 2;
           v_buffer += videoFrame.stride(kVPlane);
         }
+#endif
         spMediaBuffer->SetCurrentLength(videoFrame.width() * videoFrame.height() * 3 / 2);
         spMediaBuffer->Unlock();
       }
@@ -1597,7 +1616,11 @@ void VideoRenderMediaSourceWinRT::FrameSizeChange(int width, int height)
 
     StreamDescription description;
     description.guiMajorType = MFMediaType_Video;
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+    description.guiSubType = MFVideoFormat_NV12;
+#else
     description.guiSubType = MFVideoFormat_I420;
+#endif
     description.dwFrameWidth = width;
     description.dwFrameHeight = height;
     description.dwFrameRateNumerator = 30;
@@ -1637,9 +1660,13 @@ void VideoRenderMediaSourceWinRT::Initialize()
     // Dummy stream description. Stream format will be set by first incoming sample.
     StreamDescription description;
     description.guiMajorType = MFMediaType_Video;
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+    description.guiSubType = MFVideoFormat_NV12;
+#else
     description.guiSubType = MFVideoFormat_I420;
-    description.dwFrameWidth = 320;
-    description.dwFrameHeight = 240;
+#endif
+    description.dwFrameWidth = 640;
+    description.dwFrameHeight = 480;
     description.dwFrameRateNumerator = 30;
     description.dwFrameRateDenominator = 1;
     description.dwStreamId = 1;
