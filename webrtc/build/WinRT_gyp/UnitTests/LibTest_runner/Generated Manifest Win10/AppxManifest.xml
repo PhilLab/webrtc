@@ -7,10 +7,10 @@
 
     For more information on package manifest files, see http://go.microsoft.com/fwlink/?LinkID=241727
   -->
-  <Identity Name="StandupWinRT" Publisher="CN=WebRTC" Version="1.0.0.0" ProcessorArchitecture="x86" />
-  <mp:PhoneIdentity PhoneProductId="ee57de58-2489-4148-b17e-a468274bb9ce" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="LibTestRunner" Publisher="CN=WebRTC" Version="1.0.0.0" ProcessorArchitecture="x86" />
+  <mp:PhoneIdentity PhoneProductId="edacf4ac-ee9e-11e4-90ec-1681e6b88ec1" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>StandupWinRT</DisplayName>
+    <DisplayName>LibTest_runner</DisplayName>
     <PublisherDisplayName>WebRTC</PublisherDisplayName>
     <Logo>StoreLogo.png</Logo>
   </Properties>
@@ -21,16 +21,13 @@
     <Resource Language="EN-US" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="standup.exe" EntryPoint="StandupWinRT.App">
-      <uap:VisualElements DisplayName="StandupWinRT" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="StandupWinRT" ForegroundText="light" BackgroundColor="#464646">
+    <Application Id="App" Executable="libTest_runner.exe" EntryPoint="LibTest_runner_Windows.App">
+      <uap:VisualElements DisplayName="LibTest_runner.Windows" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="LibTest_runner.Windows" ForegroundText="light" BackgroundColor="#464646">
         <uap:SplashScreen Image="SplashScreen.png" />
       </uap:VisualElements>
     </Application>
   </Applications>
   <Capabilities>
-    <Capability Name="privateNetworkClientServer" />
-    <Capability Name="internetClientServer" />
-    <DeviceCapability Name="microphone" />
-    <DeviceCapability Name="webcam" />
+    <Capability Name="internetClient" />
   </Capabilities>
 </Package>
