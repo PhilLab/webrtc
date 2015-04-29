@@ -12,7 +12,11 @@
 #include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
 #include "webrtc/modules/video_coding/main/source/rtt_filter.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#if defined (WINRT)
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 
 #include <assert.h>
 #include <math.h>
@@ -456,7 +460,11 @@ int VCMJitterEstimator::GetJitterEstimate(double rttMultiplier) {
 bool VCMJitterEstimator::LowRateExperimentEnabled() {
   if (low_rate_experiment_ == kInit) {
     std::string group =
-        webrtc::field_trial::FindFullName("WebRTC-ReducedJitterDelay");
+#if defined (WINRT)
+      webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-ReducedJitterDelay");
+#else
+      webrtc::field_trial::FindFullName("WebRTC-ReducedJitterDelay");
+#endif
     if (group == "Disabled") {
       low_rate_experiment_ = kDisabled;
     } else {

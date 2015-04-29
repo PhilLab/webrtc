@@ -13,12 +13,15 @@
       'target_name': 'audio_device_test_winrt',
       'type': 'executable',
       'dependencies': [
+        '../../../../../webrtc/base/base.gyp:rtc_base',
+        '../../../../../webrtc/modules/modules.gyp:audio_device',
+        '../../../../../webrtc/test/test.gyp:test_support_main',
       ],
       'defines': [
         '_HAS_EXCEPTIONS=1',
       ],
       'include_dirs': [
-        '../../../../../..',
+        '../../../../../testing/gtest/include',
       ],
       'sources': [
         'App.cpp',
@@ -27,6 +30,11 @@
         'SmallLogo.png',
         'SplashScreen.png',
         'StoreLogo.png',
+        'WinRTTestManager.h',
+        'WinRTTestManager.cpp',
+      ],
+      'forcePackage': [
+        '../../../../../resources/audio_device/',
       ],
       'copies': [
         {
@@ -37,6 +45,7 @@
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+            '../../../../../resources/audio_device/',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -47,6 +56,7 @@
             'SmallLogo.png',
             'SplashScreen.png',
             'StoreLogo.png',
+            '../../../../../resources/audio_device/',
           ],
         },
       ],

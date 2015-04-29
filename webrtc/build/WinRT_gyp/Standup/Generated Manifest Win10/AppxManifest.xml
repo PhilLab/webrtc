@@ -28,13 +28,15 @@
     </Application>
   </Applications>
   <Capabilities>
+    <Capability Name="internetClient" />
+    <Capability Name="internetClient" />
     <Capability Name="privateNetworkClientServer" />
     <Capability Name="internetClientServer" />
     <DeviceCapability Name="microphone" />
     <DeviceCapability Name="webcam" />
   </Capabilities>
   <Dependencies>
-    <PackageDependency Name="Microsoft.VCLibs.120.00" MinVersion="12.0.21005.1" />
+    <PackageDependency Name="Microsoft.VCLibs.120.00.Debug" MinVersion="12.0.21005.1" />
   </Dependencies>
   <build:Metadata>
     <build:Item Name="cl.exe" Version="18.00.31101.0 built by: REL" />

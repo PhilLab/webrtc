@@ -485,8 +485,8 @@ private:
   Microsoft::WRL::ComPtr<IMFMediaEventQueue> _spEventQueue;
   Microsoft::WRL::ComPtr<IMFStreamDescriptor> _spStreamDescriptor;
 
-  std::deque<IUnknown*> _samples;
-  std::deque<IUnknown*> _tokens;
+  std::deque<Microsoft::WRL::ComPtr<IUnknown> > _samples;
+  std::deque<Microsoft::WRL::ComPtr<IUnknown> > _tokens;
 
   DWORD _dwId;
   bool _fActive;

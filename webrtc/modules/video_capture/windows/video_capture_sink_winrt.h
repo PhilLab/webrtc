@@ -227,7 +227,7 @@ class VideoCaptureStreamSinkWinRT :
   Microsoft::WRL::ComPtr<IMFByteStream> _spByteStream;
   Microsoft::WRL::ComPtr<IMFMediaType> _spCurrentType;
 
-  std::queue<IUnknown*> _sampleQueue;
+  std::queue<Microsoft::WRL::ComPtr<IUnknown> > _sampleQueue;
 
   ISinkCallback^ _callback;
   AsyncCallback<VideoCaptureStreamSinkWinRT>  _workQueueCB;
