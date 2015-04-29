@@ -12,6 +12,9 @@
       'conditions': [
         ['OS=="win" and OS_RUNTIME=="winrt"', {
           'type': 'static_library',
+          'msvs_disabled_warnings': [
+            4456, 4458,  # local members hides previously defined memebers or function members or class members
+          ],
         }, {
           'type': 'executable',
         }],
