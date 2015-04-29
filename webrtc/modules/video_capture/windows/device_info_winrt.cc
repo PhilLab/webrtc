@@ -14,8 +14,6 @@
 
 #include <windows.media.h>
 
-#include <ppltasks.h>
-
 using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
@@ -28,6 +26,79 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace webrtc {
 namespace videocapturemodule {
+
+MediaCaptureDevicesWinRT::MediaCaptureDevicesWinRT() :
+  critical_section_(CriticalSectionWrapper::CreateCriticalSection()) {
+
+}
+
+MediaCaptureDevicesWinRT::~MediaCaptureDevicesWinRT() {
+  if (critical_section_) {
+    delete critical_section_;
+  }
+}
+
+MediaCaptureDevicesWinRT^ MediaCaptureDevicesWinRT::Instance() {
+  static MediaCaptureDevicesWinRT^ instance = ref new MediaCaptureDevicesWinRT();
+  return instance;
+}
+
+Platform::Agile<MediaCapture> MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ deviceId) {
+
+  CriticalSectionScoped cs(critical_section_);
+
+  std::map<Platform::String^, Platform::Agile<MediaCapture> >::iterator iter =
+      media_capture_map_.find(deviceId);
+  if (iter != media_capture_map_.end()) {
+    return iter->second;
+  } else {
+    MediaCaptureInitializationSettings^ settings = ref new MediaCaptureInitializationSettings();
+    MediaCapture^ mediaCapture = ref new MediaCapture();
+    Platform::Agile<MediaCapture> mediaCaptureAgile(mediaCapture);
+    settings->VideoDeviceId = deviceId;
+
+    Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+    Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+    Concurrency::task<void> initializeAsyncTask;
+    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler(
+      [this,
+      &initializeAsyncTask,
+      mediaCaptureAgile,
+      settings]() {
+      initializeAsyncTask = Concurrency::create_task(mediaCaptureAgile->InitializeAsync(settings))
+        .then([this, mediaCaptureAgile](Concurrency::task<void> initTask)
+      {
+        try {
+          initTask.get();
+        } catch (Platform::Exception^ e) {
+          int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
+          std::string message(messageSize, 0);
+          WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
+          WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
+            "Failed to initialize media capture device. %s", message.c_str());
+        }
+      });
+    });
+    Windows::Foundation::IAsyncAction^ dispatcherAction = dispatcher->RunAsync(priority, handler);
+    auto dispatcherTask = Concurrency::create_task(dispatcherAction);
+    dispatcherTask.wait();
+    initializeAsyncTask.wait();
+
+    media_capture_map_[deviceId] = mediaCaptureAgile;
+    return mediaCaptureAgile;
+  }
+}
+
+void MediaCaptureDevicesWinRT::RemoveMediaCapture(Platform::String^ deviceId) {
+
+  CriticalSectionScoped cs(critical_section_);
+
+  std::map<Platform::String^, Platform::Agile<MediaCapture> >::iterator iter =
+    media_capture_map_.find(deviceId);
+  if (iter != media_capture_map_.end()) {
+    media_capture_map_.erase(deviceId);
+  }
+}
 
 // static
 DeviceInfoWinRT* DeviceInfoWinRT::Create(const int32_t id) {
@@ -173,15 +244,12 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
     "CreateCapabilityMap called for device %s", deviceUniqueIdUTF8);
 
-  bool finished = false;
-  bool* finishedPtr = &finished;
   auto findAllAsyncTask = Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
               deviceUniqueIdUTF8,
-              deviceUniqueIdUTF8Length,
-              finishedPtr](Concurrency::task<DeviceInformationCollection^> findTask) {
+              deviceUniqueIdUTF8Length](Concurrency::task<DeviceInformationCollection^> findTask) {
     try {
       DeviceInformationCollection^ devInfoCollection = findTask.get();
       if (devInfoCollection == nullptr || devInfoCollection->Size == 0) {
@@ -206,51 +274,21 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
         }
       }
       if (chosenDevInfo != nullptr) {
-        auto settings = ref new MediaCaptureInitializationSettings();
-        auto mediaCapture = ref new MediaCapture();
-        Platform::Agile<MediaCapture> mediaCaptureAgile(mediaCapture);
-        settings->VideoDeviceId = chosenDevInfo->Id;
-        Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-        Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
-        Concurrency::task<void> initializeAsyncTask;
-        Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler(
-            [this,
-            &initializeAsyncTask,
-            mediaCaptureAgile,
-            settings]() {
-          initializeAsyncTask = Concurrency::create_task(mediaCaptureAgile->InitializeAsync(settings))
-            .then([this, mediaCaptureAgile](Concurrency::task<void> initTask)
-          {
-            try {
-              initTask.get();
-              auto streamProperties = mediaCaptureAgile->VideoDeviceController->GetAvailableMediaStreamProperties(
-                  MediaStreamType::VideoRecord);
-              for (unsigned int i = 0; i < streamProperties->Size; i++)
-              {
-                IVideoEncodingProperties^ prop =
-                  static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
-                VideoCaptureCapability capability;
-                capability.width = prop->Width;
-                capability.height = prop->Height;
-                capability.maxFPS = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
-                capability.rawType = kVideoNV12;
-                _captureCapabilities.push_back(capability);
-              }
-            } catch (Platform::Exception^ e) {
-              int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
-              std::string message(messageSize, 0);
-              WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
-              WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                "Failed to get media stream properties. %s", message.c_str());
-            }
-          });
-        });
-        Windows::Foundation::IAsyncAction^ dispatcherAction = dispatcher->RunAsync(priority, handler);
-        auto dispatcherTask = Concurrency::create_task(dispatcherAction);
-        dispatcherTask.wait();
-        initializeAsyncTask.wait();
+        auto mediaCapture = MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(chosenDevInfo->Id);
+        auto streamProperties = mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
+          MediaStreamType::VideoRecord);
+        for (unsigned int i = 0; i < streamProperties->Size; i++)
+        {
+          IVideoEncodingProperties^ prop =
+            static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
+          VideoCaptureCapability capability;
+          capability.width = prop->Width;
+          capability.height = prop->Height;
+          capability.maxFPS = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
+          capability.rawType = kVideoNV12;
+          _captureCapabilities.push_back(capability);
+        }
       }
-      *finishedPtr = true;
     } catch (Platform::Exception^ e) {
     }
   });

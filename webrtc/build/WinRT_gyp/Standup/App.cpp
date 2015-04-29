@@ -530,8 +530,13 @@ namespace StandupWinRT
         auto makeRenderSurface = [grid](MediaElement^& elem, int index) {
           auto surface = ref new MediaElement();
           auto border = ref new Border();
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+          surface->Width = PREFERRED_FRAME_WIDTH / 4;
+          surface->Height = PREFERRED_FRAME_HEIGHT / 4;
+#else
           surface->Width = PREFERRED_FRAME_WIDTH;
           surface->Height = PREFERRED_FRAME_HEIGHT;
+#endif
           border->BorderBrush = ref new SolidColorBrush(ColorHelper::FromArgb(255, 0, 0, 255));
           border->BorderThickness = ThicknessHelper::FromUniformLength(2);
           border->Margin = ThicknessHelper::FromUniformLength(8);
@@ -804,6 +809,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       vcpm_->AddRef();
 
       int capabilitiesNumber = videoCapture_->NumberOfCapabilities(uniqueId, KMaxUniqueIdLength);
+
       webrtc::CaptureCapability capability;
       int minWidthDiff = INT_MAX;
       int minHeightDiff = INT_MAX;

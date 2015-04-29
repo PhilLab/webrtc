@@ -125,25 +125,9 @@ CaptureDevice::CaptureDevice(IncomingFrameCallback* incoming_frame_callback)
 
 void CaptureDevice::Initialize(Platform::String^ deviceId) {
   try {
-    auto settings = ref new MediaCaptureInitializationSettings();
-    auto media_capture = ref new Windows::Media::Capture::MediaCapture();
-    media_capture_ = media_capture;
-    settings->VideoDeviceId = deviceId;
-    media_capture_failed_event_registration_token_ = media_capture->Failed +=
+    media_capture_ = MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(deviceId);
+    media_capture_failed_event_registration_token_ = media_capture_->Failed +=
         ref new MediaCaptureFailedEventHandler(this, &CaptureDevice::OnCaptureFailed);
-    Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-    Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
-    Concurrency::task<void> initializeAsyncTask;
-    Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler(
-        [this,
-        &initializeAsyncTask,
-        settings]() {
-      initializeAsyncTask = Concurrency::create_task(media_capture_->InitializeAsync(/*settings*/));
-    });
-    Windows::Foundation::IAsyncAction^ dispatcherAction = dispatcher->RunAsync(priority, handler);
-    auto dispatcherTask = Concurrency::create_task(dispatcherAction);
-    dispatcherTask.wait();
-    initializeAsyncTask.wait();
   } catch (Platform::Exception^ e) {
     DoCleanup();
     throw e;

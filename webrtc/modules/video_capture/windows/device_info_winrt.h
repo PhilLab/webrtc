@@ -13,13 +13,38 @@
 
 #include "webrtc/modules/video_capture/device_info_impl.h"
 
+#include <map>
+
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+
+#include <ppltasks.h>
+
 namespace webrtc {
 namespace videocapturemodule {
+
+public ref class MediaCaptureDevicesWinRT sealed
+{
+ private:
+  MediaCaptureDevicesWinRT();
+
+ public:
+  virtual ~MediaCaptureDevicesWinRT();
+
+  static MediaCaptureDevicesWinRT^ Instance();
+
+ internal:
+  Platform::Agile<Windows::Media::Capture::MediaCapture> GetMediaCapture(Platform::String^ deviceId);
+  void RemoveMediaCapture(Platform::String^ deviceId);
+
+ private:
+   std::map<Platform::String^, Platform::Agile<Windows::Media::Capture::MediaCapture> > media_capture_map_;
+   CriticalSectionWrapper* critical_section_;
+};
 
 class DeviceInfoWinRT : public DeviceInfoImpl {
  public:
   // Factory function.
-   static DeviceInfoWinRT* Create(const int32_t id);
+  static DeviceInfoWinRT* Create(const int32_t id);
    
   explicit DeviceInfoWinRT(const int32_t id);
   virtual ~DeviceInfoWinRT();
