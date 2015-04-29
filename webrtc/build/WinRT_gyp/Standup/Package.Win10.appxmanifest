@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest"
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
-         xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" 
-         xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest">
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10">
   <Identity Name="StandupWinRT" Publisher="CN=WebRTC" Version="1.0.0.0" />
   <mp:PhoneIdentity PhoneProductId="ee57de58-2489-4148-b17e-a468274bb9ce" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
   <Properties>
@@ -10,18 +9,17 @@
     <PublisherDisplayName>WebRTC</PublisherDisplayName>
     <Logo>StoreLogo.png</Logo>
   </Properties>
-  <Prerequisites>
-    <OSMinVersion>6.3.0</OSMinVersion>
-    <OSMaxVersionTested>6.3.0</OSMaxVersionTested>
-  </Prerequisites>
+  <Dependencies>
+    <TargetPlatform Name="Windows.Universal" MinVersion="10.0.10030.0" MaxVersionTested="10.0.10030.0" />
+  </Dependencies>
   <Resources>
     <Resource Language="x-generate" />
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="StandupWinRT.App">
-      <m2:VisualElements DisplayName="StandupWinRT" Square150x150Logo="Logo.png" Square30x30Logo="SmallLogo.png" Description="StandupWinRT" ForegroundText="light" BackgroundColor="#464646">
-        <m2:SplashScreen Image="SplashScreen.png" />
-      </m2:VisualElements>
+      <uap:VisualElements DisplayName="StandupWinRT" Square150x150Logo="Logo.png"  Square44x44Logo="SmallLogo.png" Description="StandupWinRT" ForegroundText="light" BackgroundColor="#464646">
+        <uap:SplashScreen Image="SplashScreen.png" />
+      </uap:VisualElements>
     </Application>
   </Applications>
   <Capabilities>
