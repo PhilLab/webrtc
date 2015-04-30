@@ -1563,7 +1563,6 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
         for (int i = 0; i < videoFrame.height() / 2; i++)
         {
           std::memcpy(buffer, u_buffer, videoFrame.width() / 2);
-          std::memset(buffer, 0, videoFrame.width() / 2);
           buffer += videoFrame.width() / 2;
           u_buffer += videoFrame.stride(kUPlane);
         }
@@ -1571,7 +1570,6 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
         for (int i = 0; i < videoFrame.height() / 2; i++)
         {
           std::memcpy(buffer, v_buffer, videoFrame.width() / 2);
-          std::memset(buffer, 0, videoFrame.width() / 2);
           buffer += videoFrame.width() / 2;
           v_buffer += videoFrame.stride(kVPlane);
         }
