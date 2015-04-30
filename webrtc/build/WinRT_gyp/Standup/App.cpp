@@ -626,7 +626,6 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   if (started_) {
-	  initializeTranportInfo();	  
 	  stopEvent_.set();
 	  started_ = false;
   }
