@@ -443,7 +443,6 @@ namespace StandupWinRT
     TextBox^ ipTextBox_;
     TextBox^ videoPortTextBox_;
     TextBox^ audioPortTextBox_;
-    TextBox^ portTextBox_;
     TextBox^ ipRemoteTraces_;
     TextBox^ portRemoteTraces_;
 
