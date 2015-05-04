@@ -31,6 +31,10 @@
       'sources': [
         'peerconnectioninterface.h',
         'peerconnectioninterface.cc',
+        'GlobalObserver.h',
+        'GlobalObserver.cc',
+        'Marshalling.h',
+        'Marshalling.cc',
       ],
       'msvs_settings': {
         'VCLinkerTool': {
