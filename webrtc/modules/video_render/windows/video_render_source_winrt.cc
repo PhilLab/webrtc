@@ -1604,7 +1604,7 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
 
 void VideoRenderMediaSourceWinRT::FrameSizeChange(int width, int height)
 {
-  if (_eSourceState == SourceState_Started)
+  if (_eSourceState == SourceState_Stopped)
   {
     Trace(TRACE_LEVEL_NORMAL, L"======== FrameSizeChange - width: %d, height: %d\n", width, height);
     // Convert packet to MF sample
@@ -1663,8 +1663,8 @@ void VideoRenderMediaSourceWinRT::Initialize()
 #else
     description.guiSubType = MFVideoFormat_I420;
 #endif
-    description.dwFrameWidth = 640;
-    description.dwFrameHeight = 480;
+    description.dwFrameWidth = 320;
+    description.dwFrameHeight = 240;
     description.dwFrameRateNumerator = 30;
     description.dwFrameRateDenominator = 1;
     description.dwStreamId = 1;
