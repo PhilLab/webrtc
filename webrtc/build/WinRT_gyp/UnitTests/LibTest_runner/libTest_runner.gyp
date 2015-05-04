@@ -102,9 +102,16 @@
             'SplashScreen480x800.png',
           ],
         }],
-        ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
           'sources': [
             'Package.appxmanifest',
+            'SplashScreen.png',
+          ],
+        }],
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+          'sources': [
+            'Generated Manifest Win10\AppxManifest.xml',
+            'Package.Win10.appxmanifest',
             'SplashScreen.png',
           ],
         }],
@@ -121,9 +128,15 @@
                 'SplashScreen480x800.png',
               ],
             }],
-            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
               'files': [
                 'Generated Manifest\AppxManifest.xml',
+                'SplashScreen.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+              'files': [
+                'Generated Manifest Win10\AppxManifest.xml',
                 'SplashScreen.png',
               ],
             }],
