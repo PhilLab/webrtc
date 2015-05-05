@@ -16,6 +16,7 @@ import os
 import shlex
 import sys
 import pipes
+from _winreg import *
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir, os.pardir))
@@ -34,6 +35,32 @@ def GetSupplementalFiles():
   # Can't use the one in gyp_chromium since the directory location of the root
   # is different.
   return glob.glob(os.path.join(checkout_root, '*', 'supplement.gypi'))
+
+
+def fixVS2015Ninja():
+
+  vs2015 = '14.0'
+
+  if os.environ.get('GYP_GENERATORS') == 'ninja-winrt' and os.environ.get('VisualStudioVersion') == vs2015:
+    vcpackagePath = os.path.join(os.environ.get('VCInstallDir'), 'vcpackages')
+    if  'LIBPATH' in os.environ:
+      os.environ['LIBPATH'] = os.environ['LIBPATH'] + vcpackagePath+';'
+    else:
+      os.environ.update({'LIBPATH':  vcpackagePath+';'})
+
+    #In the VS2015+WinSDK10 environment, the windsdk include path depends on the installed sdk minor verion
+    #ex.: 10.0.3000.0. we will need to find it from system registry.
+    aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
+
+    aKey = OpenKey(aReg, r"SOFTWARE\Microsoft\VisualStudio\14.0_Config")
+
+    val=QueryValueEx(aKey, "InstalledSDKVersion")
+    if val:
+      #contruct WindowsSDK_IncludePath used by VS2015
+      WindowsSDK_IncludePath = "{0}include\{1}\shared;{0}include\{1}\um;{0}include\{1}\winrt;".format(os.environ.get('UniversalCRTSdkDir'),val[0])
+      UCRT_PATH = "{}include\ucrt;".format(os.environ.get('UniversalCRTSdkDir'))
+      os.environ.update({'VS_EXTRA_INCLUDES': UCRT_PATH + WindowsSDK_IncludePath})
+
 
 
 if __name__ == '__main__':
@@ -71,12 +98,14 @@ if __name__ == '__main__':
   if not os.environ.get('GYP_GENERATORS'):
     os.environ['GYP_GENERATORS'] = 'ninja'
 
+  fixVS2015Ninja()
+
   vs2013_runtime_dll_dirs = None
   if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
     vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
   else:
     gyp_defines_dict = gyp.NameValueListToDict(gyp.ShlexEnv('GYP_DEFINES'))
-    winSdkDir = os.environ.get('WINDOWSSDKDIR')
+    winSdkDir = os.environ.get('UniversalCRTSdkDir')
     if winSdkDir != None:
         gyp_defines_dict['windows_sdk_path'] = winSdkDir
         os.environ['GYP_DEFINES'] = ' '.join('%s=%s' % (k, pipes.quote(str(v)))

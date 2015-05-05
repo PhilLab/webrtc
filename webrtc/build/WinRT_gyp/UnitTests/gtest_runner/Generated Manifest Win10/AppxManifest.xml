@@ -7,10 +7,10 @@
 
     For more information on package manifest files, see http://go.microsoft.com/fwlink/?LinkID=241727
   -->
-  <Identity Name="StandupWinRT" Publisher="CN=WebRTC" Version="1.0.0.0" ProcessorArchitecture="x86" />
-  <mp:PhoneIdentity PhoneProductId="ee57de58-2489-4148-b17e-a468274bb9ce" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="GtestRunner" Publisher="CN=WebRTC" Version="1.0.0.1" ProcessorArchitecture="x86" />
+  <mp:PhoneIdentity PhoneProductId="7108daec-69af-45a1-871a-dc5f8abcb197" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>StandupWinRT</DisplayName>
+    <DisplayName>GtestRunner</DisplayName>
     <PublisherDisplayName>WebRTC</PublisherDisplayName>
     <Logo>StoreLogo.png</Logo>
   </Properties>
@@ -19,10 +19,28 @@
   </Dependencies>
   <Resources>
     <Resource Language="EN-US" />
+    <Resource uap:Scale="100" />
+    <Resource uap:Scale="120" />
+    <Resource uap:Scale="140" />
+    <Resource uap:Scale="160" />
+    <Resource uap:Scale="180" />
+    <Resource uap:DXFeatureLevel="dx9" />
+    <Resource uap:DXFeatureLevel="dx10" />
+    <Resource uap:DXFeatureLevel="dx11" />
+    <Resource uap:Scale="200" />
+    <Resource uap:Scale="220" />
+    <Resource uap:Scale="240" />
+    <Resource uap:Scale="300" />
+    <Resource uap:Scale="400" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="standup.exe" EntryPoint="StandupWinRT.App">
-      <uap:VisualElements DisplayName="StandupWinRT" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="StandupWinRT" ForegroundText="light" BackgroundColor="#464646">
+    <Application Id="App" Executable="gtest_runner.exe" EntryPoint="gtest_runner.App">
+      <uap:VisualElements DisplayName="gtest_runner" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="gtest_runner" ForegroundText="light" BackgroundColor="#464646">
+        <uap:DefaultTile DefaultSize="square150x150Logo">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
         <uap:SplashScreen Image="SplashScreen.png" />
       </uap:VisualElements>
     </Application>
@@ -30,7 +48,5 @@
   <Capabilities>
     <Capability Name="privateNetworkClientServer" />
     <Capability Name="internetClientServer" />
-    <DeviceCapability Name="microphone" />
-    <DeviceCapability Name="webcam" />
   </Capabilities>
 </Package>

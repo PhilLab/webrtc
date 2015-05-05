@@ -28,6 +28,12 @@
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/field_trial.h"
 
+#include "webrtc/base/loggingserver.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/logging.h"
+#include "webrtc\system_wrappers\interface\event_tracer.h"
+#include "webrtc\base\tracelog.h"
+
 #define VOICE
 #define VIDEO
 
@@ -38,6 +44,10 @@ using namespace Windows::UI;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
+using namespace Windows::UI::Xaml::Input;
+using namespace Windows::Storage;
+using namespace Windows::Foundation;
+using namespace Windows::Graphics::Display;
 
 bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
@@ -55,6 +65,26 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 1000
 #endif
+
+rtc::TraceLog tl;
+
+const unsigned char* __cdecl GetCategoryGroupEnabled(const char* category_group)
+{
+  return reinterpret_cast<const unsigned char*>("webrtc");
+}
+
+void __cdecl AddTraceEvent(char phase,
+  const unsigned char* category_group_enabled,
+  const char* name,
+  unsigned long long id,
+  int num_args,
+  const char** arg_names,
+  const unsigned char* arg_types,
+  const unsigned long long* arg_values,
+  unsigned char flags)
+{
+  tl.Add(phase, category_group_enabled, name, id, num_args, arg_names, arg_types, arg_values, flags);
+}
 
 namespace StandupWinRT
 {
@@ -415,6 +445,8 @@ namespace StandupWinRT
     TextBox^ ipTextBox_;
     TextBox^ videoPortTextBox_;
     TextBox^ audioPortTextBox_;
+    TextBox^ ipRemoteTraces_;
+    TextBox^ portRemoteTraces_;
 
     MediaElement^ localMedia_;
     MediaElement^ remoteMedia_;
@@ -422,6 +454,9 @@ namespace StandupWinRT
     Button^ startStopButton_;
     Button^ switchCameraButton_;
     Button^ startStopVideoButton_;
+    Button^ startTracingButton_;
+    Button^ stopTracingButton_;
+    Button^ sendTracesButton_;
 
     webrtc::VideoRender* vrm_;
     webrtc::VideoCaptureDataCallback* captureCallback_;
@@ -450,6 +485,7 @@ namespace StandupWinRT
     webrtc::test::VideoChannelTransport* videoTransport_;
     int captureId_;
     char deviceUniqueId_[512];
+	Concurrency::event stopEvent_;
     webrtc::VideoCaptureModule* vcpm_;
     webrtc::VideoEngine* videoEngine_;
     webrtc::ViEBase* videoBase_;
@@ -460,6 +496,15 @@ namespace StandupWinRT
     webrtc::ViECodec* videoCodec_;
 
   protected:
+
+    InputScope^ CreateInputScope() {
+      auto inputScope = ref new Windows::UI::Xaml::Input::InputScope();
+      auto scopeName = ref new Windows::UI::Xaml::Input::InputScopeName();
+      scopeName->NameValue = Windows::UI::Xaml::Input::InputScopeNameValue::Number;
+      inputScope->Names->Append(scopeName);
+      return inputScope;
+    }
+
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
     {
       g_windowDispatcher = dispatcher_ = Window::Current->Dispatcher;
@@ -467,16 +512,21 @@ namespace StandupWinRT
       auto layoutRoot = ref new Grid();
       layoutRoot->Margin = ThicknessHelper::FromUniformLength(32);
 
+      auto settings = ApplicationData::Current->LocalSettings->Values;
+
       // First row (ip and port fields)
       {
         auto row = ref new RowDefinition();
         row->Height = GridLength(32, GridUnitType::Pixel);
         layoutRoot->RowDefinitions->Append(row);
 
+        auto viewBox = ref new Viewbox;
+        Grid::SetRow(viewBox, 0);
+        layoutRoot->Children->Append(viewBox);
+
         auto stackPanel = ref new StackPanel();
         stackPanel->Orientation = Orientation::Horizontal;
-        Grid::SetRow(stackPanel, 0);
-        layoutRoot->Children->Append(stackPanel);
+        viewBox->Child = stackPanel;
 
         auto label = ref new TextBlock();
         label->Text = "IP: ";
@@ -486,6 +536,8 @@ namespace StandupWinRT
 
         ipTextBox_ = ref new TextBox();
         ipTextBox_->Width = 150;
+        ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
+        ipTextBox_->InputScope = CreateInputScope();
         stackPanel->Children->Append(ipTextBox_);
 
         label = ref new TextBlock();
@@ -495,6 +547,8 @@ namespace StandupWinRT
         stackPanel->Children->Append(label);
 
         videoPortTextBox_ = ref new TextBox();
+        videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
+        videoPortTextBox_->InputScope = CreateInputScope();
         stackPanel->Children->Append(videoPortTextBox_);
 
         label = ref new TextBlock();
@@ -504,6 +558,8 @@ namespace StandupWinRT
         stackPanel->Children->Append(label);
 
         audioPortTextBox_ = ref new TextBox();
+        audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
+        audioPortTextBox_->InputScope = CreateInputScope();
         stackPanel->Children->Append(audioPortTextBox_);
       }
 
@@ -523,8 +579,13 @@ namespace StandupWinRT
         auto makeRenderSurface = [grid](MediaElement^& elem, int index) {
           auto surface = ref new MediaElement();
           auto border = ref new Border();
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+          surface->Width = PREFERRED_FRAME_WIDTH / 4;
+          surface->Height = PREFERRED_FRAME_HEIGHT / 4;
+#else
           surface->Width = PREFERRED_FRAME_WIDTH;
           surface->Height = PREFERRED_FRAME_HEIGHT;
+#endif
           border->BorderBrush = ref new SolidColorBrush(ColorHelper::FromArgb(255, 0, 0, 255));
           border->BorderThickness = ThicknessHelper::FromUniformLength(2);
           border->Margin = ThicknessHelper::FromUniformLength(8);
@@ -556,17 +617,58 @@ namespace StandupWinRT
 
         switchCameraButton_ = ref new Button();
         switchCameraButton_->Content = "Switch Camera";
-        switchCameraButton_->Margin = ThicknessHelper::FromLengths(40, 0, 0, 0);
+        switchCameraButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
         switchCameraButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSwitchCameraClick);
         switchCameraButton_->IsEnabled = false;
         stackPanel->Children->Append(switchCameraButton_);
 
         startStopVideoButton_ = ref new Button();
         startStopVideoButton_->Content = "Start Video";
-        startStopVideoButton_->Margin = ThicknessHelper::FromLengths(40, 0, 0, 0);
+        startStopVideoButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
         startStopVideoButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartStopVideoClick);
         startStopVideoButton_->IsEnabled = true;
         stackPanel->Children->Append(startStopVideoButton_);
+
+
+        startTracingButton_ = ref new Button();
+        startTracingButton_->Content = "Start Tracing";
+        startTracingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        startTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartTracingClick);
+        stackPanel->Children->Append(startTracingButton_);
+
+        stopTracingButton_ = ref new Button();
+        stopTracingButton_->Content = "Stop Tracing";
+        stopTracingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        stopTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStopTracingClick);
+        stackPanel->Children->Append(stopTracingButton_);
+
+        sendTracesButton_ = ref new Button();
+        sendTracesButton_->Content = "Send Traces";
+        sendTracesButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        sendTracesButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSendTracesClick);
+        stackPanel->Children->Append(sendTracesButton_);
+
+        auto label = ref new TextBlock();
+        label->Text = "IP(Traces): ";
+        label->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        label->VerticalAlignment = VerticalAlignment::Center;
+        label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
+        stackPanel->Children->Append(label);
+
+        ipRemoteTraces_ = ref new TextBox();
+        ipRemoteTraces_->Width = 150;
+        ipRemoteTraces_->Height = 32;
+        stackPanel->Children->Append(ipRemoteTraces_);
+
+        label = ref new TextBlock();
+        label->Text = "Port(Traces): ";
+        label->VerticalAlignment = VerticalAlignment::Center;
+        label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
+        stackPanel->Children->Append(label);
+
+        portRemoteTraces_ = ref new TextBox();
+        portRemoteTraces_->Height = 32;
+        stackPanel->Children->Append(portRemoteTraces_);
       }
 
       Window::Current->Content = layoutRoot;
@@ -576,6 +678,9 @@ namespace StandupWinRT
     void OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnSwitchCameraClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnStartStopVideoClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnStartTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnStopTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnSendTracesClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
   private:
 
     /**
@@ -583,6 +688,13 @@ namespace StandupWinRT
      * WARNING: this function has be called from Main UI thread.
      */
     void initializeTranportInfo();
+
+    /**
+     * string representation of raw video format.
+     */
+    std::string getRawVideoFormatString(webrtc::RawVideoType videoType);
+
+    void SaveSettings();
 };
 
 }
@@ -597,6 +709,12 @@ static std::string GetIP(String^ stringIP) {
 
 int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 {
+  rtc::SocketAddress sa(INADDR_ANY, 47002);
+  rtc::LoggingServer ls;
+  ls.Listen(sa, rtc::LS_INFO);
+
+  webrtc::SetupEventTracer(&GetCategoryGroupEnabled, &AddTraceEvent);
+
   (void)args; // Unused parameter
   Windows::UI::Xaml::Application::Start(
     ref new Windows::UI::Xaml::ApplicationInitializationCallback(
@@ -610,13 +728,18 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
-  if (!started_) {
+  if (started_) {
+	  stopEvent_.set();
+	  started_ = false;
+  }
+  else {
+	  SaveSettings();
+	  stopEvent_.reset();
+      initializeTranportInfo();
 
-    initializeTranportInfo();
-
-#ifdef VOICE
     Concurrency::create_task([this]() {
       int error;
+#ifdef VOICE
       voiceChannel_ = voiceBase_->CreateChannel();
       if (voiceChannel_ < 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
@@ -731,15 +854,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopButton_->Content = "Stop";
-        startStopVideoButton_->IsEnabled = false;
-      })));
-    });
 #endif
 #ifdef VIDEO
-    Concurrency::create_task([this]() {
-      int error;
       const unsigned int KMaxDeviceNameLength = 128;
       const unsigned int KMaxUniqueIdLength = 256;
       char deviceName[KMaxDeviceNameLength];
@@ -752,7 +868,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
       for (int i = 0; i < devicesNumber; i++) {
 
-        error = videoCapture_->GetCaptureDevice(captureIdx, deviceName,
+        error = videoCapture_->GetCaptureDevice(i, deviceName,
           KMaxDeviceNameLength, uniqueId,
           KMaxUniqueIdLength);
         if (error != 0) {
@@ -795,6 +911,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       vcpm_->AddRef();
 
       int capabilitiesNumber = videoCapture_->NumberOfCapabilities(uniqueId, KMaxUniqueIdLength);
+
       webrtc::CaptureCapability capability;
       int minWidthDiff = INT_MAX;
       int minHeightDiff = INT_MAX;
@@ -810,6 +927,14 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
             "Failed to get capture capability.");
           return Concurrency::task<void>();
         }
+
+        std::string deviceRawVideoFormat = getRawVideoFormatString(deviceCapability.rawType);
+        webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+          "Capture capability - index: %d, width: %d, height: %d, max fps: %d, video format: %s",
+          i, deviceCapability.width, deviceCapability.height, deviceCapability.maxFPS, deviceRawVideoFormat.c_str());
+
+        if (deviceCapability.rawType == webrtc::kVideoMJPEG || deviceCapability.rawType == webrtc::kVideoUnknown)
+          continue;
 
         int widthDiff = abs((int)(deviceCapability.width - PREFERRED_FRAME_WIDTH));
         if (widthDiff < minWidthDiff) {
@@ -830,15 +955,12 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
             }
           }
         }
-
-        webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
-          "Capture capability - index: %d, width: %d, height: %d, max fps: %d", 
-            i, deviceCapability.width, deviceCapability.height, deviceCapability.maxFPS);
       }
 
+      std::string rawVideoFormat = getRawVideoFormatString(capability.rawType);
       webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
-        "Selected capture capability - width: %d, height: %d, max fps: %d",
-          capability.width, capability.height, capability.maxFPS);
+        "Selected capture capability - width: %d, height: %d, max fps: %d, video format: %s",
+        capability.width, capability.height, capability.maxFPS, rawVideoFormat.c_str());
 
       error = videoCapture_->StartCapture(captureId_, capability);
       if (error != 0) {
@@ -973,18 +1095,19 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+#endif
+
+      Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Stop";
         startStopVideoButton_->IsEnabled = false;
       })));
-    });
-#endif
-    started_ = true;
 
-  } else {
+    
+	  started_ = true;
+	  stopEvent_.wait();
+
 #ifdef VOICE
-    Concurrency::create_task([this]() {
-      int error;
+
       error = voiceBase_->StopSend(voiceChannel_);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
@@ -1013,16 +1136,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       voiceChannel_ = -1;
-
-      return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-        startStopButton_->Content = "Start";
-        startStopVideoButton_->IsEnabled = true;
-      })));
-    });
 #endif
 #ifdef VIDEO
-    Concurrency::create_task([this]() {
-      int error;
       error = videoRender_->StopRender(videoChannel_);
       if (error != 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
@@ -1099,14 +1214,15 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       vcpm_ = NULL;
 
       captureId_ = -1;
+#endif
+
+	  started_ = false;
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Start";
         startStopVideoButton_->IsEnabled = true;
       })));
     });
-#endif
-    started_ = false;
   }
 }
 
@@ -1119,6 +1235,8 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 {
   if (!startedVideo_) {
     initializeTranportInfo();
+    SaveSettings();
+
     Concurrency::create_task([this]() {
       webrtc::VideoCaptureModule::DeviceInfo* dev_info =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
@@ -1151,7 +1269,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
       capability.width = PREFERRED_FRAME_WIDTH;
       capability.height = PREFERRED_FRAME_HEIGHT;
       capability.maxFPS = PREFERRED_MAX_FPS;
-      capability.rawType = webrtc::kVideoI420;
+      capability.rawType = webrtc::kVideoNV12;
 
       vcpm_->StartCapture(capability);
 
@@ -1201,5 +1319,66 @@ void StandupWinRT::App::initializeTranportInfo(){
   {
     audioPort_ = userInputAudioPort;
   }
+}
 
+void StandupWinRT::App::OnStartTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  tl.StartTracing();
+}
+
+void StandupWinRT::App::OnStopTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  tl.StopTracing();
+}
+
+void StandupWinRT::App::OnSendTracesClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  std::wstring tmp(ipRemoteTraces_->Text->Data());
+  std::string ip(tmp.begin(), tmp.end());
+  tl.Save(ip, _wtoi(portRemoteTraces_->Text->Data()));
+}
+
+std::string StandupWinRT::App::getRawVideoFormatString(webrtc::RawVideoType videoType) {
+
+  std::string videoFormatString;
+  switch (videoType)
+  {
+  case webrtc::kVideoYV12:
+    videoFormatString = "YV12";
+    break;
+  case webrtc::kVideoYUY2:
+    videoFormatString = "YUY2";
+    break;
+  case webrtc::kVideoI420:
+    videoFormatString = "I420";
+    break;
+  case webrtc::kVideoIYUV:
+    videoFormatString = "IYUV";
+    break;
+  case webrtc::kVideoRGB24:
+    videoFormatString = "RGB24";
+    break;
+  case webrtc::kVideoARGB:
+    videoFormatString = "ARGB";
+    break;
+  case webrtc::kVideoMJPEG:
+    videoFormatString = "MJPEG";
+    break;
+  case webrtc::kVideoNV12:
+    videoFormatString = "NV12";
+    break;
+  default:
+    videoFormatString = "Not supported";
+    break;
+  }
+  return videoFormatString;
+}
+
+void StandupWinRT::App::SaveSettings()
+{
+  auto settings = ApplicationData::Current->LocalSettings;
+  auto values = settings->Values;
+  values->Insert("remote_ip", ipTextBox_->Text);
+  values->Insert("audio_port", audioPortTextBox_->Text);
+  values->Insert("video_port", videoPortTextBox_->Text);
 }

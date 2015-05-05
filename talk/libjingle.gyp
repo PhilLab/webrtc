@@ -538,12 +538,7 @@
             },
           },
         }],
-        # TODO (winrt) Enable when compile issue is fixed
         ['OS=="win" and OS_RUNTIME=="winrt"', {
-          'sources!': [
-            'media/sctp/sctpdataengine.cc',
-            'media/sctp/sctpdataengine.h',
-          ],
           'msvs_disabled_warnings': [ 
                                      #warning: declaration of '' hides previous local declaration, hides class member declaration
                                      4456, 4457, 4458, 
