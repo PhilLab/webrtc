@@ -89,12 +89,12 @@ static std::string GenerateExtra(LogErrorContext err_ctx,
         break;
 #if defined(WEBRTC_WIN)
       case ERRCTX_HRESULT: {
-        char msgbuf[256];
+        WCHAR msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
         HMODULE hmod = GetModuleHandleA(module);
         if (hmod)
           flags |= FORMAT_MESSAGE_FROM_HMODULE;
-        if (DWORD len = FormatMessageA(
+        if (DWORD len = FormatMessage(
             flags, hmod, err,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), NULL)) {
