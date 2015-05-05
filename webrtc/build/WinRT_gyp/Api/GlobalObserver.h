@@ -51,11 +51,11 @@ namespace webrtc_winrt_api_internal
   };
 
   // There is one of those per call to CreateOffer().
-  class OfferObserver : public webrtc::CreateSessionDescriptionObserver
+  class CreateSdpObserver : public webrtc::CreateSessionDescriptionObserver
   {
   public:
     // TODO: Get a handle on the async operation to unblock.
-    OfferObserver();
+    CreateSdpObserver();
 
     // CreateSessionDescriptionObserver implementation
     virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc);
@@ -68,6 +68,26 @@ namespace webrtc_winrt_api_internal
   private:
     std::string _error;
     webrtc::SessionDescriptionInterface* _sdi;
+    rtc::Event _callbackHappened;
+  };
+
+  // There is one of those per call to CreateOffer().
+  class SetSdpObserver : public webrtc::SetSessionDescriptionObserver
+  {
+  public:
+    // TODO: Get a handle on the async operation to unblock.
+    SetSdpObserver();
+
+    // CreateSessionDescriptionObserver implementation
+    virtual void OnSuccess();
+    virtual void OnFailure(const std::string& error);
+
+    void Wait(
+      std::function<void()> onSuccess,
+      std::function<void(const std::string&)> onFailure);
+
+  private:
+    std::string _error;
     rtc::Event _callbackHappened;
   };
 }

@@ -79,7 +79,23 @@ namespace webrtc_winrt_api
   public:
     property IBox<RTCSdpType>^ Type;
     property String^ Sdp;
+  internal:
+    RTCSessionDescription(webrtc::SessionDescriptionInterface* impl);
+    webrtc::SessionDescriptionInterface* GetImpl();
+  private:
+    webrtc::SessionDescriptionInterface* _impl;
   };
+
+  // Events and delegates
+#if 1
+  public delegate void EventDelegate();
+
+  public ref class RTCTrackEvent sealed
+  {
+  public:
+    // TODO: event properties
+  };
+  public delegate void RTCTrackEventDelegate(RTCTrackEvent^);
 
   public ref class RTCPeerConnectionIceEvent sealed
   {
@@ -87,6 +103,7 @@ namespace webrtc_winrt_api
     property RTCIceCandidate^ Candidate;
   };
   public delegate void RTCPeerConnectionIceEventDelegate(RTCPeerConnectionIceEvent^);
+#endif
 
   public ref class RTCPeerConnection sealed
   {
@@ -98,16 +115,23 @@ namespace webrtc_winrt_api
     RTCPeerConnection(RTCConfiguration^ configuration);
 
     event RTCPeerConnectionIceEventDelegate^ OnIceCandidate;
+    event EventDelegate^ OnNegotiationNeeded;
+    event RTCTrackEventDelegate^ OnTrack;
 
     IAsyncOperation<RTCSessionDescription^>^ CreateOffer();
+    IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
+    IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
+    IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
 
   private:
 
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> _impl;
     webrtc_winrt_api_internal::GlobalObserver _observer;
 
-    typedef std::vector<rtc::scoped_refptr<webrtc_winrt_api_internal::OfferObserver>> OfferObservers;
-    OfferObservers _offerObservers;
+    typedef std::vector<rtc::scoped_refptr<webrtc_winrt_api_internal::CreateSdpObserver>> CreateSdpObservers;
+    typedef std::vector<rtc::scoped_refptr<webrtc_winrt_api_internal::SetSdpObserver>> SetSdpObservers;
+    CreateSdpObservers _createSdpObservers;
+    SetSdpObservers _setSdpObservers;
   };
 
 }

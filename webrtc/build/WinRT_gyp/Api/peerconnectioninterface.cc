@@ -17,6 +17,16 @@ using namespace Platform;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
+RTCSessionDescription::RTCSessionDescription(webrtc::SessionDescriptionInterface* impl)
+  : _impl(impl)
+{
+
+}
+
+webrtc::SessionDescriptionInterface* RTCSessionDescription::GetImpl()
+{
+  return _impl;
+}
 
 // Any globals we need to keep around.
 namespace {
@@ -42,13 +52,11 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
     [this]() -> RTCSessionDescription^ {
       webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
-      rtc::scoped_refptr<OfferObserver> observer(new rtc::RefCountedObject<OfferObserver>());
+      rtc::scoped_refptr<CreateSdpObserver> observer(new rtc::RefCountedObject<CreateSdpObserver>());
       // TODO: Remove it once the callback has been received.
-      _offerObservers.push_back(observer);
+      _createSdpObservers.push_back(observer);
 
-      webrtc::PeerConnectionInterface* impl = _impl.get();
-      impl->CreateOffer(observer, nullptr);
-      impl->signaling_state();
+      _impl->CreateOffer(observer, nullptr);
 
       RTCSessionDescription^ ret = nullptr;
       observer->Wait(
@@ -66,10 +74,91 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
   return asyncOp;
 }
 
+IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateAnswer()
+{
+  // HACK: Trigger OnNegotiationNeeded
+  this->OnNegotiationNeeded();
+
+  IAsyncOperation<RTCSessionDescription^>^ asyncOp = Concurrency::create_async(
+    [this]() -> RTCSessionDescription^ {
+      webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
+
+      rtc::scoped_refptr<CreateSdpObserver> observer(new rtc::RefCountedObject<CreateSdpObserver>());
+      // TODO: Remove it once the callback has been received.
+      _createSdpObservers.push_back(observer);
+
+      _impl->CreateAnswer(observer, nullptr);
+
+      RTCSessionDescription^ ret = nullptr;
+      observer->Wait(
+        [&ret](webrtc::SessionDescriptionInterface* sdi) -> void
+        {
+          ToCx(sdi, &ret);
+        },
+        [](const std::string& err) -> void
+        {
+          // TODO: Throw?
+        });
+      return ret;
+  });
+
+  return asyncOp;
+}
+
+IAsyncAction^ RTCPeerConnection::SetLocalDescription(RTCSessionDescription^ description)
+{
+  IAsyncAction^ asyncOp = Concurrency::create_async(
+    [this, description]() -> void {
+
+    rtc::scoped_refptr<SetSdpObserver> observer(new rtc::RefCountedObject<SetSdpObserver>());
+    // TODO: Remove it once the callback has been received.
+    _setSdpObservers.push_back(observer);
+
+    _impl->SetLocalDescription(observer, description->GetImpl());
+
+    observer->Wait(
+      []() -> void
+      {
+      },
+      [](const std::string& err) -> void
+      {
+      // TODO: Throw?
+      });
+  });
+
+  return asyncOp;
+}
+
+IAsyncAction^ RTCPeerConnection::SetRemoteDescription(RTCSessionDescription^ description)
+{
+  IAsyncAction^ asyncOp = Concurrency::create_async(
+    [this, description]() -> void {
+
+    rtc::scoped_refptr<SetSdpObserver> observer(new rtc::RefCountedObject<SetSdpObserver>());
+    // TODO: Remove it once the callback has been received.
+    _setSdpObservers.push_back(observer);
+
+    _impl->SetRemoteDescription(observer, description->GetImpl());
+
+    observer->Wait(
+      []() -> void
+      {
+      },
+      [](const std::string& err) -> void
+      {
+      // TODO: Throw?
+      });
+  });
+
+  return asyncOp;
+}
+
+
 
 void WebRTC::Initialize()
 {
   rtc::EnsureWinsockInit();
+  // Create a worker thread
   gThread.Start();
   rtc::ThreadManager::Instance()->SetCurrentThread(&gThread);
   rtc::InitializeSSL();

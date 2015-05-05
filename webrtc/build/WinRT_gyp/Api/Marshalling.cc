@@ -139,7 +139,7 @@ namespace webrtc_winrt_api_internal {
     webrtc::SessionDescriptionInterface* inObj,
     webrtc_winrt_api::RTCSessionDescription^* outObj)
   {
-    (*outObj) = ref new webrtc_winrt_api::RTCSessionDescription();
+    (*outObj) = ref new webrtc_winrt_api::RTCSessionDescription(inObj);
 
     std::string sdp;
     inObj->ToString(&sdp);

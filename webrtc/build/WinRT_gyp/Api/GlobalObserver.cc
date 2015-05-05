@@ -27,7 +27,12 @@ void GlobalObserver::OnStateChange(StateType state_changed)
 // Triggered when media is received on a new stream from remote peer.
 void GlobalObserver::OnAddStream(webrtc::MediaStreamInterface* stream)
 {
-
+  if (_pc != nullptr)
+  {
+    // TODO: Register for changes and trigger OnTrack then.
+    auto evt = ref new webrtc_winrt_api::RTCTrackEvent();
+    _pc->OnTrack(evt);
+  }
 }
 
 // Triggered when a remote peer close a stream.
@@ -45,7 +50,10 @@ void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel)
 // Triggered when renegotiation is needed, for example the ICE has restarted.
 void GlobalObserver::OnRenegotiationNeeded()
 {
-
+  if (_pc != nullptr)
+  {
+    _pc->OnNegotiationNeeded();
+  }
 }
 
 // Called any time the IceConnectionState changes
@@ -83,26 +91,26 @@ void GlobalObserver::OnIceComplete()
 
 //============================================================================
 
-OfferObserver::OfferObserver()
+CreateSdpObserver::CreateSdpObserver()
   : _sdi(nullptr)
   , _callbackHappened(true, false)
 {
 
 }
 
-void OfferObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc)
+void CreateSdpObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc)
 {
   _sdi = desc;
   _callbackHappened.Set();
 }
 
-void OfferObserver::OnFailure(const std::string& error)
+void CreateSdpObserver::OnFailure(const std::string& error)
 {
   _error = error;
   _callbackHappened.Set();
 }
 
-void OfferObserver::Wait(
+void CreateSdpObserver::Wait(
   std::function<void(webrtc::SessionDescriptionInterface*)> onSuccess,
   std::function<void(const std::string&)> onFailure)
 {
@@ -114,5 +122,39 @@ void OfferObserver::Wait(
   else
   {
       onFailure(_error);
+  }
+}
+
+//============================================================================
+
+SetSdpObserver::SetSdpObserver()
+  : _callbackHappened(true, false)
+{
+
+}
+
+void SetSdpObserver::OnSuccess()
+{
+  _callbackHappened.Set();
+}
+
+void SetSdpObserver::OnFailure(const std::string& error)
+{
+  _error = error;
+  _callbackHappened.Set();
+}
+
+void SetSdpObserver::Wait(
+  std::function<void()> onSuccess,
+  std::function<void(const std::string&)> onFailure)
+{
+  _callbackHappened.Wait(rtc::Event::kForever);
+  if (_error.empty())
+  {
+    onSuccess();
+  }
+  else
+  {
+    onFailure(_error);
   }
 }
