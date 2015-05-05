@@ -1,5 +1,6 @@
 #include <collection.h>
 #include <ppltasks.h>
+#include <concrt.h>
 #include <string>
 
 #include "webrtc/modules/video_capture/include/video_capture.h"
