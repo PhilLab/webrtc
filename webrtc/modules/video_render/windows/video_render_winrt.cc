@@ -58,16 +58,6 @@ VideoChannelWinRT::VideoChannelWinRT(
 
   ComPtr<IInspectable> inspectable;
   _renderMediaSource.As(&inspectable);
-
-  IMediaSource^ mediaSource = safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(inspectable.Get()));
-
-  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-  Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
-  Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, mediaSource]() {
-    _mediaElement->SetMediaStreamSource(mediaSource);
-  });
-  Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
-  Concurrency::create_task(action).wait();
 }
 
   VideoChannelWinRT::~VideoChannelWinRT()
@@ -148,16 +138,11 @@ int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStream
 
   _renderMediaSource->FrameSizeChange(width, height);
 
-  ComPtr<IInspectable> inspectable;
-  _renderMediaSource.As(&inspectable);
-
-  IMediaSource^ mediaSource = safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(inspectable.Get()));
-
   Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
   Windows::UI::Core::CoreDispatcherPriority priority = Windows::UI::Core::CoreDispatcherPriority::Normal;
+  IMediaSource^ mediaSource = safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(_renderMediaSource.Get()));
   Windows::UI::Core::DispatchedHandler^ handler = ref new Windows::UI::Core::DispatchedHandler([this, mediaSource]() {
     _mediaElement->SetMediaStreamSource(mediaSource);
-    _mediaElement->Play();
   });
   Windows::Foundation::IAsyncAction^ action = dispatcher->RunAsync(priority, handler);
   Concurrency::create_task(action).wait();

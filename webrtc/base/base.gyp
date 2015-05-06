@@ -685,7 +685,7 @@
             'win32socketserver.h',
           ],
         }],
-        ['OS=="win" and winrt_platform!="win_phone"', {
+        ['OS=="win" and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
           'link_settings': {
             'libraries': [
               '-lcrypt32.lib',

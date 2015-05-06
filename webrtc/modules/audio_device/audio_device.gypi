@@ -221,7 +221,7 @@
                     'win/audio_device_wasapi_win.h',
                 ],
             }],
-            ['OS=="win" and winrt_platform!="win_phone"', {
+            ['OS=="win" and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
               'link_settings': {
                 'libraries': [
                   # Required for the built-in WASAPI AEC.

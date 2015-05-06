@@ -178,7 +178,14 @@
             'ns/windows_private.h',
           ],
         }],
-        ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone"', {
+        ['rtc_use_openmax_dl==1', {
+          'defines': ['WEBRTC_BEAMFORMER'],
+          'sources': [
+            'beamformer/beamformer.cc',
+            'beamformer/beamformer.h',
+          ],
+        }],
+        ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
           'dependencies': ['audio_processing_sse2',],
         }],
         ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
