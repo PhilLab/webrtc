@@ -158,7 +158,7 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
 #endif
         if (hmod)
           flags |= FORMAT_MESSAGE_FROM_HMODULE;
-        if (DWORD len = FormatMessage(
+        if (DWORD len = FormatMessageW(
             flags, hmod, err,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), NULL)) {

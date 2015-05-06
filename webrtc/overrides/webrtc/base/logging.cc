@@ -94,7 +94,7 @@ static std::string GenerateExtra(LogErrorContext err_ctx,
         HMODULE hmod = GetModuleHandleA(module);
         if (hmod)
           flags |= FORMAT_MESSAGE_FROM_HMODULE;
-        if (DWORD len = FormatMessage(
+        if (DWORD len = FormatMessageW(
             flags, hmod, err,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), NULL)) {
