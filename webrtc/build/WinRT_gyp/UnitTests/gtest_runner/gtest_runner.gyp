@@ -65,7 +65,7 @@
             'SplashScreen.png',
           ],
         }],
-        ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+        ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
           'sources': [
             'Generated Manifest Win10\AppxManifest.xml',
             'Package.Win10.appxmanifest',
