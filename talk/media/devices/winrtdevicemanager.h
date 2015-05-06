@@ -55,12 +55,43 @@ namespace cricket
     virtual bool GetVideoCaptureDevices(std::vector<Device>* devs);
 
   private:
-    static bool GetDevices(REFCLSID catid, std::vector<Device>* devices);
-    //virtual bool GetAudioDevices(bool input, std::vector<Device>* devs);
-    //virtual bool GetDefaultVideoCaptureDevice(Device* device);
-    bool needCoUninitialize_;
-    static const CLSID CLSID_VideoInputDeviceCategory;
-    static const CLSID CLSID_SystemDeviceEnum;
+    virtual bool GetDefaultVideoCaptureDevice(Device* device);
+    void OnDeviceChange();
+
+    static const char* kUsbDevicePathPrefix;
+
+    ref class WinRTWatcher sealed
+    {
+    public:
+      WinRTWatcher();
+      void Start();
+      void Stop();
+    private:
+      friend WinRTDeviceManager;
+      WinRTDeviceManager* deviceManager_;
+      Windows::Devices::Enumeration::DeviceWatcher^ videoCaptureWatcher_;
+      Windows::Devices::Enumeration::DeviceWatcher^ videoAudioInWatcher_;
+      Windows::Devices::Enumeration::DeviceWatcher^ videoAudioOutWatcher_;
+
+      void OnVideoCaptureAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender, 
+        Windows::Devices::Enumeration::DeviceInformation ^args);
+      void OnVideoCaptureRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender, 
+        Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
+
+      void OnAudioInAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender,
+        Windows::Devices::Enumeration::DeviceInformation ^args);
+      void OnAudioInRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender,
+        Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
+
+      void OnAudioOutAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender,
+        Windows::Devices::Enumeration::DeviceInformation ^args);
+      void OnAudioOutRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender,
+        Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
+
+      void OnDeviceChange();
+    };
+
+    WinRTWatcher^ watcher_;
   };
 
 }  // namespace cricket

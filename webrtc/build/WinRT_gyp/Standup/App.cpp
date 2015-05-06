@@ -183,8 +183,8 @@ namespace StandupWinRT
         std::vector<rtc::WindowDescription> winDesc;
         testDeviceManager->GetWindows(&winDesc);
 
-        testDeviceManager->Terminate();
-        delete testDeviceManager;
+        //testDeviceManager->Terminate();
+        //delete testDeviceManager;
       });
       int error;
 
