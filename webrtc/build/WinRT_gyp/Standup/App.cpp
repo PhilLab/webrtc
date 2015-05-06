@@ -28,6 +28,16 @@
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/field_trial.h"
 
+#include "webrtc/base/loggingserver.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/logging.h"
+#include "webrtc\system_wrappers\interface\event_tracer.h"
+#include "webrtc\base\tracelog.h"
+
+// Test code
+#include "talk/media/devices/devicemanager.h"
+#include "talk/media/base/videocapturer.h"
+
 #define VOICE
 #define VIDEO
 
@@ -57,6 +67,26 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 1000
 #endif
+
+rtc::TraceLog tl;
+
+const unsigned char* __cdecl GetCategoryGroupEnabled(const char* category_group)
+{
+  return reinterpret_cast<const unsigned char*>("webrtc");
+}
+
+void __cdecl AddTraceEvent(char phase,
+  const unsigned char* category_group_enabled,
+  const char* name,
+  unsigned long long id,
+  int num_args,
+  const char** arg_names,
+  const unsigned char* arg_types,
+  const unsigned long long* arg_values,
+  unsigned char flags)
+{
+  tl.Add(phase, category_group_enabled, name, id, num_args, arg_names, arg_types, arg_values, flags);
+}
 
 namespace StandupWinRT
 {
@@ -117,6 +147,45 @@ namespace StandupWinRT
       captureId_(-1),
       videoChannel_(-1)
     {
+      auto test = create_task([]()
+      {
+        // Test code
+        cricket::DeviceManagerInterface* testDeviceManager = cricket::DeviceManagerFactory::Create();
+        testDeviceManager->Init();
+        int caps = testDeviceManager->GetCapabilities();
+        if (caps)
+        {
+          testDeviceManager;
+        }
+
+        std::vector<cricket::Device> audioInputDeviceList;
+        testDeviceManager->GetAudioInputDevices(&audioInputDeviceList);
+
+        std::vector<cricket::Device> audioOutputDeviceList;
+        testDeviceManager->GetAudioOutputDevices(&audioOutputDeviceList);
+
+        cricket::Device audioInputDevice;
+        testDeviceManager->GetAudioInputDevice(audioInputDeviceList.begin()->name, &audioInputDevice);
+
+        cricket::Device audioOutputDevice;
+        testDeviceManager->GetAudioOutputDevice(audioOutputDeviceList.begin()->name, &audioOutputDevice);
+
+        std::vector<cricket::Device> videoCaptureDeviceList;
+        testDeviceManager->GetVideoCaptureDevices(&videoCaptureDeviceList);
+
+        cricket::Device videoDevice;
+        testDeviceManager->GetVideoCaptureDevice(videoCaptureDeviceList.begin()->name, &videoDevice);
+
+        //g_windowDispatcher = Window::Current->Dispatcher;
+        //cricket::VideoCapturer* cap = testDeviceManager->CreateVideoCapturer(videoDevice);
+        //delete cap;
+
+        std::vector<rtc::WindowDescription> winDesc;
+        testDeviceManager->GetWindows(&winDesc);
+
+        testDeviceManager->Terminate();
+        delete testDeviceManager;
+      });
       int error;
 
       webrtc::test::InitFieldTrialsFromString("");
@@ -417,6 +486,8 @@ namespace StandupWinRT
     TextBox^ ipTextBox_;
     TextBox^ videoPortTextBox_;
     TextBox^ audioPortTextBox_;
+    TextBox^ ipRemoteTraces_;
+    TextBox^ portRemoteTraces_;
 
     MediaElement^ localMedia_;
     MediaElement^ remoteMedia_;
@@ -424,6 +495,9 @@ namespace StandupWinRT
     Button^ startStopButton_;
     Button^ switchCameraButton_;
     Button^ startStopVideoButton_;
+    Button^ startTracingButton_;
+    Button^ stopTracingButton_;
+    Button^ sendTracesButton_;
 
     webrtc::VideoRender* vrm_;
     webrtc::VideoCaptureDataCallback* captureCallback_;
@@ -569,17 +643,58 @@ namespace StandupWinRT
 
         switchCameraButton_ = ref new Button();
         switchCameraButton_->Content = "Switch Camera";
-        switchCameraButton_->Margin = ThicknessHelper::FromLengths(40, 0, 0, 0);
+        switchCameraButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
         switchCameraButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSwitchCameraClick);
         switchCameraButton_->IsEnabled = false;
         stackPanel->Children->Append(switchCameraButton_);
 
         startStopVideoButton_ = ref new Button();
         startStopVideoButton_->Content = "Start Video";
-        startStopVideoButton_->Margin = ThicknessHelper::FromLengths(40, 0, 0, 0);
+        startStopVideoButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
         startStopVideoButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartStopVideoClick);
         startStopVideoButton_->IsEnabled = true;
         stackPanel->Children->Append(startStopVideoButton_);
+
+
+        startTracingButton_ = ref new Button();
+        startTracingButton_->Content = "Start Tracing";
+        startTracingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        startTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartTracingClick);
+        stackPanel->Children->Append(startTracingButton_);
+
+        stopTracingButton_ = ref new Button();
+        stopTracingButton_->Content = "Stop Tracing";
+        stopTracingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        stopTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStopTracingClick);
+        stackPanel->Children->Append(stopTracingButton_);
+
+        sendTracesButton_ = ref new Button();
+        sendTracesButton_->Content = "Send Traces";
+        sendTracesButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        sendTracesButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSendTracesClick);
+        stackPanel->Children->Append(sendTracesButton_);
+
+        auto label = ref new TextBlock();
+        label->Text = "IP(Traces): ";
+        label->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        label->VerticalAlignment = VerticalAlignment::Center;
+        label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
+        stackPanel->Children->Append(label);
+
+        ipRemoteTraces_ = ref new TextBox();
+        ipRemoteTraces_->Width = 150;
+        ipRemoteTraces_->Height = 32;
+        stackPanel->Children->Append(ipRemoteTraces_);
+
+        label = ref new TextBlock();
+        label->Text = "Port(Traces): ";
+        label->VerticalAlignment = VerticalAlignment::Center;
+        label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
+        stackPanel->Children->Append(label);
+
+        portRemoteTraces_ = ref new TextBox();
+        portRemoteTraces_->Height = 32;
+        stackPanel->Children->Append(portRemoteTraces_);
       }
 
       Window::Current->Content = layoutRoot;
@@ -589,6 +704,9 @@ namespace StandupWinRT
     void OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnSwitchCameraClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnStartStopVideoClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnStartTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnStopTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnSendTracesClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
   private:
 
     /**
@@ -617,6 +735,12 @@ static std::string GetIP(String^ stringIP) {
 
 int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 {
+  rtc::SocketAddress sa(INADDR_ANY, 47002);
+  rtc::LoggingServer ls;
+  ls.Listen(sa, rtc::LS_INFO);
+
+  webrtc::SetupEventTracer(&GetCategoryGroupEnabled, &AddTraceEvent);
+
   (void)args; // Unused parameter
   Windows::UI::Xaml::Application::Start(
     ref new Windows::UI::Xaml::ApplicationInitializationCallback(
@@ -1221,7 +1345,23 @@ void StandupWinRT::App::initializeTranportInfo(){
   {
     audioPort_ = userInputAudioPort;
   }
+}
 
+void StandupWinRT::App::OnStartTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  tl.StartTracing();
+}
+
+void StandupWinRT::App::OnStopTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  tl.StopTracing();
+}
+
+void StandupWinRT::App::OnSendTracesClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  std::wstring tmp(ipRemoteTraces_->Text->Data());
+  std::string ip(tmp.begin(), tmp.end());
+  tl.Save(ip, _wtoi(portRemoteTraces_->Text->Data()));
 }
 
 std::string StandupWinRT::App::getRawVideoFormatString(webrtc::RawVideoType videoType) {
