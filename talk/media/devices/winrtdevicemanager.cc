@@ -19,9 +19,6 @@
 #include "webrtc/base/win32.h"  // ToUtf8
 #include "webrtc/base/win32window.h"
 #include "talk/media/base/mediacommon.h"
-#ifdef HAVE_LOGITECH_HEADERS
-#include "third_party/logitech/files/logitechquickcam.h"
-#endif
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 
@@ -30,18 +27,15 @@ using namespace Windows::Devices::Enumeration;
 
 namespace cricket
 {
+  const char* WinRTDeviceManager::kUsbDevicePathPrefix = "\\\\?\\usb";
+
   DeviceManagerInterface* DeviceManagerFactory::Create()
   {
     return new WinRTDeviceManager();
   }
 
-  const CLSID WinRTDeviceManager::CLSID_VideoInputDeviceCategory = 
-  { 0x860BB310, 0x5D01, 0x11d0, { 0xBD, 0x3B, 0x00, 0xA0, 0xC9, 0x11, 0xCE, 0x86 } };
-
-  const CLSID WinRTDeviceManager::CLSID_SystemDeviceEnum =
-  { 0x62BE5D10, 0x60EB, 0x11d0, { 0xBD, 0x3B, 0x00, 0xA0, 0xC9, 0x11, 0xCE, 0x86 } };
-
-  WinRTDeviceManager::WinRTDeviceManager() : needCoUninitialize_(false)
+  WinRTDeviceManager::WinRTDeviceManager() :
+    watcher_(ref new WinRTWatcher())
   {
   }
 
@@ -51,22 +45,10 @@ namespace cricket
 
   bool WinRTDeviceManager::Init()
   {
-    //if (!initialized())
-    //{
-    //  HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    //  needCoUninitialize_ = SUCCEEDED(hr);
-    //  if (FAILED(hr))
-    //  {
-    //    LOG(LS_ERROR) << "CoInitialize failed, hr=" << hr;
-    //    if (hr != RPC_E_CHANGED_MODE)
-    //    {
-    //      return false;
-    //    }
-    //  }
-    //  set_initialized(true);
-    //}
     if (!initialized())
     {
+      watcher_->deviceManager_ = this;
+      watcher_->Start();
       set_initialized(true);
     }
     return true;
@@ -76,11 +58,7 @@ namespace cricket
   {
     if (initialized())
     {
-      //if (needCoUninitialize_)
-      //{
-      //  CoUninitialize();
-      //  needCoUninitialize_ = false;
-      //}
+      watcher_->Stop();
       set_initialized(false);
     }
   }
@@ -145,9 +123,112 @@ namespace cricket
     return true;
   }
 
-  bool WinRTDeviceManager::GetDevices(REFCLSID catid, std::vector<Device>* devices)
+  bool WinRTDeviceManager::GetDefaultVideoCaptureDevice(Device* device)
   {
-    return true;
+    std::vector<Device> devices;
+    bool ret = (GetVideoCaptureDevices(&devices)) && (!devices.empty());
+    if (ret)
+    {
+      *device = *devices.begin();
+      for (std::vector<Device>::const_iterator it = devices.begin(); it != devices.end(); it++)
+      {
+        if (strnicmp((*it).id.c_str(), kUsbDevicePathPrefix,
+          sizeof(kUsbDevicePathPrefix) - 1) == 0)
+        {
+          *device = *it;
+          break;
+        }
+      }
+    }
+    return ret;
   }
+
+  void WinRTDeviceManager::OnDeviceChange()
+  {
+    SignalDevicesChange();
+  }
+
+WinRTDeviceManager::WinRTWatcher::WinRTWatcher() :
+  deviceManager_(nullptr), 
+  videoCaptureWatcher_(DeviceInformation::CreateWatcher(DeviceClass::VideoCapture)),
+  videoAudioInWatcher_(DeviceInformation::CreateWatcher(DeviceClass::AudioCapture)),
+  videoAudioOutWatcher_(DeviceInformation::CreateWatcher(DeviceClass::AudioRender))
+{
+  videoCaptureWatcher_->Added += ref new Windows::Foundation::TypedEventHandler<Windows::Devices::Enumeration::DeviceWatcher ^,
+    DeviceInformation ^>(this, &WinRTDeviceManager::WinRTWatcher::OnVideoCaptureAdded);
+  videoCaptureWatcher_->Removed += ref new Windows::Foundation::TypedEventHandler<Windows::Devices::Enumeration::DeviceWatcher ^,
+    DeviceInformationUpdate ^>(this, &WinRTDeviceManager::WinRTWatcher::OnVideoCaptureRemoved);
+
+  videoAudioInWatcher_->Added += ref new Windows::Foundation::TypedEventHandler<Windows::Devices::Enumeration::DeviceWatcher ^,
+    DeviceInformation ^>(this, &WinRTDeviceManager::WinRTWatcher::OnAudioInAdded);
+  videoAudioInWatcher_->Removed += ref new Windows::Foundation::TypedEventHandler<Windows::Devices::Enumeration::DeviceWatcher ^,
+    DeviceInformationUpdate ^>(this, &WinRTDeviceManager::WinRTWatcher::OnAudioInRemoved);
+
+  videoAudioOutWatcher_->Added += ref new Windows::Foundation::TypedEventHandler<Windows::Devices::Enumeration::DeviceWatcher ^,
+    DeviceInformation ^>(this, &WinRTDeviceManager::WinRTWatcher::OnAudioOutAdded);
+  videoAudioOutWatcher_->Removed += ref new Windows::Foundation::TypedEventHandler<Windows::Devices::Enumeration::DeviceWatcher ^,
+    DeviceInformationUpdate ^>(this, &WinRTDeviceManager::WinRTWatcher::OnAudioOutRemoved);
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnVideoCaptureAdded(
+  Windows::Devices::Enumeration::DeviceWatcher ^sender,
+  DeviceInformation ^args)
+{
+  OnDeviceChange();
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnVideoCaptureRemoved(
+  Windows::Devices::Enumeration::DeviceWatcher ^sender,
+  DeviceInformationUpdate ^args)
+{
+  OnDeviceChange();
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnAudioInAdded(
+  Windows::Devices::Enumeration::DeviceWatcher ^sender,
+  DeviceInformation ^args)
+{
+  OnDeviceChange();
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnAudioInRemoved(
+  Windows::Devices::Enumeration::DeviceWatcher ^sender,
+  DeviceInformationUpdate ^args)
+{
+  OnDeviceChange();
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnAudioOutAdded(
+  Windows::Devices::Enumeration::DeviceWatcher ^sender,
+  DeviceInformation ^args)
+{
+  OnDeviceChange();
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnAudioOutRemoved(
+  Windows::Devices::Enumeration::DeviceWatcher ^sender,
+  DeviceInformationUpdate ^args)
+{
+  OnDeviceChange();
+}
+
+void WinRTDeviceManager::WinRTWatcher::Start()
+{
+  videoCaptureWatcher_->Start();
+  videoAudioInWatcher_->Start();
+  videoAudioOutWatcher_->Start();
+}
+
+void WinRTDeviceManager::WinRTWatcher::Stop()
+{
+  videoCaptureWatcher_->Stop();
+  videoAudioInWatcher_->Stop();
+  videoAudioOutWatcher_->Stop();
+}
+
+void WinRTDeviceManager::WinRTWatcher::OnDeviceChange()
+{
+  deviceManager_->OnDeviceChange();
+}
 
 }
