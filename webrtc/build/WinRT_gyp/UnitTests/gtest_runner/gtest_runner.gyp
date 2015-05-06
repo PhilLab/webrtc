@@ -158,6 +158,7 @@
               'AdditionalOptions': [
                 # Fixes linking for assembler opus source files 
                 '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
+                '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx/*.obj',
               ],
             }],
           ],
