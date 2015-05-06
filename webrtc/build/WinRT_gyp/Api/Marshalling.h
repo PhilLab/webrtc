@@ -11,6 +11,9 @@
 // Marshalling functions to convert from WinRT objects to native cpp.
 namespace webrtc_winrt_api_internal {
 
+  std::string FromCx(String^ inObj);
+  String^ ToCx(std::string const& inObj);
+
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCBundlePolicy, webrtc::PeerConnectionInterface::BundlePolicy);
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceTransportPolicy, webrtc::PeerConnectionInterface::IceTransportsType);
 

@@ -35,6 +35,8 @@
         'GlobalObserver.cc',
         'Marshalling.h',
         'Marshalling.cc',
+        'Media.h',
+        'Media.cc',
       ],
       'msvs_settings': {
         'VCLinkerTool': {

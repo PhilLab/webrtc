@@ -1,6 +1,7 @@
 ﻿#include "peerconnectioninterface.h"
 #include "GlobalObserver.h"
 #include "Marshalling.h"
+#include "Media.h"
 
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
@@ -29,9 +30,12 @@ webrtc::SessionDescriptionInterface* RTCSessionDescription::GetImpl()
 }
 
 // Any globals we need to keep around.
-namespace {
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> gPeerConnectionFactory;
-  rtc::Thread gThread;
+namespace webrtc_winrt_api {
+  namespace globals {
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> gPeerConnectionFactory;
+    // The worker thread for webrtc.
+    rtc::Thread gThread;
+  }
 }
 
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
@@ -40,15 +44,18 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
   FromCx(configuration, cc_configuration);
 
   webrtc::FakeConstraints constraints;
+  _observer.SetPeerConnection(this);
 
 
-  _impl = gPeerConnectionFactory->CreatePeerConnection(
+  _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
     cc_configuration, &constraints, nullptr, nullptr, &_observer);
 }
 
 IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
 {
   IAsyncOperation<RTCSessionDescription^>^ asyncOp = Concurrency::create_async(
+    // Lambda that does the work of create offer and
+    // returns with a session description.
     [this]() -> RTCSessionDescription^ {
       webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
@@ -59,6 +66,8 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
       _impl->CreateOffer(observer, nullptr);
 
       RTCSessionDescription^ ret = nullptr;
+
+      // Synchronous wait for the callback to be invoked.
       observer->Wait(
         [&ret](webrtc::SessionDescriptionInterface* sdi) -> void
         {
@@ -76,9 +85,6 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
 
 IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateAnswer()
 {
-  // HACK: Trigger OnNegotiationNeeded
-  this->OnNegotiationNeeded();
-
   IAsyncOperation<RTCSessionDescription^>^ asyncOp = Concurrency::create_async(
     [this]() -> RTCSessionDescription^ {
       webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -153,18 +159,21 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(RTCSessionDescription^ des
   return asyncOp;
 }
 
-
+void RTCPeerConnection::AddStream(MediaStream^ stream)
+{
+  _impl->AddStream(stream->GetImpl());
+}
 
 void WebRTC::Initialize()
 {
   rtc::EnsureWinsockInit();
   // Create a worker thread
-  gThread.Start();
-  rtc::ThreadManager::Instance()->SetCurrentThread(&gThread);
+  globals::gThread.Start();
+  rtc::ThreadManager::Instance()->SetCurrentThread(&globals::gThread);
   rtc::InitializeSSL();
 
   webrtc::test::InitFieldTrialsFromString("");
 
-  gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+  globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
 }
 

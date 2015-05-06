@@ -17,6 +17,9 @@ namespace webrtc_winrt_api_internal
 
 namespace webrtc_winrt_api
 {
+  ref class MediaStream;
+  ref class MediaStreamTrack;
+
   public ref class WebRTC sealed
   {
   public:
@@ -122,6 +125,7 @@ namespace webrtc_winrt_api
     IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
     IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
     IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
+    void AddStream(MediaStream^ stream);
 
   private:
 
@@ -134,4 +138,10 @@ namespace webrtc_winrt_api
     SetSdpObservers _setSdpObservers;
   };
 
+  namespace globals
+  {
+    extern rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> gPeerConnectionFactory;
+    // The worker thread for webrtc.
+    extern rtc::Thread gThread;
+  }
 }
