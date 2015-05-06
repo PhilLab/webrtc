@@ -1,5 +1,6 @@
 #include <collection.h>
 #include <ppltasks.h>
+#include <concrt.h>
 #include <string>
 
 #include "webrtc/modules/video_capture/include/video_capture.h"
@@ -48,8 +49,10 @@ using namespace Windows::UI;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
+using namespace Windows::UI::Xaml::Input;
 using namespace Windows::Storage;
 using namespace Windows::Foundation;
+using namespace Windows::Graphics::Display;
 
 bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
@@ -537,6 +540,15 @@ namespace StandupWinRT
     webrtc::ViECodec* videoCodec_;
 
   protected:
+
+    InputScope^ CreateInputScope() {
+      auto inputScope = ref new Windows::UI::Xaml::Input::InputScope();
+      auto scopeName = ref new Windows::UI::Xaml::Input::InputScopeName();
+      scopeName->NameValue = Windows::UI::Xaml::Input::InputScopeNameValue::Number;
+      inputScope->Names->Append(scopeName);
+      return inputScope;
+    }
+
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
     {
       g_windowDispatcher = dispatcher_ = Window::Current->Dispatcher;
@@ -552,10 +564,13 @@ namespace StandupWinRT
         row->Height = GridLength(32, GridUnitType::Pixel);
         layoutRoot->RowDefinitions->Append(row);
 
+        auto viewBox = ref new Viewbox;
+        Grid::SetRow(viewBox, 0);
+        layoutRoot->Children->Append(viewBox);
+
         auto stackPanel = ref new StackPanel();
         stackPanel->Orientation = Orientation::Horizontal;
-        Grid::SetRow(stackPanel, 0);
-        layoutRoot->Children->Append(stackPanel);
+        viewBox->Child = stackPanel;
 
         auto label = ref new TextBlock();
         label->Text = "IP: ";
@@ -566,6 +581,7 @@ namespace StandupWinRT
         ipTextBox_ = ref new TextBox();
         ipTextBox_->Width = 150;
         ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
+        ipTextBox_->InputScope = CreateInputScope();
         stackPanel->Children->Append(ipTextBox_);
 
         label = ref new TextBlock();
@@ -576,6 +592,7 @@ namespace StandupWinRT
 
         videoPortTextBox_ = ref new TextBox();
         videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
+        videoPortTextBox_->InputScope = CreateInputScope();
         stackPanel->Children->Append(videoPortTextBox_);
 
         label = ref new TextBlock();
@@ -586,6 +603,7 @@ namespace StandupWinRT
 
         audioPortTextBox_ = ref new TextBox();
         audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
+        audioPortTextBox_->InputScope = CreateInputScope();
         stackPanel->Children->Append(audioPortTextBox_);
       }
 
@@ -1408,3 +1426,4 @@ void StandupWinRT::App::SaveSettings()
   values->Insert("audio_port", audioPortTextBox_->Text);
   values->Insert("video_port", videoPortTextBox_->Text);
 }
+
