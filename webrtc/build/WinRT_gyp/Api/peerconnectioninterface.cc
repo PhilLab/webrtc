@@ -6,10 +6,12 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/bind.h"
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 
 #include <map>
+#include <functional>
 #include <ppltasks.h>
 
 using namespace webrtc_winrt_api;
@@ -164,16 +166,22 @@ void RTCPeerConnection::AddStream(MediaStream^ stream)
   _impl->AddStream(stream->GetImpl());
 }
 
-void WebRTC::Initialize()
+void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher)
 {
-  rtc::EnsureWinsockInit();
+  g_windowDispatcher = dispatcher;
+
   // Create a worker thread
   globals::gThread.Start();
-  rtc::ThreadManager::Instance()->SetCurrentThread(&globals::gThread);
-  rtc::InitializeSSL();
 
-  webrtc::test::InitFieldTrialsFromString("");
+  globals::RunOnGlobalThread<void>([]() -> void
+  {
+    rtc::EnsureWinsockInit();
+    //rtc::ThreadManager::Instance()->SetCurrentThread(&globals::gThread);
+    rtc::InitializeSSL();
 
-  globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+    webrtc::test::InitFieldTrialsFromString("");
+
+    globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+  });
 }
 

@@ -20,10 +20,11 @@ namespace webrtc_winrt_api
   ref class MediaStream;
   ref class MediaStreamTrack;
 
+  [Windows::Foundation::Metadata::WebHostHidden]
   public ref class WebRTC sealed
   {
   public:
-    static void Initialize();
+    static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
 
   private:
     // This type is not meant to be created.
@@ -143,5 +144,11 @@ namespace webrtc_winrt_api
     extern rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> gPeerConnectionFactory;
     // The worker thread for webrtc.
     extern rtc::Thread gThread;
+
+    template <typename T>
+    T RunOnGlobalThread(std::function<T()> fn)
+    {
+      return gThread.Invoke<T, std::function<T()>>(fn);
+    }
   }
 }

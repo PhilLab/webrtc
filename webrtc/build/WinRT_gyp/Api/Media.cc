@@ -95,14 +95,15 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this]() -> MediaStream^ {
 
-      // TODO: Check if a stream already exists.  Create only once.
+    // TODO: Check if a stream already exists.  Create only once.
 
-#if 0
+    return globals::RunOnGlobalThread<MediaStream^>([this]()->MediaStream^
+    {
       rtc::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(
         cricket::DeviceManagerFactory::Create());
 
       if (!dev_manager->Init()) {
-        LOG(LS_ERROR) <<  "Can't create device manager";
+        LOG(LS_ERROR) << "Can't create device manager";
         return nullptr;
       }
 
@@ -136,16 +137,12 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
           kVideoLabel,
           globals::gPeerConnectionFactory->CreateVideoSource(videoCapturer, NULL)));
 
-          stream->AddTrack(video_track);
+        stream->AddTrack(video_track);
       }
 
-#else
-    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
-    auto ret = ref new MediaStream(stream);
-
-    return ret;
-#endif
+      auto ret = ref new MediaStream(stream);
+      return ret;
+    });
   });
 
   return asyncOp;
