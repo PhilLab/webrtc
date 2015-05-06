@@ -82,10 +82,13 @@
         'audio_buffer.h',
         'audio_processing_impl.cc',
         'audio_processing_impl.h',
+        'beamformer/beamformer.h',
         'beamformer/complex_matrix.h',
         'beamformer/covariance_matrix_generator.cc',
         'beamformer/covariance_matrix_generator.h',
         'beamformer/matrix.h',
+        'beamformer/nonlinear_beamformer.cc',
+        'beamformer/nonlinear_beamformer.h',
         'common.h',
         'echo_cancellation_impl.cc',
         'echo_cancellation_impl.h',
@@ -126,8 +129,6 @@
         'utility/delay_estimator_internal.h',
         'utility/delay_estimator_wrapper.c',
         'utility/delay_estimator_wrapper.h',
-        'utility/fft4g.c',
-        'utility/fft4g.h',
         'voice_detection_impl.cc',
         'voice_detection_impl.h',
       ],
@@ -156,7 +157,7 @@
             'ns/nsx_defines.h',
           ],
           'conditions': [
-            ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+            ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
               'sources': [
                 'ns/nsx_core_mips.c',
               ],
@@ -190,7 +191,7 @@
         ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
           'dependencies': ['audio_processing_neon',],
         }],
-        ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+        ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
             'aecm/aecm_core_mips.c',
           ],
@@ -239,10 +240,14 @@
             'aec/aec_core_sse2.c',
             'aec/aec_rdft_sse2.c',
           ],
-          'cflags': ['-msse2',],
-          'xcode_settings': {
-            'OTHER_CFLAGS': ['-msse2',],
-          },
+          'conditions': [
+            ['os_posix==1', {
+              'cflags': [ '-msse2', ],
+              'xcode_settings': {
+                'OTHER_CFLAGS': [ '-msse2', ],
+              },
+            }],
+          ],
         },
       ],
     }],

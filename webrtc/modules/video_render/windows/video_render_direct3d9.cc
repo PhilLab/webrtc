@@ -18,7 +18,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -143,7 +142,7 @@ int D3D9Channel::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 int32_t D3D9Channel::RenderFrame(const uint32_t streamId,
-                                 I420VideoFrame& videoFrame)
+                                 const I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped cs(_critSect);
     if (_width != videoFrame.width() || _height != videoFrame.height())
@@ -287,7 +286,6 @@ VideoRenderDirect3D9::VideoRenderDirect3D9(Trace* trace,
     _pD3D(NULL),
     _d3dChannels(),
     _d3dZorder(),
-    _screenUpdateThread(NULL),
     _screenUpdateEvent(NULL),
     _logoLeft(0),
     _logoTop(0),
@@ -297,9 +295,9 @@ VideoRenderDirect3D9::VideoRenderDirect3D9(Trace* trace,
     _totalMemory(0),
     _availableMemory(0)
 {
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
-                                                      this, kRealtimePriority);
-    _screenUpdateEvent = EventWrapper::Create();
+    _screenUpdateThread = ThreadWrapper::CreateThread(
+        ScreenUpdateThreadProc, this, "ScreenUpdateThread");
+    _screenUpdateEvent = EventTimerWrapper::Create();
     SetRect(&_originalHwndRect, 0, 0, 0, 0);
 }
 
@@ -308,17 +306,14 @@ VideoRenderDirect3D9::~VideoRenderDirect3D9()
     //NOTE: we should not enter CriticalSection in here!
 
     // Signal event to exit thread, then delete it
-    ThreadWrapper* tmpPtr = _screenUpdateThread;
-    _screenUpdateThread = NULL;
+    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
     if (tmpPtr)
     {
         _screenUpdateEvent->Set();
         _screenUpdateEvent->StopTimer();
 
-        if (tmpPtr->Stop())
-        {
-            delete tmpPtr;
-        }
+        tmpPtr->Stop();
+        delete tmpPtr;
     }
     delete _screenUpdateEvent;
 
@@ -551,8 +546,8 @@ int32_t VideoRenderDirect3D9::Init()
         WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Thread not created");
         return -1;
     }
-    unsigned int threadId;
-    _screenUpdateThread->Start(threadId);
+    _screenUpdateThread->Start();
+    _screenUpdateThread->SetPriority(kRealtimePriority);
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;

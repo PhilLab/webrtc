@@ -1471,10 +1471,10 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
   return 0;
 }
 
-int WebRtcAec_FreeAec(AecCore* aec) {
+void WebRtcAec_FreeAec(AecCore* aec) {
   int i;
   if (aec == NULL) {
-    return -1;
+    return;
   }
 
   WebRtc_FreeBuffer(aec->nearFrBuf);
@@ -1498,7 +1498,6 @@ int WebRtcAec_FreeAec(AecCore* aec) {
   WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
   free(aec);
-  return 0;
 }
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
@@ -1899,7 +1898,9 @@ void WebRtcAec_SetConfigCore(AecCore* self,
   if (self->metricsMode) {
     InitMetrics(self);
   }
-  self->delay_logging_enabled = delay_logging;
+  // Turn on delay logging if it is either set explicitly or if delay agnostic
+  // AEC is enabled (which requires delay estimates).
+  self->delay_logging_enabled = delay_logging || !self->reported_delay_enabled;
   if (self->delay_logging_enabled) {
     memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
   }

@@ -106,7 +106,7 @@ namespace StandupWinRT
     }
 
     virtual void OnIncomingCapturedFrame(const int32_t id,
-      webrtc::I420VideoFrame& videoFrame)
+      const webrtc::I420VideoFrame& videoFrame)
     {
       _rendererCallback->RenderFrame(1, videoFrame);
     }

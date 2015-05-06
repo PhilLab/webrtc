@@ -72,10 +72,13 @@ source_set("audio_processing") {
     "audio_buffer.h",
     "audio_processing_impl.cc",
     "audio_processing_impl.h",
+    "beamformer/beamformer.h",
     "beamformer/complex_matrix.h",
     "beamformer/covariance_matrix_generator.cc",
     "beamformer/covariance_matrix_generator.h",
     "beamformer/matrix.h",
+    "beamformer/nonlinear_beamformer.cc",
+    "beamformer/nonlinear_beamformer.h",
     "common.h",
     "echo_cancellation_impl.cc",
     "echo_cancellation_impl.h",
@@ -116,8 +119,6 @@ source_set("audio_processing") {
     "utility/delay_estimator_internal.h",
     "utility/delay_estimator_wrapper.c",
     "utility/delay_estimator_wrapper.h",
-    "utility/fft4g.c",
-    "utility/fft4g.h",
     "voice_detection_impl.cc",
     "voice_detection_impl.h",
   ]
@@ -164,14 +165,6 @@ source_set("audio_processing") {
       "ns/ns_core.c",
       "ns/ns_core.h",
       "ns/windows_private.h",
-    ]
-  }
-
-  if (rtc_use_openmax_dl) {
-    defines += [ "WEBRTC_BEAMFORMER" ]
-    sources += [
-      "beamformer/beamformer.cc",
-      "beamformer/beamformer.h",
     ]
   }
 
@@ -230,7 +223,9 @@ if (current_cpu == "x86" || current_cpu == "x64") {
       "aec/aec_rdft_sse2.c",
     ]
 
-    cflags = [ "-msse2" ]
+    if (is_posix) {
+      cflags = [ "-msse2" ]
+    }
 
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]

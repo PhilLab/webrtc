@@ -31,7 +31,6 @@
 using cricket::kDefaultPortAllocatorFlags;
 using cricket::kMinimumStepDelay;
 using cricket::kDefaultStepDelay;
-using cricket::PORTALLOCATOR_ENABLE_BUNDLE;
 using cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG;
 using cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET;
 using cricket::ServerAddresses;
@@ -284,15 +283,6 @@ class P2PTransportChannelTestBase : public testing::Test,
       std::string ice_pwd_ep1_cd2_ch = kIcePwd[2];
       std::string ice_ufrag_ep2_cd2_ch = kIceUfrag[3];
       std::string ice_pwd_ep2_cd2_ch = kIcePwd[3];
-      // In BUNDLE each endpoint must share common ICE credentials.
-      if (ep1_.allocator_->flags() & PORTALLOCATOR_ENABLE_BUNDLE) {
-        ice_ufrag_ep1_cd2_ch = ice_ufrag_ep1_cd1_ch;
-        ice_pwd_ep1_cd2_ch = ice_pwd_ep1_cd1_ch;
-      }
-      if (ep2_.allocator_->flags() & PORTALLOCATOR_ENABLE_BUNDLE) {
-        ice_ufrag_ep2_cd2_ch = ice_ufrag_ep2_cd1_ch;
-        ice_pwd_ep2_cd2_ch = ice_pwd_ep2_cd1_ch;
-      }
       ep1_.cd2_.ch_.reset(CreateChannel(
           0, cricket::ICE_CANDIDATE_COMPONENT_DEFAULT,
           ice_ufrag_ep1_cd2_ch, ice_pwd_ep1_cd2_ch,
@@ -1191,20 +1181,6 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeAsIce) {
 }
 
 // Test that we restart candidate allocation when local ufrag&pwd changed.
-// Standard Ice protocol is used.
-TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeBundleAsIce) {
-  ConfigureEndpoints(
-      OPEN, OPEN,
-      PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG,
-      PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG,
-      kMinimumStepDelay, kMinimumStepDelay,
-      cricket::ICEPROTO_RFC5245);
-  CreateChannels(2);
-  TestHandleIceUfragPasswordChanged();
-  DestroyChannels();
-}
-
-// Test that we restart candidate allocation when local ufrag&pwd changed.
 // Google Ice protocol is used.
 TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeAsGice) {
   ConfigureEndpoints(OPEN, OPEN,
@@ -1213,20 +1189,6 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeAsGice) {
                      kDefaultStepDelay, kDefaultStepDelay,
                      cricket::ICEPROTO_GOOGLE);
   CreateChannels(1);
-  TestHandleIceUfragPasswordChanged();
-  DestroyChannels();
-}
-
-// Test that ICE restart works when bundle is enabled.
-// Google Ice protocol is used.
-TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeBundleAsGice) {
-  ConfigureEndpoints(
-      OPEN, OPEN,
-      PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG,
-      PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG,
-      kDefaultStepDelay, kDefaultStepDelay,
-      cricket::ICEPROTO_GOOGLE);
-  CreateChannels(2);
   TestHandleIceUfragPasswordChanged();
   DestroyChannels();
 }
@@ -1267,7 +1229,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
                      PORTALLOCATOR_ENABLE_SHARED_UFRAG,
                      kDefaultStepDelay, kDefaultStepDelay,
                      cricket::ICEPROTO_RFC5245);
+  // Emulate no remote credentials coming in.
+  set_clear_remote_candidates_ufrag_pwd(false);
   CreateChannels(1);
+  // Only have remote credentials come in for ep2, not ep1.
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
 
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
@@ -1279,11 +1245,20 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   WAIT((best_connection = ep1_ch1()->best_connection()) != NULL, 2000);
   EXPECT_EQ("prflx", ep1_ch1()->best_connection()->remote_candidate().type());
 
+  // Because we don't have a remote pwd, we don't ping yet.
+  EXPECT_EQ(kIceUfrag[1],
+            ep1_ch1()->best_connection()->remote_candidate().username());
+  EXPECT_EQ("", ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr == ep1_ch1()->FindNextPingableConnection());
+
   ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
   ResumeCandidates(1);
 
-  WAIT(ep2_ch1()->best_connection() != NULL, 2000);
+  EXPECT_EQ(kIcePwd[1],
+            ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr != ep1_ch1()->FindNextPingableConnection());
 
+  WAIT(ep2_ch1()->best_connection() != NULL, 2000);
   // Verify ep1's best connection is updated to use the 'local' candidate.
   EXPECT_EQ_WAIT(
       "local",
@@ -1301,7 +1276,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
                      PORTALLOCATOR_ENABLE_SHARED_UFRAG,
                      kDefaultStepDelay, kDefaultStepDelay,
                      cricket::ICEPROTO_RFC5245);
+  // Emulate no remote credentials coming in.
+  set_clear_remote_candidates_ufrag_pwd(false);
   CreateChannels(1);
+  // Only have remote credentials come in for ep2, not ep1.
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
   PauseCandidates(1);
@@ -1311,8 +1290,18 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   WAIT(ep1_ch1()->best_connection() != NULL, 2000);
   EXPECT_EQ("prflx", ep1_ch1()->best_connection()->remote_candidate().type());
 
+  // Because we don't have a remote pwd, we don't ping yet.
+  EXPECT_EQ(kIceUfrag[1],
+            ep1_ch1()->best_connection()->remote_candidate().username());
+  EXPECT_EQ("", ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr == ep1_ch1()->FindNextPingableConnection());
+
   ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
   ResumeCandidates(1);
+
+  EXPECT_EQ(kIcePwd[1],
+            ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr != ep1_ch1()->FindNextPingableConnection());
 
   const cricket::Connection* best_connection = NULL;
   WAIT((best_connection = ep2_ch1()->best_connection()) != NULL, 2000);
@@ -1425,75 +1414,9 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   DestroyChannels();
 }
 
-TEST_F(P2PTransportChannelTest, TestBundleAllocatorToBundleAllocator) {
+TEST_F(P2PTransportChannelTest, TestIceRoleConflict) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
-  SetAllocatorFlags(
-      0, PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  SetAllocatorFlags(
-      1, PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-
-  CreateChannels(2);
-
-  EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
-                   ep1_ch1()->writable() &&
-                   ep2_ch1()->readable() &&
-                   ep2_ch1()->writable(),
-                   1000);
-  EXPECT_TRUE(ep1_ch1()->best_connection() &&
-              ep2_ch1()->best_connection());
-
-  EXPECT_FALSE(ep1_ch2()->readable());
-  EXPECT_FALSE(ep1_ch2()->writable());
-  EXPECT_FALSE(ep2_ch2()->readable());
-  EXPECT_FALSE(ep2_ch2()->writable());
-
-  TestSendRecv(1);  // Only 1 channel is writable per Endpoint.
-  DestroyChannels();
-}
-
-TEST_F(P2PTransportChannelTest, TestBundleAllocatorToNonBundleAllocator) {
-  AddAddress(0, kPublicAddrs[0]);
-  AddAddress(1, kPublicAddrs[1]);
-  // Enable BUNDLE flag at one side.
-  SetAllocatorFlags(
-      0, PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-
-  CreateChannels(2);
-
-  EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
-                   ep1_ch1()->writable() &&
-                   ep2_ch1()->readable() &&
-                   ep2_ch1()->writable(),
-                   1000);
-  EXPECT_TRUE_WAIT(ep1_ch2()->readable() &&
-                   ep1_ch2()->writable() &&
-                   ep2_ch2()->readable() &&
-                   ep2_ch2()->writable(),
-                   1000);
-
-  EXPECT_TRUE(ep1_ch1()->best_connection() &&
-              ep2_ch1()->best_connection());
-  EXPECT_TRUE(ep1_ch2()->best_connection() &&
-              ep2_ch2()->best_connection());
-
-  TestSendRecv(2);
-  DestroyChannels();
-}
-
-TEST_F(P2PTransportChannelTest, TestIceRoleConflictWithoutBundle) {
-  AddAddress(0, kPublicAddrs[0]);
-  AddAddress(1, kPublicAddrs[1]);
-  TestSignalRoleConflict();
-}
-
-TEST_F(P2PTransportChannelTest, TestIceRoleConflictWithBundle) {
-  AddAddress(0, kPublicAddrs[0]);
-  AddAddress(1, kPublicAddrs[1]);
-  SetAllocatorFlags(
-      0, PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  SetAllocatorFlags(
-      1, PORTALLOCATOR_ENABLE_BUNDLE | PORTALLOCATOR_ENABLE_SHARED_UFRAG);
   TestSignalRoleConflict();
 }
 

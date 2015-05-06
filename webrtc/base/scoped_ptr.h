@@ -496,7 +496,9 @@ class scoped_ptr<T[], D> {
   explicit scoped_ptr(element_type* array) : impl_(array) {}
 
   // Constructor.  Allows construction from a nullptr.
+#if !defined(WINRT) // Currently getting compile error about unknown pointer size.
   scoped_ptr(decltype(nullptr)) : impl_(nullptr) {}
+#endif
 
   // Constructor.  Allows construction from a scoped_ptr rvalue.
   scoped_ptr(scoped_ptr&& other) : impl_(&other.impl_) {}
@@ -598,12 +600,12 @@ class scoped_ptr<T[], D> {
   template <class U> bool operator!=(scoped_ptr<U> const& p2) const;
 };
 
-}  // namespace rtc
-
 template <class T, class D>
 void swap(rtc::scoped_ptr<T, D>& p1, rtc::scoped_ptr<T, D>& p2) {
   p1.swap(p2);
 }
+
+}  // namespace rtc
 
 template <class T, class D>
 bool operator==(T* p1, const rtc::scoped_ptr<T, D>& p2) {

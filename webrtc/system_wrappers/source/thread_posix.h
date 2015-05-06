@@ -25,28 +25,26 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
 
 class ThreadPosix : public ThreadWrapper {
  public:
-  ThreadPosix(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
-              const char* thread_name);
+  ThreadPosix(ThreadRunFunction func, void* obj, const char* thread_name);
   ~ThreadPosix() override;
 
   // From ThreadWrapper.
-  bool Start(unsigned int& id) override;
+  bool Start() override;
   bool Stop() override;
+
+  bool SetPriority(ThreadPriority priority) override;
 
  private:
   static void* StartThread(void* param);
 
-  struct InitParams;
-  void Run(InitParams* params);
+  void Run();
 
   rtc::ThreadChecker thread_checker_;
   ThreadRunFunction const run_function_;
   void* const obj_;
-  ThreadPriority prio_;
   rtc::Event stop_event_;
   const std::string name_;
 
-  pid_t thread_id_;
   pthread_t thread_;
 };
 

@@ -8,26 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/video_frame.h"
+
 #include <math.h>
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/bind.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 
 namespace webrtc {
 
-class NativeHandleImpl : public NativeHandle {
+class NativeHandleImpl {
  public:
-  NativeHandleImpl() : ref_count_(0) {}
+  NativeHandleImpl() : no_longer_needed_(false) {}
   virtual ~NativeHandleImpl() {}
-  virtual int32_t AddRef() { return ++ref_count_; }
-  virtual int32_t Release() { return --ref_count_; }
-  virtual void* GetHandle() { return NULL; }
+  bool no_longer_needed() const { return no_longer_needed_; }
+  void SetNoLongerNeeded() { no_longer_needed_ = true; }
 
-  int32_t ref_count() { return ref_count_; }
  private:
-  int32_t ref_count_;
+  bool no_longer_needed_;
 };
 
 bool EqualPlane(const uint8_t* data1,
@@ -42,16 +42,14 @@ int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestI420VideoFrame, InitialValues) {
   I420VideoFrame frame;
-  // Invalid arguments - one call for each variable.
   EXPECT_TRUE(frame.IsZeroSize());
   EXPECT_EQ(kVideoRotation_0, frame.rotation());
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(0, 10, 10, 14, 14));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, -1, 10, 90, 14));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 0, 14, 18));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 10, -2, 13));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 10, 14, 0));
-  EXPECT_EQ(0, frame.CreateEmptyFrame(10, 10, 10, 14, 90));
-  EXPECT_FALSE(frame.IsZeroSize());
+}
+
+TEST(TestI420VideoFrame, CopiesInitialFrameWithoutCrashing) {
+  I420VideoFrame frame;
+  I420VideoFrame frame2;
+  frame2.CopyFrame(frame);
 }
 
 TEST(TestI420VideoFrame, WidthHeightValues) {
@@ -112,8 +110,8 @@ TEST(TestI420VideoFrame, CopyFrame) {
   memset(buffer_v, 4, kSizeV);
   I420VideoFrame big_frame;
   EXPECT_EQ(0,
-            big_frame.CreateFrame(kSizeY, buffer_y, kSizeU, buffer_u, kSizeV,
-                                  buffer_v, width + 5, height + 5, stride_y + 5,
+            big_frame.CreateFrame(buffer_y, buffer_u, buffer_v,
+                                  width + 5, height + 5, stride_y + 5,
                                   stride_u, stride_v, kRotation));
   // Frame of smaller dimensions.
   EXPECT_EQ(0, small_frame.CopyFrame(big_frame));
@@ -130,27 +128,75 @@ TEST(TestI420VideoFrame, CopyFrame) {
   EXPECT_TRUE(EqualFrames(small_frame, big_frame));
 }
 
-TEST(TestI420VideoFrame, CloneFrame) {
-  I420VideoFrame frame1;
-  rtc::scoped_ptr<I420VideoFrame> frame2;
+TEST(TestI420VideoFrame, ShallowCopy) {
+  uint32_t timestamp = 1;
+  int64_t ntp_time_ms = 2;
+  int64_t render_time_ms = 3;
+  int stride_y = 15;
+  int stride_u = 10;
+  int stride_v = 10;
+  int width = 15;
+  int height = 15;
+
   const int kSizeY = 400;
   const int kSizeU = 100;
   const int kSizeV = 100;
+  const VideoRotation kRotation = kVideoRotation_270;
   uint8_t buffer_y[kSizeY];
   uint8_t buffer_u[kSizeU];
   uint8_t buffer_v[kSizeV];
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  frame1.CreateFrame(
-      kSizeY, buffer_y, kSizeU, buffer_u, kSizeV, buffer_v, 20, 20, 20, 10, 10);
-  frame1.set_timestamp(1);
-  frame1.set_ntp_time_ms(2);
-  frame1.set_render_time_ms(3);
+  I420VideoFrame frame1;
+  EXPECT_EQ(0, frame1.CreateFrame(buffer_y, buffer_u, buffer_v, width, height,
+                                  stride_y, stride_u, stride_v, kRotation));
+  frame1.set_timestamp(timestamp);
+  frame1.set_ntp_time_ms(ntp_time_ms);
+  frame1.set_render_time_ms(render_time_ms);
+  I420VideoFrame frame2;
+  frame2.ShallowCopy(frame1);
 
-  frame2.reset(frame1.CloneFrame());
-  EXPECT_TRUE(frame2.get() != NULL);
-  EXPECT_TRUE(EqualFrames(frame1, *frame2));
+  // To be able to access the buffers, we need const pointers to the frames.
+  const I420VideoFrame* const_frame1_ptr = &frame1;
+  const I420VideoFrame* const_frame2_ptr = &frame2;
+
+  EXPECT_TRUE(const_frame1_ptr->buffer(kYPlane) ==
+              const_frame2_ptr->buffer(kYPlane));
+  EXPECT_TRUE(const_frame1_ptr->buffer(kUPlane) ==
+              const_frame2_ptr->buffer(kUPlane));
+  EXPECT_TRUE(const_frame1_ptr->buffer(kVPlane) ==
+              const_frame2_ptr->buffer(kVPlane));
+
+  EXPECT_EQ(frame2.timestamp(), frame1.timestamp());
+  EXPECT_EQ(frame2.ntp_time_ms(), frame1.ntp_time_ms());
+  EXPECT_EQ(frame2.render_time_ms(), frame1.render_time_ms());
+  EXPECT_EQ(frame2.rotation(), frame1.rotation());
+
+  frame2.set_timestamp(timestamp + 1);
+  frame2.set_ntp_time_ms(ntp_time_ms + 1);
+  frame2.set_render_time_ms(render_time_ms + 1);
+  frame2.set_rotation(kVideoRotation_90);
+
+  EXPECT_NE(frame2.timestamp(), frame1.timestamp());
+  EXPECT_NE(frame2.ntp_time_ms(), frame1.ntp_time_ms());
+  EXPECT_NE(frame2.render_time_ms(), frame1.render_time_ms());
+  EXPECT_NE(frame2.rotation(), frame1.rotation());
+}
+
+TEST(TestI420VideoFrame, Reset) {
+  I420VideoFrame frame;
+  ASSERT_TRUE(frame.CreateEmptyFrame(5, 5, 5, 5, 5) == 0);
+  frame.set_ntp_time_ms(1);
+  frame.set_timestamp(2);
+  frame.set_render_time_ms(3);
+  ASSERT_TRUE(frame.video_frame_buffer() != NULL);
+
+  frame.Reset();
+  EXPECT_EQ(0u, frame.ntp_time_ms());
+  EXPECT_EQ(0u, frame.render_time_ms());
+  EXPECT_EQ(0u, frame.timestamp());
+  EXPECT_TRUE(frame.video_frame_buffer() == NULL);
 }
 
 TEST(TestI420VideoFrame, CopyBuffer) {
@@ -169,9 +215,7 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeUv);
   memset(buffer_v, 4, kSizeUv);
-  frame2.CreateFrame(kSizeY, buffer_y,
-                     kSizeUv, buffer_u,
-                     kSizeUv, buffer_v,
+  frame2.CreateFrame(buffer_y, buffer_u, buffer_v,
                      width, height, stride_y, stride_uv, stride_uv);
   // Expect exactly the same pixel data.
   EXPECT_TRUE(EqualPlane(buffer_y, frame2.buffer(kYPlane), stride_y, 15, 15));
@@ -182,75 +226,6 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   EXPECT_LE(kSizeY, frame2.allocated_size(kYPlane));
   EXPECT_LE(kSizeUv, frame2.allocated_size(kUPlane));
   EXPECT_LE(kSizeUv, frame2.allocated_size(kVPlane));
-}
-
-TEST(TestI420VideoFrame, FrameSwap) {
-  I420VideoFrame frame1, frame2;
-  uint32_t timestamp1 = 1;
-  int64_t ntp_time_ms1 = 2;
-  int64_t render_time_ms1 = 3;
-  int stride_y1 = 15;
-  int stride_u1 = 10;
-  int stride_v1 = 10;
-  int width1 = 15;
-  int height1 = 15;
-  const int kSizeY1 = 225;
-  const int kSizeU1 = 80;
-  const int kSizeV1 = 80;
-  uint32_t timestamp2 = 4;
-  int64_t ntp_time_ms2 = 5;
-  int64_t render_time_ms2 = 6;
-  int stride_y2 = 30;
-  int stride_u2 = 20;
-  int stride_v2 = 20;
-  int width2 = 30;
-  int height2 = 30;
-  const int kSizeY2 = 900;
-  const int kSizeU2 = 300;
-  const int kSizeV2 = 300;
-  // Initialize frame1 values.
-  EXPECT_EQ(0, frame1.CreateEmptyFrame(width1, height1,
-                                       stride_y1, stride_u1, stride_v1));
-  frame1.set_timestamp(timestamp1);
-  frame1.set_ntp_time_ms(ntp_time_ms1);
-  frame1.set_render_time_ms(render_time_ms1);
-  // Set memory for frame1.
-  uint8_t buffer_y1[kSizeY1];
-  uint8_t buffer_u1[kSizeU1];
-  uint8_t buffer_v1[kSizeV1];
-  memset(buffer_y1, 2, kSizeY1);
-  memset(buffer_u1, 4, kSizeU1);
-  memset(buffer_v1, 8, kSizeV1);
-  frame1.CreateFrame(kSizeY1, buffer_y1,
-                     kSizeU1, buffer_u1,
-                     kSizeV1, buffer_v1,
-                     width1, height1, stride_y1, stride_u1, stride_v1);
-  // Initialize frame2 values.
-  EXPECT_EQ(0, frame2.CreateEmptyFrame(width2, height2,
-                                       stride_y2, stride_u2, stride_v2));
-  frame2.set_timestamp(timestamp2);
-  frame1.set_ntp_time_ms(ntp_time_ms2);
-  frame2.set_render_time_ms(render_time_ms2);
-  // Set memory for frame2.
-  uint8_t buffer_y2[kSizeY2];
-  uint8_t buffer_u2[kSizeU2];
-  uint8_t buffer_v2[kSizeV2];
-  memset(buffer_y2, 0, kSizeY2);
-  memset(buffer_u2, 1, kSizeU2);
-  memset(buffer_v2, 2, kSizeV2);
-  frame2.CreateFrame(kSizeY2, buffer_y2,
-                     kSizeU2, buffer_u2,
-                     kSizeV2, buffer_v2,
-                     width2, height2, stride_y2, stride_u2, stride_v2);
-  // Copy frames for subsequent comparison.
-  I420VideoFrame frame1_copy, frame2_copy;
-  frame1_copy.CopyFrame(frame1);
-  frame2_copy.CopyFrame(frame2);
-  // Swap frames.
-  frame1.SwapFrame(&frame2);
-  // Verify swap.
-  EXPECT_TRUE(EqualFrames(frame1_copy, frame2));
-  EXPECT_TRUE(EqualFrames(frame2_copy, frame1));
 }
 
 TEST(TestI420VideoFrame, ReuseAllocation) {
@@ -281,7 +256,8 @@ TEST(TestI420VideoFrame, FailToReuseAllocation) {
 
 TEST(TestI420VideoFrame, TextureInitialValues) {
   NativeHandleImpl handle;
-  I420VideoFrame frame(&handle, 640, 480, 100, 10);
+  I420VideoFrame frame(&handle, 640, 480, 100, 10, webrtc::kVideoRotation_0,
+                       rtc::Callback0<void>());
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
   EXPECT_EQ(100u, frame.timestamp());
@@ -294,21 +270,15 @@ TEST(TestI420VideoFrame, TextureInitialValues) {
   EXPECT_EQ(20, frame.render_time_ms());
 }
 
-TEST(TestI420VideoFrame, RefCount) {
+TEST(TestI420VideoFrame, NoLongerNeeded) {
   NativeHandleImpl handle;
-  EXPECT_EQ(0, handle.ref_count());
-  I420VideoFrame *frame = new I420VideoFrame(&handle, 640, 480, 100, 200);
-  EXPECT_EQ(1, handle.ref_count());
+  ASSERT_FALSE(handle.no_longer_needed());
+  I420VideoFrame* frame = new I420VideoFrame(
+      &handle, 640, 480, 100, 200, webrtc::kVideoRotation_0,
+      rtc::Bind(&NativeHandleImpl::SetNoLongerNeeded, &handle));
+  EXPECT_FALSE(handle.no_longer_needed());
   delete frame;
-  EXPECT_EQ(0, handle.ref_count());
-}
-
-TEST(TestI420VideoFrame, CloneTextureFrame) {
-  NativeHandleImpl handle;
-  I420VideoFrame frame1(&handle, 640, 480, 100, 200);
-  rtc::scoped_ptr<I420VideoFrame> frame2(frame1.CloneFrame());
-  EXPECT_TRUE(frame2.get() != NULL);
-  EXPECT_TRUE(EqualTextureFrames(frame1, *frame2));
+  EXPECT_TRUE(handle.no_longer_needed());
 }
 
 bool EqualPlane(const uint8_t* data1,

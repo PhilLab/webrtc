@@ -115,11 +115,11 @@ if __name__ == '__main__':
   args.append('--check')
 
   supplemental_includes = GetSupplementalFiles()
-  gn_vars_dict = gyp_chromium.GetGypVars(supplemental_includes)
+  gyp_vars = gyp_chromium.GetGypVars(supplemental_includes)
 
   # Automatically turn on crosscompile support for platforms that need it.
   if all(('ninja' in os.environ.get('GYP_GENERATORS', ''),
-          gn_vars_dict.get('OS') in ['android', 'ios'],
+          gyp_vars.get('OS') in ['android', 'ios'],
           'GYP_CROSSCOMPILE' not in os.environ)):
     os.environ['GYP_CROSSCOMPILE'] = '1'
 

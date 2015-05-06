@@ -36,7 +36,7 @@ class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
   scoped_ptr<AsyncSocket> listener_;
   std::list<std::pair<AsyncSocket*, SocketStream*> > connections_;
   Thread* thread_;
-  webrtc::ThreadWrapper* tw_;
+  scoped_ptr<webrtc::ThreadWrapper> tw_;
 };
 
 }  //  namespace rtc

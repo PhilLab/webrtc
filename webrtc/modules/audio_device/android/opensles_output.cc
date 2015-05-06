@@ -41,7 +41,7 @@ enum {
 
 namespace webrtc {
 
-OpenSlesOutput::OpenSlesOutput()
+OpenSlesOutput::OpenSlesOutput(AudioManager* audio_manager)
     : initialized_(false),
       speaker_initialized_(false),
       play_initialized_(false),
@@ -510,21 +510,19 @@ void OpenSlesOutput::PlayerSimpleBufferQueueCallbackHandler(
 }
 
 bool OpenSlesOutput::StartCbThreads() {
-  play_thread_.reset(ThreadWrapper::CreateThread(CbThread,
-                                                 this,
-                                                 kRealtimePriority,
-                                                 "opensl_play_thread"));
+  play_thread_ = ThreadWrapper::CreateThread(CbThread, this,
+                                             "opensl_play_thread");
   assert(play_thread_.get());
   OPENSL_RETURN_ON_FAILURE(
       (*sles_player_itf_)->SetPlayState(sles_player_itf_,
                                         SL_PLAYSTATE_PLAYING),
       false);
 
-  unsigned int thread_id = 0;
-  if (!play_thread_->Start(thread_id)) {
+  if (!play_thread_->Start()) {
     assert(false);
     return false;
   }
+  play_thread_->SetPriority(kRealtimePriority);
   return true;
 }
 

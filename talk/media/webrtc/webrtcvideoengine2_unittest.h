@@ -54,7 +54,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   void SetStats(const webrtc::VideoSendStream::Stats& stats);
 
  private:
-  void SwapFrame(webrtc::I420VideoFrame* frame) override;
+  void IncomingCapturedFrame(const webrtc::I420VideoFrame& frame) override;
   webrtc::VideoSendStream::Stats GetStats() override;
 
   bool ReconfigureVideoEncoder(
@@ -104,18 +104,9 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   FakeCall(const webrtc::Call::Config& config);
   ~FakeCall();
 
-  void SetVideoCodecs(const std::vector<webrtc::VideoCodec> codecs);
-
   webrtc::Call::Config GetConfig() const;
   std::vector<FakeVideoSendStream*> GetVideoSendStreams();
   std::vector<FakeVideoReceiveStream*> GetVideoReceiveStreams();
-
-  webrtc::VideoCodec GetEmptyVideoCodec();
-
-  webrtc::VideoCodec GetVideoCodecVp8();
-  webrtc::VideoCodec GetVideoCodecVp9();
-
-  std::vector<webrtc::VideoCodec> GetDefaultVideoCodecs();
 
   webrtc::Call::NetworkState GetNetworkState() const;
   int GetNumCreatedSendStreams() const;
@@ -146,7 +137,6 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::Call::Config config_;
   webrtc::Call::NetworkState network_state_;
   webrtc::Call::Stats stats_;
-  std::vector<webrtc::VideoCodec> codecs_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;
 

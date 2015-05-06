@@ -44,5 +44,3 @@
 #include "libSrtpTests\SrtpSha1DriverTest.h"
 #include "libSrtpTests\SrtpStatDriverTest.h"
 
-// video coding tests
-#include "videoCodingTests/VideoCodingTest.h"

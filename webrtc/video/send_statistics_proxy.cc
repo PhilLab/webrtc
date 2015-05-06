@@ -50,15 +50,11 @@ void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
   stats_.suspended = is_suspended;
 }
 
-void SendStatisticsProxy::CapturedFrameRate(const int capture_id,
-                                            const unsigned char frame_rate) {
-  CriticalSectionScoped lock(crit_.get());
-  stats_.input_frame_rate = frame_rate;
-}
-
 VideoSendStream::Stats SendStatisticsProxy::GetStats() {
   CriticalSectionScoped lock(crit_.get());
   PurgeOldStats();
+  stats_.input_frame_rate =
+      static_cast<int>(input_frame_rate_tracker_.units_second());
   return stats_;
 }
 
@@ -89,7 +85,7 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
       std::find(config_.rtp.rtx.ssrcs.begin(),
                 config_.rtp.rtx.ssrcs.end(),
                 ssrc) == config_.rtp.rtx.ssrcs.end()) {
-    return NULL;
+    return nullptr;
   }
 
   return &stats_.substreams[ssrc];  // Insert new entry and return ptr.
@@ -104,7 +100,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
     const EncodedImage& encoded_image,
     const RTPVideoHeader* rtp_video_header) {
   size_t simulcast_idx =
-      rtp_video_header != NULL ? rtp_video_header->simulcastIdx : 0;
+      rtp_video_header != nullptr ? rtp_video_header->simulcastIdx : 0;
   if (simulcast_idx >= config_.rtp.ssrcs.size()) {
     LOG(LS_ERROR) << "Encoded image outside simulcast range (" << simulcast_idx
                   << " >= " << config_.rtp.ssrcs.size() << ").";
@@ -114,7 +110,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == NULL)
+  if (stats == nullptr)
     return;
 
   stats->width = encoded_image._encodedWidth;
@@ -122,12 +118,17 @@ void SendStatisticsProxy::OnSendEncodedImage(
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
 }
 
+void SendStatisticsProxy::OnIncomingFrame() {
+  CriticalSectionScoped lock(crit_.get());
+  input_frame_rate_tracker_.Update(1);
+}
+
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
     uint32_t ssrc,
     const RtcpPacketTypeCounter& packet_counter) {
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == NULL)
+  if (stats == nullptr)
     return;
 
   stats->rtcp_packet_type_counts = packet_counter;
@@ -137,7 +138,7 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == NULL)
+  if (stats == nullptr)
     return;
 
   stats->rtcp_stats = statistics;
@@ -151,8 +152,8 @@ void SendStatisticsProxy::DataCountersUpdated(
     uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  DCHECK(stats != NULL) << "DataCountersUpdated reported for unknown ssrc: "
-                        << ssrc;
+  DCHECK(stats != nullptr) << "DataCountersUpdated reported for unknown ssrc: "
+                           << ssrc;
 
   stats->rtp_stats = counters;
 }
@@ -162,7 +163,7 @@ void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
                                  uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == NULL)
+  if (stats == nullptr)
     return;
 
   stats->total_bitrate_bps = total_stats.bitrate_bps;
@@ -173,7 +174,7 @@ void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
                                             uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == NULL)
+  if (stats == nullptr)
     return;
 
   stats->frame_counts = frame_counts;
@@ -184,7 +185,7 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
                                                uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  if (stats == NULL)
+  if (stats == nullptr)
     return;
   stats->avg_delay_ms = avg_delay_ms;
   stats->max_delay_ms = max_delay_ms;

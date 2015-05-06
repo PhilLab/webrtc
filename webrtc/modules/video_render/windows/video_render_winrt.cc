@@ -151,7 +151,7 @@ int VideoChannelWinRT::FrameSizeChange(int width, int height, int numberOfStream
 }
 
 int32_t VideoChannelWinRT::RenderFrame(const uint32_t streamId,
-  I420VideoFrame& videoFrame)
+  const I420VideoFrame& videoFrame)
 {
   if (_width != videoFrame.width() || _height != videoFrame.height())
   {
@@ -214,28 +214,24 @@ VideoRenderWinRT::VideoRenderWinRT(Trace* trace,
     _trace(trace),
     _hWnd(hWnd),
     _fullScreen(fullScreen),
-    _screenUpdateThread(NULL),
+    _screenUpdateThread(),
     _screenUpdateEvent(NULL),
     _channel(NULL),
     _winWidth(0),
     _winHeight(0) {
   _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
-    this, kRealtimePriority);
-  _screenUpdateEvent = EventWrapper::Create();
+    this, "VideoRenderWinRT");
+  _screenUpdateEvent = EventTimerWrapper::Create();
 }
 
 VideoRenderWinRT::~VideoRenderWinRT() {
-  ThreadWrapper* tmpPtr = _screenUpdateThread;
-  _screenUpdateThread = NULL;
+  rtc::scoped_ptr<ThreadWrapper> tmpPtr(_screenUpdateThread.release());
   if (tmpPtr)
   {
     _screenUpdateEvent->Set();
     _screenUpdateEvent->StopTimer();
 
-    if (tmpPtr->Stop())
-    {
-      delete tmpPtr;
-    }
+    tmpPtr->Stop();
   }
   delete _screenUpdateEvent;
 
@@ -252,8 +248,8 @@ int32_t VideoRenderWinRT::Init() {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Thread not created");
     return -1;
   }
-  unsigned int threadId;
-  _screenUpdateThread->Start(threadId);
+  _screenUpdateThread->Start();
+  _screenUpdateThread->SetPriority(kRealtimePriority);
 
   // Start the event triggering the render process
   unsigned int monitorFreq = 60;
@@ -349,7 +345,7 @@ int32_t VideoRenderWinRT::DeleteChannel(const uint32_t streamId) {
 
   delete _channel;
   _channel = NULL;
-  
+
   return 0;
 }
 

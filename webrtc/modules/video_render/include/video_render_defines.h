@@ -11,10 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_
 
-// Includes
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc
 {
@@ -49,7 +48,7 @@ class VideoRenderCallback
 {
 public:
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                I420VideoFrame& videoFrame) = 0;
+                                const I420VideoFrame& videoFrame) = 0;
 
 protected:
     virtual ~VideoRenderCallback()

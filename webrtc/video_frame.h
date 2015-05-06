@@ -12,7 +12,6 @@
 #define WEBRTC_VIDEO_FRAME_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/native_handle.h"
 #include "webrtc/common_video/interface/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
@@ -26,11 +25,16 @@ class I420VideoFrame {
                  uint32_t timestamp,
                  int64_t render_time_ms,
                  VideoRotation rotation);
-  I420VideoFrame(NativeHandle* handle,
+  I420VideoFrame(void* native_handle,
                  int width,
                  int height,
                  uint32_t timestamp,
-                 int64_t render_time_ms);
+                 int64_t render_time_ms,
+                 VideoRotation rotation,
+                 const rtc::Callback0<void>& no_longer_used);
+
+  // TODO(pbos): Make all create/copy functions void, they should not be able to
+  // fail (which should be DCHECK/CHECKed instead).
 
   // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
   // on set dimensions - height and plane stride.
@@ -46,12 +50,8 @@ class I420VideoFrame {
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
-  // TODO(magjed): Remove unnecessary buffer size arguments.
-  int CreateFrame(int size_y,
-                  const uint8_t* buffer_y,
-                  int size_u,
+  int CreateFrame(const uint8_t* buffer_y,
                   const uint8_t* buffer_u,
-                  int size_v,
                   const uint8_t* buffer_v,
                   int width,
                   int height,
@@ -60,11 +60,8 @@ class I420VideoFrame {
                   int stride_v);
 
   // TODO(guoweis): remove the previous CreateFrame when chromium has this code.
-  int CreateFrame(int size_y,
-                  const uint8_t* buffer_y,
-                  int size_u,
+  int CreateFrame(const uint8_t* buffer_y,
                   const uint8_t* buffer_u,
-                  int size_v,
                   const uint8_t* buffer_v,
                   int width,
                   int height,
@@ -73,17 +70,26 @@ class I420VideoFrame {
                   int stride_v,
                   VideoRotation rotation);
 
-  // Copy frame: If required size is bigger than allocated one, new buffers of
-  // adequate size will be allocated.
+  // CreateFrame: Sets the frame's members and buffers. If required size is
+  // bigger than allocated one, new buffers of adequate size will be allocated.
+  // |buffer| must be a packed I420 buffer.
+  // Return value: 0 on success, -1 on error.
+  int CreateFrame(const uint8_t* buffer,
+                  int width,
+                  int height,
+                  VideoRotation rotation);
+
+  // Deep copy frame: If required size is bigger than allocated one, new
+  // buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
   int CopyFrame(const I420VideoFrame& videoFrame);
 
-  // Make a copy of |this|. The caller owns the returned frame.
-  // Return value: a new frame on success, NULL on error.
-  I420VideoFrame* CloneFrame() const;
+  // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
+  // reference to the video buffer also retained by |videoFrame|.
+  void ShallowCopy(const I420VideoFrame& videoFrame);
 
-  // Swap Frame.
-  void SwapFrame(I420VideoFrame* videoFrame);
+  // Release frame buffer and reset time stamps.
+  void Reset();
 
   // Get pointer to buffer per plane.
   uint8_t* buffer(PlaneType type);
@@ -150,6 +156,10 @@ class I420VideoFrame {
   // Return the underlying buffer.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
 
+  // Set the underlying buffer.
+  void set_video_frame_buffer(
+      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
+
  private:
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
@@ -190,4 +200,3 @@ class EncodedImage {
 
 }  // namespace webrtc
 #endif  // WEBRTC_VIDEO_FRAME_H_
-

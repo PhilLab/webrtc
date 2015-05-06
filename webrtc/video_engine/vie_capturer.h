@@ -23,6 +23,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -37,7 +38,6 @@ class EventWrapper;
 class CpuOveruseObserver;
 class OveruseFrameDetector;
 class ProcessThread;
-class ThreadWrapper;
 class ViEEffectFilter;
 class ViEEncoder;
 struct ViEPicture;
@@ -69,17 +69,7 @@ class ViECapturer
   int FrameCallbackChanged();
 
   // Implements ExternalCapture.
-  virtual int IncomingFrame(unsigned char* video_frame,
-                            size_t video_frame_length,
-                            uint16_t width,
-                            uint16_t height,
-                            RawVideoType video_type,
-                            unsigned long long capture_time = 0);  // NOLINT
-
-  virtual int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
-                                unsigned long long capture_time = 0);  // NOLINT
-
-  void SwapFrame(I420VideoFrame* frame) override;
+  void IncomingFrame(const I420VideoFrame& frame) override;
 
   // Start/Stop.
   int32_t Start(
@@ -123,7 +113,7 @@ class ViECapturer
 
   // Implements VideoCaptureDataCallback.
   virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       I420VideoFrame& video_frame);
+                                       const I420VideoFrame& video_frame);
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
@@ -147,16 +137,14 @@ class ViECapturer
   static bool ViECaptureThreadFunction(void* obj);
   bool ViECaptureProcess();
 
+ private:
   void DeliverI420Frame(I420VideoFrame* video_frame);
 
- private:
-  bool SwapCapturedAndDeliverFrameIfAvailable();
-
-  // Never take capture_cs_ before deliver_cs_!
+  // Never take capture_cs_ before effects_and_stats_cs_!
   rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
-  rtc::scoped_ptr<CriticalSectionWrapper> deliver_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> effects_and_stats_cs_;
   VideoCaptureModule* capture_module_;
-  VideoCaptureExternal* external_capture_module_;
+  bool use_external_capture_;
   ProcessThread& module_process_thread_;
   const int capture_id_;
 
@@ -165,21 +153,26 @@ class ViECapturer
   I420VideoFrame incoming_frame_;
 
   // Capture thread.
-  ThreadWrapper& capture_thread_;
+  rtc::scoped_ptr<ThreadWrapper> capture_thread_;
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
   volatile int stop_;
 
-  rtc::scoped_ptr<I420VideoFrame> captured_frame_;
-  rtc::scoped_ptr<I420VideoFrame> deliver_frame_;
+  I420VideoFrame captured_frame_ GUARDED_BY(capture_cs_.get());
+  // Used to make sure incoming time stamp is increasing for every frame.
+  int64_t last_captured_timestamp_;
+  // Delta used for translating between NTP and internal timestamps.
+  const int64_t delta_ntp_internal_ms_;
 
   // Image processing.
-  ViEEffectFilter* effect_filter_;
+  ViEEffectFilter* effect_filter_ GUARDED_BY(effects_and_stats_cs_.get());
   VideoProcessingModule* image_proc_module_;
   int image_proc_module_ref_counter_;
-  VideoProcessingModule::FrameStats* deflicker_frame_stats_;
-  VideoProcessingModule::FrameStats* brightness_frame_stats_;
+  VideoProcessingModule::FrameStats* deflicker_frame_stats_
+      GUARDED_BY(effects_and_stats_cs_.get());
+  VideoProcessingModule::FrameStats* brightness_frame_stats_
+      GUARDED_BY(effects_and_stats_cs_.get());
   Brightness current_brightness_level_;
   Brightness reported_brightness_level_;
 

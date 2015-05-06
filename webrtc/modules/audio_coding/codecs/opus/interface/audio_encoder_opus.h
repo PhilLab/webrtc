@@ -55,13 +55,13 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return application_; }
+  bool dtx_enabled() const { return dtx_enabled_; }
 
  protected:
-  void EncodeInternal(uint32_t rtp_timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      EncodedInfo* info) override;
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             const int16_t* audio,
+                             size_t max_encoded_bytes,
+                             uint8_t* encoded) override;
 
  private:
   const int num_10ms_frames_per_packet_;
@@ -69,6 +69,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   const int payload_type_;
   const ApplicationMode application_;
   int bitrate_bps_;
+  const bool dtx_enabled_;
   const int samples_per_10ms_frame_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
