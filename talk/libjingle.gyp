@@ -518,6 +518,12 @@
             '-lX11',
           ],
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources': [
+            'media/devices/winrtdevicemanager.cc',
+            'media/devices/winrtdevicemanager.h',
+            ]
+        }],
         ['OS=="win" and OS_RUNTIME!="winrt"', {
           'sources': [
             'media/devices/gdivideorenderer.cc',

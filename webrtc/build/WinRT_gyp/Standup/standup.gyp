@@ -24,6 +24,7 @@
         '../../../../webrtc/test/test.gyp:channel_transport',
         '../../../../webrtc/test/test.gyp:field_trial',
         '../../../../webrtc/system_wrappers/system_wrappers.gyp:field_trial_default',
+        '../../../../talk/libjingle.gyp:libjingle_media',
         '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
       'defines': [
