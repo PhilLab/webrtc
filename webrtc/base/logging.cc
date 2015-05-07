@@ -144,7 +144,7 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
         break;
 #if WEBRTC_WIN
       case ERRCTX_HRESULT: {
-        char msgbuf[256];
+        WCHAR msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
 #if defined(WINRT)
         // TODO: Review this use of LoadPackagedLibrary() to get an HMODULE.
@@ -160,7 +160,7 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
 #endif
         if (hmod)
           flags |= FORMAT_MESSAGE_FROM_HMODULE;
-        if (DWORD len = FormatMessageA(
+        if (DWORD len = FormatMessageW(
             flags, hmod, err,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), NULL)) {
@@ -435,8 +435,11 @@ void LogMessage::OutputToDebug(const std::string& str,
   }
 #endif
 #if defined(WINRT)
+  WCHAR szTextBuf[1024];
+  int cTextBufSize = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), NULL, 0);
+  MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), szTextBuf, cTextBufSize);
   // Always log to the debugger.
-  OutputDebugStringA(str.c_str());
+  OutputDebugString(szTextBuf);
   // TODO: Pipe log to TCP port here?
   // TODO: How to open STD_ERROR_HANDLE?
 #elif defined(WEBRTC_WIN)
