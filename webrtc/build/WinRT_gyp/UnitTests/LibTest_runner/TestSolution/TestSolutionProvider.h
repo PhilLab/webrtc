@@ -1,9 +1,8 @@
 #pragma once
 
-namespace libSrtpTests
+namespace LibTest_runner
 {
-  using namespace LibTest_runner;
-  //Singleton for libsrtp tests
+  //Singleton for tests
   typedef CSafeSingletonT<CTestSolution> TestSolution;
 
   //=============================================================================

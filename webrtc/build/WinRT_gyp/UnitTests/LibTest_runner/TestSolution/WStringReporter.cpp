@@ -46,6 +46,8 @@ namespace LibTest_runner
       (*m_spReport) += test.Succeed() ? L"Pass" : L"Failed";
       (*m_spReport) += L"\tExit status: ";
       (*m_spReport) += std::to_wstring(test.ExitStatus());
+      (*m_spReport) += L"\tExecution Time (ms): ";
+      (*m_spReport) += std::to_wstring(test.GetExecutionTimeMs().count());
       if (!test.ResultMessage().empty())
       {
         (*m_spReport) += L"\n\tResult Message: ";
