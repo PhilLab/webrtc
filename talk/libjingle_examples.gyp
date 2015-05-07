@@ -150,25 +150,25 @@
           ],  # conditions
           'copies': [
         {
-          'destination': '<(PRODUCT_DIR)/standup_package',
+          'destination': '<(PRODUCT_DIR)/peerconnectionclient_package',
           'conditions': [
             ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone" and winrt_platform!="win10"', {
               'files': [
                 'examples/peerconnection/client/Generated Manifest/AppxManifest.xml',
-                'SplashScreen.png',
+                'examples/peerconnection/client/SplashScreen.png',
               ],
             }],
             ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
               'files': [
                 'examples/peerconnection/client/Generated Manifest Win10/AppxManifest.xml',
-                'SplashScreen.png',
+                'examples/peerconnection/client/SplashScreen.png',
               ],
             }],
           ],
           'files':[
-            'Logo.png',
-            'SmallLogo.png',
-            'StoreLogo.png',
+            'examples/peerconnection/client/Logo.png',
+            'examples/peerconnection/client/SmallLogo.png',
+            'examples/peerconnection/client/StoreLogo.png',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -177,14 +177,14 @@
           'conditions': [
              ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
                 'files': [
-                  'SplashScreen.png',
+                  'examples/peerconnection/client/SplashScreen.png',
                 ],
             }],
           ],
           'files':[
-            'Logo.png',
-            'SmallLogo.png',
-            'StoreLogo.png',
+            'examples/peerconnection/client/Logo.png',
+            'examples/peerconnection/client/SmallLogo.png',
+            'examples/peerconnection/client/StoreLogo.png',
           ],
         },
       ],
