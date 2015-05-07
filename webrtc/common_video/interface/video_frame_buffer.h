@@ -11,10 +11,10 @@
 #ifndef WEBRTC_VIDEO_FRAME_BUFFER_H_
 #define WEBRTC_VIDEO_FRAME_BUFFER_H_
 
+#include "webrtc/base/callback.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/native_handle.h"
 #include "webrtc/system_wrappers/interface/aligned_malloc.h"
 
 namespace webrtc {
@@ -50,7 +50,7 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
 
   // Return the handle of the underlying video frame. This is used when the
   // frame is backed by a texture.
-  virtual rtc::scoped_refptr<NativeHandle> native_handle() const = 0;
+  virtual void* native_handle() const = 0;
 
  protected:
   virtual ~VideoFrameBuffer();
@@ -67,12 +67,12 @@ class I420Buffer : public VideoFrameBuffer {
   const uint8_t* data(PlaneType type) const override;
   uint8_t* data(PlaneType type) override;
   int stride(PlaneType type) const override;
-  rtc::scoped_refptr<NativeHandle> native_handle() const override;
+  void* native_handle() const override;
 
- private:
-  friend class rtc::RefCountedObject<I420Buffer>;
+ protected:
   ~I420Buffer() override;
 
+ private:
   const int width_;
   const int height_;
   const int stride_y_;
@@ -81,27 +81,68 @@ class I420Buffer : public VideoFrameBuffer {
   const rtc::scoped_ptr<uint8_t, AlignedFreeDeleter> data_;
 };
 
-// Texture buffer around a NativeHandle.
+// Texture buffer is a VideoFrameBuffer wrapper around a |native_handle|.
+// |native_handle| must be valid for the lifetime of an instance of this object.
+// |no_longer_used| can be used to manage the lifetime of |native_handle|.
 class TextureBuffer : public VideoFrameBuffer {
  public:
-  TextureBuffer(const rtc::scoped_refptr<NativeHandle>& native_handle,
+  TextureBuffer(void* native_handle,
                 int width,
-                int height);
-
+                int height,
+                const rtc::Callback0<void>& no_longer_used);
   int width() const override;
   int height() const override;
   const uint8_t* data(PlaneType type) const override;
   uint8_t* data(PlaneType type) override;
   int stride(PlaneType type) const override;
-  rtc::scoped_refptr<NativeHandle> native_handle() const override;
+  void* native_handle() const override;
 
  private:
   friend class rtc::RefCountedObject<TextureBuffer>;
   ~TextureBuffer() override;
 
-  const rtc::scoped_refptr<NativeHandle> native_handle_;
+  // |native_handle_| is a raw pointer and not owned by TextureBuffer.
+  void* native_handle_;
   const int width_;
   const int height_;
+  rtc::Callback0<void> no_longer_used_cb_;
+};
+
+class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
+ public:
+  WrappedI420Buffer(int desired_width,
+                    int desired_height,
+                    int width,
+                    int height,
+                    const uint8_t* y_plane,
+                    int y_stride,
+                    const uint8_t* u_plane,
+                    int u_stride,
+                    const uint8_t* v_plane,
+                    int v_stride,
+                    const rtc::Callback0<void>& no_longer_used);
+  int width() const override;
+  int height() const override;
+
+  const uint8_t* data(PlaneType type) const override;
+  uint8_t* data(PlaneType type) override;
+
+  int stride(PlaneType type) const override;
+  void* native_handle() const override;
+
+ private:
+  friend class rtc::RefCountedObject<WrappedI420Buffer>;
+  ~WrappedI420Buffer() override;
+
+  int width_;
+  int height_;
+  const uint8_t* y_plane_;
+  const uint8_t* u_plane_;
+  const uint8_t* v_plane_;
+  const int y_stride_;
+  const int u_stride_;
+  const int v_stride_;
+  rtc::Callback0<void> no_longer_used_cb_;
 };
 
 }  // namespace webrtc

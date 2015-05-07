@@ -126,6 +126,8 @@
             'android/audio_device_template.h',
             'android/audio_device_utility_android.cc',
             'android/audio_device_utility_android.h',
+            'android/audio_manager.cc',
+            'android/audio_manager.h',
             'android/audio_manager_jni.cc',
             'android/audio_manager_jni.h',
             'android/audio_record_jni.cc',
@@ -219,7 +221,7 @@
                     'win/audio_device_wasapi_win.h',
                 ],
             }],
-            ['OS=="win" and winrt_platform!="win_phone"', {
+            ['OS=="win" and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
               'link_settings': {
                 'libraries': [
                   # Required for the built-in WASAPI AEC.

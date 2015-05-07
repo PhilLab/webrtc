@@ -581,9 +581,8 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     // Create yuv420 frame.
     if (color_format == COLOR_FormatYUV420Planar) {
       decoded_image_.CreateFrame(
-          stride * slice_height, payload,
-          (stride * slice_height) / 4, payload + (stride * slice_height),
-          (stride * slice_height) / 4,
+          payload,
+          payload + (stride * slice_height),
           payload + (5 * stride * slice_height / 4),
           width, height,
           stride, stride / 2, stride / 2);
@@ -655,8 +654,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int32_t callback_status = WEBRTC_VIDEO_CODEC_OK;
   if (use_surface_) {
     native_handle_.SetTextureObject(surface_texture_, texture_id);
-    I420VideoFrame texture_image(
-        &native_handle_, width, height, output_timestamp_, 0);
+    I420VideoFrame texture_image(&native_handle_, width, height,
+                                 output_timestamp_, 0, webrtc::kVideoRotation_0,
+                                 rtc::Callback0<void>());
     texture_image.set_ntp_time_ms(output_ntp_time_ms_);
     callback_status = callback_->Decoded(texture_image);
   } else {

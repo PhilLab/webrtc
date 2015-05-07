@@ -754,8 +754,8 @@ StreamResult AsyncWriteStream::Write(const void* data, size_t data_len,
   size_t previous_buffer_length = 0;
   {
     CritScope cs(&crit_buffer_);
-    previous_buffer_length = buffer_.length();
-    buffer_.AppendData(data, data_len);
+    previous_buffer_length = buffer_.size();
+    buffer_.AppendData(reinterpret_cast<const uint8_t*>(data), data_len);
   }
 
   if (previous_buffer_length == 0) {
@@ -790,12 +790,13 @@ void AsyncWriteStream::ClearBufferAndWrite() {
   Buffer to_write;
   {
     CritScope cs_buffer(&crit_buffer_);
-    buffer_.TransferTo(&to_write);
+    to_write = buffer_.Pass();
+    buffer_.Clear();
   }
 
-  if (to_write.length() > 0) {
+  if (to_write.size() > 0) {
     CritScope cs(&crit_stream_);
-    stream_->WriteAll(to_write.data(), to_write.length(), NULL, NULL);
+    stream_->WriteAll(to_write.data(), to_write.size(), NULL, NULL);
   }
 }
 

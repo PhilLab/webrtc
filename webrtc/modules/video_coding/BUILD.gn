@@ -22,7 +22,6 @@ source_set("video_coding") {
     "main/source/decoding_state.h",
     "main/source/encoded_frame.cc",
     "main/source/encoded_frame.h",
-    "main/source/er_tables_xor.h",
     "main/source/fec_tables_xor.h",
     "main/source/frame_buffer.cc",
     "main/source/frame_buffer.h",
@@ -165,10 +164,6 @@ source_set("webrtc_vp8") {
     ]
   }
 
-  # TODO(kjellander): Remove once libvpx has changed it's libvpx_config to be
-  # in direct_dependent_configs.
-  configs += [ "$rtc_libvpx_dir:libvpx_config" ]
-
   deps = [
     ":video_coding_utility",
     "../..:webrtc_common",
@@ -201,10 +196,6 @@ source_set("webrtc_vp9") {
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
-
-  # TODO(kjellander): Remove once libvpx has changed it's libvpx_config to be
-  # in direct_dependent_configs.
-  configs += [ "$rtc_libvpx_dir:libvpx_config" ]
 
   deps = [
     ":video_coding_utility",

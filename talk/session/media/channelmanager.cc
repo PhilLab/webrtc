@@ -131,10 +131,6 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   SignalDevicesChange.repeat(device_manager_->SignalDevicesChange);
   device_manager_->Init();
 
-  // Camera is started asynchronously, request callbacks when startup
-  // completes to be able to forward them to the rendering manager.
-  media_engine_->SignalVideoCaptureStateChange().connect(
-      this, &ChannelManager::OnVideoCaptureStateChange);
   capture_manager_->SignalCapturerStateChange.connect(
       this, &ChannelManager::OnVideoCaptureStateChange);
 }
@@ -1011,11 +1007,6 @@ void ChannelManager::SetVideoCaptureDeviceMaxFormat(
     const std::string& usb_id,
     const VideoFormat& max_format) {
   device_manager_->SetVideoCaptureDeviceMaxFormat(usb_id, max_format);
-}
-
-VideoFormat ChannelManager::GetStartCaptureFormat() {
-  return worker_thread_->Invoke<VideoFormat>(
-      Bind(&MediaEngineInterface::GetStartCaptureFormat, media_engine_.get()));
 }
 
 bool ChannelManager::StartAecDump(rtc::PlatformFile file) {

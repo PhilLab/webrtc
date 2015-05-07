@@ -61,10 +61,10 @@ namespace LibTest_runner
       auto ui = task_continuation_context::use_current();
       create_task([this, ui, spStringReporter]()
       {
-        libSrtpTests::TestSolution::Instance().AddReporter(spStringReporter);
-        libSrtpTests::TestSolution::Instance().AddReporter(SpXmlReporter_t(new CXmlReporter(ref new String(L"tests.xml"))));
-        libSrtpTests::TestSolution::Instance().Execute();
-        libSrtpTests::TestSolution::Instance().GenerateReport();
+        LibTest_runner::TestSolution::Instance().AddReporter(spStringReporter);
+        LibTest_runner::TestSolution::Instance().AddReporter(SpXmlReporter_t(new CXmlReporter(ref new String(L"tests.xml"))));
+        LibTest_runner::TestSolution::Instance().Execute();
+        LibTest_runner::TestSolution::Instance().GenerateReport();
       }).then([this, spStringReporter]()
       {
         // Update the UI

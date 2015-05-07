@@ -11,7 +11,9 @@
 #include <time.h>
 
 #if defined(WEBRTC_WIN)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -24,10 +26,10 @@
 #include "webrtc/base/base64.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/cryptstring.h"
-#include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
+#include "webrtc/base/httpcommon.h"
+#include "webrtc/base/messagedigest.h"
 #include "webrtc/base/socketaddress.h"
-#include "webrtc/base/stringdigest.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 

@@ -210,6 +210,10 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
   rtp_sender_.SetRtxPayloadType(payload_type);
 }
 
+int ModuleRtpRtcpImpl::RtxSendPayloadType() const {
+  return rtp_sender_.RtxPayloadType();
+}
+
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
     const uint8_t* rtcp_packet,
     const size_t length) {
@@ -403,7 +407,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   }
   return rtp_sender_.SendOutgoingData(
       frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
-      payload_size, fragmentation, NULL, rtp_video_hdr);
+      payload_size, fragmentation, rtp_video_hdr);
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,

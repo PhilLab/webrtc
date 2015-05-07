@@ -39,6 +39,7 @@ class CriticalSectionWrapper;
 class EncodedImageCallback;
 class I420FrameCallback;
 class PacedSender;
+class PacketRouter;
 class PayloadRouter;
 class ProcessThread;
 class ReceiveStatisticsProxy;
@@ -76,6 +77,7 @@ class ViEChannel
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
+             PacketRouter* packet_router,
              bool sender,
              bool disable_default_encoder);
   ~ViEChannel();
@@ -131,6 +133,8 @@ class ViEChannel
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
   int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   bool GetReceiveAbsoluteSendTimeStatus() const;
+  int SetSendVideoRotationStatus(bool enable, int id);
+  int SetReceiveVideoRotationStatus(bool enable, int id);
   void SetRtcpXrRrtrStatus(bool enable);
   void SetTransmissionSmoothingStatus(bool enable);
   void EnableTMMBR(bool enable);
@@ -215,8 +219,11 @@ class ViEChannel
   void RegisterReceiveChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback);
 
-  void GetRtcpPacketTypeCounters(RtcpPacketTypeCounter* packets_sent,
-                                 RtcpPacketTypeCounter* packets_received) const;
+  void GetSendRtcpPacketTypeCounter(
+      RtcpPacketTypeCounter* packet_counter) const;
+
+  void GetReceiveRtcpPacketTypeCounter(
+      RtcpPacketTypeCounter* packet_counter) const;
 
   void GetBandwidthUsage(uint32_t* total_bitrate_sent,
                          uint32_t* video_bitrate_sent,
@@ -522,10 +529,12 @@ class ViEChannel
   RtcpIntraFrameObserver* intra_frame_observer_;
   RtcpRttStats* rtt_stats_;
   PacedSender* paced_sender_;
+  PacketRouter* packet_router_;
 
   rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   int send_timestamp_extension_id_;
   int absolute_send_time_extension_id_;
+  int video_rotation_extension_id_;
 
   Transport* external_transport_;
 
@@ -533,7 +542,7 @@ class ViEChannel
   // Current receive codec used for codec change callback.
   VideoCodec receive_codec_;
   bool wait_for_key_frame_;
-  ThreadWrapper* decode_thread_;
+  rtc::scoped_ptr<ThreadWrapper> decode_thread_;
 
   ViEEffectFilter* effect_filter_;
   bool color_enhancement_;

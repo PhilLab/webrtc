@@ -9,6 +9,7 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
@@ -45,7 +46,7 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
 TEST_P(BweSimulation, SprintUplinkTest) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   RateCounterFilter counter2(&uplink_, 0, "receiver_input");
@@ -57,7 +58,7 @@ TEST_P(BweSimulation, SprintUplinkTest) {
 TEST_P(BweSimulation, Verizon4gDownlinkTest) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&downlink_, &source, GetParam());
+  VideoSender sender(&downlink_, &source, GetParam());
   RateCounterFilter counter1(&downlink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&downlink_, 0, "link_capacity");
   RateCounterFilter counter2(&downlink_, 0, "receiver_input");
@@ -73,13 +74,13 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
   const size_t kNumFlows = sizeof(kFlowIds) / sizeof(kFlowIds[0]);
 
   AdaptiveVideoSource source(kFlowIds[0], 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, kFlowIds[0]);
   RateCounterFilter counter(&uplink_, kFlowIds[0], "receiver_input_0");
   PacketReceiver receiver(&uplink_, kFlowIds[0], GetParam(), true, false);
 
   AdaptiveVideoSource source2(kFlowIds[1], 30, 300, 0, 0);
-  PacketSender sender2(&downlink_, &source2, GetParam());
+  VideoSender sender2(&downlink_, &source2, GetParam());
   ChokeFilter choke2(&downlink_, kFlowIds[1]);
   DelayFilter delay(&downlink_, CreateFlowIds(kFlowIds, kNumFlows));
   RateCounterFilter counter2(&downlink_, kFlowIds[1], "receiver_input_1");
@@ -101,7 +102,7 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
   VerboseLogging(true);
 
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, false);
@@ -162,7 +163,7 @@ TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
 TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
@@ -178,7 +179,7 @@ TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
 TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, kRembEstimator);
+  VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   filter.SetMaxDelay(500);
@@ -191,7 +192,7 @@ TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
 TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
   VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
-  PacedVideoSender sender(&uplink_, &source, kRembEstimator);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   filter.SetMaxDelay(500);
@@ -206,13 +207,13 @@ TEST_P(BweSimulation, SelfFairnessTest) {
   const int kAllFlowIds[] = {0, 1, 2};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
   rtc::scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
-  rtc::scoped_ptr<PacketSender> senders[kNumFlows];
+  rtc::scoped_ptr<VideoSender> senders[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
     sources[i].reset(
         new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0, i * 20000));
-    senders[i].reset(new PacketSender(&uplink_, sources[i].get(), GetParam()));
+    senders[i].reset(new VideoSender(&uplink_, sources[i].get(), GetParam()));
   }
 
   ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
@@ -238,39 +239,14 @@ TEST_P(BweSimulation, SelfFairnessTest) {
 
 TEST_P(BweSimulation, PacedSelfFairnessTest) {
   VerboseLogging(true);
-  const int kAllFlowIds[] = {0, 1, 2};
-  const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  rtc::scoped_ptr<PeriodicKeyFrameSource> sources[kNumFlows];
-  rtc::scoped_ptr<PacedVideoSender> senders[kNumFlows];
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 4, 0, 2000);
+}
 
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    // Streams started 20 seconds apart to give them different advantage when
-    // competing for the bandwidth.
-    sources[i].reset(new PeriodicKeyFrameSource(kAllFlowIds[i], 30, 300, 0,
-                                                i * 20000, 1000));
-    senders[i].reset(
-        new PacedVideoSender(&uplink_, sources[i].get(), GetParam()));
-  }
-
-  ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
-  choke.SetCapacity(1000);
-
-  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    rate_counters[i].reset(new RateCounterFilter(
-        &uplink_, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
-  }
-
-  RateCounterFilter total_utilization(
-      &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
-
-  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    receivers[i].reset(new PacketReceiver(&uplink_, kAllFlowIds[i], GetParam(),
-                                          i == 0, false));
-  }
-
-  RunFor(30 * 60 * 1000);
+TEST_P(BweSimulation, PacedTcpFairnessTest) {
+  VerboseLogging(true);
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 1, 1, 3000);
 }
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe

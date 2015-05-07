@@ -245,6 +245,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                                bool enable,
                                                int id) = 0;
 
+  virtual int SetSendVideoRotationStatus(int video_channel,
+                                         bool enable,
+                                         int id) = 0;
+
+  virtual int SetReceiveVideoRotationStatus(int video_channel,
+                                            bool enable,
+                                            int id) = 0;
+
   // Enables/disables RTCP Receiver Reference Time Report Block extension/
   // DLRR Report Block extension (RFC 3611).
   virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable) = 0;
@@ -369,12 +377,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
       int video_channel, StreamDataCountersCallback* callback) = 0;
 
 
-  // Gets sent and received RTCP packet types.
-  // TODO(asapersson): Remove default implementation.
-  virtual int GetRtcpPacketTypeCounters(
+  // Gets RTCP packet type statistics from a sent/received stream.
+  virtual int GetSendRtcpPacketTypeCounter(
       int video_channel,
-      RtcpPacketTypeCounter* packets_sent,
-      RtcpPacketTypeCounter* packets_received) const { return -1; }
+      RtcpPacketTypeCounter* packet_counter) const = 0;
+
+  virtual int GetReceiveRtcpPacketTypeCounter(
+      int video_channel,
+      RtcpPacketTypeCounter* packet_counter) const = 0;
 
   // The function gets bandwidth usage statistics from the sent RTP streams in
   // bits/s.

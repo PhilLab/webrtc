@@ -19,6 +19,7 @@ namespace LibTest_runner
     bool           m_bExecuted; //true if test was executed
     bool           m_bSucceed; //true if test succeed
     int            m_nExitStatus; //test exit code (from main method)
+    std::chrono::milliseconds  m_uExecutionTimeMs; //Test execution time in milliseconds seconds
   protected:
     std::wstring   m_wsOutput; // test output
     std::wstring   m_wsResultMessage; // result message, e.g. explaining why test failed
@@ -165,6 +166,16 @@ namespace LibTest_runner
     // 2015/03/09 TP: created
     //======================================================================
     bool Executed() const { return m_bExecuted; }
+
+    //=======================================================================
+    //         Method: GetExecutionTimeMs
+    //    Description: Test execution Time in milliseconds
+    //         return: std::chrono::milliseconds
+    //
+    //       History:
+    // 2015/05/07 TP: created
+    //======================================================================
+    std::chrono::milliseconds GetExecutionTimeMs() const { return m_uExecutionTimeMs; }
   };
 
   typedef std::shared_ptr<CTestBase> SpTestBase_t;

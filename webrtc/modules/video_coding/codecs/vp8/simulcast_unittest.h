@@ -16,12 +16,12 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
-#include "webrtc/experiments.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/experiments.h"
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/video_frame.h"
 
 #include "gtest/gtest.h"
 
@@ -125,7 +125,6 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
       : decoded_frames_(0) {
   }
   virtual int32_t Decoded(I420VideoFrame& decoded_image) {
-    last_decoded_frame_.CopyFrame(decoded_image);
     for (int i = 0; i < decoded_image.width(); ++i) {
       EXPECT_NEAR(kColorY, decoded_image.buffer(kYPlane)[i], 1);
     }
@@ -141,13 +140,9 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
   int DecodedFrames() {
     return decoded_frames_;
   }
-  void GetLastDecodedFrame(I420VideoFrame* decoded_frame) {
-    decoded_frame->SwapFrame(&last_decoded_frame_);
-  }
 
  private:
   int decoded_frames_;
-  I420VideoFrame last_decoded_frame_;
 };
 
 class SkipEncodingUnusedStreamsTest {
@@ -616,6 +611,16 @@ class TestVp8Simulcast : public ::testing::Test {
     EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
     encoder_->SetRates(settings_.startBitrate, 30);
     ExpectStreams(kKeyFrame, 1);
+    // Resize |input_frame_| to the new resolution.
+    half_width = (settings_.width + 1) / 2;
+    input_frame_.CreateEmptyFrame(settings_.width, settings_.height,
+                                  settings_.width, half_width, half_width);
+    memset(input_frame_.buffer(kYPlane), 0,
+        input_frame_.allocated_size(kYPlane));
+    memset(input_frame_.buffer(kUPlane), 0,
+        input_frame_.allocated_size(kUPlane));
+    memset(input_frame_.buffer(kVPlane), 0,
+        input_frame_.allocated_size(kVPlane));
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
   }
 

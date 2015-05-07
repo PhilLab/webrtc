@@ -24,8 +24,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
-#include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
 
 #define MAX_INIT_RTP_SEQ_NUMBER 32767  // 2^15 -1.
 
@@ -41,6 +41,14 @@ class RTPSenderInterface {
   RTPSenderInterface() {}
   virtual ~RTPSenderInterface() {}
 
+  enum CVOMode {
+    kCVONone,
+    kCVOInactive,  // CVO rtp header extension is registered but haven't
+                   // received any frame with rotation pending.
+    kCVOActivated,  // CVO rtp header extension will be present in the rtp
+                    // packets.
+  };
+
   virtual uint32_t SSRC() const = 0;
   virtual uint32_t Timestamp() const = 0;
 
@@ -53,7 +61,10 @@ class RTPSenderInterface {
                                  bool inc_sequence_number = true) = 0;
 
   virtual size_t RTPHeaderLength() const = 0;
-  virtual uint16_t IncrementSequenceNumber() = 0;
+  // Returns the next sequence number to use for a packet and allocates
+  // 'packets_to_send' number of sequence numbers. It's important all allocated
+  // sequence numbers are used in sequence to avoid perceived packet loss.
+  virtual uint16_t AllocateSequenceNumber(uint16_t packets_to_send) = 0;
   virtual uint16_t SequenceNumber() const = 0;
   virtual size_t MaxPayloadLength() const = 0;
   virtual size_t MaxDataPayloadLength() const = 0;
@@ -70,6 +81,7 @@ class RTPSenderInterface {
                                    const RTPHeader& rtp_header,
                                    VideoRotation rotation) const = 0;
   virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) = 0;
+  virtual CVOMode ActivateCVORtpHeaderExtension() = 0;
 };
 
 class RTPSender : public RTPSenderInterface {
@@ -146,13 +158,13 @@ class RTPSender : public RTPSenderInterface {
                            const uint8_t* payload_data,
                            size_t payload_size,
                            const RTPFragmentationHeader* fragmentation,
-                           VideoCodecInformation* codec_info = NULL,
                            const RTPVideoHeader* rtp_hdr = NULL);
 
   // RTP header extension
   int32_t SetTransmissionTimeOffset(int32_t transmission_time_offset);
   int32_t SetAbsoluteSendTime(uint32_t absolute_send_time);
   void SetVideoRotation(VideoRotation rotation);
+  int32_t SetTransportSequenceNumber(uint16_t sequence_number);
 
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
   virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) override;
@@ -166,6 +178,7 @@ class RTPSender : public RTPSenderInterface {
   uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const;
   uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
   uint8_t BuildVideoRotationExtension(uint8_t* data_buffer) const;
+  uint8_t BuildTransportSequenceNumberExtension(uint8_t* data_buffer) const;
 
   bool UpdateAudioLevel(uint8_t* rtp_packet,
                         size_t rtp_packet_length,
@@ -204,6 +217,7 @@ class RTPSender : public RTPSenderInterface {
   void SetRtxSsrc(uint32_t ssrc);
 
   void SetRtxPayloadType(int payloadType);
+  int RtxPayloadType() const;
 
   // Functions wrapping RTPSenderInterface.
   int32_t BuildRTPheader(uint8_t* data_buffer,
@@ -215,7 +229,7 @@ class RTPSender : public RTPSenderInterface {
                          const bool inc_sequence_number = true) override;
 
   size_t RTPHeaderLength() const override;
-  uint16_t IncrementSequenceNumber() override;
+  uint16_t AllocateSequenceNumber(uint16_t packets_to_send) override;
   size_t MaxPayloadLength() const override;
   uint16_t PacketOverHead() const override;
 
@@ -249,9 +263,6 @@ class RTPSender : public RTPSenderInterface {
   // Get payload type for Redundant Audio Data RFC 2198.
   int32_t RED(int8_t *payload_type) const;
 
-  // Video.
-  VideoCodecInformation *CodecInformationVideo();
-
   RtpVideoCodecTypes VideoCodecType() const;
 
   uint32_t MaxConfiguredBitrateVideo() const;
@@ -283,8 +294,7 @@ class RTPSender : public RTPSenderInterface {
   RtpState GetRtpState() const;
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
-
-  static uint8_t ConvertToCVOByte(VideoRotation rotation);
+  CVOMode ActivateCVORtpHeaderExtension() override;
 
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
@@ -378,6 +388,8 @@ class RTPSender : public RTPSenderInterface {
   int32_t transmission_time_offset_;
   uint32_t absolute_send_time_;
   VideoRotation rotation_;
+  CVOMode cvo_mode_;
+  uint16_t transport_sequence_number_;
 
   // NACK
   uint32_t nack_byte_count_times_[NACK_BYTECOUNT_SIZE];

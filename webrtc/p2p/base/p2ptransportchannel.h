@@ -71,7 +71,6 @@ class P2PTransportChannel : public TransportChannelImpl,
                                        const std::string& ice_pwd);
   virtual void SetRemoteIceMode(IceMode mode);
   virtual void Connect();
-  virtual void Reset();
   virtual void OnSignalingReady();
   virtual void OnCandidate(const Candidate& candidate);
 
@@ -154,6 +153,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Helper method used only in unittest.
   rtc::DiffServCodePoint DefaultDscpValue() const;
 
+  // Public for unit tests.
+  Connection* FindNextPingableConnection();
+
  private:
   rtc::Thread* thread() { return worker_thread_; }
   PortAllocatorSession* allocator_session() {
@@ -182,7 +184,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
   bool IsPingable(Connection* conn);
-  Connection* FindNextPingableConnection();
   void PingConnection(Connection* conn);
   void AddAllocatorSession(PortAllocatorSession* session);
   void AddConnection(Connection* connection);
@@ -240,7 +241,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   uint64 tiebreaker_;
   uint32 remote_candidate_generation_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(P2PTransportChannel);
+  DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };
 
 }  // namespace cricket

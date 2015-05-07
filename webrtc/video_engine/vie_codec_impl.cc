@@ -181,11 +181,13 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     LOG(LS_INFO) << "New max bitrate set " << video_codec_internal.maxBitrate;
   }
 
-  if (video_codec_internal.startBitrate < video_codec_internal.minBitrate) {
-    video_codec_internal.startBitrate = video_codec_internal.minBitrate;
-  }
-  if (video_codec_internal.startBitrate > video_codec_internal.maxBitrate) {
-    video_codec_internal.startBitrate = video_codec_internal.maxBitrate;
+  if (video_codec_internal.startBitrate > 0) {
+    if (video_codec_internal.startBitrate < video_codec_internal.minBitrate) {
+      video_codec_internal.startBitrate = video_codec_internal.minBitrate;
+    }
+    if (video_codec_internal.startBitrate > video_codec_internal.maxBitrate) {
+      video_codec_internal.startBitrate = video_codec_internal.maxBitrate;
+    }
   }
 
   // Make sure to generate a new SSRC if the codec type and/or resolution has
@@ -402,6 +404,12 @@ int ViECodecImpl::GetReceiveSideDelay(const int video_channel,
   return 0;
 }
 
+uint32_t ViECodecImpl::GetLastObservedBitrateBps(int video_channel) const {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder != nullptr);
+  return vie_encoder->LastObservedBitrateBps();
+}
 
 int ViECodecImpl::GetCodecTargetBitrate(const int video_channel,
                                         unsigned int* bitrate) const {
@@ -663,7 +671,8 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
     return false;
   }
 
-  if (video_codec.startBitrate < kViEMinCodecBitrate) {
+  if (video_codec.startBitrate > 0 &&
+      video_codec.startBitrate < kViEMinCodecBitrate) {
     LOG(LS_ERROR) << "Invalid start bitrate.";
     return false;
   }

@@ -34,6 +34,7 @@ namespace webrtc {
 
 struct WebRtcACMCodecParams;
 struct CodecInst;
+class CriticalSectionWrapper;
 
 namespace acm2 {
 
@@ -44,16 +45,19 @@ class AcmReceiver;
 class AudioDecoderProxy final : public AudioDecoder {
  public:
   AudioDecoderProxy();
+  ~AudioDecoderProxy() override;
   void SetDecoder(AudioDecoder* decoder);
   bool IsSet() const;
   int Decode(const uint8_t* encoded,
              size_t encoded_len,
              int sample_rate_hz,
+             size_t max_decoded_bytes,
              int16_t* decoded,
              SpeechType* speech_type) override;
   int DecodeRedundant(const uint8_t* encoded,
                       size_t encoded_len,
                       int sample_rate_hz,
+                      size_t max_decoded_bytes,
                       int16_t* decoded,
                       SpeechType* speech_type) override;
   bool HasDecodePlc() const override;
@@ -70,6 +74,7 @@ class AudioDecoderProxy final : public AudioDecoder {
                               size_t encoded_len) const override;
   bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;
   CNG_dec_inst* CngDecoderInstance() override;
+  size_t Channels() const override;
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> decoder_lock_;
@@ -84,7 +89,7 @@ class ACMGenericCodec {
                   int cng_pt_swb,
                   int cng_pt_fb,
                   bool enable_red,
-                  int red_payload_type);
+                  int red_pt_nb);
   ~ACMGenericCodec();
 
   ///////////////////////////////////////////////////////////////////////////
@@ -92,45 +97,6 @@ class ACMGenericCodec {
   // The function will be used for FEC. It is not implemented yet.
   //
   ACMGenericCodec* CreateInstance();
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int16_t Encode()
-  // The function is called to perform an encoding of the audio stored in
-  // audio buffer. An encoding is performed only if enough audio, i.e. equal
-  // to the frame-size of the codec, exist. The audio frame will be processed
-  // by VAD and CN/DTX if required. There are few different cases.
-  //
-  // A) Neither VAD nor DTX is active; the frame is encoded by the encoder.
-  //
-  // B) VAD is enabled but not DTX; in this case the audio is processed by VAD
-  //    and encoded by the encoder. The "*encoding_type" will be either
-  //    "kActiveNormalEncode" or "kPassiveNormalEncode" if frame is active or
-  //    passive, respectively.
-  //
-  // C) DTX is enabled; if the codec has internal VAD/DTX we just encode the
-  //    frame by the encoder. Otherwise, the frame is passed through VAD and
-  //    if identified as passive, then it will be processed by CN/DTX. If the
-  //    frame is active it will be encoded by the encoder.
-  //
-  // This function acquires the appropriate locks and calls EncodeSafe() for
-  // the actual processing.
-  //
-  // Outputs:
-  //   -bitstream          : a buffer where bit-stream will be written to.
-  //   -bitstream_len_byte : contains the length of the bit-stream in
-  //                         bytes.
-  //   -timestamp          : contains the RTP timestamp, this is the
-  //                         sampling time of the first sample encoded
-  //                         (measured in number of samples).
-  //
-  //
-  void Encode(uint32_t input_timestamp,
-              const int16_t* audio,
-              uint16_t length_per_channel,
-              uint8_t audio_channel,
-              uint8_t* bitstream,
-              int16_t* bitstream_len_byte,
-              AudioEncoder::EncodedInfo* encoded_info);
 
   ///////////////////////////////////////////////////////////////////////////
   // bool EncoderInitialized();
@@ -155,7 +121,7 @@ class ACMGenericCodec {
   //   -1 if the encoder is not initialized,
   //    0 otherwise.
   //
-  int16_t EncoderParams(WebRtcACMCodecParams* enc_params);
+  int16_t EncoderParams(WebRtcACMCodecParams* enc_params) const;
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InitEncoder(...)
@@ -251,6 +217,9 @@ class ACMGenericCodec {
   // Registers comfort noise at |sample_rate_hz| to use |payload_type|.
   void SetCngPt(int sample_rate_hz, int payload_type);
 
+  // Registers RED at |sample_rate_hz| to use |payload_type|.
+  void SetRedPt(int sample_rate_hz, int payload_type);
+
   ///////////////////////////////////////////////////////////////////////////
   // UpdateEncoderSampFreq()
   // Call this function to update the encoder sampling frequency. This
@@ -267,8 +236,7 @@ class ACMGenericCodec {
   //   -1 if failed, or if this is meaningless for the given codec.
   //    0 if succeeded.
   //
-  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz);
 
   ///////////////////////////////////////////////////////////////////////////
   // EncoderSampFreq()
@@ -282,8 +250,7 @@ class ACMGenericCodec {
   //   -1 if failed to output sampling rate.
   //    0 if the sample rate is returned successfully.
   //
-  int16_t EncoderSampFreq(uint16_t* samp_freq_hz)
-      SHARED_LOCKS_REQUIRED(codec_wrapper_lock_);
+  int16_t EncoderSampFreq(uint16_t* samp_freq_hz);
 
   ///////////////////////////////////////////////////////////////////////////
   // SetISACMaxPayloadSize()
@@ -320,18 +287,25 @@ class ACMGenericCodec {
   int32_t SetISACMaxRate(const uint32_t max_rate_bps);
 
   ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusApplication()
+  // int SetOpusApplication(OpusApplicationMode application,
+  //                        bool disable_dtx_if_needed)
   // Sets the intended application for the Opus encoder. Opus uses this to
-  // optimize the encoding for applications like VOIP and music.
+  // optimize the encoding for applications like VOIP and music. Currently, two
+  // modes are supported: kVoip and kAudio. kAudio is only allowed when Opus
+  // DTX is switched off. If DTX is on, and |application| == kAudio, a failure
+  // will be triggered unless |disable_dtx_if_needed| == true, for which, the
+  // DTX will be forced off.
   //
   // Input:
-  //   - application      : intended application.
+  //   - application            : intended application.
+  //   - disable_dtx_if_needed  : whether to force Opus DTX to stop when needed.
   //
   // Return value:
   //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
   //
-  int SetOpusApplication(OpusApplicationMode /*application*/);
+  int SetOpusApplication(OpusApplicationMode application,
+                         bool disable_dtx_if_needed);
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetOpusMaxPlaybackRate()
@@ -344,19 +318,24 @@ class ACMGenericCodec {
   //   -frequency_hz      : maximum playback rate in Hz.
   //
   // Return value:
-  //   -1 if failed or on codecs other than Opus
+  //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
   //
   int SetOpusMaxPlaybackRate(int /* frequency_hz */);
 
   ///////////////////////////////////////////////////////////////////////////
-  // EnableOpusDtx()
-  // Enable the DTX, if the codec is Opus. If current Opus application mode is
-  // audio, a failure will be triggered.
+  // EnableOpusDtx(bool force_voip)
+  // Enable the DTX, if the codec is Opus. Currently, DTX can only be enabled
+  // when the application mode is kVoip. If |force_voip| == true, the
+  // application mode will be forced to kVoip. Otherwise, a failure will be
+  // triggered if current application mode is kAudio.
+  // Input:
+  //   - force_voip  : whether to force application mode to kVoip.
   // Return value:
   //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
-  int EnableOpusDtx();
+  //
+  int EnableOpusDtx(bool force_voip);
 
   ///////////////////////////////////////////////////////////////////////////
   // DisbleOpusDtx()
@@ -364,6 +343,7 @@ class ACMGenericCodec {
   // Return value:
   //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
+  //
   int DisableOpusDtx();
 
   ///////////////////////////////////////////////////////////////////////////
@@ -386,7 +366,6 @@ class ACMGenericCodec {
   //   false otherwise.
   //
   bool HasInternalFEC() const {
-    ReadLockScoped rl(codec_wrapper_lock_);
     return has_internal_fec_;
   }
 
@@ -420,55 +399,51 @@ class ACMGenericCodec {
   //
   int SetPacketLossRate(int /* loss_rate */);
 
-  // Sets if CopyRed should be enabled.
-  void EnableCopyRed(bool enable, int red_payload_type);
+  ///////////////////////////////////////////////////////////////////////////
+  // int SetCopyRed()
+  // Enable or disable copy RED. It fails if there is no RED payload that
+  // matches the codec, e.g., sample rate differs.
+  //
+  // Return value:
+  //   -1 if failed,
+  //    0 if succeeded.
+  int SetCopyRed(bool enable);
 
-  // This method is only for testing.
+  AudioEncoder* GetAudioEncoder();
+
   const AudioEncoder* GetAudioEncoder() const;
 
  private:
-  bool has_internal_fec_ GUARDED_BY(codec_wrapper_lock_);
+  bool has_internal_fec_;
 
-  bool copy_red_enabled_ GUARDED_BY(codec_wrapper_lock_);
+  bool copy_red_enabled_;
 
-  WebRtcACMCodecParams encoder_params_ GUARDED_BY(codec_wrapper_lock_);
-
-  // Used to lock wrapper internal data
-  // such as buffers and state variables.
-  RWLockWrapper& codec_wrapper_lock_;
-
-  uint32_t last_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t unique_id_;
-
-  void ResetAudioEncoder() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  void ResetAudioEncoder();
 
   OpusApplicationMode GetOpusApplication(int num_channels,
-                                         bool enable_dtx) const
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+                                         bool enable_dtx) const;
 
-  rtc::scoped_ptr<AudioEncoder> audio_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  rtc::scoped_ptr<AudioEncoder> cng_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  rtc::scoped_ptr<AudioEncoder> red_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  AudioEncoder* encoder_ GUARDED_BY(codec_wrapper_lock_);
-  AudioDecoderProxy decoder_proxy_ GUARDED_BY(codec_wrapper_lock_);
-  WebRtcACMCodecParams acm_codec_params_ GUARDED_BY(codec_wrapper_lock_);
-  int bitrate_bps_ GUARDED_BY(codec_wrapper_lock_);
-  bool fec_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  int loss_rate_ GUARDED_BY(codec_wrapper_lock_);
-  int max_playback_rate_hz_ GUARDED_BY(codec_wrapper_lock_);
-  int max_payload_size_bytes_ GUARDED_BY(codec_wrapper_lock_);
-  int max_rate_bps_ GUARDED_BY(codec_wrapper_lock_);
-  bool opus_dtx_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  bool is_opus_ GUARDED_BY(codec_wrapper_lock_);
-  bool is_isac_ GUARDED_BY(codec_wrapper_lock_);
-  bool first_frame_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t last_rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
+  rtc::scoped_ptr<AudioEncoder> audio_encoder_;
+  rtc::scoped_ptr<AudioEncoder> cng_encoder_;
+  rtc::scoped_ptr<AudioEncoder> red_encoder_;
+  AudioEncoder* encoder_;
+  AudioDecoderProxy decoder_proxy_;
+  WebRtcACMCodecParams acm_codec_params_;
+  int bitrate_bps_;
+  bool fec_enabled_;
+  int loss_rate_;
+  int max_playback_rate_hz_;
+  int max_payload_size_bytes_;
+  int max_rate_bps_;
+  bool opus_dtx_enabled_;
+  bool is_opus_;
+  bool is_isac_;
   // Map from payload type to CNG sample rate (Hz).
-  std::map<int, int> cng_pt_ GUARDED_BY(codec_wrapper_lock_);
-  int red_payload_type_ GUARDED_BY(codec_wrapper_lock_);
-  OpusApplicationMode opus_application_ GUARDED_BY(codec_wrapper_lock_);
-  bool opus_application_set_ GUARDED_BY(codec_wrapper_lock_);
+  std::map<int, int> cng_pt_;
+  // Map from payload type to RED sample rate (Hz).
+  std::map<int, int> red_pt_;
+  OpusApplicationMode opus_application_;
+  bool opus_application_set_;
 };
 
 }  // namespace acm2

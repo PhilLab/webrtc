@@ -11,19 +11,21 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-
 #include <list>
 #include <string>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 
 class AgcManagerDirect;
 class AudioBuffer;
+
+template<typename T>
 class Beamformer;
+
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
 class EchoControlMobileImpl;
@@ -86,8 +88,9 @@ class AudioFormat : public AudioRate {
 class AudioProcessingImpl : public AudioProcessing {
  public:
   explicit AudioProcessingImpl(const Config& config);
-  // Only for testing.
-  AudioProcessingImpl(const Config& config, Beamformer* beamformer);
+
+  // AudioProcessingImpl takes ownership of beamformer.
+  AudioProcessingImpl(const Config& config, Beamformer<float>* beamformer);
   virtual ~AudioProcessingImpl();
 
   // AudioProcessing methods.
@@ -167,8 +170,8 @@ class AudioProcessingImpl : public AudioProcessing {
   bool output_copy_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
-  int InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   EchoCancellationImpl* echo_cancellation_;
@@ -207,18 +210,19 @@ class AudioProcessingImpl : public AudioProcessing {
   int delay_offset_ms_;
   bool was_stream_delay_set_;
 
-  bool output_will_be_muted_;
+  bool output_will_be_muted_ GUARDED_BY(crit_);
 
   bool key_pressed_;
 
   // Only set through the constructor's Config parameter.
   const bool use_new_agc_;
   rtc::scoped_ptr<AgcManagerDirect> agc_manager_ GUARDED_BY(crit_);
+  int agc_startup_min_volume_;
 
   bool transient_suppressor_enabled_;
   rtc::scoped_ptr<TransientSuppressor> transient_suppressor_;
   const bool beamformer_enabled_;
-  rtc::scoped_ptr<Beamformer> beamformer_;
+  rtc::scoped_ptr<Beamformer<float>> beamformer_;
   const std::vector<Point> array_geometry_;
 
   const bool supports_48kHz_;

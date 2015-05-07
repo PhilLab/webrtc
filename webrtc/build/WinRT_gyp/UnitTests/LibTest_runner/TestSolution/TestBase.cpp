@@ -1,6 +1,8 @@
 #include "common.h"
 #include "TestBase.h"
 
+using namespace std::chrono;
+
 
 //=======================================================================
 //         Method: CTestBase
@@ -14,6 +16,7 @@ LibTest_runner::CTestBase::CTestBase()
   : m_nExitStatus(0)
   , m_bSucceed(false)
   , m_bExecuted(false)
+  , m_uExecutionTimeMs(0)
 {
 }
 
@@ -67,15 +70,22 @@ int LibTest_runner::CTestBase::Execute()
 {
   PrepareForExecution();
   m_bExecuted = true;
+  high_resolution_clock::time_point startTime;
+  high_resolution_clock::time_point endTime;
   try
   {
     LibTest_runner::CStdOutputRedirector<true> redirector(m_wsOutput); //grab test output
+    //store time
+    startTime = high_resolution_clock::now();
     m_nExitStatus = InterchangeableExecute();
+    endTime = high_resolution_clock::now();
   }
   catch (int Status)
   {
     m_nExitStatus = Status;
   }
+
+  m_uExecutionTimeMs = duration_cast<milliseconds>(endTime - startTime);
 
   VerifyResult();
   InterchangeableTestCleanup();
