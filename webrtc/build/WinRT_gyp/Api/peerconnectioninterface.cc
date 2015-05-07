@@ -53,112 +53,131 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
     cc_configuration, &constraints, nullptr, nullptr, &_observer);
 }
 
-IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
+// Utility function to create an async operation
+// which wraps a callback based async function.
+// Use std::tuple<> for callbacks with more than one argument.
+// Different types T1 and T2 where additional processing
+// needs to be done in the callback.
+template <typename T1, typename T2>
+IAsyncOperation<T2>^ CreateCallbackBridge(
+  std::function<void(Concurrency::task_completion_event<T1>)> init,
+  std::function<T2(T1)> onCallback)
 {
-  IAsyncOperation<RTCSessionDescription^>^ asyncOp = Concurrency::create_async(
-    // Lambda that does the work of create offer and
-    // returns with a session description.
-    [this]() -> RTCSessionDescription^ {
-      webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
+  Concurrency::task_completion_event<T1> tce;
 
-      rtc::scoped_refptr<CreateSdpObserver> observer(new rtc::RefCountedObject<CreateSdpObserver>());
-      // TODO: Remove it once the callback has been received.
-      _createSdpObservers.push_back(observer);
-
-      _impl->CreateOffer(observer, nullptr);
-
-      RTCSessionDescription^ ret = nullptr;
-
-      // Synchronous wait for the callback to be invoked.
-      observer->Wait(
-        [&ret](webrtc::SessionDescriptionInterface* sdi) -> void
-        {
-          ToCx(sdi, &ret);
-        },
-        [](const std::string& err) -> void
-        {
-          // TODO: Throw?
-        });
-      return ret;
+  // Start the initial async operation
+  Concurrency::create_async([tce, init]
+  {
+    init(tce);
   });
 
-  return asyncOp;
+  // Create the task that waits on the completion event.
+  auto tceTask = Concurrency::task<T1>(tce)
+    .then([onCallback](T1 arg)
+  {
+    // Then calls the callback with the return value.
+    return onCallback(arg);
+  });
+
+  // Return an async operation that waits on the return value
+  // of the callback and returns it.
+  return Concurrency::create_async([tceTask]
+  {
+    return tceTask.get();
+  });
+}
+
+// Specialized version for void callbacks.
+IAsyncAction^ CreateCallbackBridge(
+  std::function<void(Concurrency::task_completion_event<void>)> init)
+{
+  Concurrency::task_completion_event<void> tce;
+
+  // Start the initial async operation
+  Concurrency::create_async([tce, init]
+  {
+    init(tce);
+  });
+
+  // Create the task that waits on the completion event.
+  auto tceTask = Concurrency::task<void>(tce);
+
+  // Return an async operation that waits on the
+  // task completetion event.
+  return Concurrency::create_async([tceTask]
+  {
+    return tceTask.get();
+  });
+}
+
+IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer()
+{
+  return CreateCallbackBridge<webrtc::SessionDescriptionInterface*, RTCSessionDescription^>(
+    [this](Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> tce)
+  {
+    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
+
+    rtc::scoped_refptr<CreateSdpObserver> observer(new rtc::RefCountedObject<CreateSdpObserver>(tce));
+    // TODO: Remove it once the callback has been received.
+    _createSdpObservers.push_back(observer);
+
+    _impl->CreateOffer(observer, nullptr);
+  }, [](webrtc::SessionDescriptionInterface* sdi)
+  {
+    RTCSessionDescription^ ret = nullptr;
+    ToCx(sdi, &ret);
+    return ret;
+  });
 }
 
 IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateAnswer()
 {
-  IAsyncOperation<RTCSessionDescription^>^ asyncOp = Concurrency::create_async(
-    [this]() -> RTCSessionDescription^ {
-      webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
+  return CreateCallbackBridge<webrtc::SessionDescriptionInterface*, RTCSessionDescription^>(
+    [this](Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> tce)
+  {
+    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
-      rtc::scoped_refptr<CreateSdpObserver> observer(new rtc::RefCountedObject<CreateSdpObserver>());
-      // TODO: Remove it once the callback has been received.
-      _createSdpObservers.push_back(observer);
+    rtc::scoped_refptr<CreateSdpObserver> observer(new rtc::RefCountedObject<CreateSdpObserver>(tce));
+    // TODO: Remove it once the callback has been received.
+    _createSdpObservers.push_back(observer);
 
-      _impl->CreateAnswer(observer, nullptr);
-
-      RTCSessionDescription^ ret = nullptr;
-      observer->Wait(
-        [&ret](webrtc::SessionDescriptionInterface* sdi) -> void
-        {
-          ToCx(sdi, &ret);
-        },
-        [](const std::string& err) -> void
-        {
-          // TODO: Throw?
-        });
-      return ret;
+    _impl->CreateAnswer(observer, nullptr);
+  }, [](webrtc::SessionDescriptionInterface* sdi)
+  {
+    RTCSessionDescription^ ret = nullptr;
+    ToCx(sdi, &ret);
+    return ret;
   });
-
-  return asyncOp;
 }
 
 IAsyncAction^ RTCPeerConnection::SetLocalDescription(RTCSessionDescription^ description)
 {
-  IAsyncAction^ asyncOp = Concurrency::create_async(
-    [this, description]() -> void {
+  return CreateCallbackBridge(
+    [this, description](Concurrency::task_completion_event<void> tce)
+  {
+    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
-    rtc::scoped_refptr<SetSdpObserver> observer(new rtc::RefCountedObject<SetSdpObserver>());
+    rtc::scoped_refptr<SetSdpObserver> observer(new rtc::RefCountedObject<SetSdpObserver>(tce));
     // TODO: Remove it once the callback has been received.
     _setSdpObservers.push_back(observer);
 
     _impl->SetLocalDescription(observer, description->GetImpl());
-
-    observer->Wait(
-      []() -> void
-      {
-      },
-      [](const std::string& err) -> void
-      {
-      // TODO: Throw?
-      });
   });
-
-  return asyncOp;
 }
 
 IAsyncAction^ RTCPeerConnection::SetRemoteDescription(RTCSessionDescription^ description)
 {
-  IAsyncAction^ asyncOp = Concurrency::create_async(
-    [this, description]() -> void {
+  return CreateCallbackBridge(
+    [this, description](Concurrency::task_completion_event<void> tce)
+  {
+    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
-    rtc::scoped_refptr<SetSdpObserver> observer(new rtc::RefCountedObject<SetSdpObserver>());
+    rtc::scoped_refptr<SetSdpObserver> observer(new rtc::RefCountedObject<SetSdpObserver>(tce));
     // TODO: Remove it once the callback has been received.
     _setSdpObservers.push_back(observer);
 
     _impl->SetRemoteDescription(observer, description->GetImpl());
-
-    observer->Wait(
-      []() -> void
-      {
-      },
-      [](const std::string& err) -> void
-      {
-      // TODO: Throw?
-      });
   });
-
-  return asyncOp;
 }
 
 void RTCPeerConnection::AddStream(MediaStream^ stream)

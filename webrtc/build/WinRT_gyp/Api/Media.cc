@@ -124,19 +124,19 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 
+      // Add an audio track.
       rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         globals::gPeerConnectionFactory->CreateAudioTrack(
         kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
-
       stream->AddTrack(audio_track);
 
+      // Add a video track
       if (videoCapturer != nullptr)
       {
         rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
           globals::gPeerConnectionFactory->CreateVideoTrack(
           kVideoLabel,
           globals::gPeerConnectionFactory->CreateVideoSource(videoCapturer, NULL)));
-
         stream->AddTrack(video_track);
       }
 

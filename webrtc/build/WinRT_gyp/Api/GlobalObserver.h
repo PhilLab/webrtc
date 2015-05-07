@@ -5,6 +5,7 @@
 #include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
 #include "webrtc/base/event.h"
 #include <functional>
+#include <ppltasks.h>
 
 namespace webrtc_winrt_api
 {
@@ -55,20 +56,14 @@ namespace webrtc_winrt_api_internal
   {
   public:
     // TODO: Get a handle on the async operation to unblock.
-    CreateSdpObserver();
+    CreateSdpObserver(Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> tce);
 
     // CreateSessionDescriptionObserver implementation
     virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc);
     virtual void OnFailure(const std::string& error);
 
-    void Wait(
-      std::function<void(webrtc::SessionDescriptionInterface*)> onSuccess,
-      std::function<void(const std::string&)> onFailure);
-
   private:
-    std::string _error;
-    webrtc::SessionDescriptionInterface* _sdi;
-    rtc::Event _callbackHappened;
+    Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> _tce;
   };
 
   // There is one of those per call to CreateOffer().
@@ -76,19 +71,14 @@ namespace webrtc_winrt_api_internal
   {
   public:
     // TODO: Get a handle on the async operation to unblock.
-    SetSdpObserver();
+    SetSdpObserver(Concurrency::task_completion_event<void> tce);
 
     // CreateSessionDescriptionObserver implementation
     virtual void OnSuccess();
     virtual void OnFailure(const std::string& error);
 
-    void Wait(
-      std::function<void()> onSuccess,
-      std::function<void(const std::string&)> onFailure);
-
   private:
-    std::string _error;
-    rtc::Event _callbackHappened;
+    Concurrency::task_completion_event<void> _tce;
   };
 }
 

@@ -91,70 +91,37 @@ void GlobalObserver::OnIceComplete()
 
 //============================================================================
 
-CreateSdpObserver::CreateSdpObserver()
-  : _sdi(nullptr)
-  , _callbackHappened(true, false)
+CreateSdpObserver::CreateSdpObserver(Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> tce)
+  : _tce(tce)
 {
 
 }
 
 void CreateSdpObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc)
 {
-  _sdi = desc;
-  _callbackHappened.Set();
+  _tce.set(desc);
 }
 
 void CreateSdpObserver::OnFailure(const std::string& error)
 {
-  _error = error;
-  _callbackHappened.Set();
-}
-
-void CreateSdpObserver::Wait(
-  std::function<void(webrtc::SessionDescriptionInterface*)> onSuccess,
-  std::function<void(const std::string&)> onFailure)
-{
-  _callbackHappened.Wait(rtc::Event::kForever);
-  if (_sdi != nullptr)
-  {
-      onSuccess(_sdi);
-  }
-  else
-  {
-      onFailure(_error);
-  }
+  _tce.set_exception(error);
 }
 
 //============================================================================
 
-SetSdpObserver::SetSdpObserver()
-  : _callbackHappened(true, false)
+SetSdpObserver::SetSdpObserver(Concurrency::task_completion_event<void> tce)
+  : _tce(tce)
 {
 
 }
 
 void SetSdpObserver::OnSuccess()
 {
-  _callbackHappened.Set();
+  _tce.set();
 }
 
 void SetSdpObserver::OnFailure(const std::string& error)
 {
-  _error = error;
-  _callbackHappened.Set();
+  _tce.set_exception(error);
 }
 
-void SetSdpObserver::Wait(
-  std::function<void()> onSuccess,
-  std::function<void(const std::string&)> onFailure)
-{
-  _callbackHappened.Wait(rtc::Event::kForever);
-  if (_error.empty())
-  {
-    onSuccess();
-  }
-  else
-  {
-    onFailure(_error);
-  }
-}
