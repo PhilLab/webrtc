@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <chrono>
 
 // Helpers
 #include "Helpers/SafeSingleton.h"
@@ -25,11 +26,12 @@
 #include "TestSolution/TestSolution.h"
 #include "TestSolution/WStringReporter.h"
 #include "TestSolution/XmlReporter.h"
+#include "TestSolution\TestSolutionProvider.h"
 
 
 // libsrtp tests
 #include "libSrtpTests\LibSrtpTestBase.h"
-#include "libSrtpTests\libsrtpTestSolution.h"
+
 #include "libSrtpTests\ReplayDriverTest.h"
 #include "libSrtpTests\RocDriverTest.h"
 #include "libSrtpTests\RtpwTest.h"
@@ -43,4 +45,11 @@
 #include "libSrtpTests\SrtpRandGenTest.h"
 #include "libSrtpTests\SrtpSha1DriverTest.h"
 #include "libSrtpTests\SrtpStatDriverTest.h"
+
+//opus tests
+#include "opusTests/OpusTestBase.h"
+#include "opusTests/OpusEncodeTest.h"
+#include "opusTests/OpusDecodeTest.h"
+#include "opusTests/OpusPaddingTest.h"
+#include "opusTests/OpusApiTest.h"
 
