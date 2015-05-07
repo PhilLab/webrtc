@@ -34,7 +34,6 @@
 #include "webrtc\system_wrappers\interface\event_tracer.h"
 #include "webrtc\base\tracelog.h"
 
-// Test code
 #include "talk/media/devices/devicemanager.h"
 #include "talk/media/base/videocapturer.h"
 
@@ -147,45 +146,6 @@ namespace StandupWinRT
       captureId_(-1),
       videoChannel_(-1)
     {
-      auto test = create_task([]()
-      {
-        // Test code
-        cricket::DeviceManagerInterface* testDeviceManager = cricket::DeviceManagerFactory::Create();
-        testDeviceManager->Init();
-        int caps = testDeviceManager->GetCapabilities();
-        if (caps)
-        {
-          testDeviceManager;
-        }
-
-        std::vector<cricket::Device> audioInputDeviceList;
-        testDeviceManager->GetAudioInputDevices(&audioInputDeviceList);
-
-        std::vector<cricket::Device> audioOutputDeviceList;
-        testDeviceManager->GetAudioOutputDevices(&audioOutputDeviceList);
-
-        cricket::Device audioInputDevice;
-        testDeviceManager->GetAudioInputDevice(audioInputDeviceList.begin()->name, &audioInputDevice);
-
-        cricket::Device audioOutputDevice;
-        testDeviceManager->GetAudioOutputDevice(audioOutputDeviceList.begin()->name, &audioOutputDevice);
-
-        std::vector<cricket::Device> videoCaptureDeviceList;
-        testDeviceManager->GetVideoCaptureDevices(&videoCaptureDeviceList);
-
-        cricket::Device videoDevice;
-        testDeviceManager->GetVideoCaptureDevice(videoCaptureDeviceList.begin()->name, &videoDevice);
-
-        //g_windowDispatcher = Window::Current->Dispatcher;
-        //cricket::VideoCapturer* cap = testDeviceManager->CreateVideoCapturer(videoDevice);
-        //delete cap;
-
-        std::vector<rtc::WindowDescription> winDesc;
-        testDeviceManager->GetWindows(&winDesc);
-
-        //testDeviceManager->Terminate();
-        //delete testDeviceManager;
-      });
       int error;
 
       webrtc::test::InitFieldTrialsFromString("");
