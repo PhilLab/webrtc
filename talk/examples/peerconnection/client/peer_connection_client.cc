@@ -33,7 +33,7 @@
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/stringutils.h"
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(WINRT)
 #include "webrtc/base/win32socketserver.h"
 #endif
 
@@ -47,7 +47,7 @@ const char kByeMessage[] = "BYE";
 const int kReconnectDelay = 2000;
 
 rtc::AsyncSocket* CreateClientSocket(int family) {
-#ifdef WIN32
+#if defined(WIN32) && !defined(WINRT)
   rtc::Win32Socket* sock = new rtc::Win32Socket();
   sock->CreateT(family, SOCK_STREAM);
   return sock;
@@ -55,11 +55,14 @@ rtc::AsyncSocket* CreateClientSocket(int family) {
   rtc::Thread* thread = rtc::Thread::Current();
   ASSERT(thread != NULL);
   return thread->socketserver()->CreateAsyncSocket(family, SOCK_STREAM);
+#elif defined(WINRT)
+  rtc::PhysicalSocketServer* sock = new rtc::PhysicalSocketServer();
+  return sock->CreateAsyncSocket(family, SOCK_STREAM);
 #else
 #error Platform not supported.
 #endif
+  return nullptr;
 }
-
 }
 
 PeerConnectionClient::PeerConnectionClient()
