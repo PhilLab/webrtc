@@ -1,6 +1,7 @@
 ﻿#include "peerconnectioninterface.h"
 #include "GlobalObserver.h"
 #include "Marshalling.h"
+#include "DataChannel.h"
 #include "Media.h"
 
 #include "webrtc/base/ssladapter.h"
@@ -183,6 +184,40 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(RTCSessionDescription^ des
 void RTCPeerConnection::AddStream(MediaStream^ stream)
 {
   _impl->AddStream(stream->GetImpl());
+}
+
+RTCDataChannel^ RTCPeerConnection::CreateDataChannel(String^ label, RTCDataChannelInit^ init)
+{
+  webrtc::DataChannelInit nativeInit;
+  if (init != nullptr)
+  {
+    FromCx(init, nativeInit);
+  }
+
+  auto channel = _impl->CreateDataChannel(FromCx(label), init != nullptr ? &nativeInit : nullptr);
+  auto ret = ref new RTCDataChannel(channel);
+
+  auto observer = new webrtc_winrt_api_internal::DataChannelObserver(ret);
+  // TODO: Figure out when to remove this observer.
+  _dataChannelObservers.PushBack(observer);
+  channel->RegisterObserver(observer);
+  return ret;
+}
+
+RTCSessionDescription^ RTCPeerConnection::LocalDescription::get()
+{
+  // HACK: Temporary, cast the const away.
+  //       Need to figure out a way to distinguish between a
+  //       RTCSessionDescription^ containing a const and not.
+  return ref new RTCSessionDescription(
+    const_cast<webrtc::SessionDescriptionInterface*>(_impl->local_description()));
+}
+
+RTCSignalingState RTCPeerConnection::SignalingState::get()
+{
+  RTCSignalingState ret;
+  ToCx(_impl->signaling_state(), ret);
+  return ret;
 }
 
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher)

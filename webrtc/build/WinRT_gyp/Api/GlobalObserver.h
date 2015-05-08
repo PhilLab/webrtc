@@ -10,6 +10,7 @@
 namespace webrtc_winrt_api
 {
   ref class RTCPeerConnection;
+  ref class RTCDataChannel;
 }
 
 namespace webrtc_winrt_api_internal
@@ -73,12 +74,26 @@ namespace webrtc_winrt_api_internal
     // TODO: Get a handle on the async operation to unblock.
     SetSdpObserver(Concurrency::task_completion_event<void> tce);
 
-    // CreateSessionDescriptionObserver implementation
+    // SetSessionDescriptionObserver implementation
     virtual void OnSuccess();
     virtual void OnFailure(const std::string& error);
 
   private:
     Concurrency::task_completion_event<void> _tce;
+  };
+
+  // There is one of those per call to CreateDataChannel().
+  class DataChannelObserver : public webrtc::DataChannelObserver
+  {
+  public:
+    DataChannelObserver(webrtc_winrt_api::RTCDataChannel^ channel);
+
+    // DataChannelObserver implementation
+    virtual void OnStateChange();
+    virtual void OnMessage(const webrtc::DataBuffer& buffer);
+
+  private:
+    webrtc_winrt_api::RTCDataChannel^ _channel;
   };
 }
 

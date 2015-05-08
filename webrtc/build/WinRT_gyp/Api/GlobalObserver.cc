@@ -2,6 +2,8 @@
 #include "GlobalObserver.h"
 #include "peerconnectioninterface.h"
 #include "Marshalling.h"
+#include "Media.h"
+#include "DataChannel.h"
 #include <ppltasks.h>
 
 using namespace webrtc_winrt_api_internal;
@@ -16,6 +18,10 @@ void GlobalObserver::SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc)
 void GlobalObserver::OnSignalingChange(
   webrtc::PeerConnectionInterface::SignalingState new_state)
 {
+  if (_pc != nullptr)
+  {
+    _pc->OnSignalingStateChange();
+  }
 }
 
 // Triggered when SignalingState or IceState have changed.
@@ -29,22 +35,32 @@ void GlobalObserver::OnAddStream(webrtc::MediaStreamInterface* stream)
 {
   if (_pc != nullptr)
   {
-    // TODO: Register for changes and trigger OnTrack then.
-    auto evt = ref new webrtc_winrt_api::RTCTrackEvent();
-    _pc->OnTrack(evt);
+    auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
+    evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
+    _pc->OnAddStream(evt);
   }
 }
 
 // Triggered when a remote peer close a stream.
 void GlobalObserver::OnRemoveStream(webrtc::MediaStreamInterface* stream)
 {
-
+  if (_pc != nullptr)
+  {
+    auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
+    evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
+    _pc->OnRemoveStream(evt);
+  }
 }
 
 // Triggered when a remote peer open a data channel.
 void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel)
 {
-
+  if (_pc != nullptr)
+  {
+    auto evt = ref new webrtc_winrt_api::RTCDataChannelEvent();
+    evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
+    _pc->OnDataChannel(evt);
+  }
 }
 
 // Triggered when renegotiation is needed, for example the ICE has restarted.
@@ -123,5 +139,42 @@ void SetSdpObserver::OnSuccess()
 void SetSdpObserver::OnFailure(const std::string& error)
 {
   _tce.set_exception(error);
+}
+
+//============================================================================
+
+DataChannelObserver::DataChannelObserver(webrtc_winrt_api::RTCDataChannel^ channel)
+  : _channel(channel)
+{
+
+}
+
+void DataChannelObserver::OnStateChange()
+{
+  switch (_channel->GetImpl()->state())
+  {
+  case webrtc::DataChannelInterface::kOpen:
+    _channel->OnOpen();
+    break;
+  case webrtc::DataChannelInterface::kClosed:
+    _channel->OnClose();
+    break;
+  }
+}
+
+void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer)
+{
+  auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
+  if (!buffer.binary)
+  {
+    evt->Data = ToCx(buffer.data.data());
+    _channel->OnMessage(evt);
+  }
+  else
+  {
+    // TODO
+    evt->Data = "<binary>";
+    _channel->OnMessage(evt);
+  }
 }
 

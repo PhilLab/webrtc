@@ -113,14 +113,15 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
         return nullptr;
       }
 
-      std::vector<cricket::Device>::iterator dev_it = devs.begin();
+      // Select the first video device as the capturer.
       cricket::VideoCapturer* videoCapturer = NULL;
-      for (; dev_it != devs.end(); ++dev_it) {
-        videoCapturer = dev_manager->CreateVideoCapturer(*dev_it);
+      for (auto videoDev : devs) {
+        videoCapturer = dev_manager->CreateVideoCapturer(videoDev);
         if (videoCapturer != NULL)
           break;
       }
 
+      // This is the stream returned.
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 

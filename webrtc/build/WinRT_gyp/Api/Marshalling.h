@@ -16,6 +16,8 @@ namespace webrtc_winrt_api_internal {
 
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCBundlePolicy, webrtc::PeerConnectionInterface::BundlePolicy);
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceTransportPolicy, webrtc::PeerConnectionInterface::IceTransportsType);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCSignalingState, webrtc::PeerConnectionInterface::SignalingState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCDataChannelState, webrtc::DataChannelInterface::DataState);
 
   void FromCx(
     webrtc_winrt_api::RTCIceServer^ inObj,
@@ -39,6 +41,10 @@ namespace webrtc_winrt_api_internal {
   void FromCx(
     webrtc_winrt_api::RTCConfiguration^ inObj,
     webrtc::PeerConnectionInterface::RTCConfiguration& outObj);
+
+  void FromCx(
+    webrtc_winrt_api::RTCDataChannelInit^ inObj,
+    webrtc::DataChannelInit& outObj);
 
   void ToCx(
     webrtc::IceCandidateInterface const& inObj,
