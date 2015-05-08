@@ -120,6 +120,9 @@
             ['OS=="win" and OS_RUNTIME == "winrt"', {
               'sources': [
                 'examples/peerconnection/client/App.cpp',
+				'examples/peerconnection/client/App.h',
+				'examples/peerconnection/client/WinRTMainWnd.h',
+				'examples/peerconnection/client/WinRTMainWnd.cpp',
                 'examples/peerconnection/client/Package.appxmanifest',
               ],              
             }],  # OS=="win" and OS_RUNTIME == "winrt"

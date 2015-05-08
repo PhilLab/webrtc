@@ -61,6 +61,7 @@ class MainWindow {
     CONNECT_TO_SERVER,
     LIST_PEERS,
     STREAMING,
+    MONOLITH_UI
   };
 
   virtual void RegisterObserver(MainWndCallback* callback) = 0;
@@ -83,7 +84,7 @@ class MainWindow {
   virtual void QueueUIThreadCallback(int msg_id, void* data) = 0;
 };
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(WINRT)
 
 class MainWnd : public MainWindow {
  public:
