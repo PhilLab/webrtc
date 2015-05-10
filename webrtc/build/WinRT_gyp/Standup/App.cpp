@@ -5,6 +5,7 @@
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/modules/video_render/windows/video_render_winrt.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_frame.h"
@@ -35,9 +36,11 @@ using namespace Platform;
 using namespace concurrency;
 using namespace Windows::ApplicationModel::Activation;
 using namespace Windows::UI;
-using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
+using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Media;
+
+
 using namespace Windows::Storage;
 using namespace Windows::Foundation;
 
@@ -60,6 +63,24 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace StandupWinRT
 {
+  class MediaElementWrapper : public webrtc::IWinRTMediaElement
+  {
+  public:
+
+    MediaElementWrapper(MediaElement^ mediaElement):_mediaElement(mediaElement){};
+    virtual void Play(){
+      _mediaElement->Play();
+    };
+    virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^ mss){
+      _mediaElement->SetMediaStreamSource(mss);
+    };
+
+    MediaElement^ getMediaElement(){ return _mediaElement; }
+
+  private:
+    MediaElement^ _mediaElement;
+  };
+
   class TestCaptureCallback : public webrtc::VideoCaptureDataCallback
   {
   public:
@@ -115,7 +136,9 @@ namespace StandupWinRT
       videoTransport_(NULL),
       voiceChannel_(-1),
       captureId_(-1),
-      videoChannel_(-1)
+      videoChannel_(-1),
+      localMediaWrapper_(NULL),
+      remoteMediaWrapper_(NULL)
     {
       int error;
 
@@ -420,7 +443,8 @@ namespace StandupWinRT
 
     MediaElement^ localMedia_;
     MediaElement^ remoteMedia_;
-
+    MediaElementWrapper* localMediaWrapper_;
+    MediaElementWrapper* remoteMediaWrapper_;
     Button^ startStopButton_;
     Button^ switchCameraButton_;
     Button^ startStopVideoButton_;
@@ -581,6 +605,9 @@ namespace StandupWinRT
         startStopVideoButton_->IsEnabled = true;
         stackPanel->Children->Append(startStopVideoButton_);
       }
+
+      localMediaWrapper_ = new MediaElementWrapper(localMedia_);
+      remoteMediaWrapper_ = new MediaElementWrapper(remoteMedia_);
 
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
@@ -871,9 +898,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      IInspectable* captureRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
-
-      error = videoRender_->AddRenderer(captureId_, captureRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
+      error = videoRender_->AddRenderer(captureId_, localMediaWrapper_, 0, 0.0F, 0.0F, 1.0F, 1.0F);
       if (0 != error) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to add renderer for video capture. Error: %d", videoBase_->LastError());
@@ -981,9 +1006,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      IInspectable* channelRendererPtr = reinterpret_cast<IInspectable*>(remoteMedia_);
 
-      error = videoRender_->AddRenderer(videoChannel_, channelRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
+      error = videoRender_->AddRenderer(videoChannel_, remoteMediaWrapper_, 0, 0.0F, 0.0F, 1.0F, 1.0F);
       if (0 != error) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to add renderer for video channel. Error: %d", videoBase_->LastError());
@@ -1157,9 +1181,9 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       delete dev_info;
 
-      IInspectable* videoRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
+      //IInspectable* videoRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
 
-      vrm_ = webrtc::VideoRender::CreateVideoRender(1, videoRendererPtr, false);
+      vrm_ = webrtc::VideoRender::CreateVideoRender(1, localMediaWrapper_, false);
 
       webrtc::VideoRenderCallback* rendererCallback = vrm_->AddIncomingRenderStream(1, 0, 0.0, 0.0, 1.0, 1.0);
 

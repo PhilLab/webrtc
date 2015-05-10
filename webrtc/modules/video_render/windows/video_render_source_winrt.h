@@ -454,6 +454,7 @@ public:
   HRESULT Shutdown();
   void ProcessSample(SampleHeader *pSampleHeader, IMFSample *pSample);
   void ProcessFormatChange(StreamDescription *pStreamDescription);
+  const StreamDescription& getCurrentStreamDescription() const { return _currentStreamDescription; }
   HRESULT SetActive(bool fActive);
   bool IsActive() const { return _fActive; }
   SourceState GetState() const { return _eSourceState; }
@@ -499,6 +500,9 @@ private:
   bool _fWaitingForCleanPoint;
   LONGLONG _hnsStartDroppingAt;
   LONGLONG _hnsAmountToDrop;
+  //trace the current sample attributes to be easier to provide to upper layer
+  StreamDescription _currentStreamDescription;
+
 };
 
 // Base class representing asyncronous source operation
@@ -697,7 +701,10 @@ class VideoRenderMediaSourceWinRT :
 
   void ProcessVideoFrame(const I420VideoFrame& videoFrame);
   void FrameSizeChange(int width, int height);
-
+  //start source triggerred by WinJs
+  HRESULT jSStart();
+  HRESULT requestSample(IUnknown* ptoken);
+  VideoRenderMediaStreamWinRT* getCurrentActiveStream();
   _Acquires_lock_(_critSec)
   HRESULT Lock();
   _Releases_lock_(_critSec)

@@ -38,7 +38,7 @@ namespace webrtc {
  *
  */
 VideoChannelWinRT::VideoChannelWinRT(
-    Windows::UI::Xaml::Controls::MediaElement^ mediaElement,
+    IWinRTMediaElement* mediaElement,
     CriticalSectionWrapper* critSect,
     Trace* trace) :
     _mediaElement(mediaElement),
@@ -344,10 +344,10 @@ VideoRenderCallback* VideoRenderWinRT::CreateChannel(
     const float bottom) {
 
   CriticalSectionScoped cs(&_refCritsect);
+  
+  //ComPtr<IInspectable> mediaElementPtr((IInspectable*)_hWnd);
 
-  ComPtr<IInspectable> mediaElementPtr((IInspectable*)_hWnd);
-
-  MediaElement^ mediaElement = safe_cast<MediaElement^>(reinterpret_cast<Platform::Object^>(mediaElementPtr.Get()));
+  IWinRTMediaElement* mediaElement = reinterpret_cast<IWinRTMediaElement*>(_hWnd);
 
   VideoChannelWinRT* pChannel = new VideoChannelWinRT(mediaElement, &_refCritsect, _trace);
   pChannel->SetStreamSettings(0, zOrder, left, top, right, bottom);

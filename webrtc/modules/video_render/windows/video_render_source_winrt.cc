@@ -787,6 +787,8 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
     _dwId = pStreamDescription->dwStreamId;
     // State of the stream is started.
     _eSourceState = SourceState_Stopped;
+
+    _currentStreamDescription = *pStreamDescription;
   }
   catch (Platform::Exception ^exc)
   {
@@ -1218,6 +1220,31 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetEvent(DWORD dwFlags, IMFMediaEven
 
 
   return hr;
+}
+
+HRESULT VideoRenderMediaSourceWinRT::jSStart(){
+
+  _eSourceState = SourceState_Started;
+
+  VideoRenderMediaStreamWinRT *pStream = static_cast<VideoRenderMediaStreamWinRT*>(_spStream.Get());
+
+  pStream->Start();
+  pStream->SetActive(true);
+  return S_OK;
+}
+
+VideoRenderMediaStreamWinRT* VideoRenderMediaSourceWinRT::getCurrentActiveStream(){
+  VideoRenderMediaStreamWinRT *pStream = static_cast<VideoRenderMediaStreamWinRT*>(_spStream.Get());
+
+  return pStream;
+}
+
+HRESULT VideoRenderMediaSourceWinRT::requestSample(IUnknown* ptoken){
+
+  VideoRenderMediaStreamWinRT *pStream = static_cast<VideoRenderMediaStreamWinRT*>(_spStream.Get());
+
+  return pStream->RequestSample(ptoken);
+
 }
 
 IFACEMETHODIMP VideoRenderMediaSourceWinRT::QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, PROPVARIANT const *pvValue)

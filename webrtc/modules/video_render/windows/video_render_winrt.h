@@ -27,10 +27,16 @@ class EventWrapper;
 class Trace;
 class ThreadWrapper;
 
+class IWinRTMediaElement {
+public:
+  virtual void Play() = 0;
+  virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^) = 0;
+};
+
 class VideoChannelWinRT : public VideoRenderCallback
 {
 public:
-  VideoChannelWinRT(Windows::UI::Xaml::Controls::MediaElement^ mediaElement, CriticalSectionWrapper* critSect, Trace* trace);
+  VideoChannelWinRT(IWinRTMediaElement* mediaElement, CriticalSectionWrapper* critSect, Trace* trace);
 
   virtual ~VideoChannelWinRT();
 
@@ -71,7 +77,7 @@ private:
   //critical section passed from the owner
   CriticalSectionWrapper* _critSect;
 
-  Windows::UI::Xaml::Controls::MediaElement^ _mediaElement;
+  IWinRTMediaElement* _mediaElement;
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> _renderMediaSource;
 
   webrtc::I420VideoFrame _videoFrame;
