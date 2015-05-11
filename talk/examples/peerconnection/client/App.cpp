@@ -15,6 +15,7 @@ using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Core;
+using namespace Windows::UI::Popups;
 using namespace Windows::Foundation::Collections;
 
 using namespace peerconnectionclient;
@@ -25,30 +26,60 @@ App::App()
 {
 	mainWnd_ = new WinRTMainWnd();
 	mainWnd_->RegisterParentApp(this);
-	PeerConnectionClient client;
-	conductor_ = rtc::scoped_refptr<Conductor>(
-		new rtc::RefCountedObject<Conductor>(&client, mainWnd_));
+	peerConnectionClient_  = new PeerConnectionClient();
+	conductor_ = new rtc::RefCountedObject<Conductor>(peerConnectionClient_, mainWnd_);
+	conductor_->AddRef();
 }
 
 App::~App()
 {
-	delete mainWnd_;
 	conductor_->Release();
+	delete peerConnectionClient_;
+	delete mainWnd_;
 	rtc::CleanupSSL();
 }
 
 //WinRTMainWnd callbacks
 void App::MessageBox(::Platform::String^ caption, ::Platform::String^ text, bool is_error)
 {
-
+	MessageDialog^ msgDialog = ref new MessageDialog(text, caption);
+	msgDialog->ShowAsync();
 }
 
 void App::UpdatePeersList(IMap<int32, Platform::String^>^ peers)
 {
-	
+	for (auto peer : peers)
+	{
+		peersListBox_->Items->Append(peer);
+	}
 }
 
+void App::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
+{
 
+}
+
+void App::StopLocalRenderer()
+{
+
+}
+
+void App::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
+{
+
+}
+
+void App::StopRemoteRenderer()
+{
+
+}
+
+void App::QueueUIThreadCallback(int msg_id, void* data)
+{
+
+}
+
+//Helper methods
 InputScope^ App::CreateInputScope()
 {
 	auto inputScope = ref new InputScope();
@@ -94,6 +125,7 @@ void App::OnLaunched(LaunchActivatedEventArgs^ e)
 	ipTextBox_ = ref new TextBox();
 	ipTextBox_->Width = 180;
 	ipTextBox_->Margin = ThicknessHelper::FromLengths(4, 4, 4, 4);
+	ipTextBox_->Text = "localhost";
 	ipTextBox_->InputScope = CreateInputScope();
 	ipStackPanel->Children->Append(ipTextBox_);
 
@@ -112,6 +144,7 @@ void App::OnLaunched(LaunchActivatedEventArgs^ e)
 	portTextBox_ = ref new TextBox();
 	portTextBox_->Width = 180;
 	portTextBox_->Margin = ThicknessHelper::FromLengths(4, 4, 4, 4);
+	portTextBox_->Text = "8888";
 	portTextBox_->InputScope = CreateInputScope();
 	portStackPanel->Children->Append(portTextBox_);
 
@@ -119,6 +152,7 @@ void App::OnLaunched(LaunchActivatedEventArgs^ e)
 	connectButton_->Content = "Connect";
 	connectButton_->Margin = ThicknessHelper::FromLengths(4, 4, 0, 4);
 	connectButton_->HorizontalAlignment = HorizontalAlignment::Right;
+	connectButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &App::OnStartStopClick);
 	leftStackPanel->Children->Append(connectButton_);
 
 	peersLabel_ = ref new TextBlock();
@@ -154,6 +188,21 @@ void App::OnLaunched(LaunchActivatedEventArgs^ e)
 
 	Window::Current->Content = rootGrid;
 	Window::Current->Activate();
+}
+
+void App::OnStartStopClick(Platform::Object ^sender, RoutedEventArgs ^e)
+{
+	auto finalIp = ref new Platform::String();
+	if (ipTextBox_->Text->Equals(L"localhost"))
+	{
+		finalIp = "127.0.0.1";
+	}
+	else
+	{
+		finalIp = ipTextBox_->Text;
+	}
+	int port = _wtof(portTextBox_->Text->Data());
+	mainWnd_->StartLogin(finalIp, port);
 }
 
 

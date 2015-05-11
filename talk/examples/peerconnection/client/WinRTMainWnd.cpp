@@ -9,6 +9,27 @@ void WinRTMainWnd::RegisterObserver(MainWndCallback* callback)
 	callback_ = callback;
 }
 
+void WinRTMainWnd::StartLogin(Platform::String ^server, int32 port)
+{
+	auto s_server = make_string(server->Data());
+	callback_->StartLogin(s_server, port);
+}
+
+void WinRTMainWnd::DisconnectFromServer()
+{
+	callback_->DisconnectFromServer();
+}
+
+void WinRTMainWnd::ConnectToPeer(int peer_id)
+{
+	callback_->ConnectToPeer(peer_id);
+}
+
+void WinRTMainWnd::DisconnectFromCurrentPeer()
+{
+	callback_->DisconnectFromCurrentPeer();
+}
+
 bool WinRTMainWnd::IsWindow()
 {
 	return true;
@@ -50,27 +71,27 @@ void WinRTMainWnd::SwitchToStreamingUI() { }
 
 void WinRTMainWnd::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
 {
-
+	parentApp_->StartLocalRenderer(local_video);
 }
 
 void WinRTMainWnd::StopLocalRenderer()
 {
-
+	parentApp_->StopLocalRenderer();
 }
 
 void WinRTMainWnd::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
 {
-
+	parentApp_->StartRemoteRenderer(remote_video);
 }
 
 void WinRTMainWnd::StopRemoteRenderer()
 {
-
+	parentApp_->StopRemoteRenderer();
 }
 
 void WinRTMainWnd::QueueUIThreadCallback(int msg_id, void* data)
 {
-
+	parentApp_->QueueUIThreadCallback(msg_id, data);
 }
 
 void WinRTMainWnd::RegisterParentApp(peerconnectionclient::App^ app)

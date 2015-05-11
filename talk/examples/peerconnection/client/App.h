@@ -26,15 +26,22 @@ namespace peerconnectionclient
 		App();
 		virtual ~App();		
 
+	internal:
 		//WinRTMainWnd callbacks
 		void MessageBox(::Platform::String^ caption, ::Platform::String^ text, bool is_error);
 		void UpdatePeersList(IMap<int32, Platform::String^>^ peers);
+		void StartLocalRenderer(webrtc::VideoTrackInterface* local_video);
+		void StopLocalRenderer();
+		void StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video);
+		void StopRemoteRenderer();
+		void QueueUIThreadCallback(int msg_id, void* data);
 
 	protected:
 		void OnLaunched(LaunchActivatedEventArgs^ args) override;
 
 	private:
 		InputScope^ CreateInputScope();
+		void OnStartStopClick(Platform::Object ^sender, RoutedEventArgs ^e);
 
 		TextBlock^ ipLabel_;
 		TextBox^ ipTextBox_;
@@ -48,6 +55,6 @@ namespace peerconnectionclient
 		CoreDispatcher^ dispatcher_;
 		WinRTMainWnd* mainWnd_;
 		PeerConnectionClient* peerConnectionClient_;
-		rtc::scoped_refptr<Conductor> conductor_;
+		rtc::RefCountedObject<Conductor>* conductor_;
 	};
 }

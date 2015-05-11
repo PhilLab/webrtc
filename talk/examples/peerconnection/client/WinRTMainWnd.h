@@ -28,8 +28,14 @@ public:
 
 	virtual void QueueUIThreadCallback(int msg_id, void* data);
 
-	//
+	//winrt parent app
 	void RegisterParentApp(peerconnectionclient::App^ app);
+	void StartLogin(Platform::String ^server, int32 port);
+	void DisconnectFromServer();
+	void ConnectToPeer(int peer_id);
+	void DisconnectFromCurrentPeer();
+	//void UIThreadCallback(int msg_id, void* data);
+	void Close();
 
 private:
 	std::string make_string(const std::wstring& wstring);
