@@ -323,10 +323,14 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
         render_time + delta_ntp_internal_ms_);
   }
 
+ //WINRT TODO: need to investigate further why the captured time check fails for winrt.
+#ifndef WINRT
   if (captured_frame_.ntp_time_ms() <= last_captured_timestamp_) {
     // We don't allow the same capture time for two frames, drop this one.
     return;
   }
+#endif
+
   last_captured_timestamp_ = captured_frame_.ntp_time_ms();
 
   // Convert ntp time, in ms, to RTP timestamp.
