@@ -145,13 +145,27 @@ namespace StandupWinRT
 
     virtual void Print(webrtc::TraceLevel level, const char* message, int length)
     {
-      WCHAR szTextBuf[1024];
-      int cTextBufSize = MultiByteToWideChar(CP_UTF8, 0, message, length + 2, NULL, 0);
-      MultiByteToWideChar(CP_UTF8, 0, message, length + 2, szTextBuf, cTextBufSize);
-      szTextBuf[cTextBufSize - 3] = L'\r';
-      szTextBuf[cTextBufSize - 2] = L'\n';
-      szTextBuf[cTextBufSize - 1] = 0;
-      OutputDebugString(szTextBuf);
+      if ((level & webrtc::kTraceApiCall) || (level & webrtc::kTraceStateInfo))
+      {
+        LOG_F(LS_VERBOSE) << message;
+      }
+      else if ((level & webrtc::kTraceDebug) || (level & webrtc::kTraceInfo))
+      {
+        LOG_F(LS_INFO) << message;
+      }
+      else if ((level & webrtc::kTraceWarning))
+      {
+        LOG_F(LS_WARNING) << message;
+      }
+      else if ((level & webrtc::kTraceError) || (level & webrtc::kTraceCritical))
+      {
+        LOG_F(LS_ERROR) << message;
+      }
+      else if ((level & webrtc::kTraceModuleCall) || (level & webrtc::kTraceMemory) ||
+        (level & webrtc::kTraceTimer) || (level & webrtc::kTraceStream))
+      {
+        LOG_F(LS_SENSITIVE) << message;
+      }
     }
   };
 
