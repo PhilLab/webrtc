@@ -47,6 +47,7 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
   FromCx(configuration, cc_configuration);
 
   webrtc::FakeConstraints constraints;
+  constraints.SetAllowRtpDataChannels();
   _observer.SetPeerConnection(this);
 
 
