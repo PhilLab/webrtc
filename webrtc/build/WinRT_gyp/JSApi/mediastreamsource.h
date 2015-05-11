@@ -73,7 +73,7 @@ namespace webrtc_winjs_api
   {
   public:
 
-    MediaElementWrapper(bool isLocal) :_mss(nullptr), _jsMss(nullptr), _isLocal(isLocal){};
+    MediaElementWrapper() :_mss(nullptr), _jsMss(nullptr){};
     virtual void Play(){
     };
     virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^ mss){
@@ -93,7 +93,6 @@ namespace webrtc_winjs_api
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 
     MediaStreamSourceHelper^ _helper;
-    bool _isLocal; //ToDo, remove this attribute, this shall not needed if we can detect the frame width/height from the media engine.
   };
 
 }

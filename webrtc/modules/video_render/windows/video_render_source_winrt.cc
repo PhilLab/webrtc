@@ -710,6 +710,8 @@ void VideoRenderMediaStreamWinRT::ProcessFormatChange(StreamDescription *pStream
 {
   assert(pStreamDescription);
 
+  _currentStreamDescription = *pStreamDescription;
+
   try
   {
     if (_eSourceState == SourceState_Shutdown) {

@@ -108,8 +108,8 @@ remoteMediaWrapper_(NULL)
   audioPort_ = 20000;
   videoPort_ = 20100;
 
-  localMediaWrapper_ = new MediaElementWrapper(TRUE);
-  remoteMediaWrapper_ = new MediaElementWrapper(FALSE);
+  localMediaWrapper_ = new MediaElementWrapper();
+  remoteMediaWrapper_ = new MediaElementWrapper();
 
 #ifdef VOICE
   voiceEngine_ = webrtc::VoiceEngine::Create();

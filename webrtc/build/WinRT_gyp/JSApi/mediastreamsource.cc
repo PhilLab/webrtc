@@ -202,14 +202,11 @@ void MediaElementWrapper::createJSMediaStreamSource() {
 
   webrtc::StreamDescription streamInfo=winrtms->getCurrentActiveStream()->getCurrentStreamDescription();
 
-  DWORD fraemWidth = _isLocal ? streamInfo.dwFrameWidth : PREFERRED_FRAME_WIDTH;
-  DWORD frameHeight = _isLocal ? streamInfo.dwFrameHeight : PREFERRED_FRAME_HEIGHT;
-
-  VideoEncodingProperties^ videoProperties = VideoEncodingProperties::CreateUncompressed(MediaEncodingSubtypes::Iyuv, fraemWidth, frameHeight);
+  VideoEncodingProperties^ videoProperties = VideoEncodingProperties::CreateUncompressed(MediaEncodingSubtypes::Iyuv, streamInfo.dwFrameWidth, streamInfo.dwFrameHeight);
   _videoDesc = ref new Windows::Media::Core::VideoStreamDescriptor(videoProperties);
   _videoDesc->EncodingProperties->FrameRate->Numerator = streamInfo.dwFrameRateNumerator;
   _videoDesc->EncodingProperties->FrameRate->Denominator = streamInfo.dwFrameRateDenominator;
-  _videoDesc->EncodingProperties->Bitrate = (unsigned int)(streamInfo.dwFrameRateNumerator * streamInfo.dwFrameRateDenominator * fraemWidth * frameHeight * 4);
+  _videoDesc->EncodingProperties->Bitrate = (unsigned int)(streamInfo.dwFrameRateNumerator * streamInfo.dwFrameRateDenominator * streamInfo.dwFrameWidth *  streamInfo.dwFrameHeight * 4);
 
   _jsMss = ref new Windows::Media::Core::MediaStreamSource(_videoDesc);
 
