@@ -34,6 +34,7 @@ import org.webrtc.VideoCapturerAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroidTest extends ActivityTestCase {
@@ -42,15 +43,17 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     private Object frameLock = 0;
 
     @Override
-    public void setSize(int width, int height) {
-    }
-
-    @Override
     public void renderFrame(I420Frame frame) {
       synchronized (frameLock) {
         ++framesRendered;
         frameLock.notify();
       }
+    }
+
+    // TODO(guoweis): Remove this once chrome code base is updated.
+    @Override
+    public boolean canApplyRotation() {
+      return false;
     }
 
     public int WaitForNextFrameToRender() throws InterruptedException {
@@ -68,6 +71,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     private Object frameLock = 0;
     private Object capturerStartLock = 0;
     private boolean captureStartResult = false;
+    private List<Long> timestamps = new ArrayList<Long>();
 
     @Override
     public void OnCapturerStarted(boolean success) {
@@ -83,6 +87,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       synchronized (frameLock) {
         ++framesCaptured;
         frameSize = length;
+        timestamps.add(timeStamp);
         frameLock.notify();
       }
     }
@@ -104,6 +109,14 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     int frameSize() {
       synchronized (frameLock) {
         return frameSize;
+      }
+    }
+
+    List<Long> getCopyAndResetListOftimeStamps() {
+      synchronized (frameLock) {
+        ArrayList<Long> list = new ArrayList<Long>(timestamps);
+        timestamps.clear();
+        return list;
       }
     }
   }
@@ -188,9 +201,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     VideoTrack track = factory.createVideoTrack("dummy", source);
 
     if (HaveTwoCameras())
-      assertTrue(capturer.switchCamera());
+      assertTrue(capturer.switchCamera(null));
     else
-      assertFalse(capturer.switchCamera());
+      assertFalse(capturer.switchCamera(null));
 
     // Wait until the camera have been switched.
     capturer.runCameraThreadUntilIdle();
@@ -247,9 +260,50 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       assertTrue(observer.WaitForCapturerToStart());
       observer.WaitForNextCapturedFrame();
       // Check the frame size.
-      assertEquals((format.width*format.height*3)/2, observer.frameSize());
+      assertEquals(format.frameSize(), observer.frameSize());
       capturer.stopCapture();
     }
     capturer.dispose();
+  }
+
+  @SmallTest
+  // This test what happens if buffers are returned after the capturer have
+  // been stopped and restarted. It does not test or use the C++ layer.
+  public void testReturnBufferLate() throws Exception {
+    FakeCapturerObserver observer = new FakeCapturerObserver();
+
+    String deviceName = VideoCapturerAndroid.getDeviceName(0);
+    ArrayList<CaptureFormat> formats =
+        VideoCapturerAndroid.getSupportedFormats(0);
+    VideoCapturerAndroid capturer = VideoCapturerAndroid.create(deviceName);
+
+    VideoCapturerAndroid.CaptureFormat format = formats.get(0);
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        getInstrumentation().getContext(), observer);
+    assertTrue(observer.WaitForCapturerToStart());
+
+    observer.WaitForNextCapturedFrame();
+    capturer.stopCapture();
+    List<Long> listOftimestamps = observer.getCopyAndResetListOftimeStamps();
+    assertTrue(listOftimestamps.size() >= 1);
+
+    format = formats.get(1);
+    capturer.startCapture(format.width, format.height, format.maxFramerate,
+        getInstrumentation().getContext(), observer);
+    observer.WaitForCapturerToStart();
+    observer.WaitForNextCapturedFrame();
+
+    for (Long timeStamp : listOftimestamps) {
+      capturer.returnBuffer(timeStamp);
+    }
+
+    observer.WaitForNextCapturedFrame();
+    capturer.stopCapture();
+
+    listOftimestamps = observer.getCopyAndResetListOftimeStamps();
+    assertTrue(listOftimestamps.size() >= 2);
+    for (Long timeStamp : listOftimestamps) {
+      capturer.returnBuffer(timeStamp);
+    }
   }
 }

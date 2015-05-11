@@ -17,13 +17,14 @@
 
 #include <wrl/implements.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_render/windows/i_video_render_win.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/modules/video_render/windows/video_render_source_winrt.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
-class EventWrapper;
+class EventTimerWrapper;
 class Trace;
 class ThreadWrapper;
 
@@ -46,7 +47,7 @@ public:
   // A new frame is delivered.
   virtual int DeliverFrame(const I420VideoFrame& videoFrame);
   virtual int32_t RenderFrame(const uint32_t streamId,
-    I420VideoFrame& videoFrame);
+    const I420VideoFrame& videoFrame);
 
   // Called to check if the video frame is updated.
   int IsUpdated(bool& isUpdated);
@@ -209,8 +210,8 @@ class VideoRenderWinRT : IVideoRenderWin {
  private:
   CriticalSectionWrapper& _refCritsect;
   Trace* _trace;
-  ThreadWrapper* _screenUpdateThread;
-  EventWrapper* _screenUpdateEvent;
+  rtc::scoped_ptr<webrtc::ThreadWrapper> _screenUpdateThread;
+  EventTimerWrapper* _screenUpdateEvent;
 
   VideoChannelWinRT* _channel;
 

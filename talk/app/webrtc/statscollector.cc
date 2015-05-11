@@ -32,6 +32,7 @@
 
 #include "talk/session/media/channel.h"
 #include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timing.h"
 
@@ -57,55 +58,40 @@ const char* STATSREPORT_ADAPTER_TYPE_WWAN = "wwan";
 const char* STATSREPORT_ADAPTER_TYPE_VPN = "vpn";
 const char* STATSREPORT_ADAPTER_TYPE_LOOPBACK = "loopback";
 
-struct FloatForAdd {
+template<typename ValueType>
+struct TypeForAdd {
   const StatsReport::StatsValueName name;
-  const float& value;
+  const ValueType& value;
 };
 
-struct IntForAdd {
-  const StatsReport::StatsValueName name;
-  const int value;
-};
+typedef TypeForAdd<bool> BoolForAdd;
+typedef TypeForAdd<float> FloatForAdd;
+typedef TypeForAdd<int64> Int64ForAdd;
+typedef TypeForAdd<int> IntForAdd;
 
-bool GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
-                             const std::string& proxy,
-                             std::string* transport) {
-  // TODO(hta): Remove handling of empty proxy name once tests do not use it.
-  if (proxy.empty()) {
-    transport->clear();
-    return true;
-  }
-
+StatsReport::Id GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
+                                        const std::string& proxy) {
+  DCHECK(!proxy.empty());
   cricket::ProxyTransportMap::const_iterator found = map.find(proxy);
-  if (found == map.end()) {
-    LOG(LS_ERROR) << "No transport ID mapping for " << proxy;
-    return false;
-  }
+  if (found == map.end())
+    return StatsReport::Id();
 
-  // Component 1 is always used for RTP.
-  scoped_ptr<StatsReport::Id> id(
-      StatsReport::NewComponentId(found->second, 1));
-  // TODO(tommi): Should |transport| simply be of type StatsReport::Id?
-  // When we support more value types than string (e.g. int, double, vector etc)
-  // we should also support a value type for Id.
-  *transport = id->ToString();
-  return true;
+  return StatsReport::NewComponentId(
+      found->second, cricket::ICE_CANDIDATE_COMPONENT_RTP);
 }
 
 void AddTrackReport(StatsCollection* reports, const std::string& track_id) {
   // Adds an empty track report.
-  rtc::scoped_ptr<StatsReport::Id> id(
+  StatsReport::Id id(
       StatsReport::NewTypedId(StatsReport::kStatsReportTypeTrack, track_id));
-  StatsReport* report = reports->ReplaceOrAddNew(id.Pass());
+  StatsReport* report = reports->ReplaceOrAddNew(id);
   report->AddString(StatsReport::kStatsValueNameTrackId, track_id);
 }
 
 template <class TrackVector>
 void CreateTrackReports(const TrackVector& tracks, StatsCollection* reports) {
-  for (size_t j = 0; j < tracks.size(); ++j) {
-    webrtc::MediaStreamTrackInterface* track = tracks[j];
+  for (const auto& track : tracks)
     AddTrackReport(reports, track->id());
-  }
 }
 
 void ExtractCommonSendProperties(const cricket::MediaSenderInfo& info,
@@ -237,9 +223,6 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
   const IntForAdd ints[] = {
     { StatsReport::kStatsValueNameAdaptationChanges, info.adapt_changes },
     { StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms },
-    { StatsReport::kStatsValueNameCaptureJitterMs, info.capture_jitter_ms },
-    { StatsReport::kStatsValueNameCaptureQueueDelayMsPerS,
-      info.capture_queue_delay_ms_per_s },
     { StatsReport::kStatsValueNameEncodeUsagePercent,
       info.encode_usage_percent },
     { StatsReport::kStatsValueNameFirsReceived, info.firs_rcvd },
@@ -263,28 +246,22 @@ void ExtractStats(const cricket::BandwidthEstimationInfo& info,
                   double stats_gathering_started,
                   PeerConnectionInterface::StatsOutputLevel level,
                   StatsReport* report) {
-  ASSERT(report->type() == StatsReport::kStatsReportTypeBwe);
+  DCHECK(report->type() == StatsReport::kStatsReportTypeBwe);
 
-  // Clear out stats from previous GatherStats calls if any.
-  if (report->timestamp() != stats_gathering_started) {
-    report->ResetValues();
-    report->set_timestamp(stats_gathering_started);
-  }
-
-  report->AddInt(StatsReport::kStatsValueNameAvailableSendBandwidth,
-                 info.available_send_bandwidth);
-  report->AddInt(StatsReport::kStatsValueNameAvailableReceiveBandwidth,
-                 info.available_recv_bandwidth);
-  report->AddInt(StatsReport::kStatsValueNameTargetEncBitrate,
-                 info.target_enc_bitrate);
-  report->AddInt(StatsReport::kStatsValueNameActualEncBitrate,
-                 info.actual_enc_bitrate);
-  report->AddInt(StatsReport::kStatsValueNameRetransmitBitrate,
-                 info.retransmit_bitrate);
-  report->AddInt(StatsReport::kStatsValueNameTransmitBitrate,
-                 info.transmit_bitrate);
-  report->AddInt64(StatsReport::kStatsValueNameBucketDelay,
-                   info.bucket_delay);
+  report->set_timestamp(stats_gathering_started);
+  const IntForAdd ints[] = {
+    { StatsReport::kStatsValueNameAvailableSendBandwidth,
+      info.available_send_bandwidth },
+    { StatsReport::kStatsValueNameAvailableReceiveBandwidth,
+      info.available_recv_bandwidth },
+    { StatsReport::kStatsValueNameTargetEncBitrate, info.target_enc_bitrate },
+    { StatsReport::kStatsValueNameActualEncBitrate, info.actual_enc_bitrate },
+    { StatsReport::kStatsValueNameRetransmitBitrate, info.retransmit_bitrate },
+    { StatsReport::kStatsValueNameTransmitBitrate, info.transmit_bitrate },
+  };
+  for (const auto& i : ints)
+    report->AddInt(i.name, i.value);
+  report->AddInt64(StatsReport::kStatsValueNameBucketDelay, info.bucket_delay);
 }
 
 void ExtractRemoteStats(const cricket::MediaSenderInfo& info,
@@ -305,7 +282,7 @@ void ExtractRemoteStats(const cricket::MediaReceiverInfo& info,
 // for each type.
 template<typename T>
 void ExtractStatsFromList(const std::vector<T>& data,
-                          const std::string& transport_id,
+                          const StatsReport::Id& transport_id,
                           StatsCollector* collector,
                           StatsReport::Direction direction) {
   for (const auto& d : data) {
@@ -340,7 +317,7 @@ const char* IceCandidateTypeToStatsType(const std::string& candidate_type) {
   if (candidate_type == cricket::RELAY_PORT_TYPE) {
     return STATSREPORT_RELAY_PORT_TYPE;
   }
-  ASSERT(false);
+  DCHECK(false);
   return "unknown";
 }
 
@@ -359,7 +336,7 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
     case rtc::ADAPTER_TYPE_LOOPBACK:
       return STATSREPORT_ADAPTER_TYPE_LOOPBACK;
     default:
-      ASSERT(false);
+      DCHECK(false);
       return "";
   }
 }
@@ -367,11 +344,11 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
 StatsCollector::StatsCollector(WebRtcSession* session)
     : session_(session),
       stats_gathering_started_(0) {
-  ASSERT(session_);
+  DCHECK(session_);
 }
 
 StatsCollector::~StatsCollector() {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
 }
 
 double StatsCollector::GetTimeNow() {
@@ -381,8 +358,8 @@ double StatsCollector::GetTimeNow() {
 // Adds a MediaStream with tracks that can be used as a |selector| in a call
 // to GetStats.
 void StatsCollector::AddStream(MediaStreamInterface* stream) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
-  ASSERT(stream != NULL);
+  DCHECK(session_->signaling_thread()->IsCurrent());
+  DCHECK(stream != NULL);
 
   CreateTrackReports<AudioTrackVector>(stream->GetAudioTracks(),
                                        &reports_);
@@ -392,46 +369,43 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
 
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
                                         uint32 ssrc) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
-  ASSERT(audio_track != NULL);
-  for (LocalAudioTrackVector::iterator it = local_audio_tracks_.begin();
-       it != local_audio_tracks_.end(); ++it) {
-    ASSERT(it->first != audio_track || it->second != ssrc);
-  }
+  DCHECK(session_->signaling_thread()->IsCurrent());
+  DCHECK(audio_track != NULL);
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+  for (const auto& track : local_audio_tracks_)
+    DCHECK(track.first != audio_track || track.second != ssrc);
+#endif
 
   local_audio_tracks_.push_back(std::make_pair(audio_track, ssrc));
 
   // Create the kStatsReportTypeTrack report for the new track if there is no
   // report yet.
-  rtc::scoped_ptr<StatsReport::Id> id(
-      StatsReport::NewTypedId(StatsReport::kStatsReportTypeTrack,
-                              audio_track->id()));
-  StatsReport* report = reports_.Find(*id.get());
+  StatsReport::Id id(StatsReport::NewTypedId(StatsReport::kStatsReportTypeTrack,
+                                             audio_track->id()));
+  StatsReport* report = reports_.Find(id);
   if (!report) {
-    report = reports_.InsertNew(id.Pass());
+    report = reports_.InsertNew(id);
     report->AddString(StatsReport::kStatsValueNameTrackId, audio_track->id());
   }
 }
 
 void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
                                            uint32 ssrc) {
-  ASSERT(audio_track != NULL);
-  for (LocalAudioTrackVector::iterator it = local_audio_tracks_.begin();
-       it != local_audio_tracks_.end(); ++it) {
-    if (it->first == audio_track && it->second == ssrc) {
-      local_audio_tracks_.erase(it);
-      return;
-    }
-  }
-
-  ASSERT(false);
+  DCHECK(audio_track != NULL);
+  local_audio_tracks_.erase(std::remove_if(local_audio_tracks_.begin(),
+      local_audio_tracks_.end(),
+      [audio_track, ssrc](const LocalAudioTrackVector::value_type& track) {
+        return track.first == audio_track && track.second == ssrc;
+      }));
 }
 
 void StatsCollector::GetStats(MediaStreamTrackInterface* track,
                               StatsReports* reports) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
-  ASSERT(reports != NULL);
-  ASSERT(reports->empty());
+  DCHECK(session_->signaling_thread()->IsCurrent());
+  DCHECK(reports != NULL);
+  DCHECK(reports->empty());
+
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
   if (!track) {
     reports->reserve(reports_.size());
@@ -460,14 +434,14 @@ void StatsCollector::GetStats(MediaStreamTrackInterface* track,
 
     const StatsReport::Value* v =
         r->FindValue(StatsReport::kStatsValueNameTrackId);
-    if (v && v->value == track->id())
+    if (v && v->string_val() == track->id())
       reports->push_back(r);
   }
 }
 
 void
 StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
   double time_now = GetTimeNow();
   // Calls to UpdateStats() that occur less than kMinGatherStatsPeriod number of
   // ms apart will be ignored.
@@ -479,6 +453,12 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
   stats_gathering_started_ = time_now;
 
   if (session_) {
+    // TODO(tommi): All of these hop over to the worker thread to fetch
+    // information.  We could use an AsyncInvoker to run all of these and post
+    // the information back to the signaling thread where we can create and
+    // update stats reports.  That would also clean up the threading story a bit
+    // since we'd be creating/updating the stats report objects consistently on
+    // the same thread (this class has no locks right now).
     ExtractSessionInfo();
     ExtractVoiceInfo();
     ExtractVideoInfo(level);
@@ -489,15 +469,14 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
 StatsReport* StatsCollector::PrepareReport(
     bool local,
     uint32 ssrc,
-    const std::string& transport_id,
+    const StatsReport::Id& transport_id,
     StatsReport::Direction direction) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
-  const std::string ssrc_id = rtc::ToString<uint32>(ssrc);
-  rtc::scoped_ptr<StatsReport::Id> id(StatsReport::NewIdWithDirection(
+  DCHECK(session_->signaling_thread()->IsCurrent());
+  StatsReport::Id id(StatsReport::NewIdWithDirection(
       local ? StatsReport::kStatsReportTypeSsrc :
               StatsReport::kStatsReportTypeRemoteSsrc,
-      ssrc_id, direction));
-  StatsReport* report = reports_.Find(*id.get());
+      rtc::ToString<uint32>(ssrc), direction));
+  StatsReport* report = reports_.Find(id);
 
   // Use the ID of the track that is currently mapped to the SSRC, if any.
   std::string track_id;
@@ -513,37 +492,25 @@ StatsReport* StatsCollector::PrepareReport(
     const StatsReport::Value* v =
         report->FindValue(StatsReport::kStatsValueNameTrackId);
     if (v)
-      track_id = v->value;
+      track_id = v->string_val();
   }
 
-  if (!report) {
-    report = reports_.InsertNew(id.Pass());
-  } else {
-    // Clear out stats from previous GatherStats calls if any.
-    // This is required since the report will be returned for the new values.
-    // Having the old values in the report will lead to multiple values with
-    // the same name.
-    // TODO(tommi): This seems to be pretty wasteful if some of these values
-    // have not changed (we basically throw them away just to recreate them).
-    // Figure out a way to not have to do this while not breaking the existing
-    // functionality.
-    report->ResetValues();
-  }
+  if (!report)
+    report = reports_.InsertNew(id);
 
-  ASSERT(report->empty());
   // FYI - for remote reports, the timestamp will be overwritten later.
   report->set_timestamp(stats_gathering_started_);
 
-  report->AddString(StatsReport::kStatsValueNameSsrc, ssrc_id);
+  report->AddInt64(StatsReport::kStatsValueNameSsrc, ssrc);
   report->AddString(StatsReport::kStatsValueNameTrackId, track_id);
   // Add the mapping of SSRC to transport.
-  report->AddString(StatsReport::kStatsValueNameTransportId, transport_id);
+  report->AddId(StatsReport::kStatsValueNameTransportId, transport_id);
   return report;
 }
 
-std::string StatsCollector::AddOneCertificateReport(
-    const rtc::SSLCertificate* cert, const std::string& issuer_id) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+StatsReport* StatsCollector::AddOneCertificateReport(
+    const rtc::SSLCertificate* cert, const StatsReport* issuer) {
+  DCHECK(session_->signaling_thread()->IsCurrent());
 
   // TODO(bemasc): Move this computation to a helper class that caches these
   // values to reduce CPU use in GetStats.  This will require adding a fast
@@ -551,7 +518,7 @@ std::string StatsCollector::AddOneCertificateReport(
 
   std::string digest_algorithm;
   if (!cert->GetSignatureDigestAlgorithm(&digest_algorithm))
-    return std::string();
+    return nullptr;
 
   rtc::scoped_ptr<rtc::SSLFingerprint> ssl_fingerprint(
       rtc::SSLFingerprint::Create(digest_algorithm, cert));
@@ -561,42 +528,40 @@ std::string StatsCollector::AddOneCertificateReport(
   // implementation of SSLCertificate::ComputeDigest.  This currently happens
   // with MD5- and SHA-224-signed certificates when linked to libNSS.
   if (!ssl_fingerprint)
-    return std::string();
+    return nullptr;
 
   std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
 
   rtc::Buffer der_buffer;
   cert->ToDER(&der_buffer);
   std::string der_base64;
-  rtc::Base64::EncodeFromArray(
-      der_buffer.data(), der_buffer.length(), &der_base64);
+  rtc::Base64::EncodeFromArray(der_buffer.data(), der_buffer.size(),
+                               &der_base64);
 
-  rtc::scoped_ptr<StatsReport::Id> id(
-      StatsReport::NewTypedId(
-          StatsReport::kStatsReportTypeCertificate, fingerprint));
-  StatsReport* report = reports_.ReplaceOrAddNew(id.Pass());
+  StatsReport::Id id(StatsReport::NewTypedId(
+      StatsReport::kStatsReportTypeCertificate, fingerprint));
+  StatsReport* report = reports_.ReplaceOrAddNew(id);
   report->set_timestamp(stats_gathering_started_);
   report->AddString(StatsReport::kStatsValueNameFingerprint, fingerprint);
   report->AddString(StatsReport::kStatsValueNameFingerprintAlgorithm,
                     digest_algorithm);
   report->AddString(StatsReport::kStatsValueNameDer, der_base64);
-  if (!issuer_id.empty())
-    report->AddString(StatsReport::kStatsValueNameIssuerId, issuer_id);
-  // TODO(tommi): Can we avoid this?
-  return report->id().ToString();
+  if (issuer)
+    report->AddId(StatsReport::kStatsValueNameIssuerId, issuer->id());
+  return report;
 }
 
-std::string StatsCollector::AddCertificateReports(
+StatsReport* StatsCollector::AddCertificateReports(
     const rtc::SSLCertificate* cert) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
   // Produces a chain of StatsReports representing this certificate and the rest
   // of its chain, and adds those reports to |reports_|.  The return value is
   // the id of the leaf report.  The provided cert must be non-null, so at least
   // one report will always be provided and the returned string will never be
   // empty.
-  ASSERT(cert != NULL);
+  DCHECK(cert != NULL);
 
-  std::string issuer_id;
+  StatsReport* issuer = nullptr;
   rtc::scoped_ptr<rtc::SSLCertChain> chain;
   if (cert->GetChain(chain.accept())) {
     // This loop runs in reverse, i.e. from root to leaf, so that each
@@ -605,21 +570,68 @@ std::string StatsCollector::AddCertificateReports(
     // value.
     for (ptrdiff_t i = chain->GetSize() - 1; i >= 0; --i) {
       const rtc::SSLCertificate& cert_i = chain->Get(i);
-      issuer_id = AddOneCertificateReport(&cert_i, issuer_id);
+      issuer = AddOneCertificateReport(&cert_i, issuer);
     }
   }
   // Add the leaf certificate.
-  return AddOneCertificateReport(cert, issuer_id);
+  return AddOneCertificateReport(cert, issuer);
 }
 
-std::string StatsCollector::AddCandidateReport(
+StatsReport* StatsCollector::AddConnectionInfoReport(
+    const std::string& content_name, int component, int connection_id,
+    const StatsReport::Id& channel_report_id,
+    const cricket::ConnectionInfo& info) {
+  StatsReport::Id id(StatsReport::NewCandidatePairId(content_name, component,
+                                                     connection_id));
+  StatsReport* report = reports_.ReplaceOrAddNew(id);
+  report->set_timestamp(stats_gathering_started_);
+
+  const BoolForAdd bools[] = {
+    { StatsReport::kStatsValueNameActiveConnection, info.best_connection },
+    { StatsReport::kStatsValueNameReadable, info.readable },
+    { StatsReport::kStatsValueNameWritable, info.writable },
+  };
+  for (const auto& b : bools)
+    report->AddBoolean(b.name, b.value);
+
+  report->AddId(StatsReport::kStatsValueNameChannelId, channel_report_id);
+  report->AddId(StatsReport::kStatsValueNameLocalCandidateId,
+                AddCandidateReport(info.local_candidate, true)->id());
+  report->AddId(StatsReport::kStatsValueNameRemoteCandidateId,
+                AddCandidateReport(info.remote_candidate, false)->id());
+
+  const Int64ForAdd int64s[] = {
+    { StatsReport::kStatsValueNameBytesReceived, info.recv_total_bytes },
+    { StatsReport::kStatsValueNameBytesSent, info.sent_total_bytes },
+    { StatsReport::kStatsValueNamePacketsSent, info.sent_total_packets },
+    { StatsReport::kStatsValueNameRtt, info.rtt },
+    { StatsReport::kStatsValueNameSendPacketsDiscarded,
+      info.sent_discarded_packets },
+  };
+  for (const auto& i : int64s)
+    report->AddInt64(i.name, i.value);
+
+  report->AddString(StatsReport::kStatsValueNameLocalAddress,
+                    info.local_candidate.address().ToString());
+  report->AddString(StatsReport::kStatsValueNameLocalCandidateType,
+                    info.local_candidate.type());
+  report->AddString(StatsReport::kStatsValueNameRemoteAddress,
+                    info.remote_candidate.address().ToString());
+  report->AddString(StatsReport::kStatsValueNameRemoteCandidateType,
+                    info.remote_candidate.type());
+  report->AddString(StatsReport::kStatsValueNameTransportType,
+                    info.local_candidate.protocol());
+
+  return report;
+}
+
+StatsReport* StatsCollector::AddCandidateReport(
     const cricket::Candidate& candidate,
     bool local) {
-  scoped_ptr<StatsReport::Id> id(
-      StatsReport::NewCandidateId(local, candidate.id()));
-  StatsReport* report = reports_.Find(*id.get());
+  StatsReport::Id id(StatsReport::NewCandidateId(local, candidate.id()));
+  StatsReport* report = reports_.Find(id);
   if (!report) {
-    report = reports_.InsertNew(id.Pass());
+    report = reports_.InsertNew(id);
     report->set_timestamp(stats_gathering_started_);
     if (local) {
       report->AddString(StatsReport::kStatsValueNameCandidateNetworkType,
@@ -637,137 +649,97 @@ std::string StatsCollector::AddCandidateReport(
                       candidate.protocol());
   }
 
-  // TODO(tommi): Necessary?
-  return report->id().ToString();
+  return report;
 }
 
 void StatsCollector::ExtractSessionInfo() {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
+
   // Extract information from the base session.
-  rtc::scoped_ptr<StatsReport::Id> id(
-      StatsReport::NewTypedId(
-          StatsReport::kStatsReportTypeSession, session_->id()));
-  StatsReport* report = reports_.ReplaceOrAddNew(id.Pass());
+  StatsReport::Id id(StatsReport::NewTypedId(
+      StatsReport::kStatsReportTypeSession, session_->id()));
+  StatsReport* report = reports_.ReplaceOrAddNew(id);
   report->set_timestamp(stats_gathering_started_);
-  report->ResetValues();
   report->AddBoolean(StatsReport::kStatsValueNameInitiator,
                      session_->initiator());
 
   cricket::SessionStats stats;
-  if (session_->GetStats(&stats)) {
-    // Store the proxy map away for use in SSRC reporting.
-    proxy_to_transport_ = stats.proxy_to_transport;
+  if (!session_->GetTransportStats(&stats)) {
+    return;
+  }
 
-    for (cricket::TransportStatsMap::iterator transport_iter
-             = stats.transport_stats.begin();
-         transport_iter != stats.transport_stats.end(); ++transport_iter) {
-      // Attempt to get a copy of the certificates from the transport and
-      // expose them in stats reports.  All channels in a transport share the
-      // same local and remote certificates.
-      //
-      // Note that Transport::GetIdentity and Transport::GetRemoteCertificate
-      // invoke method calls on the worker thread and block this thread, but
-      // messages are still processed on this thread, which may blow way the
-      // existing transports. So we cannot reuse |transport| after these calls.
-      std::string local_cert_report_id, remote_cert_report_id;
+  // Store the proxy map away for use in SSRC reporting.
+  // TODO(tommi): This shouldn't be necessary if we post the stats back to the
+  // signaling thread after fetching them on the worker thread, then just use
+  // the proxy map directly from the session stats.
+  // As is, if GetStats() failed, we could be using old (incorrect?) proxy
+  // data.
+  proxy_to_transport_ = stats.proxy_to_transport;
 
-      cricket::Transport* transport =
-          session_->GetTransport(transport_iter->second.content_name);
-      rtc::scoped_ptr<rtc::SSLIdentity> identity;
-      if (transport && transport->GetIdentity(identity.accept())) {
-        local_cert_report_id =
-            AddCertificateReports(&(identity->certificate()));
+  for (const auto& transport_iter : stats.transport_stats) {
+    // Attempt to get a copy of the certificates from the transport and
+    // expose them in stats reports.  All channels in a transport share the
+    // same local and remote certificates.
+    //
+    // Note that Transport::GetIdentity and Transport::GetRemoteCertificate
+    // invoke method calls on the worker thread and block this thread, but
+    // messages are still processed on this thread, which may blow way the
+    // existing transports. So we cannot reuse |transport| after these calls.
+    StatsReport::Id local_cert_report_id, remote_cert_report_id;
+
+    cricket::Transport* transport =
+        session_->GetTransport(transport_iter.second.content_name);
+    rtc::scoped_ptr<rtc::SSLIdentity> identity;
+    if (transport && transport->GetIdentity(identity.accept())) {
+      StatsReport* r = AddCertificateReports(&(identity->certificate()));
+      if (r)
+        local_cert_report_id = r->id();
+    }
+
+    transport = session_->GetTransport(transport_iter.second.content_name);
+    rtc::scoped_ptr<rtc::SSLCertificate> cert;
+    if (transport && transport->GetRemoteCertificate(cert.accept())) {
+      StatsReport* r = AddCertificateReports(cert.get());
+      if (r)
+        remote_cert_report_id = r->id();
+    }
+
+    for (const auto& channel_iter : transport_iter.second.channel_stats) {
+      StatsReport::Id id(StatsReport::NewComponentId(
+          transport_iter.second.content_name, channel_iter.component));
+      StatsReport* channel_report = reports_.ReplaceOrAddNew(id);
+      channel_report->set_timestamp(stats_gathering_started_);
+      channel_report->AddInt(StatsReport::kStatsValueNameComponent,
+                             channel_iter.component);
+      if (local_cert_report_id.get()) {
+        channel_report->AddId(StatsReport::kStatsValueNameLocalCertificateId,
+                              local_cert_report_id);
+      }
+      if (remote_cert_report_id.get()) {
+        channel_report->AddId(StatsReport::kStatsValueNameRemoteCertificateId,
+                              remote_cert_report_id);
+      }
+      const std::string& srtp_cipher = channel_iter.srtp_cipher;
+      if (!srtp_cipher.empty()) {
+        channel_report->AddString(StatsReport::kStatsValueNameSrtpCipher,
+                                  srtp_cipher);
+      }
+      const std::string& ssl_cipher = channel_iter.ssl_cipher;
+      if (!ssl_cipher.empty()) {
+        channel_report->AddString(StatsReport::kStatsValueNameDtlsCipher,
+                                  ssl_cipher);
       }
 
-      transport = session_->GetTransport(transport_iter->second.content_name);
-      rtc::scoped_ptr<rtc::SSLCertificate> cert;
-      if (transport && transport->GetRemoteCertificate(cert.accept())) {
-        remote_cert_report_id = AddCertificateReports(cert.get());
-      }
-
-      for (cricket::TransportChannelStatsList::iterator channel_iter
-               = transport_iter->second.channel_stats.begin();
-           channel_iter != transport_iter->second.channel_stats.end();
-           ++channel_iter) {
-        rtc::scoped_ptr<StatsReport::Id> id(
-            StatsReport::NewComponentId(transport_iter->second.content_name,
-                channel_iter->component));
-        StatsReport* channel_report = reports_.ReplaceOrAddNew(id.Pass());
-        channel_report->set_timestamp(stats_gathering_started_);
-        channel_report->AddInt(StatsReport::kStatsValueNameComponent,
-                               channel_iter->component);
-        if (!local_cert_report_id.empty()) {
-          channel_report->AddString(
-              StatsReport::kStatsValueNameLocalCertificateId,
-              local_cert_report_id);
-        }
-        if (!remote_cert_report_id.empty()) {
-          channel_report->AddString(
-              StatsReport::kStatsValueNameRemoteCertificateId,
-              remote_cert_report_id);
-        }
-        const std::string& srtp_cipher = channel_iter->srtp_cipher;
-        if (!srtp_cipher.empty()) {
-          channel_report->AddString(
-              StatsReport::kStatsValueNameSrtpCipher,
-              srtp_cipher);
-        }
-        const std::string& ssl_cipher = channel_iter->ssl_cipher;
-        if (!ssl_cipher.empty()) {
-          channel_report->AddString(
-              StatsReport::kStatsValueNameDtlsCipher,
-              ssl_cipher);
-        }
-        for (size_t i = 0;
-             i < channel_iter->connection_infos.size();
-             ++i) {
-          rtc::scoped_ptr<StatsReport::Id> id(
-              StatsReport::NewCandidatePairId(transport_iter->first,
-                  channel_iter->component, static_cast<int>(i)));
-          StatsReport* report = reports_.ReplaceOrAddNew(id.Pass());
-          report->set_timestamp(stats_gathering_started_);
-          // Link from connection to its containing channel.
-          // TODO(tommi): Any way to avoid ToString here?
-          report->AddString(StatsReport::kStatsValueNameChannelId,
-                            channel_report->id().ToString());
-
-          const cricket::ConnectionInfo& info =
-              channel_iter->connection_infos[i];
-          report->AddInt64(StatsReport::kStatsValueNameBytesSent,
-                           info.sent_total_bytes);
-          report->AddInt64(StatsReport::kStatsValueNameSendPacketsDiscarded,
-                           info.sent_discarded_packets);
-          report->AddInt64(StatsReport::kStatsValueNamePacketsSent,
-                           info.sent_total_packets);
-          report->AddInt64(StatsReport::kStatsValueNameBytesReceived,
-                           info.recv_total_bytes);
-          report->AddBoolean(StatsReport::kStatsValueNameWritable,
-                             info.writable);
-          report->AddBoolean(StatsReport::kStatsValueNameReadable,
-                             info.readable);
-          report->AddString(StatsReport::kStatsValueNameLocalCandidateId,
-                            AddCandidateReport(info.local_candidate, true));
-          report->AddString(
-              StatsReport::kStatsValueNameRemoteCandidateId,
-              AddCandidateReport(info.remote_candidate, false));
-          report->AddString(StatsReport::kStatsValueNameLocalAddress,
-                            info.local_candidate.address().ToString());
-          report->AddString(StatsReport::kStatsValueNameRemoteAddress,
-                            info.remote_candidate.address().ToString());
-          report->AddInt64(StatsReport::kStatsValueNameRtt, info.rtt);
-          report->AddString(StatsReport::kStatsValueNameTransportType,
-                            info.local_candidate.protocol());
-          report->AddString(StatsReport::kStatsValueNameLocalCandidateType,
-                            info.local_candidate.type());
-          report->AddString(StatsReport::kStatsValueNameRemoteCandidateType,
-                            info.remote_candidate.type());
-          report->AddBoolean(StatsReport::kStatsValueNameActiveConnection,
-                             info.best_connection);
-          if (info.best_connection) {
-            channel_report->AddString(
-                StatsReport::kStatsValueNameSelectedCandidatePairId,
-                report->id().ToString());
-          }
+      int connection_id = 0;
+      for (const cricket::ConnectionInfo& info :
+               channel_iter.connection_infos) {
+        StatsReport* connection_report = AddConnectionInfoReport(
+            transport_iter.first, channel_iter.component, connection_id++,
+            channel_report->id(), info);
+        if (info.best_connection) {
+          channel_report->AddId(
+              StatsReport::kStatsValueNameSelectedCandidatePairId,
+              connection_report->id());
         }
       }
     }
@@ -775,7 +747,7 @@ void StatsCollector::ExtractSessionInfo() {
 }
 
 void StatsCollector::ExtractVoiceInfo() {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
 
   if (!session_->voice_channel()) {
     return;
@@ -785,14 +757,19 @@ void StatsCollector::ExtractVoiceInfo() {
     LOG(LS_ERROR) << "Failed to get voice channel stats.";
     return;
   }
-  std::string transport_id;
-  if (!GetTransportIdFromProxy(proxy_to_transport_,
-                               session_->voice_channel()->content_name(),
-                               &transport_id)) {
+
+  // TODO(tommi): The above code should run on the worker thread and post the
+  // results back to the signaling thread, where we can add data to the reports.
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+
+  StatsReport::Id transport_id(GetTransportIdFromProxy(proxy_to_transport_,
+      session_->voice_channel()->content_name()));
+  if (!transport_id.get()) {
     LOG(LS_ERROR) << "Failed to get transport name for proxy "
                   << session_->voice_channel()->content_name();
     return;
   }
+
   ExtractStatsFromList(voice_info.receivers, transport_id, this,
       StatsReport::kReceive);
   ExtractStatsFromList(voice_info.senders, transport_id, this,
@@ -803,7 +780,7 @@ void StatsCollector::ExtractVoiceInfo() {
 
 void StatsCollector::ExtractVideoInfo(
     PeerConnectionInterface::StatsOutputLevel level) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
 
   if (!session_->video_channel())
     return;
@@ -813,10 +790,14 @@ void StatsCollector::ExtractVideoInfo(
     LOG(LS_ERROR) << "Failed to get video channel stats.";
     return;
   }
-  std::string transport_id;
-  if (!GetTransportIdFromProxy(proxy_to_transport_,
-                               session_->video_channel()->content_name(),
-                               &transport_id)) {
+
+  // TODO(tommi): The above code should run on the worker thread and post the
+  // results back to the signaling thread, where we can add data to the reports.
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+
+  StatsReport::Id transport_id(GetTransportIdFromProxy(proxy_to_transport_,
+      session_->video_channel()->content_name()));
+  if (!transport_id.get()) {
     LOG(LS_ERROR) << "Failed to get transport name for proxy "
                   << session_->video_channel()->content_name();
     return;
@@ -828,22 +809,23 @@ void StatsCollector::ExtractVideoInfo(
   if (video_info.bw_estimations.size() != 1) {
     LOG(LS_ERROR) << "BWEs count: " << video_info.bw_estimations.size();
   } else {
-    rtc::scoped_ptr<StatsReport::Id> report_id(
-        StatsReport::NewBandwidthEstimationId());
-    StatsReport* report = reports_.FindOrAddNew(report_id.Pass());
+    StatsReport::Id report_id(StatsReport::NewBandwidthEstimationId());
+    StatsReport* report = reports_.FindOrAddNew(report_id);
     ExtractStats(
         video_info.bw_estimations[0], stats_gathering_started_, level, report);
   }
 }
 
 void StatsCollector::ExtractDataInfo() {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
+
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
   for (const auto& dc :
            session_->mediastream_signaling()->sctp_data_channels()) {
-    rtc::scoped_ptr<StatsReport::Id> id(StatsReport::NewTypedIntId(
+    StatsReport::Id id(StatsReport::NewTypedIntId(
         StatsReport::kStatsReportTypeDataChannel, dc->id()));
-    StatsReport* report = reports_.ReplaceOrAddNew(id.Pass());
+    StatsReport* report = reports_.ReplaceOrAddNew(id);
     report->set_timestamp(stats_gathering_started_);
     report->AddString(StatsReport::kStatsValueNameLabel, dc->label());
     report->AddInt(StatsReport::kStatsValueNameDataChannelId, dc->id());
@@ -856,22 +838,20 @@ void StatsCollector::ExtractDataInfo() {
 StatsReport* StatsCollector::GetReport(const StatsReport::StatsType& type,
                                        const std::string& id,
                                        StatsReport::Direction direction) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
-  ASSERT(type == StatsReport::kStatsReportTypeSsrc ||
+  DCHECK(session_->signaling_thread()->IsCurrent());
+  DCHECK(type == StatsReport::kStatsReportTypeSsrc ||
          type == StatsReport::kStatsReportTypeRemoteSsrc);
   return reports_.Find(StatsReport::NewIdWithDirection(type, id, direction));
 }
 
 void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
   // Loop through the existing local audio tracks.
-  for (LocalAudioTrackVector::const_iterator it = local_audio_tracks_.begin();
-       it != local_audio_tracks_.end(); ++it) {
-    AudioTrackInterface* track = it->first;
-    uint32 ssrc = it->second;
-    const std::string ssrc_id = rtc::ToString<uint32>(ssrc);
+  for (const auto& it : local_audio_tracks_) {
+    AudioTrackInterface* track = it.first;
+    uint32 ssrc = it.second;
     StatsReport* report = GetReport(StatsReport::kStatsReportTypeSsrc,
-                                    ssrc_id,
+                                    rtc::ToString<uint32>(ssrc),
                                     StatsReport::kSend);
     if (report == NULL) {
       // This can happen if a local audio track is added to a stream on the
@@ -883,7 +863,7 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
     // The same ssrc can be used by both local and remote audio tracks.
     const StatsReport::Value* v =
         report->FindValue(StatsReport::kStatsValueNameTrackId);
-    if (!v || v->value != track->id())
+    if (!v || v->string_val() != track->id())
       continue;
 
     UpdateReportFromAudioTrack(track, report);
@@ -892,8 +872,8 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
 
 void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
                                                 StatsReport* report) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
-  ASSERT(track != NULL);
+  DCHECK(session_->signaling_thread()->IsCurrent());
+  DCHECK(track != NULL);
 
   int signal_level = 0;
   if (!track->GetSignalLevel(&signal_level))
@@ -914,7 +894,7 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
 
 bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
                                       StatsReport::Direction direction) {
-  ASSERT(session_->signaling_thread()->IsCurrent());
+  DCHECK(session_->signaling_thread()->IsCurrent());
   if (direction == StatsReport::kSend) {
     if (!session_->GetLocalTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
@@ -922,7 +902,7 @@ bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
       return false;
     }
   } else {
-    ASSERT(direction == StatsReport::kReceive);
+    DCHECK(direction == StatsReport::kReceive);
     if (!session_->GetRemoteTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
                       << " is not associated with a receiving track";

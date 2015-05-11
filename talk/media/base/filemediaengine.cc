@@ -230,7 +230,7 @@ void RtpSenderReceiver::SetSendSsrc(uint32 ssrc) {
 
 void RtpSenderReceiver::OnPacketReceived(rtc::Buffer* packet) {
   if (rtp_dump_writer_) {
-    rtp_dump_writer_->WriteRtpPacket(packet->data(), packet->length());
+    rtp_dump_writer_->WriteRtpPacket(packet->data(), packet->size());
   }
 }
 
@@ -276,7 +276,8 @@ bool RtpSenderReceiver::SendRtpPacket(const void* data, size_t len) {
   if (!media_channel_)
     return false;
 
-  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                     kMaxRtpPacketLen);
   return media_channel_->SendPacket(&packet);
 }
 

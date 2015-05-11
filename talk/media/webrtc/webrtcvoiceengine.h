@@ -290,11 +290,12 @@ class WebRtcVoiceEngine
 
   rtc::CriticalSection signal_media_critical_;
 
-  // Cache received experimental_aec and experimental_ns values, and apply them
-  // in case they are missing in the audio options. We need to do this because
-  // SetExtraOptions() will revert to defaults for options which are not
-  // provided.
+  // Cache received experimental_aec, delay_agnostic_aec and experimental_ns
+  // values, and apply them in case they are missing in the audio options. We
+  // need to do this because SetExtraOptions() will revert to defaults for
+  // options which are not provided.
   Settable<bool> experimental_aec_;
+  Settable<bool> delay_agnostic_aec_;
   Settable<bool> experimental_ns_;
 };
 
@@ -312,18 +313,20 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
  protected:
   // implements Transport interface
   int SendPacket(int channel, const void* data, size_t len) override {
-    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return T::SendPacket(&packet) ? static_cast<int>(len) : -1;
   }
 
   int SendRTCPPacket(int channel, const void* data, size_t len) override {
-    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return T::SendRtcp(&packet) ? static_cast<int>(len) : -1;
   }
 
  private:
   E *engine_;
-  int voe_channel_;
+  const int voe_channel_;
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses

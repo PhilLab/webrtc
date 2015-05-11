@@ -105,7 +105,6 @@ using webrtc::DataChannelInit;
 using webrtc::DataChannelInterface;
 using webrtc::DataChannelObserver;
 using webrtc::IceCandidateInterface;
-using webrtc::NativeHandle;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
 using webrtc::MediaStreamInterface;
@@ -581,9 +580,8 @@ class DataChannelObserverWrapper : public DataChannelObserver {
 
   void OnMessage(const DataBuffer& buffer) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject byte_buffer =
-        jni()->NewDirectByteBuffer(const_cast<char*>(buffer.data.data()),
-                                   buffer.data.length());
+    jobject byte_buffer = jni()->NewDirectByteBuffer(
+        const_cast<char*>(buffer.data.data<char>()), buffer.data.size());
     jobject j_buffer = jni()->NewObject(*j_buffer_class_, j_buffer_ctor_,
                                         byte_buffer, buffer.binary);
     jni()->CallVoidMethod(*j_observer_global_, j_on_message_mid_, j_buffer);
@@ -641,7 +639,7 @@ class StatsObserverWrapper : public StatsObserver {
     int i = 0;
     for (const auto* report : reports) {
       ScopedLocalRefFrame local_ref_frame(jni);
-      jstring j_id = JavaStringFromStdString(jni, report->id().ToString());
+      jstring j_id = JavaStringFromStdString(jni, report->id()->ToString());
       jstring j_type = JavaStringFromStdString(jni, report->TypeToString());
       jobjectArray j_values = ValuesToJava(jni, report->values());
       jobject j_report = jni->NewObject(*j_stats_report_class_,
@@ -696,21 +694,26 @@ class VideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~VideoRendererWrapper() {}
 
-  void SetSize(int width, int height) override {
+  // This wraps VideoRenderer which still has SetSize.
+  void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
-    const bool kNotReserved = false;  // What does this param mean??
-    renderer_->SetSize(width, height, kNotReserved);
-  }
-
-  void RenderFrame(const cricket::VideoFrame* frame) override {
-    ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
+    const cricket::VideoFrame* frame =
+      video_frame->GetCopyWithRotationApplied();
+    if (width_ != frame->GetWidth() || height_ != frame->GetHeight()) {
+      width_ = frame->GetWidth();
+      height_ = frame->GetHeight();
+      renderer_->SetSize(width_, height_, 0);
+    }
     renderer_->RenderFrame(frame);
   }
 
+  // TODO(guoweis): Remove this once chrome code base is updated.
+  bool CanApplyRotation() override { return true; }
+
  private:
   explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
-      : renderer_(renderer) {}
-
+    : renderer_(renderer), width_(0), height_(0) {}
+  int width_, height_;
   scoped_ptr<cricket::VideoRenderer> renderer_;
 };
 
@@ -720,32 +723,36 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
  public:
   JavaVideoRendererWrapper(JNIEnv* jni, jobject j_callbacks)
       : j_callbacks_(jni, j_callbacks),
-        j_set_size_id_(GetMethodID(
-            jni, GetObjectClass(jni, j_callbacks), "setSize", "(II)V")),
         j_render_frame_id_(GetMethodID(
             jni, GetObjectClass(jni, j_callbacks), "renderFrame",
             "(Lorg/webrtc/VideoRenderer$I420Frame;)V")),
+        j_can_apply_rotation_id_(GetMethodID(
+            jni, GetObjectClass(jni, j_callbacks),
+            "canApplyRotation", "()Z")),
         j_frame_class_(jni,
                        FindClass(jni, "org/webrtc/VideoRenderer$I420Frame")),
         j_i420_frame_ctor_id_(GetMethodID(
-            jni, *j_frame_class_, "<init>", "(II[I[Ljava/nio/ByteBuffer;)V")),
+            jni, *j_frame_class_, "<init>", "(III[I[Ljava/nio/ByteBuffer;)V")),
         j_texture_frame_ctor_id_(GetMethodID(
             jni, *j_frame_class_, "<init>",
-            "(IILjava/lang/Object;I)V")),
-        j_byte_buffer_class_(jni, FindClass(jni, "java/nio/ByteBuffer")) {
+            "(IIILjava/lang/Object;I)V")),
+        j_byte_buffer_class_(jni, FindClass(jni, "java/nio/ByteBuffer")),
+        can_apply_rotation_set_(false),
+        can_apply_rotation_(false) {
     CHECK_EXCEPTION(jni);
   }
 
   virtual ~JavaVideoRendererWrapper() {}
 
-  void SetSize(int width, int height) override {
+  void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jni()->CallVoidMethod(*j_callbacks_, j_set_size_id_, width, height);
-    CHECK_EXCEPTION(jni());
-  }
 
-  void RenderFrame(const cricket::VideoFrame* frame) override {
-    ScopedLocalRefFrame local_ref_frame(jni());
+    // Calling CanApplyRotation here to ensure can_apply_rotation_ is set.
+    CanApplyRotation();
+
+    const cricket::VideoFrame* frame =
+        can_apply_rotation_ ? video_frame
+                            : video_frame->GetCopyWithRotationApplied();
     if (frame->GetNativeHandle() != NULL) {
       jobject j_frame = CricketToJavaTextureFrame(frame);
       jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
@@ -755,6 +762,21 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
       jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
       CHECK_EXCEPTION(jni());
     }
+  }
+
+  // TODO(guoweis): Report that rotation is supported as RenderFrame calls
+  // GetCopyWithRotationApplied.
+  virtual bool CanApplyRotation() override {
+    if (can_apply_rotation_set_) {
+      return can_apply_rotation_;
+    }
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jboolean ret =
+        jni()->CallBooleanMethod(*j_callbacks_, j_can_apply_rotation_id_);
+    CHECK_EXCEPTION(jni());
+    can_apply_rotation_ = ret;
+    can_apply_rotation_set_ = true;
+    return ret;
   }
 
  private:
@@ -779,7 +801,9 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
     jni()->SetObjectArrayElement(planes, 2, v_buffer);
     return jni()->NewObject(
         *j_frame_class_, j_i420_frame_ctor_id_,
-        frame->GetWidth(), frame->GetHeight(), strides, planes);
+        frame->GetWidth(), frame->GetHeight(),
+        static_cast<int>(frame->GetVideoRotation()),
+        strides, planes);
   }
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
@@ -790,7 +814,9 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
     int texture_id = handle->GetTextureId();
     return jni()->NewObject(
         *j_frame_class_, j_texture_frame_ctor_id_,
-        frame->GetWidth(), frame->GetHeight(), texture_object, texture_id);
+        frame->GetWidth(), frame->GetHeight(),
+        static_cast<int>(frame->GetVideoRotation()),
+        texture_object, texture_id);
   }
 
   JNIEnv* jni() {
@@ -798,12 +824,14 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
   }
 
   ScopedGlobalRef<jobject> j_callbacks_;
-  jmethodID j_set_size_id_;
   jmethodID j_render_frame_id_;
+  jmethodID j_can_apply_rotation_id_;
   ScopedGlobalRef<jclass> j_frame_class_;
   jmethodID j_i420_frame_ctor_id_;
   jmethodID j_texture_frame_ctor_id_;
   ScopedGlobalRef<jclass> j_byte_buffer_class_;
+  bool can_apply_rotation_set_;
+  bool can_apply_rotation_;
 };
 
 
@@ -1381,12 +1409,12 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
                                             j_videocapturer_ctor);
   CHECK_EXCEPTION(jni) << "error during NewObject";
 
-  rtc::scoped_ptr<AndroidVideoCapturerJni> delegate =
+  rtc::scoped_refptr<AndroidVideoCapturerJni> delegate =
       AndroidVideoCapturerJni::Create(jni, j_video_capturer, j_device_name);
   if (!delegate.get())
     return nullptr;
   rtc::scoped_ptr<webrtc::AndroidVideoCapturer> capturer(
-      new webrtc::AndroidVideoCapturer(delegate.Pass()));
+      new webrtc::AndroidVideoCapturer(delegate));
 
 #else
   std::string device_name = JavaToStdString(jni, j_device_name);

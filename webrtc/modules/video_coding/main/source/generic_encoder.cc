@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/generic_encoder.h"
@@ -19,35 +20,30 @@ namespace webrtc {
 namespace {
 // Map information from info into rtp. If no relevant information is found
 // in info, rtp is set to NULL.
-void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
-  if (!info) {
-    *rtp = NULL;
-    return;
-  }
+void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
+  DCHECK(info);
   switch (info->codecType) {
     case kVideoCodecVP8: {
-      (*rtp)->codec = kRtpVideoVp8;
-      (*rtp)->codecHeader.VP8.InitRTPVideoHeaderVP8();
-      (*rtp)->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
-      (*rtp)->codecHeader.VP8.nonReference =
+      rtp->codec = kRtpVideoVp8;
+      rtp->codecHeader.VP8.InitRTPVideoHeaderVP8();
+      rtp->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
+      rtp->codecHeader.VP8.nonReference =
           info->codecSpecific.VP8.nonReference;
-      (*rtp)->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
-      (*rtp)->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
-      (*rtp)->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
-      (*rtp)->codecHeader.VP8.keyIdx = info->codecSpecific.VP8.keyIdx;
-      (*rtp)->simulcastIdx = info->codecSpecific.VP8.simulcastIdx;
+      rtp->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
+      rtp->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
+      rtp->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
+      rtp->codecHeader.VP8.keyIdx = info->codecSpecific.VP8.keyIdx;
+      rtp->simulcastIdx = info->codecSpecific.VP8.simulcastIdx;
       return;
     }
     case kVideoCodecH264:
-      (*rtp)->codec = kRtpVideoH264;
+      rtp->codec = kRtpVideoH264;
       return;
     case kVideoCodecGeneric:
-      (*rtp)->codec = kRtpVideoGeneric;
-      (*rtp)->simulcastIdx = info->codecSpecific.genericCodec.simulcast_idx;
+      rtp->codec = kRtpVideoGeneric;
+      rtp->simulcastIdx = info->codecSpecific.genericCodec.simulcast_idx;
       return;
     default:
-      // No codec specific info. Change RTP header pointer to NULL.
-      *rtp = NULL;
       return;
   }
 }
@@ -60,9 +56,11 @@ VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
                                      bool internalSource)
     : encoder_(encoder),
       rate_observer_(rate_observer),
+      vcm_encoded_frame_callback_(nullptr),
       bit_rate_(0),
       frame_rate_(0),
-      internal_source_(internalSource) {
+      internal_source_(internalSource),
+      rotation_(kVideoRotation_0) {
 }
 
 VCMGenericEncoder::~VCMGenericEncoder()
@@ -75,6 +73,7 @@ int32_t VCMGenericEncoder::Release()
       rtc::CritScope lock(&rates_lock_);
       bit_rate_ = 0;
       frame_rate_ = 0;
+      vcm_encoded_frame_callback_ = nullptr;
     }
 
     return encoder_->Release();
@@ -106,6 +105,16 @@ VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
   std::vector<VideoFrameType> video_frame_types(frameTypes.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frameTypes, &video_frame_types);
+
+  rotation_ = inputFrame.rotation();
+
+  if (vcm_encoded_frame_callback_) {
+    // Keep track of the current frame rotation and apply to the output of the
+    // encoder. There might not be exact as the encoder could have one frame
+    // delay but it should be close enough.
+    vcm_encoded_frame_callback_->SetRotation(rotation_);
+  }
+
   return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
 }
 
@@ -178,6 +187,7 @@ int32_t
 VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
 {
     VCMencodedFrameCallback->SetInternalSource(internal_source_);
+    vcm_encoded_frame_callback_ = VCMencodedFrameCallback;
     return encoder_->RegisterEncodeCompleteCallback(VCMencodedFrameCallback);
 }
 
@@ -191,14 +201,16 @@ VCMGenericEncoder::InternalSource() const
   * Callback Implementation
   ***************************/
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(
-    EncodedImageCallback* post_encode_callback):
-_sendCallback(),
-_mediaOpt(NULL),
-_payloadType(0),
-_internalSource(false),
-post_encode_callback_(post_encode_callback)
+    EncodedImageCallback* post_encode_callback)
+    : _sendCallback(),
+      _mediaOpt(NULL),
+      _payloadType(0),
+      _internalSource(false),
+      _rotation(kVideoRotation_0),
+      post_encode_callback_(post_encode_callback)
 #ifdef DEBUG_ENCODER_BIT_STREAM
-, _bitStreamAfterEncoder(NULL)
+      ,
+      _bitStreamAfterEncoder(NULL)
 #endif
 {
 #ifdef DEBUG_ENCODER_BIT_STREAM
@@ -240,7 +252,10 @@ int32_t VCMEncodedFrameCallback::Encoded(
   RTPVideoHeader rtpVideoHeader;
   memset(&rtpVideoHeader, 0, sizeof(RTPVideoHeader));
   RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
-  CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
+  if (codecSpecificInfo) {
+    CopyCodecSpecific(codecSpecificInfo, rtpVideoHeaderPtr);
+  }
+  rtpVideoHeader.rotation = _rotation;
 
   int32_t callbackReturn = _sendCallback->SendData(
       _payloadType, encodedImage, *fragmentationHeader, rtpVideoHeaderPtr);

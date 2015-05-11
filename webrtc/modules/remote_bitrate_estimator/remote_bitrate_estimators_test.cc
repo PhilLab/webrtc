@@ -15,7 +15,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/perf_test.h"
 
 using std::string;
 
@@ -36,14 +35,14 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
 
 TEST_P(DefaultBweTest, UnlimitedSpeed) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(10 * 60 * 1000);
 }
 
 TEST_P(DefaultBweTest, SteadyLoss) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   LossFilter loss(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   loss.SetLoss(20.0);
@@ -52,7 +51,7 @@ TEST_P(DefaultBweTest, SteadyLoss) {
 
 TEST_P(DefaultBweTest, IncreasingLoss1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   LossFilter loss(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 76; ++i) {
@@ -63,7 +62,7 @@ TEST_P(DefaultBweTest, IncreasingLoss1) {
 
 TEST_P(DefaultBweTest, SteadyDelay) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   delay.SetDelay(1000);
@@ -72,7 +71,7 @@ TEST_P(DefaultBweTest, SteadyDelay) {
 
 TEST_P(DefaultBweTest, IncreasingDelay1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(10 * 60 * 1000);
@@ -85,7 +84,7 @@ TEST_P(DefaultBweTest, IncreasingDelay1) {
 
 TEST_P(DefaultBweTest, IncreasingDelay2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -100,7 +99,7 @@ TEST_P(DefaultBweTest, IncreasingDelay2) {
 
 TEST_P(DefaultBweTest, JumpyDelay1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(10 * 60 * 1000);
@@ -116,7 +115,7 @@ TEST_P(DefaultBweTest, JumpyDelay1) {
 
 TEST_P(DefaultBweTest, SteadyJitter) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -126,7 +125,7 @@ TEST_P(DefaultBweTest, SteadyJitter) {
 
 TEST_P(DefaultBweTest, IncreasingJitter1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 2 * 60 * 2; ++i) {
@@ -138,7 +137,7 @@ TEST_P(DefaultBweTest, IncreasingJitter1) {
 
 TEST_P(DefaultBweTest, IncreasingJitter2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(30 * 1000);
@@ -152,7 +151,7 @@ TEST_P(DefaultBweTest, IncreasingJitter2) {
 
 TEST_P(DefaultBweTest, SteadyReorder) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ReorderFilter reorder(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   reorder.SetReorder(20.0);
@@ -161,7 +160,7 @@ TEST_P(DefaultBweTest, SteadyReorder) {
 
 TEST_P(DefaultBweTest, IncreasingReorder1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ReorderFilter reorder(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 76; ++i) {
@@ -172,7 +171,7 @@ TEST_P(DefaultBweTest, IncreasingReorder1) {
 
 TEST_P(DefaultBweTest, SteadyChoke) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   choke.SetCapacity(140);
@@ -181,7 +180,7 @@ TEST_P(DefaultBweTest, SteadyChoke) {
 
 TEST_P(DefaultBweTest, IncreasingChoke1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 1200; i >= 100; i -= 100) {
@@ -192,7 +191,7 @@ TEST_P(DefaultBweTest, IncreasingChoke1) {
 
 TEST_P(DefaultBweTest, IncreasingChoke2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(60 * 1000);
@@ -204,7 +203,7 @@ TEST_P(DefaultBweTest, IncreasingChoke2) {
 
 TEST_P(DefaultBweTest, Multi1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   ChokeFilter choke(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
@@ -222,7 +221,7 @@ TEST_P(DefaultBweTest, Multi1) {
 
 TEST_P(DefaultBweTest, Multi2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   JitterFilter jitter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
@@ -241,31 +240,6 @@ class BweFeedbackTest
   BweFeedbackTest() : BweTest() {}
   virtual ~BweFeedbackTest() {}
 
-  void PrintResults(double max_throughput_kbps, Stats<double> throughput_kbps,
-                    Stats<double> delay_ms) {
-    double utilization = throughput_kbps.GetMean() / max_throughput_kbps;
-    webrtc::test::PrintResult("BwePerformance",
-                              GetTestName(),
-                              "Utilization",
-                              utilization * 100.0,
-                              "%",
-                              false);
-    std::stringstream ss;
-    ss << throughput_kbps.GetStdDev() / throughput_kbps.GetMean();
-    webrtc::test::PrintResult("BwePerformance",
-                              GetTestName(),
-                              "Utilization var coeff",
-                              ss.str(),
-                              "",
-                              false);
-    webrtc::test::PrintResult("BwePerformance",
-                              GetTestName(),
-                              "Average delay",
-                              delay_ms.AsString(),
-                              "ms",
-                              false);
-  }
-
  protected:
   void SetUp() override { BweTest::SetUp(); }
 
@@ -280,7 +254,7 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
 
 TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -294,12 +268,13 @@ TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   filter.SetCapacity(kHighCapacityKbps);
   RunFor(60 * 1000);
   PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
-               counter.GetBitrateStats(), filter.GetDelayStats());
+               counter.GetBitrateStats(), filter.GetDelayStats(),
+               std::vector<Stats<double>>());
 }
 
 TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -314,12 +289,13 @@ TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
   RunFor(60 * 1000);
 
   PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
-               counter.GetBitrateStats(), filter.GetDelayStats());
+               counter.GetBitrateStats(), filter.GetDelayStats(),
+               std::vector<Stats<double>>());
 }
 
 TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   RateCounterFilter counter2(&uplink_, 0, "receiver_input");
@@ -327,13 +303,13 @@ TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
   ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
   RunFor(22 * 60 * 1000);
   PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
-               filter.GetDelayStats());
+               filter.GetDelayStats(), std::vector<Stats<double>>());
 }
 
 // webrtc:3277
 TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   filter.SetMaxDelay(500);
@@ -342,7 +318,17 @@ TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
   ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
   RunFor(300 * 1000);
   PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
-               filter.GetDelayStats());
+               filter.GetDelayStats(), std::vector<Stats<double>>());
+}
+
+TEST_P(BweFeedbackTest, PacedSelfFairnessTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 4, 0, 3000);
+}
+
+TEST_P(BweFeedbackTest, TcpFairnessTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 1, 1, 2000);
 }
 }  // namespace bwe
 }  // namespace testing

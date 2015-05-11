@@ -30,7 +30,10 @@
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_rand_gen',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_env',
         '../../../../../third_party/libsrtp/libsrtp.gyp:srtp_test_sha1_driver',
-        '../../../../modules/modules.gyp:video_coding_test',
+        '../../../../../third_party/opus/opus.gyp:test_opus_encode',
+        '../../../../../third_party/opus/opus.gyp:test_opus_api',
+        '../../../../../third_party/opus/opus.gyp:test_opus_decode',
+        '../../../../../third_party/opus/opus.gyp:test_opus_padding',
         '../../../../modules/modules.gyp:video_capture',
       ],
       'defines': [
@@ -54,6 +57,7 @@
         'TestSolution/WStringReporter.h',
         'TestSolution/XmlReporter.cpp',
         'TestSolution/XmlReporter.h',
+        'TestSolution/TestSolutionProvider.h',
         'libSrtpTests/LibSrtpTestBase.cpp',
         'libSrtpTests/LibSrtpTestBase.h',
         'libSrtpTests/RdbxDriverTest.cpp',
@@ -82,9 +86,16 @@
         'libSrtpTests/SrtpSha1DriverTest.h',
         'libSrtpTests/SrtpStatDriverTest.cpp',
         'libSrtpTests/SrtpStatDriverTest.h',
-        'libSrtpTests/libsrtpTestSolution.h',
-        'videoCodingTests/VideoCodingTest.h',
-        'videoCodingTests/VideoCodingTest.cpp',
+        'opusTests/OpusEncodeTest.cpp',
+        'opusTests/OpusEncodeTest.h',
+        'opusTests/OpusDecodeTest.cpp',
+        'opusTests/OpusDecodeTest.h',
+        'opusTests/OpusPaddingTest.cpp',
+        'opusTests/OpusPaddingTest.h',
+        'opusTests/OpusApiTest.cpp',
+        'opusTests/OpusApiTest.h',
+        'opusTests/OpusTestBase.cpp',
+        'opusTests/OpusTestBase.h',
         'Logo.png',
         'SmallLogo.png',
         'StoreLogo.png',
@@ -102,9 +113,16 @@
             'SplashScreen480x800.png',
           ],
         }],
-        ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
           'sources': [
             'Package.appxmanifest',
+            'SplashScreen.png',
+          ],
+        }],
+        ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+          'sources': [
+            'Generated Manifest Win10\AppxManifest.xml',
+            'Package.Win10.appxmanifest',
             'SplashScreen.png',
           ],
         }],
@@ -121,9 +139,15 @@
                 'SplashScreen480x800.png',
               ],
             }],
-            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
               'files': [
                 'Generated Manifest\AppxManifest.xml',
+                'SplashScreen.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+              'files': [
+                'Generated Manifest Win10\AppxManifest.xml',
                 'SplashScreen.png',
               ],
             }],
@@ -140,9 +164,9 @@
           'destination': '<(PRODUCT_DIR)/AppX',
           'conditions': [
             ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-              'files': [	
+              'files': [
                  'Logo71x71.png',
-                 'Logo44x44.png',	
+                 'Logo44x44.png',
                  'SplashScreen480x800.png',
               ],
             }],
@@ -175,7 +199,7 @@
         },
       },
     },
-    {	
+    {
       'target_name': 'libTest_runner_appx',
       'product_name': 'libTest_runner',
       'product_extension': 'appx',

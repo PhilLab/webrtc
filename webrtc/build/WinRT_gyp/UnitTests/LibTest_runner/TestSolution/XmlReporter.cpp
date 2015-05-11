@@ -17,6 +17,7 @@ using namespace concurrency;
 #define ATTRIBUTE_NAME        L"name"
 #define ATTRIBUTE_TESTS       L"tests"
 #define ATTRIBUTE_EXECUTED    L"executed"
+#define ATTRIBUTE_EXECUTION_TIME_MS    L"ExecutionTimeMs"
 #define ATTRIBUTE_SUCCEEDED   L"succeeded"
 #define ATTRIBUTE_RESULT_MESSAGE L"resultmessage"
 #define ATTRIBUTE_EXIT_STATUS L"exitstatus"
@@ -142,6 +143,7 @@ namespace LibTest_runner
     testEl->SetAttribute(ATTRIBUTE_SUCCEEDED, test.Succeed() ? ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
     testEl->SetAttribute(ATTRIBUTE_EXIT_STATUS, "" + test.ExitStatus());
     testEl->SetAttribute(ATTRIBUTE_RESULT_MESSAGE, ref new String(test.ResultMessage().c_str()));
+    testEl->SetAttribute(ATTRIBUTE_EXECUTION_TIME_MS, "" + test.GetExecutionTimeMs().count());
     projectEl->AppendChild(testEl);
   }
 

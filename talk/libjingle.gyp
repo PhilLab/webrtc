@@ -140,6 +140,7 @@
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViEAndroidGLES20.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViERenderer.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViESurfaceRenderer.java',
+                  '<(webrtc_modules_dir)/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioManager.java',
                   '<(webrtc_modules_dir)/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioUtils.java',
                   '<(webrtc_modules_dir)/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioRecord.java',
                   '<(webrtc_modules_dir)/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioTrack.java',
@@ -517,6 +518,12 @@
             '-lXext',
             '-lX11',
           ],
+        }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources': [
+            'media/devices/winrtdevicemanager.cc',
+            'media/devices/winrtdevicemanager.h',
+            ]
         }],
         ['OS=="win" and OS_RUNTIME!="winrt"', {
           'sources': [

@@ -44,7 +44,6 @@ const int kFrameSizeMs = 10;  // Multiple of 10.
 const int kFrameSizeSamples = kFrameSizeMs / 10 * kNumSamples10ms;
 const int kPayloadSizeBytes = kFrameSizeSamples * sizeof(int16_t);
 const uint8_t kPayloadType = 111;
-const int kUseDefaultPacketSize = -1;
 }  // namespace
 
 class RtpUtility {
@@ -84,6 +83,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
       : num_calls_(0),
         last_frame_type_(kFrameEmpty),
         last_payload_type_(-1),
+        last_timestamp_(0),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
 
   int32_t SendData(FrameType frame_type,
@@ -96,6 +96,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
     ++num_calls_;
     last_frame_type_ = frame_type;
     last_payload_type_ = payload_type;
+    last_timestamp_ = timestamp;
     last_payload_vec_.assign(payload_data, payload_data + payload_len_bytes);
     return 0;
   }
@@ -120,6 +121,11 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
     return last_payload_type_;
   }
 
+  uint32_t last_timestamp() const {
+    CriticalSectionScoped lock(crit_sect_.get());
+    return last_timestamp_;
+  }
+
   void SwapBuffers(std::vector<uint8_t>* payload) {
     CriticalSectionScoped lock(crit_sect_.get());
     last_payload_vec_.swap(*payload);
@@ -129,6 +135,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   int num_calls_ GUARDED_BY(crit_sect_);
   FrameType last_frame_type_ GUARDED_BY(crit_sect_);
   int last_payload_type_ GUARDED_BY(crit_sect_);
+  uint32_t last_timestamp_ GUARDED_BY(crit_sect_);
   std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
   const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
 };
@@ -138,8 +145,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   AudioCodingModuleTestOldApi()
       : id_(1),
         rtp_utility_(new RtpUtility(kFrameSizeSamples, kPayloadType)),
-        clock_(Clock::GetRealTimeClock()),
-        packet_size_samples_(kUseDefaultPacketSize) {}
+        clock_(Clock::GetRealTimeClock()) {}
 
   ~AudioCodingModuleTestOldApi() {}
 
@@ -160,16 +166,17 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
            input_frame_.samples_per_channel_ * sizeof(input_frame_.data_[0]));
 
     ASSERT_EQ(0, acm_->RegisterTransportCallback(&packet_cb_));
+
+    SetUpL16Codec();
+  }
+
+  // Set up L16 codec.
+  virtual void SetUpL16Codec() {
+    ASSERT_EQ(0, AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1));
+    codec_.pltype = kPayloadType;
   }
 
   virtual void RegisterCodec() {
-    AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1);
-    codec_.pltype = kPayloadType;
-    if (packet_size_samples_ != kUseDefaultPacketSize) {
-      codec_.pacsize = packet_size_samples_;
-    }
-
-    // Register L16 codec in ACM.
     ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
     ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
   }
@@ -193,7 +200,6 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
   virtual void InsertAudio() {
     ASSERT_GE(acm_->Add10MsData(input_frame_), 0);
-    VerifyEncoding();
     input_frame_.timestamp_ += kNumSamples10ms;
   }
 
@@ -201,6 +207,11 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
     int last_length = packet_cb_.last_payload_len_bytes();
     EXPECT_TRUE(last_length == 2 * codec_.pacsize || last_length == 0)
         << "Last encoded packet was " << last_length << " bytes.";
+  }
+
+  virtual void InsertAudioAndVerifyEncoding() {
+    InsertAudio();
+    VerifyEncoding();
   }
 
   const int id_;
@@ -211,7 +222,6 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   AudioFrame input_frame_;
   CodecInst codec_;
   Clock* clock_;
-  int packet_size_samples_;
 };
 
 // Check if the statistics are initialized correctly. Before any call to ACM
@@ -307,17 +317,52 @@ TEST_F(AudioCodingModuleTestOldApi, FailOnZeroDesiredFrequency) {
 // Also checks that the frame type is kAudioFrameSpeech.
 TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
   const int k10MsBlocksPerPacket = 3;
-  packet_size_samples_ = k10MsBlocksPerPacket * kSampleRateHz / 100;
+  codec_.pacsize = k10MsBlocksPerPacket * kSampleRateHz / 100;
   RegisterCodec();
   const int kLoops = 10;
   for (int i = 0; i < kLoops; ++i) {
     EXPECT_EQ(i / k10MsBlocksPerPacket, packet_cb_.num_calls());
     if (packet_cb_.num_calls() > 0)
       EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
-    InsertAudio();
+    InsertAudioAndVerifyEncoding();
   }
   EXPECT_EQ(kLoops / k10MsBlocksPerPacket, packet_cb_.num_calls());
   EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
+}
+
+// Verifies that the RTP timestamp series is not reset when the codec is
+// changed.
+TEST_F(AudioCodingModuleTestOldApi, TimestampSeriesContinuesWhenCodecChanges) {
+  RegisterCodec();  // This registers the default codec.
+  uint32_t expected_ts = input_frame_.timestamp_;
+  int blocks_per_packet = codec_.pacsize / (kSampleRateHz / 100);
+  // Encode 5 packets of the first codec type.
+  const int kNumPackets1 = 5;
+  for (int j = 0; j < kNumPackets1; ++j) {
+    for (int i = 0; i < blocks_per_packet; ++i) {
+      EXPECT_EQ(j, packet_cb_.num_calls());
+      InsertAudio();
+    }
+    EXPECT_EQ(j + 1, packet_cb_.num_calls());
+    EXPECT_EQ(expected_ts, packet_cb_.last_timestamp());
+    expected_ts += codec_.pacsize;
+  }
+
+  // Change codec.
+  ASSERT_EQ(0, AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1));
+  RegisterCodec();
+  blocks_per_packet = codec_.pacsize / (kSampleRateHz / 100);
+  // Encode another 5 packets.
+  const int kNumPackets2 = 5;
+  for (int j = 0; j < kNumPackets2; ++j) {
+    for (int i = 0; i < blocks_per_packet; ++i) {
+      EXPECT_EQ(kNumPackets1 + j, packet_cb_.num_calls());
+      InsertAudio();
+    }
+    EXPECT_EQ(kNumPackets1 + j + 1, packet_cb_.num_calls());
+    EXPECT_EQ(expected_ts, packet_cb_.last_timestamp());
+    expected_ts += codec_.pacsize;
+  }
 }
 
 // Introduce this class to set different expectations on the number of encoded
@@ -367,7 +412,7 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
     for (int i = 0; i < kLoops; ++i) {
       int num_calls_before = packet_cb_.num_calls();
       EXPECT_EQ(i / blocks_per_packet, num_calls_before);
-      InsertAudio();
+      InsertAudioAndVerifyEncoding();
       int num_calls = packet_cb_.num_calls();
       if (num_calls == num_calls_before + 1) {
         EXPECT_EQ(expectation[num_calls - 1].ix, i);
@@ -389,7 +434,7 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
 TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
        TransportCallbackTestForComfortNoiseRegisterCngLast) {
   const int k10MsBlocksPerPacket = 3;
-  packet_size_samples_ = k10MsBlocksPerPacket * kSampleRateHz / 100;
+  codec_.pacsize = k10MsBlocksPerPacket * kSampleRateHz / 100;
   RegisterCodec();
   const int kCngPayloadType = 105;
   RegisterCngCodec(kCngPayloadType);
@@ -400,7 +445,7 @@ TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
 TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
        TransportCallbackTestForComfortNoiseRegisterCngFirst) {
   const int k10MsBlocksPerPacket = 3;
-  packet_size_samples_ = k10MsBlocksPerPacket * kSampleRateHz / 100;
+  codec_.pacsize = k10MsBlocksPerPacket * kSampleRateHz / 100;
   const int kCngPayloadType = 105;
   RegisterCngCodec(kCngPayloadType);
   RegisterCodec();
@@ -417,18 +462,11 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AudioCodingModuleMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        send_thread_(ThreadWrapper::CreateThread(CbSendThread,
-                                                 this,
-                                                 kRealtimePriority,
-                                                 "send")),
-        insert_packet_thread_(ThreadWrapper::CreateThread(CbInsertPacketThread,
-                                                          this,
-                                                          kRealtimePriority,
-                                                          "insert_packet")),
-        pull_audio_thread_(ThreadWrapper::CreateThread(CbPullAudioThread,
-                                                       this,
-                                                       kRealtimePriority,
-                                                       "pull_audio")),
+        send_thread_(ThreadWrapper::CreateThread(CbSendThread, this, "send")),
+        insert_packet_thread_(ThreadWrapper::CreateThread(
+            CbInsertPacketThread, this, "insert_packet")),
+        pull_audio_thread_(ThreadWrapper::CreateThread(
+            CbPullAudioThread, this, "pull_audio")),
         test_complete_(EventWrapper::Create()),
         send_count_(0),
         insert_packet_count_(0),
@@ -446,10 +484,12 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void StartThreads() {
-    unsigned int thread_id = 0;
-    ASSERT_TRUE(send_thread_->Start(thread_id));
-    ASSERT_TRUE(insert_packet_thread_->Start(thread_id));
-    ASSERT_TRUE(pull_audio_thread_->Start(thread_id));
+    ASSERT_TRUE(send_thread_->Start());
+    send_thread_->SetPriority(kRealtimePriority);
+    ASSERT_TRUE(insert_packet_thread_->Start());
+    insert_packet_thread_->SetPriority(kRealtimePriority);
+    ASSERT_TRUE(pull_audio_thread_->Start());
+    pull_audio_thread_->SetPriority(kRealtimePriority);
   }
 
   void TearDown() {
@@ -488,7 +528,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
       test_complete_->Set();
     }
     ++send_count_;
-    InsertAudio();
+    InsertAudioAndVerifyEncoding();
     if (TestDone()) {
       test_complete_->Set();
     }
@@ -594,7 +634,6 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
     static_assert(kSampleRateHz == 16000, "test designed for iSAC 16 kHz");
     AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1);
     codec_.pltype = kPayloadType;
-    ASSERT_EQ(kUseDefaultPacketSize, packet_size_samples_);
 
     // Register iSAC codec in ACM, effectively unregistering the PCM16B codec
     // registered in AudioCodingModuleTestOldApi::SetUp();
@@ -712,7 +751,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
   Run(8000,
       PlatformChecksum("dcee98c623b147ebe1b40dd30efa896e",
-                       "6ac89c7145072c26bfeba602cd661afb",
+                       "adc92e173f908f93b96ba5844209815a",
                        "908002dc01fc4eb1d2be24eb1d3f354b"));
 }
 
@@ -725,7 +764,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
   Run(16000,
       PlatformChecksum("f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
-                       "3e888eb04f57db2c6ef952fe64f17fe6",
+                       "8cffa6abcb3e18e33b9d857666dff66a",
                        "a909560b5ca49fa472b17b7b277195e9"));
 }
 
@@ -738,7 +777,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
   Run(32000,
       PlatformChecksum("306e0d990ee6e92de3fbecc0123ece37",
-                       "aeca37e963310f5b6552b7edea23c2f1",
+                       "3e126fe894720c3f85edadcc91964ba5",
                        "441aab4b347fb3db4e9244337aca8d8e"));
 }
 
@@ -751,7 +790,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
   Run(48000,
       PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
-                       "76b9e99e0a3998aa28355e7a2bd836f7",
+                       "0155665e93067c4e89256b944dd11999",
                        "4ee2730fa1daae755e8a8fd3abd779ec"));
 }
 
@@ -1123,7 +1162,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
-  send_test_->acm()->SetOpusApplication(kVoip);
+  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip, false));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "9b9e12bc3cc793740966e11cbfa8b35b",
           "57412a4b5771d19ff03ec35deffe7067",

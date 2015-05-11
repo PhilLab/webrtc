@@ -386,7 +386,7 @@ class Transport : public rtc::MessageHandler,
   void OnRemoteCandidate_w(const Candidate& candidate);
   void OnChannelReadableState_s();
   void OnChannelWritableState_s();
-  void OnChannelRequestSignaling_s(int component);
+  void OnChannelRequestSignaling_s();
   void OnConnecting_s();
   void OnChannelRouteChange_s(const TransportChannel* channel,
                               const Candidate& remote_candidate);
@@ -432,6 +432,7 @@ class Transport : public rtc::MessageHandler,
   rtc::scoped_ptr<TransportDescription> local_description_;
   rtc::scoped_ptr<TransportDescription> remote_description_;
 
+  // TODO(tommi): Make sure we only use this on the worker thread.
   ChannelMap channels_;
   // Buffers the ready_candidates so that SignalCanidatesReady can
   // provide them in multiples.
@@ -439,7 +440,7 @@ class Transport : public rtc::MessageHandler,
   // Protects changes to channels and messages
   rtc::CriticalSection crit_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(Transport);
+  DISALLOW_COPY_AND_ASSIGN(Transport);
 };
 
 // Extract a TransportProtocol from a TransportDescription.

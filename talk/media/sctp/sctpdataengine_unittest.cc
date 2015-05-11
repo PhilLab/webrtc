@@ -74,7 +74,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
 
     // TODO(ldixon): Can/should we use Buffer.TransferTo here?
     // Note: this assignment does a deep copy of data from packet.
-    rtc::Buffer* buffer = new rtc::Buffer(packet->data(), packet->length());
+    rtc::Buffer* buffer = new rtc::Buffer(packet->data(), packet->size());
     thread_->Post(this, MSG_PACKET, rtc::WrapMessageData(buffer));
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket, Posted message.";
     return true;
@@ -486,7 +486,13 @@ TEST_F(SctpDataMediaChannelTest, ClosesStreamsOnBothSides) {
   EXPECT_TRUE_WAIT(chan_1_sig_receiver.WasStreamClosed(4), 1000);
 }
 
-TEST_F(SctpDataMediaChannelTest, ReusesAStream) {
+// Flaky on Linux and Windows. See webrtc:4453.
+#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
+#define MAYBE_ReusesAStream DISABLED_ReusesAStream
+#else
+#define MAYBE_ReusesAStream ReusesAStream
+#endif
+TEST_F(SctpDataMediaChannelTest, MAYBE_ReusesAStream) {
   // Shut down channel 1, then open it up again for reuse.
   SetupConnectedChannels();
   cricket::SendDataResult result;

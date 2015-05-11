@@ -25,7 +25,6 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/video_engine/include/vie_network.h"
 
@@ -41,9 +40,8 @@ TbExternalTransport::TbExternalTransport(
       sender_channel_(sender_channel),
       receive_channels_(receive_channels),
       _vieNetwork(vieNetwork),
-      _thread(*webrtc::ThreadWrapper::CreateThread(
-          ViEExternalTransportRun, this, webrtc::kHighPriority,
-          "AutotestTransport")),
+      _thread(webrtc::ThreadWrapper::CreateThread(
+          ViEExternalTransportRun, this, "AutotestTransport")),
       _event(*webrtc::EventWrapper::Create()),
       _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       _statCrit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
@@ -76,19 +74,17 @@ TbExternalTransport::TbExternalTransport(
       previous_drop_(false)
 {
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
-    unsigned int tId = 0;
     memset(&network_parameters_, 0, sizeof(NetworkParameters));
-    _thread.Start(tId);
+    _thread->Start();
+    _thread->SetPriority(webrtc::kHighPriority);
 }
 
 TbExternalTransport::~TbExternalTransport()
 {
     _event.Set();
-    if (_thread.Stop())
-    {
-        delete &_thread;
-        delete &_event;
-    }
+    _thread->Stop();
+    delete &_event;
+
     for (std::list<VideoPacket*>::iterator it = _rtpPackets.begin();
          it != _rtpPackets.end(); ++it) {
         delete *it;

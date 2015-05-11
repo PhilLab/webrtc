@@ -206,8 +206,7 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
 class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
  public:
   FakeWebRtcVideoEncoderFactory()
-      : num_created_encoders_(0) {
-  }
+      : num_created_encoders_(0), encoders_have_internal_sources_(false) {}
 
   virtual webrtc::VideoEncoder* CreateVideoEncoder(
       webrtc::VideoCodecType type) {
@@ -232,6 +231,15 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     return codecs_;
   }
 
+  virtual bool EncoderTypeHasInternalSource(
+      webrtc::VideoCodecType type) const override {
+    return encoders_have_internal_sources_;
+  }
+
+  void set_encoders_have_internal_sources(bool internal_source) {
+    encoders_have_internal_sources_ = internal_source;
+  }
+
   void AddSupportedVideoCodecType(webrtc::VideoCodecType type,
                                   const std::string& name) {
     supported_codec_types_.insert(type);
@@ -252,6 +260,12 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   std::vector<WebRtcVideoEncoderFactory::VideoCodec> codecs_;
   std::vector<FakeWebRtcVideoEncoder*> encoders_;
   int num_created_encoders_;
+  bool encoders_have_internal_sources_;
+};
+
+// Information associated with an external encoder.
+struct ExternalEncoderInfo {
+  bool internal_source;
 };
 
 class FakeWebRtcVideoEngine
@@ -285,6 +299,8 @@ class FakeWebRtcVideoEngine
           rtp_offset_receive_id_(-1),
           rtp_absolute_send_time_send_id_(-1),
           rtp_absolute_send_time_receive_id_(-1),
+          rtp_video_rotation_send_id_(-1),
+          rtp_video_rotation_receive_id_(-1),
           sender_target_delay_(0),
           receiver_target_delay_(0),
           transmission_smoothing_(false),
@@ -325,6 +341,8 @@ class FakeWebRtcVideoEngine
     int rtp_offset_receive_id_;
     int rtp_absolute_send_time_send_id_;
     int rtp_absolute_send_time_receive_id_;
+    int rtp_video_rotation_send_id_;
+    int rtp_video_rotation_receive_id_;
     int sender_target_delay_;
     int receiver_target_delay_;
     bool transmission_smoothing_;
@@ -332,7 +350,7 @@ class FakeWebRtcVideoEngine
     bool hybrid_nack_fec_;
     std::vector<webrtc::VideoCodec> recv_codecs;
     std::set<unsigned int> ext_decoder_pl_types_;
-    std::set<unsigned int> ext_encoder_pl_types_;
+    std::map<unsigned int, ExternalEncoderInfo> ext_encoders_;
     webrtc::VideoCodec send_codec;
     unsigned int send_video_bitrate_;
     unsigned int send_fec_bitrate_;
@@ -358,20 +376,9 @@ class FakeWebRtcVideoEngine
     int incoming_frame_num() const { return incoming_frame_num_; }
 
     // From ViEExternalCapture
-    virtual int IncomingFrame(unsigned char* videoFrame,
-                              size_t videoFrameLength,
-                              unsigned short width,
-                              unsigned short height,
-                              webrtc::RawVideoType videoType,
-                              unsigned long long captureTime) {
-      return 0;
-    }
-    virtual int IncomingFrameI420(
-        const webrtc::ViEVideoFrameI420& video_frame,
-        unsigned long long captureTime) {
-      last_capture_time_ = captureTime;
+    void IncomingFrame(const webrtc::I420VideoFrame& frame) override {
+      last_capture_time_ = frame.render_time_ms();
       ++incoming_frame_num_;
-      return 0;
     }
 
    private:
@@ -498,6 +505,8 @@ class FakeWebRtcVideoEngine
       return channels_.find(channel)->second->rtp_offset_send_id_;
     } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
       return channels_.find(channel)->second->rtp_absolute_send_time_send_id_;
+    } else if (extension == kRtpVideoRotationHeaderExtension) {
+      return channels_.find(channel)->second->rtp_video_rotation_send_id_;
     }
     return -1;
   }
@@ -508,6 +517,8 @@ class FakeWebRtcVideoEngine
     } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
       return
           channels_.find(channel)->second->rtp_absolute_send_time_receive_id_;
+    } else if (extension == kRtpVideoRotationHeaderExtension) {
+      return channels_.find(channel)->second->rtp_video_rotation_receive_id_;
     }
     return -1;
   }
@@ -590,20 +601,27 @@ class FakeWebRtcVideoEngine
   bool ExternalEncoderRegistered(int channel,
                                  unsigned int pl_type) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->
-        ext_encoder_pl_types_.count(pl_type) != 0;
+    return channels_.find(channel)->second->ext_encoders_.count(pl_type) != 0;
   };
   int GetNumExternalEncoderRegistered(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
     return static_cast<int>(
-        channels_.find(channel)->second->ext_encoder_pl_types_.size());
+        channels_.find(channel)->second->ext_encoders_.size());
+  };
+  bool ExternalEncoderHasInternalSource(int channel,
+                                        unsigned int pl_type) const {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    ASSERT(channels_.find(channel)->second->ext_encoders_.count(pl_type) != 0);
+    return channels_.find(channel)
+        ->second->ext_encoders_[pl_type]
+        .internal_source;
   };
   int GetTotalNumExternalEncoderRegistered() const {
     std::map<int, Channel*>::const_iterator it;
     int total_num_registered = 0;
     for (it = channels_.begin(); it != channels_.end(); ++it)
       total_num_registered +=
-          static_cast<int>(it->second->ext_encoder_pl_types_.size());
+          static_cast<int>(it->second->ext_encoders_.size());
     return total_num_registered;
   }
   void SetSendBitrates(int channel, unsigned int video_bitrate,
@@ -681,6 +699,13 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_STUB(CreateChannelWithoutDefaultEncoder, (int&, int original_channel));
+  webrtc::ChannelGroup* GetChannelGroup(int channel_id) override {
+    return nullptr;
+  }
+  webrtc::ViEChannel* GetChannel(int channel_id) override { return nullptr; }
+  webrtc::ViEEncoder* GetEncoder(int channel_id) override { return nullptr; }
+  webrtc::ViERenderManager* GetRenderManager() override { return nullptr; }
+
   WEBRTC_FUNC(CreateReceiveChannel, (int& channel, int original_channel)) {
     return CreateChannel(channel, original_channel);
   }
@@ -799,6 +824,9 @@ class FakeWebRtcVideoEngine
       unsigned int&, unsigned int&));
   WEBRTC_STUB_CONST(GetReceiveSideDelay, (const int video_channel,
                                           int* delay_ms));
+  virtual uint32_t GetLastObservedBitrateBps(int channel) const override {
+    return 0;
+  }
   WEBRTC_FUNC_CONST(GetCodecTargetBitrate, (const int channel,
       unsigned int* codec_target_bitrate)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -891,6 +919,7 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(DeregisterObserver, (const int));
 
   // webrtc::ViENetwork
+  WEBRTC_VOID_STUB(SetBitrateConfig, (int, int, int, int));
   WEBRTC_VOID_FUNC(SetNetworkTransmissionState, (const int channel,
                                                  const bool is_transmitting)) {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -1102,25 +1131,36 @@ class FakeWebRtcVideoEngine
   WEBRTC_FUNC(SetSendTimestampOffsetStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_offset_send_id_ = (enable) ? id : -1;
+    channels_[channel]->rtp_offset_send_id_ = enable? id : -1;
     return 0;
   }
   WEBRTC_FUNC(SetReceiveTimestampOffsetStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_offset_receive_id_ = (enable) ? id : -1;
+    channels_[channel]->rtp_offset_receive_id_ = enable? id : -1;
     return 0;
   }
   WEBRTC_FUNC(SetSendAbsoluteSendTimeStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_absolute_send_time_send_id_ = (enable) ? id : -1;
+    channels_[channel]->rtp_absolute_send_time_send_id_ = enable? id : -1;
     return 0;
   }
   WEBRTC_FUNC(SetReceiveAbsoluteSendTimeStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_absolute_send_time_receive_id_ = (enable) ? id : -1;
+    channels_[channel]->rtp_absolute_send_time_receive_id_ = enable? id : -1;
+    return 0;
+  }
+  WEBRTC_FUNC(SetSendVideoRotationStatus, (int channel, bool enable, int id)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->rtp_video_rotation_send_id_ = enable? id : -1;
+    return 0;
+  }
+  WEBRTC_FUNC(SetReceiveVideoRotationStatus,
+              (int channel, bool enable, int id)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->rtp_video_rotation_receive_id_ = enable? id : -1;
     return 0;
   }
   WEBRTC_STUB(SetRtcpXrRrtrStatus, (int, bool));
@@ -1136,8 +1176,10 @@ class FakeWebRtcVideoEngine
         reserved_transmit_bitrate_bps;
     return 0;
   }
-  WEBRTC_STUB_CONST(GetRtcpPacketTypeCounters, (int,
-      webrtc::RtcpPacketTypeCounter*, webrtc::RtcpPacketTypeCounter*));
+  WEBRTC_STUB_CONST(GetSendRtcpPacketTypeCounter, (int,
+      webrtc::RtcpPacketTypeCounter*));
+  WEBRTC_STUB_CONST(GetReceiveRtcpPacketTypeCounter, (int,
+      webrtc::RtcpPacketTypeCounter*));
   WEBRTC_STUB_CONST(GetReceivedRTCPStatistics, (const int, unsigned short&,
       unsigned int&, unsigned int&, unsigned int&, int64_t&));
   WEBRTC_STUB_CONST(GetSentRTCPStatistics, (const int, unsigned short&,
@@ -1250,16 +1292,20 @@ class FakeWebRtcVideoEngine
   WEBRTC_VOID_STUB(DeRegisterPreRenderCallback, (int));
   // webrtc::ViEExternalCodec
   WEBRTC_FUNC(RegisterExternalSendCodec,
-      (const int channel, const unsigned char pl_type, webrtc::VideoEncoder*,
-          bool)) {
+              (const int channel,
+               const unsigned char pl_type,
+               webrtc::VideoEncoder*,
+               bool internal_source)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->ext_encoder_pl_types_.insert(pl_type);
+    ExternalEncoderInfo info;
+    info.internal_source = internal_source;
+    channels_[channel]->ext_encoders_[pl_type] = info;
     return 0;
   }
   WEBRTC_FUNC(DeRegisterExternalSendCodec,
       (const int channel, const unsigned char pl_type)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->ext_encoder_pl_types_.erase(pl_type);
+    channels_[channel]->ext_encoders_.erase(pl_type);
     return 0;
   }
   WEBRTC_FUNC(RegisterExternalReceiveCodec,

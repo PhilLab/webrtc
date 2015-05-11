@@ -182,21 +182,6 @@ private:
     virtual int32_t MicrophoneIsAvailable(bool& available);
     virtual int32_t SpeakerIsAvailable(bool& available);
 
-    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect)
-    {
-        _critSect.Enter();
-    }
-    ;
-    void UnLock() UNLOCK_FUNCTION(_critSect)
-    {
-        _critSect.Leave();
-    }
-    ;
-    int32_t Id()
-    {
-        return _id;
-    }
-
     static void AtomicSet32(int32_t* theValue, int32_t newValue);
     static int32_t AtomicGet32(int32_t* theValue);
 
@@ -214,6 +199,10 @@ private:
 
     int32_t InitDevice(uint16_t userDeviceIndex,
                        AudioDeviceID& deviceId, bool isInput);
+
+    // Always work with our preferred playout format inside VoE.
+    // Then convert the output to the OS setting using an AudioConverter.
+    OSStatus SetDesiredPlayoutFormat();
 
     static OSStatus
         objectListenerProc(AudioObjectID objectId, UInt32 numberAddresses,
@@ -295,11 +284,9 @@ private:
 
     // Only valid/running between calls to StartRecording and StopRecording.
     rtc::scoped_ptr<ThreadWrapper> capture_worker_thread_;
-    unsigned int capture_worker_thread_id_;
 
     // Only valid/running between calls to StartPlayout and StopPlayout.
     rtc::scoped_ptr<ThreadWrapper> render_worker_thread_;
-    unsigned int render_worker_thread_id_;
 
     int32_t _id;
 

@@ -24,6 +24,8 @@
         '../../../../webrtc/test/test.gyp:channel_transport',
         '../../../../webrtc/test/test.gyp:field_trial',
         '../../../../webrtc/system_wrappers/system_wrappers.gyp:field_trial_default',
+        '../../../../talk/libjingle.gyp:libjingle_media',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -49,7 +51,7 @@
             'Package.appxmanifest',
           ],
         }],
-        ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+        ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
           'sources': [
             'Generated Manifest Win10\AppxManifest.xml',
             'Package.win10.appxmanifest',
@@ -68,13 +70,13 @@
                  'SplashScreen480x800.png',
               ],
             }],
-            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone" and winrt_platform!="win10"', {
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
               'files': [
                 'Generated Manifest\AppxManifest.xml',
                 'SplashScreen.png',
               ],
             }],
-            ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
               'files': [
                 'Generated Manifest Win10\AppxManifest.xml',
                 'SplashScreen.png',

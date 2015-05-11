@@ -40,6 +40,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
 
 namespace {
 
@@ -339,8 +340,7 @@ bool PeerConnection::Initialize(
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
   int portallocator_flags = port_allocator_->flags();
-  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-                         cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                          cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                          cricket::PORTALLOCATOR_ENABLE_IPV6;
   bool value;
@@ -350,10 +350,18 @@ bool PeerConnection::Initialize(
     if (!value) {
       portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
     }
-  } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
+  }
+#if defined(WINRT)
+  else if (webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-IPv6Default") ==
              "Disabled") {
     portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
+#else
+  else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
+	  "Disabled") {
+	  portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+  }
+#endif
 
   port_allocator_->set_flags(portallocator_flags);
   // No step delay is used while allocating ports.

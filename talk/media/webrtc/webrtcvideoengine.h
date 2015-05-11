@@ -128,8 +128,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<> {
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
   void SetLogging(int min_sev, const char* filter);
 
-  sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
-
   // Set a WebRtcVideoDecoderFactory for external decoding. Video engine does
   // not take the ownership of |decoder_factory|. The caller needs to make sure
   // that |decoder_factory| outlives the video engine.
@@ -152,7 +150,12 @@ class WebRtcVideoEngine : public sigslot::has_slots<> {
   // Returns an external encoder for the given codec type. The return value
   // can be NULL if encoder factory is not given or it does not support the
   // codec type. The caller takes the ownership of the returned object.
-  webrtc::VideoEncoder* CreateExternalEncoder(webrtc::VideoCodecType type);
+  // On success, |internal_source| is set to true if the encoder has an internal
+  // frame source, meaning that it doesn't expect/require frames through the
+  // normal camera pipeline. See ViEExternalCodec::RegisterExternalSendCodec for
+  // more information.
+  webrtc::VideoEncoder* CreateExternalEncoder(webrtc::VideoCodecType type,
+                                              bool* internal_source);
   // Releases the encoder instance created by CreateExternalEncoder().
   void DestroyExternalEncoder(webrtc::VideoEncoder* encoder);
 
@@ -174,8 +177,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<> {
   bool ConvertFromCricketVideoCodec(const VideoCodec& in_codec,
                                     webrtc::VideoCodec* out_codec);
   int GetNumOfChannels();
-
-  VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
 
   rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
@@ -534,6 +535,7 @@ class WebRtcSimulcastEncoderFactory
   webrtc::VideoEncoder* CreateVideoEncoder(
       webrtc::VideoCodecType type) override;
   const std::vector<VideoCodec>& codecs() const override;
+  bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const override;
   void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:

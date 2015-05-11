@@ -39,29 +39,31 @@ using webrtc::kVPlane;
 
 namespace cricket {
 
-WebRtcVideoFrame::WebRtcVideoFrame() {}
+WebRtcVideoFrame::WebRtcVideoFrame():
+    pixel_width_(0),
+    pixel_height_(0),
+    elapsed_time_ns_(0),
+    time_stamp_ns_(0),
+    rotation_(webrtc::kVideoRotation_0) {}
+
+WebRtcVideoFrame::WebRtcVideoFrame(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+    int64_t elapsed_time_ns,
+    int64_t time_stamp_ns,
+    webrtc::VideoRotation rotation)
+    : video_frame_buffer_(buffer),
+      pixel_width_(1),
+      pixel_height_(1),
+      elapsed_time_ns_(elapsed_time_ns),
+      time_stamp_ns_(time_stamp_ns),
+      rotation_(rotation) {
+}
 
 WebRtcVideoFrame::WebRtcVideoFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
     int64_t elapsed_time_ns,
     int64_t time_stamp_ns)
     : video_frame_buffer_(buffer),
-      pixel_width_(1),
-      pixel_height_(1),
-      elapsed_time_ns_(elapsed_time_ns),
-      time_stamp_ns_(time_stamp_ns),
-      rotation_(webrtc::kVideoRotation_0) {
-}
-
-WebRtcVideoFrame::WebRtcVideoFrame(webrtc::NativeHandle* handle,
-                                   int width,
-                                   int height,
-                                   int64_t elapsed_time_ns,
-                                   int64_t time_stamp_ns)
-    : video_frame_buffer_(
-          new rtc::RefCountedObject<webrtc::TextureBuffer>(handle,
-                                                           width,
-                                                           height)),
       pixel_width_(1),
       pixel_height_(1),
       elapsed_time_ns_(elapsed_time_ns),
@@ -164,12 +166,16 @@ void* WebRtcVideoFrame::GetNativeHandle() const {
   return video_frame_buffer_ ? video_frame_buffer_->native_handle() : nullptr;
 }
 
+rtc::scoped_refptr<webrtc::VideoFrameBuffer>
+WebRtcVideoFrame::GetVideoFrameBuffer() const {
+  return video_frame_buffer_;
+}
+
 VideoFrame* WebRtcVideoFrame::Copy() const {
   WebRtcVideoFrame* new_frame = new WebRtcVideoFrame(
-      video_frame_buffer_, elapsed_time_ns_, time_stamp_ns_);
+      video_frame_buffer_, elapsed_time_ns_, time_stamp_ns_, rotation_);
   new_frame->pixel_width_ = pixel_width_;
   new_frame->pixel_height_ = pixel_height_;
-  new_frame->rotation_ = rotation_;
   return new_frame;
 }
 
@@ -221,12 +227,6 @@ bool WebRtcVideoFrame::Reset(uint32 format,
   }
   // Translate aliases to standard enums (e.g., IYUV -> I420).
   format = CanonicalFourCC(format);
-
-  // Round display width and height down to multiple of 4, to avoid webrtc
-  // size calculation error on odd sizes.
-  // TODO(Ronghua): Remove this once the webrtc allocator is fixed.
-  dw = (dw > 4) ? (dw & ~3) : dw;
-  dh = (dh > 4) ? (dh & ~3) : dh;
 
   // Set up a new buffer.
   // TODO(fbarchard): Support lazy allocation.
@@ -286,6 +286,51 @@ void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
   elapsed_time_ns_ = elapsed_time_ns;
   time_stamp_ns_ = time_stamp_ns;
   rotation_ = webrtc::kVideoRotation_0;
+}
+
+const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
+  // If the frame is not rotated, the caller should reuse this frame instead of
+  // making a redundant copy.
+  if (GetVideoRotation() == webrtc::kVideoRotation_0) {
+    return this;
+  }
+
+  // If the video frame is backed up by a native handle, it resides in the GPU
+  // memory which we can't rotate here. The assumption is that the renderers
+  // which uses GPU to render should be able to rotate themselves.
+  DCHECK(!GetNativeHandle());
+
+  if (rotated_frame_) {
+    return rotated_frame_.get();
+  }
+
+  int width = static_cast<int>(GetWidth());
+  int height = static_cast<int>(GetHeight());
+
+  int rotated_width = width;
+  int rotated_height = height;
+  if (GetVideoRotation() == webrtc::kVideoRotation_90 ||
+      GetVideoRotation() == webrtc::kVideoRotation_270) {
+    rotated_width = height;
+    rotated_height = width;
+  }
+
+  rotated_frame_.reset(CreateEmptyFrame(rotated_width, rotated_height,
+                                        GetPixelWidth(), GetPixelHeight(),
+                                        GetElapsedTime(), GetTimeStamp()));
+
+  // TODO(guoweis): Add a function in webrtc_libyuv.cc to convert from
+  // VideoRotation to libyuv::RotationMode.
+  int ret = libyuv::I420Rotate(
+      GetYPlane(), GetYPitch(), GetUPlane(), GetUPitch(), GetVPlane(),
+      GetVPitch(), rotated_frame_->GetYPlane(), rotated_frame_->GetYPitch(),
+      rotated_frame_->GetUPlane(), rotated_frame_->GetUPitch(),
+      rotated_frame_->GetVPlane(), rotated_frame_->GetVPitch(), width, height,
+      static_cast<libyuv::RotationMode>(GetVideoRotation()));
+  if (ret == 0) {
+    return rotated_frame_.get();
+  }
+  return nullptr;
 }
 
 }  // namespace cricket

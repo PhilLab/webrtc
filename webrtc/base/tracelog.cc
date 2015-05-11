@@ -12,7 +12,7 @@
 
 namespace rtc {
 
-TraceLog::TraceLog() : is_tracing_(false), offset_(0), tw_(NULL) {
+TraceLog::TraceLog() : is_tracing_(false), offset_(0), tw_() {
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
 }
@@ -21,7 +21,6 @@ TraceLog::~TraceLog() {
   if (tw_) {
     tw_->Stop();
     thread_->Stop();
-    delete tw_;
   }
 }
 
@@ -127,11 +126,10 @@ void TraceLog::Save(const std::string& addr, int port) {
   }
 
   if (tw_ == NULL) {
-    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages, thread_);
-    unsigned int id;
-    tw_->Start(id);
+    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages, thread_, "TraceLog");
+    tw_->Start();
 
-    LOG(LS_INFO) << "New thread created with id: " << id;
+    LOG(LS_INFO) << "New TraceLog thread created.";
   }
 
   AsyncSocket* sock =

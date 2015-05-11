@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/criticalsection.h"
 
@@ -54,7 +55,7 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
   std::ostringstream oss_;
   CriticalSection critical_section_;
   Thread* thread_;
-  webrtc::ThreadWrapper* tw_;
+  scoped_ptr<webrtc::ThreadWrapper> tw_;
 };
 
 }  // namespace rtc

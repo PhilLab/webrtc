@@ -16,6 +16,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
@@ -58,6 +59,7 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       receiving_(false),
       restored_packet_in_use_(false),
       receiving_ast_enabled_(false),
+      receiving_cvo_enabled_(false),
       last_packet_log_ms_(-1) {
   assert(remote_bitrate_estimator);
 }
@@ -149,18 +151,6 @@ RtpReceiver* ViEReceiver::GetRtpReceiver() const {
   return rtp_receiver_.get();
 }
 
-void ViEReceiver::RegisterSimulcastRtpRtcpModules(
-    const std::list<RtpRtcp*>& rtp_modules) {
-  CriticalSectionScoped cs(receive_cs_.get());
-  rtp_rtcp_simulcast_.clear();
-
-  if (!rtp_modules.empty()) {
-    rtp_rtcp_simulcast_.insert(rtp_rtcp_simulcast_.begin(),
-                               rtp_modules.begin(),
-                               rtp_modules.end());
-  }
-}
-
 bool ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
   if (enable) {
     return rtp_header_parser_->RegisterRtpHeaderExtension(
@@ -184,6 +174,22 @@ bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
     receiving_ast_enabled_ = false;
     return rtp_header_parser_->DeregisterRtpHeaderExtension(
         kRtpExtensionAbsoluteSendTime);
+  }
+}
+
+bool ViEReceiver::SetReceiveVideoRotationStatus(bool enable, int id) {
+  if (enable) {
+    if (rtp_header_parser_->RegisterRtpHeaderExtension(
+            kRtpExtensionVideoRotation, id)) {
+      receiving_cvo_enabled_ = true;
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    receiving_cvo_enabled_ = false;
+    return rtp_header_parser_->DeregisterRtpHeaderExtension(
+        kRtpExtensionVideoRotation);
   }
 }
 
@@ -382,6 +388,11 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
     return;
   }
   rtp_header.type.Video.codec = payload_specific.Video.videoCodecType;
+  rtp_header.type.Video.rotation = kVideoRotation_0;
+  if (header.extension.hasVideoRotation) {
+    rtp_header.type.Video.rotation =
+        ConvertCVOByteToVideoRotation(header.extension.videoRotation);
+  }
   OnReceivedPayloadData(NULL, 0, &rtp_header);
 }
 
@@ -395,12 +406,6 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
 
     if (rtp_dump_) {
       rtp_dump_->DumpPacket(rtcp_packet, rtcp_packet_length);
-    }
-
-    std::list<RtpRtcp*>::iterator it = rtp_rtcp_simulcast_.begin();
-    while (it != rtp_rtcp_simulcast_.end()) {
-      RtpRtcp* rtp_rtcp = *it++;
-      rtp_rtcp->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
     }
   }
   assert(rtp_rtcp_);  // Should be set by owner at construction time.

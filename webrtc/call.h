@@ -62,14 +62,11 @@ class Call {
   };
   struct Config {
     explicit Config(newapi::Transport* send_transport)
-        : webrtc_config(NULL),
-          send_transport(send_transport),
+        : send_transport(send_transport),
           voice_engine(NULL),
           overuse_callback(NULL) {}
 
     static const int kDefaultStartBitrateBps;
-
-    webrtc::Config* webrtc_config;
 
     newapi::Transport* send_transport;
 
@@ -82,9 +79,6 @@ class Call {
 
     // Bitrate config used until valid bitrate estimates are calculated. Also
     // used to cap total bitrate used.
-    // Note: This is currently set only for video and is per-stream rather of
-    // for the entire link.
-    // TODO(pbos): Set start bitrate for entire Call.
     struct BitrateConfig {
       BitrateConfig()
           : min_bitrate_bps(0),
@@ -93,7 +87,7 @@ class Call {
       int min_bitrate_bps;
       int start_bitrate_bps;
       int max_bitrate_bps;
-    } stream_bitrates;
+    } bitrate_config;
   };
 
   struct Stats {
@@ -110,9 +104,6 @@ class Call {
   };
 
   static Call* Create(const Call::Config& config);
-
-  static Call* Create(const Call::Config& config,
-                      const webrtc::Config& webrtc_config);
 
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,

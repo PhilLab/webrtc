@@ -30,6 +30,7 @@ class BweSender : public Module {
 
   virtual int GetFeedbackIntervalMs() const = 0;
   virtual void GiveFeedback(const FeedbackPacket& feedback) = 0;
+  virtual void OnPacketsSent(const Packets& packets) = 0;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BweSender);
@@ -52,7 +53,8 @@ enum BandwidthEstimatorType {
   kNullEstimator,
   kNadaEstimator,
   kRembEstimator,
-  kFullSendSideEstimator
+  kFullSendSideEstimator,
+  kTcpEstimator
 };
 
 int64_t GetAbsSendTimeInMs(uint32_t abs_send_time);

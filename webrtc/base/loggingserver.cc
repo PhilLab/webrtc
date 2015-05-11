@@ -27,17 +27,14 @@ LoggingServer::~LoggingServer() {
 
   tw_->Stop();
   thread_->Stop();
-
-  delete tw_;
 }
 
 int LoggingServer::Listen(const SocketAddress& addr, int level) {
   level_ = level;
-  tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_);
-  unsigned int id;
-  tw_->Start(id);
+  tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_, "LoggingServer");
+  tw_->Start();
 
-  LOG(LS_INFO) << "New thread created with id: " << id;
+  LOG(LS_INFO) << "New LoggingServer thread created.";
 
   AsyncSocket* sock =
     thread_->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);

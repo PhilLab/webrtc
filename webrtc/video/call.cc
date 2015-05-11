@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
 #include <string.h>
 
 #include <map>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
@@ -41,10 +41,12 @@ namespace webrtc {
 const char* RtpExtension::kTOffset = "urn:ietf:params:rtp-hdrext:toffset";
 const char* RtpExtension::kAbsSendTime =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+const char* RtpExtension::kVideoRotation = "urn:3gpp:video-orientation";
 
 bool RtpExtension::IsSupported(const std::string& name) {
   return name == webrtc::RtpExtension::kTOffset ||
-         name == webrtc::RtpExtension::kAbsSendTime;
+         name == webrtc::RtpExtension::kAbsSendTime ||
+         name == webrtc::RtpExtension::kVideoRotation;
 }
 
 VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
@@ -54,8 +56,8 @@ VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
     case kVp9:
       return VP9Encoder::Create();
   }
-  assert(false);
-  return NULL;
+  RTC_NOTREACHED();
+  return nullptr;
 }
 
 VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
@@ -65,8 +67,8 @@ VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
     case kVp9:
       return VP9Decoder::Create();
   }
-  assert(false);
-  return NULL;
+  RTC_NOTREACHED();
+  return nullptr;
 }
 
 const int Call::Config::kDefaultStartBitrateBps = 300000;
@@ -78,7 +80,7 @@ class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
   explicit CpuOveruseObserverProxy(LoadObserver* overuse_callback)
       : crit_(CriticalSectionWrapper::CreateCriticalSection()),
         overuse_callback_(overuse_callback) {
-    assert(overuse_callback != NULL);
+    DCHECK(overuse_callback != nullptr);
   }
 
   virtual ~CpuOveruseObserverProxy() {}
@@ -140,9 +142,11 @@ class Call : public webrtc::Call, public PacketReceiver {
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_
       GUARDED_BY(receive_crit_);
+  std::set<VideoReceiveStream*> receive_streams_ GUARDED_BY(receive_crit_);
 
   rtc::scoped_ptr<RWLockWrapper> send_crit_;
   std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_crit_);
+  std::set<VideoSendStream*> send_streams_ GUARDED_BY(send_crit_);
 
   rtc::scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
@@ -153,7 +157,9 @@ class Call : public webrtc::Call, public PacketReceiver {
   ViECodec* codec_;
   ViERender* render_;
   ViEBase* base_;
+  ViENetwork* network_;
   int base_channel_id_;
+  ChannelGroup* channel_group_;
 
   rtc::scoped_ptr<VideoRender> external_render_;
 
@@ -162,10 +168,8 @@ class Call : public webrtc::Call, public PacketReceiver {
 }  // namespace internal
 
 Call* Call::Create(const Call::Config& config) {
-  VideoEngine* video_engine = config.webrtc_config != NULL
-                                  ? VideoEngine::Create(*config.webrtc_config)
-                                  : VideoEngine::Create();
-  assert(video_engine != NULL);
+  VideoEngine* video_engine = VideoEngine::Create();
+  DCHECK(video_engine != nullptr);
 
   return new internal::Call(video_engine, config);
 }
@@ -181,16 +185,16 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
       video_engine_(video_engine),
       base_channel_id_(-1),
       external_render_(
-          VideoRender::CreateVideoRender(42, NULL, false, kRenderExternal)) {
-  assert(video_engine != NULL);
-  assert(config.send_transport != NULL);
+          VideoRender::CreateVideoRender(42, nullptr, false, kRenderExternal)) {
+  DCHECK(video_engine != nullptr);
+  DCHECK(config.send_transport != nullptr);
 
-  assert(config.stream_bitrates.min_bitrate_bps >= 0);
-  assert(config.stream_bitrates.start_bitrate_bps >=
-         config.stream_bitrates.min_bitrate_bps);
-  if (config.stream_bitrates.max_bitrate_bps != -1) {
-    assert(config.stream_bitrates.max_bitrate_bps >=
-           config.stream_bitrates.start_bitrate_bps);
+  DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
+  DCHECK_GE(config.bitrate_config.start_bitrate_bps,
+            config.bitrate_config.min_bitrate_bps);
+  if (config.bitrate_config.max_bitrate_bps != -1) {
+    DCHECK_GE(config.bitrate_config.max_bitrate_bps,
+              config.bitrate_config.start_bitrate_bps);
   }
 
   if (config.overuse_callback) {
@@ -199,35 +203,48 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   }
 
   render_ = ViERender::GetInterface(video_engine_);
-  assert(render_ != NULL);
+  DCHECK(render_ != nullptr);
 
   render_->RegisterVideoRenderModule(*external_render_.get());
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
-  assert(rtp_rtcp_ != NULL);
+  DCHECK(rtp_rtcp_ != nullptr);
 
   codec_ = ViECodec::GetInterface(video_engine_);
-  assert(codec_ != NULL);
+  DCHECK(codec_ != nullptr);
+
+  network_ = ViENetwork::GetInterface(video_engine_);
 
   // As a workaround for non-existing calls in the old API, create a base
   // channel used as default channel when creating send and receive streams.
   base_ = ViEBase::GetInterface(video_engine_);
-  assert(base_ != NULL);
+  DCHECK(base_ != nullptr);
 
   base_->CreateChannel(base_channel_id_);
-  assert(base_channel_id_ != -1);
+  DCHECK(base_channel_id_ != -1);
+  channel_group_ = base_->GetChannelGroup(base_channel_id_);
+
+  network_->SetBitrateConfig(base_channel_id_,
+                             config_.bitrate_config.min_bitrate_bps,
+                             config_.bitrate_config.start_bitrate_bps,
+                             config_.bitrate_config.max_bitrate_bps);
 }
 
 Call::~Call() {
+  CHECK_EQ(0u, send_ssrcs_.size());
+  CHECK_EQ(0u, send_streams_.size());
+  CHECK_EQ(0u, receive_ssrcs_.size());
+  CHECK_EQ(0u, receive_streams_.size());
   base_->DeleteChannel(base_channel_id_);
 
   render_->DeRegisterVideoRenderModule(*external_render_.get());
 
   base_->Release();
+  network_->Release();
   codec_->Release();
   render_->Release();
   rtp_rtcp_->Release();
-  webrtc::VideoEngine::Delete(video_engine_);
+  CHECK(webrtc::VideoEngine::Delete(video_engine_));
 }
 
 PacketReceiver* Call::Receiver() { return this; }
@@ -237,21 +254,21 @@ VideoSendStream* Call::CreateVideoSendStream(
     const VideoEncoderConfig& encoder_config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   LOG(LS_INFO) << "CreateVideoSendStream: " << config.ToString();
-  assert(config.rtp.ssrcs.size() > 0);
+  DCHECK(!config.rtp.ssrcs.empty());
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
       config_.send_transport, overuse_observer_proxy_.get(), video_engine_,
-      config, encoder_config, suspended_send_ssrcs_, base_channel_id_,
-      config_.stream_bitrates);
+      config, encoder_config, suspended_send_ssrcs_, base_channel_id_);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
   CriticalSectionScoped lock(network_enabled_crit_.get());
   WriteLockScoped write_lock(*send_crit_);
+  send_streams_.insert(send_stream);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {
-    assert(send_ssrcs_.find(config.rtp.ssrcs[i]) == send_ssrcs_.end());
+    DCHECK(send_ssrcs_.find(config.rtp.ssrcs[i]) == send_ssrcs_.end());
     send_ssrcs_[config.rtp.ssrcs[i]] = send_stream;
   }
   if (!network_enabled_)
@@ -261,11 +278,11 @@ VideoSendStream* Call::CreateVideoSendStream(
 
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoSendStream");
-  assert(send_stream != NULL);
+  DCHECK(send_stream != nullptr);
 
   send_stream->Stop();
 
-  VideoSendStream* send_stream_impl = NULL;
+  VideoSendStream* send_stream_impl = nullptr;
   {
     WriteLockScoped write_lock(*send_crit_);
     std::map<uint32_t, VideoSendStream*>::iterator it = send_ssrcs_.begin();
@@ -277,7 +294,9 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
         ++it;
       }
     }
+    send_streams_.erase(send_stream_impl);
   }
+  CHECK(send_stream_impl != nullptr);
 
   VideoSendStream::RtpStateMap rtp_state = send_stream_impl->GetRtpStates();
 
@@ -287,7 +306,6 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
     suspended_send_ssrcs_[it->first] = it->second;
   }
 
-  assert(send_stream_impl != NULL);
   delete send_stream_impl;
 }
 
@@ -297,6 +315,7 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
   LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream =
       new VideoReceiveStream(video_engine_,
+                             channel_group_,
                              config,
                              config_.send_transport,
                              config_.voice_engine,
@@ -306,13 +325,14 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
   // while changing network state.
   CriticalSectionScoped lock(network_enabled_crit_.get());
   WriteLockScoped write_lock(*receive_crit_);
-  assert(receive_ssrcs_.find(config.rtp.remote_ssrc) == receive_ssrcs_.end());
+  DCHECK(receive_ssrcs_.find(config.rtp.remote_ssrc) == receive_ssrcs_.end());
   receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
   // TODO(pbos): Configure different RTX payloads per receive payload.
   VideoReceiveStream::Config::Rtp::RtxMap::const_iterator it =
       config.rtp.rtx.begin();
   if (it != config.rtp.rtx.end())
     receive_ssrcs_[it->second.ssrc] = receive_stream;
+  receive_streams_.insert(receive_stream);
 
   if (!network_enabled_)
     receive_stream->SignalNetworkState(kNetworkDown);
@@ -322,9 +342,9 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
 void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
-  assert(receive_stream != NULL);
+  DCHECK(receive_stream != nullptr);
 
-  VideoReceiveStream* receive_stream_impl = NULL;
+  VideoReceiveStream* receive_stream_impl = nullptr;
   {
     WriteLockScoped write_lock(*receive_crit_);
     // Remove all ssrcs pointing to a receive stream. As RTX retransmits on a
@@ -333,17 +353,17 @@ void Call::DestroyVideoReceiveStream(
         receive_ssrcs_.begin();
     while (it != receive_ssrcs_.end()) {
       if (it->second == static_cast<VideoReceiveStream*>(receive_stream)) {
-        assert(receive_stream_impl == NULL ||
-            receive_stream_impl == it->second);
+        if (receive_stream_impl != nullptr)
+          DCHECK(receive_stream_impl == it->second);
         receive_stream_impl = it->second;
         receive_ssrcs_.erase(it++);
       } else {
         ++it;
       }
     }
+    receive_streams_.erase(receive_stream_impl);
   }
-
-  assert(receive_stream_impl != NULL);
+  CHECK(receive_stream_impl != nullptr);
   delete receive_stream_impl;
 }
 
@@ -375,26 +395,23 @@ Call::Stats Call::GetStats() const {
 void Call::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
   TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
-  assert(bitrate_config.min_bitrate_bps >= 0);
-  assert(bitrate_config.max_bitrate_bps == -1 ||
-         bitrate_config.max_bitrate_bps > 0);
-  if (config_.stream_bitrates.min_bitrate_bps ==
+  DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
+  if (bitrate_config.max_bitrate_bps != -1)
+    DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
+  if (config_.bitrate_config.min_bitrate_bps ==
           bitrate_config.min_bitrate_bps &&
       (bitrate_config.start_bitrate_bps <= 0 ||
-       config_.stream_bitrates.start_bitrate_bps ==
+       config_.bitrate_config.start_bitrate_bps ==
            bitrate_config.start_bitrate_bps) &&
-      config_.stream_bitrates.max_bitrate_bps ==
+      config_.bitrate_config.max_bitrate_bps ==
           bitrate_config.max_bitrate_bps) {
     // Nothing new to set, early abort to avoid encoder reconfigurations.
     return;
   }
-  config_.stream_bitrates = bitrate_config;
-  ReadLockScoped read_lock(*send_crit_);
-  for (std::map<uint32_t, VideoSendStream*>::const_iterator it =
-           send_ssrcs_.begin();
-       it != send_ssrcs_.end(); ++it) {
-    it->second->SetBitrateConfig(bitrate_config);
-  }
+  config_.bitrate_config = bitrate_config;
+  network_->SetBitrateConfig(base_channel_id_, bitrate_config.min_bitrate_bps,
+                             bitrate_config.start_bitrate_bps,
+                             bitrate_config.max_bitrate_bps);
 }
 
 void Call::SignalNetworkState(NetworkState state) {
@@ -431,22 +448,15 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(const uint8_t* packet,
   bool rtcp_delivered = false;
   {
     ReadLockScoped read_lock(*receive_crit_);
-    for (std::map<uint32_t, VideoReceiveStream*>::iterator it =
-             receive_ssrcs_.begin();
-         it != receive_ssrcs_.end();
-         ++it) {
-      if (it->second->DeliverRtcp(packet, length))
+    for (VideoReceiveStream* stream : receive_streams_) {
+      if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
     }
   }
-
   {
     ReadLockScoped read_lock(*send_crit_);
-    for (std::map<uint32_t, VideoSendStream*>::iterator it =
-             send_ssrcs_.begin();
-         it != send_ssrcs_.end();
-         ++it) {
-      if (it->second->DeliverRtcp(packet, length))
+    for (VideoSendStream* stream : send_streams_) {
+      if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
     }
   }

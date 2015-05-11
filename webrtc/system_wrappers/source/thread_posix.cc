@@ -62,31 +62,20 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
   return low_prio;
 }
 
-struct ThreadPosix::InitParams {
-  InitParams(ThreadPosix* thread)
-      : me(thread), started(EventWrapper::Create()) {
-  }
-  ThreadPosix* me;
-  rtc::scoped_ptr<EventWrapper> started;
-};
-
 // static
 void* ThreadPosix::StartThread(void* param) {
-  auto params = static_cast<InitParams*>(param);
-  params->me->Run(params);
+  static_cast<ThreadPosix*>(param)->Run();
   return 0;
 }
 
-ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
-                         ThreadPriority prio, const char* thread_name)
+ThreadPosix::ThreadPosix(ThreadRunFunction func, void* obj,
+                         const char* thread_name)
     : run_function_(func),
       obj_(obj),
-      prio_(prio),
-      stop_event_(true, false),
+      stop_event_(false, false),
       name_(thread_name ? thread_name : "webrtc"),
-      thread_id_(0),
       thread_(0) {
-  DCHECK(name_.length() < kThreadMaxNameLength);
+  DCHECK(name_.length() < 64);
 }
 
 uint32_t ThreadWrapper::GetThreadId() {
@@ -97,44 +86,69 @@ ThreadPosix::~ThreadPosix() {
   DCHECK(thread_checker_.CalledOnValidThread());
 }
 
-bool ThreadPosix::Start(unsigned int& thread_id) {
+// TODO(pbos): Make Start void, calling code really doesn't support failures
+// here.
+bool ThreadPosix::Start() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!thread_id_) << "Thread already started?";
+  DCHECK(!thread_) << "Thread already started?";
 
   ThreadAttributes attr;
   // Set the stack stack size to 1M.
   pthread_attr_setstacksize(&attr, 1024 * 1024);
-
-  InitParams params(this);
-  int result = pthread_create(&thread_, &attr, &StartThread, &params);
-  if (result != 0)
-    return false;
-
-  CHECK_EQ(kEventSignaled, params.started->Wait(WEBRTC_EVENT_INFINITE));
-  DCHECK_NE(thread_id_, 0);
-
-  thread_id = thread_id_;
-
+  CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
   return true;
 }
 
 bool ThreadPosix::Stop() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (!thread_id_)
+  if (!thread_)
     return true;
 
   stop_event_.Set();
   CHECK_EQ(0, pthread_join(thread_, nullptr));
-  thread_id_ = 0;
-  stop_event_.Reset();
+  thread_ = 0;
 
   return true;
 }
 
-void ThreadPosix::Run(ThreadPosix::InitParams* params) {
-  thread_id_ = rtc::CurrentThreadId();
-  params->started->Set();
+bool ThreadPosix::SetPriority(ThreadPriority priority) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  if (!thread_)
+    return false;
+#if defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
+  // TODO(tommi): Switch to the same mechanism as Chromium uses for
+  // changing thread priorities.
+  return true;
+#else
+#ifdef WEBRTC_THREAD_RR
+  const int policy = SCHED_RR;
+#else
+  const int policy = SCHED_FIFO;
+#endif
+  const int min_prio = sched_get_priority_min(policy);
+  const int max_prio = sched_get_priority_max(policy);
+  if (min_prio == -1 || max_prio == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                 "unable to retreive min or max priority for threads");
+    return false;
+  }
 
+  if (max_prio - min_prio <= 2)
+    return false;
+
+  sched_param param;
+  param.sched_priority = ConvertToSystemPriority(priority, min_prio, max_prio);
+  if (pthread_setschedparam(thread_, policy, &param) != 0) {
+    WEBRTC_TRACE(
+        kTraceError, kTraceUtility, -1, "unable to set thread priority");
+    return false;
+  }
+
+  return true;
+#endif  // defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
+}
+
+void ThreadPosix::Run() {
   if (!name_.empty()) {
     // Setting the thread name may fail (harmlessly) if running inside a
     // sandbox. Ignore failures if they happen.
@@ -143,27 +157,6 @@ void ThreadPosix::Run(ThreadPosix::InitParams* params) {
 #elif defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
     pthread_setname_np(name_.substr(0, 63).c_str());
 #endif
-  }
-
-#ifdef WEBRTC_THREAD_RR
-  const int policy = SCHED_RR;
-#else
-  const int policy = SCHED_FIFO;
-#endif
-  const int min_prio = sched_get_priority_min(policy);
-  const int max_prio = sched_get_priority_max(policy);
-  if ((min_prio == -1) || (max_prio == -1)) {
-    WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
-                 "unable to retreive min or max priority for threads");
-  }
-
-  if (max_prio - min_prio > 2) {
-    sched_param param;
-    param.sched_priority = ConvertToSystemPriority(prio_, min_prio, max_prio);
-    if (pthread_setschedparam(pthread_self(), policy, &param) != 0) {
-      WEBRTC_TRACE(
-          kTraceError, kTraceUtility, -1, "unable to set thread priority");
-    }
   }
 
   // It's a requirement that for successful thread creation that the run

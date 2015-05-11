@@ -41,7 +41,8 @@ enum {
 
 namespace webrtc {
 
-OpenSlesInput::OpenSlesInput(PlayoutDelayProvider* delay_provider)
+OpenSlesInput::OpenSlesInput(
+    PlayoutDelayProvider* delay_provider, AudioManager* audio_manager)
     : delay_provider_(delay_provider),
       initialized_(false),
       mic_initialized_(false),
@@ -470,16 +471,14 @@ void OpenSlesInput::RecorderSimpleBufferQueueCallbackHandler(
 }
 
 bool OpenSlesInput::StartCbThreads() {
-  rec_thread_.reset(ThreadWrapper::CreateThread(CbThread,
-                                                this,
-                                                kRealtimePriority,
-                                                "opensl_rec_thread"));
+  rec_thread_ = ThreadWrapper::CreateThread(CbThread, this,
+                                            "opensl_rec_thread");
   assert(rec_thread_.get());
-  unsigned int thread_id = 0;
-  if (!rec_thread_->Start(thread_id)) {
+  if (!rec_thread_->Start()) {
     assert(false);
     return false;
   }
+  rec_thread_->SetPriority(kRealtimePriority);
   OPENSL_RETURN_ON_FAILURE(
       (*sles_recorder_itf_)->SetRecordState(sles_recorder_itf_,
                                             SL_RECORDSTATE_RECORDING),
