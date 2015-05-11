@@ -153,7 +153,13 @@
           ],
           # 2 == /SUBSYSTEM:WINDOWS
           'SubSystem': '2',
-          'AdditionalOptions': [
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'AdditionalOptions': [
+                # Fixes linking for assembler opus source files 
+                '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
+              ],
+            }],
           ],
         },
       },
