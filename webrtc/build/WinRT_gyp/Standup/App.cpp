@@ -1085,7 +1085,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
           return;
         }
 
-#if defined(VOICE) && defined(VIDEO)
+#if defined(VOICE)
         error = videoBase_->ConnectAudioChannel(videoChannel_, voiceChannel_);
         if (error != 0) {
           webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
