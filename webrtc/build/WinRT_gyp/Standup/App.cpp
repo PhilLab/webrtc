@@ -556,7 +556,25 @@ namespace StandupWinRT
         stackPanel->Orientation = Orientation::Horizontal;
         viewBox->Child = stackPanel;
 
-        auto label = ref new TextBlock();
+				auto hostNames = Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
+				String^ ipAddress = "";
+				std::for_each(begin(hostNames), end(hostNames), [&](Windows::Networking::HostName^ hostname)
+				{
+					if (hostname->IPInformation != nullptr && hostname->IPInformation->PrefixLength->Value <= 32)
+					{
+						ipAddress = hostname->DisplayName;
+					}
+				});
+	
+				auto label = ref new TextBlock();
+
+				label->Text = ipAddress;
+
+				label->VerticalAlignment = VerticalAlignment::Center;
+				label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
+				stackPanel->Children->Append(label);
+
+        label = ref new TextBlock();
         label->Text = "IP: ";
         label->VerticalAlignment = VerticalAlignment::Center;
         label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
