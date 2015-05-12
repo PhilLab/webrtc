@@ -39,6 +39,9 @@ namespace cricket
 
   WinRTDeviceManager::~WinRTDeviceManager()
   {
+    if (initialized()) {
+      Terminate();
+    }
   }
 
   bool WinRTDeviceManager::Init()

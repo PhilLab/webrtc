@@ -3,7 +3,9 @@
 #include <collection.h>
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scopedptrcollection.h"
 #include "GlobalObserver.h"
+#include "DataChannel.h"
 
 using namespace Windows::Foundation;
 using namespace Windows::Foundation::Collections;
@@ -17,10 +19,14 @@ namespace webrtc_winrt_api_internal
 
 namespace webrtc_winrt_api
 {
+  ref class MediaStream;
+  ref class MediaStreamTrack;
+
+  [Windows::Foundation::Metadata::WebHostHidden]
   public ref class WebRTC sealed
   {
   public:
-    static void Initialize();
+    static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
 
   private:
     // This type is not meant to be created.
@@ -47,6 +53,16 @@ namespace webrtc_winrt_api
     offer,
     pranswer,
     answer,
+  };
+
+  public enum class RTCSignalingState
+  {
+    stable,
+    haveLocalOffer,
+    haveRemoteOffer,
+    haveLocalPranswer,
+    haveRemotePranswer,
+    closed
   };
 
   public ref class RTCIceServer sealed
@@ -81,12 +97,22 @@ namespace webrtc_winrt_api
     property String^ Sdp;
   };
 
+  // Events and delegates
+#if 1
+  // ------------------
   public ref class RTCPeerConnectionIceEvent sealed
   {
   public:
     property RTCIceCandidate^ Candidate;
   };
-  public delegate void RTCPeerConnectionIceEventDelegate(RTCPeerConnectionIceEvent^);
+
+  // ------------------
+  public ref class MediaStreamEvent sealed
+  {
+  public:
+    property MediaStream^ Stream;
+  };
+#endif
 
   public ref class RTCPeerConnection sealed
   {
@@ -98,16 +124,47 @@ namespace webrtc_winrt_api
     RTCPeerConnection(RTCConfiguration^ configuration);
 
     event RTCPeerConnectionIceEventDelegate^ OnIceCandidate;
+    event MediaStreamEventEventDelegate^ OnAddStream;
+    event MediaStreamEventEventDelegate^ OnRemoveStream;
+    event EventDelegate^ OnNegotiationNeeded;
+    event EventDelegate^ OnSignalingStateChange;
+    event RTCDataChannelEventDelegate^ OnDataChannel;
 
     IAsyncOperation<RTCSessionDescription^>^ CreateOffer();
+    IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
+    IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
+    IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
+    void AddStream(MediaStream^ stream);
+    RTCDataChannel^ CreateDataChannel(String^ label, RTCDataChannelInit^ init);
+    IAsyncAction^ AddIceCandidate(RTCIceCandidate^ candidate);
+
+    property RTCSessionDescription^ LocalDescription { RTCSessionDescription^ get(); }
+    property RTCSessionDescription^ RemoteDescription { RTCSessionDescription^ get(); }
+    property RTCSignalingState SignalingState { RTCSignalingState get(); }
 
   private:
 
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> _impl;
     webrtc_winrt_api_internal::GlobalObserver _observer;
 
-    typedef std::vector<rtc::scoped_refptr<webrtc_winrt_api_internal::OfferObserver>> OfferObservers;
-    OfferObservers _offerObservers;
+    typedef std::vector<rtc::scoped_refptr<webrtc_winrt_api_internal::CreateSdpObserver>> CreateSdpObservers;
+    typedef std::vector<rtc::scoped_refptr<webrtc_winrt_api_internal::SetSdpObserver>> SetSdpObservers;
+    typedef rtc::ScopedPtrCollection<webrtc_winrt_api_internal::DataChannelObserver> DataChannelObservers;
+    CreateSdpObservers _createSdpObservers;
+    SetSdpObservers _setSdpObservers;
+    DataChannelObservers _dataChannelObservers;
   };
 
+  namespace globals
+  {
+    extern rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> gPeerConnectionFactory;
+    // The worker thread for webrtc.
+    extern rtc::Thread gThread;
+
+    template <typename T>
+    T RunOnGlobalThread(std::function<T()> fn)
+    {
+      return gThread.Invoke<T, std::function<T()>>(fn);
+    }
+  }
 }

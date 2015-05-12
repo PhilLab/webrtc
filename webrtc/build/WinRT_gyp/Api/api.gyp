@@ -35,6 +35,11 @@
         'GlobalObserver.cc',
         'Marshalling.h',
         'Marshalling.cc',
+        'Media.h',
+        'Media.cc',
+        'DataChannel.h',
+        'DataChannel.cc',
+        'Delegates.h',
       ],
       'msvs_settings': {
         'VCLinkerTool': {

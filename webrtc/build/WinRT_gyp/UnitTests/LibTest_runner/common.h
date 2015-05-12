@@ -31,7 +31,6 @@
 
 // libsrtp tests
 #include "libSrtpTests\LibSrtpTestBase.h"
-
 #include "libSrtpTests\ReplayDriverTest.h"
 #include "libSrtpTests\RocDriverTest.h"
 #include "libSrtpTests\RtpwTest.h"
@@ -53,3 +52,6 @@
 #include "opusTests/OpusPaddingTest.h"
 #include "opusTests/OpusApiTest.h"
 
+//rtpPlayer tests
+#include "rtpPlayerTests/RtpPlayerTestBase.h"
+#include "rtpPlayerTests/RtpPlayerTest.h"

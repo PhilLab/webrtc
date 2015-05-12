@@ -5,10 +5,12 @@
 #include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
 #include "webrtc/base/event.h"
 #include <functional>
+#include <ppltasks.h>
 
 namespace webrtc_winrt_api
 {
   ref class RTCPeerConnection;
+  ref class RTCDataChannel;
 }
 
 namespace webrtc_winrt_api_internal
@@ -51,24 +53,47 @@ namespace webrtc_winrt_api_internal
   };
 
   // There is one of those per call to CreateOffer().
-  class OfferObserver : public webrtc::CreateSessionDescriptionObserver
+  class CreateSdpObserver : public webrtc::CreateSessionDescriptionObserver
   {
   public:
     // TODO: Get a handle on the async operation to unblock.
-    OfferObserver();
+    CreateSdpObserver(Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> tce);
 
     // CreateSessionDescriptionObserver implementation
     virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc);
     virtual void OnFailure(const std::string& error);
 
-    void Wait(
-      std::function<void(webrtc::SessionDescriptionInterface*)> onSuccess,
-      std::function<void(const std::string&)> onFailure);
+  private:
+    Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> _tce;
+  };
+
+  // There is one of those per call to CreateOffer().
+  class SetSdpObserver : public webrtc::SetSessionDescriptionObserver
+  {
+  public:
+    // TODO: Get a handle on the async operation to unblock.
+    SetSdpObserver(Concurrency::task_completion_event<void> tce);
+
+    // SetSessionDescriptionObserver implementation
+    virtual void OnSuccess();
+    virtual void OnFailure(const std::string& error);
 
   private:
-    std::string _error;
-    webrtc::SessionDescriptionInterface* _sdi;
-    rtc::Event _callbackHappened;
+    Concurrency::task_completion_event<void> _tce;
+  };
+
+  // There is one of those per call to CreateDataChannel().
+  class DataChannelObserver : public webrtc::DataChannelObserver
+  {
+  public:
+    DataChannelObserver(webrtc_winrt_api::RTCDataChannel^ channel);
+
+    // DataChannelObserver implementation
+    virtual void OnStateChange();
+    virtual void OnMessage(const webrtc::DataBuffer& buffer);
+
+  private:
+    webrtc_winrt_api::RTCDataChannel^ _channel;
   };
 }
 

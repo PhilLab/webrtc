@@ -34,6 +34,7 @@
         '../../../../../third_party/opus/opus.gyp:test_opus_api',
         '../../../../../third_party/opus/opus.gyp:test_opus_decode',
         '../../../../../third_party/opus/opus.gyp:test_opus_padding',
+        '../../../../modules/modules.gyp:rtp_player',
         '../../../../modules/modules.gyp:video_capture',
       ],
       'defines': [
@@ -96,6 +97,10 @@
         'opusTests/OpusApiTest.h',
         'opusTests/OpusTestBase.cpp',
         'opusTests/OpusTestBase.h',
+        'rtpPlayerTests/RtpPlayerTest.cpp',
+        'rtpPlayerTests/RtpPlayerTest.h',
+        'rtpPlayerTests/RtpPlayerTestBase.cpp',
+        'rtpPlayerTests/RtpPlayerTestBase.h',
         'Logo.png',
         'SmallLogo.png',
         'StoreLogo.png',
