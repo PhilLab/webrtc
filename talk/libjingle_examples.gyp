@@ -104,7 +104,7 @@
           'conditions': [
             # TODO(ronghuawu): Move these files to a win/ directory then they
             # can be excluded automatically.
-            ['OS=="win"', {
+            ['OS=="win" and OS_RUNTIME != "winrt"', {
               'sources': [
                 'examples/peerconnection/client/flagdefs.h',
                 'examples/peerconnection/client/main.cc',
@@ -116,7 +116,13 @@
                  'SubSystem': '2',  # Windows
                 },
               },
-            }],  # OS=="win"
+            }],  # OS=="win" and OS_RUNTIME != "winrt"
+            ['OS=="win" and OS_RUNTIME == "winrt"', {
+              'sources': [
+                'examples/peerconnection/client/App.cpp',
+                'examples/peerconnection/client/Package.appxmanifest',
+              ],              
+            }],  # OS=="win" and OS_RUNTIME == "winrt"
             ['OS=="linux"', {
               'sources': [
                 'examples/peerconnection/client/linux/main.cc',
@@ -142,6 +148,46 @@
               },
             }],  # OS=="linux"
           ],  # conditions
+          'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)/peerconnectionclient_package',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone" and winrt_platform!="win10"', {
+              'files': [
+                'examples/peerconnection/client/Generated Manifest/AppxManifest.xml',
+                'examples/peerconnection/client/SplashScreen.png',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
+              'files': [
+                'examples/peerconnection/client/Generated Manifest Win10/AppxManifest.xml',
+                'examples/peerconnection/client/SplashScreen.png',
+              ],
+            }],
+          ],
+          'files':[
+            'examples/peerconnection/client/Logo.png',
+            'examples/peerconnection/client/SmallLogo.png',
+            'examples/peerconnection/client/StoreLogo.png',
+          ],
+        },
+        # Hack for MSVS to copy to the Appx folder
+        {
+          'destination': '<(PRODUCT_DIR)/AppX',
+          'conditions': [
+             ['OS_RUNTIME=="winrt" and winrt_platform!="win_phone"', {
+                'files': [
+                  'examples/peerconnection/client/SplashScreen.png',
+                ],
+            }],
+          ],
+          'files':[
+            'examples/peerconnection/client/Logo.png',
+            'examples/peerconnection/client/SmallLogo.png',
+            'examples/peerconnection/client/StoreLogo.png',
+          ],
+        },
+      ],
         },  # target peerconnection_client
       ], # targets
     }],  # OS=="linux" or OS=="win"

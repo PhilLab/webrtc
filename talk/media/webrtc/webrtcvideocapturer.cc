@@ -44,7 +44,12 @@
 
 #include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
+
+#if defined(WINRT)
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 
 namespace cricket {
 
@@ -266,8 +271,13 @@ bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
   // calls, can't take lock.
   assert(module_);
 
+#if defined (WINRT)
   const std::string group_name =
-      webrtc::field_trial::FindFullName("WebRTC-CVO");
+      webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-CVO");
+#else
+  const std::string group_name =
+	  webrtc::field_trial::FindFullName("WebRTC-CVO");
+#endif
 
   if (group_name == "Disabled") {
     return true;

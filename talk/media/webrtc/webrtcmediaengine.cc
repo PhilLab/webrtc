@@ -31,7 +31,12 @@
 #include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
+
+#if defined(WINRT)
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 
 namespace cricket {
 
@@ -70,10 +75,17 @@ cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm_sc,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory) {
-  if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Disabled") {
-    return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
-                                          decoder_factory);
-  }
+#if defined(WINRT)
+	if (webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-NewVideoAPI") == "Disabled") {
+		return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
+			decoder_factory);
+	}
+#else
+	if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Disabled") {
+		return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
+			decoder_factory);
+	}
+#endif  
   return new cricket::WebRtcMediaEngine2(adm, adm_sc, encoder_factory,
                                          decoder_factory);
 }

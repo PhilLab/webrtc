@@ -1,6 +1,4 @@
 #include "talk/media/devices/winrtdevicemanager.h"
-#define _ATL_STATIC_LIB_IMPL
-#include <atlbase.h>
 #include <dbt.h>
 #include <strmif.h>
 #include <ks.h>

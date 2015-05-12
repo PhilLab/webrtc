@@ -6,6 +6,7 @@
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/modules/video_render/windows/video_render_winrt.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_frame.h"
@@ -35,7 +36,6 @@
 #include "webrtc\system_wrappers\interface\event_tracer.h"
 #include "webrtc\base\tracelog.h"
 
-// Test code
 #include "talk/media/devices/devicemanager.h"
 #include "talk/media/base/videocapturer.h"
 
@@ -93,6 +93,24 @@ void __cdecl AddTraceEvent(char phase,
 
 namespace StandupWinRT
 {
+  class MediaElementWrapper : public webrtc::IWinRTMediaElement
+  {
+  public:
+
+    MediaElementWrapper(MediaElement^ mediaElement) :_mediaElement(mediaElement){};
+    virtual void Play(){
+      _mediaElement->Play();
+    };
+    virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^ mss){
+      _mediaElement->SetMediaStreamSource(mss);
+    };
+
+    MediaElement^ getMediaElement(){ return _mediaElement; }
+
+  private:
+    MediaElement^ _mediaElement;
+  };
+
   class TestCaptureCallback : public webrtc::VideoCaptureDataCallback
   {
   public:
@@ -148,47 +166,10 @@ namespace StandupWinRT
       videoTransport_(NULL),
       voiceChannel_(-1),
       captureId_(-1),
-      videoChannel_(-1)
+      videoChannel_(-1),
+      localMediaWrapper_(NULL),
+      remoteMediaWrapper_(NULL)
     {
-      auto test = create_task([]()
-      {
-        // Test code
-        cricket::DeviceManagerInterface* testDeviceManager = cricket::DeviceManagerFactory::Create();
-        testDeviceManager->Init();
-        int caps = testDeviceManager->GetCapabilities();
-        if (caps)
-        {
-          testDeviceManager;
-        }
-
-        std::vector<cricket::Device> audioInputDeviceList;
-        testDeviceManager->GetAudioInputDevices(&audioInputDeviceList);
-
-        std::vector<cricket::Device> audioOutputDeviceList;
-        testDeviceManager->GetAudioOutputDevices(&audioOutputDeviceList);
-
-        cricket::Device audioInputDevice;
-        testDeviceManager->GetAudioInputDevice(audioInputDeviceList.begin()->name, &audioInputDevice);
-
-        cricket::Device audioOutputDevice;
-        testDeviceManager->GetAudioOutputDevice(audioOutputDeviceList.begin()->name, &audioOutputDevice);
-
-        std::vector<cricket::Device> videoCaptureDeviceList;
-        testDeviceManager->GetVideoCaptureDevices(&videoCaptureDeviceList);
-
-        cricket::Device videoDevice;
-        testDeviceManager->GetVideoCaptureDevice(videoCaptureDeviceList.begin()->name, &videoDevice);
-
-        //g_windowDispatcher = Window::Current->Dispatcher;
-        //cricket::VideoCapturer* cap = testDeviceManager->CreateVideoCapturer(videoDevice);
-        //delete cap;
-
-        std::vector<rtc::WindowDescription> winDesc;
-        testDeviceManager->GetWindows(&winDesc);
-
-        testDeviceManager->Terminate();
-        delete testDeviceManager;
-      });
       int error;
 
       webrtc::test::InitFieldTrialsFromString("");
@@ -325,7 +306,8 @@ namespace StandupWinRT
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to initialize video base. Error: %d", videoBase_->LastError());
         return;
-      } else if (videoBase_->LastError() > 0) {
+      }
+      else if (videoBase_->LastError() > 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "An error has occured during video base init. Error: %d", videoBase_->LastError());
       }
@@ -494,6 +476,8 @@ namespace StandupWinRT
 
     MediaElement^ localMedia_;
     MediaElement^ remoteMedia_;
+    MediaElementWrapper* localMediaWrapper_;
+    MediaElementWrapper* remoteMediaWrapper_;
 
     Button^ startStopButton_;
     Button^ switchCameraButton_;
@@ -529,7 +513,7 @@ namespace StandupWinRT
     webrtc::test::VideoChannelTransport* videoTransport_;
     int captureId_;
     char deviceUniqueId_[512];
-	Concurrency::event stopEvent_;
+    Concurrency::event stopEvent_;
     webrtc::VideoCaptureModule* vcpm_;
     webrtc::VideoEngine* videoEngine_;
     webrtc::ViEBase* videoBase_;
@@ -715,6 +699,9 @@ namespace StandupWinRT
         stackPanel->Children->Append(portRemoteTraces_);
       }
 
+      localMediaWrapper_ = new MediaElementWrapper(localMedia_);
+      remoteMediaWrapper_ = new MediaElementWrapper(remoteMedia_);
+
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
     }
@@ -728,25 +715,25 @@ namespace StandupWinRT
   private:
 
     /**
-     * initialize transport information provided by user input.
-     * WARNING: this function has be called from Main UI thread.
-     */
+    * initialize transport information provided by user input.
+    * WARNING: this function has be called from Main UI thread.
+    */
     void initializeTranportInfo();
 
     /**
-     * string representation of raw video format.
-     */
+    * string representation of raw video format.
+    */
     std::string getRawVideoFormatString(webrtc::RawVideoType videoType);
 
     void SaveSettings();
-};
+  };
 
 }
 
 static std::string GetIP(String^ stringIP) {
 
   std::wstring ipW(stringIP->Begin());
-  std::string ip(ipW.begin(),ipW.end());
+  std::string ip(ipW.begin(), ipW.end());
   //ToDo, trim the string
   return ip;
 }
@@ -773,13 +760,13 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   if (started_) {
-	  stopEvent_.set();
-	  started_ = false;
+    stopEvent_.set();
+    started_ = false;
   }
   else {
-	  SaveSettings();
-	  stopEvent_.reset();
-      initializeTranportInfo();
+    SaveSettings();
+    stopEvent_.reset();
+    initializeTranportInfo();
 
     Concurrency::create_task([this]() {
       int error;
@@ -788,8 +775,8 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       if (voiceChannel_ < 0) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
           "Could not create voice channel. Error: %d", voiceBase_->LastError());
-          voiceChannel_ = -1;
-          return Concurrency::task<void>();
+        voiceChannel_ = -1;
+        return Concurrency::task<void>();
       }
 
       voiceTransport_ = new webrtc::test::VoiceChannelTransport(voiceNetwork_, voiceChannel_);
@@ -1013,9 +1000,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      IInspectable* captureRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
-
-      error = videoRender_->AddRenderer(captureId_, captureRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
+      error = videoRender_->AddRenderer(captureId_, localMediaWrapper_, 0, 0.0F, 0.0F, 1.0F, 1.0F);
       if (0 != error) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to add renderer for video capture. Error: %d", videoBase_->LastError());
@@ -1037,11 +1022,11 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       }
 
       videoTransport_ = new webrtc::test::VideoChannelTransport(videoNetwork_, videoChannel_);
-        if (videoTransport_ == NULL) {
+      if (videoTransport_ == NULL) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Could not create video channel transport.");
         return Concurrency::task<void>();
-        }
+      }
 
       error = videoCapture_->ConnectCaptureDevice(captureId_, videoChannel_);
       if (0 != error) {
@@ -1123,9 +1108,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         return Concurrency::task<void>();
       }
 
-      IInspectable* channelRendererPtr = reinterpret_cast<IInspectable*>(remoteMedia_);
-
-      error = videoRender_->AddRenderer(videoChannel_, channelRendererPtr, 0, 0.0F, 0.0F, 1.0F, 1.0F);
+      error = videoRender_->AddRenderer(videoChannel_, remoteMediaWrapper_, 0, 0.0F, 0.0F, 1.0F, 1.0F);
       if (0 != error) {
         webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
           "Failed to add renderer for video channel. Error: %d", videoBase_->LastError());
@@ -1146,9 +1129,9 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
         startStopVideoButton_->IsEnabled = false;
       })));
 
-    
-	  started_ = true;
-	  stopEvent_.wait();
+
+      started_ = true;
+      stopEvent_.wait();
 
 #ifdef VOICE
 
@@ -1260,7 +1243,7 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
       captureId_ = -1;
 #endif
 
-	  started_ = false;
+      started_ = false;
 
       return Concurrency::create_task(dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
         startStopButton_->Content = "Start";
@@ -1299,9 +1282,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
 
       delete dev_info;
 
-      IInspectable* videoRendererPtr = reinterpret_cast<IInspectable*>(localMedia_);
-
-      vrm_ = webrtc::VideoRender::CreateVideoRender(1, videoRendererPtr, false);
+      vrm_ = webrtc::VideoRender::CreateVideoRender(1, localMediaWrapper_, false);
 
       webrtc::VideoRenderCallback* rendererCallback = vrm_->AddIncomingRenderStream(1, 0, 0.0, 0.0, 1.0, 1.0);
 
@@ -1426,4 +1407,3 @@ void StandupWinRT::App::SaveSettings()
   values->Insert("audio_port", audioPortTextBox_->Text);
   values->Insert("video_port", videoPortTextBox_->Text);
 }
-
