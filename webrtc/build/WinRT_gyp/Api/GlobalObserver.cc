@@ -2,6 +2,8 @@
 #include "GlobalObserver.h"
 #include "peerconnectioninterface.h"
 #include "Marshalling.h"
+#include "Media.h"
+#include "DataChannel.h"
 #include <ppltasks.h>
 
 using namespace webrtc_winrt_api_internal;
@@ -16,6 +18,10 @@ void GlobalObserver::SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc)
 void GlobalObserver::OnSignalingChange(
   webrtc::PeerConnectionInterface::SignalingState new_state)
 {
+  if (_pc != nullptr)
+  {
+    _pc->OnSignalingStateChange();
+  }
 }
 
 // Triggered when SignalingState or IceState have changed.
@@ -27,25 +33,45 @@ void GlobalObserver::OnStateChange(StateType state_changed)
 // Triggered when media is received on a new stream from remote peer.
 void GlobalObserver::OnAddStream(webrtc::MediaStreamInterface* stream)
 {
-
+  if (_pc != nullptr)
+  {
+    auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
+    evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
+    _pc->OnAddStream(evt);
+  }
 }
 
 // Triggered when a remote peer close a stream.
 void GlobalObserver::OnRemoveStream(webrtc::MediaStreamInterface* stream)
 {
-
+  if (_pc != nullptr)
+  {
+    auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
+    evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
+    _pc->OnRemoveStream(evt);
+  }
 }
 
 // Triggered when a remote peer open a data channel.
 void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel)
 {
-
+  if (_pc != nullptr)
+  {
+    auto evt = ref new webrtc_winrt_api::RTCDataChannelEvent();
+    evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
+    // TODO: Figure out when this observer can be deleted.
+    data_channel->RegisterObserver(new DataChannelObserver(evt->Channel));
+    _pc->OnDataChannel(evt);
+  }
 }
 
 // Triggered when renegotiation is needed, for example the ICE has restarted.
 void GlobalObserver::OnRenegotiationNeeded()
 {
-
+  if (_pc != nullptr)
+  {
+    _pc->OnNegotiationNeeded();
+  }
 }
 
 // Called any time the IceConnectionState changes
@@ -83,36 +109,74 @@ void GlobalObserver::OnIceComplete()
 
 //============================================================================
 
-OfferObserver::OfferObserver()
-  : _sdi(nullptr)
-  , _callbackHappened(true, false)
+CreateSdpObserver::CreateSdpObserver(Concurrency::task_completion_event<webrtc::SessionDescriptionInterface*> tce)
+  : _tce(tce)
 {
 
 }
 
-void OfferObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc)
+void CreateSdpObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc)
 {
-  _sdi = desc;
-  _callbackHappened.Set();
+  _tce.set(desc);
 }
 
-void OfferObserver::OnFailure(const std::string& error)
+void CreateSdpObserver::OnFailure(const std::string& error)
 {
-  _error = error;
-  _callbackHappened.Set();
+  _tce.set_exception(error);
 }
 
-void OfferObserver::Wait(
-  std::function<void(webrtc::SessionDescriptionInterface*)> onSuccess,
-  std::function<void(const std::string&)> onFailure)
+//============================================================================
+
+SetSdpObserver::SetSdpObserver(Concurrency::task_completion_event<void> tce)
+  : _tce(tce)
 {
-  _callbackHappened.Wait(rtc::Event::kForever);
-  if (_sdi != nullptr)
+
+}
+
+void SetSdpObserver::OnSuccess()
+{
+  _tce.set();
+}
+
+void SetSdpObserver::OnFailure(const std::string& error)
+{
+  _tce.set_exception(error);
+}
+
+//============================================================================
+
+DataChannelObserver::DataChannelObserver(webrtc_winrt_api::RTCDataChannel^ channel)
+  : _channel(channel)
+{
+
+}
+
+void DataChannelObserver::OnStateChange()
+{
+  switch (_channel->GetImpl()->state())
   {
-      onSuccess(_sdi);
+  case webrtc::DataChannelInterface::kOpen:
+    _channel->OnOpen();
+    break;
+  case webrtc::DataChannelInterface::kClosed:
+    _channel->OnClose();
+    break;
+  }
+}
+
+void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer)
+{
+  auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
+  if (!buffer.binary)
+  {
+    evt->Data = ToCx(std::string(buffer.data.data(), buffer.size()));
+    _channel->OnMessage(evt);
   }
   else
   {
-      onFailure(_error);
+    // TODO
+    evt->Data = "<binary>";
+    _channel->OnMessage(evt);
   }
 }
+

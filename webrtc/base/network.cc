@@ -13,6 +13,7 @@
 #endif
 
 #include "webrtc/base/network.h"
+#include "webrtc/base/nethelpers.h"
 
 #if defined(WEBRTC_POSIX)
 // linux/if.h can't be included at the same time as the posix sys/if.h, and
@@ -432,9 +433,26 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 #if defined(WINRT)
 bool BasicNetworkManager::CreateNetworks(bool include_ignored,
     NetworkList* networks) const {
-    // TODO: Implement using WinRT APIs.
-    //       NetworkInformation::GetLanIdentifiers() ?
-    return true;
+
+  auto hostnames = NetworkInformation::GetHostNames();
+  for (unsigned int i = 0; i < hostnames->Size; ++i)
+  {
+    auto hostname = hostnames->GetAt(i);
+    // TODO (WINRT): Handle IPV6 addresses.
+    // TODO (WINRT): Group networks instead of one-to-one mapping.
+    if (hostname->Type == HostNameType::Ipv4)
+    {
+      struct in_addr addr;
+      rtc::inet_pton(AF_INET, rtc::ToUtf8(hostname->CanonicalName->Data()).c_str(), &addr);
+      IPAddress ip(addr);
+      int prefixLength = hostname->IPInformation->PrefixLength->Value;
+      // TODO (WINRT): Meaningful network text.
+      auto network = new Network("NetworkName", "NetworkDescription", ip, prefixLength);
+      network->AddIP(InterfaceAddress(ip));
+      networks->push_back(network);
+    }
+  }
+  return true;
 }
 #else
 

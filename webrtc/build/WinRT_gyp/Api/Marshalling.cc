@@ -1,6 +1,7 @@
 ﻿#include "Marshalling.h"
 
 #include "webrtc/p2p/base/candidate.h"
+#include "talk/app/webrtc/webrtcsdp.h"
 
 using namespace webrtc_winrt_api;
 
@@ -13,7 +14,7 @@ namespace webrtc_winrt_api_internal {
     };\
     outObj = enumMap[inObj];\
   }\
-  void ToCx(nativeType inObj, winrtType& outObj) {\
+  void ToCx(nativeType const& inObj, winrtType& outObj) {\
     std::map<nativeType, winrtType> enumMap = {
 #define DEFINE_MARSHALLED_ENUM_END()\
     };\
@@ -41,6 +42,34 @@ namespace webrtc_winrt_api_internal {
       { webrtc::PeerConnectionInterface::kRelay, RTCIceTransportPolicy::kRelay },
       { webrtc::PeerConnectionInterface::kNoHost, RTCIceTransportPolicy::kNoHost },
       { webrtc::PeerConnectionInterface::kAll, RTCIceTransportPolicy::kAll },
+  DEFINE_MARSHALLED_ENUM_END()
+
+  DEFINE_MARSHALLED_ENUM_FROM(RTCSignalingState, webrtc::PeerConnectionInterface::SignalingState)
+    { RTCSignalingState::stable, webrtc::PeerConnectionInterface::kStable },
+    { RTCSignalingState::haveLocalOffer, webrtc::PeerConnectionInterface::kHaveLocalOffer },
+    { RTCSignalingState::haveRemoteOffer, webrtc::PeerConnectionInterface::kHaveRemoteOffer },
+    { RTCSignalingState::haveLocalPranswer, webrtc::PeerConnectionInterface::kHaveLocalPrAnswer },
+    { RTCSignalingState::haveRemotePranswer, webrtc::PeerConnectionInterface::kHaveRemotePrAnswer },
+    { RTCSignalingState::closed, webrtc::PeerConnectionInterface::kClosed },
+  DEFINE_MARSHALLED_ENUM_TO(RTCSignalingState, webrtc::PeerConnectionInterface::SignalingState)
+    { webrtc::PeerConnectionInterface::kStable, RTCSignalingState::stable },
+    { webrtc::PeerConnectionInterface::kHaveLocalOffer, RTCSignalingState::haveLocalOffer },
+    { webrtc::PeerConnectionInterface::kHaveRemoteOffer, RTCSignalingState::haveRemoteOffer },
+    { webrtc::PeerConnectionInterface::kHaveLocalPrAnswer, RTCSignalingState::haveLocalPranswer },
+    { webrtc::PeerConnectionInterface::kHaveRemotePrAnswer, RTCSignalingState::haveRemotePranswer },
+    { webrtc::PeerConnectionInterface::kClosed, RTCSignalingState::closed },
+  DEFINE_MARSHALLED_ENUM_END()
+
+  DEFINE_MARSHALLED_ENUM_FROM(webrtc_winrt_api::RTCDataChannelState, webrtc::DataChannelInterface::DataState)
+    { RTCDataChannelState::connecting, webrtc::DataChannelInterface::kConnecting },
+    { RTCDataChannelState::open, webrtc::DataChannelInterface::kOpen },
+    { RTCDataChannelState::closing, webrtc::DataChannelInterface::kClosing },
+    { RTCDataChannelState::closed, webrtc::DataChannelInterface::kClosed },
+  DEFINE_MARSHALLED_ENUM_TO(webrtc_winrt_api::RTCDataChannelState, webrtc::DataChannelInterface::DataState)
+    { webrtc::DataChannelInterface::kConnecting, RTCDataChannelState::connecting },
+    { webrtc::DataChannelInterface::kOpen, RTCDataChannelState::open },
+    { webrtc::DataChannelInterface::kClosing, RTCDataChannelState::closing },
+    { webrtc::DataChannelInterface::kClosed, RTCDataChannelState::closed },
   DEFINE_MARSHALLED_ENUM_END()
 
   std::string FromCx(String^ inObj)
@@ -100,12 +129,35 @@ namespace webrtc_winrt_api_internal {
     // TODO: Other fields once they are added.
   }
 
+  void FromCx(
+    webrtc_winrt_api::RTCDataChannelInit^ inObj,
+    webrtc::DataChannelInit& outObj)
+  {
+    // Use ternary operators to handle default values.
+    outObj.ordered = inObj->Ordered != nullptr ? inObj->Ordered->Value : true;
+    outObj.maxRetransmitTime = inObj->MaxPacketLifeTime != nullptr ? inObj->MaxPacketLifeTime->Value : -1;
+    outObj.maxRetransmits = inObj->MaxRetransmits != nullptr ? inObj->MaxRetransmits->Value : -1;
+    outObj.protocol = FromCx(inObj->Protocol);
+    outObj.negotiated = inObj->Negotiated != nullptr ? inObj->Negotiated->Value : false;
+    outObj.id = inObj->Id != nullptr ? inObj->Id->Value : -1;
+  }
+
+  void FromCx(
+    webrtc_winrt_api::RTCIceCandidate^ inObj,
+    rtc::scoped_ptr<webrtc::IceCandidateInterface>& outObj)
+  {
+    outObj.reset(webrtc::CreateIceCandidate(
+      FromCx(inObj->SdpMid),
+      inObj->sdpMLineIndex,
+      FromCx(inObj->Candidate)));
+  }
+
   void ToCx(
     webrtc::IceCandidateInterface const& inObj,
     webrtc_winrt_api::RTCIceCandidate^* outObj)
   {
     (*outObj) = ref new webrtc_winrt_api::RTCIceCandidate();
-    (*outObj)->Candidate = ToCx(inObj.candidate().ToString());
+    (*outObj)->Candidate = ToCx(webrtc::SdpSerializeCandidate(inObj));
     (*outObj)->SdpMid = ToCx(inObj.sdp_mid());
     (*outObj)->sdpMLineIndex = inObj.sdp_mline_index();
   }
@@ -135,8 +187,17 @@ namespace webrtc_winrt_api_internal {
       outObj = webrtc_winrt_api::RTCSdpType::pranswer;
   }
 
+  void FromCx(
+    webrtc_winrt_api::RTCSessionDescription^ inObj,
+    rtc::scoped_ptr<webrtc::SessionDescriptionInterface>& outObj)
+  {
+    outObj.reset(webrtc::CreateSessionDescription(
+      FromCx(inObj->Type->Value),
+      FromCx(inObj->Sdp)));
+  }
+
   void ToCx(
-    webrtc::SessionDescriptionInterface* inObj,
+    const webrtc::SessionDescriptionInterface* inObj,
     webrtc_winrt_api::RTCSessionDescription^* outObj)
   {
     (*outObj) = ref new webrtc_winrt_api::RTCSessionDescription();
