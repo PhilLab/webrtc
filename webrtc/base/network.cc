@@ -434,21 +434,6 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 bool BasicNetworkManager::CreateNetworks(bool include_ignored,
     NetworkList* networks) const {
 
-  auto lanIds = NetworkInformation::GetLanIdentifiers();
-  for (unsigned int i = 0; i < lanIds->Size; ++i)
-  {
-    auto lanId = lanIds->GetAt(i);
-  }
-
-  auto profiles = NetworkInformation::GetConnectionProfiles();
-  for (unsigned int i = 0; i < profiles->Size; ++i)
-  {
-    auto profile = profiles->GetAt(i);
-  }
-
-  auto netProfile = NetworkInformation::GetInternetConnectionProfile();
-  auto networkNames = netProfile->GetNetworkNames();
-
   auto hostnames = NetworkInformation::GetHostNames();
   for (unsigned int i = 0; i < hostnames->Size; ++i)
   {
