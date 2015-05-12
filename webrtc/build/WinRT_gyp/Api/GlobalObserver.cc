@@ -59,6 +59,8 @@ void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel)
   {
     auto evt = ref new webrtc_winrt_api::RTCDataChannelEvent();
     evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
+    // TODO: Figure out when this observer can be deleted.
+    data_channel->RegisterObserver(new DataChannelObserver(evt->Channel));
     _pc->OnDataChannel(evt);
   }
 }
@@ -167,7 +169,7 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer)
   auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
   if (!buffer.binary)
   {
-    evt->Data = ToCx(buffer.data.data());
+    evt->Data = ToCx(std::string(buffer.data.data(), buffer.size()));
     _channel->OnMessage(evt);
   }
   else

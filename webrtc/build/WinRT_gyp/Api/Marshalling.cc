@@ -1,6 +1,7 @@
 ﻿#include "Marshalling.h"
 
 #include "webrtc/p2p/base/candidate.h"
+#include "talk/app/webrtc/webrtcsdp.h"
 
 using namespace webrtc_winrt_api;
 
@@ -141,12 +142,22 @@ namespace webrtc_winrt_api_internal {
     outObj.id = inObj->Id != nullptr ? inObj->Id->Value : -1;
   }
 
+  void FromCx(
+    webrtc_winrt_api::RTCIceCandidate^ inObj,
+    rtc::scoped_ptr<webrtc::IceCandidateInterface>& outObj)
+  {
+    outObj.reset(webrtc::CreateIceCandidate(
+      FromCx(inObj->SdpMid),
+      inObj->sdpMLineIndex,
+      FromCx(inObj->Candidate)));
+  }
+
   void ToCx(
     webrtc::IceCandidateInterface const& inObj,
     webrtc_winrt_api::RTCIceCandidate^* outObj)
   {
     (*outObj) = ref new webrtc_winrt_api::RTCIceCandidate();
-    (*outObj)->Candidate = ToCx(inObj.candidate().ToString());
+    (*outObj)->Candidate = ToCx(webrtc::SdpSerializeCandidate(inObj));
     (*outObj)->SdpMid = ToCx(inObj.sdp_mid());
     (*outObj)->sdpMLineIndex = inObj.sdp_mline_index();
   }
@@ -176,11 +187,20 @@ namespace webrtc_winrt_api_internal {
       outObj = webrtc_winrt_api::RTCSdpType::pranswer;
   }
 
+  void FromCx(
+    webrtc_winrt_api::RTCSessionDescription^ inObj,
+    rtc::scoped_ptr<webrtc::SessionDescriptionInterface>& outObj)
+  {
+    outObj.reset(webrtc::CreateSessionDescription(
+      FromCx(inObj->Type->Value),
+      FromCx(inObj->Sdp)));
+  }
+
   void ToCx(
-    webrtc::SessionDescriptionInterface* inObj,
+    const webrtc::SessionDescriptionInterface* inObj,
     webrtc_winrt_api::RTCSessionDescription^* outObj)
   {
-    (*outObj) = ref new webrtc_winrt_api::RTCSessionDescription(inObj);
+    (*outObj) = ref new webrtc_winrt_api::RTCSessionDescription();
 
     std::string sdp;
     inObj->ToString(&sdp);

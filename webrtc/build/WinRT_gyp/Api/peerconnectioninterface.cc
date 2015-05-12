@@ -21,17 +21,6 @@ using namespace Platform;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
-RTCSessionDescription::RTCSessionDescription(webrtc::SessionDescriptionInterface* impl)
-  : _impl(impl)
-{
-
-}
-
-webrtc::SessionDescriptionInterface* RTCSessionDescription::GetImpl()
-{
-  return _impl;
-}
-
 // Any globals we need to keep around.
 namespace webrtc_winrt_api {
   namespace globals {
@@ -47,7 +36,7 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
   FromCx(configuration, cc_configuration);
 
   webrtc::FakeConstraints constraints;
-  constraints.SetAllowRtpDataChannels();
+  constraints.SetAllowDtlsSctpDataChannels();
   _observer.SetPeerConnection(this);
 
 
@@ -163,7 +152,10 @@ IAsyncAction^ RTCPeerConnection::SetLocalDescription(RTCSessionDescription^ desc
     // TODO: Remove it once the callback has been received.
     _setSdpObservers.push_back(observer);
 
-    _impl->SetLocalDescription(observer, description->GetImpl());
+    rtc::scoped_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
+    FromCx(description, nativeDescription);
+
+    _impl->SetLocalDescription(observer, nativeDescription.release());
   });
 }
 
@@ -178,7 +170,10 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(RTCSessionDescription^ des
     // TODO: Remove it once the callback has been received.
     _setSdpObservers.push_back(observer);
 
-    _impl->SetRemoteDescription(observer, description->GetImpl());
+    rtc::scoped_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
+    FromCx(description, nativeDescription);
+
+    _impl->SetRemoteDescription(observer, nativeDescription.release());
   });
 }
 
@@ -205,13 +200,36 @@ RTCDataChannel^ RTCPeerConnection::CreateDataChannel(String^ label, RTCDataChann
   return ret;
 }
 
+IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate)
+{
+  return Concurrency::create_async([this, candidate]
+  {
+    rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
+    FromCx(candidate, nativeCandidate);
+
+    _impl->AddIceCandidate(nativeCandidate.get());
+  });
+
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get()
 {
-  // HACK: Temporary, cast the const away.
-  //       Need to figure out a way to distinguish between a
-  //       RTCSessionDescription^ containing a const and not.
-  return ref new RTCSessionDescription(
-    const_cast<webrtc::SessionDescriptionInterface*>(_impl->local_description()));
+  RTCSessionDescription^ ret;
+  if (_impl->local_description() != nullptr)
+  {
+    ToCx(_impl->local_description(), &ret);
+  }
+  return ret;
+}
+
+RTCSessionDescription^ RTCPeerConnection::RemoteDescription::get()
+{
+  RTCSessionDescription^ ret;
+  if (_impl->remote_description() != nullptr)
+  {
+    ToCx(_impl->remote_description(), &ret);
+  }
+  return ret;
 }
 
 RTCSignalingState RTCPeerConnection::SignalingState::get()

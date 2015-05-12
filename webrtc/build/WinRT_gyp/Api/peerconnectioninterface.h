@@ -95,11 +95,6 @@ namespace webrtc_winrt_api
   public:
     property IBox<RTCSdpType>^ Type;
     property String^ Sdp;
-  internal:
-    RTCSessionDescription(webrtc::SessionDescriptionInterface* impl);
-    webrtc::SessionDescriptionInterface* GetImpl();
-  private:
-    webrtc::SessionDescriptionInterface* _impl;
   };
 
   // Events and delegates
@@ -141,8 +136,10 @@ namespace webrtc_winrt_api
     IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
     void AddStream(MediaStream^ stream);
     RTCDataChannel^ CreateDataChannel(String^ label, RTCDataChannelInit^ init);
+    IAsyncAction^ AddIceCandidate(RTCIceCandidate^ candidate);
 
     property RTCSessionDescription^ LocalDescription { RTCSessionDescription^ get(); }
+    property RTCSessionDescription^ RemoteDescription { RTCSessionDescription^ get(); }
     property RTCSignalingState SignalingState { RTCSignalingState get(); }
 
   private:
