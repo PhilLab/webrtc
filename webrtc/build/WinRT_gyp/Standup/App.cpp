@@ -1047,17 +1047,17 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
           return;
         }
 
-        error = videoBase_->ConnectAudioChannel(videoChannel_, voiceChannel_);
+        error = videoBase_->CreateChannel(videoChannel_);
         if (error != 0) {
-            webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-                "Could not connect audio channel. Error: %d", videoBase_->LastError());
-            return;
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Could not create video channel. Error: %d", videoBase_->LastError());
+          return;
         }
 
-        videoTransport_ = new webrtc::test::VideoChannelTransport(videoNetwork_, videoChannel_);
-        if (videoTransport_ == NULL) {
+        error = videoBase_->ConnectAudioChannel(videoChannel_, voiceChannel_);
+        if (error != 0) {
           webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Could not create video channel transport.");
+            "Could not connect audio channel. Error: %d", videoBase_->LastError());
           return;
         }
 
