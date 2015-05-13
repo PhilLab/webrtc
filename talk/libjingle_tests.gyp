@@ -196,6 +196,19 @@
             },
           },
         }],
+		['OS=="win" and OS_RUNTIME=="winrt"', {
+		  'type': 'static_library',
+		  'msvs_settings': {
+            'VCLinkerTool': {
+              'AdditionalDependencies': [
+                'mfuuid.lib',
+                'mfplat.lib'
+              ],
+            },
+          },
+		}, {
+          'type': 'executable',
+        }],
       ],
     },  # target libjingle_p2p_unittest
     {
