@@ -249,10 +249,7 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher)
   globals::RunOnGlobalThread<void>([]() -> void
   {
     rtc::EnsureWinsockInit();
-    //rtc::ThreadManager::Instance()->SetCurrentThread(&globals::gThread);
     rtc::InitializeSSL();
-
-    webrtc::test::InitFieldTrialsFromString("");
 
     globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
   });
