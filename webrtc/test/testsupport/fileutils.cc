@@ -146,8 +146,6 @@ std::string ProjectRootPath() {
 
 std::string OutputPath() {
 #if defined(WINRT)
-  // TODO revisit this if needed as soon as the WorkingDir() is fixed for WinRT
-  // output files are created in the local app folder
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
   wchar_t buffer[255];
   wcsncpy_s(buffer, 255, folder->Path->Data(), _TRUNCATE);
@@ -205,6 +203,13 @@ std::string TempFilename(const std::string &dir, const std::string &prefix) {
     UINT(g.Data4[4]), UINT(g.Data4[5]), UINT(g.Data4[6]), UINT(g.Data4[7]));
 
   fullpath.AppendPathname(ToUtf8(filename));
+  // make sure to create the file
+  ::CreateFile2(
+    ToUtf16(fullpath.pathname()).c_str(),
+    GENERIC_READ | GENERIC_WRITE,
+    FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+    CREATE_NEW,
+    NULL);
   return fullpath.pathname();
 #elif defined(WIN32)
   wchar_t filename[MAX_PATH];
