@@ -92,9 +92,7 @@ TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(OutputPathFromRootWorkingDir)) {
 #if defined WINRT
   // For WinRT the output folder is the application local folder
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
-  wchar_t buffer[255];
-  wcsncpy_s(buffer, 255, folder->Path->Data(), _TRUNCATE);
-  std::string outputPath = ToUtf8(buffer) + kPathDelimiter;
+  std::string outputPath = ToUtf8(folder->Path->Data()) + kPathDelimiter;
   ASSERT_EQ(outputPath, webrtc::test::OutputPath());
 #else
   ASSERT_EQ("./", webrtc::test::OutputPath());
