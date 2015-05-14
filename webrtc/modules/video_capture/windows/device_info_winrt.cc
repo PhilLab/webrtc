@@ -72,9 +72,9 @@ Platform::Agile<MediaCapture> MediaCaptureDevicesWinRT::GetMediaCapture(Platform
         try {
           initTask.get();
         } catch (Platform::Exception^ e) {
-          int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
+          int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
           std::string message(messageSize, 0);
-          WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
+          WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
           WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
             "Failed to initialize media capture device. %s", message.c_str());
         }
@@ -303,18 +303,18 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
           else
             capability.rawType = kVideoUnknown;
           _captureCapabilities.push_back(capability);
-          int subtypeSize = WideCharToMultiByte(CP_UTF8, 0, prop->Subtype->Data(), wcslen(prop->Subtype->Data()), NULL, 0, NULL, NULL);
+          int subtypeSize = WideCharToMultiByte(CP_UTF8, 0, prop->Subtype->Data(), (int)wcslen(prop->Subtype->Data()), NULL, 0, NULL, NULL);
           std::string subtype(subtypeSize, 0);
-          WideCharToMultiByte(CP_UTF8, 0, prop->Subtype->Data(), wcslen(prop->Subtype->Data()), &subtype[0], subtypeSize, NULL, NULL);
+          WideCharToMultiByte(CP_UTF8, 0, prop->Subtype->Data(), (int)wcslen(prop->Subtype->Data()), &subtype[0], subtypeSize, NULL, NULL);
           WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
             "Capture media stream properties: index: %d, width: %d, height: %d, frame rate: %d/%d, subtype: %s",
             i, prop->Width, prop->Height, prop->FrameRate->Numerator, prop->FrameRate->Denominator, subtype.c_str());
         }
       }
     } catch (Platform::Exception^ e) {
-      int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
+      int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
       std::string message(messageSize, 0);
-      WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
+      WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
         "Failed to find media capture devices. %s", message.c_str());
     }
@@ -322,7 +322,7 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
 
   findAllAsyncTask.wait();
 
-  return _captureCapabilities.size();
+  return (int32_t)_captureCapabilities.size();
 }
 
 }  // namespace videocapturemodule
