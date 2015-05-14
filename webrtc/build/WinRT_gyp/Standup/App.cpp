@@ -1582,7 +1582,7 @@ void StandupWinRT::App::setCameraDeviceCapabilities()
 
   int capabilitiesNumber = videoCapture_->NumberOfCapabilities(uniqueId, KMaxUniqueIdLength);
 
-  int selectedCapabilityIndex;
+  int selectedCapabilityIndex = 0;
   int minWidthDiff = INT_MAX;
   int minHeightDiff = INT_MAX;
   int minFpsDiff = INT_MAX;
