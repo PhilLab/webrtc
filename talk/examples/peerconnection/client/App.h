@@ -34,7 +34,6 @@ namespace peerconnectionclient
 		void StopLocalRenderer();
 		void StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video);
 		void StopRemoteRenderer();
-		void QueueUIThreadCallback(int msg_id, void* data);
 
 	protected:
 		void OnLaunched(LaunchActivatedEventArgs^ args) override;
@@ -56,5 +55,6 @@ namespace peerconnectionclient
 		WinRTMainWnd* mainWnd_;
 		PeerConnectionClient* peerConnectionClient_;
 		rtc::RefCountedObject<Conductor>* conductor_;
+    rtc::Thread workerThread_;
 	};
 }

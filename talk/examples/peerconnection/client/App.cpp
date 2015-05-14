@@ -3,6 +3,7 @@
 #include "WinRTMainWnd.h"
 #include "conductor.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/base/win32socketinit.h"
 #include <collection.h>
 #include <ppltasks.h>
 #include <string>
@@ -24,19 +25,29 @@ CoreDispatcher^ g_windowDispatcher;
 
 App::App()
 {
-	mainWnd_ = new WinRTMainWnd();
-	mainWnd_->RegisterParentApp(this);
-	peerConnectionClient_  = new PeerConnectionClient();
-	conductor_ = new rtc::RefCountedObject<Conductor>(peerConnectionClient_, mainWnd_);
-	conductor_->AddRef();
+  rtc::EnsureWinsockInit();
+  rtc::InitializeSSL();
+  workerThread_.Start();
+
+  workerThread_.Invoke<void>([this]
+  {
+    mainWnd_ = new WinRTMainWnd();
+    mainWnd_->RegisterParentApp(this);
+    peerConnectionClient_ = new PeerConnectionClient();
+    conductor_ = new rtc::RefCountedObject<Conductor>(peerConnectionClient_, mainWnd_);
+    conductor_->AddRef();
+  });
 }
 
 App::~App()
 {
-	conductor_->Release();
-	delete peerConnectionClient_;
-	delete mainWnd_;
-	rtc::CleanupSSL();
+  workerThread_.Invoke<void>([this]
+  {
+    conductor_->Release();
+    delete peerConnectionClient_;
+    delete mainWnd_;
+    rtc::CleanupSSL();
+  });
 }
 
 //WinRTMainWnd callbacks
@@ -70,11 +81,6 @@ void App::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
 }
 
 void App::StopRemoteRenderer()
-{
-
-}
-
-void App::QueueUIThreadCallback(int msg_id, void* data)
 {
 
 }
@@ -202,7 +208,11 @@ void App::OnStartStopClick(Platform::Object ^sender, RoutedEventArgs ^e)
 		finalIp = ipTextBox_->Text;
 	}
 	int port = _wtof(portTextBox_->Text->Data());
-	mainWnd_->StartLogin(finalIp, port);
+
+  workerThread_.Invoke<void>([this, finalIp, port]
+  {
+    mainWnd_->StartLogin(finalIp, port);
+  });
 }
 
 

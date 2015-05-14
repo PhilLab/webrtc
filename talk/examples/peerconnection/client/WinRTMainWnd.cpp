@@ -89,9 +89,16 @@ void WinRTMainWnd::StopRemoteRenderer()
 	parentApp_->StopRemoteRenderer();
 }
 
+extern CoreDispatcher^ g_windowDispatcher;
+
 void WinRTMainWnd::QueueUIThreadCallback(int msg_id, void* data)
 {
-	parentApp_->QueueUIThreadCallback(msg_id, data);
+	//parentApp_->QueueUIThreadCallback(msg_id, data);
+  g_windowDispatcher->RunAsync(CoreDispatcherPriority::Normal,
+    ref new DispatchedHandler([this, msg_id, data] {
+    callback_->UIThreadCallback(msg_id, data);
+  }));
+
 }
 
 void WinRTMainWnd::RegisterParentApp(peerconnectionclient::App^ app)
