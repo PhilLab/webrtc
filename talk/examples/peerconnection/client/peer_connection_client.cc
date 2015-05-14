@@ -51,13 +51,10 @@ rtc::AsyncSocket* CreateClientSocket(int family) {
   rtc::Win32Socket* sock = new rtc::Win32Socket();
   sock->CreateT(family, SOCK_STREAM);
   return sock;
-#elif defined(WEBRTC_POSIX)
+#elif defined(WEBRTC_POSIX) || defined(WINRT)
   rtc::Thread* thread = rtc::Thread::Current();
   ASSERT(thread != NULL);
   return thread->socketserver()->CreateAsyncSocket(family, SOCK_STREAM);
-#elif defined(WINRT)
-  rtc::PhysicalSocketServer* sock = new rtc::PhysicalSocketServer();
-  return sock->CreateAsyncSocket(family, SOCK_STREAM);
 #else
 #error Platform not supported.
 #endif
