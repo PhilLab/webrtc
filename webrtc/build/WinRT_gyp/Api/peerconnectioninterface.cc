@@ -257,4 +257,3 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher)
     globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
   });
 }
-
