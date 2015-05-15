@@ -18,6 +18,8 @@
       'dependencies': [
         '../../../../../talk/libjingle_tests.gyp:libjingle_media_unittest',
         '../../../../../talk/libjingle_tests.gyp:libjingle_p2p_unittest',
+        # TODO(winrt) uncomment when the issue with microphone access is fixed
+        #'../../../../../talk/libjingle_tests.gyp:libjingle_peerconnection_unittest',
         '../../../../../webrtc/common_audio/common_audio.gyp:common_audio_unittests',
         '../../../../../webrtc/common_video/common_video_unittests.gyp:common_video_unittests',
         # TODO(winrt) uncomment when the issue with microphone access is fixed
