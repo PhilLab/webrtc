@@ -150,6 +150,27 @@ namespace StandupWinRT
       messageUTF16[length] = L'\n';
       messageUTF16[length + 1] = 0;
       OutputDebugString(messageUTF16.c_str());
+
+      rtc::LoggingSeverity sev = rtc::LS_VERBOSE;
+      if (level == webrtc::kTraceError || level == webrtc::kTraceCritical)
+          sev = rtc::LS_ERROR;
+      else if (level == webrtc::kTraceWarning)
+          sev = rtc::LS_WARNING;
+      else if (level == webrtc::kTraceStateInfo || level == webrtc::kTraceInfo)
+          sev = rtc::LS_INFO;
+      else if (level == webrtc::kTraceTerseInfo)
+          sev = rtc::LS_INFO;
+
+      // Skip past boilerplate prefix text
+      if (length < 72) {
+          std::string msg(message, length);
+          LOG(LS_ERROR) << "Malformed webrtc log message: ";
+          LOG_V(sev) << msg;
+      }
+      else {
+          std::string msg(message + 71, length - 72);
+          LOG_V(sev) << "webrtc: " << msg;
+      }
     }
   };
 
