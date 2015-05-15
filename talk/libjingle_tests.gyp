@@ -239,6 +239,7 @@
         'app/webrtc/peerconnectioninterface_unittest.cc',
         # 'app/webrtc/peerconnectionproxy_unittest.cc',
         'app/webrtc/remotevideocapturer_unittest.cc',
+        'app/webrtc/sctputils.cc',
         'app/webrtc/statscollector_unittest.cc',
         'app/webrtc/test/fakeaudiocapturemodule.cc',
         'app/webrtc/test/fakeaudiocapturemodule.h',
