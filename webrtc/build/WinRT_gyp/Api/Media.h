@@ -34,6 +34,7 @@ namespace webrtc_winrt_api
     int _stride;
     BYTE* _buffer;
     size_t _bufferSize;
+    ULONGLONG _timeStamp;
   };
   class RTCRenderer : public webrtc::VideoRendererInterface
   {
@@ -42,8 +43,10 @@ namespace webrtc_winrt_api
     virtual ~RTCRenderer();
     virtual void SetSize(int width, int height, int reserved);
     virtual void RenderFrame(const cricket::VideoFrame *frame);
+    void SetMediaSource(MediaStreamSource^ mediaSource);
   private:
     FrameBuffer& _frameBuffer;
+    MediaStreamSource^ _mediaSource;
   };
 
   public interface class IMediaStreamTrack
@@ -64,7 +67,7 @@ namespace webrtc_winrt_api
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
   internal:
-    void SetRenderer(int width, int height);
+    void SetRenderer(int width, int height, MediaStreamSource^ mediaSource);
   private:
     FrameBuffer _frameBuffer;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> _impl;

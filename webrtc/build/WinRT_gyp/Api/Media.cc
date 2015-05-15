@@ -13,8 +13,9 @@ using namespace webrtc_winrt_api;
 using namespace webrtc_winrt_api_internal;
 using namespace Platform;
 using namespace Microsoft::WRL;
+using namespace Windows::Media::MediaProperties;
 
-FrameBuffer::FrameBuffer() : _width(0), _height(0), _stride(0), _buffer(0), _bufferSize(0)
+FrameBuffer::FrameBuffer() : _width(0), _height(0), _stride(0), _buffer(0), _bufferSize(0), _timeStamp(0)
 {
   InitializeCriticalSection(&_critical);
 }
@@ -43,7 +44,7 @@ void FrameBuffer::SetFrame(const cricket::VideoFrame *frame)
     LeaveCriticalSection(&_critical);
     return;
   }
-   frame->ConvertToRgbBuffer(libyuv::FOURCC_BGRA, _buffer, _bufferSize, _stride);
+  frame->ConvertToRgbBuffer(libyuv::FOURCC_ARGB, _buffer, _bufferSize, _stride);
   LeaveCriticalSection(&_critical);
 }
 
@@ -65,18 +66,25 @@ void FrameBuffer::GenerateFrame(MediaStreamSourceSampleRequest ^ request)
   {
     return;
   }
-  if (!_mediaBuffer.Get())
+  ComPtr<IMFMediaBuffer> mediaBuffer;
+  hr = MFCreate2DMediaBuffer(_width, _height, 20, FALSE, mediaBuffer.GetAddressOf());
+  if (FAILED(hr))
   {
-    hr = MFCreate2DMediaBuffer(_width, _height, 20, FALSE, _mediaBuffer.GetAddressOf());
-    if (FAILED(hr))
-    {
-      return;
-    }
+    return;
   }
-  spSample->AddBuffer(_mediaBuffer.Get());
-  //hr = spSample->GetBufferByIndex(0, spBuffer.GetAddressOf());
-  if (ConvertFrame(_mediaBuffer.Get()))
+  spSample->AddBuffer(mediaBuffer.Get());
+  auto spVideoStreamDescriptor = (VideoStreamDescriptor^)request->StreamDescriptor;
+  auto spEncodingProperties = spVideoStreamDescriptor->EncodingProperties;
+  auto spRatio = spEncodingProperties->FrameRate;
+  UINT32 ui32Numerator = spRatio->Numerator;
+  UINT32 ui32Denominator = spRatio->Denominator;
+  ULONGLONG ulTimeSpan = ((ULONGLONG)ui32Denominator) * 10000000 / ui32Numerator;
+
+  spSample->SetSampleDuration(ulTimeSpan);
+  spSample->SetSampleTime((LONGLONG)_timeStamp);
+  if (ConvertFrame(mediaBuffer.Get()))
   {
+    _timeStamp += ulTimeSpan;
   }
   spRequest->SetSample(spSample.Get());
 }
@@ -104,10 +112,23 @@ bool FrameBuffer::ConvertFrame(IMFMediaBuffer* mediaBuffer)
     imageBuffer->Unlock2D();
     return false;
   }
+  // Test code
+  //for (int y = 0; y < 480; y++)
+  //{
+  //  BYTE* destPtr = destRawData;
+  //  for (int x = 0; x < 640; x++)
+  //  {
+  //    *destPtr++ = 255;
+  //    *destPtr++ = 0;
+  //    *destPtr++ = 0;
+  //    *destPtr++ = 255;
+  //  }
+  //  destRawData += pitch;
+  //}
   memcpy(destRawData, _buffer, _bufferSize);
   LeaveCriticalSection(&_critical);
   imageBuffer->Unlock2D();
-  return false;
+  return true;
 }
 
 MediaVideoTrack::MediaVideoTrack(rtc::scoped_refptr<webrtc::VideoTrackInterface> impl) :
@@ -143,8 +164,9 @@ void MediaVideoTrack::Enabled::set(bool value)
   _impl->set_enabled(value);
 }
 
-void MediaVideoTrack::SetRenderer(int width, int height)
+void MediaVideoTrack::SetRenderer(int width, int height, MediaStreamSource^ mediaSource)
 {
+  _videoRenderer->SetMediaSource(mediaSource);
   _frameBuffer.Initialize(width, height);
   _impl->AddRenderer(_videoRenderer.get());
 }
@@ -308,10 +330,10 @@ MediaStreamSource^ Media::CreateMediaStreamSource(MediaVideoTrack^ track, int wi
     track, &webrtc_winrt_api::MediaVideoTrack::OnSampleRequested);
   ret->Starting += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, Windows::Media::Core::MediaStreamSourceStartingEventArgs ^>(this, &webrtc_winrt_api::Media::OnStarting);
   TimeSpan spanBuffer;
-  spanBuffer.Duration = 10000L * 250L;
+  spanBuffer.Duration = 10000LL * 250LL;
   ret->BufferTime = spanBuffer;
   ret->CanSeek = false;
-  track->SetRenderer(width,height);
+  track->SetRenderer(width, height, ret);
   return ret;
 }
 
@@ -330,6 +352,11 @@ void RTCRenderer::SetSize(int width, int height, int reserved)
 void RTCRenderer::RenderFrame(const cricket::VideoFrame *frame)
 {
   _frameBuffer.SetFrame(frame);
+}
+
+void RTCRenderer::SetMediaSource(MediaStreamSource^ mediaSource)
+{
+  _mediaSource = mediaSource;
 }
 
 
