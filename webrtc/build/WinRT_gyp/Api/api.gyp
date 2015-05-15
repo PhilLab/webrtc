@@ -16,10 +16,7 @@
       'target_name': 'webrtc_winrt_api',
       'type': 'shared_library',
       'dependencies': [
-        '../../../../webrtc/system_wrappers/system_wrappers.gyp:metrics_default',
         '../../../../talk/libjingle.gyp:libjingle_peerconnection',
-        '../../../../webrtc/test/test.gyp:field_trial',
-        # '../../../../webrtc/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
