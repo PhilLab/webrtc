@@ -64,8 +64,8 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 500
 #else
-#define PREFERRED_FRAME_WIDTH 800
-#define PREFERRED_FRAME_HEIGHT 600
+#define PREFERRED_FRAME_WIDTH 640
+#define PREFERRED_FRAME_HEIGHT 480
 #define PREFERRED_MAX_FPS 30
 #define CAPTURE_DEVICE_INDEX 0
 #define MAX_BITRATE 1000
@@ -1609,47 +1609,58 @@ void StandupWinRT::App::setCameraDeviceCapabilities()
   int minFpsDiff = INT_MAX;
   std::vector<webrtc::CaptureCapability> captureCapabilities;
 
-  for (int i = 0; i < capabilitiesNumber; i++) {
 
-    webrtc::CaptureCapability capability;
+	for (int i = 0; i < capabilitiesNumber; i++) {
 
-    error = videoCapture_->GetCaptureCapability(uniqueId, KMaxUniqueIdLength, i, capability);
-    if (error != 0) {
-      webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-        "Failed to get capture capability.");
-      return;
-    }
+		webrtc::CaptureCapability capability;
 
-    std::string rawVideoFormat = getRawVideoFormatString(capability.rawType);
-    webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
-      "Capture capability - index: %d, width: %d, height: %d, max fps: %d, video format: %s",
-      i, capability.width, capability.height, capability.maxFPS, rawVideoFormat.c_str());
+		error = videoCapture_->GetCaptureCapability(uniqueId, KMaxUniqueIdLength, i, capability);
+		if (error != 0) {
+			webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+				"Failed to get capture capability.");
+			return;
+		}
 
-    captureCapabilities.push_back(capability);
+		std::string rawVideoFormat = getRawVideoFormatString(capability.rawType);
+		webrtc::WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, -1,
+			"Capture capability - index: %d, width: %d, height: %d, max fps: %d, video format: %s",
+			i, capability.width, capability.height, capability.maxFPS, rawVideoFormat.c_str());
 
-    if (capability.rawType == webrtc::kVideoMJPEG || capability.rawType == webrtc::kVideoUnknown)
-      continue;
+		captureCapabilities.push_back(capability);
 
-    int widthDiff = abs((int)(capability.width - PREFERRED_FRAME_WIDTH));
-    if (widthDiff < minWidthDiff) {
-      selectedCapabilityIndex = i;
-      minWidthDiff = widthDiff;
-    }
-    else if (widthDiff == minWidthDiff) {
-      int heightDiff = abs((int)(capability.height - PREFERRED_FRAME_HEIGHT));
-      if (heightDiff < minHeightDiff) {
-        selectedCapabilityIndex = i;
-        minHeightDiff = heightDiff;
-      }
-      else if (heightDiff == minHeightDiff) {
-        int fpsDiff = abs((int)(capability.maxFPS - PREFERRED_MAX_FPS));
-        if (fpsDiff < minFpsDiff) {
-          selectedCapabilityIndex = i;
-          minFpsDiff = fpsDiff;
-        }
-      }
-    }
-  }
+		if (capability.rawType == webrtc::kVideoMJPEG || capability.rawType == webrtc::kVideoUnknown)
+			continue;
+
+		int widthDiff = abs((int)(capability.width - PREFERRED_FRAME_WIDTH));
+		if (widthDiff < minWidthDiff) {
+			selectedCapabilityIndex = i;
+			minWidthDiff = widthDiff;
+		}
+		else if (widthDiff == minWidthDiff) {
+			int heightDiff = abs((int)(capability.height - PREFERRED_FRAME_HEIGHT));
+			if (heightDiff < minHeightDiff) {
+				selectedCapabilityIndex = i;
+				minHeightDiff = heightDiff;
+			}
+			else if (heightDiff == minHeightDiff) {
+				int fpsDiff = abs((int)(capability.maxFPS - PREFERRED_MAX_FPS));
+				if (fpsDiff < minFpsDiff) {
+					selectedCapabilityIndex = i;
+					minFpsDiff = fpsDiff;
+				}
+			}
+		}
+	}
+	auto settings = ApplicationData::Current->LocalSettings->Values;
+	if (settings->HasKey("video_format"))
+	{
+		int vf = safe_cast<IPropertyValue^>(settings->Lookup("video_format"))->GetInt32();
+		if (vf >= 0 && vf < capabilitiesNumber)
+		{
+			selectedCapabilityIndex = vf;
+		}
+	}
+
 
   webrtc::CaptureCapability selectedCapability = captureCapabilities[selectedCapabilityIndex];
 
@@ -1682,4 +1693,5 @@ void StandupWinRT::App::SaveSettings()
   values->Insert("remote_ip", ipTextBox_->Text);
   values->Insert("audio_port", audioPortTextBox_->Text);
   values->Insert("video_port", videoPortTextBox_->Text);
+	values->Insert("video_format", videoFormatComboBox_->SelectedIndex);
 }
