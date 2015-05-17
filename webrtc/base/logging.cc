@@ -435,11 +435,8 @@ void LogMessage::OutputToDebug(const std::string& str,
   }
 #endif
 #if defined(WINRT)
-  WCHAR szTextBuf[1024];
-  int cTextBufSize = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), NULL, 0);
-  MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), szTextBuf, cTextBufSize);
   // Always log to the debugger.
-  OutputDebugString(szTextBuf);
+  OutputDebugString(rtc::ToUtf16(str).c_str());
   // TODO: Pipe log to TCP port here?
   // TODO: How to open STD_ERROR_HANDLE?
 #elif defined(WEBRTC_WIN)
