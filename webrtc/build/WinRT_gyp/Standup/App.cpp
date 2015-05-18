@@ -181,6 +181,7 @@ namespace StandupWinRT
       traceCallback_(new TestTraceCallback()),
       started_(false),
       startedVideo_(false),
+      stoppedRendering_(false),
       voiceTransport_(NULL),
       videoTransport_(NULL),
       voiceChannel_(-1),
@@ -510,6 +511,7 @@ namespace StandupWinRT
 
     Button^ startStopButton_;
     Button^ startStopVideoButton_;
+    Button^ stopRenderingButton_;
     ComboBox^ videoDeviceComboBox_;
     ComboBox^ videoFormatComboBox_;
     Button^ startTracingButton_;
@@ -522,6 +524,7 @@ namespace StandupWinRT
     Windows::UI::Core::CoreDispatcher^ dispatcher_;
     bool started_;
     bool startedVideo_;
+    bool stoppedRendering_;
 
     int audioPort_;
     int videoPort_;
@@ -542,7 +545,6 @@ namespace StandupWinRT
     int videoChannel_;
     webrtc::test::VideoChannelTransport* videoTransport_;
     int captureId_;
-    Concurrency::event stopEvent_;
     webrtc::VideoCaptureModule* vcpm_;
     webrtc::VideoEngine* videoEngine_;
     webrtc::ViEBase* videoBase_;
@@ -696,12 +698,22 @@ namespace StandupWinRT
         startStopButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartStopClick);
         stackPanel->Children->Append(startStopButton_);
 
+#if (WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP)
         startStopVideoButton_ = ref new Button();
         startStopVideoButton_->Content = "Start Video";
         startStopVideoButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
         startStopVideoButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartStopVideoClick);
         startStopVideoButton_->IsEnabled = true;
         stackPanel->Children->Append(startStopVideoButton_);
+#endif
+
+        stopRenderingButton_ = ref new Button();
+        stopRenderingButton_->Width = 100;
+        stopRenderingButton_->Content = "Stop Left";
+        stopRenderingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        stopRenderingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStopRenderingClick);
+        stopRenderingButton_->IsEnabled = false;
+        stackPanel->Children->Append(stopRenderingButton_);
 
         videoDeviceComboBox_ = ref new ComboBox();
         videoDeviceComboBox_->Width = 180;
@@ -786,6 +798,7 @@ namespace StandupWinRT
 
     void OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnStartStopVideoClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnStopRenderingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnSelectionChanged(Platform::Object ^sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs ^e);
     void OnStartTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnStopTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
@@ -848,12 +861,138 @@ int __cdecl main(::Platform::Array<::Platform::String^>^ args)
 void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
   if (started_) {
-    stopEvent_.set();
-    started_ = false;
+    Concurrency::create_async([this]
+    {
+      workerThread_.Invoke<void>([this]() -> void
+      {
+        int error;
+#ifdef VOICE
+        error = voiceBase_->StopSend(voiceChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+            "Failed to stop sending voice. Error: %d", voiceBase_->LastError());
+          return;
+        }
+        error = voiceBase_->StopPlayout(voiceChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+            "Failed to stop playout. Error: %d", voiceBase_->LastError());
+          return;
+        }
+        error = voiceBase_->StopReceive(voiceChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+            "Failed to stop receiving voice. Error: %d", voiceBase_->LastError());
+          return;
+        }
+        if (voiceTransport_)
+          delete voiceTransport_;
+        error = voiceBase_->DeleteChannel(voiceChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
+            "Failed to delete voice channel. Error: %d", voiceBase_->LastError());
+          return;
+        }
+
+        voiceChannel_ = -1;
+#endif
+#ifdef VIDEO
+        error = videoRender_->StopRender(videoChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to stop rendering video channel. Error: %d", videoBase_->LastError());
+          return;
+        }
+
+        error = videoRender_->RemoveRenderer(videoChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to remove renderer for video channel. Error: %d", videoBase_->LastError());
+          return;
+        }
+
+        error = videoBase_->StopSend(videoChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to stop sending video. Error: %d", videoBase_->LastError());
+          return;
+        }
+        error = videoBase_->StopReceive(videoChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to stop receiving video. Error: %d", videoBase_->LastError());
+          return;
+        }
+        error = videoCapture_->DisconnectCaptureDevice(videoChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to disconnect capture device from video channel. Error: %d", videoBase_->LastError());
+          return;
+        }
+        if (videoTransport_)
+          delete videoTransport_;
+        error = videoBase_->DeleteChannel(videoChannel_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to delete video channel. Error: %d", videoBase_->LastError());
+          return;
+        }
+
+        videoChannel_ = -1;
+
+        error = videoRender_->StopRender(captureId_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to stop rendering video capture. Error: %d", videoBase_->LastError());
+          return;
+        }
+        error = videoRender_->RemoveRenderer(captureId_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to remove renderer for video capture. Error: %d", videoBase_->LastError());
+          return;
+        }
+
+        error = videoCapture_->StopCapture(captureId_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to stop video capturing. Error: %d", videoBase_->LastError());
+          return;
+        }
+
+        error = videoCapture_->ReleaseCaptureDevice(captureId_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to release video capture device. Error: %d", videoBase_->LastError());
+          return;
+        }
+
+        if (vcpm_ != NULL)
+          vcpm_->Release();
+
+        vcpm_ = NULL;
+
+        captureId_ = -1;
+#endif
+
+        started_ = false;
+
+        dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+          startStopButton_->Content = "Start";
+#if (WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP)
+          startStopVideoButton_->IsEnabled = true;
+#endif
+          videoDeviceComboBox_->IsEnabled = true;
+          videoFormatComboBox_->IsEnabled = true;
+          stopRenderingButton_->Content = "Stop Left";
+          stopRenderingButton_->IsEnabled = false;
+          stoppedRendering_ = false;
+        }));
+      });
+    });
   }
   else {
     SaveSettings();
-    stopEvent_.reset();
     initializeTranportInfo();
 
     Concurrency::create_async([this]
@@ -1196,134 +1335,17 @@ void StandupWinRT::App::OnStartStopClick(Platform::Object ^sender, Windows::UI::
 
         dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
           startStopButton_->Content = "Stop";
+#if (WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP)
           startStopVideoButton_->IsEnabled = false;
+#endif
           videoDeviceComboBox_->IsEnabled = false;
           videoFormatComboBox_->IsEnabled = false;
+          stopRenderingButton_->IsEnabled = true;
         }));
-
 
         started_ = true;
-        stopEvent_.wait();
-
-#ifdef VOICE
-
-        error = voiceBase_->StopSend(voiceChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-            "Failed to stop sending voice. Error: %d", voiceBase_->LastError());
-          return;
-        }
-        error = voiceBase_->StopPlayout(voiceChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-            "Failed to stop playout. Error: %d", voiceBase_->LastError());
-          return;
-        }
-        error = voiceBase_->StopReceive(voiceChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-            "Failed to stop receiving voice. Error: %d", voiceBase_->LastError());
-          return;
-        }
-        if (voiceTransport_)
-          delete voiceTransport_;
-        error = voiceBase_->DeleteChannel(voiceChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice, -1,
-            "Failed to delete voice channel. Error: %d", voiceBase_->LastError());
-          return;
-        }
-
-        voiceChannel_ = -1;
-#endif
-#ifdef VIDEO
-        error = videoRender_->StopRender(videoChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to stop rendering video channel. Error: %d", videoBase_->LastError());
-          return;
-        }
-
-        error = videoRender_->RemoveRenderer(videoChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to remove renderer for video channel. Error: %d", videoBase_->LastError());
-          return;
-        }
-
-        error = videoBase_->StopSend(videoChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to stop sending video. Error: %d", videoBase_->LastError());
-          return;
-        }
-        error = videoBase_->StopReceive(videoChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to stop receiving video. Error: %d", videoBase_->LastError());
-          return;
-        }
-        error = videoCapture_->DisconnectCaptureDevice(videoChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to disconnect capture device from video channel. Error: %d", videoBase_->LastError());
-          return;
-        }
-        if (videoTransport_)
-          delete videoTransport_;
-        error = videoBase_->DeleteChannel(videoChannel_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to delete video channel. Error: %d", videoBase_->LastError());
-          return;
-        }
-
-        videoChannel_ = -1;
-
-        error = videoRender_->StopRender(captureId_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to stop rendering video capture. Error: %d", videoBase_->LastError());
-          return;
-        }
-        error = videoRender_->RemoveRenderer(captureId_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to remove renderer for video capture. Error: %d", videoBase_->LastError());
-          return;
-        }
-
-        error = videoCapture_->StopCapture(captureId_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to stop video capturing. Error: %d", videoBase_->LastError());
-          return;
-        }
-
-        error = videoCapture_->ReleaseCaptureDevice(captureId_);
-        if (error != 0) {
-          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-            "Failed to release video capture device. Error: %d", videoBase_->LastError());
-          return;
-        }
-
-        if (vcpm_ != NULL)
-          vcpm_->Release();
-
-        vcpm_ = NULL;
-
-        captureId_ = -1;
-#endif
-
-        started_ = false;
-
-        dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
-          startStopButton_->Content = "Start";
-          startStopVideoButton_->IsEnabled = true;
-          videoDeviceComboBox_->IsEnabled = true;
-          videoFormatComboBox_->IsEnabled = true;
-        }));
-      }); });
+      });
+    });
   }
 }
 
@@ -1395,7 +1417,9 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
           startedVideo_ = true;
 
           dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+#if (WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP)
             startStopVideoButton_->Content = "Stop Video";
+#endif
             startStopButton_->IsEnabled = false;
             videoDeviceComboBox_->IsEnabled = false;
             videoFormatComboBox_->IsEnabled = false;
@@ -1417,10 +1441,55 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
         startedVideo_ = false;
 
         dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+#if (WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP)
           startStopVideoButton_->Content = "Start Video";
+#endif
           startStopButton_->IsEnabled = true;
           videoDeviceComboBox_->IsEnabled = true;
           videoFormatComboBox_->IsEnabled = true;
+        }));
+      });
+    });
+  }
+}
+
+void StandupWinRT::App::OnStopRenderingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e) {
+  if (stoppedRendering_) {
+    Concurrency::create_async([this]
+    {
+      workerThread_.Invoke<void>([this]() -> void
+      {
+        int error = videoRender_->StartRender(captureId_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to start rendering video capture. Error: %d", videoBase_->LastError());
+        }
+
+        stoppedRendering_ = false;
+
+        dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+          stopRenderingButton_->Content = "Stop Left";
+          stopRenderingButton_->IsEnabled = true;
+        }));
+      });
+    });
+  }
+  else {
+    Concurrency::create_async([this]
+    {
+      workerThread_.Invoke<void>([this]() -> void
+      {
+        int error = videoRender_->StopRender(captureId_);
+        if (error != 0) {
+          webrtc::WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+            "Failed to stop rendering video capture. Error: %d", videoBase_->LastError());
+        }
+
+        stoppedRendering_ = true;
+
+        dispatcher_->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, ref new Windows::UI::Core::DispatchedHandler([this]() {
+          stopRenderingButton_->Content = "Start Left";
+          stopRenderingButton_->IsEnabled = true;
         }));
       });
     });
