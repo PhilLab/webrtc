@@ -388,10 +388,6 @@ void Conductor::ConnectToPeer(int peer_id) {
 }
 
 cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
-#if defined(WINRT)
-
-  return nullptr;
-#else
   rtc::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(
       cricket::DeviceManagerFactory::Create());
   if (!dev_manager->Init()) {
@@ -411,7 +407,6 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
       break;
   }
   return capturer;
-#endif
 }
 
 void Conductor::AddStreams() {
