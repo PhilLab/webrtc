@@ -44,7 +44,9 @@ void FrameBuffer::SetFrame(const cricket::VideoFrame *frame)
     LeaveCriticalSection(&_critical);
     return;
   }
-  frame->ConvertToRgbBuffer(libyuv::FOURCC_ARGB, _buffer, _bufferSize, _stride);
+  cricket::VideoFrame* scaledFrame = frame->Stretch(_width, _height, false, true);
+  scaledFrame->ConvertToRgbBuffer(libyuv::FOURCC_ARGB, _buffer, _bufferSize, _stride);
+  delete scaledFrame;
   LeaveCriticalSection(&_critical);
 }
 
@@ -112,19 +114,6 @@ bool FrameBuffer::ConvertFrame(IMFMediaBuffer* mediaBuffer)
     imageBuffer->Unlock2D();
     return false;
   }
-  // Test code
-  //for (int y = 0; y < 480; y++)
-  //{
-  //  BYTE* destPtr = destRawData;
-  //  for (int x = 0; x < 640; x++)
-  //  {
-  //    *destPtr++ = 255;
-  //    *destPtr++ = 0;
-  //    *destPtr++ = 0;
-  //    *destPtr++ = 255;
-  //  }
-  //  destRawData += pitch;
-  //}
   memcpy(destRawData, _buffer, _bufferSize);
   LeaveCriticalSection(&_critical);
   imageBuffer->Unlock2D();
@@ -316,9 +305,13 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
 
 MediaStreamSource^ Media::CreateMediaStreamSource(MediaVideoTrack^ track, int width, int height)
 {
+  //int aWidth = std::min(width, ((width * 9 / 16) >> 1) * 2);
+  //int aHeight = std::min(height, ((height * 16 / 9) >> 1) * 2);
+  int aWidth = 1280;
+  int aHeight = 720;
   auto videoProperties =
     Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
-    Windows::Media::MediaProperties::MediaEncodingSubtypes::Bgra8, (uint32)width, (uint32)height);
+    Windows::Media::MediaProperties::MediaEncodingSubtypes::Bgra8, (uint32)aWidth, (uint32)aHeight);
   auto videoDesc = ref new VideoStreamDescriptor(videoProperties);
   videoDesc->EncodingProperties->FrameRate->Numerator = 30; // TODO: remove magic number
   videoDesc->EncodingProperties->FrameRate->Denominator = 1;
@@ -328,7 +321,8 @@ MediaStreamSource^ Media::CreateMediaStreamSource(MediaVideoTrack^ track, int wi
   ret->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^,
     Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(
     track, &webrtc_winrt_api::MediaVideoTrack::OnSampleRequested);
-  ret->Starting += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, Windows::Media::Core::MediaStreamSourceStartingEventArgs ^>(this, &webrtc_winrt_api::Media::OnStarting);
+  ret->Starting += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, 
+    Windows::Media::Core::MediaStreamSourceStartingEventArgs ^>(this, &webrtc_winrt_api::Media::OnStarting);
   TimeSpan spanBuffer;
   spanBuffer.Duration = 10000LL * 250LL;
   ret->BufferTime = spanBuffer;
