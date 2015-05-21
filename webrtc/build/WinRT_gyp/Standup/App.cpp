@@ -517,6 +517,9 @@ namespace StandupWinRT
     Button^ startTracingButton_;
     Button^ stopTracingButton_;
     Button^ sendTracesButton_;
+    Button^ settingsButton_;
+
+    Flyout^ settingsFlyout_;
 
     webrtc::VideoRender* vrm_;
     webrtc::VideoCaptureDataCallback* captureCallback_;
@@ -575,75 +578,40 @@ namespace StandupWinRT
 
       auto settings = ApplicationData::Current->LocalSettings->Values;
 
-      // First row (ip and port fields)
+      // First row (Traces, Settings)
       {
         auto row = ref new RowDefinition();
-#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
-        row->Height = GridLength(64, GridUnitType::Pixel);
-#else
-        row->Height = GridLength(32, GridUnitType::Pixel);
-#endif
-        layoutRoot->RowDefinitions->Append(row);
+        row->Height = GridLength(40, GridUnitType::Pixel);
 
-        auto viewBox = ref new Viewbox;
-        Grid::SetRow(viewBox, 0);
-        layoutRoot->Children->Append(viewBox);
+        layoutRoot->RowDefinitions->Append(row);
 
         auto stackPanel = ref new StackPanel();
         stackPanel->Orientation = Orientation::Horizontal;
-        viewBox->Child = stackPanel;
+        Grid::SetRow(stackPanel, 0);
+        layoutRoot->Children->Append(stackPanel);
 
-				auto hostNames = Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
-				String^ ipAddress = "";
-				std::for_each(begin(hostNames), end(hostNames), [&](Windows::Networking::HostName^ hostname)
-				{
-					if (hostname->IPInformation != nullptr && hostname->IPInformation->PrefixLength->Value <= 32)
-					{
-						ipAddress = hostname->DisplayName;
-					}
-				});
-	
-				auto label = ref new TextBlock();
+        startTracingButton_ = ref new Button();
+        startTracingButton_->Content = "Start Tracing";
+        startTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartTracingClick);
+        stackPanel->Children->Append(startTracingButton_);
 
-				label->Text = ipAddress;
+        stopTracingButton_ = ref new Button();
+        stopTracingButton_->Content = "Stop Tracing";
+        stopTracingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        stopTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStopTracingClick);
+        stackPanel->Children->Append(stopTracingButton_);
 
-				label->VerticalAlignment = VerticalAlignment::Center;
-				label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
-				stackPanel->Children->Append(label);
+        sendTracesButton_ = ref new Button();
+        sendTracesButton_->Content = "Send Traces";
+        sendTracesButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        sendTracesButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSendTracesClick);
+        stackPanel->Children->Append(sendTracesButton_);
 
-        label = ref new TextBlock();
-        label->Text = "IP: ";
-        label->VerticalAlignment = VerticalAlignment::Center;
-        label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
-        stackPanel->Children->Append(label);
-
-        ipTextBox_ = ref new TextBox();
-        ipTextBox_->Width = 150;
-        ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
-        ipTextBox_->InputScope = CreateInputScope();
-        stackPanel->Children->Append(ipTextBox_);
-
-        label = ref new TextBlock();
-        label->Text = "Video Port: ";
-        label->VerticalAlignment = VerticalAlignment::Center;
-        label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
-        stackPanel->Children->Append(label);
-
-        videoPortTextBox_ = ref new TextBox();
-        videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
-        videoPortTextBox_->InputScope = CreateInputScope();
-        stackPanel->Children->Append(videoPortTextBox_);
-
-        label = ref new TextBlock();
-        label->Text = "Audio Port: ";
-        label->VerticalAlignment = VerticalAlignment::Center;
-        label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
-        stackPanel->Children->Append(label);
-
-        audioPortTextBox_ = ref new TextBox();
-        audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
-        audioPortTextBox_->InputScope = CreateInputScope();
-        stackPanel->Children->Append(audioPortTextBox_);
+        settingsButton_ = ref new Button();
+        settingsButton_->Content = "Settings";
+        settingsButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
+        settingsButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSettingsClick);
+        stackPanel->Children->Append(settingsButton_);
       }
 
       // Second row
@@ -729,57 +697,6 @@ namespace StandupWinRT
         stackPanel->Children->Append(videoFormatComboBox_);
       }
 
-      // Fourth row (Tracing controls)
-      {
-        auto row = ref new RowDefinition();
-        row->Height = GridLength(40, GridUnitType::Pixel);
-        layoutRoot->RowDefinitions->Append(row);
-
-        auto stackPanel = ref new StackPanel();
-        stackPanel->Orientation = Orientation::Horizontal;
-        Grid::SetRow(stackPanel, 3);
-        layoutRoot->Children->Append(stackPanel);
-        
-        startTracingButton_ = ref new Button();
-        startTracingButton_->Content = "Start Tracing";
-        startTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStartTracingClick);
-        stackPanel->Children->Append(startTracingButton_);
-
-        stopTracingButton_ = ref new Button();
-        stopTracingButton_->Content = "Stop Tracing";
-        stopTracingButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
-        stopTracingButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnStopTracingClick);
-        stackPanel->Children->Append(stopTracingButton_);
-
-        sendTracesButton_ = ref new Button();
-        sendTracesButton_->Content = "Send Traces";
-        sendTracesButton_->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
-        sendTracesButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this, &StandupWinRT::App::OnSendTracesClick);
-        stackPanel->Children->Append(sendTracesButton_);
-
-        auto label = ref new TextBlock();
-        label->Text = "IP(Traces): ";
-        label->Margin = ThicknessHelper::FromLengths(20, 0, 0, 0);
-        label->VerticalAlignment = VerticalAlignment::Center;
-        label->Margin = ThicknessHelper::FromLengths(4, 0, 4, 0);
-        stackPanel->Children->Append(label);
-
-        ipRemoteTraces_ = ref new TextBox();
-        ipRemoteTraces_->Width = 150;
-        ipRemoteTraces_->Height = 32;
-        stackPanel->Children->Append(ipRemoteTraces_);
-
-        label = ref new TextBlock();
-        label->Text = "Port(Traces): ";
-        label->VerticalAlignment = VerticalAlignment::Center;
-        label->Margin = ThicknessHelper::FromLengths(8, 0, 4, 0);
-        stackPanel->Children->Append(label);
-
-        portRemoteTraces_ = ref new TextBox();
-        portRemoteTraces_->Height = 32;
-        stackPanel->Children->Append(portRemoteTraces_);
-      }
-
       localMediaWrapper_ = new MediaElementWrapper(localMedia_);
       remoteMediaWrapper_ = new MediaElementWrapper(remoteMedia_);
 
@@ -803,6 +720,7 @@ namespace StandupWinRT
     void OnStartTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnStopTracingClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
     void OnSendTracesClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
+    void OnSettingsClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
   private:
 
     /**
@@ -1542,6 +1460,87 @@ void StandupWinRT::App::OnSendTracesClick(Platform::Object ^sender, Windows::UI:
   std::wstring tmp(ipRemoteTraces_->Text->Data());
   std::string ip(tmp.begin(), tmp.end());
   tl.Save(ip, _wtoi(portRemoteTraces_->Text->Data()));
+}
+
+void StandupWinRT::App::OnSettingsClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
+{
+  if (!settingsFlyout_) {
+
+    auto layoutRoot = ref new Grid();
+    auto settings = ApplicationData::Current->LocalSettings->Values;
+
+    auto row = ref new RowDefinition();
+    auto stackPanel = ref new StackPanel();
+    stackPanel->Width = 300;
+    layoutRoot->Children->Append(stackPanel);
+    auto hostNames = Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
+    String^ ipAddress = "";
+    std::for_each(begin(hostNames), end(hostNames), [&](Windows::Networking::HostName^ hostname)
+    {
+      if (hostname->IPInformation != nullptr && hostname->IPInformation->PrefixLength->Value <= 32)
+      {
+        ipAddress = hostname->DisplayName;
+      }
+    });
+
+    auto label = ref new TextBlock();
+    label->Text = "IP: " + ipAddress;
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 0, 4, 0);
+    stackPanel->Children->Append(label);
+
+    ipTextBox_ = ref new TextBox();
+    ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
+    ipTextBox_->InputScope = CreateInputScope();
+    stackPanel->Children->Append(ipTextBox_);
+
+    label = ref new TextBlock();
+    label->Text = "Video Port: ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    videoPortTextBox_ = ref new TextBox();
+    videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
+    videoPortTextBox_->InputScope = CreateInputScope();
+    stackPanel->Children->Append(videoPortTextBox_);
+
+    label = ref new TextBlock();
+    label->Text = "Audio Port: ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    audioPortTextBox_ = ref new TextBox();
+    audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
+    audioPortTextBox_->InputScope = CreateInputScope();
+    stackPanel->Children->Append(audioPortTextBox_);
+
+    label = ref new TextBlock();
+    label->Text = "IP(Traces): ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    ipRemoteTraces_ = ref new TextBox();
+
+    stackPanel->Children->Append(ipRemoteTraces_);
+
+    label = ref new TextBlock();
+    label->Text = "Port(Traces): ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    portRemoteTraces_ = ref new TextBox();
+    stackPanel->Children->Append(portRemoteTraces_);
+
+    settingsFlyout_ = ref new Flyout();
+    settingsFlyout_->Content = layoutRoot;
+
+  }
+
+  settingsFlyout_->ShowAt((FrameworkElement^)(Window::Current->Content));
 }
 
 std::string StandupWinRT::App::getRawVideoFormatString(webrtc::RawVideoType videoType) {
