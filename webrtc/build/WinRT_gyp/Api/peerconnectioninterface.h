@@ -85,14 +85,18 @@ namespace webrtc_winrt_api
   public ref class RTCIceCandidate sealed
   {
   public:
+    RTCIceCandidate();
+    RTCIceCandidate(String^ candidate, String^ sdpMid, unsigned short sdpMLineIndex);
     property String^ Candidate;
     property String^ SdpMid;
-    property unsigned short sdpMLineIndex;
+    property unsigned short SdpMLineIndex;
   };
 
   public ref class RTCSessionDescription sealed
   {
   public:
+    RTCSessionDescription();
+    RTCSessionDescription(RTCSdpType type, String^ sdp);
     property IBox<RTCSdpType>^ Type;
     property String^ Sdp;
   };

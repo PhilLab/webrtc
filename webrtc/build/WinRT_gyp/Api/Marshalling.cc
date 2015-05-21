@@ -148,7 +148,7 @@ namespace webrtc_winrt_api_internal {
   {
     outObj.reset(webrtc::CreateIceCandidate(
       FromCx(inObj->SdpMid),
-      inObj->sdpMLineIndex,
+      inObj->SdpMLineIndex,
       FromCx(inObj->Candidate)));
   }
 
@@ -159,7 +159,7 @@ namespace webrtc_winrt_api_internal {
     (*outObj) = ref new webrtc_winrt_api::RTCIceCandidate();
     (*outObj)->Candidate = ToCx(webrtc::SdpSerializeCandidate(inObj));
     (*outObj)->SdpMid = ToCx(inObj.sdp_mid());
-    (*outObj)->sdpMLineIndex = inObj.sdp_mline_index();
+    (*outObj)->SdpMLineIndex = inObj.sdp_mline_index();
   }
 
   std::string FromCx(
