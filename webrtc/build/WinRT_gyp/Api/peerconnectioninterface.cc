@@ -30,6 +30,27 @@ namespace webrtc_winrt_api {
   }
 }
 
+RTCIceCandidate::RTCIceCandidate()
+{
+}
+
+RTCIceCandidate::RTCIceCandidate(String^ candidate, String^ sdpMid, unsigned short sdpMLineIndex)
+{
+  Candidate = candidate;
+  SdpMid = sdpMid;
+  SdpMLineIndex = sdpMLineIndex;
+}
+
+RTCSessionDescription::RTCSessionDescription()
+{
+}
+
+RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp)
+{
+  Type = type;
+  Sdp = sdp;
+}
+
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
 {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
@@ -59,7 +80,10 @@ IAsyncOperation<T2>^ CreateCallbackBridge(
   // Start the initial async operation
   Concurrency::create_async([tce, init]
   {
-    init(tce);
+    globals::RunOnGlobalThread<void>([tce, init]
+    {
+      init(tce);
+    });
   });
 
   // Create the task that waits on the completion event.
@@ -246,7 +270,7 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher)
   // Create a worker thread
   globals::gThread.Start();
 
-  globals::RunOnGlobalThread<void>([]() -> void
+  globals::RunOnGlobalThread<void>([]
   {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL();
