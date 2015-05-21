@@ -31,6 +31,7 @@
         '../../../../../webrtc/video_engine/video_engine.gyp:video_engine_core_unittests',
         '../../../../../webrtc/voice_engine/voice_engine.gyp:voice_engine_unittests',
         '../../../../../webrtc/webrtc.gyp:rtc_unittests',
+        '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
@@ -160,6 +161,7 @@
                 # Fixes linking for assembler opus source files 
                 '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
                 '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx/*.obj',
+                '../../../../../third_party/libyuv/source/*.obj',
               ],
             }],
           ],
