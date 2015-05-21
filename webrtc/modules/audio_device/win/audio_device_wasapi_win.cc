@@ -197,11 +197,11 @@ private:
 }  // namespace
 
 AudioDeviceWindowsWasapi* AudioInterfaceActivator::m_AudioDevice = nullptr;
+AudioInterfaceActivator::ActivatorDeviceType AudioInterfaceActivator::m_DeviceType = eNone;
 
 HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncOperation  *pAsyncOp)
 {
-  // Set the completed event and return success
-  m_ActivateCompleted.set();
+  
 
   HRESULT hr = S_OK;
   HRESULT hrActivateResult = S_OK;
@@ -211,12 +211,12 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
   //IAudioRenderClient *audioRenderClient = nullptr;
   WAVEFORMATEX *mixFormat = nullptr;
 
-  if (!m_AudioDevice->_captureDeviceActivated)
+  if (m_DeviceType == eInputDevice)
   {
     //audioClient = m_AudioDevice->_ptrClientIn;
     mixFormat = m_AudioDevice->_mixFormatIn;
   }
-  else
+  else if (m_DeviceType == eOutputDevice)
   {
     //audioClient = m_AudioDevice->_ptrClientOut;
     mixFormat = m_AudioDevice->_mixFormatOut;
@@ -286,7 +286,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
     //{
     //  goto exit;
     //}
-    if (!m_AudioDevice->_captureDeviceActivated)
+    if (m_DeviceType == eInputDevice)
     {
       // Get the capture client
       hr = audioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&m_AudioDevice->_ptrCaptureClient);
@@ -295,9 +295,9 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         goto exit;
       }
       m_AudioDevice->_ptrClientIn = audioClient;
-      m_AudioDevice->_captureDeviceActivated = true;
+      //m_AudioDevice->_captureDeviceActivated = true;
     }
-    else
+    else if (m_DeviceType == eOutputDevice)
     {
       // Get the render client
       hr = audioClient->GetService(__uuidof(IAudioRenderClient), (void**)&m_AudioDevice->_ptrRenderClient);
@@ -306,38 +306,12 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         goto exit;
       }
       m_AudioDevice->_ptrClientOut = audioClient;
-      m_AudioDevice->_renderDeviceActivated = true;
+      //m_AudioDevice->_renderDeviceActivated = true;
     }
   }
 
-  //  // Create Async callback for sample events
-  //  hr = MFCreateAsyncResult(nullptr, &m_xSampleReady, nullptr, &m_SampleReadyAsyncResult);
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-
-  //  // Sets the event handle that the system signals when an audio buffer is ready to be processed by the client
-  //  hr = audioClient->SetEventHandle(m_SampleReadyEvent);
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-
-  //  // Create the visualization array
-  //  hr = InitializeScopeData();
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-
-  //  // Creates the WAV file.  If successful, will set the Initialized event
-  //  hr = CreateWAVFile();
-  //  if (FAILED(hr))
-  //  {
-  //    goto exit;
-  //  }
-  //}
+  // Set the completed event and return success
+  m_ActivateCompleted.set();
   
 exit:
   SAFE_RELEASE(punkAudioInterface);
@@ -346,22 +320,16 @@ exit:
   {
     //m_DeviceStateChanged->SetState(DeviceState::DeviceStateInError, hr, true);
     SAFE_RELEASE(audioClient);
-    if (!m_AudioDevice->_captureDeviceActivated)
+    if (m_DeviceType == eInputDevice)
     {
       SAFE_RELEASE(m_AudioDevice->_ptrCaptureClient);
     }
-    else
+    else if (m_DeviceType == eOutputDevice)
     {
       SAFE_RELEASE(m_AudioDevice->_ptrRenderClient);
     }
     //SAFE_RELEASE(m_SampleReadyAsyncResult);
   }
-
-
-
-
-
-
 
   return S_OK;
 }
@@ -371,12 +339,14 @@ void AudioInterfaceActivator::SetAudioDevice(AudioDeviceWindowsWasapi* device)
   m_AudioDevice = device;
 }
 
-task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId)
+task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId, ActivatorDeviceType deviceType)
 {
   ComPtr<AudioInterfaceActivator> pActivator = Make<AudioInterfaceActivator>();
 
   ComPtr<IActivateAudioInterfaceAsyncOperation> pAsyncOp;
   ComPtr<IActivateAudioInterfaceCompletionHandler> pHandler = pActivator;
+
+  m_DeviceType = deviceType;
 
   HRESULT hr = ActivateAudioInterfaceAsync(
     deviceId,
@@ -553,10 +523,10 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
 
     _EnumerateEndpointDevicesAll();
 
-    while (!_ptrCaptureCollection && !_ptrRenderCollection)
-    {
-      Sleep(200);
-    }
+    //while (!_ptrCaptureCollection && !_ptrRenderCollection)
+    //{
+    //  Sleep(200);
+    //}
 
 }
 
@@ -720,27 +690,19 @@ int32_t AudioDeviceWindowsWasapi::Init()
     _recWarning = 0;
     _recError = 0;
 
-    _InitializeAudioDeviceInAsync();
-
-    while (true)
+    Concurrency::task<void> (_InitializeAudioDeviceInAsync())
+      .then([this](concurrency::task<void> )
     {
-      if (_ptrCaptureClient && _ptrClientIn)
-      {
-        break;
-      }
-      Sleep(100);
-    }
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "Input audio device activated");
+    }, task_continuation_context::use_arbitrary()).wait();
 
-    _InitializeAudioDeviceOutAsync();
 
-    while (true)
+    Concurrency::task<void> (_InitializeAudioDeviceOutAsync())
+      .then([this](concurrency::task<void>)
     {
-      if (_ptrRenderClient && _ptrClientOut)
-      {
-        break;
-      }
-      Sleep(100);
-    }
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "Output audio device activated");
+    }, task_continuation_context::use_arbitrary()).wait();
+
 
     _initialized = true;
 
@@ -765,8 +727,8 @@ int32_t AudioDeviceWindowsWasapi::Terminate()
     _microphoneIsInitialized = false;
     _playing = false;
     _recording = false;
-    _captureDeviceActivated = false;
-    _renderDeviceActivated = false;
+    //_captureDeviceActivated = false;
+    //_renderDeviceActivated = false;
 
     //SAFE_RELEASE(_ptrRenderCollection);
     //SAFE_RELEASE(_ptrCaptureCollection);
@@ -4174,14 +4136,8 @@ int32_t AudioDeviceWindowsWasapi::_RefreshDeviceList(DeviceClass cls)
         .then([this](DeviceInformationCollection^ interfaces)
       {
         _ptrCollection = interfaces;
-        //std::for_each(begin(interfaces), end(interfaces),
-        //  [this](DeviceInformation^ deviceInterface)
-        //{
-        //  //DisplayDeviceInterface(deviceInterface);
 
-        //});
-
-      }, task_continuation_context::use_arbitrary());
+      }, task_continuation_context::use_arbitrary()).wait();
     }
     catch (Platform::InvalidArgumentException^)
     {
@@ -4191,14 +4147,14 @@ int32_t AudioDeviceWindowsWasapi::_RefreshDeviceList(DeviceClass cls)
 
     }
 
-    while (true)
-    {
-      if (_ptrCollection)
-      {
-        break;
-      }
-      Sleep(100);
-    }
+    //while (true)
+    //{
+    //  if (_ptrCollection)
+    //  {
+    //    break;
+    //  }
+    //  Sleep(100);
+    //}
 
     if (cls == DeviceClass::AudioCapture)
     {
@@ -4287,18 +4243,10 @@ Platform::String^ AudioDeviceWindowsWasapi::_GetDefaultDeviceName(DeviceClass cl
 
     if (cls == DeviceClass::AudioRender)
     {
-      //Concurrency::create_task(Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(_deviceIdStringOut)).then([this](Windows::Devices::Enumeration::DeviceInformation^ deviceInformation)
-      //{
-      //  _defaultRenderDevice = deviceInformation;
-      //});
       return _defaultRenderDevice->Name;
     }
     else if (cls == DeviceClass::AudioCapture)
     {
-      //Concurrency::create_task(Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(_deviceIdStringIn)).then([this](Windows::Devices::Enumeration::DeviceInformation^ deviceInformation)
-      //{
-      //  _defaultCaptureDevice = deviceInformation;
-      //});
       return _defaultCaptureDevice->Name;
     }
 
@@ -4474,15 +4422,7 @@ DeviceInformation^ AudioDeviceWindowsWasapi::_GetDefaultDevice(DeviceClass cls)
         Concurrency::create_task(Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(MediaDevice::GetDefaultAudioRenderId(AudioDeviceRole::Default))).then([this](Windows::Devices::Enumeration::DeviceInformation^ deviceInformation)
         {
           _defaultRenderDevice = deviceInformation;
-        }, task_continuation_context::use_arbitrary());
-        while (true)
-        {
-          if (_defaultRenderDevice)
-          {
-            break;
-          }
-          Sleep(100);
-        }
+        }, task_continuation_context::use_arbitrary()).wait();
       }
         return _defaultRenderDevice;
     }
@@ -4492,15 +4432,8 @@ DeviceInformation^ AudioDeviceWindowsWasapi::_GetDefaultDevice(DeviceClass cls)
         Concurrency::create_task(Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(MediaDevice::GetDefaultAudioCaptureId(AudioDeviceRole::Default))).then([this](Windows::Devices::Enumeration::DeviceInformation^ deviceInformation)
         {
           _defaultCaptureDevice = deviceInformation;
-        }, task_continuation_context::use_arbitrary());
-        while (true)
-        {
-          if (_defaultCaptureDevice)
-          {
-            break;
-          }
-          Sleep(100);
-        }
+        }, task_continuation_context::use_arbitrary()).wait();
+
       }
       return _defaultCaptureDevice;
     }
@@ -4548,7 +4481,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
       {
         _ptrCaptureCollection = getDevicesTask.get();
 
-      }, task_continuation_context::use_arbitrary());
+      }, task_continuation_context::use_arbitrary()).wait();
 
     }
     catch (Platform::InvalidArgumentException^)
@@ -4569,7 +4502,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll()
       {
         _ptrRenderCollection = getDevicesTask.get();
 
-      }, task_continuation_context::use_arbitrary());
+      }, task_continuation_context::use_arbitrary()).wait();
     }
     catch (Platform::InvalidArgumentException^)
     {
@@ -4599,7 +4532,16 @@ Exit:
 //  Activates the default audio capture on a asynchronous callback thread.  This needs
 //  to be called from the main UI thread.
 //
-HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceInAsync()
+
+Windows::Foundation::IAsyncAction^ AudioDeviceWindowsWasapi::_InitializeAudioDeviceInAsync()
+{
+  return Concurrency::create_async([this]
+  {
+    _InitializeAudioDeviceIn();
+  });
+}
+
+HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn()
 {
   HRESULT hr = S_OK;
 
@@ -4607,7 +4549,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceInAsync()
   AudioInterfaceActivator::SetAudioDevice(this);
   auto defaultCaptureDeviceId = MediaDevice::GetDefaultAudioCaptureId(AudioDeviceRole::Default);
 
-  AudioInterfaceActivator::ActivateAudioClientAsync(defaultCaptureDeviceId->Data()).then(
+  AudioInterfaceActivator::ActivateAudioClientAsync(defaultCaptureDeviceId->Data(), AudioInterfaceActivator::ActivatorDeviceType::eInputDevice).then(
     [defaultCaptureDeviceId](ComPtr<IAudioClient2> captureClient)
   {
     Platform::String^ rawProcessingSupportedKey = L"System.Devices.AudioDevice.RawProcessingSupported";
@@ -4623,22 +4565,30 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceInAsync()
         rawIsSupported = safe_cast<bool>(device->Properties->Lookup(rawProcessingSupportedKey));
       }
 
-    });
+    }).wait();
 
-  }, task_continuation_context::use_arbitrary());
+  }, task_continuation_context::use_arbitrary()).wait();
 
   _deviceIdStringIn = defaultCaptureDeviceId;
   return hr;
 }
 
-HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOutAsync()
+Windows::Foundation::IAsyncAction^ AudioDeviceWindowsWasapi::_InitializeAudioDeviceOutAsync()
+{
+  return Concurrency::create_async([this]
+  {
+    _InitializeAudioDeviceOut();
+  });
+}
+
+HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut()
 {
   HRESULT hr = S_OK;
 
   auto defaultRenderDeviceId = MediaDevice::GetDefaultAudioRenderId(AudioDeviceRole::Default);
   AudioInterfaceActivator::SetAudioDevice(this);
 
-  AudioInterfaceActivator::ActivateAudioClientAsync(defaultRenderDeviceId->Data()).then(
+  AudioInterfaceActivator::ActivateAudioClientAsync(defaultRenderDeviceId->Data(), AudioInterfaceActivator::ActivatorDeviceType::eOutputDevice).then(
     [defaultRenderDeviceId](ComPtr<IAudioClient2> renderClient)
   {
     Platform::String^ rawProcessingSupportedKey = L"System.Devices.AudioDevice.RawProcessingSupported";
@@ -4653,9 +4603,9 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOutAsync()
       {
         rawIsSupported = safe_cast<bool>(device->Properties->Lookup(rawProcessingSupportedKey));
       }
-    });
+    }).wait();
 
-  }, task_continuation_context::use_arbitrary());
+  }, task_continuation_context::use_arbitrary()).wait();
 
   _deviceIdStringOut = defaultRenderDeviceId;
 
