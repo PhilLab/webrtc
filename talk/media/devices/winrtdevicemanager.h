@@ -28,6 +28,10 @@
 #ifndef TALK_MEDIA_DEVICES_WINRTDEVICEMANAGER_H_
 #define TALK_MEDIA_DEVICES_WINRTDEVICEMANAGER_H_
 
+#ifndef WINRT
+#error Invalid build configuration
+#endif // WINRT
+
 #include <string>
 #include <vector>
 

@@ -1,3 +1,6 @@
+#ifndef WINRT
+#error Invalid build configuration
+#endif // WINRT
 #include "talk/media/devices/winrtdevicemanager.h"
 #include <dbt.h>
 #include <strmif.h>
