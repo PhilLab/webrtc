@@ -105,7 +105,7 @@ namespace webrtc_winrt_api
   public:
     // TODO: Arguments
     IAsyncOperation<MediaStream^>^ GetUserMedia();
-    MediaStreamSource^ CreateMediaStreamSource(MediaVideoTrack^ track, int width, int height);
+    MediaStreamSource^ CreateMediaStreamSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate);
     void OnStarting(Windows::Media::Core::MediaStreamSource ^sender, Windows::Media::Core::MediaStreamSourceStartingEventArgs ^args);
   };
 
