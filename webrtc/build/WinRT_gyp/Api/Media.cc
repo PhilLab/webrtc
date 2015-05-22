@@ -44,14 +44,14 @@ void MediaVideoTrack::Enabled::set(bool value)
 }
 
 void MediaVideoTrack::SetRenderer(webrtc::VideoRendererInterface* renderer)
-{
+//{
   _impl->AddRenderer(renderer);
-}
+//}
 
 void MediaVideoTrack::UnsetRenderer(webrtc::VideoRendererInterface* renderer)
-{
+//{
   _impl->RemoveRenderer(renderer);
-}
+//}
 
 // ===========================================================================
 
@@ -191,6 +191,44 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
 }
 
 IMediaSource^ Media::CreateMediaStreamSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate)
-{
+  //  Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
+  //  Windows::Media::MediaProperties::MediaEncodingSubtypes::Bgra8, width, height);
+  //auto videoDesc = ref new VideoStreamDescriptor(videoProperties);
+  //videoDesc->EncodingProperties->FrameRate->Numerator = framerate;
+  //videoDesc->EncodingProperties->FrameRate->Denominator = 1;
+  //videoDesc->EncodingProperties->Bitrate = (uint32)(videoDesc->EncodingProperties->FrameRate->Numerator*
+  //  videoDesc->EncodingProperties->FrameRate->Denominator * width * height * 4);
+  //auto ret = ref new MediaStreamSource(videoDesc);
+  //ret->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^,
+  //  Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(
+  //  track, &webrtc_winrt_api::MediaVideoTrack::OnSampleRequested);
+  //ret->Starting += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, 
+  //  Windows::Media::Core::MediaStreamSourceStartingEventArgs ^>(this, &webrtc_winrt_api::Media::OnStarting);
+  //ret->CanSeek = false;
+  //track->SetRenderer(width, height, ret);
+  //return ret;
   return RTMediaStreamSource::CreateMediaSource(track, width, height, framerate);
-}
+//}
+  return RTMediaStreamSource::CreateMediaSource(track, width, height, framerate);
+//RTCRenderer::~RTCRenderer()
+//{
+//}
+//
+//void RTCRenderer::SetSize(int width, int height, int reserved)
+//{
+//}
+//
+//void RTCRenderer::RenderFrame(const cricket::VideoFrame *frame)
+//{
+//  _frameBuffer.SetFrame(frame);
+//}
+//
+//void RTCRenderer::SetMediaSource(MediaStreamSource^ mediaSource)
+//{
+//  _mediaSource = mediaSource;
+//}
+//
+//
+//void webrtc_winrt_api::Media::OnStarting(Windows::Media::Core::MediaStreamSource ^sender, Windows::Media::Core::MediaStreamSourceStartingEventArgs ^args)
+//{
+//}

@@ -3,6 +3,7 @@
 #include "Media.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 
+
 using namespace Windows::Media::Core;
 using namespace Windows::Media::Protection;
 using namespace Windows::Foundation;
