@@ -889,7 +889,6 @@ void VideoRenderMediaStreamWinRT::SetMediaTypeAttributes(StreamDescription *pStr
 void VideoRenderMediaStreamWinRT::SetSampleAttributes(SampleHeader *pSampleHeader, IMFSample *pSample)
 {
   ThrowIfError(pSample->SetSampleTime(pSampleHeader->ullTimestamp));
-  ThrowIfError(pSample->SetSampleDuration(pSampleHeader->ullDuration));
 
   ThrowIfError(pSample->SetUINT32(MFSampleExtension_CleanPoint, TRUE));
 }
@@ -1113,7 +1112,8 @@ VideoRenderMediaSourceWinRT::VideoRenderMediaSourceWinRT(void)
     _cRef(1),
     _eSourceState(SourceState_Invalid),
     _flRate(1.0f),
-    _hnsCurrentSampleTime(0) {
+    _bRenderTimeOffsetSet(false),
+    _msRenderTimeOffset(0) {
   OpQueue<VideoRenderMediaSourceWinRT, VideoRenderSourceOperation>::m_critSec = _critSec;
 }
 
@@ -1545,7 +1545,6 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
 {
   if (_eSourceState == SourceState_Started)
   {
-    Trace(TRACE_LEVEL_NORMAL, L"======== ProcessVideoFrame - %015d\n", videoFrame.render_time_ms());
     // Convert packet to MF sample
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
     ComPtr<IMFSample> spSample;
@@ -1617,10 +1616,13 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
         // Forward sample to a proper stream.
         SampleHeader sampleHead;
         sampleHead.dwStreamId = 1;
-        sampleHead.ullDuration = 10000000 / 30;
-        //sampleHead.ullTimestamp = videoFrame.render_time_ms();
-        sampleHead.ullTimestamp = _hnsCurrentSampleTime;
-        _hnsCurrentSampleTime += sampleHead.ullDuration;
+        if (!_bRenderTimeOffsetSet)
+        {
+          _msRenderTimeOffset = videoFrame.render_time_ms();
+          _bRenderTimeOffsetSet = true;
+        }
+        // conversion from millisecond to 100-nanosecond units
+        sampleHead.ullTimestamp = (videoFrame.render_time_ms() - _msRenderTimeOffset) * 10000;
         spStream->ProcessSample(&sampleHead, spSample.Get());
       }
     }
@@ -1859,6 +1861,8 @@ void VideoRenderMediaSourceWinRT::DoStop(VideoRenderSourceOperation *pOp)
       ThrowIfError(pStream->Stop());
     }
     _eSourceState = SourceState_Stopped;
+    _bRenderTimeOffsetSet = false;
+    _msRenderTimeOffset = 0;
   }
   catch (Platform::Exception ^exc)
   {

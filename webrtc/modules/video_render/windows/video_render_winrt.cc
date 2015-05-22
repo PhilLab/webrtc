@@ -275,9 +275,13 @@ int VideoRenderWinRT::UpdateRenderSurface() {
     return -1;
 
   _channel->Lock();
-  const uint8_t* buf = _channel->GetVideoFrame().buffer(kYPlane);
-  int siz = _channel->GetVideoFrame().allocated_size(kYPlane);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1, "UpdateRenderSurface - %d, %d", buf, siz);
+  int frameLength = 0;
+  frameLength += _channel->GetVideoFrame().allocated_size(kYPlane);
+  frameLength += _channel->GetVideoFrame().allocated_size(kUPlane);
+  frameLength += _channel->GetVideoFrame().allocated_size(kVPlane);
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
+    "Video Render - UpdateRenderSurface - video frame length: %d, render time: %lld",
+    frameLength, _channel->GetVideoFrame().render_time_ms());
   _channel->GetMediaSource()->ProcessVideoFrame(_channel->GetVideoFrame());
   _channel->Unlock();
 

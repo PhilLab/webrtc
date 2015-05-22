@@ -739,7 +739,8 @@ class VideoRenderMediaSourceWinRT :
   Microsoft::WRL::ComPtr<IMFMediaStream> _spStream;
 
   float _flRate;
-  LONGLONG _hnsCurrentSampleTime;
+  bool _bRenderTimeOffsetSet;
+  int64_t _msRenderTimeOffset;
 };
 }  // namespace webrtc
 

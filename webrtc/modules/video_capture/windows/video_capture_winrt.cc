@@ -266,19 +266,23 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     HRESULT hr = spMediaSample->GetBufferByIndex(0, &spMediaBuffer);
     uint8_t* videoFrame;
     size_t videoFrameLength;
+    int64_t captureTime;
     VideoCaptureCapability frameInfo;
     frameInfo.width = frame_width_;
     frameInfo.height = frame_height_;
     frameInfo.maxFPS = max_fps_;
     frameInfo.rawType = raw_type_;
-    int64_t captureTime;
-    DWORD maxLength;
-    DWORD currentLength;
-    hr = spMediaSample->GetSampleTime(&captureTime);
-    hr = spMediaBuffer->Lock(&videoFrame, &maxLength, &currentLength);
-    videoFrameLength = currentLength;
+    LONGLONG hnsSampleTime;
+    DWORD cbMaxLength;
+    DWORD cbCurrentLength;
+    hr = spMediaSample->GetSampleTime(&hnsSampleTime);
+    hr = spMediaBuffer->Lock(&videoFrame, &cbMaxLength, &cbCurrentLength);
+    videoFrameLength = cbCurrentLength;
+    captureTime = hnsSampleTime / 10000; // conversion from 100-nanosecond to millisecond units
     if (SUCCEEDED(hr)) {
-      incoming_frame_callback_->OnIncomingFrame(videoFrame, videoFrameLength, frameInfo, captureTime);
+      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
+        "Video Capture - OnMediaSample - video frame length: %d, capture time: %lld", videoFrameLength, captureTime);
+      incoming_frame_callback_->OnIncomingFrame(videoFrame, videoFrameLength, frameInfo);
       spMediaBuffer->Unlock();
     }
   }
@@ -436,10 +440,9 @@ int32_t VideoCaptureWinRT::CaptureSettings(
 void VideoCaptureWinRT::OnIncomingFrame(
     uint8_t* videoFrame,
     size_t videoFrameLength,
-    const VideoCaptureCapability& frameInfo,
-    int64_t captureTime) {
+    const VideoCaptureCapability& frameInfo) {
 
-  IncomingFrame(videoFrame, videoFrameLength, frameInfo, captureTime);
+  IncomingFrame(videoFrame, videoFrameLength, frameInfo);
 }
 
 }  // namespace videocapturemodule
