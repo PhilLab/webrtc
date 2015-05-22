@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Media.h"
+#include "talk/app/webrtc/mediastreaminterface.h"
+
+
 using namespace Windows::Media::Core;
 using namespace Windows::Media::Protection;
 using namespace Windows::Foundation;
@@ -7,19 +11,19 @@ using namespace Platform;
 
 namespace webrtc_winrt_api
 {
-
   ref class RTMediaStreamSource sealed :
     IMediaSource,
     IMediaStreamSource
   {
   public:
-    RTMediaStreamSource();
     // IMediaStreamSource
+    // Methods
     virtual void AddProtectionKey(IMediaStreamDescriptor^ streamDescriptor, const Array<uint8>^ keyIdentifier,
       const Array<uint8>^ licenseData);
     virtual void AddStreamDescriptor(IMediaStreamDescriptor^ descriptor);
     virtual void NotifyError(MediaStreamSourceErrorStatus errorStatus);
     virtual void SetBufferedRange(TimeSpan startOffset, TimeSpan endOffset);
+    // Properties
     property TimeSpan BufferTime
     {
       virtual TimeSpan get();
@@ -44,9 +48,68 @@ namespace webrtc_winrt_api
     {
       virtual Windows::Storage::FileProperties::MusicProperties^ get();
     }
-
+    property Windows::Storage::Streams::IRandomAccessStreamReference^ Thumbnail
+    {
+      virtual Windows::Storage::Streams::IRandomAccessStreamReference^ get();
+      virtual void set(Windows::Storage::Streams::IRandomAccessStreamReference^ value);
+    }
+    property Windows::Storage::FileProperties::VideoProperties^ VideoProperties
+    {
+      virtual Windows::Storage::FileProperties::VideoProperties^ get();
+    }
+    // Events
+    event TypedEventHandler<MediaStreamSource^, MediaStreamSourceClosedEventArgs^>^ Closed
+    {
+      virtual EventRegistrationToken add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceClosedEventArgs^>^ value);
+      virtual void remove(Windows::Foundation::EventRegistrationToken token);
+    }
+    event TypedEventHandler<MediaStreamSource^, Object^>^ Paused
+    {
+      virtual EventRegistrationToken add(TypedEventHandler<MediaStreamSource^, Object^>^ value);
+      virtual void remove(Windows::Foundation::EventRegistrationToken token);
+    }
+    event TypedEventHandler<MediaStreamSource^, MediaStreamSourceSampleRequestedEventArgs^>^ SampleRequested
+    {
+      virtual EventRegistrationToken add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceSampleRequestedEventArgs^>^ value);
+      virtual void remove(Windows::Foundation::EventRegistrationToken token);
+    }
+    event TypedEventHandler<MediaStreamSource^, MediaStreamSourceStartingEventArgs^>^ Starting
+    {
+      virtual EventRegistrationToken add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceStartingEventArgs^>^ value);
+      virtual void remove(Windows::Foundation::EventRegistrationToken token);
+    }
+    event TypedEventHandler<MediaStreamSource^, MediaStreamSourceSwitchStreamsRequestedEventArgs^>^ SwitchStreamsRequested
+    {
+      virtual EventRegistrationToken add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceSwitchStreamsRequestedEventArgs^>^ value);
+      virtual void remove(Windows::Foundation::EventRegistrationToken token);
+    }
+  internal:
+    static IMediaSource^ CreateMediaSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate);
   private:
+
+    class RTCRenderer : public webrtc::VideoRendererInterface
+    {
+    public:
+      RTCRenderer(RTMediaStreamSource^ streamSource);
+      virtual ~RTCRenderer();
+      virtual void SetSize(int width, int height, int reserved);
+      virtual void RenderFrame(const cricket::VideoFrame *frame);
+    private:
+      // This object is owned by RTMediaStreamSource so _streamSource must be a weak reference
+      WeakReference _streamSource;
+    };
+
+    RTMediaStreamSource();
+    void OnSampleRequested(Windows::Media::Core::MediaStreamSource ^sender, Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
+    void ProcessReceivedFrame(const cricket::VideoFrame *frame);
+
     MediaStreamSource^ _mediaStreamSource;
+    rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
+    CRITICAL_SECTION _lock;
+    uint32 _stride;
+    byte* _buffer;
+    uint32 _sourceWidth;
+    uint32 _sourceHeight;
   };
 
 }
