@@ -38,6 +38,8 @@
         'DataChannel.h',
         'DataChannel.cc',
         'Delegates.h',
+        'RTMediaStreamSource.h',
+        'RTMediaStreamSource.cc',
       ],
       'msvs_settings': {
         'VCLinkerTool': {
