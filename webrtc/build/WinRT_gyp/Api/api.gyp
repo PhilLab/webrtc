@@ -23,6 +23,7 @@
          '_WINRT_DLL',
       ],
       'include_dirs': [
+        '../../../../third_party/libyuv/include',
         '.',
       ],
       'sources': [
