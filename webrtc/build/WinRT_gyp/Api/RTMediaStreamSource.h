@@ -3,19 +3,19 @@
 #include "Media.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 
-
 using namespace Windows::Media::Core;
 using namespace Windows::Media::Protection;
 using namespace Windows::Foundation;
 using namespace Platform;
+using namespace webrtc_winrt_api;
 
-namespace webrtc_winrt_api
+namespace webrtc_winrt_api_internal
 {
   ref class RTMediaStreamSource sealed :
-    IMediaSource,
-    IMediaStreamSource
+    IMediaSource
   {
   public:
+    virtual ~RTMediaStreamSource();
     // IMediaStreamSource
     // Methods
     virtual void AddProtectionKey(IMediaStreamDescriptor^ streamDescriptor, const Array<uint8>^ keyIdentifier,
@@ -99,17 +99,21 @@ namespace webrtc_winrt_api
       WeakReference _streamSource;
     };
 
-    RTMediaStreamSource();
+    RTMediaStreamSource(MediaVideoTrack^ videoTrack);
     void OnSampleRequested(Windows::Media::Core::MediaStreamSource ^sender, Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
+    bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
 
+    MediaVideoTrack^ _videoTrack;
     MediaStreamSource^ _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     CRITICAL_SECTION _lock;
     uint32 _stride;
     byte* _buffer;
+    uint32 _bufferSize;
     uint32 _sourceWidth;
     uint32 _sourceHeight;
+    uint64 _timeStamp;
   };
 
 }

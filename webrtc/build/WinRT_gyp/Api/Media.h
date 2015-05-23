@@ -68,7 +68,8 @@ namespace webrtc_winrt_api
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
   internal:
-    void SetRenderer(int width, int height, MediaStreamSource^ mediaSource);
+    void SetRenderer(webrtc::VideoRendererInterface* renderer);
+    void UnsetRenderer(webrtc::VideoRendererInterface* renderer);
   private:
     //FrameBuffer _frameBuffer;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> _impl;
