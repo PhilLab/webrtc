@@ -191,4 +191,6 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
 }
 
 IMediaSource^ Media::CreateMediaStreamSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate)
+{
   return RTMediaStreamSource::CreateMediaSource(track, width, height, framerate);
+}
