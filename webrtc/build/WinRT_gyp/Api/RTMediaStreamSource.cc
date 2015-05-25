@@ -27,13 +27,14 @@ namespace webrtc_winrt_api_internal
     ret->_mediaStreamSource = streamSource;
     ret->_mediaStreamSource->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, 
       Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(ret, &RTMediaStreamSource::OnSampleRequested);
+    ret->_frameRate = frameRate;
     track->SetRenderer(ret->_rtcRenderer.get());
     return ret;
   }
 
   RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
     _videoTrack(videoTrack), _stride(0), _buffer(nullptr), 
-    _bufferSize(0), _sourceWidth(0), _sourceHeight(0), _timeStamp(0)
+    _bufferSize(0), _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0)
   {
     InitializeCriticalSection(&_lock);
   }
@@ -196,6 +197,11 @@ namespace webrtc_winrt_api_internal
 
   void RTMediaStreamSource::RTCRenderer::SetSize(int width, int height, int reserved)
   {
+    auto stream = _streamSource.Resolve<RTMediaStreamSource>();
+    if (stream != nullptr)
+    {
+      stream->ResizeSource((uint32)width, (uint32)height);
+    }
   }
 
   void RTMediaStreamSource::RTCRenderer::RenderFrame(const cricket::VideoFrame *frame)
@@ -289,6 +295,38 @@ namespace webrtc_winrt_api_internal
     LeaveCriticalSection(&_lock);
     imageBuffer->Unlock2D();
     return true;
+  }
+
+  void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height)
+  {
+    // Destroy inner stream object and re-create
+    EnterCriticalSection(&_lock);
+    if (_rtcRenderer != nullptr)
+    {
+      _videoTrack->UnsetRenderer(_rtcRenderer.get());
+    }
+    if (_buffer != nullptr)
+    {
+      delete[] _buffer;
+      _buffer = nullptr;
+    }
+    _sourceWidth = width;
+    _sourceHeight = height;
+    auto videoProperties =
+      Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
+      Windows::Media::MediaProperties::MediaEncodingSubtypes::Bgra8, width, height);
+    auto videoDesc = ref new VideoStreamDescriptor(videoProperties);
+    videoDesc->EncodingProperties->FrameRate->Numerator = _frameRate;
+    videoDesc->EncodingProperties->FrameRate->Denominator = 1;
+    videoDesc->EncodingProperties->Bitrate = (uint32)(videoDesc->EncodingProperties->FrameRate->Numerator*
+      videoDesc->EncodingProperties->FrameRate->Denominator * width * height * 4);
+    auto newMediaStreamSource = ref new MediaStreamSource(videoDesc);
+    _mediaStreamSource = newMediaStreamSource;
+    _mediaStreamSource->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^,
+      Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(this, &RTMediaStreamSource::OnSampleRequested);
+    _videoTrack->SetRenderer(_rtcRenderer.get());
+    // TODO: re-create events
+    LeaveCriticalSection(&_lock);
   }
 
 }
