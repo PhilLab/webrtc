@@ -215,79 +215,107 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
   {
     //audioClient = m_AudioDevice->_ptrClientIn;
     mixFormat = m_AudioDevice->_mixFormatIn;
-  }
-  else if (m_DeviceType == eOutputDevice)
-  {
-    //audioClient = m_AudioDevice->_ptrClientOut;
-    mixFormat = m_AudioDevice->_mixFormatOut;
-  }
 
-
-  // Check for a successful activation result
-  hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
-  if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult))
-  {
-    // Get the pointer for the Audio Client
-    punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
-    if (nullptr == audioClient)
+    // Check for a successful activation result
+    hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
+    if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult))
     {
-      hr = E_FAIL;
-      goto exit;
-    }
+      // Get the pointer for the Audio Client
+      punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
+      if (nullptr == audioClient)
+      {
+        hr = E_FAIL;
+        goto exit;
+      }
 
-    AudioClientProperties prop = { 0 };
-    prop.cbSize = sizeof(AudioClientProperties);
-    prop.bIsOffload = 0;
-    prop.eCategory = AudioCategory_Communications;
-    prop.Options = AUDCLNT_STREAMOPTIONS_NONE;
-    hr = audioClient->SetClientProperties(&prop);
+      AudioClientProperties prop = { 0 };
+      prop.cbSize = sizeof(AudioClientProperties);
+      prop.bIsOffload = 0;
+      prop.eCategory = AudioCategory_Communications;
+      prop.Options = AUDCLNT_STREAMOPTIONS_NONE;
+      hr = audioClient->SetClientProperties(&prop);
 
-    if (FAILED(hr))
-    {
-      goto exit;
-    }
+      if (FAILED(hr))
+      {
+        goto exit;
+      }
 
+      hr = audioClient->GetMixFormat(&mixFormat);
+      if (FAILED(hr))
+      {
+        goto exit;
+      }
 
+      WAVEFORMATEX Wfx = WAVEFORMATEX();
+      WAVEFORMATEX* pWfxClosestMatch = NULL;
 
-    hr = audioClient->GetMixFormat(&mixFormat);
-    if (FAILED(hr))
-    {
-      goto exit;
-    }
+      // Set wave format
+      Wfx.wFormatTag = WAVE_FORMAT_PCM;
+      Wfx.wBitsPerSample = 16;
+      Wfx.cbSize = 0;
 
-    // convert from Float to PCM and from WAVEFORMATEXTENSIBLE to WAVEFORMATEX
-    if ((mixFormat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT) ||
-      ((mixFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) &&
-      (reinterpret_cast<WAVEFORMATEXTENSIBLE *>(mixFormat)->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)))
-    {
-      mixFormat->wFormatTag = WAVE_FORMAT_PCM;
-      mixFormat->wBitsPerSample = 16;
-      mixFormat->nBlockAlign = mixFormat->nChannels * 2;    // (nChannels * wBitsPerSample) / 8
-      mixFormat->nAvgBytesPerSec = mixFormat->nSamplesPerSec * mixFormat->nBlockAlign;
-      mixFormat->cbSize = 0;
-    }
+      const int freqs[6] = { 48000, 44100, 16000, 96000, 32000, 8000 };
+      hr = S_FALSE;
 
-    //audioClient->
-    // Initialize the AudioClient in Shared Mode with the user specified buffer
-    hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-      AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-      200000,
-      0,
-      mixFormat,
-      nullptr);
-    if (FAILED(hr))
-    {
-      goto exit;
-    }
+      // Iterate over frequencies and channels, in order of priority
+      for (int freq = 0; freq < sizeof(freqs) / sizeof(freqs[0]); freq++)
+      {
+        for (int chan = 0; chan < sizeof(m_AudioDevice->_recChannelsPrioList) / sizeof(m_AudioDevice->_recChannelsPrioList[0]); chan++)
+        {
+          Wfx.nChannels = m_AudioDevice->_recChannelsPrioList[chan];
+          Wfx.nSamplesPerSec = freqs[freq];
+          Wfx.nBlockAlign = Wfx.nChannels * Wfx.wBitsPerSample / 8;
+          Wfx.nAvgBytesPerSec = Wfx.nSamplesPerSec * Wfx.nBlockAlign;
+          // If the method succeeds and the audio endpoint device supports the specified stream format,
+          // it returns S_OK. If the method succeeds and provides a closest match to the specified format,
+          // it returns S_FALSE.
+          hr = audioClient->IsFormatSupported(
+            AUDCLNT_SHAREMODE_SHARED,
+            &Wfx,
+            &pWfxClosestMatch);
+          if (hr == S_OK)
+          {
+            break;
+          }
+          else
+          {
+           /* WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "nChannels=%d, nSamplesPerSec=%d is not supported",
+              Wfx.nChannels, Wfx.nSamplesPerSec);*/
+          }
+        }
+        if (hr == S_OK)
+          break;
+      }
 
-    //// Get the maximum size of the AudioClient Buffer
-    //hr = audioClient->GetBufferSize(&m_BufferFrames);
-    //if (FAILED(hr))
-    //{
-    //  goto exit;
-    //}
-    if (m_DeviceType == eInputDevice)
-    {
+      // Create a capturing stream.
+      hr = audioClient->Initialize(
+        AUDCLNT_SHAREMODE_SHARED,             // share Audio Engine with other applications
+        AUDCLNT_STREAMFLAGS_EVENTCALLBACK |   // processing of the audio buffer by the client will be event driven
+        AUDCLNT_STREAMFLAGS_NOPERSIST,        // volume and mute settings for an audio session will not persist across system restarts
+        0,                                    // required for event-driven shared mode
+        0,                                    // periodicity
+        &Wfx,                                 // selected wave format
+        NULL);                                // session GUID
+
+      if (FAILED(hr))
+      {
+        goto exit;
+      }
+
+      //// Get the maximum size of the AudioClient Buffer
+      //hr = audioClient->GetBufferSize(&m_BufferFrames);
+      //if (FAILED(hr))
+      //{
+      //  goto exit;
+      //}
+
+      if (m_AudioDevice->_ptrAudioBuffer)
+      {
+        // Update the audio buffer with the selected parameters
+        m_AudioDevice->_ptrAudioBuffer->SetRecordingSampleRate(Wfx.nSamplesPerSec);
+        m_AudioDevice->_ptrAudioBuffer->SetRecordingChannels((uint8_t)Wfx.nChannels);
+      }
+
       // Get the capture client
       hr = audioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&m_AudioDevice->_ptrCaptureClient);
       if (FAILED(hr))
@@ -295,20 +323,127 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         goto exit;
       }
       m_AudioDevice->_ptrClientIn = audioClient;
-      //m_AudioDevice->_captureDeviceActivated = true;
-    }
-    else if (m_DeviceType == eOutputDevice)
-    {
-      // Get the render client
-      hr = audioClient->GetService(__uuidof(IAudioRenderClient), (void**)&m_AudioDevice->_ptrRenderClient);
-      if (FAILED(hr))
-      {
-        goto exit;
-      }
-      m_AudioDevice->_ptrClientOut = audioClient;
-      //m_AudioDevice->_renderDeviceActivated = true;
+
     }
   }
+    else if (m_DeviceType == eOutputDevice)
+    {
+      //audioClient = m_AudioDevice->_ptrClientOut;
+      mixFormat = m_AudioDevice->_mixFormatOut;
+
+      // Check for a successful activation result
+      hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
+      if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult))
+      {
+        // Get the pointer for the Audio Client
+        punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
+        if (nullptr == audioClient)
+        {
+          hr = E_FAIL;
+          goto exit;
+        }
+
+        AudioClientProperties prop = { 0 };
+        prop.cbSize = sizeof(AudioClientProperties);
+        prop.bIsOffload = 0;
+        prop.eCategory = AudioCategory_Communications;
+        prop.Options = AUDCLNT_STREAMOPTIONS_NONE;
+        hr = audioClient->SetClientProperties(&prop);
+
+        if (FAILED(hr))
+        {
+          goto exit;
+        }
+
+        hr = audioClient->GetMixFormat(&mixFormat);
+        if (FAILED(hr))
+        {
+          goto exit;
+        }
+
+        WAVEFORMATEX Wfx = WAVEFORMATEX();
+        WAVEFORMATEX* pWfxClosestMatch = NULL;
+
+        // Set wave format
+        Wfx.wFormatTag = WAVE_FORMAT_PCM;
+        Wfx.wBitsPerSample = 16;
+        Wfx.cbSize = 0;
+
+        const int freqs[] = { 48000, 44100, 16000, 96000, 32000, 8000 };
+        hr = S_FALSE;
+
+        // Iterate over frequencies and channels, in order of priority
+        for (int freq = 0; freq < sizeof(freqs) / sizeof(freqs[0]); freq++)
+        {
+          for (int chan = 0; chan < sizeof(m_AudioDevice->_playChannelsPrioList) / sizeof(m_AudioDevice->_playChannelsPrioList[0]); chan++)
+          {
+            Wfx.nChannels = m_AudioDevice->_playChannelsPrioList[chan];
+            Wfx.nSamplesPerSec = freqs[freq];
+            Wfx.nBlockAlign = Wfx.nChannels * Wfx.wBitsPerSample / 8;
+            Wfx.nAvgBytesPerSec = Wfx.nSamplesPerSec * Wfx.nBlockAlign;
+            // If the method succeeds and the audio endpoint device supports the specified stream format,
+            // it returns S_OK. If the method succeeds and provides a closest match to the specified format,
+            // it returns S_FALSE.
+            hr = audioClient->IsFormatSupported(
+              AUDCLNT_SHAREMODE_SHARED,
+              &Wfx,
+              &pWfxClosestMatch);
+            if (hr == S_OK)
+            {
+              break;
+            }
+            else
+            {
+              //WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "nChannels=%d, nSamplesPerSec=%d is not supported",
+              //  Wfx.nChannels, Wfx.nSamplesPerSec);
+            }
+          }
+          if (hr == S_OK)
+            break;
+        }
+
+
+        REFERENCE_TIME hnsBufferDuration = 0;  // ask for minimum buffer size (default)
+        if (mixFormat->nSamplesPerSec == 44100)
+        {
+          // Ask for a larger buffer size (30ms) when using 44.1kHz as render rate.
+          // There seems to be a larger risk of underruns for 44.1 compared
+          // with the default rate (48kHz). When using default, we set the requested
+          // buffer duration to 0, which sets the buffer to the minimum size
+          // required by the engine thread. The actual buffer size can then be
+          // read by GetBufferSize() and it is 20ms on most machines.
+          hnsBufferDuration = 30 * 10000;
+        }
+
+        // Initialize the AudioClient in Shared Mode with the user specified buffer
+        hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+          AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+          hnsBufferDuration,
+          0,
+          &Wfx,
+          nullptr);
+        if (FAILED(hr))
+        {
+          goto exit;
+        }
+
+        if (m_AudioDevice->_ptrAudioBuffer)
+        {
+          // Update the audio buffer with the selected parameters
+          m_AudioDevice->_ptrAudioBuffer->SetPlayoutSampleRate(Wfx.nSamplesPerSec);
+          m_AudioDevice->_ptrAudioBuffer->SetPlayoutChannels((uint8_t)Wfx.nChannels);
+        }
+
+
+        // Get the render client
+        hr = audioClient->GetService(__uuidof(IAudioRenderClient), (void**)&m_AudioDevice->_ptrRenderClient);
+        if (FAILED(hr))
+        {
+          goto exit;
+        }
+        m_AudioDevice->_ptrClientOut = audioClient;
+      }
+    }
 
   // Set the completed event and return success
   m_ActivateCompleted.set();
