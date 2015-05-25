@@ -8,6 +8,7 @@ using namespace Windows::Media::Protection;
 using namespace Windows::Foundation;
 using namespace Platform;
 using namespace webrtc_winrt_api;
+using namespace Windows::Foundation::Collections;
 
 namespace webrtc_winrt_api_internal
 {
@@ -103,6 +104,7 @@ namespace webrtc_winrt_api_internal
     void OnSampleRequested(Windows::Media::Core::MediaStreamSource ^sender, Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
+    void ResizeSource(uint32 width, uint32 height);
 
     MediaVideoTrack^ _videoTrack;
     MediaStreamSource^ _mediaStreamSource;
@@ -114,6 +116,7 @@ namespace webrtc_winrt_api_internal
     uint32 _sourceWidth;
     uint32 _sourceHeight;
     uint64 _timeStamp;
+    uint32 _frameRate;
   };
 
 }
