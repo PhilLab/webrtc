@@ -29,13 +29,18 @@ namespace webrtc_winrt_api_internal
     videoDesc->EncodingProperties->FrameRate->Denominator = 1;
     videoDesc->EncodingProperties->Bitrate = (uint32)(videoDesc->EncodingProperties->FrameRate->Numerator*
       videoDesc->EncodingProperties->FrameRate->Denominator * width * height * 4);
+    videoDesc->EncodingProperties->Width = width;
+    videoDesc->EncodingProperties->Height = height;
+    videoDesc->EncodingProperties->PixelAspectRatio->Numerator = 1;
+    videoDesc->EncodingProperties->PixelAspectRatio->Denominator = 1;
     auto streamSource = ref new MediaStreamSource(videoDesc);
     auto streamState = ref new RTMediaStreamSource(track);
     streamState->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(new RTCRenderer(streamState));
     streamState->_mediaStreamSource = streamSource;
     streamState->_mediaStreamSource->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^,
       Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(streamState, &RTMediaStreamSource::OnSampleRequested);
-    streamState->_mediaStreamSource->Closed += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>(&webrtc_winrt_api_internal::RTMediaStreamSource::OnClosed);
+    streamState->_mediaStreamSource->Closed += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, 
+      Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>(&webrtc_winrt_api_internal::RTMediaStreamSource::OnClosed);
     streamState->_frameRate = frameRate;
     streamState->_sourceWidth = width;
     streamState->_sourceHeight = height;
@@ -113,25 +118,14 @@ namespace webrtc_winrt_api_internal
       return;
     }
     ComPtr<IMFMediaBuffer> mediaBuffer;
-    hr = MFCreate2DMediaBuffer(_sourceWidth, _sourceHeight, 20, FALSE, mediaBuffer.GetAddressOf());
+    hr = MFCreate2DMediaBuffer(_sourceWidth, _sourceHeight, 21, FALSE, mediaBuffer.GetAddressOf());
     if (FAILED(hr))
     {
       return;
     }
     spSample->AddBuffer(mediaBuffer.Get());
-    auto spVideoStreamDescriptor = (VideoStreamDescriptor^)request->StreamDescriptor;
-    auto spEncodingProperties = spVideoStreamDescriptor->EncodingProperties;
-    auto spRatio = spEncodingProperties->FrameRate;
-    UINT32 ui32Numerator = spRatio->Numerator;
-    UINT32 ui32Denominator = spRatio->Denominator;
-    ULONGLONG ulTimeSpan = ((ULONGLONG)ui32Denominator) * 10000000 / ui32Numerator;
-
-    spSample->SetSampleDuration(ulTimeSpan);
-    spSample->SetSampleTime((LONGLONG)_timeStamp);
-    if (ConvertFrame(mediaBuffer.Get()))
-    {
-      _timeStamp += ulTimeSpan;
-    }
+    spSample->SetSampleTime(0);
+    ConvertFrame(mediaBuffer.Get());
     spRequest->SetSample(spSample.Get());
   }
 
