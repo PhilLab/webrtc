@@ -4,14 +4,22 @@
 #include <mfidl.h>
 #include "talk/media/base/videoframe.h"
 #include "libyuv/video_common.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using namespace Windows::Media::MediaProperties;
 using namespace Microsoft::WRL;
 using namespace webrtc_winrt_api;
 
+namespace
+{
+  webrtc::CriticalSectionWrapper& gMediaStreamListLock(*webrtc::CriticalSectionWrapper::CreateCriticalSection());
+  Vector<webrtc_winrt_api_internal::RTMediaStreamSource^>^ gMediaStreamList = ref new Vector<webrtc_winrt_api_internal::RTMediaStreamSource^>();
+}
+
 namespace webrtc_winrt_api_internal
 {
-  IMediaSource^ RTMediaStreamSource::CreateMediaSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate)
+
+  MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate)
   {
     auto videoProperties =
       Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
@@ -22,18 +30,25 @@ namespace webrtc_winrt_api_internal
     videoDesc->EncodingProperties->Bitrate = (uint32)(videoDesc->EncodingProperties->FrameRate->Numerator*
       videoDesc->EncodingProperties->FrameRate->Denominator * width * height * 4);
     auto streamSource = ref new MediaStreamSource(videoDesc);
-    auto ret = ref new RTMediaStreamSource(track);
-    ret->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(new RTCRenderer(ret));
-    ret->_mediaStreamSource = streamSource;
-    ret->_mediaStreamSource->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, 
-      Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(ret, &RTMediaStreamSource::OnSampleRequested);
-    ret->_frameRate = frameRate;
-    track->SetRenderer(ret->_rtcRenderer.get());
-    return ret;
+    auto streamState = ref new RTMediaStreamSource(track);
+    streamState->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(new RTCRenderer(streamState));
+    streamState->_mediaStreamSource = streamSource;
+    streamState->_mediaStreamSource->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^,
+      Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(streamState, &RTMediaStreamSource::OnSampleRequested);
+    streamState->_mediaStreamSource->Closed += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^, Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>(&webrtc_winrt_api_internal::RTMediaStreamSource::OnClosed);
+    streamState->_frameRate = frameRate;
+    streamState->_sourceWidth = width;
+    streamState->_sourceHeight = height;
+    track->SetRenderer(streamState->_rtcRenderer.get());
+    {
+      webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+      gMediaStreamList->Append(streamState);
+    }
+    return streamState->_mediaStreamSource;
   }
 
   RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
-    _videoTrack(videoTrack), _stride(0), _buffer(nullptr), 
+    _videoTrack(videoTrack), _stride(0), _buffer(nullptr),
     _bufferSize(0), _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0)
   {
     InitializeCriticalSection(&_lock);
@@ -50,141 +65,6 @@ namespace webrtc_winrt_api_internal
     {
       delete[] _buffer;
     }
-  }
-
-  void RTMediaStreamSource::AddProtectionKey(IMediaStreamDescriptor^ streamDescriptor, const Array<uint8>^ keyIdentifier,
-    const Array<uint8>^ licenseData)
-  {
-    _mediaStreamSource->AddProtectionKey(streamDescriptor, keyIdentifier, licenseData);
-  }
-
-  void RTMediaStreamSource::AddStreamDescriptor(IMediaStreamDescriptor^ descriptor)
-  {
-    _mediaStreamSource->AddStreamDescriptor(descriptor);
-  }
-
-  void RTMediaStreamSource::NotifyError(MediaStreamSourceErrorStatus errorStatus)
-  {
-    _mediaStreamSource->NotifyError(errorStatus);
-  }
-
-  void RTMediaStreamSource::SetBufferedRange(TimeSpan startOffset, TimeSpan endOffset)
-  {
-    _mediaStreamSource->SetBufferedRange(startOffset, endOffset);
-  }
-
-  TimeSpan RTMediaStreamSource::BufferTime::get()
-  {
-    return _mediaStreamSource->BufferTime;
-  }
-
-  void RTMediaStreamSource::BufferTime::set(TimeSpan value)
-  {
-    _mediaStreamSource->BufferTime = value;
-  }
-
-  bool RTMediaStreamSource::CanSeek::get()
-  {
-    // This is a live feed to seeking is always unavailable
-    return false;
-  }
-
-  void RTMediaStreamSource::CanSeek::set(bool value)
-  {
-    if (!value)
-    {
-      throw ref new AccessDeniedException("Cannot seek on live media");
-    }
-  }
-
-  TimeSpan RTMediaStreamSource::Duration::get()
-  {
-    throw ref new NotImplementedException("Live media does not have a duration");
-  }
-
-  void RTMediaStreamSource::Duration::set(TimeSpan value)
-  {
-    throw ref new AccessDeniedException("Cannot set the duration of live media");
-  }
-
-  MediaProtectionManager^ RTMediaStreamSource::MediaProtectionManager::get()
-  {
-    return _mediaStreamSource->MediaProtectionManager;
-  }
-
-  void RTMediaStreamSource::MediaProtectionManager::set(Windows::Media::Protection::MediaProtectionManager^ value)
-  {
-    _mediaStreamSource->MediaProtectionManager = value;
-  }
-
-  Windows::Storage::FileProperties::MusicProperties^ RTMediaStreamSource::MusicProperties::get()
-  {
-    return _mediaStreamSource->MusicProperties;
-  }
-
-  Windows::Storage::Streams::IRandomAccessStreamReference^  RTMediaStreamSource::Thumbnail::get()
-  {
-    return _mediaStreamSource->Thumbnail;
-  }
-
-  void RTMediaStreamSource::Thumbnail::set(Windows::Storage::Streams::IRandomAccessStreamReference^ value)
-  {
-    _mediaStreamSource->Thumbnail = value;
-  }
-
-  Windows::Storage::FileProperties::VideoProperties^ RTMediaStreamSource::VideoProperties::get()
-  {
-    return _mediaStreamSource->VideoProperties;
-  }
-
-  EventRegistrationToken RTMediaStreamSource::Closed::add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceClosedEventArgs^>^ value)
-  {
-    return (_mediaStreamSource->Closed += value);
-  }
-
-  void RTMediaStreamSource::Closed::remove(Windows::Foundation::EventRegistrationToken token)
-  {
-    _mediaStreamSource->Closed -= token;
-  }
-
-  EventRegistrationToken RTMediaStreamSource::Paused::add(TypedEventHandler<MediaStreamSource^, Object^>^ value)
-  {
-    return (_mediaStreamSource->Paused += value);
-  }
-
-  void RTMediaStreamSource::Paused::remove(Windows::Foundation::EventRegistrationToken token)
-  {
-    _mediaStreamSource->Paused -= token;
-  }
-
-  EventRegistrationToken RTMediaStreamSource::SampleRequested::add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceSampleRequestedEventArgs^>^ value)
-  {
-    return (_mediaStreamSource->SampleRequested += value);
-  }
-
-  void RTMediaStreamSource::SampleRequested::remove(Windows::Foundation::EventRegistrationToken token)
-  {
-    _mediaStreamSource->SampleRequested -= token;
-  }
-
-  EventRegistrationToken RTMediaStreamSource::Starting::add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceStartingEventArgs^>^ value)
-  {
-    return (_mediaStreamSource->Starting += value);
-  }
-
-  void RTMediaStreamSource::Starting::remove(Windows::Foundation::EventRegistrationToken token)
-  {
-    _mediaStreamSource->Starting -= token;
-  }
-
-  EventRegistrationToken RTMediaStreamSource::SwitchStreamsRequested::add(TypedEventHandler<MediaStreamSource^, MediaStreamSourceSwitchStreamsRequestedEventArgs^>^ value)
-  {
-    return (_mediaStreamSource->SwitchStreamsRequested += value);
-  }
-
-  void RTMediaStreamSource::SwitchStreamsRequested::remove(Windows::Foundation::EventRegistrationToken token)
-  {
-    _mediaStreamSource->SwitchStreamsRequested -= token;
   }
 
   RTMediaStreamSource::RTCRenderer::RTCRenderer(RTMediaStreamSource^ streamSource) : _streamSource(streamSource)
@@ -299,34 +179,19 @@ namespace webrtc_winrt_api_internal
 
   void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height)
   {
-    // Destroy inner stream object and re-create
-    EnterCriticalSection(&_lock);
-    if (_rtcRenderer != nullptr)
-    {
-      _videoTrack->UnsetRenderer(_rtcRenderer.get());
-    }
-    if (_buffer != nullptr)
-    {
-      delete[] _buffer;
-      _buffer = nullptr;
-    }
-    _sourceWidth = width;
-    _sourceHeight = height;
-    auto videoProperties =
-      Windows::Media::MediaProperties::VideoEncodingProperties::CreateUncompressed(
-      Windows::Media::MediaProperties::MediaEncodingSubtypes::Bgra8, width, height);
-    auto videoDesc = ref new VideoStreamDescriptor(videoProperties);
-    videoDesc->EncodingProperties->FrameRate->Numerator = _frameRate;
-    videoDesc->EncodingProperties->FrameRate->Denominator = 1;
-    videoDesc->EncodingProperties->Bitrate = (uint32)(videoDesc->EncodingProperties->FrameRate->Numerator*
-      videoDesc->EncodingProperties->FrameRate->Denominator * width * height * 4);
-    auto newMediaStreamSource = ref new MediaStreamSource(videoDesc);
-    _mediaStreamSource = newMediaStreamSource;
-    _mediaStreamSource->SampleRequested += ref new Windows::Foundation::TypedEventHandler<Windows::Media::Core::MediaStreamSource ^,
-      Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^>(this, &RTMediaStreamSource::OnSampleRequested);
-    _videoTrack->SetRenderer(_rtcRenderer.get());
-    // TODO: re-create events
-    LeaveCriticalSection(&_lock);
   }
 
+  void RTMediaStreamSource::OnClosed(Windows::Media::Core::MediaStreamSource ^sender,
+    Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args)
+  {
+    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+    for (unsigned int i = 0; i < gMediaStreamList->Size; i++)
+    {
+      if (gMediaStreamList->GetAt(i)->Equals(sender))
+      {
+        gMediaStreamList->RemoveAt(i);
+        break;
+      }
+    }
+  }
 }
