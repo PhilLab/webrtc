@@ -711,6 +711,7 @@ namespace StandupWinRT
 
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
+      CreateSettingsFlyout();
     }
 
     void OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
@@ -745,6 +746,8 @@ namespace StandupWinRT
     void setCameraDeviceCapabilities();
 
     void SaveSettings();
+
+    void CreateSettingsFlyout();
   };
 
 }
@@ -1464,82 +1467,7 @@ void StandupWinRT::App::OnSendTracesClick(Platform::Object ^sender, Windows::UI:
 
 void StandupWinRT::App::OnSettingsClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e)
 {
-  if (!settingsFlyout_) {
-
-    auto layoutRoot = ref new Grid();
-    auto settings = ApplicationData::Current->LocalSettings->Values;
-
-    auto row = ref new RowDefinition();
-    auto stackPanel = ref new StackPanel();
-    stackPanel->Width = 300;
-    layoutRoot->Children->Append(stackPanel);
-    auto hostNames = Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
-    String^ ipAddress = "";
-    std::for_each(begin(hostNames), end(hostNames), [&](Windows::Networking::HostName^ hostname)
-    {
-      if (hostname->IPInformation != nullptr && hostname->IPInformation->PrefixLength->Value <= 32)
-      {
-        ipAddress = hostname->DisplayName;
-      }
-    });
-
-    auto label = ref new TextBlock();
-    label->Text = "IP: " + ipAddress;
-    label->VerticalAlignment = VerticalAlignment::Center;
-    label->Margin = ThicknessHelper::FromLengths(0, 0, 4, 0);
-    stackPanel->Children->Append(label);
-
-    ipTextBox_ = ref new TextBox();
-    ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
-    ipTextBox_->InputScope = CreateInputScope();
-    stackPanel->Children->Append(ipTextBox_);
-
-    label = ref new TextBlock();
-    label->Text = "Video Port: ";
-    label->VerticalAlignment = VerticalAlignment::Center;
-    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
-    stackPanel->Children->Append(label);
-
-    videoPortTextBox_ = ref new TextBox();
-    videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
-    videoPortTextBox_->InputScope = CreateInputScope();
-    stackPanel->Children->Append(videoPortTextBox_);
-
-    label = ref new TextBlock();
-    label->Text = "Audio Port: ";
-    label->VerticalAlignment = VerticalAlignment::Center;
-    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
-    stackPanel->Children->Append(label);
-
-    audioPortTextBox_ = ref new TextBox();
-    audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
-    audioPortTextBox_->InputScope = CreateInputScope();
-    stackPanel->Children->Append(audioPortTextBox_);
-
-    label = ref new TextBlock();
-    label->Text = "IP(Traces): ";
-    label->VerticalAlignment = VerticalAlignment::Center;
-    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
-    stackPanel->Children->Append(label);
-
-    ipRemoteTraces_ = ref new TextBox();
-
-    stackPanel->Children->Append(ipRemoteTraces_);
-
-    label = ref new TextBlock();
-    label->Text = "Port(Traces): ";
-    label->VerticalAlignment = VerticalAlignment::Center;
-    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
-    stackPanel->Children->Append(label);
-
-    portRemoteTraces_ = ref new TextBox();
-    stackPanel->Children->Append(portRemoteTraces_);
-
-    settingsFlyout_ = ref new Flyout();
-    settingsFlyout_->Content = layoutRoot;
-
-  }
-
+  CreateSettingsFlyout();
   settingsFlyout_->ShowAt((FrameworkElement^)(Window::Current->Content));
 }
 
@@ -1762,4 +1690,83 @@ void StandupWinRT::App::SaveSettings()
   values->Insert("audio_port", audioPortTextBox_->Text);
   values->Insert("video_port", videoPortTextBox_->Text);
 	values->Insert("video_format", videoFormatComboBox_->SelectedIndex);
+}
+
+void StandupWinRT::App::CreateSettingsFlyout()
+{
+  if (!settingsFlyout_) {
+
+    auto layoutRoot = ref new Grid();
+    auto settings = ApplicationData::Current->LocalSettings->Values;
+
+    auto row = ref new RowDefinition();
+    auto stackPanel = ref new StackPanel();
+    stackPanel->Width = 300;
+    layoutRoot->Children->Append(stackPanel);
+    auto hostNames = Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
+    String^ ipAddress = "";
+    std::for_each(begin(hostNames), end(hostNames), [&](Windows::Networking::HostName^ hostname)
+    {
+      if (hostname->IPInformation != nullptr && hostname->IPInformation->PrefixLength->Value <= 32)
+      {
+        ipAddress = hostname->DisplayName;
+      }
+    });
+
+    auto label = ref new TextBlock();
+    label->Text = "IP: " + ipAddress;
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 0, 4, 0);
+    stackPanel->Children->Append(label);
+
+    ipTextBox_ = ref new TextBox();
+    ipTextBox_->Text = settings->Lookup("remote_ip")->ToString();
+    ipTextBox_->InputScope = CreateInputScope();
+    stackPanel->Children->Append(ipTextBox_);
+
+    label = ref new TextBlock();
+    label->Text = "Video Port: ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    videoPortTextBox_ = ref new TextBox();
+    videoPortTextBox_->Text = settings->Lookup("video_port")->ToString();
+    videoPortTextBox_->InputScope = CreateInputScope();
+    stackPanel->Children->Append(videoPortTextBox_);
+
+    label = ref new TextBlock();
+    label->Text = "Audio Port: ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    audioPortTextBox_ = ref new TextBox();
+    audioPortTextBox_->Text = settings->Lookup("audio_port")->ToString();
+    audioPortTextBox_->InputScope = CreateInputScope();
+    stackPanel->Children->Append(audioPortTextBox_);
+
+    label = ref new TextBlock();
+    label->Text = "IP(Traces): ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    ipRemoteTraces_ = ref new TextBox();
+
+    stackPanel->Children->Append(ipRemoteTraces_);
+
+    label = ref new TextBlock();
+    label->Text = "Port(Traces): ";
+    label->VerticalAlignment = VerticalAlignment::Center;
+    label->Margin = ThicknessHelper::FromLengths(0, 4, 4, 0);
+    stackPanel->Children->Append(label);
+
+    portRemoteTraces_ = ref new TextBox();
+    stackPanel->Children->Append(portRemoteTraces_);
+
+    settingsFlyout_ = ref new Flyout();
+    settingsFlyout_->Content = layoutRoot;
+
+  }
 }
