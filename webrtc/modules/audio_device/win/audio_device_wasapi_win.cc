@@ -246,6 +246,24 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         goto exit;
       }
 
+      if (SUCCEEDED(hr))
+      {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "Audio Engine's current capturing mix format:");
+        // format type
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wFormatTag     : 0x%X (%u)", mixFormat->wFormatTag, mixFormat->wFormatTag);
+        // number of channels (i.e. mono, stereo...)
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels      : %d", mixFormat->nChannels);
+        // sample rate
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nSamplesPerSec : %d", mixFormat->nSamplesPerSec);
+        // for buffer estimation
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nAvgBytesPerSec: %d", mixFormat->nAvgBytesPerSec);
+        // block size of data
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nBlockAlign    : %d", mixFormat->nBlockAlign);
+        // number of bits per sample of mono data
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wBitsPerSample : %d", mixFormat->wBitsPerSample);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "cbSize         : %d", mixFormat->cbSize);
+      }
+
       WAVEFORMATEX Wfx = WAVEFORMATEX();
       WAVEFORMATEX* pWfxClosestMatch = NULL;
 
@@ -279,14 +297,34 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
           }
           else
           {
-           /* WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "nChannels=%d, nSamplesPerSec=%d is not supported",
-              Wfx.nChannels, Wfx.nSamplesPerSec);*/
+            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels=%d, nSamplesPerSec=%d is not supported",
+              Wfx.nChannels, Wfx.nSamplesPerSec);
           }
         }
         if (hr == S_OK)
           break;
       }
 
+      if (hr == S_OK)
+      {
+        m_AudioDevice->_recAudioFrameSize = Wfx.nBlockAlign;
+        m_AudioDevice->_recSampleRate = Wfx.nSamplesPerSec;
+        m_AudioDevice->_recBlockSize = Wfx.nSamplesPerSec / 100;
+        m_AudioDevice->_recChannels = Wfx.nChannels;
+
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "VoE selected this capturing format:");
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wFormatTag        : 0x%X (%u)", Wfx.wFormatTag, Wfx.wFormatTag);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels         : %d", Wfx.nChannels);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nSamplesPerSec    : %d", Wfx.nSamplesPerSec);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nAvgBytesPerSec   : %d", Wfx.nAvgBytesPerSec);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nBlockAlign       : %d", Wfx.nBlockAlign);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wBitsPerSample    : %d", Wfx.wBitsPerSample);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "cbSize            : %d", Wfx.cbSize);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "Additional settings:");
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_recAudioFrameSize: %d", m_AudioDevice->_recAudioFrameSize);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_recBlockSize     : %d", m_AudioDevice->_recBlockSize);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_recChannels      : %d", m_AudioDevice->_recChannels);
+      }
       // Create a capturing stream.
       hr = audioClient->Initialize(
         AUDCLNT_SHAREMODE_SHARED,             // share Audio Engine with other applications
@@ -296,6 +334,20 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
         0,                                    // periodicity
         &Wfx,                                 // selected wave format
         NULL);                                // session GUID
+
+      if (hr != S_OK)
+      {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id, "IAudioClient::Initialize() failed:");
+        if (pWfxClosestMatch != NULL)
+        {
+          WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id, "closest mix format: #channels=%d, samples/sec=%d, bits/sample=%d",
+            pWfxClosestMatch->nChannels, pWfxClosestMatch->nSamplesPerSec, pWfxClosestMatch->wBitsPerSample);
+        }
+        else
+        {
+          WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id, "no format suggested");
+        }
+      }
 
       if (FAILED(hr))
       {
@@ -361,6 +413,27 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
           goto exit;
         }
 
+        // Retrieve the stream format that the audio engine uses for its internal
+        // processing (mixing) of shared-mode streams.
+        hr = audioClient->GetMixFormat(&mixFormat);
+        if (SUCCEEDED(hr))
+        {
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "Audio Engine's current rendering mix format:");
+          // format type
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wFormatTag     : 0x%X (%u)", mixFormat->wFormatTag, mixFormat->wFormatTag);
+          // number of channels (i.e. mono, stereo...)
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels      : %d", mixFormat->nChannels);
+          // sample rate
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nSamplesPerSec : %d", mixFormat->nSamplesPerSec);
+          // for buffer estimation
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nAvgBytesPerSec: %d", mixFormat->nAvgBytesPerSec);
+          // block size of data
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nBlockAlign    : %d", mixFormat->nBlockAlign);
+          // number of bits per sample of mono data
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wBitsPerSample : %d", mixFormat->wBitsPerSample);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "cbSize         : %d", mixFormat->cbSize);
+        }
+
         WAVEFORMATEX Wfx = WAVEFORMATEX();
         WAVEFORMATEX* pWfxClosestMatch = NULL;
 
@@ -394,14 +467,37 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
             }
             else
             {
-              //WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "nChannels=%d, nSamplesPerSec=%d is not supported",
-              //  Wfx.nChannels, Wfx.nSamplesPerSec);
+              WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels=%d, nSamplesPerSec=%d is not supported",
+                Wfx.nChannels, Wfx.nSamplesPerSec);
             }
           }
           if (hr == S_OK)
             break;
         }
 
+
+        if (hr == S_OK)
+        {
+          m_AudioDevice->_playAudioFrameSize = Wfx.nBlockAlign;
+          m_AudioDevice->_playBlockSize = Wfx.nSamplesPerSec / 100;
+          m_AudioDevice->_playSampleRate = Wfx.nSamplesPerSec;
+          m_AudioDevice->_devicePlaySampleRate = Wfx.nSamplesPerSec; // The device itself continues to run at 44.1 kHz.
+          m_AudioDevice->_devicePlayBlockSize = Wfx.nSamplesPerSec / 100;
+          m_AudioDevice->_playChannels = Wfx.nChannels;
+
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "VoE selected this rendering format:");
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wFormatTag         : 0x%X (%u)", Wfx.wFormatTag, Wfx.wFormatTag);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels          : %d", Wfx.nChannels);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nSamplesPerSec     : %d", Wfx.nSamplesPerSec);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nAvgBytesPerSec    : %d", Wfx.nAvgBytesPerSec);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nBlockAlign        : %d", Wfx.nBlockAlign);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wBitsPerSample     : %d", Wfx.wBitsPerSample);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "cbSize             : %d", Wfx.cbSize);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "Additional settings:");
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playAudioFrameSize: %d", m_AudioDevice->_playAudioFrameSize);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playBlockSize     : %d", m_AudioDevice->_playBlockSize);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playChannels      : %d", m_AudioDevice->_playChannels);
+        }
 
         REFERENCE_TIME hnsBufferDuration = 0;  // ask for minimum buffer size (default)
         if (mixFormat->nSamplesPerSec == 44100)
@@ -422,6 +518,22 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
           0,
           &Wfx,
           nullptr);
+
+
+        if (FAILED(hr))
+        {
+          WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id, "IAudioClient::Initialize() failed:");
+          if (pWfxClosestMatch != NULL)
+          {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id, "closest mix format: #channels=%d, samples/sec=%d, bits/sample=%d",
+              pWfxClosestMatch->nChannels, pWfxClosestMatch->nSamplesPerSec, pWfxClosestMatch->wBitsPerSample);
+          }
+          else
+          {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id, "no format suggested");
+          }
+        }
+
         if (FAILED(hr))
         {
           goto exit;
@@ -828,14 +940,14 @@ int32_t AudioDeviceWindowsWasapi::Init()
     Concurrency::task<void> (_InitializeAudioDeviceInAsync())
       .then([this](concurrency::task<void> )
     {
-      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "Input audio device activated");
+      WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Input audio device activated");
     }, task_continuation_context::use_arbitrary()).wait();
 
 
     Concurrency::task<void> (_InitializeAudioDeviceOutAsync())
       .then([this](concurrency::task<void>)
     {
-      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "Output audio device activated");
+      WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Output audio device activated");
     }, task_continuation_context::use_arbitrary()).wait();
 
 
