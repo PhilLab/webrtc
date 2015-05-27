@@ -277,6 +277,12 @@
             'GTEST_HAS_TR1_TUPLE=1',
            ],
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'type': 'static_library',
+          'sources!': ['app/webrtc/sctputils.cc',],
+        }, {
+          'type': 'executable',
+        }],
       ],
     },  # target libjingle_peerconnection_unittest
   ],
