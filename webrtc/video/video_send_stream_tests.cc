@@ -14,6 +14,7 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
@@ -103,8 +104,8 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpSdesChunkCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kSdesChunk) {
           EXPECT_EQ(parser.Packet().CName.CName, kCName);
           observation_complete_->Set();
         }
@@ -305,14 +306,22 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
         EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
       }
 
-      EXPECT_EQ(kRedPayloadType, header.payloadType);
-
-      uint8_t encapsulated_payload_type = packet[header.headerLength];
-
-      if (encapsulated_payload_type == kUlpfecPayloadType) {
-        received_fec_ = true;
+      int encapsulated_payload_type = -1;
+      if (header.payloadType == kRedPayloadType) {
+        encapsulated_payload_type =
+            static_cast<int>(packet[header.headerLength]);
+        if (encapsulated_payload_type != kFakeSendPayloadType)
+          EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
       } else {
-        received_media_ = true;
+        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+      }
+
+      if (encapsulated_payload_type != -1) {
+        if (encapsulated_payload_type == kUlpfecPayloadType) {
+          received_fec_ = true;
+        } else {
+          received_media_ = true;
+        }
       }
 
       if (received_media_ && received_fec_)
@@ -664,7 +673,6 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         : SendTest(kDefaultTimeoutMs),
           transport_adapter_(&transport_),
           clock_(Clock::GetRealTimeClock()),
-          crit_(CriticalSectionWrapper::CreateCriticalSection()),
           test_state_(kBeforeSuspend),
           rtp_count_(0),
           last_sequence_number_(0),
@@ -678,13 +686,13 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       // Receive statistics reporting having lost 0% of the packets.
       // This is needed for the send-side bitrate controller to work properly.
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       SendRtcpFeedback(0);  // REMB is only sent if value is > 0.
       return SEND_PACKET;
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       ++rtp_count_;
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
@@ -719,7 +727,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     // This method implements the I420FrameCallback.
     void FrameCallback(I420VideoFrame* video_frame) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       if (test_state_ == kDuringSuspend &&
           ++suspended_frame_count_ > kSuspendTimeFrames) {
         VideoSendStream::Stats stats = stream_->GetStats();
@@ -730,12 +738,12 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     }
 
     void set_low_remb_bps(int value) {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       low_remb_bps_ = value;
     }
 
     void set_high_remb_bps(int value) {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       high_remb_bps_ = value;
     }
 
@@ -799,7 +807,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     Clock* const clock_;
     VideoSendStream* stream_;
 
-    const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+    rtc::CriticalSection crit_;
     TestState test_state_ GUARDED_BY(crit_);
     int rtp_count_ GUARDED_BY(crit_);
     int last_sequence_number_ GUARDED_BY(crit_);
@@ -818,7 +826,6 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
         : SendTest(kDefaultTimeoutMs),
           clock_(Clock::GetRealTimeClock()),
           transport_adapter_(ReceiveTransport()),
-          crit_(CriticalSectionWrapper::CreateCriticalSection()),
           last_packet_time_ms_(-1),
           capturer_(nullptr) {
       transport_adapter_.Enable();
@@ -826,14 +833,14 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       last_packet_time_ms_ = clock_->TimeInMilliseconds();
       capturer_->Stop();
       return SEND_PACKET;
     }
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       const int kVideoMutedThresholdMs = 10000;
       if (last_packet_time_ms_ > 0 &&
           clock_->TimeInMilliseconds() - last_packet_time_ms_ >
@@ -864,7 +871,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
     virtual void OnFrameGeneratorCapturerCreated(
         test::FrameGeneratorCapturer* frame_generator_capturer) {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       capturer_ = frame_generator_capturer;
     }
 
@@ -875,7 +882,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
     Clock* const clock_;
     internal::TransportAdapter transport_adapter_;
-    const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+    rtc::CriticalSection crit_;
     int64_t last_packet_time_ms_ GUARDED_BY(crit_);
     test::FrameGeneratorCapturer* capturer_ GUARDED_BY(crit_);
   } test;
@@ -916,8 +923,10 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
     }
 
    private:
-    DeliveryStatus DeliverPacket(const uint8_t* packet,
+    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
                                  size_t length) override {
+      EXPECT_TRUE(media_type == MediaType::ANY ||
+                  media_type == MediaType::VIDEO);
       if (RtpHeaderParser::IsRtcp(packet, length))
         return DELIVERY_OK;
 
@@ -1175,24 +1184,23 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
    public:
     EncoderStateObserver()
         : SendTest(kDefaultTimeoutMs),
-          crit_(CriticalSectionWrapper::CreateCriticalSection()),
           initialized_(false),
           callback_registered_(false),
           num_releases_(0),
           released_(false) {}
 
     bool IsReleased() {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       return released_;
     }
 
     bool IsReadyForEncode() {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       return initialized_ && callback_registered_;
     }
 
     size_t num_releases() {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       return num_releases_;
     }
 
@@ -1200,7 +1208,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     int32_t InitEncode(const VideoCodec* codecSettings,
                        int32_t numberOfCores,
                        size_t maxPayloadSize) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       EXPECT_FALSE(initialized_);
       initialized_ = true;
       released_ = false;
@@ -1218,14 +1226,14 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
 
     int32_t RegisterEncodeCompleteCallback(
         EncodedImageCallback* callback) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       EXPECT_TRUE(initialized_);
       callback_registered_ = true;
       return 0;
     }
 
     int32_t Release() override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       EXPECT_TRUE(IsReadyForEncode());
       EXPECT_FALSE(released_);
       initialized_ = false;
@@ -1277,7 +1285,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
           << "Timed out while waiting for Encode.";
     }
 
-    rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+    rtc::CriticalSection crit_;
     VideoSendStream* stream_;
     bool initialized_ GUARDED_BY(crit_);
     bool callback_registered_ GUARDED_BY(crit_);
@@ -1332,7 +1340,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     void PerformTest() override {
       EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
-      encoder_config_.content_type = VideoEncoderConfig::kScreenshare;
+      encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
       stream_->ReconfigureVideoEncoder(encoder_config_);
       EXPECT_EQ(2u, num_initializations_)
           << "ReconfigureVideoEncoder did not reinitialize the encoder with "
@@ -1506,8 +1514,8 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpSrCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
           // Only compare sent media bytes if SenderPacketCount matches the
           // number of sent rtp packets (a new rtp packet could be sent before
           // the rtcp packet).
@@ -1563,7 +1571,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
           encoder_config->streams[0].temporal_layer_thresholds_bps.empty());
       encoder_config->streams[0].temporal_layer_thresholds_bps.push_back(
           kScreencastTargetBitrateKbps * 1000);
-      encoder_config->content_type = VideoEncoderConfig::kScreenshare;
+      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
     void PerformTest() override {

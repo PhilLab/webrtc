@@ -34,8 +34,6 @@ class EncodedFrameObserver;
 
 namespace vcm {
 
-class DebugRecorder;
-
 class VCMProcessTimer {
  public:
   VCMProcessTimer(int64_t periodMs, Clock* clock)
@@ -62,8 +60,6 @@ class VideoSender {
               VCMQMSettingsCallback* qm_settings_callback);
 
   ~VideoSender();
-
-  int32_t InitializeSender();
 
   // Register the send codec to be used.
   // This method must be called on the construction thread.
@@ -110,9 +106,6 @@ class VideoSender {
   int32_t IntraFrameRequest(int stream_index);
   int32_t EnableFrameDropper(bool enable);
 
-  int StartDebugRecording(const char* file_name_utf8);
-  void StopDebugRecording();
-
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
 
@@ -121,8 +114,6 @@ class VideoSender {
 
  private:
   Clock* clock_;
-
-  rtc::scoped_ptr<DebugRecorder> recorder_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _sendCritSect;
@@ -150,7 +141,6 @@ class VideoReceiver {
   VideoReceiver(Clock* clock, EventFactory* event_factory);
   ~VideoReceiver();
 
-  int32_t InitializeReceiver();
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,
                                bool requireKeyFrame);

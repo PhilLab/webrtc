@@ -107,8 +107,8 @@ struct GetStatsMsg : public rtc::MessageData {
 bool GetServiceTypeAndHostnameFromUri(const std::string& in_str,
                                       ServiceType* service_type,
                                       std::string* hostname) {
-  std::string::size_type colonpos = in_str.find(':');
-  if (colonpos == std::string::npos) {
+  const std::string::size_type colonpos = in_str.find(':');
+  if (colonpos == std::string::npos || (colonpos + 1) == in_str.length()) {
     return false;
   }
   std::string type = in_str.substr(0, colonpos);
@@ -219,13 +219,19 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       continue;
     }
 
+    ASSERT(!hoststring.empty());
+
     // Let's break hostname.
     tokens.clear();
     rtc::tokenize(hoststring, '@', &tokens);
-    hoststring = tokens[0];
-    if (tokens.size() == kTurnHostTokensNum) {
+    ASSERT(!tokens.empty());
+    // TODO(pthatcher): What's the right thing to do if tokens.size() is >2?
+    // E.g. a string like "foo@bar@bat".
+    if (tokens.size() >= kTurnHostTokensNum) {
       server.username = rtc::s_url_decode(tokens[0]);
       hoststring = tokens[1];
+    } else {
+      hoststring = tokens[0];
     }
 
     int port = kDefaultStunPort;
@@ -239,7 +245,6 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       LOG(WARNING) << "Invalid Hostname format: " << uri_without_transport;
       continue;
     }
-
 
     if (port <= 0 || port > 0xffff) {
       LOG(WARNING) << "Invalid port: " << port;
@@ -363,6 +368,11 @@ bool PeerConnection::Initialize(
   }
 #endif
 
+  if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {
+    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_TCP;
+    LOG(LS_INFO) << "TCP candidates are disabled.";
+  }
+
   port_allocator_->set_flags(portallocator_flags);
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
@@ -381,9 +391,7 @@ bool PeerConnection::Initialize(
 
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), constraints,
-                            dtls_identity_service,
-                            configuration.type,
-                            configuration.bundle_policy))
+                            dtls_identity_service, configuration))
     return false;
 
   // Register PeerConnection as receiver of local ice candidates.

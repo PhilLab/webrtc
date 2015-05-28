@@ -88,8 +88,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void SetRtxSsrc(uint32_t ssrc) override;
 
-  void SetRtxSendPayloadType(int payload_type) override;
-  int RtxSendPayloadType() const override;
+  void SetRtxSendPayloadType(int payload_type,
+                             int associated_payload_type) override;
+  std::pair<int, int> RtxSendPayloadType() const override;
 
   // Sends kRtcpByeCode when going from true to false.
   int32_t SetSendingStatus(bool sending) override;
@@ -120,9 +121,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Returns the number of padding bytes actually sent, which can be more or
   // less than |bytes|.
   size_t TimeToSendPadding(size_t bytes) override;
-
-  bool GetSendSideDelay(int* avg_send_delay_ms,
-                        int* max_send_delay_ms) const override;
 
   // RTCP part.
 
@@ -160,7 +158,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Force a send of an RTCP packet.
   // Normal SR and RR are triggered via the process function.
-  int32_t SendRTCP(uint32_t rtcp_packet_type = kRtcpReport) override;
+  int32_t SendRTCP(RTCPPacketType rtcpPacketType) override;
+
+  int32_t SendCompoundRTCP(
+      const std::set<RTCPPacketType>& rtcpPacketTypes) override;
 
   int32_t ResetSendDataCountersRTP() override;
 
@@ -178,12 +179,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Get received RTCP report, report block.
   int32_t RemoteRTCPStat(
       std::vector<RTCPReportBlock>* receive_blocks) const override;
-
-  // Set received RTCP report block.
-  int32_t AddRTCPReportBlock(uint32_t ssrc,
-                             const RTCPReportBlock* receive_block) override;
-
-  int32_t RemoveRTCPReportBlock(uint32_t ssrc) override;
 
   // (REMB) Receiver Estimated Max Bitrate.
   bool REMB() const override;
@@ -340,9 +335,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Get remote SequenceNumber.
   uint16_t RemoteSequenceNumber() const;
-
-  // Only for internal testing.
-  uint32_t LastSendReport(int64_t& last_rtcptime);
 
   RTPSender rtp_sender_;
 

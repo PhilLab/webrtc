@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
 
 #include <list>
+#include <limits>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
@@ -27,7 +28,11 @@ namespace bwe {
 class PacketSender : public PacketProcessor {
  public:
   PacketSender(PacketProcessorListener* listener, int flow_id)
-      : PacketProcessor(listener, flow_id, kSender) {}
+      : PacketProcessor(listener, flow_id, kSender),
+        // For Packet::send_time_us() to be comparable with timestamps from
+        // clock_, the clock of the PacketSender and the Source must be aligned.
+        // We assume that both start at time 0.
+        clock_(0) {}
   virtual ~PacketSender() {}
   // Call GiveFeedback() with the returned interval in milliseconds, provided
   // there is a new estimate available.
@@ -35,6 +40,10 @@ class PacketSender : public PacketProcessor {
   // output of the estimators is sampled and therefore the baseline files may
   // have to be regenerated.
   virtual int GetFeedbackIntervalMs() const = 0;
+  void SetSenderTimestamps(Packets* in_out);
+
+ protected:
+  SimulatedClock clock_;
 };
 
 class VideoSender : public PacketSender, public BitrateObserver {
@@ -59,7 +68,6 @@ class VideoSender : public PacketSender, public BitrateObserver {
                                          std::list<FeedbackPacket*>* feedbacks,
                                          Packets* generated);
 
-  SimulatedClock clock_;
   VideoSource* source_;
   rtc::scoped_ptr<BweSender> bwe_;
   int64_t start_of_run_ms_;
@@ -104,32 +112,57 @@ class PacedVideoSender : public VideoSender, public PacedSender::Callback {
 
 class TcpSender : public PacketSender {
  public:
-  TcpSender(PacketProcessorListener* listener, int flow_id)
+  TcpSender(PacketProcessorListener* listener, int flow_id, int64_t offset_ms)
       : PacketSender(listener, flow_id),
-        now_ms_(0),
-        in_slow_start_(false),
-        cwnd_(1),
-        in_flight_(0),
+        cwnd_(10),
+        ssthresh_(std::numeric_limits<int>::max()),
         ack_received_(false),
         last_acked_seq_num_(0),
-        next_sequence_number_(0) {}
+        next_sequence_number_(0),
+        offset_ms_(offset_ms),
+        last_reduction_time_ms_(-1),
+        last_rtt_ms_(0) {}
+
+  virtual ~TcpSender() {}
 
   void RunFor(int64_t time_ms, Packets* in_out) override;
   int GetFeedbackIntervalMs() const override { return 10; }
 
  private:
+  struct InFlight {
+   public:
+    InFlight(const MediaPacket& packet)
+        : sequence_number(packet.header().sequenceNumber),
+          time_ms(packet.send_time_us() / 1000) {}
+
+    InFlight(uint16_t seq_num, int64_t now_ms)
+        : sequence_number(seq_num), time_ms(now_ms) {}
+
+    bool operator<(const InFlight& rhs) const {
+      return sequence_number < rhs.sequence_number;
+    }
+
+    uint16_t sequence_number;  // Sequence number of a packet in flight, or a
+                               // packet which has just been acked.
+    int64_t time_ms;  // Time of when the packet left the sender, or when the
+                      // ack was received.
+  };
+
   void SendPackets(Packets* in_out);
   void UpdateCongestionControl(const FeedbackPacket* fb);
-  bool LossEvent(const std::vector<uint16_t>& acked_packets);
+  int TriggerTimeouts();
+  void HandleLoss();
   Packets GeneratePackets(size_t num_packets);
 
-  int64_t now_ms_;
-  bool in_slow_start_;
   float cwnd_;
-  int in_flight_;
+  int ssthresh_;
+  std::set<InFlight> in_flight_;
   bool ack_received_;
   uint16_t last_acked_seq_num_;
   uint16_t next_sequence_number_;
+  int64_t offset_ms_;
+  int64_t last_reduction_time_ms_;
+  int64_t last_rtt_ms_;
 };
 }  // namespace bwe
 }  // namespace testing

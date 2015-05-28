@@ -46,8 +46,6 @@ namespace rtc {
 const char* win32_inet_ntop(int af, const void *src, char* dst, socklen_t size);
 int win32_inet_pton(int af, const char* src, void *dst);
 
-///////////////////////////////////////////////////////////////////////////////
-
 inline std::wstring ToUtf16(const char* utf8, size_t len) {
   int len16 = ::MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len),
                                     NULL, 0);
@@ -152,8 +150,6 @@ bool AdjustCurrentProcessPrivilege(const TCHAR* privilege, bool to_enable);
 #define WaitForSingleObject(a, b) WaitForSingleObjectEx(a, b, FALSE)
 #define WaitForMultipleObjects(a, b, c, d) WaitForMultipleObjectsEx(a, b, c, d, FALSE) 
 #endif
-
-///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace rtc
 

@@ -28,6 +28,7 @@
 
 package org.webrtc;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -105,6 +106,44 @@ public class PeerConnection {
       return uri + "[" + username + ":" + password + "]";
     }
   }
+
+  /** Java version of PeerConnectionInterface.IceTransportsType */
+  public enum IceTransportsType {
+    NONE, RELAY, NOHOST, ALL
+  };
+
+  /** Java version of PeerConnectionInterface.BundlePolicy */
+  public enum BundlePolicy {
+    BALANCED, MAXBUNDLE, MAXCOMPAT
+  };
+
+  /** Java version of PeerConnectionInterface.RtcpMuxPolicy */
+  public enum RtcpMuxPolicy {
+    NEGOTIATE, REQUIRE
+  };
+  /** Java version of PeerConnectionInterface.TcpCandidatePolicy */
+  public enum TcpCandidatePolicy {
+    ENABLED, DISABLED
+  };
+
+  /** Java version of PeerConnectionInterface.RTCConfiguration */
+  public static class RTCConfiguration {
+    public IceTransportsType iceTransportsType;
+    public List<IceServer> iceServers;
+    public BundlePolicy bundlePolicy;
+    public RtcpMuxPolicy rtcpMuxPolicy;
+    public TcpCandidatePolicy tcpCandidatePolicy;
+    public int audioJitterBufferMaxPackets;
+
+    public RTCConfiguration(List<IceServer> iceServers) {
+      iceTransportsType = IceTransportsType.ALL;
+      bundlePolicy = BundlePolicy.BALANCED;
+      rtcpMuxPolicy = RtcpMuxPolicy.NEGOTIATE;
+      tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
+      this.iceServers = iceServers;
+      audioJitterBufferMaxPackets = 50;
+    }
+  };
 
   private final List<MediaStream> localStreams;
   private final long nativePeerConnection;

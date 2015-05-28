@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '81b4fffe821f296b2b34b5dc2cb2dfae4c52747f',
+  'chromium_revision': '1b9c098a08e40114e44b6c1ec33ddf95c40b901d',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -17,7 +17,7 @@ deps = {
   'src/third_party/gflags/src':
     'git+https://dpeted.visualstudio.com/DefaultCollection/TED%20Consumer/_git/RTC_gflags@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
 
-  'src/third_party/junit':
+  'src/third_party/junit-jar':
     Var('chromium_git') + '/external/webrtc/deps/third_party/junit@f35596b476aa6e62fd3b3857b9942ddcd13ce35e', # from svn revision 3367
 }
 
@@ -40,7 +40,9 @@ include_rules = [
   '+talk',
   '+testing',
   '+third_party',
+  '+unicode',
   '+webrtc',
+  '+vpx',
 ]
 
 # checkdeps.py shouldn't check include paths for files in these dirs:

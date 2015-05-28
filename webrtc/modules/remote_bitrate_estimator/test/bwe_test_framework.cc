@@ -178,9 +178,10 @@ void MediaPacket::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
 
 RembFeedback::RembFeedback(int flow_id,
                            int64_t send_time_us,
+                           int64_t last_send_time_ms,
                            uint32_t estimated_bps,
                            RTCPReportBlock report_block)
-    : FeedbackPacket(flow_id, send_time_us),
+    : FeedbackPacket(flow_id, send_time_us, last_send_time_ms),
       estimated_bps_(estimated_bps),
       report_block_(report_block) {
 }
@@ -188,8 +189,9 @@ RembFeedback::RembFeedback(int flow_id,
 SendSideBweFeedback::SendSideBweFeedback(
     int flow_id,
     int64_t send_time_us,
+    int64_t last_send_time_ms,
     const std::vector<PacketInfo>& packet_feedback_vector)
-    : FeedbackPacket(flow_id, send_time_us),
+    : FeedbackPacket(flow_id, send_time_us, last_send_time_ms),
       packet_feedback_vector_(packet_feedback_vector) {
 }
 
@@ -341,7 +343,7 @@ DelayFilter::DelayFilter(PacketProcessorListener* listener,
       last_send_time_us_(0) {
 }
 
-void DelayFilter::SetDelay(int64_t delay_ms) {
+void DelayFilter::SetDelayMs(int64_t delay_ms) {
   BWE_TEST_LOGGING_ENABLE(false);
   BWE_TEST_LOGGING_LOG1("Delay", "%d ms", static_cast<int>(delay_ms));
   assert(delay_ms >= 0);

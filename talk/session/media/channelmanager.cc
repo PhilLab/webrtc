@@ -41,7 +41,6 @@
 #ifdef HAVE_SCTP
 #include "talk/media/sctp/sctpdataengine.h"
 #endif
-#include "talk/session/media/soundclip.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
@@ -75,16 +74,6 @@ static DataEngineInterface* ConstructDataEngine() {
   return new RtpDataEngine();
 #endif
 }
-
-#if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
-ChannelManager::ChannelManager(rtc::Thread* worker_thread) {
-  Construct(MediaEngineFactory::Create(),
-            ConstructDataEngine(),
-            cricket::DeviceManagerFactory::Create(),
-            new CaptureManager(),
-            worker_thread);
-}
-#endif
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
                                DataEngineInterface* dme,
@@ -319,10 +308,7 @@ void ChannelManager::Terminate_w() {
     DestroyVideoChannel_w(video_channels_.back());
   }
   while (!voice_channels_.empty()) {
-    DestroyVoiceChannel_w(voice_channels_.back());
-  }
-  while (!soundclips_.empty()) {
-    DestroySoundclip_w(soundclips_.back());
+    DestroyVoiceChannel_w(voice_channels_.back(), nullptr);
   }
   if (!SetCaptureDevice_w(NULL)) {
     LOG(LS_WARNING) << "failed to delete video capturer";
@@ -339,8 +325,8 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     BaseSession* session, const std::string& content_name, bool rtcp) {
-  // This is ok to alloc from a thread other than the worker thread
   ASSERT(initialized_);
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   VoiceMediaChannel* media_channel = media_engine_->CreateChannel();
   if (media_channel == NULL)
     return NULL;
@@ -356,22 +342,29 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
   return voice_channel;
 }
 
-void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
+void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel,
+                                         VideoChannel* video_channel) {
   if (voice_channel) {
     worker_thread_->Invoke<void>(
-        Bind(&ChannelManager::DestroyVoiceChannel_w, this, voice_channel));
+        Bind(&ChannelManager::DestroyVoiceChannel_w, this, voice_channel,
+             video_channel));
   }
 }
 
-void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
+void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel,
+                                           VideoChannel* video_channel) {
   // Destroy voice channel.
   ASSERT(initialized_);
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   VoiceChannels::iterator it = std::find(voice_channels_.begin(),
       voice_channels_.end(), voice_channel);
   ASSERT(it != voice_channels_.end());
   if (it == voice_channels_.end())
     return;
 
+  if (video_channel) {
+    video_channel->media_channel()->DetachVoiceChannel();
+  }
   voice_channels_.erase(it);
   delete voice_channel;
 }
@@ -413,8 +406,8 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
     bool rtcp,
     const VideoOptions& options,
     VoiceChannel* voice_channel) {
-  // This is ok to alloc from a thread other than the worker thread
   ASSERT(initialized_);
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   VideoMediaChannel* media_channel =
       // voice_channel can be NULL in case of NullVoiceEngine.
       media_engine_->CreateVideoChannel(
@@ -424,7 +417,7 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
 
   VideoChannel* video_channel = new VideoChannel(
       worker_thread_, media_engine_.get(), media_channel,
-      session, content_name, rtcp, voice_channel);
+      session, content_name, rtcp);
   if (!video_channel->Init()) {
     delete video_channel;
     return NULL;
@@ -443,6 +436,7 @@ void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
 void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
   // Destroy video channel.
   ASSERT(initialized_);
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   VideoChannels::iterator it = std::find(video_channels_.begin(),
       video_channels_.end(), video_channel);
   ASSERT(it != video_channels_.end());
@@ -504,45 +498,6 @@ void ChannelManager::DestroyDataChannel_w(DataChannel* data_channel) {
 
   data_channels_.erase(it);
   delete data_channel;
-}
-
-Soundclip* ChannelManager::CreateSoundclip() {
-  return worker_thread_->Invoke<Soundclip*>(
-      Bind(&ChannelManager::CreateSoundclip_w, this));
-}
-
-Soundclip* ChannelManager::CreateSoundclip_w() {
-  ASSERT(initialized_);
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-
-  SoundclipMedia* soundclip_media = media_engine_->CreateSoundclip();
-  if (!soundclip_media) {
-    return NULL;
-  }
-
-  Soundclip* soundclip = new Soundclip(worker_thread_, soundclip_media);
-  soundclips_.push_back(soundclip);
-  return soundclip;
-}
-
-void ChannelManager::DestroySoundclip(Soundclip* soundclip) {
-  if (soundclip) {
-    worker_thread_->Invoke<void>(
-        Bind(&ChannelManager::DestroySoundclip_w, this, soundclip));
-  }
-}
-
-void ChannelManager::DestroySoundclip_w(Soundclip* soundclip) {
-  // Destroy soundclip.
-  ASSERT(initialized_);
-  Soundclips::iterator it = std::find(soundclips_.begin(),
-      soundclips_.end(), soundclip);
-  ASSERT(it != soundclips_.end());
-  if (it == soundclips_.end())
-    return;
-
-  soundclips_.erase(it);
-  delete soundclip;
 }
 
 bool ChannelManager::GetAudioOptions(std::string* in_name,

@@ -7,34 +7,38 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 
 namespace webrtc {
 
 static const int kMinFps = 10;
 static const int kMeasureSeconds = 5;
 static const int kFramedropPercentThreshold = 60;
-static const int kLowQpThresholdDenominator = 3;
 
 QualityScaler::QualityScaler()
-    : num_samples_(0), low_qp_threshold_(-1), downscale_shift_(0) {
+    : num_samples_(0), low_qp_threshold_(-1), downscale_shift_(0),
+      min_width_(0), min_height_(0) {
 }
 
-void QualityScaler::Init(int max_qp) {
+void QualityScaler::Init(int low_qp_threshold) {
   ClearSamples();
-  downscale_shift_ = 0;
-  low_qp_threshold_ = max_qp / kLowQpThresholdDenominator ;
+  low_qp_threshold_ = low_qp_threshold;
 }
 
+void QualityScaler::SetMinResolution(int min_width, int min_height) {
+  min_width_ = min_width;
+  min_height_ = min_height;
+}
+
+// Report framerate(fps) to estimate # of samples.
 void QualityScaler::ReportFramerate(int framerate) {
   num_samples_ = static_cast<size_t>(
       kMeasureSeconds * (framerate < kMinFps ? kMinFps : framerate));
 }
 
-void QualityScaler::ReportEncodedFrame(int qp) {
-  average_qp_.AddSample(qp);
+void QualityScaler::ReportQP(int qp) {
   framedrop_percent_.AddSample(0);
+  average_qp_.AddSample(qp);
 }
 
 void QualityScaler::ReportDroppedFrame() {
@@ -43,22 +47,24 @@ void QualityScaler::ReportDroppedFrame() {
 
 QualityScaler::Resolution QualityScaler::GetScaledResolution(
     const I420VideoFrame& frame) {
-  // Both of these should be set through InitEncode -> Should be set by now.
+  // Should be set through InitEncode -> Should be set by now.
   assert(low_qp_threshold_ >= 0);
   assert(num_samples_ > 0);
-  // Update scale factor.
-  int avg;
-  if (framedrop_percent_.GetAverage(num_samples_, &avg) &&
-      avg >= kFramedropPercentThreshold) {
-    AdjustScale(false);
-  } else if (average_qp_.GetAverage(num_samples_, &avg) &&
-             avg <= low_qp_threshold_) {
-    AdjustScale(true);
-  }
 
   Resolution res;
   res.width = frame.width();
   res.height = frame.height();
+
+  // Update scale factor.
+  int avg_drop = 0;
+  int avg_qp = 0;
+  if (framedrop_percent_.GetAverage(num_samples_, &avg_drop) &&
+      avg_drop >= kFramedropPercentThreshold) {
+    AdjustScale(false);
+  } else if (average_qp_.GetAverage(num_samples_, &avg_qp) &&
+      avg_qp <= low_qp_threshold_) {
+    AdjustScale(true);
+  }
 
   assert(downscale_shift_ >= 0);
   for (int shift = downscale_shift_;
@@ -66,6 +72,12 @@ QualityScaler::Resolution QualityScaler::GetScaledResolution(
        --shift) {
     res.width >>= 1;
     res.height >>= 1;
+  }
+
+  // Set this limitation for VP8 HW encoder to avoid crash.
+  if (min_width_ > 0 && res.width * res.height < min_width_ * min_height_) {
+    res.width = min_width_;
+    res.height = min_height_;
   }
 
   return res;
@@ -94,37 +106,9 @@ const I420VideoFrame& QualityScaler::GetScaledFrame(
   return scaled_frame_;
 }
 
-QualityScaler::MovingAverage::MovingAverage() : sum_(0) {
-}
-
-void QualityScaler::MovingAverage::AddSample(int sample) {
-  samples_.push_back(sample);
-  sum_ += sample;
-}
-
-bool QualityScaler::MovingAverage::GetAverage(size_t num_samples, int* avg) {
-  assert(num_samples > 0);
-  if (num_samples > samples_.size())
-    return false;
-
-  // Remove old samples.
-  while (num_samples < samples_.size()) {
-    sum_ -= samples_.front();
-    samples_.pop_front();
-  }
-
-  *avg = sum_ / static_cast<int>(num_samples);
-  return true;
-}
-
-void QualityScaler::MovingAverage::Reset() {
-  sum_ = 0;
-  samples_.clear();
-}
-
 void QualityScaler::ClearSamples() {
-  average_qp_.Reset();
   framedrop_percent_.Reset();
+  average_qp_.Reset();
 }
 
 void QualityScaler::AdjustScale(bool up) {

@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 
-#include <list>
 #include <map>
 #include <vector>
 
@@ -26,8 +25,8 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
+#include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_defines.h"
-#include "webrtc/video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 
@@ -43,6 +42,26 @@ class ViEBitrateObserver;
 class ViEEffectFilter;
 class ViEEncoderObserver;
 class VideoCodingModule;
+
+// This class declares an abstract interface for a user defined observer. It is
+// up to the VideoEngine user to implement a derived class which implements the
+// observer class. The observer is registered using RegisterEncoderObserver()
+// and deregistered using DeregisterEncoderObserver().
+class ViEEncoderObserver {
+ public:
+  // This method is called once per second with the current encoded frame rate
+  // and bit rate.
+  virtual void OutgoingRate(const int video_channel,
+                            const unsigned int framerate,
+                            const unsigned int bitrate) = 0;
+
+  // This method is called whenever the state of the SuspendBelowMinBitrate
+  // changes, i.e., when |is_suspended| toggles.
+  virtual void SuspendChange(int video_channel, bool is_suspended) = 0;
+
+ protected:
+  virtual ~ViEEncoderObserver() {}
+};
 
 class ViEEncoder
     : public RtcpIntraFrameObserver,
@@ -104,15 +123,7 @@ class ViEEncoder
   int32_t ScaleInputImage(bool enable);
 
   // Implementing ViEFrameCallback.
-  void DeliverFrame(int id,
-                    const I420VideoFrame& video_frame,
-                    const std::vector<uint32_t>& csrcs) override;
-  void DelayChanged(int id, int frame_delay) override;
-  int GetPreferedFrameSettings(int* width,
-                               int* height,
-                               int* frame_rate) override;
-
-  void ProviderDestroyed(int id) override { return; }
+  void DeliverFrame(I420VideoFrame video_frame) override;
 
   int32_t SendKeyFrame();
   int32_t SendCodecStatistics(uint32_t* num_key_frames,
@@ -149,18 +160,9 @@ class ViEEncoder
   void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
 
   // Sets SSRCs for all streams.
-  bool SetSsrcs(const std::list<unsigned int>& ssrcs);
+  bool SetSsrcs(const std::vector<uint32_t>& ssrcs);
 
   void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
-
-  // Effect filter.
-  int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
-
-  // Enables recording of debugging information.
-  int StartDebugRecording(const char* fileNameUTF8);
-
-  // Disables recording of debugging information.
-  int StopDebugRecording();
 
   // Lets the sender suspend video when the rate drops below
   // |threshold_bps|, and turns back on when the rate goes back up above
@@ -169,10 +171,8 @@ class ViEEncoder
 
   // New-style callbacks, used by VideoSendStream.
   void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);
-  void DeRegisterPreEncodeCallback();
   void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback);
-  void DeRegisterPostEncodeImageCallback();
 
   void RegisterSendStatisticsProxy(SendStatisticsProxy* send_statistics_proxy);
 
@@ -228,14 +228,13 @@ class ViEEncoder
   bool nack_enabled_;
 
   ViEEncoderObserver* codec_observer_ GUARDED_BY(callback_cs_);
-  ViEEffectFilter* effect_filter_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
 
   bool has_received_sli_ GUARDED_BY(data_cs_);
   uint8_t picture_id_sli_ GUARDED_BY(data_cs_);
   bool has_received_rpsi_ GUARDED_BY(data_cs_);
   uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
-  std::map<unsigned int, int> ssrc_streams_ GUARDED_BY(data_cs_);
+  std::map<uint32_t, int> ssrc_streams_ GUARDED_BY(data_cs_);
 
   bool video_suspended_ GUARDED_BY(data_cs_);
   I420FrameCallback* pre_encode_callback_ GUARDED_BY(callback_cs_);

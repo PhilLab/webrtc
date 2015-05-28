@@ -603,14 +603,14 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  quality_scaler_.Init(codec_.qpMax);
+  quality_scaler_.Init(codec_.qpMax / kDefaultLowQpDenominator);
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   return InitAndSetControlSettings();
 }
 
 int VP8EncoderImpl::SetCpuSpeed(int width, int height) {
-#if defined(WEBRTC_ARCH_ARM)
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
   // On mobile platform, always set to -12 to leverage between cpu usage
   // and video quality.
   return -12;
@@ -670,7 +670,7 @@ int VP8EncoderImpl::InitAndSetControlSettings() {
   // when encoding lower resolution streams. Would it work with the
   // multi-res encoding feature?
   denoiserState denoiser_state = kDenoiserOnYOnly;
-#ifdef WEBRTC_ARCH_ARM
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
   denoiser_state = kDenoiserOnYOnly;
 #else
   denoiser_state = kDenoiserOnAdaptive;
@@ -730,7 +730,7 @@ int VP8EncoderImpl::Encode(
   }
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics
-  // use framedrops as a signal and is only applicable when we drop frames.
+  // use frame drops as a signal and is only applicable when we drop frames.
   const bool use_quality_scaler = encoders_.size() == 1 &&
                                   configurations_[0].rc_dropframe_thresh > 0 &&
                                   codec_.codecSpecific.VP8.automaticResizeOn;
@@ -1035,7 +1035,7 @@ int VP8EncoderImpl::GetEncodedPartitions(
     if (encoded_images_[0]._length > 0) {
       int qp;
       vpx_codec_control(&encoders_[0], VP8E_GET_LAST_QUANTIZER_64, &qp);
-      quality_scaler_.ReportEncodedFrame(qp);
+      quality_scaler_.ReportQP(qp);
     } else {
       quality_scaler_.ReportDroppedFrame();
     }
@@ -1101,7 +1101,7 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst,
   cfg.h = cfg.w = 0;  // set after decode
 
 vpx_codec_flags_t flags = 0;
-#ifndef WEBRTC_ARCH_ARM
+#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64)
   flags = VPX_CODEC_USE_POSTPROC;
 #ifdef INDEPENDENT_PARTITIONS
   flags |= VPX_CODEC_USE_INPUT_PARTITION;
@@ -1148,7 +1148,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
   }
 #endif
 
-#ifndef WEBRTC_ARCH_ARM
+#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64)
   vp8_postproc_cfg_t ppcfg;
   // MFQE enabled to reduce key frame popping.
   ppcfg.post_proc_flag = VP8_MFQE | VP8_DEBLOCK;
@@ -1388,86 +1388,6 @@ int VP8DecoderImpl::Release() {
   buffer_pool_.Release();
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
-}
-
-VideoDecoder* VP8DecoderImpl::Copy() {
-  // Sanity checks.
-  if (!inited_) {
-    // Not initialized.
-    assert(false);
-    return NULL;
-  }
-  if (last_frame_width_ == 0 || last_frame_height_ == 0) {
-    // Nothing has been decoded before; cannot clone.
-    return NULL;
-  }
-  if (last_keyframe_._buffer == NULL) {
-    // Cannot clone if we have no key frame to start with.
-    return NULL;
-  }
-  // Create a new VideoDecoder object
-  VP8DecoderImpl* copy = new VP8DecoderImpl;
-
-  // Initialize the new decoder
-  if (copy->InitDecode(&codec_, 1) != WEBRTC_VIDEO_CODEC_OK) {
-    delete copy;
-    return NULL;
-  }
-  // Inject last key frame into new decoder.
-  if (vpx_codec_decode(copy->decoder_, last_keyframe_._buffer,
-                       last_keyframe_._length, NULL, VPX_DL_REALTIME)) {
-    delete copy;
-    return NULL;
-  }
-  // Allocate memory for reference image copy
-  assert(last_frame_width_ > 0);
-  assert(last_frame_height_ > 0);
-  assert(image_format_ > VPX_IMG_FMT_NONE);
-  // Check if frame format has changed.
-  if (ref_frame_ &&
-      (last_frame_width_ != static_cast<int>(ref_frame_->img.d_w) ||
-          last_frame_height_ != static_cast<int>(ref_frame_->img.d_h) ||
-          image_format_ != ref_frame_->img.fmt)) {
-    vpx_img_free(&ref_frame_->img);
-    delete ref_frame_;
-    ref_frame_ = NULL;
-  }
-
-
-  if (!ref_frame_) {
-    ref_frame_ = new vpx_ref_frame_t;
-    // Setting alignment to 32 - as that ensures at least 16 for all
-    // planes (32 for Y, 16 for U,V) - libvpx sets the requested stride
-    // for the y plane, but only half of it to the u and v planes.
-    if (!vpx_img_alloc(&ref_frame_->img,
-                       static_cast<vpx_img_fmt_t>(image_format_),
-                       last_frame_width_, last_frame_height_,
-                       kVp832ByteAlign)) {
-      assert(false);
-      delete copy;
-      return NULL;
-    }
-  }
-  const vpx_ref_frame_type_t type_vec[] = { VP8_LAST_FRAME, VP8_GOLD_FRAME,
-      VP8_ALTR_FRAME };
-  for (uint32_t ix = 0;
-      ix < sizeof(type_vec) / sizeof(vpx_ref_frame_type_t); ++ix) {
-    ref_frame_->frame_type = type_vec[ix];
-    if (CopyReference(copy) < 0) {
-      delete copy;
-      return NULL;
-    }
-  }
-  // Copy all member variables (that are not set in initialization).
-  copy->feedback_mode_ = feedback_mode_;
-  copy->image_format_ = image_format_;
-  copy->last_keyframe_ = last_keyframe_;  // Shallow copy.
-  // Allocate memory. (Discard copied _buffer pointer.)
-  copy->last_keyframe_._buffer = new uint8_t[last_keyframe_._size];
-  memcpy(copy->last_keyframe_._buffer, last_keyframe_._buffer,
-         last_keyframe_._length);
-
-  return static_cast<VideoDecoder*>(copy);
 }
 
 int VP8DecoderImpl::CopyReference(VP8DecoderImpl* copy) {

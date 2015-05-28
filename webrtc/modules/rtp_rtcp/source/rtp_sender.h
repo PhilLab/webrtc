@@ -10,7 +10,6 @@
 
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
-
 #include <assert.h>
 #include <math.h>
 
@@ -104,10 +103,6 @@ class RTPSender : public RTPSenderInterface {
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
-
-  // Returns true if the statistics have been calculated, and false if no frame
-  // was sent within the statistics window.
-  bool GetSendSideDelay(int* avg_send_delay_ms, int* max_send_delay_ms) const;
 
   void SetTargetBitrate(uint32_t bitrate);
   uint32_t GetTargetBitrate();
@@ -216,8 +211,8 @@ class RTPSender : public RTPSenderInterface {
   uint32_t RtxSsrc() const;
   void SetRtxSsrc(uint32_t ssrc);
 
-  void SetRtxPayloadType(int payloadType);
-  int RtxPayloadType() const;
+  void SetRtxPayloadType(int payload_type, int associated_payload_type);
+  std::pair<int, int> RtxPayloadType() const;
 
   // Functions wrapping RTPSenderInterface.
   int32_t BuildRTPheader(uint8_t* data_buffer,
@@ -426,7 +421,11 @@ class RTPSender : public RTPSenderInterface {
   std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
   int rtx_ GUARDED_BY(send_critsect_);
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
-  int payload_type_rtx_ GUARDED_BY(send_critsect_);
+  // TODO(changbin): Remove rtx_payload_type_ once interop with old clients that
+  // only understand one RTX PT is no longer needed.
+  int rtx_payload_type_ GUARDED_BY(send_critsect_);
+  // Mapping rtx_payload_type_map_[associated] = rtx.
+  std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
 
   // Note: Don't access this variable directly, always go through
   // SetTargetBitrateKbps or GetTargetBitrateKbps. Also remember

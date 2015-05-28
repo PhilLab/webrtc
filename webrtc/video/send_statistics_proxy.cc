@@ -24,8 +24,7 @@ const int SendStatisticsProxy::kStatsTimeoutMs = 5000;
 SendStatisticsProxy::SendStatisticsProxy(Clock* clock,
                                          const VideoSendStream::Config& config)
     : clock_(clock),
-      config_(config),
-      crit_(CriticalSectionWrapper::CreateCriticalSection()) {
+      config_(config) {
 }
 
 SendStatisticsProxy::~SendStatisticsProxy() {}
@@ -33,25 +32,25 @@ SendStatisticsProxy::~SendStatisticsProxy() {}
 void SendStatisticsProxy::OutgoingRate(const int video_channel,
                                        const unsigned int framerate,
                                        const unsigned int bitrate) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.encode_frame_rate = framerate;
   stats_.media_bitrate_bps = bitrate;
 }
 
 void SendStatisticsProxy::CpuOveruseMetricsUpdated(
     const CpuOveruseMetrics& metrics) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.avg_encode_time_ms = metrics.avg_encode_time_ms;
   stats_.encode_usage_percent = metrics.encode_usage_percent;
 }
 
 void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.suspended = is_suspended;
 }
 
 VideoSendStream::Stats SendStatisticsProxy::GetStats() {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   PurgeOldStats();
   stats_.input_frame_rate =
       static_cast<int>(input_frame_rate_tracker_.units_second());
@@ -59,17 +58,15 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
 }
 
 void SendStatisticsProxy::PurgeOldStats() {
-  int64_t current_time_ms = clock_->TimeInMilliseconds();
+  int64_t old_stats_ms = clock_->TimeInMilliseconds() - kStatsTimeoutMs;
   for (std::map<uint32_t, VideoSendStream::StreamStats>::iterator it =
            stats_.substreams.begin();
        it != stats_.substreams.end(); ++it) {
     uint32_t ssrc = it->first;
-    if (update_times_[ssrc].resolution_update_ms + kStatsTimeoutMs >
-        current_time_ms)
-      continue;
-
-    it->second.width = 0;
-    it->second.height = 0;
+    if (update_times_[ssrc].resolution_update_ms <= old_stats_ms) {
+      it->second.width = 0;
+      it->second.height = 0;
+    }
   }
 }
 
@@ -91,8 +88,20 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
   return &stats_.substreams[ssrc];  // Insert new entry and return ptr.
 }
 
+void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
+  rtc::CritScope lock(&crit_);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
+  if (stats == nullptr)
+    return;
+
+  stats->total_bitrate_bps = 0;
+  stats->retransmit_bitrate_bps = 0;
+  stats->height = 0;
+  stats->width = 0;
+}
+
 void SendStatisticsProxy::OnSetRates(uint32_t bitrate_bps, int framerate) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.target_media_bitrate_bps = bitrate_bps;
 }
 
@@ -108,7 +117,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   }
   uint32_t ssrc = config_.rtp.ssrcs[simulcast_idx];
 
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == nullptr)
     return;
@@ -119,14 +128,14 @@ void SendStatisticsProxy::OnSendEncodedImage(
 }
 
 void SendStatisticsProxy::OnIncomingFrame() {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   input_frame_rate_tracker_.Update(1);
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
     uint32_t ssrc,
     const RtcpPacketTypeCounter& packet_counter) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == nullptr)
     return;
@@ -136,7 +145,7 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
 
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == nullptr)
     return;
@@ -150,7 +159,7 @@ void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
 void SendStatisticsProxy::DataCountersUpdated(
     const StreamDataCounters& counters,
     uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   DCHECK(stats != nullptr) << "DataCountersUpdated reported for unknown ssrc: "
                            << ssrc;
@@ -161,7 +170,7 @@ void SendStatisticsProxy::DataCountersUpdated(
 void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
                                  const BitrateStatistics& retransmit_stats,
                                  uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == nullptr)
     return;
@@ -172,7 +181,7 @@ void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
 
 void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
                                             uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == nullptr)
     return;
@@ -183,7 +192,7 @@ void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
 void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
                                                int max_delay_ms,
                                                uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == nullptr)
     return;

@@ -77,7 +77,7 @@ class VideoReceiveStream {
     int target_delay_ms = 0;
     int jitter_buffer_ms = 0;
     int min_playout_delay_ms = 0;
-    int render_delay_ms = 0;
+    int render_delay_ms = 10;
 
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
@@ -92,7 +92,7 @@ class VideoReceiveStream {
   struct Config {
     Config()
         : renderer(NULL),
-          render_delay_ms(0),
+          render_delay_ms(10),
           audio_channel_id(-1),
           pre_decode_callback(NULL),
           pre_render_callback(NULL),

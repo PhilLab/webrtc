@@ -27,7 +27,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
@@ -55,6 +55,8 @@ class VP8EncoderImpl : public VP8Encoder {
   virtual int SetChannelParameters(uint32_t packet_loss, int64_t rtt);
 
   virtual int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate);
+
+  void OnDroppedFrame() override {}
 
  private:
   void SetupTemporalLayers(int num_streams, int num_temporal_layers,
@@ -126,21 +128,17 @@ class VP8DecoderImpl : public VP8Decoder {
 
   virtual ~VP8DecoderImpl();
 
-  virtual int InitDecode(const VideoCodec* inst, int number_of_cores);
+  int InitDecode(const VideoCodec* inst, int number_of_cores) override;
 
-  virtual int Decode(const EncodedImage& input_image,
+  int Decode(const EncodedImage& input_image,
                      bool missing_frames,
                      const RTPFragmentationHeader* fragmentation,
                      const CodecSpecificInfo* codec_specific_info,
-                     int64_t /*render_time_ms*/);
+                     int64_t /*render_time_ms*/) override;
 
-  virtual int RegisterDecodeCompleteCallback(DecodedImageCallback* callback);
-
-  virtual int Release();
-
-  virtual int Reset();
-
-  virtual VideoDecoder* Copy();
+  int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
+  int Release() override;
+  int Reset() override;
 
  private:
   // Copy reference image from this _decoder to the _decoder in copyTo. Set

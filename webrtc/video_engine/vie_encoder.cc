@@ -31,8 +31,6 @@
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_defines.h"
 
@@ -133,7 +131,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       fec_enabled_(false),
       nack_enabled_(false),
       codec_observer_(NULL),
-      effect_filter_(NULL),
       module_process_thread_(module_process_thread),
       has_received_sli_(false),
       picture_id_sli_(0),
@@ -147,9 +144,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
 }
 
 bool ViEEncoder::Init() {
-  if (vcm_->InitializeSender() != 0) {
-    return false;
-  }
   vpm_->EnableTemporalDecimation(true);
 
   // Enable/disable content analysis: off by default for now.
@@ -496,11 +490,8 @@ void ViEEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void ViEEncoder::DeliverFrame(int id,
-                              const I420VideoFrame& video_frame,
-                              const std::vector<uint32_t>& csrcs) {
+void ViEEncoder::DeliverFrame(I420VideoFrame video_frame) {
   DCHECK(send_payload_router_ != NULL);
-  DCHECK(csrcs.empty());
   if (!send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
     // encoding.
@@ -521,22 +512,6 @@ void ViEEncoder::DeliverFrame(int id,
   I420VideoFrame* decimated_frame = NULL;
   // TODO(wuchengli): support texture frames.
   if (video_frame.native_handle() == NULL) {
-    {
-      CriticalSectionScoped cs(callback_cs_.get());
-      if (effect_filter_) {
-        size_t length =
-            CalcBufferSize(kI420, video_frame.width(), video_frame.height());
-        rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-        ExtractBuffer(video_frame, length, video_buffer.get());
-        effect_filter_->Transform(length,
-                                  video_buffer.get(),
-                                  video_frame.ntp_time_ms(),
-                                  video_frame.timestamp(),
-                                  video_frame.width(),
-                                  video_frame.height());
-      }
-    }
-
     // Pass frame via preprocessor.
     const int ret = vpm_->PreprocessFrame(video_frame, &decimated_frame);
     if (ret == 1) {
@@ -597,24 +572,6 @@ void ViEEncoder::DeliverFrame(int id,
   }
 #endif
   vcm_->AddVideoFrame(*output_frame);
-}
-
-void ViEEncoder::DelayChanged(int id, int frame_delay) {
-}
-
-int ViEEncoder::GetPreferedFrameSettings(int* width,
-                                         int* height,
-                                         int* frame_rate) {
-  webrtc::VideoCodec video_codec;
-  memset(&video_codec, 0, sizeof(video_codec));
-  if (vcm_->SendCodec(&video_codec) != VCM_OK) {
-    return -1;
-  }
-
-  *width = video_codec.width;
-  *height = video_codec.height;
-  *frame_rate = video_codec.maxFramerate;
-  return 0;
 }
 
 int ViEEncoder::SendKeyFrame() {
@@ -770,7 +727,7 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   int idx = 0;
   {
     CriticalSectionScoped cs(data_cs_.get());
-    std::map<unsigned int, int>::iterator stream_it = ssrc_streams_.find(ssrc);
+    auto stream_it = ssrc_streams_.find(ssrc);
     if (stream_it == ssrc_streams_.end()) {
       LOG_F(LS_WARNING) << "ssrc not found: " << ssrc << ", map size "
                         << ssrc_streams_.size();
@@ -813,7 +770,7 @@ void ViEEncoder::OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
   time_last_intra_request_ms_[new_ssrc] = last_intra_request_ms;
 }
 
-bool ViEEncoder::SetSsrcs(const std::list<unsigned int>& ssrcs) {
+bool ViEEncoder::SetSsrcs(const std::vector<uint32_t>& ssrcs) {
   VideoCodec codec;
   if (vcm_->SendCodec(&codec) != 0)
     return false;
@@ -827,10 +784,8 @@ bool ViEEncoder::SetSsrcs(const std::list<unsigned int>& ssrcs) {
   ssrc_streams_.clear();
   time_last_intra_request_ms_.clear();
   int idx = 0;
-  for (std::list<unsigned int>::const_iterator it = ssrcs.begin();
-       it != ssrcs.end(); ++it, ++idx) {
-    unsigned int ssrc = *it;
-    ssrc_streams_[ssrc] = idx;
+  for (uint32_t ssrc : ssrcs) {
+    ssrc_streams_[ssrc] = idx++;
   }
   return true;
 }
@@ -846,7 +801,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                                   uint8_t fraction_lost,
                                   int64_t round_trip_time_ms) {
   LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
-                  << " packet loss " << fraction_lost
+                  << " packet loss " << static_cast<int>(fraction_lost)
                   << " rtt " << round_trip_time_ms;
   DCHECK(send_payload_router_ != NULL);
   vcm_->SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
@@ -878,24 +833,6 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
   }
 }
 
-int32_t ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (effect_filter != NULL && effect_filter_ != NULL) {
-    LOG_F(LS_ERROR) << "Filter already set.";
-    return -1;
-  }
-  effect_filter_ = effect_filter;
-  return 0;
-}
-
-int ViEEncoder::StartDebugRecording(const char* fileNameUTF8) {
-  return vcm_->StartDebugRecording(fileNameUTF8);
-}
-
-int ViEEncoder::StopDebugRecording() {
-  return vcm_->StopDebugRecording();
-}
-
 void ViEEncoder::SuspendBelowMinBitrate() {
   vcm_->SuspendBelowMinBitrate();
   bitrate_allocator_->EnforceMinBitrate(false);
@@ -907,18 +844,9 @@ void ViEEncoder::RegisterPreEncodeCallback(
   pre_encode_callback_ = pre_encode_callback;
 }
 
-void ViEEncoder::DeRegisterPreEncodeCallback() {
-  CriticalSectionScoped cs(callback_cs_.get());
-  pre_encode_callback_ = NULL;
-}
-
 void ViEEncoder::RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) {
   vcm_->RegisterPostEncodeImageCallback(post_encode_callback);
-}
-
-void ViEEncoder::DeRegisterPostEncodeImageCallback() {
-  vcm_->RegisterPostEncodeImageCallback(NULL);
 }
 
 void ViEEncoder::RegisterSendStatisticsProxy(

@@ -17,57 +17,21 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/video_coding_impl.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 namespace vcm {
 
-class DebugRecorder {
- public:
-  DebugRecorder()
-      : cs_(CriticalSectionWrapper::CreateCriticalSection()), file_(nullptr) {}
-
-  ~DebugRecorder() { Stop(); }
-
-  int Start(const char* file_name_utf8) {
-    CriticalSectionScoped cs(cs_.get());
-    if (file_)
-      fclose(file_);
-    file_ = fopen(file_name_utf8, "wb");
-    if (!file_)
-      return VCM_GENERAL_ERROR;
-    return VCM_OK;
-  }
-
-  void Stop() {
-    CriticalSectionScoped cs(cs_.get());
-    if (file_) {
-      fclose(file_);
-      file_ = nullptr;
-    }
-  }
-
-  void Add(const I420VideoFrame& frame) {
-    CriticalSectionScoped cs(cs_.get());
-    if (file_)
-      PrintI420VideoFrame(frame, file_);
-  }
-
- private:
-  rtc::scoped_ptr<CriticalSectionWrapper> cs_;
-  FILE* file_ GUARDED_BY(cs_);
-};
-
 VideoSender::VideoSender(Clock* clock,
                          EncodedImageCallback* post_encode_callback,
                          VideoEncoderRateObserver* encoder_rate_observer,
                          VCMQMSettingsCallback* qm_settings_callback)
     : clock_(clock),
-      recorder_(new DebugRecorder()),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _encoder(),
+      _encoder(nullptr),
       _encodedFrameCallback(post_encode_callback),
       _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(clock_),
@@ -82,6 +46,7 @@ VideoSender::VideoSender(Clock* clock,
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
   _mediaOpt.EnableQM(qm_settings_callback_ != nullptr);
+  _mediaOpt.Reset();
   main_thread_.DetachFromThread();
 }
 
@@ -103,17 +68,6 @@ int32_t VideoSender::Process() {
   }
 
   return returnValue;
-}
-
-// Reset send side to initial state - all components
-int32_t VideoSender::InitializeSender() {
-  DCHECK(main_thread_.CalledOnValidThread());
-  CriticalSectionScoped cs(_sendCritSect);
-  _codecDataBase.ResetSender();
-  _encoder = nullptr;
-  _encodedFrameCallback.SetTransportCallback(nullptr);
-  _mediaOpt.Reset();  // Resetting frame dropper
-  return VCM_OK;
 }
 
 int64_t VideoSender::TimeUntilNextProcess() {
@@ -163,10 +117,10 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
 
   _mediaOpt.SetEncodingData(sendCodec->codecType,
                             sendCodec->maxBitrate * 1000,
-                            sendCodec->maxFramerate * 1000,
                             sendCodec->startBitrate * 1000,
                             sendCodec->width,
                             sendCodec->height,
+                            sendCodec->maxFramerate,
                             numLayers,
                             maxPayloadSize);
   return VCM_OK;
@@ -356,6 +310,7 @@ int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
     return VCM_OK;
   }
   if (_mediaOpt.DropFrame()) {
+    _encoder->OnDroppedFrame();
     return VCM_OK;
   }
   _mediaOpt.UpdateContentData(contentMetrics);
@@ -368,7 +323,6 @@ int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
   }
   int32_t ret =
       _encoder->Encode(videoFrame, codecSpecificInfo, _nextFrameTypes);
-  recorder_->Add(videoFrame);
   if (ret < 0) {
     LOG(LS_ERROR) << "Failed to encode frame. Error code: " << ret;
     return ret;
@@ -401,14 +355,6 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
   frame_dropper_enabled_ = enable;
   _mediaOpt.EnableFrameDropper(enable);
   return VCM_OK;
-}
-
-int VideoSender::StartDebugRecording(const char* file_name_utf8) {
-  return recorder_->Start(file_name_utf8);
-}
-
-void VideoSender::StopDebugRecording() {
-  recorder_->Stop();
 }
 
 void VideoSender::SuspendBelowMinBitrate() {
