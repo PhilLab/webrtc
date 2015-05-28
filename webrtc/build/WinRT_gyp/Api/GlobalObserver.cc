@@ -39,8 +39,10 @@ void GlobalObserver::SetPeerConnection(
 
 // Triggered when the SignalingState changed.
 void GlobalObserver::OnSignalingChange(
-  webrtc::PeerConnectionInterface::SignalingState new_state) {
-  if (_pc != nullptr) {
+  webrtc::PeerConnectionInterface::SignalingState new_state)
+{
+  if (_pc != nullptr)
+  {
     POST_ACTION(_pc->OnSignalingStateChange());
   }
 }
@@ -56,6 +58,7 @@ void GlobalObserver::OnAddStream(webrtc::MediaStreamInterface* stream) {
     auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
     evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
     POST_EVENT(evt, _pc->OnAddStream(evt));
+
   }
 }
 
@@ -80,8 +83,10 @@ void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
 }
 
 // Triggered when renegotiation is needed, for example the ICE has restarted.
-void GlobalObserver::OnRenegotiationNeeded() {
-  if (_pc != nullptr) {
+void GlobalObserver::OnRenegotiationNeeded()
+{
+  if (_pc != nullptr)
+  {
     POST_ACTION(_pc->OnNegotiationNeeded());
   }
 }
@@ -164,8 +169,10 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
   if (!buffer.binary) {
     evt->Data = ToCx(std::string(buffer.data.data(), buffer.size()));
-  } else {
-    // TODO(WINRT)
+  }
+  else
+  {
+    // TODO
     evt->Data = "<binary>";
   }
   POST_EVENT(evt, _channel->OnMessage(evt));
