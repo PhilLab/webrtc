@@ -498,6 +498,32 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(IActivateAudioInterfaceAsyncO
           WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playBlockSize     : %d", m_AudioDevice->_playBlockSize);
           WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playChannels      : %d", m_AudioDevice->_playChannels);
         }
+        else
+        {
+          Wfx = *mixFormat;
+
+          m_AudioDevice->_playAudioFrameSize = Wfx.nBlockAlign;
+          m_AudioDevice->_playBlockSize = Wfx.nSamplesPerSec / 100;
+          m_AudioDevice->_playSampleRate = Wfx.nSamplesPerSec;
+          m_AudioDevice->_devicePlaySampleRate = Wfx.nSamplesPerSec; // The device itself continues to run at 44.1 kHz.
+          m_AudioDevice->_devicePlayBlockSize = Wfx.nSamplesPerSec / 100;
+          m_AudioDevice->_playChannels = Wfx.nChannels;
+
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "VoE has been forced to select this rendering format:");
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wFormatTag         : 0x%X (%u)", Wfx.wFormatTag, Wfx.wFormatTag);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nChannels          : %d", Wfx.nChannels);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nSamplesPerSec     : %d", Wfx.nSamplesPerSec);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nAvgBytesPerSec    : %d", Wfx.nAvgBytesPerSec);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "nBlockAlign        : %d", Wfx.nBlockAlign);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "wBitsPerSample     : %d", Wfx.wBitsPerSample);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "cbSize             : %d", Wfx.cbSize);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "Additional settings:");
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playAudioFrameSize: %d", m_AudioDevice->_playAudioFrameSize);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playBlockSize     : %d", m_AudioDevice->_playBlockSize);
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id, "_playChannels      : %d", m_AudioDevice->_playChannels);
+
+          
+        }
 
         REFERENCE_TIME hnsBufferDuration = 0;  // ask for minimum buffer size (default)
         if (mixFormat->nSamplesPerSec == 44100)
