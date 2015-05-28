@@ -9,6 +9,19 @@
 using namespace webrtc_winrt_api_internal;
 using namespace Platform;
 
+extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+
+#define POST_EVENT(evt, statement)     g_windowDispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,\
+                                       ref new Windows::UI::Core::DispatchedHandler([this,evt] \
+                                       {\
+                                        statement;\
+                                       }));
+#define POST_ACTION(statement)     g_windowDispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,\
+                                       ref new Windows::UI::Core::DispatchedHandler([this] \
+                                       {\
+                                        statement;\
+                                       }));
+
 void GlobalObserver::SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc)
 {
   _pc = pc;
@@ -20,7 +33,7 @@ void GlobalObserver::OnSignalingChange(
 {
   if (_pc != nullptr)
   {
-    _pc->OnSignalingStateChange();
+    POST_ACTION(_pc->OnSignalingStateChange());
   }
 }
 
@@ -37,7 +50,8 @@ void GlobalObserver::OnAddStream(webrtc::MediaStreamInterface* stream)
   {
     auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
     evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
-    _pc->OnAddStream(evt);
+    POST_EVENT(evt, _pc->OnAddStream(evt));
+
   }
 }
 
@@ -48,7 +62,7 @@ void GlobalObserver::OnRemoveStream(webrtc::MediaStreamInterface* stream)
   {
     auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
     evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
-    _pc->OnRemoveStream(evt);
+    POST_EVENT(evt, _pc->OnRemoveStream(evt));
   }
 }
 
@@ -61,7 +75,7 @@ void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel)
     evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
     // TODO: Figure out when this observer can be deleted.
     data_channel->RegisterObserver(new DataChannelObserver(evt->Channel));
-    _pc->OnDataChannel(evt);
+    POST_EVENT(evt, _pc->OnDataChannel(evt));
   }
 }
 
@@ -70,7 +84,7 @@ void GlobalObserver::OnRenegotiationNeeded()
 {
   if (_pc != nullptr)
   {
-    _pc->OnNegotiationNeeded();
+    POST_ACTION(_pc->OnNegotiationNeeded());
   }
 }
 
@@ -97,7 +111,7 @@ void GlobalObserver::OnIceCandidate(const webrtc::IceCandidateInterface* candida
     webrtc_winrt_api::RTCIceCandidate^ cxCandidate;
     ToCx(*candidate, &cxCandidate);
     evt->Candidate = cxCandidate;
-    _pc->OnIceCandidate(evt);
+    POST_EVENT(evt, _pc->OnIceCandidate(evt));
   }
 }
 
@@ -170,13 +184,12 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer)
   if (!buffer.binary)
   {
     evt->Data = ToCx(std::string(buffer.data.data(), buffer.size()));
-    _channel->OnMessage(evt);
   }
   else
   {
     // TODO
     evt->Data = "<binary>";
-    _channel->OnMessage(evt);
   }
+  POST_EVENT(evt, _channel->OnMessage(evt));
 }
 
