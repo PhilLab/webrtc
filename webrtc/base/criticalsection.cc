@@ -17,7 +17,7 @@ namespace rtc {
 CriticalSection::CriticalSection() {
 #if defined(WEBRTC_WIN)
 #ifdef WINRT
-  InitializeCriticalSection(&crit_, 0, 0);
+  InitializeCriticalSectionEx(&crit_, 0, 0);
 #else
   InitializeCriticalSection(&crit_);
 #endif

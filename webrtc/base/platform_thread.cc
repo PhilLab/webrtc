@@ -59,7 +59,8 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
 
 void SetCurrentThreadName(const char* name) {
   DCHECK(strlen(name) < 64);
-#if defined(WEBRTC_WIN)
+  // TODO (WINRT): Setting thread name.
+#if defined(WEBRTC_WIN) && !defined(WINRT)
   struct {
     DWORD dwType;
     LPCSTR szName;

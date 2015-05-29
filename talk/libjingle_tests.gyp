@@ -45,6 +45,17 @@
         ['build_libyuv==1', {
           'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          # avoid duplicate inclusion 
+          'sources!': [
+            'media/base/testutils.cc',
+            'media/base/testutils.h',
+          ],
+          'msvs_disabled_warnings': [ 
+                                     #warning: declaration of '' hides previous local declaration, hides class member declaration
+                                     4458, 
+                                    ],
+        }],
       ],
       'include_dirs': [
          '<(DEPTH)/testing/gtest/include',
@@ -71,19 +82,6 @@
         'media/webrtc/fakewebrtcvideocapturemodule.h',
         'media/webrtc/fakewebrtcvideoengine.h',
         'media/webrtc/fakewebrtcvoiceengine.h',
-      ],
-      'conditions': [
-        ['OS=="win" and OS_RUNTIME=="winrt"', {
-          # avoid duplicate inclusion 
-          'sources!': [
-            'media/base/testutils.cc',
-            'media/base/testutils.h',
-          ],
-          'msvs_disabled_warnings': [ 
-                                     #warning: declaration of '' hides previous local declaration, hides class member declaration
-                                     4458, 
-                                    ],
-        }],
       ],
     },  # target libjingle_unittest_main
     {

@@ -24,7 +24,6 @@
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_core_win.h"
  #endif
-#endif  // WINRT
 #elif defined(WEBRTC_ANDROID)
 #include <stdlib.h>
 #include "webrtc/modules/audio_device/android/audio_device_template.h"

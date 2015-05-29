@@ -18,6 +18,7 @@
 
 #if defined(WINRT)
 #include <stdlib.h>
+#include "webrtc/base/win32.h"
 #endif
 #endif
 

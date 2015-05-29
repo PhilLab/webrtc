@@ -110,8 +110,8 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
     const int encod = WebRtcG722_Encode(
         encoders_[i].encoder, encoders_[i].speech_buffer.get(),
         samples_per_channel, encoders_[i].encoded_buffer.data<uint8_t>());
-    CHECK_GE(encoded, 0);
-    CHECK_EQ(encoded, samples_per_channel / 2);
+    CHECK_GE(encod, 0);
+    CHECK_EQ(encod, samples_per_channel / 2);
   }
 
   // Interleave the encoded bytes of the different channels. Each separate

@@ -5,6 +5,7 @@
 #include <utility>
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 class ThreadWrapper;
@@ -22,7 +23,7 @@ class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
   LoggingServer();
   virtual ~LoggingServer();
 
-  int Listen(const SocketAddress& addr, int level);
+  int Listen(const SocketAddress& addr, LoggingSeverity level);
 
  protected:
   void OnAcceptEvent(AsyncSocket* socket);
@@ -32,7 +33,7 @@ class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
   static bool processMessages(void* args);
 
  private:
-  int level_;
+   LoggingSeverity level_;
   scoped_ptr<AsyncSocket> listener_;
   std::list<std::pair<AsyncSocket*, SocketStream*> > connections_;
   Thread* thread_;

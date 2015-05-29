@@ -29,7 +29,7 @@ LoggingServer::~LoggingServer() {
   thread_->Stop();
 }
 
-int LoggingServer::Listen(const SocketAddress& addr, int level) {
+int LoggingServer::Listen(const SocketAddress& addr, LoggingSeverity level) {
   level_ = level;
   tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_, "LoggingServer");
   tw_->Start();
@@ -75,7 +75,8 @@ void LoggingServer::OnAcceptEvent(AsyncSocket* socket) {
     connections_.push_back(std::make_pair(incoming, stream));
 
     // Add new non-blocking stream to log messages.
-    LogMessage::AddLogToStream(stream, level_);
+    // TODO: Wrap the stream in a LogSink.
+    //LogMessage::AddLogToStream(stream, level_);
     incoming->SignalCloseEvent.connect(this, &LoggingServer::OnCloseEvent);
 
     LOG(LS_INFO) << "Successfully connected to the logging server!";
@@ -91,7 +92,8 @@ void LoggingServer::OnCloseEvent(AsyncSocket* socket, int err) {
   for (auto it = connections_.begin();
                it != connections_.end(); ++it) {
     if (socket == it->first) {
-      LogMessage::RemoveLogToStream(it->second);
+      // TODO: Wrap the stream in a LogSink.
+      //LogMessage::RemoveLogToStream(it->second);
       it->second->Detach();
 
       // Post messages to delete doomed objects
