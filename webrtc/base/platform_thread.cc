@@ -59,8 +59,14 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
 
 void SetCurrentThreadName(const char* name) {
   DCHECK(strlen(name) < 64);
-  // TODO (WINRT): Setting thread name.
-#if defined(WEBRTC_WIN) && !defined(WINRT)
+#if defined(WINRT)
+  THREADNAME_INFO threadname_info;
+  threadname_info.dwType = 0x1000;
+  threadname_info.szName = name;
+  threadname_info.dwThreadID = static_cast<DWORD>(-1);
+  threadname_info.dwFlags = 0;
+  SetCurrentThreadNameHelper(threadname_info);
+#elif defined(WEBRTC_WIN)
   struct {
     DWORD dwType;
     LPCSTR szName;
@@ -79,5 +85,16 @@ void SetCurrentThreadName(const char* name) {
   pthread_setname_np(name);
 #endif
 }
+
+#if defined(WINRT)
+void SetCurrentThreadNameHelper(THREADNAME_INFO threadname_info) {
+  __try {
+    ::RaiseException(0x406D1388, 0, sizeof(threadname_info) / sizeof(DWORD),
+      reinterpret_cast<ULONG_PTR*>(&threadname_info));
+  }
+  __except (EXCEPTION_EXECUTE_HANDLER) {
+  }
+}
+#endif
 
 }  // namespace rtc

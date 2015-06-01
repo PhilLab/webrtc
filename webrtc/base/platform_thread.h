@@ -21,6 +21,19 @@
 
 namespace rtc {
 
+#if defined(WINRT)
+  // See https://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx 
+#pragma pack(push,8)
+  typedef struct tagTHREADNAME_INFO
+  {
+    DWORD dwType; // Must be 0x1000.
+    LPCSTR szName; // Pointer to name (in user addr space).
+    DWORD dwThreadID; // Thread ID (-1=caller thread).
+    DWORD dwFlags; // Reserved for future use, must be zero.
+} THREADNAME_INFO;
+#pragma pack(pop)
+#endif
+
 #if defined(WEBRTC_WIN)
 typedef DWORD PlatformThreadId;
 typedef DWORD PlatformThreadRef;
@@ -37,6 +50,9 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b);
 
 // Sets the current thread name.
 void SetCurrentThreadName(const char* name);
+#if defined(WINRT)
+void SetCurrentThreadNameHelper(THREADNAME_INFO threadname_info);
+#endif
 
 }  // namespace rtc
 
