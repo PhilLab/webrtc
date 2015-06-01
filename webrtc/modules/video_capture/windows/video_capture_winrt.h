@@ -21,13 +21,14 @@ ref class CaptureDevice;
 
 class IncomingFrameCallback {
  public:
-  virtual void OnIncomingFrame(
-    uint8_t* videoFrame,
-    size_t videoFrameLength,
-    const VideoCaptureCapability& frameInfo) = 0;
+  virtual void OnIncomingFrame(uint8_t* video_frame,
+                               size_t video_frame_length,
+                               const VideoCaptureCapability& frame_info) = 0;
 };
 
-class VideoCaptureWinRT : public VideoCaptureImpl, public IncomingFrameCallback {
+class VideoCaptureWinRT
+    : public VideoCaptureImpl,
+      public IncomingFrameCallback {
  public:
   explicit VideoCaptureWinRT(const int32_t id);
 
@@ -37,16 +38,14 @@ class VideoCaptureWinRT : public VideoCaptureImpl, public IncomingFrameCallback 
   virtual int32_t StartCapture(const VideoCaptureCapability& capability);
   virtual int32_t StopCapture();
   virtual bool CaptureStarted();
-  virtual int32_t CaptureSettings(
-      VideoCaptureCapability& settings);
+  virtual int32_t CaptureSettings(VideoCaptureCapability& settings);
 
  protected:
   virtual ~VideoCaptureWinRT();
 
-  virtual void OnIncomingFrame(
-    uint8_t* videoFrame,
-    size_t videoFrameLength,
-    const VideoCaptureCapability& frameInfo);
+  virtual void OnIncomingFrame(uint8_t* video_frame,
+                               size_t video_frame_length,
+                               const VideoCaptureCapability& frame_info);
 
  private:
   Platform::String^ device_id_;

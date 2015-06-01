@@ -1,5 +1,5 @@
 /*
-*  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 *
 *  Use of this source code is governed by a BSD-style license
 *  that can be found in the LICENSE file in the root of the source
@@ -13,17 +13,16 @@
 
 #include "webrtc/modules/video_capture/device_info_impl.h"
 
+#include <ppltasks.h>
+
 #include <map>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
-#include <ppltasks.h>
-
 namespace webrtc {
 namespace videocapturemodule {
 
-private ref class MediaCaptureDevicesWinRT sealed
-{
+private ref class MediaCaptureDevicesWinRT sealed {
  private:
   MediaCaptureDevicesWinRT();
 
@@ -33,48 +32,54 @@ private ref class MediaCaptureDevicesWinRT sealed
   static MediaCaptureDevicesWinRT^ Instance();
 
  internal:
-  Platform::Agile<Windows::Media::Capture::MediaCapture> GetMediaCapture(Platform::String^ deviceId);
-  void RemoveMediaCapture(Platform::String^ deviceId);
+  Platform::Agile<Windows::Media::Capture::MediaCapture>
+    GetMediaCapture(Platform::String^ device_id);
+  void RemoveMediaCapture(Platform::String^ device_id);
 
  private:
-   std::map<Platform::String^, Platform::Agile<Windows::Media::Capture::MediaCapture> > media_capture_map_;
-   CriticalSectionWrapper* critical_section_;
+  std::map<Platform::String^,
+           Platform::Agile<Windows::Media::Capture::MediaCapture> >
+    media_capture_map_;
+  CriticalSectionWrapper* critical_section_;
 };
 
 class DeviceInfoWinRT : public DeviceInfoImpl {
  public:
   // Factory function.
   static DeviceInfoWinRT* Create(const int32_t id);
-   
+
   explicit DeviceInfoWinRT(const int32_t id);
   virtual ~DeviceInfoWinRT();
 
   int32_t Init();
   virtual uint32_t NumberOfDevices();
 
-  virtual int32_t GetDeviceName(uint32_t deviceNumber, char* deviceNameUTF8,
-                                uint32_t deviceNameLength,
-                                char* deviceUniqueIdUTF8,
-                                uint32_t deviceUniqueIdUTF8Length,
-                                char* productUniqueIdUTF8,
-                                uint32_t productUniqueIdUTF8Length);
+  virtual int32_t GetDeviceName(uint32_t device_number,
+                                char* device_name_utf8,
+                                uint32_t device_name_utf8_length,
+                                char* device_unique_id_utf8,
+                                uint32_t device_unique_id_utf8_length,
+                                char* product_unique_id_utf8,
+                                uint32_t product_unique_id_utf8_length);
 
   virtual int32_t DisplayCaptureSettingsDialogBox(
-      const char* deviceUniqueIdUTF8, const char* dialogTitleUTF8,
-      void* parentWindow, uint32_t positionX, uint32_t positionY);
+    const char* device_unique_id_utf8,
+    const char* dialog_title_utf8,
+    void* parent_window,
+    uint32_t position_x,
+    uint32_t position_y);
 
  protected:
+  int32_t GetDeviceInfo(uint32_t device_number,
+                        char* device_name_utf8,
+                        uint32_t device_name_utf8_length,
+                        char* device_unique_id_utf8,
+                        uint32_t device_unique_id_utf8_length,
+                        char* product_unique_id_utf8,
+                        uint32_t product_unique_id_utf8_length);
 
-  int32_t GetDeviceInfo(uint32_t deviceNumber,
-      char* deviceNameUTF8,
-      uint32_t deviceNameLength,
-      char* deviceUniqueIdUTF8,
-      uint32_t deviceUniqueIdUTF8Length,
-      char* productUniqueIdUTF8,
-      uint32_t productUniqueIdUTF8Length);
-
-   virtual int32_t
-       CreateCapabilityMap(const char* deviceUniqueIdUTF8);
+  virtual int32_t
+    CreateCapabilityMap(const char* device_unique_id_utf8);
 };
 
 }  // namespace videocapturemodule

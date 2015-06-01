@@ -29,28 +29,30 @@ class Trace;
 class ThreadWrapper;
 
 class IWinRTMediaElement {
-public:
+ public:
   virtual void Play() = 0;
   virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^) = 0;
 };
 
-class VideoChannelWinRT : public VideoRenderCallback
-{
-public:
-  VideoChannelWinRT(IWinRTMediaElement* mediaElement, CriticalSectionWrapper* critSect, Trace* trace);
+class VideoChannelWinRT : public VideoRenderCallback {
+ public:
+  VideoChannelWinRT(IWinRTMediaElement* media_element,
+                    CriticalSectionWrapper* crit_sect,
+                    Trace* trace);
 
   virtual ~VideoChannelWinRT();
 
-  // Called when the incomming frame size and/or number of streams in mix changes
-  virtual int FrameSizeChange(int width, int height, int numberOfStreams);
+  // Called when the incomming frame size and/or number of
+  // streams in mix changes
+  virtual int FrameSizeChange(int width, int height, int number_of_streams);
 
   // A new frame is delivered.
-  virtual int DeliverFrame(const I420VideoFrame& videoFrame);
-  virtual int32_t RenderFrame(const uint32_t streamId,
-    const I420VideoFrame& videoFrame);
+  virtual int DeliverFrame(const I420VideoFrame& video_frame);
+  virtual int32_t RenderFrame(const uint32_t stream_id,
+                              const I420VideoFrame& video_frame);
 
   // Called to check if the video frame is updated.
-  int IsUpdated(bool& isUpdated);
+  int IsUpdated(bool& is_updated);
   // Called after the video frame has been render to the screen
   int RenderOffFrame();
 
@@ -61,45 +63,44 @@ public:
   int GetWidth();
   int GetHeight();
 
-  void SetStreamSettings(uint16_t streamId,
-    uint32_t zOrder,
-    float startWidth,
-    float startHeight,
-    float stopWidth,
-    float stopHeight);
-  int GetStreamSettings(uint16_t streamId,
-    uint32_t& zOrder,
-    float& startWidth,
-    float& startHeight,
-    float& stopWidth,
-    float& stopHeight);
+  void SetStreamSettings(uint16_t stream_id,
+                         uint32_t z_order,
+                         float start_width,
+                         float start_height,
+                         float stop_width,
+                         float stop_height);
+  int GetStreamSettings(uint16_t stream_id,
+                        uint32_t& z_order,
+                        float& start_width,
+                        float& start_height,
+                        float& stop_width,
+                        float& stop_height);
 
-private:
-  //critical section passed from the owner
-  CriticalSectionWrapper* _critSect;
+ private:
+  // critical section passed from the owner
+  CriticalSectionWrapper* crit_sect_;
 
-  IWinRTMediaElement* _mediaElement;
-  Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> _renderMediaSource;
+  IWinRTMediaElement* media_element_;
+  Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> render_media_source_;
 
-  webrtc::I420VideoFrame _videoFrame;
+  webrtc::I420VideoFrame video_frame_;
 
-  bool _bufferIsUpdated;
+  bool buffer_is_updated_;
   // the frame size
-  int _width;
-  int _height;
-  //sream settings
-  //TODO support multiple streams in one channel
-  uint16_t _streamId;
-  uint32_t _zOrder;
-  float _startWidth;
-  float _startHeight;
-  float _stopWidth;
-  float _stopHeight;
+  int width_;
+  int height_;
+  // stream settings
+  uint16_t stream_id_;
+  uint32_t z_order_;
+  float start_width_;
+  float start_height_;
+  float stop_width_;
+  float stop_height_;
 };
 
 class VideoRenderWinRT : IVideoRenderWin {
  public:
-  VideoRenderWinRT(Trace* trace, void* hWnd, bool fullScreen);
+  VideoRenderWinRT(Trace* trace, void* h_wnd, bool full_screen);
   ~VideoRenderWinRT();
 
  public:
@@ -117,27 +118,22 @@ class VideoRenderWinRT : IVideoRenderWin {
   *   Incoming Streams
   *
   ***************************************************************************/
-  virtual VideoRenderCallback* CreateChannel(
-      const uint32_t streamId,
-      const uint32_t zOrder,
-      const float left,
-      const float top,
-      const float right,
-      const float bottom);
+  virtual VideoRenderCallback* CreateChannel(const uint32_t stream_id,
+                                             const uint32_t z_order,
+                                             const float left,
+                                             const float top,
+                                             const float right,
+                                             const float bottom);
 
-  virtual int32_t DeleteChannel(const uint32_t streamId);
+  virtual int32_t DeleteChannel(const uint32_t stream_id);
 
-  virtual int32_t GetStreamSettings(
-    const uint32_t channel,
-    const uint16_t streamId,
-    uint32_t& zOrder,
-    float& left,
-    float& top,
-    float& right,
-    float& bottom) {
-    // TODO (WinRT) This is a dummy body to be fixed
-    return 1;
-  }
+  virtual int32_t GetStreamSettings(const uint32_t channel,
+                                    const uint16_t stream_id,
+                                    uint32_t& z_order,
+                                    float& left,
+                                    float& top,
+                                    float& right,
+                                    float& bottom);
 
   /**************************************************************************
   *
@@ -155,49 +151,45 @@ class VideoRenderWinRT : IVideoRenderWin {
 
   virtual bool IsFullScreen();
 
-  virtual int32_t SetCropping(
-      const uint32_t channel,
-      const uint16_t streamId,
-      const float left,
-      const float top,
-      const float right,
-      const float bottom);
+  virtual int32_t SetCropping(const uint32_t channel,
+                              const uint16_t stream_id,
+                              const float left,
+                              const float top,
+                              const float right,
+                              const float bottom);
 
-  virtual int32_t ConfigureRenderer(
-      const uint32_t channel,
-      const uint16_t streamId,
-      const unsigned int zOrder,
-      const float left,
-      const float top,
-      const float right,
-      const float bottom);
+  virtual int32_t ConfigureRenderer(const uint32_t channel,
+                                    const uint16_t stream_id,
+                                    const unsigned int z_order,
+                                    const float left,
+                                    const float top,
+                                    const float right,
+                                    const float bottom);
 
   virtual int32_t SetTransparentBackground(const bool enable);
 
   virtual int32_t ChangeWindow(void* window);
 
-  virtual int32_t GetGraphicsMemory(uint64_t& totalMemory,
-                                    uint64_t& availableMemory);
+  virtual int32_t GetGraphicsMemory(uint64_t& total_memory,
+                                    uint64_t& available_memory);
 
-  virtual int32_t SetText(
-      const uint8_t textId,
-      const uint8_t* text,
-      const int32_t textLength,
-      const uint32_t colorText,
-      const uint32_t colorBg,
-      const float left,
-      const float top,
-      const float rigth,
-      const float bottom);
+  virtual int32_t SetText(const uint8_t text_id,
+                          const uint8_t* text,
+                          const int32_t text_length,
+                          const uint32_t color_text,
+                          const uint32_t color_bg,
+                          const float left,
+                          const float top,
+                          const float rigth,
+                          const float bottom);
 
-  virtual int32_t SetBitmap(
-      const void* bitMap,
-      const uint8_t pictureId,
-      const void* colorKey,
-      const float left,
-      const float top,
-      const float right,
-      const float bottom);
+  virtual int32_t SetBitmap(const void* bit_map,
+                            const uint8_t picture_id,
+                            const void* color_key,
+                            const float left,
+                            const float top,
+                            const float right,
+                            const float bottom);
 
  public:
   int UpdateRenderSurface();
@@ -208,17 +200,17 @@ class VideoRenderWinRT : IVideoRenderWin {
   bool ScreenUpdateProcess();
 
  private:
-  CriticalSectionWrapper& _refCritsect;
-  Trace* _trace;
-  rtc::scoped_ptr<webrtc::ThreadWrapper> _screenUpdateThread;
-  EventTimerWrapper* _screenUpdateEvent;
+  CriticalSectionWrapper& ref_critsect_;
+  Trace* trace_;
+  rtc::scoped_ptr<webrtc::ThreadWrapper> screen_update_thread_;
+  EventTimerWrapper* screen_update_event_;
 
-  VideoChannelWinRT* _channel;
+  VideoChannelWinRT* channel_;
 
-  void* _hWnd;
-  bool _fullScreen;
-  int _winWidth;
-  int _winHeight;
+  void* h_wnd_;
+  bool full_screen_;
+  int win_width_;
+  int win_height_;
 };
 
 }  // namespace webrtc
