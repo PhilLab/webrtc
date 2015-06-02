@@ -17,6 +17,23 @@ class SocketAddress;
 class SocketStream;
 class Thread;
 
+template <typename Base>
+class LogSinkImpl
+  : public LogSink,
+  public Base {
+public:
+  LogSinkImpl() {}
+
+  template<typename P>
+  explicit LogSinkImpl(P* p) : Base(p) {}
+
+private:
+  void OnLogMessage(const std::string& message) override {
+    static_cast<Base*>(this)->WriteAll(
+      message.data(), message.size(), nullptr, nullptr);
+  }
+};
+
 // Inherit from has_slots class to use signal and slots.
 class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
  public:
@@ -35,7 +52,7 @@ class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
  private:
    LoggingSeverity level_;
   scoped_ptr<AsyncSocket> listener_;
-  std::list<std::pair<AsyncSocket*, SocketStream*> > connections_;
+  std::list<std::pair<AsyncSocket*, LogSinkImpl<SocketStream>* > > connections_;
   Thread* thread_;
   scoped_ptr<webrtc::ThreadWrapper> tw_;
 };

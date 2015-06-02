@@ -71,12 +71,11 @@ void LoggingServer::OnAcceptEvent(AsyncSocket* socket) {
 
   if (incoming) {
     // Attach the socket of accepted connection to a stream.
-    auto stream = new SocketStream(incoming);
+    LogSinkImpl<SocketStream>* stream = new LogSinkImpl<SocketStream>(incoming);
     connections_.push_back(std::make_pair(incoming, stream));
 
     // Add new non-blocking stream to log messages.
-    // TODO: Wrap the stream in a LogSink.
-    //LogMessage::AddLogToStream(stream, level_);
+    LogMessage::AddLogToStream(stream, level_);
     incoming->SignalCloseEvent.connect(this, &LoggingServer::OnCloseEvent);
 
     LOG(LS_INFO) << "Successfully connected to the logging server!";
@@ -92,8 +91,7 @@ void LoggingServer::OnCloseEvent(AsyncSocket* socket, int err) {
   for (auto it = connections_.begin();
                it != connections_.end(); ++it) {
     if (socket == it->first) {
-      // TODO: Wrap the stream in a LogSink.
-      //LogMessage::RemoveLogToStream(it->second);
+      LogMessage::RemoveLogToStream(it->second);
       it->second->Detach();
 
       // Post messages to delete doomed objects
