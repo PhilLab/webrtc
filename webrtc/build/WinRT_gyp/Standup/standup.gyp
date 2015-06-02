@@ -115,6 +115,7 @@
       ],
       'msvs_disabled_warnings': [
         4453,  # A '[WebHostHidden]' type should not be used on the published surface of a public type that is not '[WebHostHidden]'
+        4458,
       ],
       'msvs_package_certificate': {
         'KeyFile': '..\UnitTests\gtest_runner\gtest_runner_TemporaryKey.pfx',

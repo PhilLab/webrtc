@@ -26,7 +26,8 @@
         'send_time_history.h',
       ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
-      'msvs_disabled_warnings': [ 4267, ],
+      'msvs_disabled_warnings': [ 4267, 4457, 4456, # local members hides previously defined memebers or function members or class members
+      ],
     },
   ], # targets
 }
