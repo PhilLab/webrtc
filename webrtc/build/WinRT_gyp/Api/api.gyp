@@ -44,8 +44,9 @@
       'msvs_settings': {
         'VCLinkerTool': {
           'AdditionalOptions': [
-            '/WINMD',
+            '/WINMD',            
           ],
+          'WindowsMetadataFile':'$(OutDir)webrtc_winrt_api.winmd'
         },
       },
     },
