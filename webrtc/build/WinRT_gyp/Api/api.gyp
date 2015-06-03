@@ -27,8 +27,8 @@
         '.',
       ],
       'sources': [
-        'peerconnectioninterface.h',
-        'peerconnectioninterface.cc',
+        'PeerConnectionInterface.h',
+        'PeerConnectionInterface.cc',
         'GlobalObserver.h',
         'GlobalObserver.cc',
         'Marshalling.h',
