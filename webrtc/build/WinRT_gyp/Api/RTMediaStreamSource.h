@@ -44,9 +44,8 @@ namespace webrtc_winrt_api_internal
     MediaStreamSource^ _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     CRITICAL_SECTION _lock;
+    rtc::scoped_ptr<cricket::VideoFrame> _frame;
     uint32 _stride;
-    byte* _buffer;
-    uint32 _bufferSize;
     uint32 _sourceWidth;
     uint32 _sourceHeight;
     uint64 _timeStamp;

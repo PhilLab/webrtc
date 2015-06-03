@@ -53,8 +53,8 @@ namespace webrtc_winrt_api_internal
   }
 
   RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
-    _videoTrack(videoTrack), _stride(0), _buffer(nullptr),
-    _bufferSize(0), _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0)
+    _videoTrack(videoTrack), _stride(0),
+   _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0)
   {
     InitializeCriticalSection(&_lock);
   }
@@ -66,10 +66,6 @@ namespace webrtc_winrt_api_internal
       _videoTrack->UnsetRenderer(_rtcRenderer.get());
     }
     DeleteCriticalSection(&_lock);
-    if (_buffer != nullptr)
-    {
-      delete[] _buffer;
-    }
   }
 
   RTMediaStreamSource::RTCRenderer::RTCRenderer(RTMediaStreamSource^ streamSource) : _streamSource(streamSource)
@@ -132,40 +128,36 @@ namespace webrtc_winrt_api_internal
   void RTMediaStreamSource::ProcessReceivedFrame(const cricket::VideoFrame *frame)
   {
     EnterCriticalSection(&_lock);
-    if (_buffer == nullptr)
-    {
-      // Not ready for frames yet
-      LeaveCriticalSection(&_lock);
-      return;
-    }
-    frame->ConvertToRgbBuffer(libyuv::FOURCC_ARGB, _buffer, _bufferSize, _stride);
+    _frame.reset(frame->Copy());
     LeaveCriticalSection(&_lock);
   }
 
   bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer)
   {
-    ComPtr<IMF2DBuffer> imageBuffer;
+    ComPtr<IMF2DBuffer2> imageBuffer;
     if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf())))
     {
       return false;
     }
     BYTE* destRawData;
+    BYTE* buffer;
     LONG pitch;
-    if (FAILED(imageBuffer->Lock2D(&destRawData, &pitch)))
+    DWORD destMediaBufferSize;
+
+    if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
+      &destRawData, &pitch, &buffer, &destMediaBufferSize)))
     {
       return false;
     }
     EnterCriticalSection(&_lock);
-    if (!_buffer)
+    if (_frame.get() == nullptr)
     {
       _stride = (uint32)pitch;
-      _bufferSize = _sourceHeight * _stride;
-      _buffer = new BYTE[_bufferSize];
       LeaveCriticalSection(&_lock);
       imageBuffer->Unlock2D();
       return false;
     }
-    memcpy(destRawData, _buffer, _bufferSize);
+    _frame->ConvertToRgbBuffer(libyuv::FOURCC_ARGB, destRawData, destMediaBufferSize, _stride);
     LeaveCriticalSection(&_lock);
     imageBuffer->Unlock2D();
     return true;
