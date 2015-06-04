@@ -112,17 +112,26 @@ bool TraceLog::IsTracing() {
   return is_tracing_;
 }
 
-void TraceLog::Save(const std::string& file_name) {
+bool TraceLog::Save(const std::string& file_name) {
+  bool result = true;
   std::ofstream file;
   file.open(file_name.c_str());
-  file << oss_.str();
-  file.close();
+  if (file.is_open())
+  {
+    file << oss_.str();
+    file.close();
+    if (file.bad())
+      result = false;
+  }
+  else
+    result = false;
+  return result;
 }
 
-void TraceLog::Save(const std::string& addr, int port) {
+bool TraceLog::Save(const std::string& addr, int port) {
   if (offset_) {
     // Sending the data still is in progress.
-    return;
+    return false;
   }
 
   if (tw_ == NULL) {
@@ -142,6 +151,7 @@ void TraceLog::Save(const std::string& addr, int port) {
 
   // Send wake up signal to update the event list to wait
   thread_->socketserver()->WakeUp();
+  return true;
 }
 
 void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {

@@ -4,6 +4,7 @@
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scopedptrcollection.h"
+#include "webrtc/base/logging.h"
 #include "GlobalObserver.h"
 #include "DataChannel.h"
 
@@ -22,15 +23,47 @@ namespace webrtc_winrt_api
   ref class MediaStream;
   ref class MediaStreamTrack;
 
+  public enum class LogLevel
+  { 
+    LOGLVL_SENSITIVE = rtc::LS_SENSITIVE,
+    LOGLVL_VERBOSE = rtc::LS_VERBOSE,
+    LOGLVL_INFO = rtc::LS_INFO,
+    LOGLVL_WARNING = rtc::LS_WARNING,
+    LOGLVL_ERROR = rtc::LS_ERROR
+  };
+
   [Windows::Foundation::Metadata::WebHostHidden]
   public ref class WebRTC sealed
   {
   public:
+    
+    
+  public:
     static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
 
+    static bool IsTracing();
+    static void StartTracing();
+    static void StopTracing();
+    static bool SaveTrace(Platform::String^ filename);
+    static bool SaveTrace(Platform::String^ host, int port);
+
+    static void EnableLogging(LogLevel level);
+    static void DisableLogging();
   private:
     // This type is not meant to be created.
     WebRTC();
+
+    static const unsigned char* GetCategoryGroupEnabled(const char* category_group);
+    static void __cdecl AddTraceEvent(char phase,
+      const unsigned char* category_group_enabled,
+      const char* name,
+      unsigned long long id,
+      int num_args,
+      const char** arg_names,
+      const unsigned char* arg_types,
+      const unsigned long long* arg_values,
+      unsigned char flags);
+
   };
 
   public enum class RTCBundlePolicy

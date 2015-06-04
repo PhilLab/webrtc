@@ -13,7 +13,10 @@
 
 #include <map>
 #include <functional>
+#include "webrtc/base/event_tracer.h"
+#include "webrtc/base/loggingserver.h"
 #include <ppltasks.h>
+#include <codecvt>
 
 using namespace webrtc_winrt_api;
 using namespace webrtc_winrt_api_internal;
@@ -27,6 +30,8 @@ namespace webrtc_winrt_api {
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> gPeerConnectionFactory;
     // The worker thread for webrtc.
     rtc::Thread gThread;
+    rtc::TraceLog tl;
+    rtc::scoped_ptr<rtc::LoggingServer> ls;
   }
 }
 
@@ -276,5 +281,67 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher)
     rtc::InitializeSSL();
 
     globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+    webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled, &WebRTC::AddTraceEvent);
   });
+
+bool WebRTC::IsTracing()
+{
+  return globals::tl.IsTracing();
+}
+
+void WebRTC::StartTracing()
+{
+  globals::tl.StartTracing();
+}
+
+void WebRTC::StopTracing()
+{
+  globals::tl.StopTracing();
+}
+
+bool WebRTC::SaveTrace(Platform::String^ filename)
+{
+  std::wstring filename_ws(filename->Begin());
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  std::string filename_mb = converter.to_bytes(filename_ws);
+  return globals::tl.Save(filename_mb);
+}
+
+bool WebRTC::SaveTrace(Platform::String^ host, int port)
+{
+  std::wstring host_ws(host->Begin());
+  std::string host_mb(host_ws.begin(), host_ws.end());
+  return globals::tl.Save(host_mb, port);
+}
+
+void WebRTC::EnableLogging(LogLevel level)
+{
+  rtc::SocketAddress sa(INADDR_ANY, 47003);
+  globals::ls = rtc::scoped_ptr<rtc::LoggingServer>(new rtc::LoggingServer());
+  globals::ls->Listen(sa, (int)level);
+  LOG(LS_INFO) << "WebRTC logging enabled";
+}
+
+void WebRTC::DisableLogging()
+{
+  LOG(LS_INFO) << "WebRTC logging disabled";
+  globals::ls.reset();
+}
+
+const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(const char* category_group)
+{
+  return reinterpret_cast<const unsigned char*>("webrtc");
+}
+
+void __cdecl WebRTC::AddTraceEvent(char phase,
+  const unsigned char* category_group_enabled,
+  const char* name,
+  unsigned long long id,
+  int num_args,
+  const char** arg_names,
+  const unsigned char* arg_types,
+  const unsigned long long* arg_values,
+  unsigned char flags)
+{
+  globals::tl.Add(phase, category_group_enabled, name, id, num_args, arg_names, arg_types, arg_values, flags);
 }
