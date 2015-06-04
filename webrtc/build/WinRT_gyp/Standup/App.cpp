@@ -1628,18 +1628,21 @@ void StandupWinRT::App::setCameraDeviceCapabilities()
 			continue;
 
 		int widthDiff = abs((int)(capability.width - PREFERRED_FRAME_WIDTH));
-		if (widthDiff < minWidthDiff) {
+    int heightDiff = abs((int)(capability.height - PREFERRED_FRAME_HEIGHT));
+    int fpsDiff = abs((int)(capability.maxFPS - PREFERRED_MAX_FPS));
+    if (widthDiff < minWidthDiff) {
 			selectedCapabilityIndex = i;
 			minWidthDiff = widthDiff;
-		}
+      minHeightDiff = heightDiff;
+      minFpsDiff = fpsDiff;
+    }
 		else if (widthDiff == minWidthDiff) {
-			int heightDiff = abs((int)(capability.height - PREFERRED_FRAME_HEIGHT));
 			if (heightDiff < minHeightDiff) {
 				selectedCapabilityIndex = i;
 				minHeightDiff = heightDiff;
-			}
+        minFpsDiff = fpsDiff;
+      }
 			else if (heightDiff == minHeightDiff) {
-				int fpsDiff = abs((int)(capability.maxFPS - PREFERRED_MAX_FPS));
 				if (fpsDiff < minFpsDiff) {
 					selectedCapabilityIndex = i;
 					minFpsDiff = fpsDiff;
