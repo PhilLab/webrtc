@@ -11,6 +11,7 @@
 
 #include <ppltasks.h>
 #include <map>
+#include <string>
 #include <functional>
 
 #include "GlobalObserver.h"
@@ -27,6 +28,7 @@
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
+using Platform::Collections::Vector;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -198,8 +200,76 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(
   });
 }
 
+RTCConfiguration^ RTCPeerConnection::GetConfiguration() {
+  RTCConfiguration^ ret = nullptr;
+  globals::RunOnGlobalThread<void>([this, ret] {
+    // TODO(WINRT): Figure out how to rebuild a configuration
+    // object.  There doesn't seem to be a simple function
+    // on the webrtc::PeerConnectionInterface.
+  });
+  return ret;
+}
+
+IVector<MediaStream^>^ RTCPeerConnection::GetLocalStreams() {
+  auto ret = ref new Vector<MediaStream^>();
+  globals::RunOnGlobalThread<void>([this, ret] {
+    auto streams = _impl->local_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      ret->Append(ref new MediaStream(streams->at(i)));
+    }
+  });
+  return ret;
+}
+
+IVector<MediaStream^>^ RTCPeerConnection::GetRemoteStreams() {
+  auto ret = ref new Vector<MediaStream^>();
+  globals::RunOnGlobalThread<void>([this, ret] {
+    auto streams = _impl->remote_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      ret->Append(ref new MediaStream(streams->at(i)));
+    }
+  });
+  return ret;
+}
+
+MediaStream^ RTCPeerConnection::GetStreamById(String^ streamId) {
+  MediaStream^ ret = nullptr;
+  globals::RunOnGlobalThread<void>([this, streamId, &ret] {
+    std::string streamIdStr = FromCx(streamId);
+    // Look through the local streams.
+    auto streams = _impl->local_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      auto stream = streams->at(i);
+      // TODO(WINRT): Is the label the stream id?
+      if (stream->label() == streamIdStr) {
+        ret = ref new MediaStream(stream);
+        return;
+      }
+    }
+    // Look through the remote streams.
+    streams = _impl->remote_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      auto stream = streams->at(i);
+      // TODO(WINRT): Is the label the stream id?
+      if (stream->label() == streamIdStr) {
+        ret = ref new MediaStream(stream);
+        return;
+      }
+    }
+  });
+  return ret;
+}
+
 void RTCPeerConnection::AddStream(MediaStream^ stream) {
-  _impl->AddStream(stream->GetImpl());
+  globals::RunOnGlobalThread<void>([this, stream] {
+    _impl->AddStream(stream->GetImpl());
+  });
+}
+
+void RTCPeerConnection::RemoveStream(MediaStream^ stream) {
+  globals::RunOnGlobalThread<void>([this, stream] {
+    _impl->RemoveStream(stream->GetImpl());
+  });
 }
 
 RTCDataChannel^ RTCPeerConnection::CreateDataChannel(
@@ -229,25 +299,53 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
   });
 }
 
+void RTCPeerConnection::Close() {
+  globals::RunOnGlobalThread<void>([this] {
+    _impl->Close();
+  });
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
-  if (_impl->local_description() != nullptr) {
-    ToCx(_impl->local_description(), &ret);
-  }
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    if (_impl->local_description() != nullptr) {
+      ToCx(_impl->local_description(), &ret);
+    }
+  });
   return ret;
 }
 
 RTCSessionDescription^ RTCPeerConnection::RemoteDescription::get() {
   RTCSessionDescription^ ret;
-  if (_impl->remote_description() != nullptr) {
-    ToCx(_impl->remote_description(), &ret);
-  }
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    if (_impl->remote_description() != nullptr) {
+      ToCx(_impl->remote_description(), &ret);
+    }
+  });
   return ret;
 }
 
 RTCSignalingState RTCPeerConnection::SignalingState::get() {
   RTCSignalingState ret;
-  ToCx(_impl->signaling_state(), &ret);
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    ToCx(_impl->signaling_state(), &ret);
+  });
+  return ret;
+}
+
+RTCIceGatheringState RTCPeerConnection::IceGatheringState::get() {
+  RTCIceGatheringState ret;
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    ToCx(_impl->ice_gathering_state(), &ret);
+  });
+  return ret;
+}
+
+RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
+  RTCIceConnectionState ret;
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    ToCx(_impl->ice_connection_state(), &ret);
+  });
   return ret;
 }
 

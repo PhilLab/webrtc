@@ -32,6 +32,9 @@ namespace webrtc_winrt_api {
   public ref class MediaVideoTrack sealed : public IMediaStreamTrack {
   internal:
     MediaVideoTrack(rtc::scoped_refptr<webrtc::VideoTrackInterface> impl);
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> GetImpl() {
+      return _impl;
+    }
   public:
     virtual ~MediaVideoTrack();
     virtual property String^ Kind { String^ get(); }
@@ -47,6 +50,9 @@ namespace webrtc_winrt_api {
   public ref class MediaAudioTrack sealed : public IMediaStreamTrack {
   internal:
     MediaAudioTrack(rtc::scoped_refptr<webrtc::AudioTrackInterface> impl);
+    rtc::scoped_refptr<webrtc::AudioTrackInterface> GetImpl() {
+      return _impl;
+    }
   public:
     virtual property String^ Kind { String^ get(); }
     virtual property String^ Id { String^ get(); }
@@ -54,7 +60,6 @@ namespace webrtc_winrt_api {
   private:
     rtc::scoped_refptr<webrtc::AudioTrackInterface> _impl;
   };
-
 
   public ref class MediaStream sealed {
   internal:
@@ -64,6 +69,11 @@ namespace webrtc_winrt_api {
     IVector<MediaAudioTrack^>^ GetAudioTracks();
     IVector<MediaVideoTrack^>^ GetVideoTracks();
     IVector<IMediaStreamTrack^>^ GetTracks();
+    IMediaStreamTrack^ GetTrackById(String^ trackId);
+    void AddTrack(IMediaStreamTrack^ track);
+    void RemoveTrack(IMediaStreamTrack^ track);
+
+    property bool Active { bool get(); }
   private:
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
   };

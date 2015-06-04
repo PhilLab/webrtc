@@ -45,31 +45,47 @@ private:
 };
 
 public enum class RTCBundlePolicy {
-  kBundlePolicyBalanced,
-  kBundlePolicyMaxBundle,
-  kBundlePolicyMaxCompat,
+  Balanced,
+  MaxBundle,
+  MaxCompat,
 };
 
 public enum class RTCIceTransportPolicy {
-  kNone,
-  kRelay,
-  kNoHost,
-  kAll
+  None,
+  Relay,
+  NoHost,
+  All
+};
+
+public enum class RTCIceGatheringState {
+  New,
+  Gathering,
+  Complete
+};
+
+public enum class RTCIceConnectionState {
+  New,
+  Checking,
+  Connected,
+  Completed,
+  Failed,
+  Disconnected,
+  Closed
 };
 
 public enum class RTCSdpType {
-  offer,
-  pranswer,
-  answer,
+  Offer,
+  Pranswer,
+  Answer,
 };
 
 public enum class RTCSignalingState {
-  stable,
-  haveLocalOffer,
-  haveRemoteOffer,
-  haveLocalPranswer,
-  haveRemotePranswer,
-  closed
+  Stable,
+  HaveLocalOffer,
+  HaveRemoteOffer,
+  HaveLocalPranswer,
+  HaveRemotePranswer,
+  Closed
 };
 
 public ref class RTCIceServer sealed {
@@ -137,9 +153,15 @@ public:
   IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
   IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
   IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
+  RTCConfiguration^ GetConfiguration();
+  IVector<MediaStream^>^ GetLocalStreams();
+  IVector<MediaStream^>^ GetRemoteStreams();
+  MediaStream^ GetStreamById(String^ streamId);
   void AddStream(MediaStream^ stream);
+  void RemoveStream(MediaStream^ stream);
   RTCDataChannel^ CreateDataChannel(String^ label, RTCDataChannelInit^ init);
   IAsyncAction^ AddIceCandidate(RTCIceCandidate^ candidate);
+  void Close();
 
   property RTCSessionDescription^ LocalDescription {
     RTCSessionDescription^ get();
@@ -149,6 +171,12 @@ public:
   }
   property RTCSignalingState SignalingState {
     RTCSignalingState get();
+  }
+  property RTCIceGatheringState IceGatheringState {
+    RTCIceGatheringState get();
+  }
+  property RTCIceConnectionState IceConnectionState {
+    RTCIceConnectionState get();
   }
 
 private:

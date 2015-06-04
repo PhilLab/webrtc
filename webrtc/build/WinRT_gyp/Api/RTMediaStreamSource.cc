@@ -73,7 +73,7 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
     _videoTrack(videoTrack), _stride(0),
-   _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0) {
+    _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0) {
   InitializeCriticalSection(&_lock);
 }
 
@@ -164,7 +164,8 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
     imageBuffer->Unlock2D();
     return false;
   }
-  _frame->ConvertToRgbBuffer(libyuv::FOURCC_ARGB, destRawData, destMediaBufferSize, _stride);
+  _frame->ConvertToRgbBuffer(
+    libyuv::FOURCC_ARGB, destRawData, destMediaBufferSize, _stride);
   LeaveCriticalSection(&_lock);
   imageBuffer->Unlock2D();
   return true;

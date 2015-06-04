@@ -11,6 +11,7 @@
 #include <ppltasks.h>
 #include <mfapi.h>
 #include <vector>
+#include <string>
 #include "PeerConnectionInterface.h"
 #include "Marshalling.h"
 #include "RTMediaStreamSource.h"
@@ -20,8 +21,11 @@
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
+using webrtc_winrt_api_internal::FromCx;
 
 namespace webrtc_winrt_api {
+
+// = MediaVideoTrack =========================================================
 
 MediaVideoTrack::MediaVideoTrack(
   rtc::scoped_refptr<webrtc::VideoTrackInterface> impl) :
@@ -55,7 +59,7 @@ void MediaVideoTrack::UnsetRenderer(webrtc::VideoRendererInterface* renderer) {
   _impl->RemoveRenderer(renderer);
 }
 
-// ===========================================================================
+// = MediaAudioTrack =========================================================
 
 MediaAudioTrack::MediaAudioTrack(
   rtc::scoped_refptr<webrtc::AudioTrackInterface> impl) :
@@ -77,6 +81,8 @@ bool MediaAudioTrack::Enabled::get() {
 void MediaAudioTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
 }
+
+// = MediaStream =============================================================
 
 MediaStream::MediaStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> impl)
   : _impl(impl) {
@@ -113,7 +119,65 @@ IVector<IMediaStreamTrack^>^ MediaStream::GetTracks() {
   return ret;
 }
 
-// ===========================================================================
+IMediaStreamTrack^ MediaStream::GetTrackById(String^ trackId) {
+  IMediaStreamTrack^ ret = nullptr;
+  std::string trackIdStr = FromCx(trackId);
+  // Search the audio tracks.
+  auto audioTrack = _impl->FindAudioTrack(trackIdStr);
+  if (audioTrack != nullptr) {
+    ret = ref new MediaAudioTrack(audioTrack);
+  } else {
+    // Search the video tracks.
+    auto videoTrack = _impl->FindVideoTrack(trackIdStr);
+    if (videoTrack != nullptr) {
+      ret = ref new MediaVideoTrack(videoTrack);
+    }
+  }
+  return ret;
+}
+
+void MediaStream::AddTrack(IMediaStreamTrack^ track) {
+  std::string kind = FromCx(track->Kind);
+  if (kind == "audio") {
+    auto audioTrack = static_cast<MediaAudioTrack^>(track);
+    _impl->AddTrack(audioTrack->GetImpl());
+  } else if (kind == "video") {
+    auto videoTrack = static_cast<MediaVideoTrack^>(track);
+    _impl->AddTrack(videoTrack->GetImpl());
+  } else {
+    throw "Unknown track kind";
+  }
+}
+
+void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
+  std::string kind = FromCx(track->Kind);
+  if (kind == "audio") {
+    auto audioTrack = static_cast<MediaAudioTrack^>(track);
+    _impl->RemoveTrack(audioTrack->GetImpl());
+  } else if (kind == "video") {
+    auto videoTrack = static_cast<MediaVideoTrack^>(track);
+    _impl->RemoveTrack(videoTrack->GetImpl());
+  } else {
+    throw "Unknown track kind";
+  }
+}
+
+bool MediaStream::Active::get() {
+  bool ret = false;
+  for (auto track : _impl->GetAudioTracks()) {
+    if (track->state() < webrtc::MediaStreamTrackInterface::kEnded) {
+      ret = true;
+    }
+  }
+  for (auto track : _impl->GetVideoTracks()) {
+    if (track->state() < webrtc::MediaStreamTrackInterface::kEnded) {
+      ret = true;
+    }
+  }
+  return ret;
+}
+
+// = Media ===================================================================
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
