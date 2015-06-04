@@ -15,6 +15,7 @@
 #include <functional>
 #include "webrtc/base/event_tracer.h"
 #include "webrtc/base/loggingserver.h"
+#include "webrtc/base/tracelog.h"
 #include <ppltasks.h>
 #include <codecvt>
 
