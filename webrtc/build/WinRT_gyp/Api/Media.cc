@@ -1,125 +1,113 @@
-﻿#include "Media.h"
-#include "peerconnectioninterface.h"
+﻿
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file in the root of the source
+// tree. An additional intellectual property rights grant can be found
+// in the file PATENTS.  All contributing project authors may
+// be found in the AUTHORS file in the root of the source tree.
+
+#include "webrtc/build/WinRT_gyp/Api/Media.h"
+#include <ppltasks.h>
+#include <mfapi.h>
+#include <vector>
+#include "PeerConnectionInterface.h"
 #include "Marshalling.h"
 #include "RTMediaStreamSource.h"
 #include "webrtc/base/logging.h"
 #include "talk/media/devices/devicemanager.h"
 #include "talk/app/webrtc/videosourceinterface.h"
-#include <ppltasks.h>
-#include <mfapi.h>
 
-using namespace webrtc_winrt_api;
-using namespace webrtc_winrt_api_internal;
-using namespace Platform;
-using namespace Microsoft::WRL;
-//using namespace Windows::Media::MediaProperties;
+using Platform::Collections::Vector;
+using webrtc_winrt_api_internal::ToCx;
 
-MediaVideoTrack::MediaVideoTrack(rtc::scoped_refptr<webrtc::VideoTrackInterface> impl) :
-  _impl(impl)
-{
+namespace webrtc_winrt_api {
+
+MediaVideoTrack::MediaVideoTrack(
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> impl) :
+  _impl(impl) {
 }
 
-MediaVideoTrack::~MediaVideoTrack()
-{
+MediaVideoTrack::~MediaVideoTrack() {
 }
 
-String^ MediaVideoTrack::Kind::get()
-{
+String^ MediaVideoTrack::Kind::get() {
   return ToCx(_impl->kind());
 }
 
-String^ MediaVideoTrack::Id::get()
-{
+String^ MediaVideoTrack::Id::get() {
   return ToCx(_impl->id());
 }
 
-bool MediaVideoTrack::Enabled::get()
-{
+bool MediaVideoTrack::Enabled::get() {
   return _impl->enabled();
 }
 
-void MediaVideoTrack::Enabled::set(bool value)
-{
+void MediaVideoTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
 }
 
-void MediaVideoTrack::SetRenderer(webrtc::VideoRendererInterface* renderer)
-{
+void MediaVideoTrack::SetRenderer(webrtc::VideoRendererInterface* renderer) {
   _impl->AddRenderer(renderer);
 }
 
-void MediaVideoTrack::UnsetRenderer(webrtc::VideoRendererInterface* renderer)
-{
+void MediaVideoTrack::UnsetRenderer(webrtc::VideoRendererInterface* renderer) {
   _impl->RemoveRenderer(renderer);
 }
 
 // ===========================================================================
 
-MediaAudioTrack::MediaAudioTrack(rtc::scoped_refptr<webrtc::AudioTrackInterface> impl) :
-_impl(impl)
-{
+MediaAudioTrack::MediaAudioTrack(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> impl) :
+  _impl(impl) {
 }
 
-String^ MediaAudioTrack::Kind::get()
-{
+String^ MediaAudioTrack::Kind::get() {
   return ToCx(_impl->kind());
 }
 
-String^ MediaAudioTrack::Id::get()
-{
+String^ MediaAudioTrack::Id::get() {
   return ToCx(_impl->id());
 }
 
-bool MediaAudioTrack::Enabled::get()
-{
+bool MediaAudioTrack::Enabled::get() {
   return _impl->enabled();
 }
 
-void MediaAudioTrack::Enabled::set(bool value)
-{
+void MediaAudioTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
 }
 
 MediaStream::MediaStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> impl)
-  : _impl(impl)
-{
-
+  : _impl(impl) {
 }
 
-rtc::scoped_refptr<webrtc::MediaStreamInterface> MediaStream::GetImpl()
-{
+rtc::scoped_refptr<webrtc::MediaStreamInterface> MediaStream::GetImpl() {
   return _impl;
 }
 
-IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks()
-{
+IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks() {
   auto ret = ref new Vector<MediaAudioTrack^>();
-  for (auto track : _impl->GetAudioTracks())
-  {
+  for (auto track : _impl->GetAudioTracks()) {
     ret->Append(ref new MediaAudioTrack(track));
   }
   return ret;
 }
 
-IVector<MediaVideoTrack^>^ MediaStream::GetVideoTracks()
-{
+IVector<MediaVideoTrack^>^ MediaStream::GetVideoTracks() {
   auto ret = ref new Vector<MediaVideoTrack^>();
-  for (auto track : _impl->GetVideoTracks())
-  {
+  for (auto track : _impl->GetVideoTracks()) {
     ret->Append(ref new MediaVideoTrack(track));
   }
   return ret;
 }
 
-IVector<IMediaStreamTrack^>^ MediaStream::GetTracks()
-{
+IVector<IMediaStreamTrack^>^ MediaStream::GetTracks() {
   auto ret = ref new Vector<IMediaStreamTrack^>();
-  for (auto track : _impl->GetAudioTracks())
-  {
+  for (auto track : _impl->GetAudioTracks()) {
     ret->Append(ref new MediaAudioTrack(track));
   }
-  for (auto track : _impl->GetVideoTracks())
-  {
+  for (auto track : _impl->GetVideoTracks()) {
     ret->Append(ref new MediaVideoTrack(track));
   }
   return ret;
@@ -131,15 +119,12 @@ const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
 const char kStreamLabel[] = "stream_label";
 
-IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
-{
+IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this]() -> MediaStream^ {
+    // TODO(WINRT): Check if a stream already exists.  Create only once.
 
-    // TODO: Check if a stream already exists.  Create only once.
-
-    return globals::RunOnGlobalThread<MediaStream^>([this]()->MediaStream^
-    {
+    return globals::RunOnGlobalThread<MediaStream^>([this]()->MediaStream^ {
       rtc::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(
         cricket::DeviceManagerFactory::Create());
 
@@ -173,12 +158,12 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
       stream->AddTrack(audio_track);
 
       // Add a video track
-      if (videoCapturer != nullptr)
-      {
+      if (videoCapturer != nullptr) {
         rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
           globals::gPeerConnectionFactory->CreateVideoTrack(
           kVideoLabel,
-          globals::gPeerConnectionFactory->CreateVideoSource(videoCapturer, NULL)));
+          globals::gPeerConnectionFactory->CreateVideoSource(
+            videoCapturer, NULL)));
         stream->AddTrack(video_track);
       }
 
@@ -190,7 +175,10 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia()
   return asyncOp;
 }
 
-IMediaSource^ Media::CreateMediaStreamSource(MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate)
-{
-  return RTMediaStreamSource::CreateMediaSource(track, width, height, framerate);
+IMediaSource^ Media::CreateMediaStreamSource(
+  MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate) {
+  return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
+    track, width, height, framerate);
 }
+
+}  // namespace webrtc_winrt_api

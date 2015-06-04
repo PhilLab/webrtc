@@ -75,6 +75,19 @@ namespace webrtc_winjs_api {
     void OnLaunched()
     {
       g_windowDispatcher = dispatcher_ = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+
+      webrtc_winrt_api::WebRTC::Initialize(dispatcher_);
+
+
+    }
+
+    static void initial()
+    {
+      g_windowDispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+
+      webrtc_winrt_api::WebRTC::Initialize(g_windowDispatcher);
+
+
     }
 
     bool initialized(){ return this->started_; }

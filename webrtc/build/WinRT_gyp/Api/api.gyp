@@ -27,8 +27,8 @@
         '.',
       ],
       'sources': [
-        'peerconnectioninterface.h',
-        'peerconnectioninterface.cc',
+        'PeerConnectionInterface.h',
+        'PeerConnectionInterface.cc',
         'GlobalObserver.h',
         'GlobalObserver.cc',
         'Marshalling.h',
@@ -44,8 +44,9 @@
       'msvs_settings': {
         'VCLinkerTool': {
           'AdditionalOptions': [
-            '/WINMD',
+            '/WINMD',            
           ],
+          'WindowsMetadataFile':'$(OutDir)webrtc_winrt_api.winmd'
         },
       },
     },

@@ -23,10 +23,12 @@ using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaCaptureFailedEventArgs;
 using Windows::Media::Capture::MediaCaptureFailedEventHandler;
+using Windows::Media::Capture::MediaStreamType;
 using Windows::Media::IMediaExtension;
+using Windows::Media::MediaProperties::IVideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingProfile;
-using Windows::Media::MediaProperties::VideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
+using Windows::Media::MediaProperties::VideoEncodingProperties;
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -76,7 +78,8 @@ ref class CaptureDevice sealed {
 
   void Cleanup();
 
-  void StartCapture(MediaEncodingProfile^ media_encoding_profile);
+  void StartCapture(MediaEncodingProfile^ media_encoding_profile,
+                    IVideoEncodingProperties^ video_encoding_properties);
 
   void StopCapture();
 
@@ -175,7 +178,7 @@ void CaptureDevice::Cleanup() {
   }
 }
 
-void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile) {
+void CaptureDevice::StartCapture(MediaEncodingProfile^ media_encoding_profile, IVideoEncodingProperties^ video_encoding_properties) {
   if (media_sink_ && capture_started_) {
     throw ref new Platform::Exception(
       __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
@@ -183,32 +186,32 @@ void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile) {
 
   CleanupSink();
 
-  frame_info_.width = mediaEncodingProfile->Video->Width;
-  frame_info_.height = mediaEncodingProfile->Video->Height;
+  frame_info_.width = media_encoding_profile->Video->Width;
+  frame_info_.height = media_encoding_profile->Video->Height;
   frame_info_.maxFPS =
     static_cast<int>(
-      static_cast<float>(mediaEncodingProfile->Video->FrameRate->Numerator) /
-      static_cast<float>(mediaEncodingProfile->Video->FrameRate->Denominator));
-  if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-               MediaEncodingSubtypes::Yv12->Data()) == 0)
+    static_cast<float>(media_encoding_profile->Video->FrameRate->Numerator) /
+    static_cast<float>(media_encoding_profile->Video->FrameRate->Denominator));
+  if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Yv12->Data()) == 0)
     frame_info_.rawType = kVideoYV12;
-  else if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-                    MediaEncodingSubtypes::Yuy2->Data()) == 0)
+  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Yuy2->Data()) == 0)
     frame_info_.rawType = kVideoYUY2;
-  else if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-                    MediaEncodingSubtypes::Iyuv->Data()) == 0)
+  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Iyuv->Data()) == 0)
     frame_info_.rawType = kVideoIYUV;
-  else if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-                    MediaEncodingSubtypes::Rgb24->Data()) == 0)
+  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Rgb24->Data()) == 0)
     frame_info_.rawType = kVideoRGB24;
-  else if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-                    MediaEncodingSubtypes::Rgb32->Data()) == 0)
+  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Rgb32->Data()) == 0)
     frame_info_.rawType = kVideoARGB;
-  else if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-                    MediaEncodingSubtypes::Mjpg->Data()) == 0)
+  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Mjpg->Data()) == 0)
     frame_info_.rawType = kVideoMJPEG;
-  else if (_wcsicmp(mediaEncodingProfile->Video->Subtype->Data(),
-                    MediaEncodingSubtypes::Nv12->Data()) == 0)
+  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Nv12->Data()) == 0)
     frame_info_.rawType = kVideoNV12;
   else
     frame_info_.rawType = kVideoUnknown;
@@ -220,19 +223,22 @@ void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile) {
         (this, &CaptureDevice::OnMediaSample);
 
   Concurrency::create_task(
-    media_sink_->InitializeAsync(mediaEncodingProfile->Video)).
-      then([this, mediaEncodingProfile](IMediaExtension^ mediaExtension) {
-    return Concurrency::create_task(
-        media_capture_->StartRecordToCustomSinkAsync(
-          mediaEncodingProfile, mediaExtension)).
-            then([this](Concurrency::task<void>& asyncInfo) {
-      try {
-        asyncInfo.get();
-        capture_started_ = true;
-      } catch (Platform::Exception^ e) {
-        CleanupSink();
-        throw;
-      }
+    media_sink_->InitializeAsync(media_encoding_profile->Video)).
+      then([this, media_encoding_profile, video_encoding_properties](IMediaExtension^ media_extension) {
+    return Concurrency::create_task(media_capture_->VideoDeviceController->
+      SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, video_encoding_properties)).
+        then([this, media_encoding_profile, media_extension](Concurrency::task<void> async_info) {
+      return Concurrency::create_task(media_capture_->
+        StartRecordToCustomSinkAsync(media_encoding_profile, media_extension)).then([this](Concurrency::task<void> async_info)
+      {
+        try {
+          async_info.get();
+          capture_started_ = true;
+        } catch (Platform::Exception^ e) {
+          CleanupSink();
+          throw;
+        }
+      });
     });
   }).wait();
 }
@@ -390,8 +396,53 @@ int32_t VideoCaptureWinRT::StartCapture(
   media_encoding_profile->Video->FrameRate->Numerator = capability.maxFPS;
   media_encoding_profile->Video->FrameRate->Denominator = 1;
 
+  IVideoEncodingProperties^ video_encoding_properties;
+  int min_width_diff = INT_MAX;
+  int min_height_diff = INT_MAX;
+  int min_fps_diff = INT_MAX;
+  auto mediaCapture = MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id_);
+  auto streamProperties = mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
+    MediaStreamType::VideoRecord);
+  for (unsigned int i = 0; i < streamProperties->Size; i++)
+  {
+    IVideoEncodingProperties^ prop =
+      static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
+
+    if (_wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0)
+      continue;
+
+    int width_diff = abs((int)(prop->Width - capability.width));
+    int height_diff = abs((int)(prop->Height - capability.height));
+    int prop_fps = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
+    int fps_diff = abs((int)(prop_fps - capability.maxFPS));
+
+    if (width_diff < min_width_diff)
+    {
+      video_encoding_properties = prop;
+      min_width_diff = width_diff;
+      min_height_diff = height_diff;
+      min_fps_diff = fps_diff;
+    }
+    else if (width_diff == min_width_diff)
+    {
+      if (height_diff < min_height_diff)
+      {
+        video_encoding_properties = prop;
+        min_height_diff = height_diff;
+        min_fps_diff = fps_diff;
+      }
+      else if (height_diff == min_height_diff)
+      {
+        if (fps_diff < min_fps_diff) {
+          video_encoding_properties = prop;
+          min_fps_diff = fps_diff;
+        }
+      }
+    }
+  }
+
   try {
-    device_->StartCapture(media_encoding_profile);
+    device_->StartCapture(media_encoding_profile, video_encoding_properties);
   } catch (Platform::Exception^ e) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
       "Failed to start capture on device");
