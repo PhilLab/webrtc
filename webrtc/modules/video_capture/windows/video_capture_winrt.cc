@@ -12,7 +12,9 @@
 
 #include <ppltasks.h>
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include <string>
+
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
 
 using Microsoft::WRL::ComPtr;
@@ -20,9 +22,9 @@ using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
 using Windows::Media::Capture::MediaCapture;
-using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaCaptureFailedEventArgs;
 using Windows::Media::Capture::MediaCaptureFailedEventHandler;
+using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaStreamType;
 using Windows::Media::IMediaExtension;
 using Windows::Media::MediaProperties::IVideoEncodingProperties;
@@ -35,46 +37,13 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc {
 namespace videocapturemodule {
 
-ref class CaptureFailedEventArgs {
- internal:
-  CaptureFailedEventArgs(HRESULT code, Platform::String^ message)
-    : code_(code),
-      message_(message) {
-  }
-
-  property HRESULT Code {
-    HRESULT get() {
-      return code_;
-    }
-  }
-
-  property Platform::String^ Message {
-    Platform::String^ get() {
-      return message_;
-    }
-  }
-
- private:
-  HRESULT code_;
-  Platform::String^ message_;
-};
-
-ref class CaptureDevice;
-
-delegate void CaptureFailedHandler(CaptureDevice^ sender,
-                                   CaptureFailedEventArgs^ error_event_args);
-
 ref class CaptureDevice sealed {
  internal:
-  event CaptureFailedHandler^ Failed;
-
-  CaptureDevice(IncomingFrameCallback* incoming_frame_callback);
+  CaptureDevice(CaptureDeviceListener* capture_device_listener);
 
   void Initialize(Platform::String^ device_id);
 
   void CleanupSink();
-
-  void DoCleanup();
 
   void Cleanup();
 
@@ -88,10 +57,7 @@ ref class CaptureDevice sealed {
   VideoCaptureCapability GetFrameInfo() { return frame_info_; }
 
   void OnCaptureFailed(MediaCapture^ sender,
-                       MediaCaptureFailedEventArgs^ error_event_args) {
-    Failed(this, ref new CaptureFailedEventArgs(error_event_args->Code,
-                                                error_event_args->Message));
-  }
+                       MediaCaptureFailedEventArgs^ error_event_args);
 
   void OnMediaSample(Object^ sender, MediaSampleEventArgs^ args);
 
@@ -107,31 +73,27 @@ private:
   Windows::Foundation::EventRegistrationToken
     media_sink_video_sample_event_registration_token_;
 
-  IncomingFrameCallback* incoming_frame_callback_;
+  CaptureDeviceListener* capture_device_listener_;
 
   bool capture_started_;
   VideoCaptureCapability frame_info_;
 };
 
-CaptureDevice::CaptureDevice(IncomingFrameCallback* incoming_frame_callback)
+CaptureDevice::CaptureDevice(
+  CaptureDeviceListener* capture_device_listener)
   : media_capture_(nullptr),
     media_sink_(nullptr),
-    incoming_frame_callback_(incoming_frame_callback),
+    capture_device_listener_(capture_device_listener),
     capture_started_(false) {
 }
 
 void CaptureDevice::Initialize(Platform::String^ device_id) {
-  try {
-    media_capture_ =
-      MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id);
-    media_capture_failed_event_registration_token_ =
-      media_capture_->Failed +=
-        ref new MediaCaptureFailedEventHandler(this,
-                                               &CaptureDevice::OnCaptureFailed);
-  } catch (Platform::Exception^ e) {
-    DoCleanup();
-    throw e;
-  }
+  media_capture_ =
+    MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id);
+  media_capture_failed_event_registration_token_ =
+    media_capture_->Failed +=
+      ref new MediaCaptureFailedEventHandler(this,
+                                             &CaptureDevice::OnCaptureFailed);
 }
 
 void CaptureDevice::CleanupSink() {
@@ -144,15 +106,6 @@ void CaptureDevice::CleanupSink() {
   }
 }
 
-void CaptureDevice::DoCleanup() {
-  Windows::Media::Capture::MediaCapture^ media_capture = media_capture_.Get();
-  if (media_capture != nullptr) {
-    media_capture->Failed -= media_capture_failed_event_registration_token_;
-  }
-
-  CleanupSink();
-}
-
 Platform::Agile<Windows::Media::Capture::MediaCapture>
 CaptureDevice::MediaCapture::get() {
   return media_capture_;
@@ -160,26 +113,23 @@ CaptureDevice::MediaCapture::get() {
 
 void CaptureDevice::Cleanup() {
   Windows::Media::Capture::MediaCapture^ media_capture = media_capture_.Get();
-  if (media_capture == nullptr && !media_sink_) {
+  if (media_capture == nullptr) {
     return;
   }
 
-  if (media_capture != nullptr) {
-    media_capture->Failed -= media_capture_failed_event_registration_token_;
-  }
-
-  if (media_capture != nullptr && capture_started_) {
+  if (capture_started_) {
     Concurrency::create_task(
       media_capture->StopRecordAsync()).then([this](Concurrency::task<void>&) {
-      DoCleanup();
     }).wait();
-  } else {
-    DoCleanup();
   }
+  media_capture->Failed -= media_capture_failed_event_registration_token_;
+  CleanupSink();
 }
 
-void CaptureDevice::StartCapture(MediaEncodingProfile^ media_encoding_profile, IVideoEncodingProperties^ video_encoding_properties) {
-  if (media_sink_ && capture_started_) {
+void CaptureDevice::StartCapture(
+  MediaEncodingProfile^ media_encoding_profile,
+  IVideoEncodingProperties^ video_encoding_properties) {
+  if (capture_started_) {
     throw ref new Platform::Exception(
       __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
   }
@@ -190,8 +140,10 @@ void CaptureDevice::StartCapture(MediaEncodingProfile^ media_encoding_profile, I
   frame_info_.height = media_encoding_profile->Video->Height;
   frame_info_.maxFPS =
     static_cast<int>(
-    static_cast<float>(media_encoding_profile->Video->FrameRate->Numerator) /
-    static_cast<float>(media_encoding_profile->Video->FrameRate->Denominator));
+      static_cast<float>(
+        media_encoding_profile->Video->FrameRate->Numerator) /
+      static_cast<float>(
+        media_encoding_profile->Video->FrameRate->Denominator));
   if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
     MediaEncodingSubtypes::Yv12->Data()) == 0)
     frame_info_.rawType = kVideoYV12;
@@ -224,13 +176,20 @@ void CaptureDevice::StartCapture(MediaEncodingProfile^ media_encoding_profile, I
 
   Concurrency::create_task(
     media_sink_->InitializeAsync(media_encoding_profile->Video)).
-      then([this, media_encoding_profile, video_encoding_properties](IMediaExtension^ media_extension) {
-    return Concurrency::create_task(media_capture_->VideoDeviceController->
-      SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, video_encoding_properties)).
-        then([this, media_encoding_profile, media_extension](Concurrency::task<void> async_info) {
+      then([this,
+            media_encoding_profile,
+            video_encoding_properties](IMediaExtension^ media_extension) {
+    return Concurrency::create_task(
+      media_capture_->VideoDeviceController->SetMediaStreamPropertiesAsync(
+        MediaStreamType::VideoRecord,
+        video_encoding_properties)).
+          then([this,
+                media_encoding_profile,
+                media_extension](Concurrency::task<void> async_info) {
       return Concurrency::create_task(media_capture_->
-        StartRecordToCustomSinkAsync(media_encoding_profile, media_extension)).then([this](Concurrency::task<void> async_info)
-      {
+        StartRecordToCustomSinkAsync(media_encoding_profile,
+                                     media_extension)).
+          then([this](Concurrency::task<void> async_info) {
         try {
           async_info.get();
           capture_started_ = true;
@@ -244,40 +203,68 @@ void CaptureDevice::StartCapture(MediaEncodingProfile^ media_encoding_profile, I
 }
 
 void CaptureDevice::StopCapture() {
-  if (capture_started_) {
-    Concurrency::create_task(
-      media_capture_.Get()->StopRecordAsync()).then([this]() {
+  if (!capture_started_) {
+    throw ref new Platform::Exception(
+      __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
+  }
+
+  Concurrency::create_task(
+    media_capture_.Get()->StopRecordAsync()).
+      then([this](Concurrency::task<void>& asyncInfo) {
+    try {
+      asyncInfo.get();
       CleanupSink();
-    }).wait();
+    } catch (Platform::Exception^ e) {
+      CleanupSink();
+      throw;
+    }
+  }).wait();
+}
+
+void CaptureDevice::OnCaptureFailed(
+  Windows::Media::Capture::MediaCapture^ sender,
+  MediaCaptureFailedEventArgs^ error_event_args) {
+  if (capture_device_listener_) {
+    capture_device_listener_->OnCaptureDeviceFailed(
+      error_event_args->Code,
+      error_event_args->Message);
   }
 }
 
 void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
-  if (incoming_frame_callback_) {
+  if (capture_device_listener_) {
     Microsoft::WRL::ComPtr<IMFSample> spMediaSample = args->GetMediaSample();
     ComPtr<IMFMediaBuffer> spMediaBuffer;
     HRESULT hr = spMediaSample->GetBufferByIndex(0, &spMediaBuffer);
-    uint8_t* video_frame;
-    size_t video_frame_length;
-    int64_t capture_time;
-    LONGLONG hnsSampleTime;
-    BYTE* pbBuffer;
-    DWORD cbMaxLength;
-    DWORD cbCurrentLength;
-    hr = spMediaSample->GetSampleTime(&hnsSampleTime);
-    hr = spMediaBuffer->Lock(&pbBuffer, &cbMaxLength, &cbCurrentLength);
-    video_frame = pbBuffer;
-    video_frame_length = cbCurrentLength;
-    // conversion from 100-nanosecond to millisecond units
-    capture_time = hnsSampleTime / 10000;
+    LONGLONG hnsSampleTime = 0;
+    BYTE* pbBuffer = NULL;
+    DWORD cbMaxLength = 0;
+    DWORD cbCurrentLength = 0;
     if (SUCCEEDED(hr)) {
-      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
-        "Video Capture - OnMediaSample - video frame length: %d, capture time: %lld",
-        video_frame_length, capture_time);
-      incoming_frame_callback_->OnIncomingFrame(video_frame,
+      hr = spMediaSample->GetSampleTime(&hnsSampleTime);
+    }
+    if (SUCCEEDED(hr)) {
+      hr = spMediaBuffer->Lock(&pbBuffer, &cbMaxLength, &cbCurrentLength);
+    }
+    if (SUCCEEDED(hr)) {
+      uint8_t* video_frame;
+      size_t video_frame_length;
+      int64_t capture_time;
+      video_frame = pbBuffer;
+      video_frame_length = cbCurrentLength;
+      // conversion from 100-nanosecond to millisecond units
+      capture_time = hnsSampleTime / 10000;
+      LOG(LS_VERBOSE) <<
+        "Video Capture - Media sample received - video frame length: " <<
+        video_frame_length <<", capture time : " << capture_time;
+      capture_device_listener_->OnIncomingFrame(video_frame,
                                                 video_frame_length,
                                                 frame_info_);
-      spMediaBuffer->Unlock();
+    }
+    if (SUCCEEDED(hr)) {
+      hr = spMediaBuffer->Unlock();
+    } else {
+      LOG(LS_ERROR) << "Failed to send media sample. " << hr;
     }
   }
 }
@@ -288,19 +275,20 @@ VideoCaptureWinRT::VideoCaptureWinRT(const int32_t id)
 }
 
 VideoCaptureWinRT::~VideoCaptureWinRT() {
+  if (device_ != nullptr)
+    device_->Cleanup();
 }
 
 int32_t VideoCaptureWinRT::Init(const int32_t id,
                                 const char* device_unique_id) {
+  CriticalSectionScoped cs(&_apiCs);
   const int32_t device_unique_id_length = strlen(device_unique_id);
   if (device_unique_id_length > kVideoCaptureUniqueNameLength) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-      "Device name too long");
+    LOG(LS_ERROR) << "Device name too long";
     return -1;
   }
 
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
-    "Init called for device %s", device_unique_id);
+  LOG(LS_INFO) << "Init called for device " << device_unique_id;
 
   device_id_ = nullptr;
 
@@ -313,8 +301,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-          "No video capture device found");
+        LOG(LS_ERROR) << "There is no capture device installed on the system";
       }
       for (unsigned int i = 0; i < dev_info_collection->Size; i++) {
         auto dev_info = dev_info_collection->GetAt(i);
@@ -333,29 +320,35 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
         }
       }
     } catch (Platform::Exception^ e) {
+      int message_size = WideCharToMultiByte(
+        CP_UTF8, 0, e->Message->Data(),
+        static_cast<int>(wcslen(e->Message->Data())),
+        NULL, 0, NULL, NULL);
+      std::string message(message_size, 0);
+      WideCharToMultiByte(
+        CP_UTF8, 0, e->Message->Data(),
+        static_cast<int>(wcslen(e->Message->Data())),
+        &message[0], message_size, NULL, NULL);
+      LOG(LS_ERROR) <<
+        "Failed to retrieve device info collection. " << message.c_str();
     }
   }).wait();
 
-  CaptureDevice^ device = ref new CaptureDevice(this);
-
-  try {
-    device->Initialize(device_id_);
-
-    device_ = device;
-  } catch (Platform::Exception^ e) {
-    if (device_) {
-      device_->Cleanup();
-      device_id_ = nullptr;
-      device_ = nullptr;
-      return -1;
-    }
+  if (device_id_ == nullptr) {
+    LOG(LS_ERROR) << "No video capture device found";
+    return -1;
   }
+
+  device_ = ref new CaptureDevice(this);
+
+  device_->Initialize(device_id_);
 
   return 0;
 }
 
 int32_t VideoCaptureWinRT::StartCapture(
   const VideoCaptureCapability& capability) {
+  CriticalSectionScoped cs(&_apiCs);
   Platform::String^ subtype;
   switch (capability.rawType) {
   case kVideoYV12:
@@ -381,8 +374,8 @@ int32_t VideoCaptureWinRT::StartCapture(
     subtype = MediaEncodingSubtypes::Nv12;
     break;
   default:
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-      "The specified raw video format is not supported on this plaform.");
+    LOG(LS_ERROR) <<
+      "The specified raw video format is not supported on this plaform.";
     return -1;
   }
 
@@ -400,39 +393,36 @@ int32_t VideoCaptureWinRT::StartCapture(
   int min_width_diff = INT_MAX;
   int min_height_diff = INT_MAX;
   int min_fps_diff = INT_MAX;
-  auto mediaCapture = MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id_);
-  auto streamProperties = mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
-    MediaStreamType::VideoRecord);
-  for (unsigned int i = 0; i < streamProperties->Size; i++)
-  {
+  auto mediaCapture =
+    MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id_);
+  auto streamProperties =
+    mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
+      MediaStreamType::VideoRecord);
+  for (unsigned int i = 0; i < streamProperties->Size; i++) {
     IVideoEncodingProperties^ prop =
       static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
 
     if (_wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0)
       continue;
 
-    int width_diff = abs((int)(prop->Width - capability.width));
-    int height_diff = abs((int)(prop->Height - capability.height));
-    int prop_fps = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
-    int fps_diff = abs((int)(prop_fps - capability.maxFPS));
+    int width_diff = abs(static_cast<int>(prop->Width - capability.width));
+    int height_diff = abs(static_cast<int>(prop->Height - capability.height));
+    int prop_fps = static_cast<int>(
+      (static_cast<float>(prop->FrameRate->Numerator) /
+      static_cast<float>(prop->FrameRate->Denominator)));
+    int fps_diff = abs(static_cast<int>(prop_fps - capability.maxFPS));
 
-    if (width_diff < min_width_diff)
-    {
+    if (width_diff < min_width_diff) {
       video_encoding_properties = prop;
       min_width_diff = width_diff;
       min_height_diff = height_diff;
       min_fps_diff = fps_diff;
-    }
-    else if (width_diff == min_width_diff)
-    {
-      if (height_diff < min_height_diff)
-      {
+    } else if (width_diff == min_width_diff) {
+      if (height_diff < min_height_diff) {
         video_encoding_properties = prop;
         min_height_diff = height_diff;
         min_fps_diff = fps_diff;
-      }
-      else if (height_diff == min_height_diff)
-      {
+      } else if (height_diff == min_height_diff) {
         if (fps_diff < min_fps_diff) {
           video_encoding_properties = prop;
           min_fps_diff = fps_diff;
@@ -444,8 +434,16 @@ int32_t VideoCaptureWinRT::StartCapture(
   try {
     device_->StartCapture(media_encoding_profile, video_encoding_properties);
   } catch (Platform::Exception^ e) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-      "Failed to start capture on device");
+    int message_size = WideCharToMultiByte(
+      CP_UTF8, 0, e->Message->Data(),
+      static_cast<int>(wcslen(e->Message->Data())),
+      NULL, 0, NULL, NULL);
+    std::string message(message_size, 0);
+    WideCharToMultiByte(
+      CP_UTF8, 0, e->Message->Data(),
+      static_cast<int>(wcslen(e->Message->Data())),
+      &message[0], message_size, NULL, NULL);
+    LOG(LS_ERROR) << "Failed to start capture. " << message.c_str();
     return -1;
   }
 
@@ -453,15 +451,32 @@ int32_t VideoCaptureWinRT::StartCapture(
 }
 
 int32_t VideoCaptureWinRT::StopCapture() {
-  device_->StopCapture();
+  CriticalSectionScoped cs(&_apiCs);
+  try {
+    device_->StopCapture();
+  } catch (Platform::Exception^ e) {
+    int message_size = WideCharToMultiByte(
+      CP_UTF8, 0, e->Message->Data(),
+      static_cast<int>(wcslen(e->Message->Data())),
+      NULL, 0, NULL, NULL);
+    std::string message(message_size, 0);
+    WideCharToMultiByte(
+      CP_UTF8, 0, e->Message->Data(),
+      static_cast<int>(wcslen(e->Message->Data())),
+      &message[0], message_size, NULL, NULL);
+    LOG(LS_ERROR) << "Failed to stop capture. " << message.c_str();
+    return -1;
+  }
   return 0;
 }
 
 bool VideoCaptureWinRT::CaptureStarted() {
+  CriticalSectionScoped cs(&_apiCs);
   return device_->CaptureStarted();
 }
 
 int32_t VideoCaptureWinRT::CaptureSettings(VideoCaptureCapability& settings) {
+  CriticalSectionScoped cs(&_apiCs);
   settings = device_->GetFrameInfo();
   return 0;
 }
@@ -471,6 +486,24 @@ void VideoCaptureWinRT::OnIncomingFrame(
   size_t video_frame_length,
   const VideoCaptureCapability& frame_info) {
   IncomingFrame(video_frame, video_frame_length, frame_info);
+}
+
+void VideoCaptureWinRT::OnCaptureDeviceFailed(HRESULT code,
+                                              Platform::String^ message) {
+  CriticalSectionScoped cs(&_apiCs);
+  if (device_ != nullptr && device_->CaptureStarted())
+    device_->StopCapture();
+  int message_string_size = WideCharToMultiByte(
+    CP_UTF8, 0, message->Data(),
+    static_cast<int>(wcslen(message->Data())),
+    NULL, 0, NULL, NULL);
+  std::string message_string(message_string_size, 0);
+  WideCharToMultiByte(
+    CP_UTF8, 0, message->Data(),
+    static_cast<int>(wcslen(message->Data())),
+    &message_string[0], message_string_size, NULL, NULL);
+  LOG(LS_ERROR) << "Capture device failed. HRESULT: " <<
+    code << " Mesage: " << message_string.c_str();
 }
 
 }  // namespace videocapturemodule

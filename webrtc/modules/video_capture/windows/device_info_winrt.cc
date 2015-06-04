@@ -14,7 +14,7 @@
 
 #include <string>
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
@@ -72,8 +72,9 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
         media_capture_agile,
         settings]() {
       initialize_async_task =
-        Concurrency::create_task(media_capture_agile->InitializeAsync(settings)).
-          then([this, media_capture_agile](Concurrency::task<void> initTask) {
+        Concurrency::create_task(
+          media_capture_agile->InitializeAsync(settings)).
+            then([this, media_capture_agile](Concurrency::task<void> initTask) {
         try {
           initTask.get();
         } catch (Platform::Exception^ e) {
@@ -86,15 +87,14 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
           WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(),
                               static_cast<int>(wcslen(e->Message->Data())),
                               &message[0], messageSize, NULL, NULL);
-          WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-            "Failed to initialize media capture device. %s", message.c_str());
+          LOG(LS_ERROR) <<
+            "Failed to initialize media capture device. " << message.c_str();
         }
       });
     });
     Windows::Foundation::IAsyncAction^ dispatcher_action =
       dispatcher->RunAsync(priority, handler);
-    auto dispatcherTask = Concurrency::create_task(dispatcher_action);
-    dispatcherTask.wait();
+    Concurrency::create_task(dispatcher_action).wait();
     initialize_async_task.wait();
 
     media_capture_map_[device_id] = media_capture_agile;
@@ -118,6 +118,7 @@ DeviceInfoWinRT* DeviceInfoWinRT::Create(const int32_t id) {
   if (!winrt_info || winrt_info->Init() != 0) {
     delete winrt_info;
     winrt_info = NULL;
+    LOG(LS_ERROR) << "Failed to initialize device info object.";
   }
   return winrt_info;
 }
@@ -179,8 +180,7 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(uint32_t device_number,
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-          "No video capture device found");
+        LOG_F(LS_ERROR) << "No video capture device found";
       }
       device_count = dev_info_collection->Size;
       for (unsigned int i = 0; i < dev_info_collection->Size; i++) {
@@ -195,10 +195,8 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(uint32_t device_number,
             device_name_utf8_length, NULL,
             NULL);
           if (convResult == 0) {
-            WEBRTC_TRACE(webrtc::kTraceError,
-              webrtc::kTraceVideoCapture, _id,
-              "Failed to convert device name to UTF8. %d",
-              GetLastError());
+            LOG(LS_ERROR) << "Failed to convert device name to UTF8. " <<
+              GetLastError();
           }
           convResult = WideCharToMultiByte(CP_UTF8, 0,
             device_unique_id->Data(), -1,
@@ -206,16 +204,25 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(uint32_t device_number,
             device_unique_id_utf8_length, NULL,
             NULL);
           if (convResult == 0) {
-            WEBRTC_TRACE(webrtc::kTraceError,
-              webrtc::kTraceVideoCapture, _id,
-              "Failed to convert device unique ID to UTF8. %d",
-              GetLastError());
+            LOG(LS_ERROR) << "Failed to convert device unique ID to UTF8. " <<
+              GetLastError();
           }
           if (product_unique_id_utf8 != NULL)
             product_unique_id_utf8[0] = 0;
         }
       }
     } catch (Platform::Exception^ e) {
+      int message_size = WideCharToMultiByte(
+        CP_UTF8, 0, e->Message->Data(),
+        static_cast<int>(wcslen(e->Message->Data())),
+        NULL, 0, NULL, NULL);
+      std::string message(message_size, 0);
+      WideCharToMultiByte(
+        CP_UTF8, 0, e->Message->Data(),
+        static_cast<int>(wcslen(e->Message->Data())),
+        &message[0], message_size, NULL, NULL);
+      LOG(LS_ERROR) << "Failed to retrieve device info collection. " <<
+        message.c_str();
     }
   }).wait();
 
@@ -228,6 +235,7 @@ int32_t DeviceInfoWinRT::DisplayCaptureSettingsDialogBox(
   void* parent_window,
   uint32_t position_x,
   uint32_t position_y) {
+  LOG_F(LS_ERROR) << "Not supported.";
   return -1;
 }
 
@@ -238,12 +246,11 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
   const int32_t device_unique_id_utf8_length =
     (int32_t)strlen(device_unique_id_utf8);
   if (device_unique_id_utf8_length > kVideoCaptureUniqueNameLength) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-      "Device name too long");
+    LOG_F(LS_ERROR) << "Device name too long";
     return -1;
   }
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
-    "CreateCapabilityMap called for device %s", device_unique_id_utf8);
+  LOG(LS_INFO) << "CreateCapabilityMap called for device " <<
+    device_unique_id_utf8;
 
   Concurrency::create_task(
     DeviceInformation::FindAllAsync(
@@ -255,8 +262,7 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-          "No video capture device found");
+        LOG_F(LS_ERROR) << "No video capture device found";
       }
       DeviceInformation^ chosen_dev_info = nullptr;
       for (unsigned int i = 0; i < dev_info_collection->Size; i++) {
@@ -280,8 +286,7 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
           MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(
             chosen_dev_info->Id);
         auto stream_properties = media_capture->VideoDeviceController->
-          GetAvailableMediaStreamProperties(
-            MediaStreamType::VideoRecord);
+          GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
         for (unsigned int i = 0; i < stream_properties->Size; i++) {
           IVideoEncodingProperties^ prop =
             static_cast<IVideoEncodingProperties^>(stream_properties->GetAt(i));
@@ -316,19 +321,6 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
           else
             capability.rawType = kVideoUnknown;
           _captureCapabilities.push_back(capability);
-          int subtype_size = WideCharToMultiByte(
-            CP_UTF8, 0, prop->Subtype->Data(),
-            static_cast<int>(wcslen(prop->Subtype->Data())),
-            NULL, 0, NULL, NULL);
-          std::string subtype(subtype_size, 0);
-          WideCharToMultiByte(
-            CP_UTF8, 0, prop->Subtype->Data(),
-            static_cast<int>(wcslen(prop->Subtype->Data())),
-            &subtype[0], subtype_size, NULL, NULL);
-          WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
-            "Capture media stream properties: index: %d, width: %d, height: %d, frame rate: %d/%d, subtype: %s",
-            i, prop->Width, prop->Height, prop->FrameRate->Numerator,
-            prop->FrameRate->Denominator, subtype.c_str());
         }
       }
     } catch (Platform::Exception^ e) {
@@ -341,8 +333,8 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
         CP_UTF8, 0, e->Message->Data(),
         static_cast<int>(wcslen(e->Message->Data())),
         &message[0], message_size, NULL, NULL);
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
-        "Failed to find media capture devices. %s", message.c_str());
+      LOG(LS_ERROR) << "Failed to find media capture devices. " <<
+        message.c_str();
     }
   }).wait();
 

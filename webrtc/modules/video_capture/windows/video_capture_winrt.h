@@ -19,16 +19,18 @@ namespace videocapturemodule {
 
 ref class CaptureDevice;
 
-class IncomingFrameCallback {
+class CaptureDeviceListener {
  public:
   virtual void OnIncomingFrame(uint8_t* video_frame,
                                size_t video_frame_length,
                                const VideoCaptureCapability& frame_info) = 0;
+  virtual void OnCaptureDeviceFailed(HRESULT code,
+    Platform::String^ message) = 0;
 };
 
 class VideoCaptureWinRT
     : public VideoCaptureImpl,
-      public IncomingFrameCallback {
+      public CaptureDeviceListener {
  public:
   explicit VideoCaptureWinRT(const int32_t id);
 
@@ -46,6 +48,9 @@ class VideoCaptureWinRT
   virtual void OnIncomingFrame(uint8_t* video_frame,
                                size_t video_frame_length,
                                const VideoCaptureCapability& frame_info);
+
+  virtual void OnCaptureDeviceFailed(HRESULT code,
+                                     Platform::String^ message);
 
  private:
   Platform::String^ device_id_;

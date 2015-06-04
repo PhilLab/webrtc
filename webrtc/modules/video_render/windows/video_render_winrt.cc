@@ -21,8 +21,8 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 using Microsoft::WRL::ComPtr;
 using Windows::Media::Core::IMediaSource;
@@ -117,11 +117,11 @@ int VideoChannelWinRT::GetHeight() {
 int VideoChannelWinRT::FrameSizeChange(int width,
                                        int height,
                                        int number_of_streams) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
-    "FrameSizeChange, width: %d, height: %d, streams: %d", width,
-    height, number_of_streams);
-
   CriticalSectionScoped cs(crit_sect_);
+
+  LOG(LS_INFO) << "FrameSizeChange, width: " << width <<
+    ", height: " << height << ", streams: " << number_of_streams;
+
   width_ = width;
   height_ = height;
 
@@ -157,14 +157,12 @@ int32_t VideoChannelWinRT::RenderFrame(const uint32_t stream_id,
 
 // Called from video engine when a new frame should be rendered.
 int VideoChannelWinRT::DeliverFrame(const I420VideoFrame& video_frame) {
-  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-    "DeliverFrame to VideoChannelWinRT");
-
   CriticalSectionScoped cs(crit_sect_);
 
+  LOG(LS_VERBOSE) << "DeliverFrame to VideoChannelWinRT";
+
   if (buffer_is_updated_) {
-    WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-      "Last frame hasn't been rendered yet. Drop this frame.");
+    LOG(LS_VERBOSE) << "Last frame hasn't been rendered yet. Drop this frame.";
     return -1;
   }
 
@@ -176,8 +174,6 @@ int VideoChannelWinRT::DeliverFrame(const I420VideoFrame& video_frame) {
 
 // Called by channel owner to indicate the frame has been rendered off
 int VideoChannelWinRT::RenderOffFrame() {
-  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-    "Frame has been rendered to the screen.");
   CriticalSectionScoped cs(crit_sect_);
   buffer_is_updated_ = false;
   return 0;
@@ -228,7 +224,7 @@ int32_t VideoRenderWinRT::Init() {
 
   // Start rendering thread...
   if (!screen_update_thread_) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Thread not created");
+    LOG(LS_ERROR) << "Thread not created";
     return -1;
   }
   screen_update_thread_->Start();
@@ -261,9 +257,10 @@ int VideoRenderWinRT::UpdateRenderSurface() {
   frameLength += channel_->GetVideoFrame().allocated_size(kYPlane);
   frameLength += channel_->GetVideoFrame().allocated_size(kUPlane);
   frameLength += channel_->GetVideoFrame().allocated_size(kVPlane);
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
-    "Video Render - UpdateRenderSurface - video frame length: %d, render time: %lld",
-    frameLength, channel_->GetVideoFrame().render_time_ms());
+  LOG(LS_VERBOSE) <<
+    "Video Render - Update render surface - video frame length: " <<
+    frameLength << ", render time: " <<
+    channel_->GetVideoFrame().render_time_ms();
   channel_->GetMediaSource()->ProcessVideoFrame(channel_->GetVideoFrame());
   channel_->Unlock();
 
@@ -290,11 +287,7 @@ bool VideoRenderWinRT::ScreenUpdateProcess() {
     return false;
   }
 
-  HRESULT hr = S_OK;
-
-  if (SUCCEEDED(hr)) {
-    UpdateRenderSurface();
-  }
+  UpdateRenderSurface();
 
   return true;
 }
@@ -346,12 +339,12 @@ int32_t VideoRenderWinRT::GetStreamSettings(const uint32_t channel,
 }
 
 int32_t VideoRenderWinRT::StartRender() {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
 int32_t VideoRenderWinRT::StopRender() {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
@@ -365,12 +358,12 @@ int32_t VideoRenderWinRT::SetCropping(const uint32_t channel,
                                       const float top,
                                       const float right,
                                       const float bottom) {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
 int32_t VideoRenderWinRT::SetTransparentBackground(const bool enable) {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
@@ -383,7 +376,7 @@ int32_t VideoRenderWinRT::SetText(const uint8_t text_id,
                                   const float top,
                                   const float rigth,
                                   const float bottom) {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
@@ -394,13 +387,13 @@ int32_t VideoRenderWinRT::SetBitmap(const void* bit_map,
                                     const float top,
                                     const float right,
                                     const float bottom) {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
 int32_t VideoRenderWinRT::GetGraphicsMemory(uint64_t& total_memory,
                                             uint64_t& available_memory) {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
@@ -411,7 +404,7 @@ int32_t VideoRenderWinRT::ConfigureRenderer(const uint32_t channel,
                                             const float top,
                                             const float right,
                                             const float bottom) {
-  WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Not supported.");
+  LOG_F(LS_WARNING) << "Not supported.";
   return 0;
 }
 
