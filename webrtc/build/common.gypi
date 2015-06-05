@@ -154,7 +154,7 @@
       ['target_arch=="arm" or target_arch=="arm64"', {
         'prefer_fixed_point%': 1,
       }],
-      ['OS!="ios" and (target_arch!="arm" or arm_version>=7) and target_arch!="mips64el" and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
+      ['(OS!="ios" and (target_arch!="arm" or arm_version>=7) and target_arch!="mips64el") or (winrt_platform=="win_phone" or  winrt_platform=="win10_arm")', {
         'rtc_use_openmax_dl%': 1,
       }, {
         'rtc_use_openmax_dl%': 0,
