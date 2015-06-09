@@ -36,17 +36,10 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate) {
   auto videoProperties =
     VideoEncodingProperties::CreateUncompressed(
-    MediaEncodingSubtypes::Bgra8, width, height);
+    MediaEncodingSubtypes::Nv12, width, height);
   auto videoDesc = ref new VideoStreamDescriptor(videoProperties);
   videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   videoDesc->EncodingProperties->FrameRate->Denominator = 1;
-  videoDesc->EncodingProperties->Bitrate =
-    static_cast<uint32>(videoDesc->EncodingProperties->FrameRate->Numerator *
-    videoDesc->EncodingProperties->FrameRate->Denominator * width * height * 4);
-  videoDesc->EncodingProperties->Width = width;
-  videoDesc->EncodingProperties->Height = height;
-  videoDesc->EncodingProperties->PixelAspectRatio->Numerator = 1;
-  videoDesc->EncodingProperties->PixelAspectRatio->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(videoDesc);
   auto streamState = ref new RTMediaStreamSource(track);
   streamState->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(
@@ -125,15 +118,33 @@ void RTMediaStreamSource::OnSampleRequested(
     return;
   }
   ComPtr<IMFMediaBuffer> mediaBuffer;
-  hr = MFCreate2DMediaBuffer(_sourceWidth, _sourceHeight, 21, FALSE,
+  EnterCriticalSection(&_lock);
+  // TODO: fix size issue
+  //if (_frame.get() != nullptr)
+  //{
+  //  _sourceWidth = _frame->GetWidth();
+  //  _sourceHeight = _frame->GetHeight();
+  //}
+  hr = MFCreate2DMediaBuffer(_sourceWidth, _sourceHeight, libyuv::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
   if (FAILED(hr)) {
+    LeaveCriticalSection(&_lock);
     return;
   }
   spSample->AddBuffer(mediaBuffer.Get());
   spSample->SetSampleTime(0);
-  ConvertFrame(mediaBuffer.Get());
-  spRequest->SetSample(spSample.Get());
+  if (_frame.get() != nullptr)
+  {
+    ConvertFrame(mediaBuffer.Get());
+  }
+
+  hr = spRequest->SetSample(spSample.Get());
+  if (FAILED(hr))
+  {
+    LeaveCriticalSection(&_lock);
+    return;
+  }
+  LeaveCriticalSection(&_lock);
 }
 
 void RTMediaStreamSource::ProcessReceivedFrame(
@@ -149,24 +160,46 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
     return false;
   }
   BYTE* destRawData;
-    BYTE* buffer;
+  BYTE* buffer;
   LONG pitch;
-    DWORD destMediaBufferSize;
+  DWORD destMediaBufferSize;
 
   if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
-    &destRawData, &pitch, &buffer, &destMediaBufferSize))) {
+    &destRawData, &pitch, &buffer, &destMediaBufferSize)))
+  {
     return false;
   }
-  EnterCriticalSection(&_lock);
-  if (_frame.get() == nullptr) {
-    _stride = static_cast<uint32>(pitch);
-    LeaveCriticalSection(&_lock);
-    imageBuffer->Unlock2D();
-    return false;
+  _frame->MakeExclusive();
+  // Convert to NV12
+  uint8* y_buffer = _frame->GetYPlane();
+  const size_t width = _frame->GetWidth();
+  const int32 yPitch = _frame->GetYPitch();
+  uint8* originalBuf = destRawData;
+  for (size_t i = 0; i < _frame->GetHeight(); i++)
+  {
+    memcpy(destRawData, y_buffer, width);
+    destRawData += pitch;
+    y_buffer += yPitch;
   }
-  _frame->ConvertToRgbBuffer(
-    libyuv::FOURCC_ARGB, destRawData, destMediaBufferSize, _stride);
-  LeaveCriticalSection(&_lock);
+  destRawData = originalBuf + (pitch*_sourceHeight);
+  uint8* u_buffer = _frame->GetUPlane();
+  uint8* v_buffer = _frame->GetVPlane();
+  const int32 uPitch = _frame->GetUPitch();
+  const int32 vPitch = _frame->GetVPitch();
+  const size_t uvHeight = _frame->GetHeight() / 2;
+  const size_t uvWidth = _frame->GetWidth() / 2;
+  for (size_t y = 0; y < uvHeight; y++)
+  {
+    uint8* lineBuffer = destRawData;
+    for (size_t x = 0; x < uvWidth; x++)
+    {
+      *lineBuffer++ = u_buffer[x];
+      *lineBuffer++ = v_buffer[x];
+    }
+    destRawData += pitch;
+    u_buffer += uPitch;
+    v_buffer += vPitch;
+  }
   imageBuffer->Unlock2D();
   return true;
 }
