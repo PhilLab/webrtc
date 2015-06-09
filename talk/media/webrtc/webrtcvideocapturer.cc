@@ -137,7 +137,7 @@ WebRtcVideoCapturer::WebRtcVideoCapturer()
       module_(nullptr),
       captured_frames_(0),
       start_thread_(nullptr),
-      async_invoker_(nullptr) {
+      async_invoker_() {
   set_frame_factory(new WebRtcVideoFrameFactory());
 }
 
@@ -146,7 +146,7 @@ WebRtcVideoCapturer::WebRtcVideoCapturer(WebRtcVcmFactoryInterface* factory)
       module_(nullptr),
       captured_frames_(0),
       start_thread_(nullptr),
-      async_invoker_(nullptr) {
+      async_invoker_() {
   set_frame_factory(new WebRtcVideoFrameFactory());
 }
 
