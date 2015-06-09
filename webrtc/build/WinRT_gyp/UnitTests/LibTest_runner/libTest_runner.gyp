@@ -201,6 +201,13 @@
           'ExceptionHandling': '1',
         },
         'VCLinkerTool': {
+           'conditions': [
+             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+			  'AdditionalDependencies': [
+		       'WindowsApp.lib',
+              ],
+            }],
+          ],
         },
       },
     },
