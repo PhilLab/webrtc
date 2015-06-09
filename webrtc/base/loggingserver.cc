@@ -25,8 +25,8 @@ LoggingServer::~LoggingServer() {
     delete it->second;
   }
 
-  tw_->Stop();
   thread_->Stop();
+  tw_->Stop();
 }
 
 int LoggingServer::Listen(const SocketAddress& addr, int level) {
@@ -95,8 +95,8 @@ void LoggingServer::OnCloseEvent(AsyncSocket* socket, int err) {
       it->second->Detach();
 
       // Post messages to delete doomed objects
-      Thread::Current()->Dispose(it->first);
-      Thread::Current()->Dispose(it->second);
+      thread_->Dispose(it->first);
+      thread_->Dispose(it->second);
       it = connections_.erase(it);
       break;
     }

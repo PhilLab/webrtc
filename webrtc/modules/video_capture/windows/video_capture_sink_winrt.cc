@@ -1367,7 +1367,6 @@ void VideoCaptureMediaSinkProxyWinRT::OnSample(MediaSampleEventArgs^ args) {
   spSample->GetTotalLength(&pcbTotalLength);
   spSample->GetSampleTime(&phnsSampleTime);
   spSample->GetSampleDuration(&phnsSampleDuration);
-  Trace(TRACE_LEVEL_NORMAL, L"======== ProcessSamplesFromQueue - %d %d %d\n", pcbTotalLength, phnsSampleTime, phnsSampleDuration);
   MediaSampleEvent(this, args);
 }
 

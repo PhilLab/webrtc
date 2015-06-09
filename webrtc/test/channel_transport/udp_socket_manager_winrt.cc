@@ -255,7 +255,7 @@ bool UdpSocketManagerWinRTImpl::Process()
 
     UpdateSocketMap();
 
-    int nFd = _socketMap.size();
+    int nFd = (int)_socketMap.size();
     for (std::map<SOCKET, UdpSocketWinRT*>::iterator it = _socketMap.begin();
          it != _socketMap.end();
          ++it) {

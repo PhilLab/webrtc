@@ -24,8 +24,7 @@ class IncomingFrameCallback {
   virtual void OnIncomingFrame(
     uint8_t* videoFrame,
     size_t videoFrameLength,
-    const VideoCaptureCapability& frameInfo,
-    int64_t captureTime) = 0;
+    const VideoCaptureCapability& frameInfo) = 0;
 };
 
 class VideoCaptureWinRT : public VideoCaptureImpl, public IncomingFrameCallback {
@@ -47,8 +46,7 @@ class VideoCaptureWinRT : public VideoCaptureImpl, public IncomingFrameCallback 
   virtual void OnIncomingFrame(
     uint8_t* videoFrame,
     size_t videoFrameLength,
-    const VideoCaptureCapability& frameInfo,
-    int64_t captureTime);
+    const VideoCaptureCapability& frameInfo);
 
  private:
   Platform::String^ device_id_;

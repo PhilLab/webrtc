@@ -59,10 +59,14 @@ void App::MessageBox(::Platform::String^ caption, ::Platform::String^ text, bool
 
 void App::UpdatePeersList(IMap<int32, Platform::String^>^ peers)
 {
-	for (auto peer : peers)
-	{
-		peersListBox_->Items->Append(peer);
-	}
+  g_windowDispatcher->RunAsync(CoreDispatcherPriority::Normal,
+    ref new DispatchedHandler([this, peers]
+  {
+    for (auto peer : peers)
+    {
+      peersListBox_->Items->Append(peer);
+    }
+  }));
 }
 
 void App::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
@@ -170,7 +174,8 @@ void App::OnLaunched(LaunchActivatedEventArgs^ e)
 	peersListBox_ = ref new ListView();
 	peersListBox_->Margin = ThicknessHelper::FromLengths(4, 4, 0, 4);
 	peersListBox_->Height = 400;
-	peersListBox_->Background = ref new SolidColorBrush(Colors::White);
+  peersListBox_->Background = ref new SolidColorBrush(Colors::White);
+  peersListBox_->Foreground = ref new SolidColorBrush(Colors::Black);
 	leftStackPanel->Children->Append(peersListBox_);
 
 	localMedia_ = ref new MediaElement();

@@ -183,3 +183,7 @@
 /webrtc/modules/video_capture/test/winrt/**/Generated Files
 AppPackages
 *.ipch
+build_win/
+build_win_phone/
+webrtc/build/WinRT_gyp/NuGet/lib/
+*.nupkg

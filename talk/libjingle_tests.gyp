@@ -122,10 +122,6 @@
       'conditions': [
         ['OS=="win" and OS_RUNTIME=="winrt"', {
           'type': 'static_library',
-          # TODO (winrt) enable when compile issue is fixed
-          'sources!': [
-            'media/sctp/sctpdataengine_unittest.cc',
-          ],
           'msvs_disabled_warnings': [ 
                                      #warning: declaration of '' hides previous local declaration, hides class member declaration
                                      4456, 4457, 4458, 4459,
@@ -276,6 +272,12 @@
             # automatically on android, so it has to be set explicitly here.
             'GTEST_HAS_TR1_TUPLE=1',
            ],
+        }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'type': 'static_library',
+          'sources!': ['app/webrtc/sctputils.cc',],
+        }, {
+          'type': 'executable',
         }],
       ],
     },  # target libjingle_peerconnection_unittest

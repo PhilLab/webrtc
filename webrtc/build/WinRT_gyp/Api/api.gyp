@@ -23,11 +23,12 @@
          '_WINRT_DLL',
       ],
       'include_dirs': [
+        '../../../../third_party/libyuv/include',
         '.',
       ],
       'sources': [
-        'peerconnectioninterface.h',
-        'peerconnectioninterface.cc',
+        'PeerConnectionInterface.h',
+        'PeerConnectionInterface.cc',
         'GlobalObserver.h',
         'GlobalObserver.cc',
         'Marshalling.h',
@@ -37,12 +38,15 @@
         'DataChannel.h',
         'DataChannel.cc',
         'Delegates.h',
+        'RTMediaStreamSource.h',
+        'RTMediaStreamSource.cc',
       ],
       'msvs_settings': {
         'VCLinkerTool': {
           'AdditionalOptions': [
-            '/WINMD',
+            '/WINMD',            
           ],
+          'WindowsMetadataFile':'$(OutDir)webrtc_winrt_api.winmd'
         },
       },
     },
