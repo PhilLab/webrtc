@@ -41,6 +41,13 @@
         'RTMediaStreamSource.h',
         'RTMediaStreamSource.cc',
       ],
+      'conditions': [
+        ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+          'msvs_disabled_warnings': [
+            '4458',  # local members hides previously defined memebers or function members or class members
+          ],
+        }],
+      ],
       'msvs_settings': {
         'VCLinkerTool': {
           'AdditionalOptions': [
