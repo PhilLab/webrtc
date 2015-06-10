@@ -44,9 +44,16 @@
       'msvs_settings': {
         'VCLinkerTool': {
           'AdditionalOptions': [
-            '/WINMD',            
+            '/WINMD',
           ],
-          'WindowsMetadataFile':'$(OutDir)webrtc_winrt_api.winmd'
+          'WindowsMetadataFile':'$(OutDir)webrtc_winrt_api.winmd',
+          'conditions': [
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+              'AdditionalDependencies': [
+                'WindowsApp.lib',
+              ],
+            }],
+          ],
         },
       },
     },
