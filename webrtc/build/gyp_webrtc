@@ -16,6 +16,7 @@ import os
 import shlex
 import sys
 import pipes
+import xml.etree.ElementTree as ET
 from _winreg import *
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -49,19 +50,27 @@ def fixVS2015Ninja():
       os.environ.update({'LIBPATH':  vcpackagePath+';'})
 
     #In the VS2015+WinSDK10 environment, the windsdk include path depends on the installed sdk minor verion
-    #ex.: 10.0.3000.0. we will need to find it from system registry.
-    aReg = ConnectRegistry(None, HKEY_CURRENT_USER)
+    #ex.: 10.0.3000.0. we will need to find it from SDKManifest.xml
+    sdfManifestFile = os.environ.get('UniversalCRTSdkDir') + 'SDKManifest.xml';
 
-    aKey = OpenKey(aReg, r"SOFTWARE\Microsoft\VisualStudio\14.0_Config")
+    sdkVersion = None;
 
-    val=QueryValueEx(aKey, "InstalledSDKVersion")
-    if val:
+    xmlRoot = ET.parse(sdfManifestFile).getroot()
+    for fileListNode in xmlRoot.iter('FileList'):
+      if fileListNode.get('PlatformIdentity'):
+        sdkVersion = fileListNode.get('PlatformIdentity');
+        verPos = sdkVersion.find('Version=')
+        sdkVersion = sdkVersion[verPos+8:]
+        break;
+
+    if sdkVersion:
       #contruct WindowsSDK_IncludePath used by VS2015
-      WindowsSDK_IncludePath = "{0}include\{1}\shared;{0}include\{1}\um;{0}include\{1}\winrt;".format(os.environ.get('UniversalCRTSdkDir'),val[0])
+      WindowsSDK_IncludePath = "{0}include\{1}\shared;{0}include\{1}\um;{0}include\{1}\winrt;".format(os.environ.get('UniversalCRTSdkDir'),sdkVersion)
       UCRT_PATH = "{}include\ucrt;".format(os.environ.get('UniversalCRTSdkDir'))
       os.environ.update({'VS_EXTRA_INCLUDES': UCRT_PATH + WindowsSDK_IncludePath})
-
-
+      #Todo: for ninja+vs2015+win10, we only support x86 for now
+      WindowsSDK_lIBPath = "{0}Lib\{1}\um\\x86;".format(os.environ.get('UniversalCRTSdkDir'),sdkVersion)
+      os.environ['LIB'] = WindowsSDK_lIBPath + os.environ['LIB']  
 
 if __name__ == '__main__':
   args = sys.argv[1:]
