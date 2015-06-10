@@ -2384,7 +2384,11 @@ int32_t UdpTransport::InetPresentationToNumeric(int32_t af,
 
     if(af == AF_INET)
     {
-        int32_t result = WSAStringToAddressA(
+#if defined(WINRT)
+        int32_t result = webrtc::test::WSAStringToAddressA(
+#else
+		int32_t result = WSAStringToAddressA(
+#endif
             (const LPSTR)src,
             af,
             0,
@@ -2400,7 +2404,11 @@ int32_t UdpTransport::InetPresentationToNumeric(int32_t af,
     }
     else if(af == AF_INET6)
     {
-        int32_t result = WSAStringToAddressA(
+#if defined(WINRT)
+		int32_t result = webrtc::test::WSAStringToAddressA(
+#else
+		int32_t result = WSAStringToAddressA(
+#endif
             (const LPSTR)src,
             af,
             0,
@@ -2778,7 +2786,12 @@ int32_t UdpTransport::IPAddress(const SocketAddress& address,
 {
  #if defined(_WIN32)
     DWORD dwIPSize = ipSize;
-    int32_t returnvalue = WSAAddressToStringA((LPSOCKADDR)(&address),
+#if defined(WINRT)
+	int32_t returnvalue = webrtc::test::WSAAddressToStringA(
+#else
+	int32_t returnvalue = WSAAddressToStringA(
+#endif
+										 (LPSOCKADDR)(&address),
                                          sizeof(SocketAddress),
                                          NULL,
                                          ip,

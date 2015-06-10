@@ -166,6 +166,12 @@
                 '../../../../../third_party/libyuv/source/*.obj',
               ],
             }],
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+			  'AdditionalDependencies': [
+			   'ws2_32.lib',
+		       'WindowsApp.lib',
+              ],
+            }],
           ],
         },
       },
