@@ -188,7 +188,10 @@ namespace StandupWinRT
       captureId_(-1),
       videoChannel_(-1),
       localMediaWrapper_(NULL),
-      remoteMediaWrapper_(NULL)
+      remoteMediaWrapper_(NULL),
+      defaultRemoteIpAddress_("127.0.0.1"),
+      defaultAudioPort_(20000),
+      defaultVideoPort_(20100)
     {
 
       webrtc::test::InitFieldTrialsFromString("");
@@ -197,9 +200,9 @@ namespace StandupWinRT
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
 
       //provide some default values if user want to test on local machine 
-      remoteIpAddress_ = "127.0.0.1";
-      audioPort_ = 20000;
-      videoPort_ = 20100;
+      remoteIpAddress_ = defaultRemoteIpAddress_;
+      audioPort_ = defaultAudioPort_;
+      videoPort_ = defaultVideoPort_;
 
       workerThread_.Start();
 
@@ -532,6 +535,10 @@ namespace StandupWinRT
     int audioPort_;
     int videoPort_;
     std::string remoteIpAddress_;
+
+    const std::string defaultRemoteIpAddress_;
+    const int defaultAudioPort_;
+    const int defaultVideoPort_;
 
     int voiceChannel_;
     webrtc::test::VoiceChannelTransport* voiceTransport_;
@@ -1435,16 +1442,27 @@ void StandupWinRT::App::initializeTranportInfo(){
   if (!userIp.empty()) {
     remoteIpAddress_ = userIp;
   }
+  else {
+    remoteIpAddress_ = defaultRemoteIpAddress_;
+  }
   int userInputVideoPort = _wtoi(videoPortTextBox_->Text->Data());
   if (userInputVideoPort > 0)
   {
     videoPort_ = userInputVideoPort;
+  }
+  else
+  {
+    videoPort_ = defaultVideoPort_;
   }
 
   int userInputAudioPort = _wtoi(audioPortTextBox_->Text->Data());
   if (userInputAudioPort > 0)
   {
     audioPort_ = userInputAudioPort;
+  }
+  else
+  {
+    audioPort_ = defaultAudioPort_;
   }
 }
 
