@@ -19,9 +19,8 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/win32.h"  // ToUtf8
 #include "webrtc/base/win32window.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "talk/media/base/mediacommon.h"
-#include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_capture.h"
 
 using namespace concurrency;
 using namespace Windows::Devices::Enumeration;
@@ -108,22 +107,21 @@ namespace cricket
   bool WinRTDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devices)
   {
     devices->clear();
-    webrtc::VideoEngine* ve = webrtc::VideoEngine::Create();
-    webrtc::ViECapture* vc = webrtc::ViECapture::GetInterface(ve);
-    int deviceCount = vc->NumberOfCaptureDevices();
+    rtc::scoped_ptr<webrtc::VideoCaptureModule::DeviceInfo> devInfo =
+      rtc::scoped_ptr<webrtc::VideoCaptureModule::DeviceInfo>(
+        webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
+    int deviceCount = devInfo->NumberOfDevices();
     const unsigned int KMaxDeviceNameLength = 128;
     const unsigned int KMaxUniqueIdLength = 256;
     char deviceName[KMaxDeviceNameLength];
     char uniqueId[KMaxUniqueIdLength];
     for (int i = 0; i < deviceCount; i++)
     {
-      vc->GetCaptureDevice(i, deviceName,
+      devInfo->GetDeviceName(i, deviceName,
         KMaxDeviceNameLength, uniqueId,
         KMaxUniqueIdLength);
       devices->push_back(Device(std::string(deviceName), std::string(uniqueId)));
     }
-    vc->Release();
-    webrtc::VideoEngine::Delete(ve);
     return true;
   }
 
