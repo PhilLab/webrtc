@@ -16,11 +16,15 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "GlobalObserver.h"
+#include "talk/media/devices/devicemanager.h"
+#include "talk/media/devices/winrtdevicemanager.h"
+#include "Delegates.h"
 
 using Windows::Foundation::IAsyncOperation;
 using Platform::String;
 using Windows::Foundation::Collections::IVector;
 using Windows::Media::Core::IMediaSource;
+using namespace cricket;
 
 namespace webrtc_winrt_api {
   public interface class IMediaStreamTrack {
@@ -78,12 +82,52 @@ namespace webrtc_winrt_api {
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
   };
 
+  public ref class MediaDevice sealed {
+  private:
+    String^ _id;
+    String^ _name;
+  public:
+    MediaDevice(String^ id, String^ name) {
+      _id = id;
+      _name = name;
+    }
+    property String^ Id {
+      String^ get(){
+        return _id;
+      }
+      void set(String^ value) {
+        _id = value;
+      }
+    }
+
+    property String^ Name {
+      String^ get(){
+        return _name;
+      }
+      void set(String^ value) {
+        _name = value;
+      }
+    }
+  };
+
   public ref class Media sealed {
   public:
+    Media();
+
     // TODO(WINRT): Arguments
     IAsyncOperation<MediaStream^>^ GetUserMedia();
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate);
+
+    void EnumerateVideoCaptureDevices();
+    void SelectVideoDevice(MediaDevice^ device);
+
+    event OnMediaCaptureDeviceFoundDelegate^ OnVideoCaptureDeviceFound;
+
+  private:
+    rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
+    std::vector<cricket::Device> _videoDevices;
+    cricket::Device *_selectedVideoDevice;
   };
 
 }  // namespace webrtc_winrt_api

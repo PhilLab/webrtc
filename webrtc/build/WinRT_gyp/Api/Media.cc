@@ -16,7 +16,6 @@
 #include "Marshalling.h"
 #include "RTMediaStreamSource.h"
 #include "webrtc/base/logging.h"
-#include "talk/media/devices/devicemanager.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 
 using Platform::Collections::Vector;
@@ -183,32 +182,32 @@ const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
 const char kStreamLabel[] = "stream_label";
 
+Media::Media() {
+  _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>(cricket::DeviceManagerFactory::Create());
+
+  if (!_dev_manager->Init()) {
+    LOG(LS_ERROR) << "Can't create device manager";
+    return;
+  }
+}
+
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
-
     return globals::RunOnGlobalThread<MediaStream^>([this]()->MediaStream^ {
-      rtc::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(
-        cricket::DeviceManagerFactory::Create());
 
-      if (!dev_manager->Init()) {
-        LOG(LS_ERROR) << "Can't create device manager";
-        return nullptr;
-      }
-
-      std::vector<cricket::Device> devs;
-      if (!dev_manager->GetVideoCaptureDevices(&devs)) {
-        LOG(LS_ERROR) << "Can't enumerate video devices";
-        return nullptr;
-      }
-
-      // Select the first video device as the capturer.
       cricket::VideoCapturer* videoCapturer = NULL;
-      for (auto videoDev : devs) {
-        videoCapturer = dev_manager->CreateVideoCapturer(videoDev);
-        if (videoCapturer != NULL)
-          break;
+      if (_selectedVideoDevice == nullptr) {
+        // Select the first video device as the capturer.
+        for (auto videoDev : _videoDevices) {
+          videoCapturer = _dev_manager->CreateVideoCapturer(videoDev);
+          if (videoCapturer != NULL)
+            break;
+        }
+      }
+      else {
+        videoCapturer = _dev_manager->CreateVideoCapturer(*_selectedVideoDevice);
       }
 
       // This is the stream returned.
@@ -243,6 +242,33 @@ IMediaSource^ Media::CreateMediaStreamSource(
   MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate) {
   return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
     track, width, height, framerate);
+}
+
+void Media::EnumerateVideoCaptureDevices() {
+
+  IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
+    [this]() -> bool {
+    _videoDevices.clear();
+    if (!_dev_manager->GetVideoCaptureDevices(&_videoDevices)) {
+      LOG(LS_ERROR) << "Can't enumerate video devices";
+      return false;
+    }
+    for (auto videoDev : _videoDevices) {
+      OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+    }
+    return true;
+  });
+}
+
+void Media::SelectVideoDevice(MediaDevice^ device) {
+  std::string id = FromCx(device->Id);
+  _selectedVideoDevice = nullptr;
+  for (auto videoDev : _videoDevices) {
+    if (videoDev.id == id) {
+      _selectedVideoDevice = &videoDev;
+      break;
+    }
+  }
 }
 
 }  // namespace webrtc_winrt_api
