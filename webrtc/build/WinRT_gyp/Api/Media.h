@@ -18,6 +18,7 @@
 #include "GlobalObserver.h"
 #include "talk/media/devices/devicemanager.h"
 #include "talk/media/devices/winrtdevicemanager.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
 #include "Delegates.h"
 
 using Windows::Foundation::IAsyncOperation;
@@ -119,15 +120,19 @@ namespace webrtc_winrt_api {
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate);
 
-    void EnumerateVideoCaptureDevices();
+    void EnumerateAudioVideoCaptureDevices();
     void SelectVideoDevice(MediaDevice^ device);
+    void SelectAudioDevice(MediaDevice^ device);
 
     event OnMediaCaptureDeviceFoundDelegate^ OnVideoCaptureDeviceFound;
+    event OnMediaCaptureDeviceFoundDelegate^ OnAudioCaptureDeviceFound;
 
   private:
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
     std::vector<cricket::Device> _videoDevices;
-    cricket::Device *_selectedVideoDevice;
+    cricket::Device _selectedVideoDevice;
+    webrtc::AudioDeviceModule *_audioDevice;
+    uint16_t _selectedAudioDevice;
   };
 
 }  // namespace webrtc_winrt_api

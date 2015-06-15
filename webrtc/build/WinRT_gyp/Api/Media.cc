@@ -17,6 +17,10 @@
 #include "RTMediaStreamSource.h"
 #include "webrtc/base/logging.h"
 #include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_impl.h"
+#include "webrtc/modules/audio_device/include/audio_device_defines.h"
+
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
@@ -189,6 +193,14 @@ Media::Media() {
     LOG(LS_ERROR) << "Can't create device manager";
     return;
   }
+
+  _audioDevice = webrtc::AudioDeviceModuleImpl::Create(555, 
+    webrtc::AudioDeviceModule::kWindowsWasapiAudio);
+  if (_audioDevice == NULL) {
+    LOG(LS_ERROR) << "Can't create audio device manager";
+    return;
+  }
+  _audioDevice->Init();
 }
 
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
@@ -198,7 +210,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
     return globals::RunOnGlobalThread<MediaStream^>([this]()->MediaStream^ {
 
       cricket::VideoCapturer* videoCapturer = NULL;
-      if (_selectedVideoDevice == nullptr) {
+      if (_selectedVideoDevice.id == "") {
         // Select the first video device as the capturer.
         for (auto videoDev : _videoDevices) {
           videoCapturer = _dev_manager->CreateVideoCapturer(videoDev);
@@ -207,13 +219,20 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
         }
       }
       else {
-        videoCapturer = _dev_manager->CreateVideoCapturer(*_selectedVideoDevice);
+        videoCapturer = _dev_manager->CreateVideoCapturer(_selectedVideoDevice);
       }
 
       // This is the stream returned.
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 
+      if (_selectedAudioDevice == -1) {
+        // select default device if wasn't set
+        _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
+      }
+      else {
+        _audioDevice->SetRecordingDevice(_selectedAudioDevice);
+      }
       // Add an audio track.
       rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         globals::gPeerConnectionFactory->CreateAudioTrack(
@@ -244,7 +263,7 @@ IMediaSource^ Media::CreateMediaStreamSource(
     track, width, height, framerate);
 }
 
-void Media::EnumerateVideoCaptureDevices() {
+void Media::EnumerateAudioVideoCaptureDevices() {
 
   IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
     [this]() -> bool {
@@ -258,15 +277,41 @@ void Media::EnumerateVideoCaptureDevices() {
     }
     return true;
   });
+
+  char name[webrtc::kAdmMaxDeviceNameSize];
+  char guid[webrtc::kAdmMaxGuidSize];
+
+  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
+  for (int i = 0; i < recordingDeviceCount; i++) {
+    _audioDevice->RecordingDeviceName(i, name, guid);
+    OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
+  }
 }
 
 void Media::SelectVideoDevice(MediaDevice^ device) {
   std::string id = FromCx(device->Id);
-  _selectedVideoDevice = nullptr;
+  _selectedVideoDevice.id = "";
+  _selectedVideoDevice.name = "";
   for (auto videoDev : _videoDevices) {
     if (videoDev.id == id) {
-      _selectedVideoDevice = &videoDev;
+      _selectedVideoDevice = videoDev;
       break;
+    }
+  }
+}
+
+void Media::SelectAudioDevice(MediaDevice^ device) {
+  std::string id = FromCx(device->Id);
+  _selectedAudioDevice = 0;
+  char name[webrtc::kAdmMaxDeviceNameSize];
+  char guid[webrtc::kAdmMaxGuidSize];
+
+  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
+  for (int i = 0; i < recordingDeviceCount; i++) {
+    _audioDevice->RecordingDeviceName(i, name, guid);
+    if (strcmp(guid, id.c_str()) == 0) {
+      _selectedAudioDevice = i;
+      return;
     }
   }
 }
