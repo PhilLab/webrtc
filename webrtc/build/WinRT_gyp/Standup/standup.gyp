@@ -44,7 +44,7 @@
             'Package.phone.appxmanifest',
           ],
           'defines!': [
-             'WINAPI_FAMILY=WINAPI_FAMILY_APP',
+             'WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP',
           ],
         }],
           ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {

@@ -167,7 +167,7 @@
             }],
             ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
               'defines!': [
-                 'WINAPI_FAMILY=WINAPI_FAMILY_APP',
+                 'WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP',
               ],
             }],
           ] # conditions

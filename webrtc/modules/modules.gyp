@@ -282,6 +282,11 @@
             'video_processing/main/test/unit_test/video_processing_unittest.h',
           ],
           'conditions': [
+            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+              'defines!': [
+                 'WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP',
+              ],
+            }],
             ['OS_RUNTIME=="winrt"', {
               'dependencies': [
                 'webrtc_opus_fec_test',

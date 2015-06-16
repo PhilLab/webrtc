@@ -78,7 +78,7 @@ TEST_F(SplTest, MacroTest) {
                                                       WEBRTC_SPL_WORD32_MAX));
     EXPECT_EQ(1073741824, WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
                                                       WEBRTC_SPL_WORD32_MIN));
-#if defined(WEBRTC_ARCH_ARM_V7) || (defined(WINRT) && defined(_M_ARM))
+#if defined(WEBRTC_ARCH_ARM_V7) || (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
     EXPECT_EQ(-1073741824,
               WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
                                           WEBRTC_SPL_WORD32_MAX));
