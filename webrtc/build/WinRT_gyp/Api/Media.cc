@@ -54,6 +54,10 @@ void MediaVideoTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
 }
 
+void MediaVideoTrack::Stop() {
+  _impl->GetSource()->Stop();
+}
+
 void MediaVideoTrack::SetRenderer(webrtc::VideoRendererInterface* renderer) {
   _impl->AddRenderer(renderer);
 }
@@ -83,6 +87,9 @@ bool MediaAudioTrack::Enabled::get() {
 
 void MediaAudioTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
+}
+
+void MediaAudioTrack::Stop() {
 }
 
 // = MediaStream =============================================================
@@ -238,18 +245,22 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
         _audioDevice->SetRecordingDevice(_selectedAudioDevice);
       }
       // Add an audio track.
+      LOG(LS_INFO) << "Creating audio track.";
       rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         globals::gPeerConnectionFactory->CreateAudioTrack(
         kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
+      LOG(LS_INFO) << "Adding audio track to stream.";
       stream->AddTrack(audio_track);
 
       // Add a video track
       if (videoCapturer != nullptr) {
+        LOG(LS_INFO) << "Creating video track.";
         rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
           globals::gPeerConnectionFactory->CreateVideoTrack(
           kVideoLabel,
           globals::gPeerConnectionFactory->CreateVideoSource(
             videoCapturer, NULL)));
+        LOG(LS_INFO) << "Adding video track to stream.";
         stream->AddTrack(video_track);
       }
 

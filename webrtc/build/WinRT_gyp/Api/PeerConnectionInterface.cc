@@ -67,16 +67,22 @@ RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp) {
 }
 
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
-  webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
-  FromCx(configuration, &cc_configuration);
+  globals::RunOnGlobalThread<void>([this, configuration] {
+    webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
+    FromCx(configuration, &cc_configuration);
 
-  webrtc::FakeConstraints constraints;
-  constraints.SetAllowDtlsSctpDataChannels();
-  _observer.SetPeerConnection(this);
+    webrtc::FakeConstraints constraints;
+    constraints.SetAllowDtlsSctpDataChannels();
+    _observer.SetPeerConnection(this);
 
+    LOG(LS_INFO) << "Creating PeerConnection native.";
+    _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
+      cc_configuration, &constraints, nullptr, nullptr, &_observer);
+  });
+}
 
-  _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
-    cc_configuration, &constraints, nullptr, nullptr, &_observer);
+RTCPeerConnection::~RTCPeerConnection() {
+  LOG(LS_INFO) << "RTCPeerConnection::~RTCPeerConnection";
 }
 
 // Utility function to create an async operation
@@ -308,7 +314,10 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
 
 void RTCPeerConnection::Close() {
   globals::RunOnGlobalThread<void>([this] {
-    _impl->Close();
+    // Needed to remove the circular references and allow
+    // this object to be garbage collected.
+    _observer.SetPeerConnection(nullptr);
+    _impl = nullptr;
   });
 }
 
@@ -381,7 +390,9 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL();
 
+    LOG(LS_INFO) << "Creating PeerConnectionFactory.";
     globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
   });

@@ -210,6 +210,7 @@ public:
   }
 
 private:
+  ~RTCPeerConnection();
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _impl;
   GlobalObserver _observer;
 
