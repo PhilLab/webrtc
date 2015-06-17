@@ -194,13 +194,17 @@ Media::Media() {
     return;
   }
 
-  _audioDevice = webrtc::AudioDeviceModuleImpl::Create(555, 
-    webrtc::AudioDeviceModule::kWindowsWasapiAudio);
-  if (_audioDevice == NULL) {
-    LOG(LS_ERROR) << "Can't create audio device manager";
-    return;
-  }
-  _audioDevice->Init();
+  globals::RunOnGlobalThread<int>([this]()->int {
+      _audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
+          webrtc::AudioDeviceModule::kWindowsWasapiAudio);
+      if (_audioDevice == NULL) {
+          LOG(LS_ERROR) << "Can't create audio device manager";
+          return 0;
+      }
+      _audioDevice->Init();
+      return 0;
+  });
+  
 }
 
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
@@ -258,9 +262,11 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
 }
 
 IMediaSource^ Media::CreateMediaStreamSource(
-  MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate) {
-  return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
-    track, width, height, framerate);
+    MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate) {
+    return globals::RunOnGlobalThread<MediaStreamSource^>([track, width, height, framerate]()->MediaStreamSource^{
+        return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
+            track, width, height, framerate);
+    });
 }
 
 void Media::EnumerateAudioVideoCaptureDevices() {
@@ -275,17 +281,17 @@ void Media::EnumerateAudioVideoCaptureDevices() {
     for (auto videoDev : _videoDevices) {
       OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
     }
+
+    char name[webrtc::kAdmMaxDeviceNameSize];
+    char guid[webrtc::kAdmMaxGuidSize];
+
+    int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
+    for (int i = 0; i < recordingDeviceCount; i++) {
+        _audioDevice->RecordingDeviceName(i, name, guid);
+        OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
+    }
     return true;
   });
-
-  char name[webrtc::kAdmMaxDeviceNameSize];
-  char guid[webrtc::kAdmMaxGuidSize];
-
-  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-  for (int i = 0; i < recordingDeviceCount; i++) {
-    _audioDevice->RecordingDeviceName(i, name, guid);
-    OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
-  }
 }
 
 void Media::SelectVideoDevice(MediaDevice^ device) {
