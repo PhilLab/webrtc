@@ -35,6 +35,7 @@ using webrtc_winrt_api_internal::ToCx;
 using Platform::Collections::Vector;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+Platform::Agile<Windows::Media::Capture::MediaCapture> capture_manager = nullptr;
 
 // Any globals we need to keep around.
 namespace webrtc_winrt_api {
@@ -353,6 +354,37 @@ RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
     ToCx(_impl->ice_connection_state(), &ret);
   });
   return ret;
+}
+/*
+IAsyncOperation<Windows::Devices::Enumeration::DeviceInformationCollection^>^ WebRTC::GetAllDeviceInfo(){
+  return Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(Windows::Devices::Enumeration::DeviceClass::VideoCapture);
+}
+*/
+Windows::Foundation::IAsyncAction^  WebRTC::InitializeMediaEngine(){
+
+  capture_manager = ref new  Windows::Media::Capture::MediaCapture();
+
+  Windows::Media::Capture::MediaCaptureInitializationSettings^ mediaSettings = ref new  Windows::Media::Capture::MediaCaptureInitializationSettings();
+
+  mediaSettings->AudioDeviceId = "";
+  mediaSettings->VideoDeviceId = "";
+  mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
+
+  mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
+  /*
+  IAsyncOperation<Windows::Devices::Enumeration::DeviceInformationCollection^>^ devicesOp = Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(Windows::Devices::Enumeration::DeviceClass::VideoCapture);
+  auto aTask = Concurrency::create_task(devicesOp);
+  aTask.then([mediaSettings](Windows::Devices::Enumeration::DeviceInformationCollection^ devices){
+
+    mediaSettings->VideoDeviceId = devices->GetAt(0)->Id;
+    mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
+
+    mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
+
+
+  }, Concurrency::task_continuation_context::use_current()).wait();*/
+  
+  return capture_manager->InitializeAsync(mediaSettings);
 }
 
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {

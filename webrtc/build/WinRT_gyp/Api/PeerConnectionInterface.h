@@ -48,6 +48,7 @@ public enum class LogLevel
 public ref class WebRTC sealed {
 public:
   static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
+  static IAsyncAction^ InitializeMediaEngine();
   static bool IsTracing();
   static void StartTracing();
   static void StopTracing();
@@ -71,7 +72,6 @@ private:
     const unsigned char* arg_types,
     const unsigned long long* arg_values,
     unsigned char flags);
-
 };
 
 public enum class RTCBundlePolicy {
