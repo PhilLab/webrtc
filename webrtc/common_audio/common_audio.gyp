@@ -136,11 +136,6 @@
         ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
           'dependencies': ['common_audio_sse2',],
         }],
-        ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-          'defines!': [
-              'WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP',
-          ],
-        }],
         ['target_arch=="arm"', {
           'sources': [
             'signal_processing/complex_bit_reverse_arm.S',
@@ -284,11 +279,6 @@
           'conditions': [
             ['rtc_use_openmax_dl==1', {
               'defines': ['RTC_USE_OPENMAX_DL',],
-            }],
-            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-              'defines!': [
-                 'WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP',
-              ],
             }],
             ['OS=="android"', {
               'dependencies': [
