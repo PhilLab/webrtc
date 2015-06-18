@@ -12,7 +12,7 @@
 
 #include <arm_neon.h>
 
-#if WINAPI_FAMILY!=WINAPI_FAMILY_PHONE_APP
+#ifndef WINAPI_FAMILY
 inline
 #endif
 static void DotProductWithScaleNeon(int32_t* cross_correlation,
