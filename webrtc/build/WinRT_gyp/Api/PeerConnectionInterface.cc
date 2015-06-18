@@ -355,11 +355,7 @@ RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
   });
   return ret;
 }
-/*
-IAsyncOperation<Windows::Devices::Enumeration::DeviceInformationCollection^>^ WebRTC::GetAllDeviceInfo(){
-  return Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(Windows::Devices::Enumeration::DeviceClass::VideoCapture);
-}
-*/
+
 Windows::Foundation::IAsyncAction^  WebRTC::InitializeMediaEngine(){
 
   capture_manager = ref new  Windows::Media::Capture::MediaCapture();
@@ -371,19 +367,7 @@ Windows::Foundation::IAsyncAction^  WebRTC::InitializeMediaEngine(){
   mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
 
   mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
-  /*
-  IAsyncOperation<Windows::Devices::Enumeration::DeviceInformationCollection^>^ devicesOp = Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(Windows::Devices::Enumeration::DeviceClass::VideoCapture);
-  auto aTask = Concurrency::create_task(devicesOp);
-  aTask.then([mediaSettings](Windows::Devices::Enumeration::DeviceInformationCollection^ devices){
 
-    mediaSettings->VideoDeviceId = devices->GetAt(0)->Id;
-    mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
-
-    mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
-
-
-  }, Concurrency::task_continuation_context::use_current()).wait();*/
-  
   return capture_manager->InitializeAsync(mediaSettings);
 }
 

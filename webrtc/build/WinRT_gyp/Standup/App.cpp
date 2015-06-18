@@ -207,31 +207,19 @@ namespace StandupWinRT
 
     void init()
     {
-
       captureManager_ = ref new  Windows::Media::Capture::MediaCapture();
 
       Windows::Media::Capture::MediaCaptureInitializationSettings^ mediaSettings = ref new  Windows::Media::Capture::MediaCaptureInitializationSettings();
 
       mediaSettings->AudioDeviceId = "";
       mediaSettings->VideoDeviceId = "";
-
-      IAsyncOperation<Windows::Devices::Enumeration::DeviceInformationCollection^>^ devicesOp = Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(Windows::Devices::Enumeration::DeviceClass::VideoCapture);
-      auto aTask = Concurrency::create_task(devicesOp);
-      aTask.then([this, mediaSettings](Windows::Devices::Enumeration::DeviceInformationCollection^ devices){
-
-        mediaSettings->VideoDeviceId = devices->GetAt(0)->Id;
-        mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::Audio;
-
-        //mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
-
-        Windows::Foundation::IAsyncAction^ action = captureManager_->InitializeAsync(mediaSettings);
-        auto dispatcherTask = Concurrency::create_task(action);
-        dispatcherTask.then([this] {
-          startEngine();
-        });
-
-      }, task_continuation_context::use_current());
-
+      mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::Audio;
+      mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
+      Windows::Foundation::IAsyncAction^ action = captureManager_->InitializeAsync(mediaSettings);
+      auto dispatcherTask = Concurrency::create_task(action);
+      dispatcherTask.then([this] {
+        startEngine();
+      });
     }
 
     void startEngine()
