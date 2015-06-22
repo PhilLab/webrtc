@@ -32,6 +32,7 @@ namespace webrtc_winrt_api {
     property String^ Kind { String^ get(); }
     property String^ Id { String^ get(); }
     property bool Enabled { bool get(); void set(bool value); }
+    void Stop();
   };
 
   public ref class MediaVideoTrack sealed : public IMediaStreamTrack {
@@ -45,6 +46,7 @@ namespace webrtc_winrt_api {
     virtual property String^ Kind { String^ get(); }
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
+    virtual void Stop();
   internal:
     void SetRenderer(webrtc::VideoRendererInterface* renderer);
     void UnsetRenderer(webrtc::VideoRendererInterface* renderer);
@@ -62,6 +64,7 @@ namespace webrtc_winrt_api {
     virtual property String^ Kind { String^ get(); }
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
+    virtual void Stop();
   private:
     rtc::scoped_refptr<webrtc::AudioTrackInterface> _impl;
   };

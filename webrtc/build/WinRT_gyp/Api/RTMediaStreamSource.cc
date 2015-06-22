@@ -71,6 +71,7 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
+  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource";
   if (_rtcRenderer != nullptr) {
     _videoTrack->UnsetRenderer(_rtcRenderer.get());
   }
@@ -82,6 +83,7 @@ RTMediaStreamSource::RTCRenderer::RTCRenderer(
 }
 
 RTMediaStreamSource::RTCRenderer::~RTCRenderer() {
+  LOG(LS_INFO) << "RTMediaStreamSource::RTCRenderer::~RTCRenderer";
 }
 
 void RTMediaStreamSource::RTCRenderer::SetSize(
@@ -102,6 +104,8 @@ void RTMediaStreamSource::RTCRenderer::RenderFrame(
 
 void RTMediaStreamSource::OnSampleRequested(
   MediaStreamSource ^sender, MediaStreamSourceSampleRequestedEventArgs ^args) {
+  if (_mediaStreamSource == nullptr)
+    return;
   auto request = args->Request;
   if (request == nullptr) {
     return;
@@ -169,36 +173,41 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
   {
     return false;
   }
-  _frame->MakeExclusive();
-  // Convert to NV12
-  uint8* y_buffer = _frame->GetYPlane();
-  const size_t width = _frame->GetWidth();
-  const int32 yPitch = _frame->GetYPitch();
-  uint8* originalBuf = destRawData;
-  for (size_t i = 0; i < _frame->GetHeight(); i++)
-  {
-    memcpy(destRawData, y_buffer, width);
-    destRawData += pitch;
-    y_buffer += yPitch;
-  }
-  destRawData = originalBuf + (pitch*_sourceHeight);
-  uint8* u_buffer = _frame->GetUPlane();
-  uint8* v_buffer = _frame->GetVPlane();
-  const int32 uPitch = _frame->GetUPitch();
-  const int32 vPitch = _frame->GetVPitch();
-  const size_t uvHeight = _frame->GetHeight() / 2;
-  const size_t uvWidth = _frame->GetWidth() / 2;
-  for (size_t y = 0; y < uvHeight; y++)
-  {
-    uint8* lineBuffer = destRawData;
-    for (size_t x = 0; x < uvWidth; x++)
+  try {
+    _frame->MakeExclusive();
+    // Convert to NV12
+    uint8* y_buffer = _frame->GetYPlane();
+    const size_t width = _frame->GetWidth();
+    const int32 yPitch = _frame->GetYPitch();
+    uint8* originalBuf = destRawData;
+    for (size_t i = 0; i < _frame->GetHeight(); i++)
     {
-      *lineBuffer++ = u_buffer[x];
-      *lineBuffer++ = v_buffer[x];
+      memcpy(destRawData, y_buffer, width);
+      destRawData += pitch;
+      y_buffer += yPitch;
     }
-    destRawData += pitch;
-    u_buffer += uPitch;
-    v_buffer += vPitch;
+    destRawData = originalBuf + (pitch*_sourceHeight);
+    uint8* u_buffer = _frame->GetUPlane();
+    uint8* v_buffer = _frame->GetVPlane();
+    const int32 uPitch = _frame->GetUPitch();
+    const int32 vPitch = _frame->GetVPitch();
+    const size_t uvHeight = _frame->GetHeight() / 2;
+    const size_t uvWidth = _frame->GetWidth() / 2;
+    for (size_t y = 0; y < uvHeight; y++)
+    {
+      uint8* lineBuffer = destRawData;
+      for (size_t x = 0; x < uvWidth; x++)
+      {
+        *lineBuffer++ = u_buffer[x];
+        *lineBuffer++ = v_buffer[x];
+      }
+      destRawData += pitch;
+      u_buffer += uPitch;
+      v_buffer += vPitch;
+    }
+  }
+  catch (...) {
+    LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
   }
   imageBuffer->Unlock2D();
   return true;
@@ -210,10 +219,13 @@ void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {
 void RTMediaStreamSource::OnClosed(
   Windows::Media::Core::MediaStreamSource ^sender,
   Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args) {
+  LOG(LS_INFO) << "RTMediaStreamSource::OnClosed";
   webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
   for (unsigned int i = 0; i < gMediaStreamList->Size; i++) {
-    if (gMediaStreamList->GetAt(i)->Equals(sender)) {
+    auto obj = gMediaStreamList->GetAt(i);
+    if (obj->_mediaStreamSource == sender) {
       gMediaStreamList->RemoveAt(i);
+      obj->_mediaStreamSource = nullptr;
       break;
     }
   }
