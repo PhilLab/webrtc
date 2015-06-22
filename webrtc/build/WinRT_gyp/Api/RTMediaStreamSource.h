@@ -23,7 +23,7 @@ ref class RTMediaStreamSource sealed {
     virtual ~RTMediaStreamSource();
   internal:
     static MediaStreamSource^ CreateMediaSource(
-      MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate);
+      MediaVideoTrack^ track, uint32 frameRate);
   private:
     class RTCRenderer : public webrtc::VideoRendererInterface {
      public:
@@ -43,6 +43,7 @@ ref class RTMediaStreamSource sealed {
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
     void ResizeSource(uint32 width, uint32 height);
+    void GetSourceDimensions(size_t& width, size_t& height);
     static void OnClosed(Windows::Media::Core::MediaStreamSource ^sender,
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);
 
@@ -56,6 +57,7 @@ ref class RTMediaStreamSource sealed {
     uint32 _sourceHeight;
     uint64 _timeStamp;
     uint32 _frameRate;
+    HANDLE _firstFrameEvent;
 };
 
 }  // namespace webrtc_winrt_api_internal

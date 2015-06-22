@@ -33,7 +33,14 @@ Vector<webrtc_winrt_api_internal::RTMediaStreamSource^>^ gMediaStreamList =
 namespace webrtc_winrt_api_internal {
 
 MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
-  MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate) {
+  MediaVideoTrack^ track, uint32 frameRate) {
+  auto streamState = ref new RTMediaStreamSource(track);
+  streamState->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(
+    new RTCRenderer(streamState));
+  track->SetRenderer(streamState->_rtcRenderer.get());
+  size_t width;
+  size_t height;
+  streamState->GetSourceDimensions(width, height);
   auto videoProperties =
     VideoEncodingProperties::CreateUncompressed(
     MediaEncodingSubtypes::Nv12, width, height);
@@ -41,9 +48,6 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(videoDesc);
-  auto streamState = ref new RTMediaStreamSource(track);
-  streamState->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(
-    new RTCRenderer(streamState));
   streamState->_mediaStreamSource = streamSource;
   streamState->_mediaStreamSource->SampleRequested +=
     ref new Windows::Foundation::TypedEventHandler<MediaStreamSource ^,
@@ -57,7 +61,8 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   streamState->_frameRate = frameRate;
   streamState->_sourceWidth = width;
   streamState->_sourceHeight = height;
-  track->SetRenderer(streamState->_rtcRenderer.get()); {
+  track->SetRenderer(streamState->_rtcRenderer.get());
+  {
     webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
     gMediaStreamList->Append(streamState);
   }
@@ -68,6 +73,7 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
     _videoTrack(videoTrack), _stride(0),
     _sourceWidth(0), _sourceHeight(0), _timeStamp(0), _frameRate(0) {
   InitializeCriticalSection(&_lock);
+  _firstFrameEvent = CreateEvent(nullptr, true, false, nullptr);
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
@@ -75,6 +81,7 @@ RTMediaStreamSource::~RTMediaStreamSource() {
     _videoTrack->UnsetRenderer(_rtcRenderer.get());
   }
   DeleteCriticalSection(&_lock);
+  CloseHandle(_firstFrameEvent);
 }
 
 RTMediaStreamSource::RTCRenderer::RTCRenderer(
@@ -119,12 +126,6 @@ void RTMediaStreamSource::OnSampleRequested(
   }
   ComPtr<IMFMediaBuffer> mediaBuffer;
   EnterCriticalSection(&_lock);
-  // TODO: fix size issue
-  //if (_frame.get() != nullptr)
-  //{
-  //  _sourceWidth = _frame->GetWidth();
-  //  _sourceHeight = _frame->GetHeight();
-  //}
   hr = MFCreate2DMediaBuffer(_sourceWidth, _sourceHeight, libyuv::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
   if (FAILED(hr)) {
@@ -150,7 +151,20 @@ void RTMediaStreamSource::OnSampleRequested(
 void RTMediaStreamSource::ProcessReceivedFrame(
   const cricket::VideoFrame *frame) {
   EnterCriticalSection(&_lock);
+  if (_sourceWidth == 0)
+  {
+    _sourceWidth = frame->GetWidth();
+    _sourceHeight = frame->GetHeight();
+    SetEvent(_firstFrameEvent);
+  }
+  if ((frame->GetWidth() == _sourceWidth) && (frame->GetHeight() == _sourceHeight))
+  {
     _frame.reset(frame->Copy());
+  }
+  else
+  {
+    _frame.reset(frame->Stretch(_sourceWidth, _sourceHeight, true, false));
+  }
   LeaveCriticalSection(&_lock);
 }
 
@@ -205,6 +219,13 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
 }
 
 void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {
+}
+
+void RTMediaStreamSource::GetSourceDimensions(size_t& width, size_t& height)
+{
+  WaitForSingleObject(_firstFrameEvent, INFINITE);
+  width = _sourceWidth;
+  height = _sourceHeight;
 }
 
 void RTMediaStreamSource::OnClosed(
