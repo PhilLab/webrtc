@@ -28,6 +28,7 @@
 #include "webrtc/base/tracelog.h"
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/session/media/channelmanager.h"
 
 
 using webrtc_winrt_api_internal::FromCx;
@@ -420,6 +421,34 @@ void WebRTC::EnableLogging(LogLevel level) {
 void WebRTC::DisableLogging() {
   LOG(LS_INFO) << "WebRTC logging disabled";
   globals::gLoggingServer.reset();
+}
+
+IVector<CodecInfo^>^ WebRTC::GetAudioCodecs()
+{
+    auto ret = ref new Vector<CodecInfo^>();
+    std::vector<AudioCodec> codecs;
+    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+    chmng->GetSupportedAudioCodecs(&codecs);
+    for (auto it = codecs.begin(); it != codecs.end(); ++it)
+    {
+        ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+    }
+    return ret;
+}
+
+IVector<CodecInfo^>^ WebRTC::GetVideoCodecs()
+{
+    auto ret = ref new Vector<CodecInfo^>();
+    std::vector<VideoCodec> codecs;
+    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+    chmng->GetSupportedVideoCodecs(&codecs);
+    for (auto it = codecs.begin(); it != codecs.end(); ++it)
+    {
+        if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
+            ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+
+    }
+    return ret;
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(
