@@ -90,6 +90,7 @@ namespace cricket {
 class PortAllocator;
 class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
+class ChannelManager;
 }
 
 namespace webrtc {
@@ -570,6 +571,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // TODO(grunell): Remove when Chromium has started to use AEC in each source.
   // http://crbug.com/264611.
   virtual bool StartAecDump(rtc::PlatformFile file) = 0;
+
+  virtual cricket::ChannelManager* channel_manager() = 0;
 
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via
