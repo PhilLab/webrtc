@@ -89,6 +89,13 @@ void GlobalObserver::OnRenegotiationNeeded() {
 // Called any time the IceConnectionState changes
 void GlobalObserver::OnIceConnectionChange(
   webrtc::PeerConnectionInterface::IceConnectionState new_state) {
+  if (new_state == webrtc::PeerConnectionInterface::kIceConnectionConnected) {
+    if (!_stats_observer_etw.get()) {
+      _stats_observer_etw = new rtc::RefCountedObject<webrtc::StatsObserverETW>();
+    }
+
+    _stats_observer_etw->PollStats(_pc->_impl);
+  }
 }
 
 // Called any time the IceGatheringState changes

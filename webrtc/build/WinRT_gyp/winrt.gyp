@@ -21,6 +21,7 @@
         'standup/standup.gyp:*',
         'api/api.gyp:*',
         'JSApi/js_api.gyp:*',
+        'etw/etw.gyp:*',
         '<(webrtc_root)/modules/video_capture/test/winrt/video_capture_test_winrt.gyp:*',
         '<(webrtc_root)/modules/audio_device/test/winrt/audio_device_test_winrt.gyp:*',
         '<(webrtc_root)/../talk/libjingle_examples.gyp:peerconnection_client',
