@@ -55,3 +55,7 @@
 //rtpPlayer tests
 #include "rtpPlayerTests/RtpPlayerTestBase.h"
 #include "rtpPlayerTests/RtpPlayerTest.h"
+
+//BoringSSL
+#include "boringsslTests/BoringSslTestBase.h"
+#include "boringsslTests/SimpleTest.h"
