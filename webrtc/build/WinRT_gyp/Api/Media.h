@@ -123,7 +123,7 @@ namespace webrtc_winrt_api {
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate);
 
-    bool EnumerateAudioVideoCaptureDevices();
+    void EnumerateAudioVideoCaptureDevices();
     IAsyncOperation<bool>^ AsyncEnumerateAudioVideoCaptureDevices();
     void SelectVideoDevice(MediaDevice^ device);
     void SelectAudioDevice(MediaDevice^ device);

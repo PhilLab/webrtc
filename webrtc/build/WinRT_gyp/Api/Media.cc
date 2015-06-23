@@ -280,8 +280,8 @@ IMediaSource^ Media::CreateMediaStreamSource(
     });
 }
 
-bool Media::EnumerateAudioVideoCaptureDevices() {
-  return AsyncEnumerateAudioVideoCaptureDevices()->GetResults();
+void Media::EnumerateAudioVideoCaptureDevices() {
+  AsyncEnumerateAudioVideoCaptureDevices();
 }
 
 IAsyncOperation<bool>^ Media::AsyncEnumerateAudioVideoCaptureDevices()
