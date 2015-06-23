@@ -273,15 +273,19 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
 }
 
 IMediaSource^ Media::CreateMediaStreamSource(
-    MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate) {
-    return globals::RunOnGlobalThread<MediaStreamSource^>([track, width, height, framerate]()->MediaStreamSource^{
+    MediaVideoTrack^ track, uint32 framerate) {
+    return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate]()->MediaStreamSource^{
         return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
-            track, width, height, framerate);
+            track, framerate);
     });
 }
 
-void Media::EnumerateAudioVideoCaptureDevices() {
+bool Media::EnumerateAudioVideoCaptureDevices() {
+  return AsyncEnumerateAudioVideoCaptureDevices()->GetResults();
+}
 
+IAsyncOperation<bool>^ Media::AsyncEnumerateAudioVideoCaptureDevices()
+{
   IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
     [this]() -> bool {
     _videoDevices.clear();
@@ -298,11 +302,12 @@ void Media::EnumerateAudioVideoCaptureDevices() {
 
     int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
     for (int i = 0; i < recordingDeviceCount; i++) {
-        _audioDevice->RecordingDeviceName(i, name, guid);
-        OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
+      _audioDevice->RecordingDeviceName(i, name, guid);
+      OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
     }
     return true;
   });
+  return asyncOp;
 }
 
 void Media::SelectVideoDevice(MediaDevice^ device) {

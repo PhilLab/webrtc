@@ -121,9 +121,10 @@ namespace webrtc_winrt_api {
     // TODO(WINRT): Arguments
     IAsyncOperation<MediaStream^>^ GetUserMedia();
     IMediaSource^ CreateMediaStreamSource(
-      MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate);
+      MediaVideoTrack^ track, uint32 framerate);
 
-    void EnumerateAudioVideoCaptureDevices();
+    bool EnumerateAudioVideoCaptureDevices();
+    IAsyncOperation<bool>^ AsyncEnumerateAudioVideoCaptureDevices();
     void SelectVideoDevice(MediaDevice^ device);
     void SelectAudioDevice(MediaDevice^ device);
 
