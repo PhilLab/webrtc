@@ -1,12 +1,8 @@
 #!/usr/bin/env perl
-# This sript originates from https://git.libav.org/?p=gas-preprocessor.git and was
-# specificaly modified for openmax_dl project for conversion from gas to MS Armasm.
-
 # by David Conrad
 # This code is licensed under GPLv2 or later; go to gnu.org to read it
 #  (not that it much matters for an asm preprocessor)
 # usage: set your assembler to be something like "perl gas-preprocessor.pl gcc"
-#
 use strict;
 
 # Apple's gas is ancient and doesn't support modern preprocessing features like
@@ -26,7 +22,6 @@ my @gcc_cmd;
 my @preprocess_c_cmd;
 
 my $comm;
-
 my $arch;
 my $as_type = "apple-gas";
 
@@ -269,19 +264,6 @@ my %labels_seen;
 
 my %aarch64_req_alias;
 
-# Handler some multiline pseudo instruction fisrt (it easier to do it here)
-my $testxxx = scalar @alllines;
-if ($as_type eq "armasm") {
-  my $lineNumber = 0;
-  foreach (@alllines) {
-    if ($_ =~ /\.fnstart/) {
-      $_ =  "";
-      $alllines[$lineNumber - 1] =~ s/\s*[^:^\s]*:/$2 PROC/;
-    }
-    $lineNumber++;
-  }
-}
-
 if ($force_thumb) {
     parse_line(".thumb\n");
 }
@@ -329,9 +311,7 @@ sub handle_if {
         if ($type eq "b") {
             $expr =~ s/\s//g;
             $result ^= $expr eq "";
-        } elsif (($type eq "c") or ($type eq "eqs")) {
-            #remove double quotes.
-            $expr =~ s/""/"/g;
+        } elsif ($type eq "c") {
             if ($expr =~ /(.*)\s*,\s*(.*)/) {
                 $result ^= $1 eq $2;
             } else {
@@ -470,7 +450,7 @@ sub expand_macros {
     if (handle_if($line)) {
         return;
     }
-    
+
     if (/\.purgem\s+([\d\w\.]+)/) {
         delete $macro_lines{$1};
         delete $macro_args{$1};
@@ -617,7 +597,7 @@ sub expand_macros {
                 $replacements{$argname} = $args[$i];
             }
         }
-        
+
         my $count = $macro_count++;
 
         # apply replacements as regex
@@ -763,7 +743,6 @@ sub handle_serialized_line {
             return;
         }
     }
-
     # old gas versions store upper and lower case names on .req,
     # but they remove only one on .unreq
     if ($fix_unreq) {
@@ -864,7 +843,7 @@ sub handle_serialized_line {
         if ($line =~ s/^\s*\.func\s+(\w+)/$1 PROC/) {
             $labels_seen{$1} = 1;
         }
-        
+
         if ($line =~ s/^\s*(\d+)://) {
             # Convert local labels into unique labels. armasm (at least in
             # RVCT) has something similar, but still different enough.
@@ -895,7 +874,8 @@ sub handle_serialized_line {
             # otherwise ms armasm interprets it incorrectly.
             $line =~ s/^[\.\w]/\t$&/;
         }
-              
+
+
         # Check branch instructions
         if ($line =~ /(?:^|\n)\s*(\w+\s*:\s*)?(bl?x?(..)?(\.w)?)\s+(\w+)/) {
             my $instr = $2;
@@ -1021,60 +1001,7 @@ sub handle_serialized_line {
         $line =~ s/\.arm/ARM/x;
         # The alignment in AREA is the power of two, just as .align in gas
         $line =~ s/\.text/AREA |.text|, CODE, READONLY, ALIGN=4, CODEALIGN/;
-        # note this is not 100% accurate replacement, basically all parameters behing section name is ignored
-        $line =~ s/\.section\s*([^,]*),.*/\tAREA |$1|, CODE, READONLY, ALIGN=2, CODEALIGN/;
         $line =~ s/(\s*)(.*)\.rodata/$1AREA |.rodata|, DATA, READONLY, ALIGN=5/;
-        $line =~ s/(\s*)\.equ\s*(.*),/$2 EQU/x;
-        $line =~ s/\.fnend/ENDP/x;
-        $line =~ s/\s*\.exitm//x;
-        $line =~ s/\s*\.warning.*//x;
-        # fix labels alignment
-        $line =~ s/(\s*)([^:]*):/$2/x;
-        $line =~ s/\.extern/EXTERN/x;
-
-        # gas uses different syntax for some instruction. Basically gas allows to specify type after register instead of after instruction like ArmAsm
-        # !! IMPORTANT: conditions are not handled (VMOV{cond}.F32 Sd, #imm)
-        # fix VLDx, VSTx
-        $line =~ s/(VLD1|VST1)\s*([D|Q][0-9]*)\.[F|S](32|16)([^,]*),/$1\.$3 {$2$4},/xi; # VLD1 D0.F32.... 
-        $line =~ s/(VLD2|VLD1|VST2|VST1)\s*{\s*([D|Q][0-9]*)\.(F|S)(32|16)([^,]*),\s*([D|Q][0-9]*)\.(F|S)(32|16)([^,]*)\s*}/$1\.$4 {$2$5, $6$9}/xi;
-        $line =~ s/(VLD1|VST1)\s*{\s*([D|Q][0-9]*)\.((F|S)(32|16))/$1\.$5 {$2/xi; # VLD1 {D0.F32}.... 
-        $line =~ s/(VLD3|VST3)\s*{\s*(D[0-9]*)\.(F|S)(32|16)([^,]*),\s*(D[0-9]*)\.(F|S)(32|16)([^,]*),\s*(D[0-9]*)\.(F|S)(32|16)([^,]*)\s*}/$1\.$4 {$2$5, $6$9, $10$13}/xi;
-        $line =~ s/(VLD4|VST4)\s*{\s*(D[0-9]*)\.(F|S)(32|16)([^,]*),\s*(D[0-9]*)\.(F|S)(32|16)([^,]*),\s*(D[0-9]*)\.(F|S)(32|16)([^,]*),\s*(D[0-9]*)\.(F|S)(32|16)([^,]*)\s*}/$1\.$4 {$2$5, $6$9, $10$13, $14$17}/xi;
-        # fix VADD, VSUB, VMUL, VMLS, VMLA, VSUB
-        $line =~ s/(VADD|VSUB|VMUL|VMLS|VMLA|VSUB)\s*([D|Q][0-9]*)\.F32([^,]*),\s*([D|Q][0-9]*)\.F32([^,]*),\s*([D|Q][0-9]*)\.F32/$1\.F32 $2$3, $3$4, $5$6/xi; # float
-        $line =~ s/(VADD|VSUB|VMUL|VMLS|VMLA|VSUB)\s*([D|Q][0-9]*)\.S(32|16)([^,]*),\s*([D|Q][0-9]*)\.S(32|16)([^,]*),\s*([D|Q][0-9]*)\.S(32|16)/$1\.i$3 $2$4, $5$7, $8$10/xi; # integer
-        # fix VMULL, VMLSL, VMLAL, VHADD, VHSUB
-        $line =~ s/(VHSUB|VHADD|VMULL|VMLSL|VMLAL|VRSHRN)\s*([D|Q][0-9]*)\.S(64|32|16)([^,]*),\s*([D|Q][0-9]*)\.S(32|16)([^,]*),\s*([D|Q][0-9]*)\.S(32|16)/$1\.S$6 $2$4, $5$7, $8$10/xi; # integer
-        # fix VRSHRN
-        $line =~ s/(VRSHRN)\s*([D|Q][0-9]*)\.S(32|16)([^,]*),\s*([D|Q][0-9]*)\.S(64|32|16)([^,]*)/$1\.i$6 $2$4, $5$7/xi; # integer
-        # fix VMOV register. Accordiong to documentation type is optional, so it's removed completely
-        $line =~ s/(VMOV)\s*([S|D|Q][0-9]*)\.(F|S)(32|16)([^,]*),(\s*([R|D|Q][0-9]*)(\.(F|S)(32|16)){0,1})/$1.$4\ $2$5,$7/xi;
-        # fix VMOV immediate 
-        $line =~ s/(VMOV)\s*([S|D|Q][0-9]*)\.F32([^,]*),\s*(\#){0,1}(.*)([^\s]*)/$1\.F32 $2$3,#$5/xi;
-        $line =~ s/VMOV.(F){0,1}(32)(\s*s.*,\s*r.*)/VMOV $3/xi; #remove type form certain VMOV pattern, because it produces compilation error
-        # fix VZIP, VUZP, VTRN, VDUP
-        $line =~ s/(VDUP|VZIP|VUZP|VTRN)\s*([D|Q][0-9]*)\.(F|S)(32|16)([^,]*),(\s*([D|Q][0-9]*)\.(F|S)(32|16)){0,1}/$1\.$4 $2$5,$7/xi;
-        # fix VQRDMULH, VQDMULH, VRHADD
-        $line =~ s/(VQRDMULH|VQDMULH|VRHADD)\s*(D[0-9]*)\.S(16|32)([^,]*),\s*(D[0-9]*)\.S(16|32)([^,]*),\s*(D[0-9]*)\.S(16|32)([^\s]*)/$1\.S$3 $2$4, $5$7, $8$10/xi;
-        # fix VREV64
-        $line =~ s/(VREV64|VREV32)\s*([D|Q][0-9]*)\.[F|S](16|32|64)([^,]*),\s*([D|Q][0-9]*)\.[F|S](16|32|64)([^\s]*)/$1\.$3 $2$4, $5$7/xi;
-         # fix VNEG
-        $line =~ s/(VNEG)\s*(D[0-9]*)\.(F|S)(32|16)([^,]*),\s*(D[0-9]*)\.(F|S)(32|16)([^\s]*)/$1\.$3$4 $2$5, $6$9/xi;
-        # fix  VRSHL, VSHL
-        $line =~ s/(VRSHL|VSHL|VSHR)\s*([D|Q][0-9]*)\.S(16|32)([^,]*),\s*([D|Q][0-9]*)\.S(16|32)([^\s]*)/$1\.S$3 $2$4, $5$7/xi;
-        # fix VMOVL, VQMOVN
-        $line =~ s/(VMOVL|VQMOVN)\s*([D|Q][0-9]*)\.S(16|32)([^,]*),\s*([D|Q][0-9]*)\.S(16|32)([^\s]*)/$1\.S$6 $2$4, $5$7/xi;
-        # fix VCVT
-        $line =~ s/(VCVT)\s*(S[0-9]*)\.(S32|F32)([^,]*),\s*(S[0-9]*)\.(S32|F32)([^\s]*)/$1\.$3.$6 $2$4, $5$7/xi;
-        # fix VDIV
-        $line =~ s/(VDIV)\s*(S[0-9]*)\.F32([^,]*),\s*(S[0-9]*)\.F32([^,]*),\s*(S[0-9]*)\.F32([^\s]*)/$1\.F32 $2$3, $4$5, $6$7/xi;
-
-        #testing
-        $line =~ s/ARM//x;
-
-        
-        # just testing
-        $line =~ s/\s*\.end/END/x;
 
         $line =~ s/fmxr/vmsr/;
         $line =~ s/fmrx/vmrs/;
@@ -1102,12 +1029,10 @@ if ($as_type ne "armasm") {
     map print(ASMFILE ".thumb_func $_\n"),
         grep exists $thumb_labels{$_}, keys %call_targets;
 } else {
-  # TODO: Following lines sometimes causes adding imports for local fuctions.
-  # Eventualy it should be fixed, but right now just commented out
-  #map print(ASMFILE "\tIMPORT $_\n"),
-  #      grep ! exists $labels_seen{$_}, (keys %call_targets, keys %mov32_targets);
+    map print(ASMFILE "\tIMPORT $_\n"),
+        grep ! exists $labels_seen{$_}, (keys %call_targets, keys %mov32_targets);
 
-  print ASMFILE "\tEND\n";
+    print ASMFILE "\tEND\n";
 }
 
 close(INPUT) or exit 1;
