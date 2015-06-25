@@ -20,11 +20,18 @@
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
-
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
+
+namespace
+{
+  std::vector<cricket::Device> g_videoDevices;
+  webrtc::CriticalSectionWrapper& gMediaStreamListLock(
+    *webrtc::CriticalSectionWrapper::CreateCriticalSection());
+}
 
 namespace webrtc_winrt_api {
 
@@ -223,7 +230,8 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
       cricket::VideoCapturer* videoCapturer = NULL;
       if (_selectedVideoDevice.id == "") {
         // Select the first video device as the capturer.
-        for (auto videoDev : _videoDevices) {
+        webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+        for (auto videoDev : g_videoDevices) {
           videoCapturer = _dev_manager->CreateVideoCapturer(videoDev);
           if (videoCapturer != NULL)
             break;
@@ -280,20 +288,19 @@ IMediaSource^ Media::CreateMediaStreamSource(
     });
 }
 
-void Media::EnumerateAudioVideoCaptureDevices() {
-  AsyncEnumerateAudioVideoCaptureDevices();
-}
-
-IAsyncOperation<bool>^ Media::AsyncEnumerateAudioVideoCaptureDevices()
+IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices()
 {
   IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
     [this]() -> bool {
-    _videoDevices.clear();
-    if (!_dev_manager->GetVideoCaptureDevices(&_videoDevices)) {
+    std::vector<cricket::Device> videoDevices;
+    if (!_dev_manager->GetVideoCaptureDevices(&videoDevices)) {
       LOG(LS_ERROR) << "Can't enumerate video devices";
       return false;
     }
-    for (auto videoDev : _videoDevices) {
+    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+    g_videoDevices.clear();
+    for (auto videoDev : videoDevices) {
+      g_videoDevices.push_back(videoDev);
       OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
     }
 
@@ -314,7 +321,8 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
   std::string id = FromCx(device->Id);
   _selectedVideoDevice.id = "";
   _selectedVideoDevice.name = "";
-  for (auto videoDev : _videoDevices) {
+  webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+  for (auto videoDev : g_videoDevices) {
     if (videoDev.id == id) {
       _selectedVideoDevice = videoDev;
       break;

@@ -68,9 +68,9 @@ RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp) {
 }
 
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
-  globals::RunOnGlobalThread<void>([this, configuration] {
-    webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
-    FromCx(configuration, &cc_configuration);
+  webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
+  FromCx(configuration, &cc_configuration);
+  globals::RunOnGlobalThread<void>([this, cc_configuration] {
 
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
