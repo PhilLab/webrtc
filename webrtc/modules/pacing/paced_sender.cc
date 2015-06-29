@@ -20,7 +20,11 @@
 #include "webrtc/modules/pacing/bitrate_prober.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#ifdef WINRT
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 #include "webrtc/system_wrappers/interface/logging.h"
 
 namespace {
@@ -405,7 +409,12 @@ void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {
 }
 
 bool PacedSender::ProbingExperimentIsEnabled() const {
+#ifdef WINRT
+  return webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-BitrateProbing") ==
+         "Enabled";
+#else
   return webrtc::field_trial::FindFullName("WebRTC-BitrateProbing") ==
          "Enabled";
+#endif
 }
 }  // namespace webrtc

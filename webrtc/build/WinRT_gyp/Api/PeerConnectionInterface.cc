@@ -425,7 +425,7 @@ void WebRTC::EnableLogging(LogLevel level) {
   rtc::SocketAddress sa(INADDR_ANY, 47003);
   globals::gLoggingServer = rtc::scoped_ptr<rtc::LoggingServer>(
     new rtc::LoggingServer());
-  globals::gLoggingServer->Listen(sa, static_cast<int>(level));
+  globals::gLoggingServer->Listen(sa, static_cast<rtc::LoggingSeverity>(level));
   LOG(LS_INFO) << "WebRTC logging enabled";
 }
 

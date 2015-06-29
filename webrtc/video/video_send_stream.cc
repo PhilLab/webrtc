@@ -183,7 +183,7 @@ VideoSendStream::VideoSendStream(
 
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
   vie_channel_->SetMTU(
-      static_cast<unsigned int>(config_.rtp.max_packet_size + 28));
+      static_cast<uint16_t>(config_.rtp.max_packet_size + 28));
 
   DCHECK(config.encoder_settings.encoder != nullptr);
   DCHECK_GE(config.encoder_settings.payload_type, 0);
