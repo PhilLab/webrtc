@@ -188,7 +188,10 @@ namespace StandupWinRT
       captureId_(-1),
       videoChannel_(-1),
       localMediaWrapper_(NULL),
-      remoteMediaWrapper_(NULL)
+      remoteMediaWrapper_(NULL),
+      defaultRemoteIpAddress_("127.0.0.1"),
+      defaultAudioPort_(20000),
+      defaultVideoPort_(20100)
     {
 
       webrtc::test::InitFieldTrialsFromString("");
@@ -197,10 +200,30 @@ namespace StandupWinRT
       webrtc::Trace::set_level_filter(webrtc::kTraceAll);
 
       //provide some default values if user want to test on local machine 
-      remoteIpAddress_ = "127.0.0.1";
-      audioPort_ = 20000;
-      videoPort_ = 20100;
+      remoteIpAddress_ = defaultRemoteIpAddress_;
+      audioPort_ = defaultAudioPort_;
+      videoPort_ = defaultVideoPort_;
+    }
 
+    void init()
+    {
+      captureManager_ = ref new  Windows::Media::Capture::MediaCapture();
+
+      Windows::Media::Capture::MediaCaptureInitializationSettings^ mediaSettings = ref new  Windows::Media::Capture::MediaCaptureInitializationSettings();
+
+      mediaSettings->AudioDeviceId = "";
+      mediaSettings->VideoDeviceId = "";
+      mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::Audio;
+      mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
+      Windows::Foundation::IAsyncAction^ action = captureManager_->InitializeAsync(mediaSettings);
+      auto dispatcherTask = Concurrency::create_task(action);
+      dispatcherTask.then([this] {
+        startEngine();
+      });
+    }
+
+    void startEngine()
+    {
       workerThread_.Start();
 
       workerThread_.Invoke<void>([this]() -> void
@@ -346,6 +369,17 @@ namespace StandupWinRT
 #endif
 #endif
       });
+
+
+      Concurrency::create_async([this]
+      {
+        workerThread_.Invoke<void>([this]() -> void
+        {
+          setCameraDevices();
+          setCameraDeviceCapabilities();
+        });
+      });
+
 
     }
 
@@ -533,6 +567,11 @@ namespace StandupWinRT
     int videoPort_;
     std::string remoteIpAddress_;
 
+    const std::string defaultRemoteIpAddress_;
+    const int defaultAudioPort_;
+    const int defaultVideoPort_;
+
+    Platform::Agile<Windows::Media::Capture::MediaCapture> captureManager_;
     int voiceChannel_;
     webrtc::test::VoiceChannelTransport* voiceTransport_;
     webrtc::VoiceEngine* voiceEngine_;
@@ -700,18 +739,11 @@ namespace StandupWinRT
       localMediaWrapper_ = new MediaElementWrapper(localMedia_);
       remoteMediaWrapper_ = new MediaElementWrapper(remoteMedia_);
 
-      Concurrency::create_async([this]
-      {
-        workerThread_.Invoke<void>([this]() -> void
-        {
-          setCameraDevices();
-          setCameraDeviceCapabilities();
-        });
-      });
-
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
       CreateSettingsFlyout();
+
+      init();
     }
 
     void OnStartStopClick(Platform::Object ^sender, Windows::UI::Xaml::RoutedEventArgs ^e);
@@ -1435,16 +1467,27 @@ void StandupWinRT::App::initializeTranportInfo(){
   if (!userIp.empty()) {
     remoteIpAddress_ = userIp;
   }
+  else {
+    remoteIpAddress_ = defaultRemoteIpAddress_;
+  }
   int userInputVideoPort = _wtoi(videoPortTextBox_->Text->Data());
   if (userInputVideoPort > 0)
   {
     videoPort_ = userInputVideoPort;
+  }
+  else
+  {
+    videoPort_ = defaultVideoPort_;
   }
 
   int userInputAudioPort = _wtoi(audioPortTextBox_->Text->Data());
   if (userInputAudioPort > 0)
   {
     audioPort_ = userInputAudioPort;
+  }
+  else
+  {
+    audioPort_ = defaultAudioPort_;
   }
 }
 
@@ -1628,18 +1671,21 @@ void StandupWinRT::App::setCameraDeviceCapabilities()
 			continue;
 
 		int widthDiff = abs((int)(capability.width - PREFERRED_FRAME_WIDTH));
-		if (widthDiff < minWidthDiff) {
+    int heightDiff = abs((int)(capability.height - PREFERRED_FRAME_HEIGHT));
+    int fpsDiff = abs((int)(capability.maxFPS - PREFERRED_MAX_FPS));
+    if (widthDiff < minWidthDiff) {
 			selectedCapabilityIndex = i;
 			minWidthDiff = widthDiff;
-		}
+      minHeightDiff = heightDiff;
+      minFpsDiff = fpsDiff;
+    }
 		else if (widthDiff == minWidthDiff) {
-			int heightDiff = abs((int)(capability.height - PREFERRED_FRAME_HEIGHT));
 			if (heightDiff < minHeightDiff) {
 				selectedCapabilityIndex = i;
 				minHeightDiff = heightDiff;
-			}
+        minFpsDiff = fpsDiff;
+      }
 			else if (heightDiff == minHeightDiff) {
-				int fpsDiff = abs((int)(capability.maxFPS - PREFERRED_MAX_FPS));
 				if (fpsDiff < minFpsDiff) {
 					selectedCapabilityIndex = i;
 					minFpsDiff = fpsDiff;

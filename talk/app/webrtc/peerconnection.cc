@@ -317,6 +317,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
 }
 
 PeerConnection::~PeerConnection() {
+  LOG(LS_INFO) << "PeerConnection::~PeerConnection()";
   if (mediastream_signaling_)
     mediastream_signaling_->TearDown();
   if (stream_handler_container_)

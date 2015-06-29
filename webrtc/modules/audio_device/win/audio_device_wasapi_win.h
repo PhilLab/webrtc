@@ -94,9 +94,18 @@ class AudioInterfaceActivator : public RuntimeClass < RuntimeClassFlags< Classic
   task_completion_event<void> m_ActivateCompleted;
   STDMETHODIMP ActivateCompleted(IActivateAudioInterfaceAsyncOperation  *pAsyncOp);
 
+public:
+  enum ActivatorDeviceType{
+    eNone = 0,
+    eInputDevice,
+    eOutputDevice
+  };
+
+  static ActivatorDeviceType m_DeviceType;
+
   static AudioDeviceWindowsWasapi* m_AudioDevice;
 public:
-  static task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId);
+  static task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId, ActivatorDeviceType deviceType);
   static void SetAudioDevice(AudioDeviceWindowsWasapi* device);
 };
 
@@ -287,8 +296,11 @@ private:
     DeviceInformation^ _GetDefaultDevice(DeviceClass cls);
     DeviceInformation^ _GetListDevice(DeviceClass cls, int index);
 
-    HRESULT _InitializeAudioDeviceInAsync();
-    HRESULT _InitializeAudioDeviceOutAsync();
+    Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceInAsync();
+    Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceOutAsync();
+
+    HRESULT _InitializeAudioDeviceIn();
+    HRESULT _InitializeAudioDeviceOut();
 
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
@@ -307,8 +319,8 @@ private:  // MMDevice
     Platform::String^   _deviceIdStringOut;
     DeviceInformation^  _defaultCaptureDevice;
     DeviceInformation^  _defaultRenderDevice;
-    bool                _captureDeviceActivated;
-    bool                _renderDeviceActivated;
+    //bool                _captureDeviceActivated;
+    //bool                _renderDeviceActivated;
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;

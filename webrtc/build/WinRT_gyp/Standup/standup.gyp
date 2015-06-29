@@ -10,6 +10,7 @@
   'includes': ['../../common.gypi',],
   'variables': {
 
+
   },
   'targets': [
     {
@@ -41,9 +42,6 @@
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
           'sources': [
             'Package.phone.appxmanifest',
-          ],
-          'defines!': [
-             'WINAPI_FAMILY=WINAPI_FAMILY_APP',
           ],
         }],
           ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
@@ -115,6 +113,7 @@
       ],
       'msvs_disabled_warnings': [
         4453,  # A '[WebHostHidden]' type should not be used on the published surface of a public type that is not '[WebHostHidden]'
+        4458,
       ],
       'msvs_package_certificate': {
         'KeyFile': '..\UnitTests\gtest_runner\gtest_runner_TemporaryKey.pfx',
@@ -126,6 +125,15 @@
           'ExceptionHandling': '1',
         },
         'VCLinkerTool': {
+            'conditions': [
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+			  'AdditionalDependencies': [
+               'mfplat.lib',
+               'mfuuid.lib',
+		       'WindowsApp.lib',
+              ],
+            }],
+          ],
           'AdditionalDependencies': [
            'mfplat.lib',
            'mfuuid.lib',

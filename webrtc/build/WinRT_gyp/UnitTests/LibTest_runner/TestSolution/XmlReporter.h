@@ -16,14 +16,17 @@ namespace LibTest_runner
   //=============================================================================
   class CXmlReporter : public CTestsReporterBase
   {
+  public:
+    static unsigned int const kAllTests = 1; //Print all tests, only executed tests otherwise
   private:
     Platform::String^ OutputFile_;
     XmlDocument^ report_;
     XmlElement^  solutionEl_;
     XmlElement^ GetLibraryElement(String^ projectName);
     XmlElement^ GetProjectElement(XmlElement^ library, String^ projectName);
+    unsigned int m_nFlags;
   public:
-    CXmlReporter(Platform::String^ outputFile);
+    CXmlReporter(Platform::String^ outputFile, unsigned int flags = 0);
     virtual ~CXmlReporter() {};
     virtual void AddTestResult(const CTestBase& test) throw(ReportGenerationException);
     virtual void Begin() throw(ReportGenerationException);

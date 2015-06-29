@@ -125,13 +125,7 @@
                 'windows/video_capture_winrt.cc',
                 'windows/video_capture_winrt.h',
               ],
-            }],  # winrt
-            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
-              'defines!': [
-                 'WINAPI_FAMILY=WINAPI_FAMILY_APP',
-              ],
-            }],
-            
+            }],  # winrt            
             ['OS=="android"', {
               'sources': [
                 'android/device_info_android.cc',

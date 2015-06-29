@@ -1,12 +1,27 @@
-﻿#pragma once
+﻿
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file in the root of the source
+// tree. An additional intellectual property rights grant can be found
+// in the file PATENTS.  All contributing project authors may
+// be found in the AUTHORS file in the root of the source tree.
 
+#ifndef WEBRTC_BUILD_WINRT_GYP_API_MARSHALLING_H_
+#define WEBRTC_BUILD_WINRT_GYP_API_MARSHALLING_H_
+
+#include <string>
+#include <vector>
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/jsep.h"
-#include "peerconnectioninterface.h"
+#include "PeerConnectionInterface.h"
+
+using Platform::String;
+using Windows::Foundation::Collections::IVector;
 
 #define DECLARE_MARSHALLED_ENUM(winrtType, nativeType) \
-  void FromCx(winrtType inObj, nativeType& outObj);\
-  void ToCx(nativeType const& inObj, winrtType& outObj)
+  void FromCx(winrtType inObj, nativeType* outObj);\
+  void ToCx(nativeType const& inObj, winrtType* outObj)
 
 // Marshalling functions to convert from WinRT objects to native cpp.
 namespace webrtc_winrt_api_internal {
@@ -14,45 +29,51 @@ namespace webrtc_winrt_api_internal {
   std::string FromCx(String^ inObj);
   String^ ToCx(std::string const& inObj);
 
-  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCBundlePolicy, webrtc::PeerConnectionInterface::BundlePolicy);
-  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceTransportPolicy, webrtc::PeerConnectionInterface::IceTransportsType);
-  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCSignalingState, webrtc::PeerConnectionInterface::SignalingState);
-  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCDataChannelState, webrtc::DataChannelInterface::DataState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCBundlePolicy,
+                          webrtc::PeerConnectionInterface::BundlePolicy);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceTransportPolicy,
+                          webrtc::PeerConnectionInterface::IceTransportsType);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCSignalingState,
+                          webrtc::PeerConnectionInterface::SignalingState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCDataChannelState,
+                          webrtc::DataChannelInterface::DataState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceGatheringState,
+                          webrtc::PeerConnectionInterface::IceGatheringState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceConnectionState,
+                          webrtc::PeerConnectionInterface::IceConnectionState);
 
   // Templated function to convert vectors.
   template <typename I, typename O>
   void FromCx(
     IVector<I>^ inArray,
-    std::vector<O>& outArray)
-  {
-    for (auto inObj : inArray)
-    {
-      // TODO: Optimize with reference to object in vector.
+    std::vector<O>* outArray) {
+    for (auto inObj : inArray) {
+      // TODO(WINRT): Optimize with reference to object in vector.
       O outObj;
-      FromCx(inObj, outObj);
-      outArray.push_back(outObj);
+      FromCx(inObj, &outObj);
+      outArray->push_back(outObj);
     }
   }
 
   // ==========================
   void FromCx(
     webrtc_winrt_api::RTCIceServer^ inObj,
-    webrtc::PeerConnectionInterface::IceServer& outObj);
+    webrtc::PeerConnectionInterface::IceServer* outObj);
 
   // ==========================
   void FromCx(
     webrtc_winrt_api::RTCConfiguration^ inObj,
-    webrtc::PeerConnectionInterface::RTCConfiguration& outObj);
+    webrtc::PeerConnectionInterface::RTCConfiguration* outObj);
 
   // ==========================
   void FromCx(
     webrtc_winrt_api::RTCDataChannelInit^ inObj,
-    webrtc::DataChannelInit& outObj);
+    webrtc::DataChannelInit* outObj);
 
   // ==========================
   void FromCx(
     webrtc_winrt_api::RTCIceCandidate^ inObj,
-    rtc::scoped_ptr<webrtc::IceCandidateInterface>& outObj);
+    rtc::scoped_ptr<webrtc::IceCandidateInterface>* outObj);
   void ToCx(
     webrtc::IceCandidateInterface const& inObj,
     webrtc_winrt_api::RTCIceCandidate^* outObj);
@@ -62,13 +83,16 @@ namespace webrtc_winrt_api_internal {
     webrtc_winrt_api::RTCSdpType const& inObj);
   void ToCx(
     std::string const& inObj,
-    webrtc_winrt_api::RTCSdpType& outObj);
+    webrtc_winrt_api::RTCSdpType* outObj);
 
   // ==========================
   void FromCx(
     webrtc_winrt_api::RTCSessionDescription^ inObj,
-    rtc::scoped_ptr<webrtc::SessionDescriptionInterface>& outObj);
+    rtc::scoped_ptr<webrtc::SessionDescriptionInterface>* outObj);
   void ToCx(
     const webrtc::SessionDescriptionInterface* inObj,
     webrtc_winrt_api::RTCSessionDescription^* outObj);
-}
+}  // namespace webrtc_winrt_api_internal
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_API_MARSHALLING_H_
+

@@ -23,10 +23,12 @@ using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaCaptureFailedEventArgs;
 using Windows::Media::Capture::MediaCaptureFailedEventHandler;
+using Windows::Media::Capture::MediaStreamType;
 using Windows::Media::IMediaExtension;
+using Windows::Media::MediaProperties::IVideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingProfile;
-using Windows::Media::MediaProperties::VideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
+using Windows::Media::MediaProperties::VideoEncodingProperties;
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -79,7 +81,7 @@ ref class CaptureDevice sealed {
   void Cleanup();
 
   void StartCapture(
-      MediaEncodingProfile^ mediaEncodingProfile);
+    MediaEncodingProfile^ mediaEncodingProfile, IVideoEncodingProperties^ videoEncodingProperties);
 
   void StopCapture();
 
@@ -186,7 +188,7 @@ void CaptureDevice::Cleanup()
   }
 }
 
-void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile)
+void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile, IVideoEncodingProperties^ videoEncodingProperties)
 {
   // We cannot start recording twice.
   if (media_sink_ && capture_started_) {
@@ -221,29 +223,28 @@ void CaptureDevice::StartCapture(MediaEncodingProfile^ mediaEncodingProfile)
   media_sink_video_sample_event_registration_token_ = media_sink_->MediaSampleEvent += 
     ref new Windows::Foundation::EventHandler<MediaSampleEventArgs^>(this, &CaptureDevice::OnMediaSample);
 
-  auto initializeAsyncTask = Concurrency::create_task(media_sink_->InitializeAsync(mediaEncodingProfile->Video)).
-     then([this, mediaEncodingProfile](IMediaExtension^ mediaExtension)
+  Concurrency::create_task(media_sink_->InitializeAsync(mediaEncodingProfile->Video)).
+    then([this, mediaEncodingProfile, videoEncodingProperties](IMediaExtension^ mediaExtension)
   {
-    auto startRecordToCustomSinkAsyncTask = Concurrency::create_task(media_capture_->StartRecordToCustomSinkAsync(mediaEncodingProfile, mediaExtension)).then([this](Concurrency::task<void>& asyncInfo)
+    return Concurrency::create_task(media_capture_->VideoDeviceController->
+      SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, videoEncodingProperties)).then([this, mediaEncodingProfile, mediaExtension](Concurrency::task<void> asyncInfo)
     {
-      try
+      return Concurrency::create_task(media_capture_->
+        StartRecordToCustomSinkAsync(mediaEncodingProfile, mediaExtension)).then([this](Concurrency::task<void> asyncInfo)
       {
-        asyncInfo.get();
-        capture_started_ = true;
-      }
-      catch (Platform::Exception^ e)
-      {
-        CleanupSink();
-        throw;
-      }
+        try
+        {
+          asyncInfo.get();
+          capture_started_ = true;
+        }
+        catch (Platform::Exception^ e)
+        {
+          CleanupSink();
+          throw;
+        }
+      });
     });
-
-    startRecordToCustomSinkAsyncTask.wait();
-
-    return startRecordToCustomSinkAsyncTask;
-  });
-
-  initializeAsyncTask.wait();
+  }).wait();
 }
 
 void CaptureDevice::StopCapture()
@@ -311,7 +312,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
 
   device_id_ = nullptr;
 
-  auto findAllAsyncTask = Concurrency::create_task(
+  Concurrency::create_task(
       DeviceInformation::FindAllAsync(
           DeviceClass::VideoCapture)).then(
               [this,
@@ -341,9 +342,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id, const char* device_unique_id) 
       }
     } catch (Platform::Exception^ e) {
     }
-  });
-
-  findAllAsyncTask.wait();
+  }).wait();
 
   CaptureDevice^ device = ref new CaptureDevice(this);
 
@@ -411,9 +410,54 @@ int32_t VideoCaptureWinRT::StartCapture(
   mediaEncodingProfile->Video->FrameRate->Numerator = capability.maxFPS;
   mediaEncodingProfile->Video->FrameRate->Denominator = 1;
 
+  IVideoEncodingProperties^ videoEncodingProperties;
+  int minWidthDiff = INT_MAX;
+  int minHeightDiff = INT_MAX;
+  int minFpsDiff = INT_MAX;
+  auto mediaCapture = MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id_);
+  auto streamProperties = mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
+    MediaStreamType::VideoRecord);
+  for (unsigned int i = 0; i < streamProperties->Size; i++)
+  {
+    IVideoEncodingProperties^ prop =
+      static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
+
+    if (_wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0)
+      continue;
+
+    int widthDiff = abs((int)(prop->Width - capability.width));
+    int heightDiff = abs((int)(prop->Height - capability.height));
+    int propFps = (int)((float)prop->FrameRate->Numerator / (float)prop->FrameRate->Denominator);
+    int fpsDiff = abs((int)(propFps - capability.maxFPS));
+
+    if (widthDiff < minWidthDiff)
+    {
+      videoEncodingProperties = prop;
+      minWidthDiff = widthDiff;
+      minHeightDiff = heightDiff;
+      minFpsDiff = fpsDiff;
+    }
+    else if (widthDiff == minWidthDiff)
+    {
+      if (heightDiff < minHeightDiff)
+      {
+        videoEncodingProperties = prop;
+        minHeightDiff = heightDiff;
+        minFpsDiff = fpsDiff;
+      }
+      else if (heightDiff == minHeightDiff)
+      {
+        if (fpsDiff < minFpsDiff) {
+          videoEncodingProperties = prop;
+          minFpsDiff = fpsDiff;
+        }
+      }
+    }
+  }
+
   try
   {
-    device_->StartCapture(mediaEncodingProfile);
+    device_->StartCapture(mediaEncodingProfile, videoEncodingProperties);
   }
   catch (Platform::Exception^ e)
   {

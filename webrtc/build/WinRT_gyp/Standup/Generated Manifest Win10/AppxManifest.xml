@@ -15,14 +15,14 @@
     <Logo>StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
-    <TargetPlatform Name="Windows.Universal" MinVersion="10.0.10030.0" MaxVersionTested="10.0.10030.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.10042.0" MaxVersionTested="10.0.10042.0" />
   </Dependencies>
   <Resources>
     <Resource Language="EN-US" />
   </Resources>
   <Applications>
     <Application Id="App" Executable="standup.exe" EntryPoint="StandupWinRT.App">
-      <uap:VisualElements DisplayName="StandupWinRT" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="StandupWinRT" ForegroundText="light" BackgroundColor="#464646">
+      <uap:VisualElements DisplayName="StandupWinRT" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="StandupWinRT" BackgroundColor="#464646">
         <uap:SplashScreen Image="SplashScreen.png" />
       </uap:VisualElements>
     </Application>

@@ -378,9 +378,16 @@ bool WebRtcVideoCapturer::GetPreferredFourccs(
   return true;
 }
 
+// TODO(WINRT): Find a nicer way of not overwhelming the
+// memory with pending async frames.
+static bool hasFramePending = false;
+
 void WebRtcVideoCapturer::OnIncomingCapturedFrame(
     const int32_t id,
     const webrtc::I420VideoFrame& sample) {
+  if (hasFramePending)
+    return;
+  hasFramePending = true;
   // This can only happen between Start() and Stop().
   DCHECK(start_thread_);
   DCHECK(async_invoker_);
@@ -431,6 +438,7 @@ void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
   webrtc::ExtractBuffer(frame, length, &capture_buffer_[0]);
   WebRtcCapturedFrame webrtc_frame(frame, &capture_buffer_[0], length);
   SignalFrameCaptured(this, &webrtc_frame);
+  hasFramePending = false;
 }
 
 // WebRtcCapturedFrame

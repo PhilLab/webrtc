@@ -1,82 +1,83 @@
-﻿#pragma once
+﻿
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file in the root of the source
+// tree. An additional intellectual property rights grant can be found
+// in the file PATENTS.  All contributing project authors may
+// be found in the AUTHORS file in the root of the source tree.
+
+#ifndef WEBRTC_BUILD_WINRT_GYP_API_DATACHANNEL_H_
+#define WEBRTC_BUILD_WINRT_GYP_API_DATACHANNEL_H_
 
 #include <collection.h>
+#include "GlobalObserver.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "Delegates.h"
 
-using namespace Windows::Foundation;
-using namespace Windows::Foundation::Collections;
-using namespace Platform;
-using namespace Platform::Collections;
+using Platform::String;
+using Platform::IBox;
 
-namespace webrtc_winrt_api_internal
-{
-  class DataChannelObserver;
-}
+namespace webrtc_winrt_api {
+public enum class RTCDataChannelState {
+  Connecting,
+  Open,
+  Closing,
+  Closed,
+};
 
-namespace webrtc_winrt_api
-{
-  public enum class RTCDataChannelState
-  {
-    connecting,
-    open,
-    closing,
-    closed,
-  };
+public ref class RTCDataChannelInit sealed {
+public:
+  property IBox<bool>^ Ordered;
+  property IBox<uint16>^ MaxPacketLifeTime;
+  property IBox<uint16>^ MaxRetransmits;
+  property String^ Protocol;
+  property IBox<bool>^ Negotiated;
+  property IBox<uint16>^ Id;
+};
 
-  public ref class RTCDataChannelInit sealed
-  {
-  public:
-    property IBox<bool>^ Ordered;
-    property IBox<unsigned short>^ MaxPacketLifeTime;
-    property IBox<unsigned short>^ MaxRetransmits;
-    property String^ Protocol;
-    property IBox<bool>^ Negotiated;
-    property IBox<unsigned short>^ Id;
-  };
+public ref class RTCDataChannelMessageEvent sealed {
+public:
+  property String^ Data;
+};
 
-  public ref class RTCDataChannelMessageEvent sealed
-  {
-  public:
-    property String^ Data;
-  };
+public ref class RTCDataChannel sealed {
+internal:
+  RTCDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> impl);
+  rtc::scoped_refptr<webrtc::DataChannelInterface> GetImpl();
+  friend class webrtc_winrt_api_internal::DataChannelObserver;
 
-  public ref class RTCDataChannel sealed
-  {
-  internal:
-    RTCDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> impl);
-    rtc::scoped_refptr<webrtc::DataChannelInterface> GetImpl();
-    friend class webrtc_winrt_api_internal::DataChannelObserver;
+public:
+  property String^ Label { String^ get(); }
+  property bool Ordered { bool get(); }
+  property IBox<uint16>^ MaxPacketLifeTime { IBox<uint16>^ get(); }
+  property IBox<uint16>^ MaxRetransmits { IBox<uint16>^ get(); }
+  property String^ Protocol { String^ get(); }
+  property bool Negotiated { bool get(); }
+  property uint16 Id { uint16 get(); }
+  property RTCDataChannelState ReadyState { RTCDataChannelState get(); }
+  property unsigned int BufferedAmount { unsigned int get(); }
 
-  public:
-    property String^ Label { String^ get(); }
-    property bool Ordered { bool get(); }
-    property IBox<unsigned short>^ MaxPacketLifeTime { IBox<unsigned short>^ get(); }
-    property IBox<unsigned short>^ MaxRetransmits { IBox<unsigned short>^ get(); }
-    property String^ Protocol { String^ get(); }
-    property bool Negotiated { bool get(); }
-    property unsigned short Id { unsigned short get(); }
-    property RTCDataChannelState ReadyState { RTCDataChannelState get(); }
-    property unsigned int BufferedAmount { unsigned int get(); }
+  event RTCDataChannelMessageEventDelegate^ OnMessage;
+  event EventDelegate^ OnOpen;
+  event EventDelegate^ OnClose;
+  // TODO(WINRT): Figure out how OnError is received.
+  event EventDelegate^ OnError;
 
-    event RTCDataChannelMessageEventDelegate^ OnMessage;
-    event EventDelegate^ OnOpen;
-    event EventDelegate^ OnClose;
-    // TODO: Figure out how OnError is received.
-    event EventDelegate^ OnError;
+  void Send(String^ data);
 
-    void Send(String^ data);
+private:
+  rtc::scoped_refptr<webrtc::DataChannelInterface> _impl;
+};
 
-  private:
-    rtc::scoped_refptr<webrtc::DataChannelInterface> _impl;
-  };
+public ref class RTCDataChannelEvent sealed {
+public:
+  property RTCDataChannel^ Channel;
+};
+public delegate void RTCDataChannelEventDelegate(RTCDataChannelEvent^);
 
-  public ref class RTCDataChannelEvent sealed
-  {
-  public:
-    property RTCDataChannel^ Channel;
-  };
-  public delegate void RTCDataChannelEventDelegate(RTCDataChannelEvent^);
+}  // namespace webrtc_winrt_api
 
-}
+#endif  // WEBRTC_BUILD_WINRT_GYP_API_DATACHANNEL_H_
+

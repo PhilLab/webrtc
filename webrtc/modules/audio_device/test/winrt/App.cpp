@@ -168,15 +168,29 @@ namespace audio_device_test_winrt {
     }
 
     void testDeviceEnumerationButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
-      WinRTTestManager *mManager = new WinRTTestManager();
-      mManager->Init();
-      mManager->TestDeviceEnumeration();
+      TestDeviceEnumerationAsync();
+    }
+
+    Windows::Foundation::IAsyncAction^ TestDeviceEnumerationAsync() {
+      return create_async([this]
+      {
+        WinRTTestManager *mManager = new WinRTTestManager();
+        mManager->Init();
+        mManager->TestDeviceEnumeration();
+      });
     }
 
     void testDeviceSelectionButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
-      WinRTTestManager *mManager = new WinRTTestManager();
-      mManager->Init();
-      mManager->TestDeviceSelection();
+       TestDeviceSelectionAsync();
+    }
+
+    Windows::Foundation::IAsyncAction^ TestDeviceSelectionAsync() {
+      return create_async([this]
+      {
+        WinRTTestManager *mManager = new WinRTTestManager();
+        mManager->Init();
+        mManager->TestDeviceSelection();
+      });
     }
 
     void testAudioTransportButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {

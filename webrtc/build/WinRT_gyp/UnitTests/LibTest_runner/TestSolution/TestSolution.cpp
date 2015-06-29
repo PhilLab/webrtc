@@ -74,6 +74,29 @@ namespace LibTest_runner
   }
 
   //=======================================================================
+  //         Method: Execute
+  //    Description: Executes test from specified library
+  //       Argument: const wchar_t * libraryName - specified library name
+  //         return: void
+  //
+  //       History:
+  // 2015/03/03 TP: created
+  //======================================================================
+  void CTestSolution::ExecuteLibrary(const wchar_t* libraryName)
+  {
+    if (!IsEmpty())
+    {
+      for (auto it = m_Tests.cbegin(); it != m_Tests.cend(); ++it)
+      {
+        if ((*it)->Library().compare(libraryName) == 0)
+        {
+          InternalTestExecute(*it);
+        }
+      }
+    }
+  }
+
+  //=======================================================================
   //         Method: LibTest_runner::CTestSolution::AddTest
   //    Description: Adds test to solution
   //       Argument: const SpTestBase_t & ptrTest - test to add

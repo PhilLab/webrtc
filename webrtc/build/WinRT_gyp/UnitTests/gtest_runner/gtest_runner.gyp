@@ -164,6 +164,14 @@
                 '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
                 '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx/*.obj',
                 '../../../../../third_party/libyuv/source/*.obj',
+                '<(PRODUCT_DIR)/obj/openmax_dl_armv7/*.obj',
+                '<(PRODUCT_DIR)/obj/openmax_dl_neon/*.obj',
+              ],
+            }],
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+			  'AdditionalDependencies': [
+			   'ws2_32.lib',
+		       'WindowsApp.lib',
               ],
             }],
           ],

@@ -125,10 +125,6 @@
       'conditions': [
         ['OS=="win" and OS_RUNTIME=="winrt"', {
           'type': 'static_library',
-          # TODO (winrt) enable when compile issue is fixed
-          'sources!': [
-            'media/sctp/sctpdataengine_unittest.cc',
-          ],
           'msvs_disabled_warnings': [ 
                                      #warning: declaration of '' hides previous local declaration, hides class member declaration
                                      4456, 4457, 4458, 4459,

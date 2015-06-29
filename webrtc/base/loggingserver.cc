@@ -23,8 +23,8 @@ LoggingServer::~LoggingServer() {
     delete it->second;
   }
 
-  tw_->Stop();
   thread_->Stop();
+  tw_->Stop();
 }
 
 int LoggingServer::Listen(const SocketAddress& addr, LoggingSeverity level) {
