@@ -34,9 +34,12 @@
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
 using Platform::Collections::Vector;
+using Windows::Media::Capture::MediaCapture;
+using Windows::Media::Capture::MediaCaptureInitializationSettings;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
-Platform::Agile<Windows::Media::Capture::MediaCapture> capture_manager = nullptr;
+//Temporary object used during initialization only! Do not use for other purposes!
+Platform::Agile<MediaCapture> mediaAccessRequester = nullptr;
 
 // Any globals we need to keep around.
 namespace webrtc_winrt_api {
@@ -366,36 +369,47 @@ RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
   return ret;
 }
 
-Windows::Foundation::IAsyncAction^  WebRTC::InitializeMediaEngine(){
-
-  capture_manager = ref new  Windows::Media::Capture::MediaCapture();
-
-  Windows::Media::Capture::MediaCaptureInitializationSettings^ mediaSettings = ref new  Windows::Media::Capture::MediaCaptureInitializationSettings();
-
-  mediaSettings->AudioDeviceId = "";
-  mediaSettings->VideoDeviceId = "";
-  mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
-
-  mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
-
-  return capture_manager->InitializeAsync(mediaSettings);
-}
-
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   g_windowDispatcher = dispatcher;
 
   // Create a worker thread
   globals::gThread.Start();
 
-  globals::RunOnGlobalThread<void>([] {
-    rtc::EnsureWinsockInit();
-    rtc::InitializeSSL();
+  mediaAccessRequester = ref new MediaCapture();
+  MediaCaptureInitializationSettings^ mediaSettings = ref new MediaCaptureInitializationSettings();
+  mediaSettings->AudioDeviceId = "";
+  mediaSettings->VideoDeviceId = "";
+  mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
+  mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
 
-    LOG(LS_INFO) << "Creating PeerConnectionFactory.";
-    globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+  Concurrency::create_task(mediaAccessRequester->InitializeAsync(mediaSettings)).then([] {
+    //Release MediaCapture instance, since on some platforms, two calls of InitializeAsync
+    //on two diferent instances causes exception to be thrown from the second call to
+    //InitializeAsync. The second InitializeAsync is called in MediaCaptureDevicesWinRT::GetMediaCapture
+    //Behavior present on Lumia620, OS version 8.10.14219.341.
+    mediaAccessRequester = nullptr;
+    
+    globals::RunOnGlobalThread<void>([] {
+      rtc::EnsureWinsockInit();
+      rtc::InitializeSSL();
 
-    webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
-      &WebRTC::AddTraceEvent);
+      LOG(LS_INFO) << "Creating PeerConnectionFactory.";
+      globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+
+      webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
+        &WebRTC::AddTraceEvent);
+    });
+  }).then([](Concurrency::task<void> initTask){
+    try {
+      initTask.get();
+      OnInitializeSucceeded();
+    }
+    catch (Platform::Exception^ e) {
+      int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
+      std::string message(messageSize, 0);
+      WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
+      LOG(LS_ERROR) << "Failed to obtain media access permission: %s", message.c_str();
+    }
   });
 }
 
@@ -436,30 +450,30 @@ void WebRTC::DisableLogging() {
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs()
 {
-    auto ret = ref new Vector<CodecInfo^>();
-    std::vector<AudioCodec> codecs;
-    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
-    chmng->GetSupportedAudioCodecs(&codecs);
+  auto ret = ref new Vector<CodecInfo^>();
+  std::vector<AudioCodec> codecs;
+  cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+  chmng->GetSupportedAudioCodecs(&codecs);
     for (auto it = codecs.begin(); it != codecs.end(); ++it)
     {
-        ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-    }
-    return ret;
+      ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+  }
+  return ret;
 }
 
 IVector<CodecInfo^>^ WebRTC::GetVideoCodecs()
 {
-    auto ret = ref new Vector<CodecInfo^>();
-    std::vector<VideoCodec> codecs;
-    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
-    chmng->GetSupportedVideoCodecs(&codecs);
+  auto ret = ref new Vector<CodecInfo^>();
+  std::vector<VideoCodec> codecs;
+  cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+  chmng->GetSupportedVideoCodecs(&codecs);
     for (auto it = codecs.begin(); it != codecs.end(); ++it)
     {
-        if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
-            ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+    if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
+      ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
 
-    }
-    return ret;
+  }
+  return ret;
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(

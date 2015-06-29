@@ -89,7 +89,7 @@ public:
 public ref class WebRTC sealed {
 public:
   static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
-  static IAsyncAction^ InitializeMediaEngine();
+  
   static bool IsTracing();
   static void StartTracing();
   static void StopTracing();
@@ -102,6 +102,7 @@ public:
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
 
+  static event EventDelegate^ OnInitializeSucceeded;
 private:
   // This type is not meant to be created.
   WebRTC();
