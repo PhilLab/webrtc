@@ -76,18 +76,21 @@ namespace webrtc_winjs_api {
     {
       g_windowDispatcher = dispatcher_ = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
 
-      webrtc_winrt_api::WebRTC::Initialize(dispatcher_);
-
-
     }
 
     static void initial()
     {
       g_windowDispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
 
+
       webrtc_winrt_api::WebRTC::Initialize(g_windowDispatcher);
 
+      webrtc_winrt_api::Media^ mediaObject = ref new webrtc_winrt_api::Media();
 
+    }
+
+    static Windows::Foundation::IAsyncAction^ initialize(){
+      return webrtc_winrt_api::WebRTC::InitializeMediaEngine();
     }
 
     bool initialized(){ return this->started_; }

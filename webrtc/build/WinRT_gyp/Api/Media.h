@@ -77,7 +77,7 @@ namespace webrtc_winrt_api {
     IMediaStreamTrack^ GetTrackById(String^ trackId);
     void AddTrack(IMediaStreamTrack^ track);
     void RemoveTrack(IMediaStreamTrack^ track);
-
+    property String^ Id { String^ get();}
     property bool Active { bool get(); }
   private:
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
@@ -129,7 +129,6 @@ namespace webrtc_winrt_api {
 
   private:
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
-    std::vector<cricket::Device> _videoDevices;
     cricket::Device _selectedVideoDevice;
     webrtc::AudioDeviceModule *_audioDevice;
     uint16_t _selectedAudioDevice;

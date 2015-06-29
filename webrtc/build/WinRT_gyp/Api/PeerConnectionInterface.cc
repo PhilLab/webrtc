@@ -71,6 +71,8 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
   FromCx(configuration, &cc_configuration);
 
   webrtc::FakeConstraints constraints;
+  constraints.SetMandatoryReceiveAudio(true);
+  constraints.SetMandatoryReceiveVideo(true);
   constraints.SetAllowDtlsSctpDataChannels();
   _observer.SetPeerConnection(this);
 
