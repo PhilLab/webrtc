@@ -62,7 +62,7 @@ namespace LibTest_runner
       create_task([this, ui, spStringReporter]()
       {
         LibTest_runner::TestSolution::Instance().AddReporter(spStringReporter);
-        LibTest_runner::TestSolution::Instance().AddReporter(SpXmlReporter_t(new CXmlReporter(ref new String(L"tests.xml"))));
+        LibTest_runner::TestSolution::Instance().AddReporter(SpXmlReporter_t(new CXmlReporter(ref new String(L"tests.xml"), CXmlReporter::kAllTests)));
         LibTest_runner::TestSolution::Instance().Execute();
         LibTest_runner::TestSolution::Instance().GenerateReport();
       }).then([this, spStringReporter]()

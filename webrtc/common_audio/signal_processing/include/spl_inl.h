@@ -15,7 +15,7 @@
 #ifndef WEBRTC_SPL_SPL_INL_H_
 #define WEBRTC_SPL_SPL_INL_H_
 
-#if defined(WINRT) && defined(_M_ARM)
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP)
 #include "webrtc/common_audio/signal_processing/include/spl_inl_neon.h"
 #else
 

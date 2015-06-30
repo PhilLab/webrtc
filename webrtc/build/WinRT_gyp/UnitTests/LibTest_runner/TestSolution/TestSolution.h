@@ -29,6 +29,7 @@ namespace LibTest_runner
     CTestSolution() {};
     void Execute() throw();
     void Execute(const wchar_t* testName) throw();
+    void ExecuteLibrary(const wchar_t* libraryName) throw();
     void AddTest(const SpTestBase_t& ptrTest) throw();
     size_t GetTestCount() const throw();
     //=======================================================================

@@ -28,6 +28,7 @@
 #include "webrtc/base/tracelog.h"
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/session/media/channelmanager.h"
 
 
 using webrtc_winrt_api_internal::FromCx;
@@ -69,16 +70,19 @@ RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp) {
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
+  globals::RunOnGlobalThread<void>([this, cc_configuration] {
 
-  webrtc::FakeConstraints constraints;
-  constraints.SetMandatoryReceiveAudio(true);
-  constraints.SetMandatoryReceiveVideo(true);
-  constraints.SetAllowDtlsSctpDataChannels();
-  _observer.SetPeerConnection(this);
+    webrtc::FakeConstraints constraints;
+    constraints.SetAllowDtlsSctpDataChannels();
+    _observer.SetPeerConnection(this);
+    LOG(LS_INFO) << "Creating PeerConnection native.";
+    _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
+      cc_configuration, &constraints, nullptr, nullptr, &_observer);
+  });
+}
 
-
-  _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
-    cc_configuration, &constraints, nullptr, nullptr, &_observer);
+RTCPeerConnection::~RTCPeerConnection() {
+  LOG(LS_INFO) << "RTCPeerConnection::~RTCPeerConnection";
 }
 
 // Utility function to create an async operation
@@ -310,7 +314,10 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
 
 void RTCPeerConnection::Close() {
   globals::RunOnGlobalThread<void>([this] {
-    _impl->Close();
+    // Needed to remove the circular references and allow
+    // this object to be garbage collected.
+    _observer.SetPeerConnection(nullptr);
+    _impl = nullptr;
   });
 }
 
@@ -383,7 +390,9 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL();
 
+    LOG(LS_INFO) << "Creating PeerConnectionFactory.";
     globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
   });
@@ -422,6 +431,34 @@ void WebRTC::EnableLogging(LogLevel level) {
 void WebRTC::DisableLogging() {
   LOG(LS_INFO) << "WebRTC logging disabled";
   globals::gLoggingServer.reset();
+}
+
+IVector<CodecInfo^>^ WebRTC::GetAudioCodecs()
+{
+    auto ret = ref new Vector<CodecInfo^>();
+    std::vector<AudioCodec> codecs;
+    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+    chmng->GetSupportedAudioCodecs(&codecs);
+    for (auto it = codecs.begin(); it != codecs.end(); ++it)
+    {
+        ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+    }
+    return ret;
+}
+
+IVector<CodecInfo^>^ WebRTC::GetVideoCodecs()
+{
+    auto ret = ref new Vector<CodecInfo^>();
+    std::vector<VideoCodec> codecs;
+    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+    chmng->GetSupportedVideoCodecs(&codecs);
+    for (auto it = codecs.begin(); it != codecs.end(); ++it)
+    {
+        if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
+            ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+
+    }
+    return ret;
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(

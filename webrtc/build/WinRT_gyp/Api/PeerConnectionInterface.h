@@ -37,12 +37,53 @@ ref class MediaStreamTrack;
 
 public enum class LogLevel
   { 
-    LOGLVL_SENSITIVE = rtc::LS_SENSITIVE,
-    LOGLVL_VERBOSE = rtc::LS_VERBOSE,
-    LOGLVL_INFO = rtc::LS_INFO,
-    LOGLVL_WARNING = rtc::LS_WARNING,
-    LOGLVL_ERROR = rtc::LS_ERROR
-  };
+  LOGLVL_SENSITIVE = rtc::LS_SENSITIVE,
+  LOGLVL_VERBOSE = rtc::LS_VERBOSE,
+  LOGLVL_INFO = rtc::LS_INFO,
+  LOGLVL_WARNING = rtc::LS_WARNING,
+  LOGLVL_ERROR = rtc::LS_ERROR
+};
+
+public ref class CodecInfo sealed {
+private:
+    int _id;
+    int _clockrate;
+    int _channels;
+    String^ _name;
+public:
+    CodecInfo(int id, int clockrate, String^ name) {
+        _id = id;
+        _clockrate = clockrate;
+        _name = name;
+    }
+
+    property int Id {
+        int get(){
+            return _id;
+        }
+        void set(int value) {
+            _id = value;
+        }
+    }
+
+    property int Clockrate {
+        int get(){
+            return _clockrate;
+        }
+        void set(int value) {
+            _clockrate = value;
+        }
+    }
+
+    property String^ Name {
+        String^ get(){
+            return _name;
+        }
+        void set(String^ value) {
+            _name = value;
+        }
+    }
+};
 
 [Windows::Foundation::Metadata::WebHostHidden]
 public ref class WebRTC sealed {
@@ -57,6 +98,9 @@ public:
 
   static void EnableLogging(LogLevel level);
   static void DisableLogging();
+
+  static IVector<CodecInfo^>^ GetAudioCodecs();
+  static IVector<CodecInfo^>^ GetVideoCodecs();
 
 private:
   // This type is not meant to be created.
@@ -210,6 +254,7 @@ public:
   }
 
 private:
+  ~RTCPeerConnection();
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _impl;
   GlobalObserver _observer;
 

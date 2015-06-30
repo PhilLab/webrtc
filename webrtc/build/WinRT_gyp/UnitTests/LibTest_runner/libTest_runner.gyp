@@ -34,6 +34,31 @@
         '../../../../../third_party/opus/opus.gyp:test_opus_api',
         '../../../../../third_party/opus/opus.gyp:test_opus_decode',
         '../../../../../third_party/opus/opus.gyp:test_opus_padding',
+        #'../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_aead_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_base64_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_bio_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_bn_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_bytestring_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_constant_time_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_dh_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_digest_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_dsa_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_ec_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_ecdsa_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_err_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_gcm_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_hmac_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_lhash_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_rsa_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_pkcs7_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_pkcs12_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_example_mul',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_evp_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_ssl_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_pqueue_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_hkdf_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_pbkdf_test',
+        '../../../../../third_party/boringssl/boringssl_tests.gyp:boringssl_thread_test',
         '../../../../modules/modules.gyp:rtp_player',
         '../../../../modules/modules.gyp:video_capture',
       ],
@@ -101,6 +126,10 @@
         'rtpPlayerTests/RtpPlayerTest.h',
         'rtpPlayerTests/RtpPlayerTestBase.cpp',
         'rtpPlayerTests/RtpPlayerTestBase.h',
+        'boringsslTests/SimpleTest.cpp',
+        'boringsslTests/SimpleTest.h',
+        'boringsslTests/BoringSslTestBase.cpp',
+        'boringsslTests/BoringSslTestBase.h',
         'Logo.png',
         'SmallLogo.png',
         'StoreLogo.png',
@@ -203,8 +232,8 @@
         'VCLinkerTool': {
            'conditions': [
              ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
-			  'AdditionalDependencies': [
-		       'WindowsApp.lib',
+                'AdditionalDependencies': [
+                'WindowsApp.lib',
               ],
             }],
           ],
@@ -236,3 +265,4 @@
     },
   ],
 }
+

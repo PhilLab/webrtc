@@ -119,32 +119,37 @@ namespace LibTest_runner
   //       Argument: String^  outputFile - report output file name. 
   //                             Relative to root folder in the local app data store.
   //                             See Windows::Storage::ApplicationData::LocalFolder for details
+  //                 unsigned int flags - reporter flags
   //         return: 
   //
   //       History:
   // 2015/03/16 TP: created
   //======================================================================
-  CXmlReporter::CXmlReporter(String^ outputFile)
+  CXmlReporter::CXmlReporter(String^ outputFile, unsigned int flags)
     : OutputFile_(outputFile)
+    , m_nFlags(flags)
   {
   }
 
   void CXmlReporter::AddTestResult(const CTestBase& test) throw(ReportGenerationException)
   {
-    //first find project element
-    XmlElement^ projectEl = GetProjectElement(GetLibraryElement(ref new String(test.Library().c_str())),
-      ref new String(test.Project().c_str()));
+    if (test.Executed() || (m_nFlags & kAllTests))
+    {
+      //first find project element
+      XmlElement^ projectEl = GetProjectElement(GetLibraryElement(ref new String(test.Library().c_str())),
+        ref new String(test.Project().c_str()));
 
-    //create test element
-    XmlElement^ testEl = report_->CreateElement(TEST_ELEMENT_NAME);
-    //set test attributes
-    testEl->SetAttribute(ATTRIBUTE_NAME, ref new String(test.Name().c_str()));
-    testEl->SetAttribute(ATTRIBUTE_EXECUTED, test.Executed() ? ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
-    testEl->SetAttribute(ATTRIBUTE_SUCCEEDED, test.Succeed() ? ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
-    testEl->SetAttribute(ATTRIBUTE_EXIT_STATUS, "" + test.ExitStatus());
-    testEl->SetAttribute(ATTRIBUTE_RESULT_MESSAGE, ref new String(test.ResultMessage().c_str()));
-    testEl->SetAttribute(ATTRIBUTE_EXECUTION_TIME_MS, "" + test.GetExecutionTimeMs().count());
-    projectEl->AppendChild(testEl);
+      //create test element
+      XmlElement^ testEl = report_->CreateElement(TEST_ELEMENT_NAME);
+      //set test attributes
+      testEl->SetAttribute(ATTRIBUTE_NAME, ref new String(test.Name().c_str()));
+      testEl->SetAttribute(ATTRIBUTE_EXECUTED, test.Executed() ? ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
+      testEl->SetAttribute(ATTRIBUTE_SUCCEEDED, test.Succeed() ? ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
+      testEl->SetAttribute(ATTRIBUTE_EXIT_STATUS, "" + test.ExitStatus());
+      testEl->SetAttribute(ATTRIBUTE_RESULT_MESSAGE, ref new String(test.ResultMessage().c_str()));
+      testEl->SetAttribute(ATTRIBUTE_EXECUTION_TIME_MS, "" + test.GetExecutionTimeMs().count());
+      projectEl->AppendChild(testEl);
+    }
   }
 
   void CXmlReporter::Begin() throw(ReportGenerationException)
