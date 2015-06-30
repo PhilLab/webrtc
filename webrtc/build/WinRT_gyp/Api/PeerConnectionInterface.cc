@@ -405,10 +405,7 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
       OnInitializeSucceeded();
     }
     catch (Platform::Exception^ e) {
-      int messageSize = WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), NULL, 0, NULL, NULL);
-      std::string message(messageSize, 0);
-      WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(), (int)wcslen(e->Message->Data()), &message[0], messageSize, NULL, NULL);
-      LOG(LS_ERROR) << "Failed to obtain media access permission: %s", message.c_str();
+      LOG(LS_ERROR) << "Failed to obtain media access permission: " << rtc::ToUtf8(e->Message->Data()).c_str();
     }
   });
 }
