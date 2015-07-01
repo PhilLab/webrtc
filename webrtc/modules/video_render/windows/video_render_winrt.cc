@@ -58,6 +58,23 @@ VideoChannelWinRT::VideoChannelWinRT(IWinRTMediaElement* media_element,
 }
 
 VideoChannelWinRT::~VideoChannelWinRT() {
+  render_media_source_->Stop();
+  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+  Windows::UI::Core::CoreDispatcherPriority priority =
+    Windows::UI::Core::CoreDispatcherPriority::Normal;
+  IMediaSource^ media_source =
+    safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(
+    render_media_source_.Get()));
+  Windows::UI::Core::DispatchedHandler^ handler =
+    ref new Windows::UI::Core::DispatchedHandler(
+    [this, media_source]() {
+    if (media_element_) {
+      media_element_->Stop();
+    }
+  });
+  Windows::Foundation::IAsyncAction^ action =
+    dispatcher->RunAsync(priority, handler);
+  Concurrency::create_task(action).wait();
 }
 
 void VideoChannelWinRT::SetStreamSettings(uint16_t stream_id,
@@ -137,6 +154,7 @@ int VideoChannelWinRT::FrameSizeChange(int width,
     ref new Windows::UI::Core::DispatchedHandler(
       [this, media_source]() {
     media_element_->SetMediaStreamSource(media_source);
+    media_element_->Play();
   });
   Windows::Foundation::IAsyncAction^ action =
     dispatcher->RunAsync(priority, handler);

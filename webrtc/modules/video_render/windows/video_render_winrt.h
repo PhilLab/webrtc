@@ -31,6 +31,7 @@ class ThreadWrapper;
 class IWinRTMediaElement {
  public:
   virtual void Play() = 0;
+  virtual void Stop() = 0;
   virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^) = 0;
 };
 

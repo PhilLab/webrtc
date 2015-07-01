@@ -820,9 +820,6 @@ HRESULT VideoCaptureStreamSinkWinRT::QueueAsyncOperation(StreamOperation op) {
 
 HRESULT VideoCaptureStreamSinkWinRT::OnDispatchWorkItem(
     IMFAsyncResult *pAsyncResult) {
-  // Called by work queue thread. Need to hold the critical section.
-  CriticalSectionScoped cs(_critSec);
-
   try {
     ComPtr<IUnknown> spState;
 
@@ -903,12 +900,16 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
 
   bool fSendSamples = true;
 
-  if (_sampleQueue.size() == 0) {
-    fNeedMoreSamples = true;
-    fSendSamples = false;
-  } else {
-    spunkSample = _sampleQueue.front();
-    _sampleQueue.pop();
+  {
+    CriticalSectionScoped cs(_critSec);
+
+    if (_sampleQueue.size() == 0) {
+      fNeedMoreSamples = true;
+      fSendSamples = false;
+    } else {
+      spunkSample = _sampleQueue.front();
+      _sampleQueue.pop();
+    }
   }
 
   while (fSendSamples) {
@@ -930,17 +931,21 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
       }
     }
 
-    if (_state == State_Started && fProcessingSample) {
-      // If we are still in started state request another sample
-      ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
-    }
+    {
+      CriticalSectionScoped cs(_critSec);
 
-    if (_sampleQueue.size() == 0) {
-      fNeedMoreSamples = true;
-      fSendSamples = false;
-    } else {
-      spunkSample = _sampleQueue.front();
-      _sampleQueue.pop();
+      if (_state == State_Started && fProcessingSample) {
+        // If we are still in started state request another sample
+        ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+      }
+
+      if (_sampleQueue.size() == 0) {
+        fNeedMoreSamples = true;
+        fSendSamples = false;
+      } else {
+        spunkSample = _sampleQueue.front();
+        _sampleQueue.pop();
+      }
     }
   }
 
@@ -1214,8 +1219,6 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkById(
     assert(_spStreamSink);
     ComPtr<IMFStreamSink> spResult = _spStreamSink;
     *ppStreamSink = spResult.Detach();
-  } else {
-    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;

@@ -38,12 +38,17 @@ namespace webrtc {
 namespace videocapturemodule {
 
 ref class CaptureDevice sealed {
+ public:
+  virtual ~CaptureDevice();
+
  internal:
   CaptureDevice(CaptureDeviceListener* capture_device_listener);
 
   void Initialize(Platform::String^ device_id);
 
   void CleanupSink();
+
+  void CleanupMediaCapture();
 
   void Cleanup();
 
@@ -65,8 +70,9 @@ ref class CaptureDevice sealed {
     Platform::Agile<Windows::Media::Capture::MediaCapture> get();
   }
 
-private:
+ private:
   Platform::Agile<Windows::Media::Capture::MediaCapture> media_capture_;
+  Platform::String^ device_id_;
   VideoCaptureMediaSinkProxyWinRT^ media_sink_;
   Windows::Foundation::EventRegistrationToken
     media_capture_failed_event_registration_token_;
@@ -82,14 +88,20 @@ private:
 CaptureDevice::CaptureDevice(
   CaptureDeviceListener* capture_device_listener)
   : media_capture_(nullptr),
+    device_id_(nullptr),
     media_sink_(nullptr),
     capture_device_listener_(capture_device_listener),
     capture_started_(false) {
 }
 
+CaptureDevice::~CaptureDevice() {
+}
+
 void CaptureDevice::Initialize(Platform::String^ device_id) {
+  LOG(LS_INFO) << "CaptureDevice::Initialize";
   media_capture_ =
     MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id);
+  device_id_ = device_id;
   media_capture_failed_event_registration_token_ =
     media_capture_->Failed +=
       ref new MediaCaptureFailedEventHandler(this,
@@ -106,6 +118,16 @@ void CaptureDevice::CleanupSink() {
   }
 }
 
+void CaptureDevice::CleanupMediaCapture() {
+  Windows::Media::Capture::MediaCapture^ media_capture = media_capture_.Get();
+  if (media_capture != nullptr) {
+    media_capture->Failed -= media_capture_failed_event_registration_token_;
+    MediaCaptureDevicesWinRT::Instance()->RemoveMediaCapture(device_id_);
+    media_capture_ = nullptr;
+    device_id_ = nullptr;
+  }
+}
+
 Platform::Agile<Windows::Media::Capture::MediaCapture>
 CaptureDevice::MediaCapture::get() {
   return media_capture_;
@@ -119,11 +141,22 @@ void CaptureDevice::Cleanup() {
 
   if (capture_started_) {
     Concurrency::create_task(
-      media_capture->StopRecordAsync()).then([this](Concurrency::task<void>&) {
+      media_capture->StopRecordAsync()).
+        then([this](Concurrency::task<void>& async_info) {
+      try {
+        async_info.get();
+        CleanupSink();
+        CleanupMediaCapture();
+      } catch (Platform::Exception^ e) {
+        CleanupSink();
+        CleanupMediaCapture();
+        throw;
+      }
     }).wait();
+  } else {
+    CleanupSink();
+    CleanupMediaCapture();
   }
-  media_capture->Failed -= media_capture_failed_event_registration_token_;
-  CleanupSink();
 }
 
 void CaptureDevice::StartCapture(
@@ -195,6 +228,7 @@ void CaptureDevice::StartCapture(
           capture_started_ = true;
         } catch (Platform::Exception^ e) {
           CleanupSink();
+          CleanupMediaCapture();
           throw;
         }
       });
@@ -210,12 +244,14 @@ void CaptureDevice::StopCapture() {
 
   Concurrency::create_task(
     media_capture_.Get()->StopRecordAsync()).
-      then([this](Concurrency::task<void>& asyncInfo) {
+      then([this](Concurrency::task<void>& async_info) {
     try {
-      asyncInfo.get();
+      async_info.get();
       CleanupSink();
+      CleanupMediaCapture();
     } catch (Platform::Exception^ e) {
       CleanupSink();
+      CleanupMediaCapture();
       throw;
     }
   }).wait();
@@ -452,6 +488,7 @@ int32_t VideoCaptureWinRT::StartCapture(
 
 int32_t VideoCaptureWinRT::StopCapture() {
   CriticalSectionScoped cs(&_apiCs);
+
   try {
     device_->StopCapture();
   } catch (Platform::Exception^ e) {
@@ -490,9 +527,6 @@ void VideoCaptureWinRT::OnIncomingFrame(
 
 void VideoCaptureWinRT::OnCaptureDeviceFailed(HRESULT code,
                                               Platform::String^ message) {
-  CriticalSectionScoped cs(&_apiCs);
-  if (device_ != nullptr && device_->CaptureStarted())
-    device_->StopCapture();
   int message_string_size = WideCharToMultiByte(
     CP_UTF8, 0, message->Data(),
     static_cast<int>(wcslen(message->Data())),
@@ -504,6 +538,9 @@ void VideoCaptureWinRT::OnCaptureDeviceFailed(HRESULT code,
     &message_string[0], message_string_size, NULL, NULL);
   LOG(LS_ERROR) << "Capture device failed. HRESULT: " <<
     code << " Mesage: " << message_string.c_str();
+  CriticalSectionScoped cs(&_apiCs);
+  if (device_ != nullptr && device_->CaptureStarted())
+    device_->StopCapture();
 }
 
 }  // namespace videocapturemodule

@@ -234,10 +234,6 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueueEvent(MediaEventType met, REFGU
     hr = _spEventQueue->QueueEventParamVar(met, guidExtendedType, hrStatus, pvValue);
   }
 
-  if (!SUCCEEDED(hr)) {
-    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
-  }
-
   return hr;
 }
 
@@ -484,10 +480,6 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetService(
     } else {
       hr = MF_E_UNSUPPORTED_SERVICE;
     }
-  }
-
-  if (!SUCCEEDED(hr)) {
-    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
@@ -1149,10 +1141,6 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::QueueEvent(MediaEventType met, REFGU
     hr = _spEventQueue->QueueEventParamVar(met, guidExtendedType, hrStatus, pvValue);
   }
 
-  if (!SUCCEEDED(hr)) {
-    LOG_F(LS_ERROR) << "Render media source error: " << hr;
-  }
-
   return hr;
 }
 
@@ -1336,10 +1324,6 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetService(
     hr = QueryInterface(riid, ppvObject);
   } else if (guidService == MF_MEDIASOURCE_SERVICE) {
     hr = QueryInterface(riid, ppvObject);
-  }
-
-  if (!SUCCEEDED(hr)) {
-    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
