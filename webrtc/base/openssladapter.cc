@@ -858,6 +858,7 @@ OpenSSLAdapter::SSLInfoCallback(const SSL* s, int where, int ret) {
 
 int
 OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
+  return ok;
 #if _DEBUG
   if (!ok) {
     char data[256];
@@ -943,7 +944,7 @@ OpenSSLAdapter::SetupSSLContext() {
   SSL_CTX_set_info_callback(ctx, SSLInfoCallback);
 #endif
 
-  SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, SSLVerifyCallback);
+  SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, SSLVerifyCallback);
   SSL_CTX_set_verify_depth(ctx, 4);
   SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 

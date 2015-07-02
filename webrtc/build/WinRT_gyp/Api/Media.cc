@@ -25,7 +25,6 @@
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
-std::vector<cricket::Device> _videoDevices;
 
 namespace
 {
@@ -223,9 +222,13 @@ Media::Media() {
       _audioDevice->Init();
       return 0;
   });
-
-  if (_videoDevices.size() == 0)
+  static bool initialized = false;
+  if (!initialized) {
     this->EnumerateAudioVideoCaptureDevices();
+    initialized = true;
+
+  }
+
   
 }
 
