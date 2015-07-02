@@ -40,6 +40,7 @@
       'modules_java_gyp_path%': '<(modules_java_gyp_path)',
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
+	  'webrtc_h264_winrt_dir%': '<(webrtc_root)/modules/video_coding/codecs/h264_winrt',
       'include_opus%': 1,
       'opus_dir%': '<(DEPTH)/third_party/opus',
     },
