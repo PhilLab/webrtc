@@ -98,7 +98,7 @@ _playFile(*FileWrapper::Create()),
 _recCount(0),
 _playCount(0)
 {
-  _resampler.Reset(48000, 48000, kResamplerSynchronousStereo);
+  _resampler.Reset(48000, 48000, 2);
 }
 
 AudioTransportImpl::~AudioTransportImpl()
@@ -342,8 +342,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
         if (nChannelsIn == 2 && nBytesPerSampleIn == 4)
         {
           // input is stereo => we will resample in stereo
-          ret = _resampler.ResetIfNeeded(fsInHz, fsOutHz,
-            kResamplerSynchronousStereo);
+          ret = _resampler.ResetIfNeeded(fsInHz, fsOutHz, 2);
           if (ret == 0)
           {
             if (nChannels == 2)
@@ -387,8 +386,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
         {
           // input is mono (can be "reduced from stereo" as well) =>
           // we will resample in mono
-          ret = _resampler.ResetIfNeeded(fsInHz, fsOutHz,
-            kResamplerSynchronous);
+          ret = _resampler.ResetIfNeeded(fsInHz, fsOutHz, 1);
           if (ret == 0)
           {
             if (nChannels == 1)

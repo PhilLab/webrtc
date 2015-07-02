@@ -17,119 +17,110 @@ using webrtc_winrt_api::RTCBundlePolicy;
 using webrtc_winrt_api::RTCIceTransportPolicy;
 using webrtc_winrt_api::RTCSignalingState;
 using webrtc_winrt_api::RTCDataChannelState;
+using webrtc_winrt_api::RTCIceGatheringState;
+using webrtc_winrt_api::RTCIceConnectionState;
 using webrtc_winrt_api::RTCIceServer;
 using webrtc_winrt_api::RTCConfiguration;
 
 namespace webrtc_winrt_api_internal {
 
-#define DEFINE_MARSHALLED_ENUM_FROM(winrtType, nativeType)\
-  void FromCx(winrtType inObj, nativeType* outObj) {\
-    std::map<winrtType, nativeType> enumMap = {
-#define DEFINE_MARSHALLED_ENUM_TO(winrtType, nativeType)\
-    };\
-    (*outObj) = enumMap[inObj];\
+#define DEFINE_MARSHALLED_ENUM(name, winrtType, nativeType)\
+  typedef winrtType name##_winrtType;\
+  typedef nativeType name##_nativeType;\
+  std::map<winrtType, nativeType> name##_enumMap = {
+#define DEFINE_MARSHALLED_ENUM_END(name)\
+  };\
+  void FromCx(name##_winrtType inObj, name##_nativeType* outObj) {\
+    (*outObj) = name##_enumMap[inObj];\
   }\
-  void ToCx(nativeType const& inObj, winrtType* outObj) {\
-    std::map<nativeType, winrtType> enumMap = {
-#define DEFINE_MARSHALLED_ENUM_END()\
-    };\
-    (*outObj) = enumMap[inObj];\
+  void ToCx(name##_nativeType const& inObj, name##_winrtType* outObj) {\
+    for (auto& kv : name##_enumMap) {\
+      if (kv.second == inObj) {\
+        (*outObj) = kv.first;\
+        return;\
+      }\
+    }\
+    throw "Marshalling failed";\
   }\
 
-
-  DEFINE_MARSHALLED_ENUM_FROM(
+  DEFINE_MARSHALLED_ENUM(BundlePolicy,
     RTCBundlePolicy, webrtc::PeerConnectionInterface::BundlePolicy)
-      { RTCBundlePolicy::kBundlePolicyBalanced,
+      { RTCBundlePolicy::Balanced,
         webrtc::PeerConnectionInterface::kBundlePolicyBalanced },
-      { RTCBundlePolicy::kBundlePolicyMaxBundle,
+      { RTCBundlePolicy::MaxBundle,
         webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle },
-      { RTCBundlePolicy::kBundlePolicyMaxCompat,
+      { RTCBundlePolicy::MaxCompat,
         webrtc::PeerConnectionInterface::kBundlePolicyMaxCompat },
-  DEFINE_MARSHALLED_ENUM_TO(
-    RTCBundlePolicy, webrtc::PeerConnectionInterface::BundlePolicy)
-      { webrtc::PeerConnectionInterface::kBundlePolicyBalanced,
-        RTCBundlePolicy::kBundlePolicyBalanced },
-      { webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle,
-        RTCBundlePolicy::kBundlePolicyMaxBundle },
-      { webrtc::PeerConnectionInterface::kBundlePolicyMaxCompat,
-        RTCBundlePolicy::kBundlePolicyMaxCompat },
-  DEFINE_MARSHALLED_ENUM_END()
+  DEFINE_MARSHALLED_ENUM_END(BundlePolicy)
 
-  DEFINE_MARSHALLED_ENUM_FROM(
+  DEFINE_MARSHALLED_ENUM(IceTransportPolicy,
     RTCIceTransportPolicy, webrtc::PeerConnectionInterface::IceTransportsType)
-      { RTCIceTransportPolicy::kNone,
+      { RTCIceTransportPolicy::None,
         webrtc::PeerConnectionInterface::kNone },
-      { RTCIceTransportPolicy::kRelay,
+      { RTCIceTransportPolicy::Relay,
         webrtc::PeerConnectionInterface::kRelay },
-      { RTCIceTransportPolicy::kNoHost,
+      { RTCIceTransportPolicy::NoHost,
         webrtc::PeerConnectionInterface::kNoHost },
-      { RTCIceTransportPolicy::kAll,
+      { RTCIceTransportPolicy::All,
         webrtc::PeerConnectionInterface::kAll },
-  DEFINE_MARSHALLED_ENUM_TO(
-    RTCIceTransportPolicy, webrtc::PeerConnectionInterface::IceTransportsType)
-      { webrtc::PeerConnectionInterface::kNone,
-        RTCIceTransportPolicy::kNone },
-      { webrtc::PeerConnectionInterface::kRelay,
-        RTCIceTransportPolicy::kRelay },
-      { webrtc::PeerConnectionInterface::kNoHost,
-        RTCIceTransportPolicy::kNoHost },
-      { webrtc::PeerConnectionInterface::kAll,
-        RTCIceTransportPolicy::kAll },
-  DEFINE_MARSHALLED_ENUM_END()
+  DEFINE_MARSHALLED_ENUM_END(IceTransportPolicy)
 
-  DEFINE_MARSHALLED_ENUM_FROM(
+  DEFINE_MARSHALLED_ENUM(SignalingState,
     RTCSignalingState, webrtc::PeerConnectionInterface::SignalingState)
-      { RTCSignalingState::stable,
+      { RTCSignalingState::Stable,
         webrtc::PeerConnectionInterface::kStable },
-      { RTCSignalingState::haveLocalOffer,
+      { RTCSignalingState::HaveLocalOffer,
         webrtc::PeerConnectionInterface::kHaveLocalOffer },
-      { RTCSignalingState::haveRemoteOffer,
+      { RTCSignalingState::HaveRemoteOffer,
         webrtc::PeerConnectionInterface::kHaveRemoteOffer },
-      { RTCSignalingState::haveLocalPranswer,
+      { RTCSignalingState::HaveLocalPranswer,
         webrtc::PeerConnectionInterface::kHaveLocalPrAnswer },
-      { RTCSignalingState::haveRemotePranswer,
+      { RTCSignalingState::HaveRemotePranswer,
         webrtc::PeerConnectionInterface::kHaveRemotePrAnswer },
-      { RTCSignalingState::closed,
+      { RTCSignalingState::Closed,
         webrtc::PeerConnectionInterface::kClosed },
-  DEFINE_MARSHALLED_ENUM_TO(
-    RTCSignalingState, webrtc::PeerConnectionInterface::SignalingState)
-      { webrtc::PeerConnectionInterface::kStable,
-        RTCSignalingState::stable },
-      { webrtc::PeerConnectionInterface::kHaveLocalOffer,
-        RTCSignalingState::haveLocalOffer },
-      { webrtc::PeerConnectionInterface::kHaveRemoteOffer,
-        RTCSignalingState::haveRemoteOffer },
-      { webrtc::PeerConnectionInterface::kHaveLocalPrAnswer,
-        RTCSignalingState::haveLocalPranswer },
-      { webrtc::PeerConnectionInterface::kHaveRemotePrAnswer,
-        RTCSignalingState::haveRemotePranswer },
-      { webrtc::PeerConnectionInterface::kClosed,
-        RTCSignalingState::closed },
-  DEFINE_MARSHALLED_ENUM_END()
+  DEFINE_MARSHALLED_ENUM_END(SignalingState)
 
-  DEFINE_MARSHALLED_ENUM_FROM(
-    webrtc_winrt_api::RTCDataChannelState,
+  DEFINE_MARSHALLED_ENUM(DataChannelState,
+    RTCDataChannelState,
     webrtc::DataChannelInterface::DataState)
-      { RTCDataChannelState::connecting,
+      { RTCDataChannelState::Connecting,
         webrtc::DataChannelInterface::kConnecting },
-      { RTCDataChannelState::open,
+      { RTCDataChannelState::Open,
         webrtc::DataChannelInterface::kOpen },
-      { RTCDataChannelState::closing,
+      { RTCDataChannelState::Closing,
         webrtc::DataChannelInterface::kClosing },
-      { RTCDataChannelState::closed,
+      { RTCDataChannelState::Closed,
         webrtc::DataChannelInterface::kClosed },
-  DEFINE_MARSHALLED_ENUM_TO(
-    webrtc_winrt_api::RTCDataChannelState,
-    webrtc::DataChannelInterface::DataState)
-      { webrtc::DataChannelInterface::kConnecting,
-        RTCDataChannelState::connecting },
-      { webrtc::DataChannelInterface::kOpen,
-        RTCDataChannelState::open },
-      { webrtc::DataChannelInterface::kClosing,
-        RTCDataChannelState::closing },
-      { webrtc::DataChannelInterface::kClosed,
-        RTCDataChannelState::closed },
-  DEFINE_MARSHALLED_ENUM_END()
+  DEFINE_MARSHALLED_ENUM_END(DataChannelState)
+
+  DEFINE_MARSHALLED_ENUM(IceGatheringState,
+    RTCIceGatheringState, webrtc::PeerConnectionInterface::IceGatheringState)
+      { RTCIceGatheringState::New,
+        webrtc::PeerConnectionInterface::kIceGatheringNew },
+      { RTCIceGatheringState::Gathering,
+        webrtc::PeerConnectionInterface::kIceGatheringGathering },
+      { RTCIceGatheringState::Complete,
+        webrtc::PeerConnectionInterface::kIceGatheringComplete },
+  DEFINE_MARSHALLED_ENUM_END(IceGatheringState)
+
+  DEFINE_MARSHALLED_ENUM(IceConnectionState,
+    RTCIceConnectionState, webrtc::PeerConnectionInterface::IceConnectionState)
+      { RTCIceConnectionState::New,
+        webrtc::PeerConnectionInterface::kIceConnectionNew },
+      { RTCIceConnectionState::Checking,
+        webrtc::PeerConnectionInterface::kIceConnectionChecking },
+      { RTCIceConnectionState::Connected,
+        webrtc::PeerConnectionInterface::kIceConnectionConnected },
+      { RTCIceConnectionState::Completed,
+        webrtc::PeerConnectionInterface::kIceConnectionCompleted },
+      { RTCIceConnectionState::Failed,
+        webrtc::PeerConnectionInterface::kIceConnectionFailed },
+      { RTCIceConnectionState::Disconnected,
+        webrtc::PeerConnectionInterface::kIceConnectionDisconnected },
+      { RTCIceConnectionState::Closed,
+        webrtc::PeerConnectionInterface::kIceConnectionClosed },
+  DEFINE_MARSHALLED_ENUM_END(IceConnectionState)
 
   std::string FromCx(String^ inObj) {
     return rtc::ToUtf8(inObj->Data());
@@ -213,11 +204,11 @@ namespace webrtc_winrt_api_internal {
 
   std::string FromCx(
     webrtc_winrt_api::RTCSdpType const& inObj) {
-    if (inObj == webrtc_winrt_api::RTCSdpType::offer)
+    if (inObj == webrtc_winrt_api::RTCSdpType::Offer)
       return webrtc::SessionDescriptionInterface::kOffer;
-    if (inObj == webrtc_winrt_api::RTCSdpType::answer)
+    if (inObj == webrtc_winrt_api::RTCSdpType::Answer)
       return webrtc::SessionDescriptionInterface::kAnswer;
-    if (inObj == webrtc_winrt_api::RTCSdpType::pranswer)
+    if (inObj == webrtc_winrt_api::RTCSdpType::Pranswer)
       return webrtc::SessionDescriptionInterface::kPrAnswer;
     // TODO(WINRT): Throw?
     return "";
@@ -227,11 +218,11 @@ namespace webrtc_winrt_api_internal {
     std::string const& inObj,
     webrtc_winrt_api::RTCSdpType* outObj) {
     if (inObj == webrtc::SessionDescriptionInterface::kOffer)
-      (*outObj) = webrtc_winrt_api::RTCSdpType::offer;
+      (*outObj) = webrtc_winrt_api::RTCSdpType::Offer;
     if (inObj == webrtc::SessionDescriptionInterface::kAnswer)
-      (*outObj) = webrtc_winrt_api::RTCSdpType::answer;
+      (*outObj) = webrtc_winrt_api::RTCSdpType::Answer;
     if (inObj == webrtc::SessionDescriptionInterface::kPrAnswer)
-      (*outObj) = webrtc_winrt_api::RTCSdpType::pranswer;
+      (*outObj) = webrtc_winrt_api::RTCSdpType::Pranswer;
   }
 
   void FromCx(

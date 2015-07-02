@@ -23,7 +23,7 @@ ref class RTMediaStreamSource sealed {
     virtual ~RTMediaStreamSource();
   internal:
     static MediaStreamSource^ CreateMediaSource(
-      MediaVideoTrack^ track, uint32 width, uint32 height, uint32 frameRate);
+      MediaVideoTrack^ track, uint32 frameRate);
   private:
     class RTCRenderer : public webrtc::VideoRendererInterface {
      public:
@@ -52,10 +52,9 @@ ref class RTMediaStreamSource sealed {
     CRITICAL_SECTION _lock;
     rtc::scoped_ptr<cricket::VideoFrame> _frame;
     uint32 _stride;
-    uint32 _sourceWidth;
-    uint32 _sourceHeight;
     uint64 _timeStamp;
     uint32 _frameRate;
+    Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 };
 
 }  // namespace webrtc_winrt_api_internal

@@ -16,27 +16,37 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "GlobalObserver.h"
+#include "talk/media/devices/devicemanager.h"
+#include "talk/media/devices/winrtdevicemanager.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "Delegates.h"
 
 using Windows::Foundation::IAsyncOperation;
 using Platform::String;
 using Windows::Foundation::Collections::IVector;
 using Windows::Media::Core::IMediaSource;
+using namespace cricket;
 
 namespace webrtc_winrt_api {
   public interface class IMediaStreamTrack {
     property String^ Kind { String^ get(); }
     property String^ Id { String^ get(); }
     property bool Enabled { bool get(); void set(bool value); }
+    void Stop();
   };
 
   public ref class MediaVideoTrack sealed : public IMediaStreamTrack {
   internal:
     MediaVideoTrack(rtc::scoped_refptr<webrtc::VideoTrackInterface> impl);
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> GetImpl() {
+      return _impl;
+    }
   public:
     virtual ~MediaVideoTrack();
     virtual property String^ Kind { String^ get(); }
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
+    virtual void Stop();
   internal:
     void SetRenderer(webrtc::VideoRendererInterface* renderer);
     void UnsetRenderer(webrtc::VideoRendererInterface* renderer);
@@ -47,14 +57,17 @@ namespace webrtc_winrt_api {
   public ref class MediaAudioTrack sealed : public IMediaStreamTrack {
   internal:
     MediaAudioTrack(rtc::scoped_refptr<webrtc::AudioTrackInterface> impl);
+    rtc::scoped_refptr<webrtc::AudioTrackInterface> GetImpl() {
+      return _impl;
+    }
   public:
     virtual property String^ Kind { String^ get(); }
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
+    virtual void Stop();
   private:
     rtc::scoped_refptr<webrtc::AudioTrackInterface> _impl;
   };
-
 
   public ref class MediaStream sealed {
   internal:
@@ -64,16 +77,64 @@ namespace webrtc_winrt_api {
     IVector<MediaAudioTrack^>^ GetAudioTracks();
     IVector<MediaVideoTrack^>^ GetVideoTracks();
     IVector<IMediaStreamTrack^>^ GetTracks();
+    IMediaStreamTrack^ GetTrackById(String^ trackId);
+    void AddTrack(IMediaStreamTrack^ track);
+    void RemoveTrack(IMediaStreamTrack^ track);
+
+    property bool Active { bool get(); }
   private:
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
   };
 
+  public ref class MediaDevice sealed {
+  private:
+    String^ _id;
+    String^ _name;
+  public:
+    MediaDevice(String^ id, String^ name) {
+      _id = id;
+      _name = name;
+    }
+    property String^ Id {
+      String^ get(){
+        return _id;
+      }
+      void set(String^ value) {
+        _id = value;
+      }
+    }
+
+    property String^ Name {
+      String^ get(){
+        return _name;
+      }
+      void set(String^ value) {
+        _name = value;
+      }
+    }
+  };
+
   public ref class Media sealed {
   public:
+    Media();
+
     // TODO(WINRT): Arguments
     IAsyncOperation<MediaStream^>^ GetUserMedia();
     IMediaSource^ CreateMediaStreamSource(
-      MediaVideoTrack^ track, uint32 width, uint32 height, uint32 framerate);
+      MediaVideoTrack^ track, uint32 framerate);
+
+    IAsyncOperation<bool>^ EnumerateAudioVideoCaptureDevices();
+    void SelectVideoDevice(MediaDevice^ device);
+    void SelectAudioDevice(MediaDevice^ device);
+
+    event OnMediaCaptureDeviceFoundDelegate^ OnVideoCaptureDeviceFound;
+    event OnMediaCaptureDeviceFoundDelegate^ OnAudioCaptureDeviceFound;
+
+  private:
+    rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
+    cricket::Device _selectedVideoDevice;
+    webrtc::AudioDeviceModule *_audioDevice;
+    uint16_t _selectedAudioDevice;
   };
 
 }  // namespace webrtc_winrt_api

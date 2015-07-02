@@ -27,6 +27,9 @@ ref class RTCDataChannelMessageEvent;
 public delegate void RTCDataChannelMessageEventDelegate(
   RTCDataChannelMessageEvent^);
 
+ref class MediaDevice;
+public delegate void OnMediaCaptureDeviceFoundDelegate(MediaDevice^);
+
 }  // namespace webrtc_winrt_api
 
 #endif  // WEBRTC_BUILD_WINRT_GYP_API_DELEGATES_H_

@@ -11,7 +11,9 @@
 
 #include <ppltasks.h>
 #include <map>
+#include <string>
 #include <functional>
+#include <codecvt>
 
 #include "GlobalObserver.h"
 #include "Marshalling.h"
@@ -21,22 +23,30 @@
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/event_tracer.h"
+#include "webrtc/base/loggingserver.h"
+#include "webrtc/base/tracelog.h"
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/session/media/channelmanager.h"
 
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
+using Platform::Collections::Vector;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
+Platform::Agile<Windows::Media::Capture::MediaCapture> capture_manager = nullptr;
 
 // Any globals we need to keep around.
 namespace webrtc_winrt_api {
 namespace globals {
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   gPeerConnectionFactory;
-// The worker thread for webrtc.
-rtc::Thread gThread;
+  // The worker thread for webrtc.
+  rtc::Thread gThread;
+  rtc::TraceLog gTraceLog;
+  rtc::scoped_ptr<rtc::LoggingServer> gLoggingServer;
 }  // namespace globals
 
 RTCIceCandidate::RTCIceCandidate() {
@@ -60,14 +70,20 @@ RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp) {
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
+  globals::RunOnGlobalThread<void>([this, cc_configuration] {
 
-  webrtc::FakeConstraints constraints;
-  constraints.SetAllowDtlsSctpDataChannels();
-  _observer.SetPeerConnection(this);
+    webrtc::FakeConstraints constraints;
+    constraints.SetAllowDtlsSctpDataChannels();
+    _observer.SetPeerConnection(this);
 
+    LOG(LS_INFO) << "Creating PeerConnection native.";
+    _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
+      cc_configuration, &constraints, nullptr, nullptr, &_observer);
+  });
+}
 
-  _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
-    cc_configuration, &constraints, nullptr, nullptr, &_observer);
+RTCPeerConnection::~RTCPeerConnection() {
+  LOG(LS_INFO) << "RTCPeerConnection::~RTCPeerConnection";
 }
 
 // Utility function to create an async operation
@@ -198,8 +214,76 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(
   });
 }
 
+RTCConfiguration^ RTCPeerConnection::GetConfiguration() {
+  RTCConfiguration^ ret = nullptr;
+  globals::RunOnGlobalThread<void>([this, ret] {
+    // TODO(WINRT): Figure out how to rebuild a configuration
+    // object.  There doesn't seem to be a simple function
+    // on the webrtc::PeerConnectionInterface.
+  });
+  return ret;
+}
+
+IVector<MediaStream^>^ RTCPeerConnection::GetLocalStreams() {
+  auto ret = ref new Vector<MediaStream^>();
+  globals::RunOnGlobalThread<void>([this, ret] {
+    auto streams = _impl->local_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      ret->Append(ref new MediaStream(streams->at(i)));
+    }
+  });
+  return ret;
+}
+
+IVector<MediaStream^>^ RTCPeerConnection::GetRemoteStreams() {
+  auto ret = ref new Vector<MediaStream^>();
+  globals::RunOnGlobalThread<void>([this, ret] {
+    auto streams = _impl->remote_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      ret->Append(ref new MediaStream(streams->at(i)));
+    }
+  });
+  return ret;
+}
+
+MediaStream^ RTCPeerConnection::GetStreamById(String^ streamId) {
+  MediaStream^ ret = nullptr;
+  globals::RunOnGlobalThread<void>([this, streamId, &ret] {
+    std::string streamIdStr = FromCx(streamId);
+    // Look through the local streams.
+    auto streams = _impl->local_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      auto stream = streams->at(i);
+      // TODO(WINRT): Is the label the stream id?
+      if (stream->label() == streamIdStr) {
+        ret = ref new MediaStream(stream);
+        return;
+      }
+    }
+    // Look through the remote streams.
+    streams = _impl->remote_streams();
+    for (size_t i = 0; i < streams->count(); ++i) {
+      auto stream = streams->at(i);
+      // TODO(WINRT): Is the label the stream id?
+      if (stream->label() == streamIdStr) {
+        ret = ref new MediaStream(stream);
+        return;
+      }
+    }
+  });
+  return ret;
+}
+
 void RTCPeerConnection::AddStream(MediaStream^ stream) {
-  _impl->AddStream(stream->GetImpl());
+  globals::RunOnGlobalThread<void>([this, stream] {
+    _impl->AddStream(stream->GetImpl());
+  });
+}
+
+void RTCPeerConnection::RemoveStream(MediaStream^ stream) {
+  globals::RunOnGlobalThread<void>([this, stream] {
+    _impl->RemoveStream(stream->GetImpl());
+  });
 }
 
 RTCDataChannel^ RTCPeerConnection::CreateDataChannel(
@@ -229,26 +313,72 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
   });
 }
 
+void RTCPeerConnection::Close() {
+  globals::RunOnGlobalThread<void>([this] {
+    // Needed to remove the circular references and allow
+    // this object to be garbage collected.
+    _observer.SetPeerConnection(nullptr);
+    _impl = nullptr;
+  });
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
-  if (_impl->local_description() != nullptr) {
-    ToCx(_impl->local_description(), &ret);
-  }
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    if (_impl->local_description() != nullptr) {
+      ToCx(_impl->local_description(), &ret);
+    }
+  });
   return ret;
 }
 
 RTCSessionDescription^ RTCPeerConnection::RemoteDescription::get() {
   RTCSessionDescription^ ret;
-  if (_impl->remote_description() != nullptr) {
-    ToCx(_impl->remote_description(), &ret);
-  }
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    if (_impl->remote_description() != nullptr) {
+      ToCx(_impl->remote_description(), &ret);
+    }
+  });
   return ret;
 }
 
 RTCSignalingState RTCPeerConnection::SignalingState::get() {
   RTCSignalingState ret;
-  ToCx(_impl->signaling_state(), &ret);
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    ToCx(_impl->signaling_state(), &ret);
+  });
   return ret;
+}
+
+RTCIceGatheringState RTCPeerConnection::IceGatheringState::get() {
+  RTCIceGatheringState ret;
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    ToCx(_impl->ice_gathering_state(), &ret);
+  });
+  return ret;
+}
+
+RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
+  RTCIceConnectionState ret;
+  globals::RunOnGlobalThread<void>([this, &ret] {
+    ToCx(_impl->ice_connection_state(), &ret);
+  });
+  return ret;
+}
+
+Windows::Foundation::IAsyncAction^  WebRTC::InitializeMediaEngine(){
+
+  capture_manager = ref new  Windows::Media::Capture::MediaCapture();
+
+  Windows::Media::Capture::MediaCaptureInitializationSettings^ mediaSettings = ref new  Windows::Media::Capture::MediaCaptureInitializationSettings();
+
+  mediaSettings->AudioDeviceId = "";
+  mediaSettings->VideoDeviceId = "";
+  mediaSettings->StreamingCaptureMode = Windows::Media::Capture::StreamingCaptureMode::AudioAndVideo;
+
+  mediaSettings->PhotoCaptureSource = Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
+
+  return capture_manager->InitializeAsync(mediaSettings);
 }
 
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
@@ -261,8 +391,93 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL();
 
+    LOG(LS_INFO) << "Creating PeerConnectionFactory.";
     globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory();
+
+    webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
+      &WebRTC::AddTraceEvent);
   });
+}
+
+bool WebRTC::IsTracing() {
+  return globals::gTraceLog.IsTracing();
+}
+
+void WebRTC::StartTracing() {
+  globals::gTraceLog.StartTracing();
+}
+
+void WebRTC::StopTracing() {
+  globals::gTraceLog.StopTracing();
+}
+
+bool WebRTC::SaveTrace(Platform::String^ filename) {
+  std::string filenameStr = FromCx(filename);
+  return globals::gTraceLog.Save(filenameStr);
+}
+
+bool WebRTC::SaveTrace(Platform::String^ host, int port) {
+  std::string hostStr = FromCx(host);
+  return globals::gTraceLog.Save(hostStr, port);
+}
+
+void WebRTC::EnableLogging(LogLevel level) {
+  rtc::SocketAddress sa(INADDR_ANY, 47003);
+  globals::gLoggingServer = rtc::scoped_ptr<rtc::LoggingServer>(
+    new rtc::LoggingServer());
+  globals::gLoggingServer->Listen(sa, static_cast<int>(level));
+  LOG(LS_INFO) << "WebRTC logging enabled";
+}
+
+void WebRTC::DisableLogging() {
+  LOG(LS_INFO) << "WebRTC logging disabled";
+  globals::gLoggingServer.reset();
+}
+
+IVector<CodecInfo^>^ WebRTC::GetAudioCodecs()
+{
+    auto ret = ref new Vector<CodecInfo^>();
+    std::vector<AudioCodec> codecs;
+    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+    chmng->GetSupportedAudioCodecs(&codecs);
+    for (auto it = codecs.begin(); it != codecs.end(); ++it)
+    {
+        ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+    }
+    return ret;
+}
+
+IVector<CodecInfo^>^ WebRTC::GetVideoCodecs()
+{
+    auto ret = ref new Vector<CodecInfo^>();
+    std::vector<VideoCodec> codecs;
+    cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+    chmng->GetSupportedVideoCodecs(&codecs);
+    for (auto it = codecs.begin(); it != codecs.end(); ++it)
+    {
+        if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
+            ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+
+    }
+    return ret;
+}
+
+const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(
+  const char* category_group) {
+  return reinterpret_cast<const unsigned char*>("webrtc");
+}
+
+void __cdecl WebRTC::AddTraceEvent(char phase,
+  const unsigned char* category_group_enabled,
+  const char* name,
+  unsigned long long id,
+  int num_args,
+  const char** arg_names,
+  const unsigned char* arg_types,
+  const unsigned long long* arg_values,
+  unsigned char flags) {
+  globals::gTraceLog.Add(phase, category_group_enabled, name, id,
+    num_args, arg_names, arg_types, arg_values, flags);
 }
 
 }  // namespace webrtc_winrt_api

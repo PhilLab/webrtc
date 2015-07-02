@@ -37,6 +37,10 @@ namespace webrtc_winrt_api_internal {
                           webrtc::PeerConnectionInterface::SignalingState);
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCDataChannelState,
                           webrtc::DataChannelInterface::DataState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceGatheringState,
+                          webrtc::PeerConnectionInterface::IceGatheringState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceConnectionState,
+                          webrtc::PeerConnectionInterface::IceConnectionState);
 
   // Templated function to convert vectors.
   template <typename I, typename O>

@@ -21,10 +21,10 @@ using Platform::IBox;
 
 namespace webrtc_winrt_api {
 public enum class RTCDataChannelState {
-  connecting,
-  open,
-  closing,
-  closed,
+  Connecting,
+  Open,
+  Closing,
+  Closed,
 };
 
 public ref class RTCDataChannelInit sealed {

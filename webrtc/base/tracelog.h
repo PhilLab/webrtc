@@ -39,8 +39,8 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
   void StopTracing();
   bool IsTracing();
 
-  void Save(const std::string& file_name);
-  void Save(const std::string& addr, int port);
+  bool Save(const std::string& file_name);
+  bool Save(const std::string& addr, int port);
 
  private:
   static bool processMessages(void* args);
