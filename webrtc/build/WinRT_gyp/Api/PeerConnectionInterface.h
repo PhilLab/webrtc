@@ -88,8 +88,8 @@ public:
 [Windows::Foundation::Metadata::WebHostHidden]
 public ref class WebRTC sealed {
 public:
+  static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
   static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
-  
   static bool IsTracing();
   static void StartTracing();
   static void StopTracing();
