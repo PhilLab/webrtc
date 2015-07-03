@@ -102,7 +102,6 @@ public:
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
 
-  static event EventDelegate^ OnInitializeSucceeded;
 private:
   // This type is not meant to be created.
   WebRTC();
