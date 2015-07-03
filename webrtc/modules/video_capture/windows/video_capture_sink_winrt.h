@@ -25,11 +25,10 @@ class CriticalSectionWrapper;
 namespace videocapturemodule {
 class VideoCaptureMediaSinkWinRT;
 
-private ref class MediaSampleEventArgs sealed
-{
+private ref class MediaSampleEventArgs sealed {
 internal:
   MediaSampleEventArgs(Microsoft::WRL::ComPtr<IMFSample> spMediaSample) :
-      _spMediaSample(spMediaSample) { }
+    _spMediaSample(spMediaSample) { }
 
   Microsoft::WRL::ComPtr<IMFSample> GetMediaSample() {
     return _spMediaSample;
@@ -39,8 +38,7 @@ private:
   Microsoft::WRL::ComPtr<IMFSample> _spMediaSample;
 };
 
-interface class ISinkCallback
-{
+interface class ISinkCallback {
   void OnSample(MediaSampleEventArgs^ args);
   void OnShutdown();
 };
@@ -51,12 +49,12 @@ class VideoCaptureStreamSinkWinRT :
 
   // State enum: Defines the current state of the stream.
   enum State {
-    State_TypeNotSet = 0,    // No media type is set
-    State_Ready,             // Media type is set, Start has never been called.
+    State_TypeNotSet = 0,
+    State_Ready,
     State_Started,
     State_Stopped,
     State_Paused,
-    State_Count              // Number of states
+    State_Count
   };
 
   // StreamOperation: Defines various operations that can
@@ -68,7 +66,7 @@ class VideoCaptureStreamSinkWinRT :
     OpPause,
     OpStop,
     OpProcessSample,
-    Op_Count                // Number of operations
+    Op_Count
   };
 
   template<class T>
@@ -106,7 +104,6 @@ class VideoCaptureStreamSinkWinRT :
 
     // IMFAsyncCallback methods
     STDMETHODIMP GetParameters(DWORD*, DWORD*) {
-      // Implementation of this method is optional.
       return E_NOTIMPL;
     }
 
@@ -126,7 +123,7 @@ class VideoCaptureStreamSinkWinRT :
    public:
     explicit AsyncOperation(StreamOperation op);
 
-    StreamOperation m_op;   // The operation to perform.
+    StreamOperation m_op;
 
     // IUnknown methods.
     STDMETHODIMP QueryInterface(REFIID iid, void **ppv);
@@ -296,8 +293,7 @@ class VideoCaptureMediaSinkWinRT
   Microsoft::WRL::ComPtr<IMFPresentationClock> _spClock;
 };
 
-private ref class VideoCaptureMediaSinkProxyWinRT sealed
-{
+private ref class VideoCaptureMediaSinkProxyWinRT sealed {
  public:
   VideoCaptureMediaSinkProxyWinRT();
   virtual ~VideoCaptureMediaSinkProxyWinRT();
@@ -310,23 +306,19 @@ private ref class VideoCaptureMediaSinkProxyWinRT sealed
   event Windows::Foundation::EventHandler<MediaSampleEventArgs^>^ MediaSampleEvent;
 
  private:
-  ref class VideoCaptureSinkCallback sealed : ISinkCallback
-  {
+  ref class VideoCaptureSinkCallback sealed : ISinkCallback {
    public:
-    virtual void OnSample(MediaSampleEventArgs^ args)
-    {
+    virtual void OnSample(MediaSampleEventArgs^ args) {
       _parent->OnSample(args);
     }
 
-    virtual void OnShutdown()
-    {
+    virtual void OnShutdown() {
       _parent->OnShutdown();
     }
 
    internal:
     VideoCaptureSinkCallback(VideoCaptureMediaSinkProxyWinRT ^parent)
-      : _parent(parent)
-    {
+      : _parent(parent) {
     }
 
    private:
