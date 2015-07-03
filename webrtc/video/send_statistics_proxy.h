@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/ratetracker.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -20,14 +21,11 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_capture.h"
-#include "webrtc/video_engine/include/vie_codec.h"
+#include "webrtc/video_engine/overuse_frame_detector.h"
+#include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
 
 class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public RtcpStatisticsCallback,
@@ -53,6 +51,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
+
+  void OnInactiveSsrc(uint32_t ssrc);
 
  protected:
   // From CpuOveruseMetricsObserver.
@@ -93,6 +93,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   struct StatsUpdateTimes {
     StatsUpdateTimes() : resolution_update_ms(0) {}
     int64_t resolution_update_ms;
+    int64_t bitrate_update_ms;
   };
   void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
@@ -100,7 +101,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   Clock* const clock_;
   const VideoSendStream::Config config_;
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
   rtc::RateTracker input_frame_rate_tracker_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);

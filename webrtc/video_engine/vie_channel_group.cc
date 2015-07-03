@@ -141,7 +141,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 };
 }  // namespace
 
-ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
+ChannelGroup::ChannelGroup(ProcessThread* process_thread)
     : remb_(new VieRemb()),
       bitrate_allocator_(new BitrateAllocator()),
       call_stats_(new CallStats()),
@@ -154,8 +154,7 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
                                  BitrateController::kDefaultStartBitrateKbps,
                              0)),
       encoder_map_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      config_(config),
-      own_config_(),
+      config_(new Config),
       process_thread_(process_thread),
       pacer_thread_(ProcessThread::Create()),
       // Constructed last as this object calls the provided callback on
@@ -163,16 +162,8 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
                                                      this)) {
-  if (!config) {
-    own_config_.reset(new Config);
-    config_ = own_config_.get();
-  }
-  DCHECK(config_);  // Must have a valid config pointer here.
-
-  remote_bitrate_estimator_.reset(
-      new WrappingBitrateEstimator(remb_.get(),
-                                   Clock::GetRealTimeClock(),
-                                   *config_));
+  remote_bitrate_estimator_.reset(new WrappingBitrateEstimator(
+      remb_.get(), Clock::GetRealTimeClock(), *config_.get()));
 
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
@@ -195,20 +186,23 @@ ChannelGroup::~ChannelGroup() {
   DCHECK(channel_map_.empty());
   DCHECK(!remb_->InUse());
   DCHECK(vie_encoder_map_.empty());
+  DCHECK(send_encoders_.empty());
 }
 
 bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int engine_id,
+                                     Transport* transport,
                                      int number_of_cores,
                                      bool disable_default_encoder) {
-  rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
-      channel_id, number_of_cores, *config_, *process_thread_, pacer_.get(),
-      bitrate_allocator_.get(), bitrate_controller_.get(), false));
+  rtc::scoped_ptr<ViEEncoder> vie_encoder(
+      new ViEEncoder(channel_id, number_of_cores, *config_.get(),
+                     *process_thread_, pacer_.get(), bitrate_allocator_.get(),
+                     bitrate_controller_.get(), false));
   if (!vie_encoder->Init()) {
     return false;
   }
   ViEEncoder* encoder = vie_encoder.get();
-  if (!CreateChannel(channel_id, engine_id, number_of_cores,
+  if (!CreateChannel(channel_id, engine_id, transport, number_of_cores,
                      vie_encoder.release(), true, disable_default_encoder)) {
     return false;
   }
@@ -222,7 +216,7 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   int stream_idx = 0;
   channel->GetLocalSSRC(stream_idx, &ssrc);
   encoder_state_feedback_->AddEncoder(ssrc, encoder);
-  std::list<unsigned int> ssrcs;
+  std::vector<uint32_t> ssrcs;
   ssrcs.push_back(ssrc);
   encoder->SetSsrcs(ssrcs);
   return true;
@@ -231,15 +225,17 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
 bool ChannelGroup::CreateReceiveChannel(int channel_id,
                                         int engine_id,
                                         int base_channel_id,
+                                        Transport* transport,
                                         int number_of_cores,
                                         bool disable_default_encoder) {
   ViEEncoder* encoder = GetEncoder(base_channel_id);
-  return CreateChannel(channel_id, engine_id, number_of_cores, encoder, false,
-                       disable_default_encoder);
+  return CreateChannel(channel_id, engine_id, transport, number_of_cores,
+                       encoder, false, disable_default_encoder);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
                                  int engine_id,
+                                 Transport* transport,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
                                  bool sender,
@@ -247,8 +243,8 @@ bool ChannelGroup::CreateChannel(int channel_id,
   DCHECK(vie_encoder);
 
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
-      channel_id, engine_id, number_of_cores, *config_, *process_thread_,
-      encoder_state_feedback_->GetRtcpIntraFrameObserver(),
+      channel_id, engine_id, number_of_cores, *config_.get(), transport,
+      *process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
       pacer_.get(), packet_router_.get(), sender, disable_default_encoder));
@@ -273,6 +269,8 @@ bool ChannelGroup::CreateChannel(int channel_id,
   {
     CriticalSectionScoped lock(encoder_map_cs_.get());
     vie_encoder_map_[channel_id] = vie_encoder;
+    if (sender)
+      send_encoders_[channel_id] = vie_encoder;
   }
 
   return true;
@@ -368,10 +366,14 @@ ViEChannel* ChannelGroup::PopChannel(int channel_id) {
 
 ViEEncoder* ChannelGroup::PopEncoder(int channel_id) {
   CriticalSectionScoped lock(encoder_map_cs_.get());
-  EncoderMap::iterator e_it = vie_encoder_map_.find(channel_id);
-  DCHECK(e_it != vie_encoder_map_.end());
-  ViEEncoder* encoder = e_it->second;
-  vie_encoder_map_.erase(e_it);
+  auto it = vie_encoder_map_.find(channel_id);
+  DCHECK(it != vie_encoder_map_.end());
+  ViEEncoder* encoder = it->second;
+  vie_encoder_map_.erase(it);
+
+  it = send_encoders_.find(channel_id);
+  if (it != send_encoders_.end())
+    send_encoders_.erase(it);
 
   return encoder;
 }
@@ -472,7 +474,7 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
   int pad_up_to_bitrate_bps = 0;
   {
     CriticalSectionScoped lock(encoder_map_cs_.get());
-    for (const auto& encoder : vie_encoder_map_) {
+    for (const auto& encoder : send_encoders_) {
       pad_up_to_bitrate_bps +=
           encoder.second->GetPaddingNeededBps(target_bitrate_bps);
     }

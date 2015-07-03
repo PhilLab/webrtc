@@ -40,6 +40,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_frame.h"
@@ -71,9 +72,13 @@ class WebRtcRenderAdapter;
 class WebRtcVideoChannelRecvInfo;
 class WebRtcVideoChannelSendInfo;
 class WebRtcVoiceEngine;
+class WebRtcVoiceMediaChannel;
 
 struct CapturedFrame;
 struct Device;
+
+// Exposed here for unittests.
+std::vector<VideoCodec> DefaultVideoCodecList();
 
 class UnsignalledSsrcHandler {
  public:
@@ -118,8 +123,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   void SetCallFactory(WebRtcCallFactory* call_factory);
 
   // Basic video engine implementation.
-  bool Init(rtc::Thread* worker_thread);
-  void Terminate();
+  void Init();
 
   int GetCapabilities();
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
@@ -153,7 +157,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
-  rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
@@ -175,7 +178,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  public:
   WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
                       WebRtcVoiceEngine* voice_engine,
-                      VoiceMediaChannel* voice_channel,
+                      WebRtcVoiceMediaChannel* voice_channel,
                       const VideoOptions& options,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
                       WebRtcVideoDecoderFactory* external_decoder_factory);
@@ -183,6 +186,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool Init();
 
   // VideoMediaChannel implementation
+  void DetachVoiceChannel() override;
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) override;
   bool SetSendCodecs(const std::vector<VideoCodec>& codecs) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
@@ -247,7 +251,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   struct VideoCodecSettings {
     VideoCodecSettings();
 
-    bool operator ==(const VideoCodecSettings& other) const;
+    bool operator==(const VideoCodecSettings& other) const;
+    bool operator!=(const VideoCodecSettings& other) const;
 
     VideoCodec codec;
     webrtc::FecConfig fec;
@@ -314,9 +319,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     struct AllocatedEncoder {
       AllocatedEncoder(webrtc::VideoEncoder* encoder,
                        webrtc::VideoCodecType type,
-                       bool external)
-          : encoder(encoder), type(type), external(external) {}
+                       bool external);
       webrtc::VideoEncoder* encoder;
+      webrtc::VideoEncoder* external_encoder;
       webrtc::VideoCodecType type;
       bool external;
     };
@@ -352,7 +357,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         size_t num_streams);
 
     void* ConfigureVideoEncoderSettings(const VideoCodec& codec,
-                                        const VideoOptions& options)
+                                        const VideoOptions& options,
+                                        bool is_screencast)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
@@ -370,6 +376,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     const std::vector<uint32> ssrcs_;
+    const std::vector<SsrcGroup> ssrc_groups_;
     webrtc::Call* const call_;
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         GUARDED_BY(lock_);
@@ -394,8 +401,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   class WebRtcVideoReceiveStream : public webrtc::VideoRenderer {
    public:
     WebRtcVideoReceiveStream(
-        webrtc::Call*,
-        const std::vector<uint32>& ssrcs,
+        webrtc::Call* call,
+        const StreamParams& sp,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
         const webrtc::VideoReceiveStream::Config& config,
@@ -404,6 +411,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     const std::vector<uint32>& GetSsrcs() const;
 
+    void SetLocalSsrc(uint32_t local_ssrc);
+    void SetNackAndRemb(bool nack_enabled, bool remb_enabled);
     void SetRecvCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
     void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
 
@@ -421,9 +430,10 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     struct AllocatedDecoder {
       AllocatedDecoder(webrtc::VideoDecoder* decoder,
                        webrtc::VideoCodecType type,
-                       bool external)
-          : decoder(decoder), type(type), external(external) {}
+                       bool external);
       webrtc::VideoDecoder* decoder;
+      // Decoder wrapped into a fallback decoder to permit software fallback.
+      webrtc::VideoDecoder* external_decoder;
       webrtc::VideoCodecType type;
       bool external;
     };
@@ -438,6 +448,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     webrtc::Call* const call_;
     const std::vector<uint32> ssrcs_;
+    const std::vector<SsrcGroup> ssrc_groups_;
 
     webrtc::VideoReceiveStream* stream_;
     const bool default_stream_;
@@ -479,6 +490,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   void FillBandwidthEstimationStats(const webrtc::Call::Stats& stats,
                                     VideoMediaInfo* info);
 
+  rtc::ThreadChecker thread_checker_;
+
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
   rtc::scoped_ptr<webrtc::Call> call_;
@@ -508,6 +521,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
+  WebRtcVoiceMediaChannel* voice_channel_;
   const int voice_channel_id_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;

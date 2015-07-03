@@ -84,14 +84,16 @@
     'enable_protobuf%': 1,
 
     # Disable these to not build components which can be externally provided.
+    'build_expat%': 1,
+    'build_icu%': 1,
     'build_json%': 1,
     'build_libjpeg%': 1,
-    'build_libyuv%': 1,
     'build_libvpx%': 1,
-    'build_vp9%': 1,
-    'build_ssl%': 1,
+    'build_libyuv%': 1,
     'build_openmax_dl%': 1,
     'build_opus%': 1,
+    'build_ssl%': 1,
+    'build_vp9%': 1,
 
     # Disable by default
     'have_dbus_glib%': 0,
@@ -127,7 +129,6 @@
 
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
-
       }, {  # Settings for the standalone (not-in-Chromium) build.
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
@@ -261,13 +262,8 @@
       }],
       ['target_arch=="arm64"', {
         'defines': [
-          'WEBRTC_ARCH_ARM',
-          # TODO(zhongwei) Defining an unique WEBRTC_NEON and
-          # distinguishing ARMv7 NEON and ARM64 NEON by
-          # WEBRTC_ARCH_ARM_V7 and WEBRTC_ARCH_ARM64 should be better.
-
-          # This macro is used to distinguish ARMv7 NEON and ARM64 NEON
-          'WEBRTC_ARCH_ARM64_NEON',
+          'WEBRTC_ARCH_ARM64',
+          'WEBRTC_HAS_NEON',
         ],
       }],
       ['target_arch=="arm"', {
@@ -279,10 +275,10 @@
             'defines': ['WEBRTC_ARCH_ARM_V7',],
             'conditions': [
               ['arm_neon==1', {
-                'defines': ['WEBRTC_ARCH_ARM_NEON',],
+                'defines': ['WEBRTC_HAS_NEON',],
               }],
-              ['arm_neon==0 and OS=="android"', {
-                'defines': ['WEBRTC_DETECT_ARM_NEON',],
+              ['arm_neon==0 and arm_neon_optional==1', {
+                'defines': ['WEBRTC_DETECT_NEON',],
               }],
             ],
           }],
@@ -364,11 +360,6 @@
           'WEBRTC_ANDROID',
          ],
          'conditions': [
-           ['enable_android_opensl==1', {
-             'defines': [
-               'WEBRTC_ANDROID_OPENSLES',
-             ],
-           }],
            ['clang!=1', {
              # The Android NDK doesn't provide optimized versions of these
              # functions. Ensure they are disabled for all compilers.
@@ -380,6 +371,11 @@
              ],
            }],
          ],
+      }],
+      ['include_internal_audio_device==1', {
+        'defines': [
+          'WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE',
+        ],
       }],
     ], # conditions
     'direct_dependent_settings': {
@@ -431,13 +427,6 @@
           'defines': [
             'WEBRTC_LINUX',
             'WEBRTC_ANDROID',
-           ],
-           'conditions': [
-             ['enable_android_opensl==1', {
-               'defines': [
-                 'WEBRTC_ANDROID_OPENSLES',
-               ],
-             }]
            ],
         }],
         ['os_posix==1', {

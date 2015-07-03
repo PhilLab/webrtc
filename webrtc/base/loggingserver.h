@@ -5,6 +5,9 @@
 #include <utility>
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/socketstream.h"
 
 namespace webrtc {
 class ThreadWrapper;
@@ -16,13 +19,35 @@ class SocketAddress;
 class SocketStream;
 class Thread;
 
+class LogSinkImpl
+  : public LogSink {
+public:
+  LogSinkImpl() {}
+
+  explicit LogSinkImpl(AsyncSocket* socket) {
+    socketStream_.reset(new SocketStream(socket));
+  }
+
+  void Detach() {
+    socketStream_->Detach();
+  }
+
+private:
+  void OnLogMessage(const std::string& message) override {
+    socketStream_->WriteAll(
+      message.data(), message.size(), nullptr, nullptr);
+  }
+
+  scoped_ptr<SocketStream> socketStream_;
+};
+
 // Inherit from has_slots class to use signal and slots.
 class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
  public:
   LoggingServer();
   virtual ~LoggingServer();
 
-  int Listen(const SocketAddress& addr, int level);
+  int Listen(const SocketAddress& addr, LoggingSeverity level);
 
  protected:
   void OnAcceptEvent(AsyncSocket* socket);
@@ -32,9 +57,9 @@ class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
   static bool processMessages(void* args);
 
  private:
-  int level_;
+   LoggingSeverity level_;
   scoped_ptr<AsyncSocket> listener_;
-  std::list<std::pair<AsyncSocket*, SocketStream*> > connections_;
+  std::list<std::pair<AsyncSocket*, LogSinkImpl*> > connections_;
   Thread* thread_;
   scoped_ptr<webrtc::ThreadWrapper> tw_;
 };

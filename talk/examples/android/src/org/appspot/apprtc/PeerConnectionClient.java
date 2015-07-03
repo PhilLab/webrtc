@@ -413,8 +413,14 @@ public class PeerConnectionClient {
     }
     queuedRemoteCandidates = new LinkedList<IceCandidate>();
 
+    PeerConnection.RTCConfiguration rtcConfig =
+        new PeerConnection.RTCConfiguration(signalingParameters.iceServers);
+    // TCP candidates are only useful when connecting to a server that supports
+    // ICE-TCP.
+    rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
+
     peerConnection = factory.createPeerConnection(
-        signalingParameters.iceServers, pcConstraints, pcObserver);
+        rtcConfig, pcConstraints, pcObserver);
     isInitiator = false;
 
     // Set default WebRTC tracing and INFO libjingle logging.
@@ -433,7 +439,7 @@ public class PeerConnectionClient {
         cameraDeviceName = frontCameraDeviceName;
       }
       Log.d(TAG, "Opening camera: " + cameraDeviceName);
-      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName);
+      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null);
       if (videoCapturer == null) {
         reportError("Failed to open camera");
         return;

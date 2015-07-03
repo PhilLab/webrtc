@@ -77,6 +77,8 @@ class I420Encoder : public VideoEncoder {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
+  void OnDroppedFrame() override {}
+
  private:
   static uint8_t* InsertHeader(uint8_t* buffer, uint16_t width,
                                uint16_t height);
@@ -99,11 +101,6 @@ class I420Decoder : public VideoDecoder {
 //                        <0 - Errors
   int InitDecode(const VideoCodec* codecSettings,
                  int /*numberOfCores*/) override;
-
-  int SetCodecConfigParameters(const uint8_t* /*buffer*/,
-                               int /*size*/) override {
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
 
 // Decode encoded image (as a part of a video stream). The decoded image
 // will be returned to the user through the decode complete callback.

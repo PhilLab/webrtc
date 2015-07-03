@@ -15,6 +15,7 @@
 #include <string.h>  // memcpy
 
 #include <algorithm>
+#include <limits>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
@@ -61,9 +62,25 @@ struct RTPVideoHeaderVP8 {
                               // in a VP8 partition. Otherwise false
 };
 
+// The packetization types that we support: single, aggregated, and fragmented.
+enum H264PacketizationTypes {
+  kH264SingleNalu,  // This packet contains a single NAL unit.
+  kH264StapA,       // This packet contains STAP-A (single time
+                    // aggregation) packets. If this packet has an
+                    // associated NAL unit type, it'll be for the
+                    // first such aggregated packet.
+  kH264FuA,         // This packet contains a FU-A (fragmentation
+                    // unit) packet, meaning it is a part of a frame
+                    // that was too large to fit into a single packet.
+};
+
 struct RTPVideoHeaderH264 {
-  bool stap_a;
-  bool single_nalu;
+  uint8_t nalu_type;  // The NAL unit type. If this is a header for a
+                      // fragmented packet, it's the NAL unit type of
+                      // the original data. If this is the header for an
+                      // aggregated packet, it's the NAL unit type of
+                      // the first NAL unit in the packet.
+  H264PacketizationTypes packetization_type;
 };
 
 union RTPVideoTypeHeader {
@@ -177,15 +194,17 @@ class RTPFragmentationHeader {
     }
   }
 
-  void VerifyAndAllocateFragmentationHeader(const uint16_t size) {
-    if (fragmentationVectorSize < size) {
+  void VerifyAndAllocateFragmentationHeader(const size_t size) {
+    assert(size <= std::numeric_limits<uint16_t>::max());
+    const uint16_t size16 = static_cast<uint16_t>(size);
+    if (fragmentationVectorSize < size16) {
       uint16_t oldVectorSize = fragmentationVectorSize;
       {
         // offset
         size_t* oldOffsets = fragmentationOffset;
-        fragmentationOffset = new size_t[size];
+        fragmentationOffset = new size_t[size16];
         memset(fragmentationOffset + oldVectorSize, 0,
-               sizeof(size_t) * (size - oldVectorSize));
+               sizeof(size_t) * (size16 - oldVectorSize));
         // copy old values
         memcpy(fragmentationOffset, oldOffsets,
                sizeof(size_t) * oldVectorSize);
@@ -194,9 +213,9 @@ class RTPFragmentationHeader {
       // length
       {
         size_t* oldLengths = fragmentationLength;
-        fragmentationLength = new size_t[size];
+        fragmentationLength = new size_t[size16];
         memset(fragmentationLength + oldVectorSize, 0,
-               sizeof(size_t) * (size - oldVectorSize));
+               sizeof(size_t) * (size16 - oldVectorSize));
         memcpy(fragmentationLength, oldLengths,
                sizeof(size_t) * oldVectorSize);
         delete[] oldLengths;
@@ -204,9 +223,9 @@ class RTPFragmentationHeader {
       // time diff
       {
         uint16_t* oldTimeDiffs = fragmentationTimeDiff;
-        fragmentationTimeDiff = new uint16_t[size];
+        fragmentationTimeDiff = new uint16_t[size16];
         memset(fragmentationTimeDiff + oldVectorSize, 0,
-               sizeof(uint16_t) * (size - oldVectorSize));
+               sizeof(uint16_t) * (size16 - oldVectorSize));
         memcpy(fragmentationTimeDiff, oldTimeDiffs,
                sizeof(uint16_t) * oldVectorSize);
         delete[] oldTimeDiffs;
@@ -214,14 +233,14 @@ class RTPFragmentationHeader {
       // payload type
       {
         uint8_t* oldTimePlTypes = fragmentationPlType;
-        fragmentationPlType = new uint8_t[size];
+        fragmentationPlType = new uint8_t[size16];
         memset(fragmentationPlType + oldVectorSize, 0,
-               sizeof(uint8_t) * (size - oldVectorSize));
+               sizeof(uint8_t) * (size16 - oldVectorSize));
         memcpy(fragmentationPlType, oldTimePlTypes,
                sizeof(uint8_t) * oldVectorSize);
         delete[] oldTimePlTypes;
       }
-      fragmentationVectorSize = size;
+      fragmentationVectorSize = size16;
     }
   }
 

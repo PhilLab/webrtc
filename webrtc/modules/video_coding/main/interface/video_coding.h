@@ -119,18 +119,6 @@ public:
     *   Sender
     */
 
-    // Any encoder-related state of VCM will be initialized to the
-    // same state as when the VCM was created. This will not interrupt
-    // or effect decoding functionality of VCM. VCM will lose all the
-    // encoding-related settings by calling this function.
-    // For instance, a send codec has to be registered again.
-    //
-    // NOTE: Must be called on the thread that constructed the VCM instance.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error.
-    virtual int32_t InitializeSender() = 0;
-
     // Registers a codec to be used for encoding. Calling this
     // API multiple times overwrites any previously registered codecs.
     //
@@ -331,17 +319,6 @@ public:
     /*
     *   Receiver
     */
-
-    // The receiver state of the VCM will be initialized to the
-    // same state as when the VCM was created. This will not interrupt
-    // or effect the send side functionality of VCM. VCM will lose all the
-    // decoding-related settings by calling this function. All frames
-    // inside the jitter buffer are flushed and the delay is reset.
-    // For instance, a receive codec has to be registered again.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error.
-    virtual int32_t InitializeReceiver() = 0;
 
     // Register possible receive codecs, can be called multiple times for different codecs.
     // The module will automatically switch between registered codecs depending on the
@@ -556,12 +533,6 @@ public:
     // Setting a desired delay to the VCM receiver. Video rendering will be
     // delayed by at least desired_delay_ms.
     virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
-
-    // Enables recording of debugging information.
-    virtual int StartDebugRecording(const char* file_name_utf8) = 0;
-
-    // Disables recording of debugging information.
-    virtual int StopDebugRecording() = 0;
 
     // Lets the sender suspend video when the rate drops below
     // |threshold_bps|, and turns back on when the rate goes back up above

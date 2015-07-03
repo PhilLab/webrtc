@@ -44,7 +44,6 @@ namespace cricket {
 
 const int kDefaultAudioDelayOffset = 0;
 
-class Soundclip;
 class VideoProcessor;
 class VoiceChannel;
 class VoiceProcessor;
@@ -60,11 +59,6 @@ class VoiceProcessor;
 class ChannelManager : public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
-#if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
-  // Creates the channel manager, and specifies the worker thread to use.
-  explicit ChannelManager(rtc::Thread* worker);
-#endif
-
   // For testing purposes. Allows the media engine and data media
   // engine and dev manager to be mocks.  The ChannelManager takes
   // ownership of these objects.
@@ -112,7 +106,8 @@ class ChannelManager : public rtc::MessageHandler,
   VoiceChannel* CreateVoiceChannel(
       BaseSession* session, const std::string& content_name, bool rtcp);
   // Destroys a voice channel created with the Create API.
-  void DestroyVoiceChannel(VoiceChannel* voice_channel);
+  void DestroyVoiceChannel(VoiceChannel* voice_channel,
+                           VideoChannel* video_channel);
   // TODO(pbos): Remove as soon as all call sites specify VideoOptions.
   VideoChannel* CreateVideoChannel(BaseSession* session,
                                    const std::string& content_name,
@@ -133,15 +128,9 @@ class ChannelManager : public rtc::MessageHandler,
   // Destroys a data channel created with the Create API.
   void DestroyDataChannel(DataChannel* data_channel);
 
-  // Creates a soundclip.
-  Soundclip* CreateSoundclip();
-  // Destroys a soundclip created with the Create API.
-  void DestroySoundclip(Soundclip* soundclip);
-
   // Indicates whether any channels exist.
   bool has_channels() const {
-    return (!voice_channels_.empty() || !video_channels_.empty() ||
-            !soundclips_.empty());
+    return (!voice_channels_.empty() || !video_channels_.empty());
   }
 
   // Configures the audio and video devices. A null pointer can be passed to
@@ -257,7 +246,6 @@ class ChannelManager : public rtc::MessageHandler,
   typedef std::vector<VoiceChannel*> VoiceChannels;
   typedef std::vector<VideoChannel*> VideoChannels;
   typedef std::vector<DataChannel*> DataChannels;
-  typedef std::vector<Soundclip*> Soundclips;
 
   void Construct(MediaEngineInterface* me,
                  DataEngineInterface* dme,
@@ -269,7 +257,8 @@ class ChannelManager : public rtc::MessageHandler,
   void Terminate_w();
   VoiceChannel* CreateVoiceChannel_w(
       BaseSession* session, const std::string& content_name, bool rtcp);
-  void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
+  void DestroyVoiceChannel_w(VoiceChannel* voice_channel,
+                             VideoChannel* video_channel);
   VideoChannel* CreateVideoChannel_w(BaseSession* session,
                                      const std::string& content_name,
                                      bool rtcp,
@@ -280,8 +269,6 @@ class ChannelManager : public rtc::MessageHandler,
       BaseSession* session, const std::string& content_name,
       bool rtcp, DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
-  Soundclip* CreateSoundclip_w();
-  void DestroySoundclip_w(Soundclip* soundclip);
   bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
                          const Device* in_dev, const Device* out_dev);
   bool SetEngineAudioOptions_w(const AudioOptions& options);
@@ -309,7 +296,6 @@ class ChannelManager : public rtc::MessageHandler,
   VoiceChannels voice_channels_;
   VideoChannels video_channels_;
   DataChannels data_channels_;
-  Soundclips soundclips_;
 
   std::string audio_in_device_;
   std::string audio_out_device_;
