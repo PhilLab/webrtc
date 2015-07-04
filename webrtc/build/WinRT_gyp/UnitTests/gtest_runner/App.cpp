@@ -43,6 +43,8 @@ namespace gtest_runner
   protected:
     virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
     {
+      g_windowDispatcher = Window::Current->Dispatcher;
+
       auto layoutRoot = ref new Grid();
       layoutRoot->VerticalAlignment = VerticalAlignment::Center;
       layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;

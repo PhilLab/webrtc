@@ -838,10 +838,10 @@ HRESULT VideoCaptureStreamSinkWinRT::OnDispatchWorkItem(
       // There might be samples queue from earlier (ie, while paused).
       bool fRequestMoreSamples;
       fRequestMoreSamples = DropSamplesFromQueue();
-      if (fRequestMoreSamples) {
+      if (fRequestMoreSamples && !_isShutdown) {
         // If false there is no samples in the queue now so request one
         ThrowIfError(
-            QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+          QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
       }
       break;
 
@@ -874,10 +874,10 @@ void VideoCaptureStreamSinkWinRT::DispatchProcessSample(AsyncOperation *pOp) {
   bool fRequestMoreSamples = SendSampleFromQueue();
 
   // Ask for another sample
-  if (fRequestMoreSamples) {
+  if (fRequestMoreSamples && !_isShutdown) {
     if (pOp->m_op == OpProcessSample) {
       ThrowIfError(
-          QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+        QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
     }
   }
 }
@@ -934,7 +934,7 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
     {
       CriticalSectionScoped cs(_critSec);
 
-      if (_state == State_Started && fProcessingSample) {
+      if (_state == State_Started && fProcessingSample && !_isShutdown) {
         // If we are still in started state request another sample
         ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
       }
@@ -1308,8 +1308,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::Shutdown() {
     }
   }
 
-  if (callback != nullptr)
-  {
+  if (callback != nullptr) {
     callback->OnShutdown();
   }
 

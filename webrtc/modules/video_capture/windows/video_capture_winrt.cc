@@ -99,13 +99,7 @@ CaptureDevice::~CaptureDevice() {
 
 void CaptureDevice::Initialize(Platform::String^ device_id) {
   LOG(LS_INFO) << "CaptureDevice::Initialize";
-  media_capture_ =
-    MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id);
   device_id_ = device_id;
-  media_capture_failed_event_registration_token_ =
-    media_capture_->Failed +=
-      ref new MediaCaptureFailedEventHandler(this,
-                                             &CaptureDevice::OnCaptureFailed);
 }
 
 void CaptureDevice::CleanupSink() {
@@ -124,7 +118,6 @@ void CaptureDevice::CleanupMediaCapture() {
     media_capture->Failed -= media_capture_failed_event_registration_token_;
     MediaCaptureDevicesWinRT::Instance()->RemoveMediaCapture(device_id_);
     media_capture_ = nullptr;
-    device_id_ = nullptr;
   }
 }
 
@@ -157,6 +150,8 @@ void CaptureDevice::Cleanup() {
     CleanupSink();
     CleanupMediaCapture();
   }
+
+  device_id_ = nullptr;
 }
 
 void CaptureDevice::StartCapture(
@@ -168,6 +163,12 @@ void CaptureDevice::StartCapture(
   }
 
   CleanupSink();
+  CleanupMediaCapture();
+
+  if (device_id_ == nullptr) {
+    LOG(LS_WARNING) << "Capture device is not initialized.";
+    return;
+  }
 
   frame_info_.width = media_encoding_profile->Video->Width;
   frame_info_.height = media_encoding_profile->Video->Height;
@@ -178,28 +179,37 @@ void CaptureDevice::StartCapture(
       static_cast<float>(
         media_encoding_profile->Video->FrameRate->Denominator));
   if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Yv12->Data()) == 0)
+    MediaEncodingSubtypes::Yv12->Data()) == 0) {
     frame_info_.rawType = kVideoYV12;
-  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Yuy2->Data()) == 0)
+  } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Yuy2->Data()) == 0) {
     frame_info_.rawType = kVideoYUY2;
-  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Iyuv->Data()) == 0)
+  } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Iyuv->Data()) == 0) {
     frame_info_.rawType = kVideoIYUV;
-  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Rgb24->Data()) == 0)
+  } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Rgb24->Data()) == 0) {
     frame_info_.rawType = kVideoRGB24;
-  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Rgb32->Data()) == 0)
+  } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Rgb32->Data()) == 0) {
     frame_info_.rawType = kVideoARGB;
-  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Mjpg->Data()) == 0)
-    frame_info_.rawType = kVideoMJPEG;
-  else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
-    MediaEncodingSubtypes::Nv12->Data()) == 0)
+  } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Mjpg->Data()) == 0) {
+      LOG(LS_ERROR) << "MJPEG format is not supported.";
+      return;
+  } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
+    MediaEncodingSubtypes::Nv12->Data()) == 0) {
     frame_info_.rawType = kVideoNV12;
-  else
+  } else {
     frame_info_.rawType = kVideoUnknown;
+  }
+
+  media_capture_ =
+    MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id_);
+  media_capture_failed_event_registration_token_ =
+    media_capture_->Failed +=
+    ref new MediaCaptureFailedEventHandler(this,
+    &CaptureDevice::OnCaptureFailed);
 
   media_sink_ = ref new VideoCaptureMediaSinkProxyWinRT();
   media_sink_video_sample_event_registration_token_ =
@@ -308,6 +318,7 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
 VideoCaptureWinRT::VideoCaptureWinRT(const int32_t id)
   : VideoCaptureImpl(id),
     device_(nullptr) {
+  _captureDelay = 120;
 }
 
 VideoCaptureWinRT::~VideoCaptureWinRT() {
@@ -327,6 +338,9 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
   LOG(LS_INFO) << "Init called for device " << device_unique_id;
 
   device_id_ = nullptr;
+
+  _deviceUniqueId = new (std::nothrow) char[device_unique_id_length + 1];
+  memcpy(_deviceUniqueId, device_unique_id, device_unique_id_length + 1);
 
   Concurrency::create_task(
     DeviceInformation::FindAllAsync(DeviceClass::VideoCapture)).
