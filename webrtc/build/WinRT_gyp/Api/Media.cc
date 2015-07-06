@@ -1,5 +1,4 @@
-﻿
-// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+﻿// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -221,21 +220,20 @@ Media::Media() {
   
 }
 
-IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audioEnabled, bool videoEnabled) {
+IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ constraints) {
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
-    [this, videoEnabled, audioEnabled]() -> MediaStream^ {
+    [this, constraints]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
-    return globals::RunOnGlobalThread<MediaStream^>([this, videoEnabled, audioEnabled]()->MediaStream^ {
+    return globals::RunOnGlobalThread<MediaStream^>([this, constraints]()->MediaStream^ {
 
-      MediaConstraints constraints;
-      constraints.SetMandatoryReceiveAudio(audioEnabled);
-      constraints.SetMandatoryReceiveVideo(videoEnabled);
+      MediaConstraints mediaConstraints;
+      FromCx(constraints, &mediaConstraints);
 
       // This is the stream returned.
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 
-      if (audioEnabled) {
+      if (constraints->audio) {
         if (_selectedAudioDevice == -1) {
           // select default device if wasn't set
           _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
@@ -247,12 +245,12 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audioEnabled, bool video
         LOG(LS_INFO) << "Creating audio track.";
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
-          kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(&constraints)));
+          kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(&mediaConstraints)));
         LOG(LS_INFO) << "Adding audio track to stream.";
         stream->AddTrack(audio_track);
       }
 
-      if (videoEnabled) {
+      if (constraints->video) {
         cricket::VideoCapturer* videoCapturer = NULL;
         if (_selectedVideoDevice.id == "") {
           // Select the first video device as the capturer.
@@ -274,7 +272,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audioEnabled, bool video
             globals::gPeerConnectionFactory->CreateVideoTrack(
             kVideoLabel,
             globals::gPeerConnectionFactory->CreateVideoSource(
-            videoCapturer, &constraints)));
+            videoCapturer, &mediaConstraints)));
           LOG(LS_INFO) << "Adding video track to stream.";
           stream->AddTrack(video_track);
         }

@@ -115,12 +115,18 @@ namespace webrtc_winrt_api {
     }
   };
 
+  public ref class RTCMediaStreamConstraints sealed {
+  public:
+    property bool audio;
+    property bool video;
+  };
+
   public ref class Media sealed {
   public:
     Media();
 
     // TODO(WINRT): Arguments
-    IAsyncOperation<MediaStream^>^ GetUserMedia(bool audioEnabled, bool videoDisabled);
+    IAsyncOperation<MediaStream^>^ GetUserMedia(RTCMediaStreamConstraints^ constraints);
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate);
 
@@ -168,7 +174,7 @@ namespace webrtc_winrt_api {
           }
         }
       }
-      mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
+      AddMandatory(key, value);
     }
 
     void SetMandatoryReceiveAudio(bool enable) {
