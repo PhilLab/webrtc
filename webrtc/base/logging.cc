@@ -72,7 +72,11 @@ std::string ErrorName(int err, const ConstantLabel * err_table) {
   }
 
   char buffer[16];
+#if defined(WEBRTC_WIN)
   rtc_base_snprintf(buffer, sizeof(buffer), "0x%08x", err);
+#else
+  snprintf(buffer, sizeof(buffer), "0x%08x", err);
+#endif  //WEBRTC_WIN
   return buffer;
 }
 

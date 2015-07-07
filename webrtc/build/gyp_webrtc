@@ -17,7 +17,6 @@ import shlex
 import sys
 import pipes
 import xml.etree.ElementTree as ET
-from _winreg import *
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir, os.pardir))
