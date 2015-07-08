@@ -20,6 +20,7 @@ using webrtc_winrt_api::RTCDataChannelState;
 using webrtc_winrt_api::RTCIceGatheringState;
 using webrtc_winrt_api::RTCIceConnectionState;
 using webrtc_winrt_api::RTCIceServer;
+using webrtc_winrt_api::RTCMediaStreamConstraints;
 using webrtc_winrt_api::RTCConfiguration;
 
 namespace webrtc_winrt_api_internal {
@@ -139,6 +140,14 @@ namespace webrtc_winrt_api_internal {
       outObj->username = rtc::ToUtf8(inObj->Username->Data());
     if (inObj->Credential != nullptr)
       outObj->password = rtc::ToUtf8(inObj->Credential->Data());
+  }
+
+  void FromCx(
+    RTCMediaStreamConstraints^ inObj,
+    webrtc_winrt_api::MediaConstraints* outObj) {
+
+    outObj->SetMandatoryReceiveAudio(inObj->audio);
+    outObj->SetMandatoryReceiveVideo(inObj->video);
   }
 
   void FromCx(
