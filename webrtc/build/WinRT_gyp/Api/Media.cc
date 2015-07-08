@@ -178,6 +178,11 @@ void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
   }
 }
 
+void MediaStream::Stop()
+{
+  _impl.release();
+}
+
 bool MediaStream::Active::get() {
   bool ret = false;
   for (auto track : _impl->GetAudioTracks()) {

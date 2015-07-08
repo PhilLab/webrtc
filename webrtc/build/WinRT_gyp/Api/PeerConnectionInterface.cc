@@ -314,7 +314,6 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
   return Concurrency::create_async([this, candidate] {
     rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
     FromCx(candidate, &nativeCandidate);
-
     _impl->AddIceCandidate(nativeCandidate.get());
   });
 }

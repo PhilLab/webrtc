@@ -101,16 +101,27 @@ void GlobalObserver::OnIceConnectionChange(
 // Called any time the IceGatheringState changes
 void GlobalObserver::OnIceGatheringChange(
   webrtc::PeerConnectionInterface::IceGatheringState new_state) {
+  LOG(LS_INFO) << "OnIceGatheringChange";
 }
 
 // New Ice candidate have been found.
 void GlobalObserver::OnIceCandidate(
   const webrtc::IceCandidateInterface* candidate) {
-  if (_pc != nullptr && candidate != nullptr) {
+  std::string c;
+  candidate->ToString(&c);
+  LOG(LS_INFO) << "Ice candidate = " << c;
+  if (_pc != nullptr) {
     auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceEvent();
     webrtc_winrt_api::RTCIceCandidate^ cxCandidate;
-    ToCx(*candidate, &cxCandidate);
-    evt->Candidate = cxCandidate;
+    if (candidate == nullptr)
+    {
+      evt->Candidate = nullptr;
+    }
+    else
+    {
+      ToCx(*candidate, &cxCandidate);
+      evt->Candidate = cxCandidate;
+    }
     POST_EVENT(evt, _pc->OnIceCandidate(evt));
   }
 }
@@ -118,6 +129,9 @@ void GlobalObserver::OnIceCandidate(
 // TODO(bemasc): Remove this once callers transition to OnIceGatheringChange.
 // All Ice candidates have been found.
 void GlobalObserver::OnIceComplete() {
+  auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceEvent();
+  evt->Candidate = nullptr;
+  POST_EVENT(evt, _pc->OnIceCandidate(evt));
 }
 
 //============================================================================

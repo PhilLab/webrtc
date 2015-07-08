@@ -55,6 +55,7 @@ ref class RTMediaStreamSource sealed {
       Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
+    void BlankFrame(IMFMediaBuffer* mediaBuffer);
     void ResizeSource(uint32 width, uint32 height);
     static void OnClosed(Windows::Media::Core::MediaStreamSource ^sender,
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);

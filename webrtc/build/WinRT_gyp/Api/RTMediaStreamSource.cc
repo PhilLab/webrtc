@@ -246,6 +246,27 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
   return true;
 }
 
+void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer)
+{
+  ComPtr<IMF2DBuffer2> imageBuffer;
+  if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf()))) {
+    return;
+  }
+  BYTE* destRawData;
+  BYTE* buffer;
+  LONG pitch;
+  DWORD destMediaBufferSize;
+
+
+  if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
+    &destRawData, &pitch, &buffer, &destMediaBufferSize)))
+  {
+    return;
+  }
+  memset(destRawData, 0, destMediaBufferSize);
+  imageBuffer->Unlock2D();
+}
+
 void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {
 }
 
