@@ -101,6 +101,9 @@ namespace StandupWinRT
     virtual void Play(){
       _mediaElement->Play();
     };
+    virtual void Stop(){
+      _mediaElement->Stop();
+    };
     virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^ mss){
       _mediaElement->SetMediaStreamSource(mss);
     };
@@ -1339,11 +1342,14 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
           vcpm_ = webrtc::VideoCaptureFactory::Create(0, uniqueId);
           vcpm_->AddRef();
 
-          vrm_ = webrtc::VideoRender::CreateVideoRender(1, localMediaWrapper_, false);
+          if (vrm_ == NULL)
+          {
+            vrm_ = webrtc::VideoRender::CreateVideoRender(1, localMediaWrapper_, false);
 
-          webrtc::VideoRenderCallback* rendererCallback = vrm_->AddIncomingRenderStream(1, 0, 0.0, 0.0, 1.0, 1.0);
+            webrtc::VideoRenderCallback* rendererCallback = vrm_->AddIncomingRenderStream(1, 0, 0.0, 0.0, 1.0, 1.0);
 
-          captureCallback_ = new TestCaptureCallback(rendererCallback);
+            captureCallback_ = new TestCaptureCallback(rendererCallback);
+          }
 
           vcpm_->RegisterCaptureDataCallback(*captureCallback_);
 
@@ -1389,7 +1395,7 @@ void StandupWinRT::App::OnStartStopVideoClick(Platform::Object ^sender, Windows:
         vrm_->StopRender(1);
         vcpm_->StopCapture();
         vcpm_->Release();
-        delete (TestCaptureCallback*)captureCallback_;
+        vcpm_ = NULL;
 
         startedVideo_ = false;
 

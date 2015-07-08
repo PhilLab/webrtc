@@ -207,15 +207,12 @@ bool WebRtcVideoCapturer::Init(const Device& device) {
     }
   }
   factory_->DestroyDeviceInfo(info);
-// TODO(fischman): Remove the following check
-// when capabilities for iOS are implemented
-// https://code.google.com/p/webrtc/issues/detail?id=2968
-#if !defined(IOS)
+
   if (supported.empty()) {
     LOG(LS_ERROR) << "Failed to find usable formats for id: " << device.id;
     return false;
   }
-#endif
+
   module_ = factory_->Create(0, vcm_id);
   if (!module_) {
     LOG(LS_ERROR) << "Failed to create capturer for id: " << device.id;
@@ -271,7 +268,7 @@ bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
   // Can't take lock here as this will cause deadlock with
   // OnIncomingCapturedFrame. In fact, the whole method, including methods it
   // calls, can't take lock.
-  assert(module_);
+  DCHECK(module_);
 
 #if defined (WINRT)
   const std::string group_name =

@@ -163,7 +163,7 @@ void DataChannelObserver::OnStateChange() {
 void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
   if (!buffer.binary) {
-    evt->Data = ToCx(std::string(buffer.data.data(), buffer.size()));
+    evt->Data = ToCx(std::string((char*)buffer.data.data(), buffer.size()));
   } else {
     // TODO(WINRT)
     evt->Data = "<binary>";

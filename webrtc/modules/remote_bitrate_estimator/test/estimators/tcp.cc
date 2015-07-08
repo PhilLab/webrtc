@@ -23,7 +23,9 @@ namespace testing {
 namespace bwe {
 
 TcpBweReceiver::TcpBweReceiver(int flow_id)
-    : BweReceiver(flow_id), last_feedback_ms_(0) {
+    : BweReceiver(flow_id),
+      last_feedback_ms_(0),
+      latest_owd_ms_(0) {
 }
 
 TcpBweReceiver::~TcpBweReceiver() {
@@ -31,14 +33,15 @@ TcpBweReceiver::~TcpBweReceiver() {
 
 void TcpBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                    const MediaPacket& media_packet) {
+  latest_owd_ms_ = arrival_time_ms - media_packet.sender_timestamp_us() / 1000;
   acks_.push_back(media_packet.header().sequenceNumber);
 }
 
 FeedbackPacket* TcpBweReceiver::GetFeedback(int64_t now_ms) {
-  // if (now_ms - last_feedback_ms_ < 100)
-  //   return NULL;
+  int64_t corrected_send_time_ms = now_ms - latest_owd_ms_;
+  FeedbackPacket* fb =
+      new TcpFeedback(flow_id_, now_ms * 1000, corrected_send_time_ms, acks_);
   last_feedback_ms_ = now_ms;
-  FeedbackPacket* fb = new TcpFeedback(flow_id_, now_ms * 1000, acks_);
   acks_.clear();
   return fb;
 }

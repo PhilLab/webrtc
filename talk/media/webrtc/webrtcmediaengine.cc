@@ -25,43 +25,19 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(LIBPEERCONNECTION_LIB) || defined(LIBPEERCONNECTION_IMPLEMENTATION)
-
 #include "talk/media/webrtc/webrtcmediaengine.h"
-#include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 
-#if defined(WINRT)
-#include "webrtc/system_wrappers/interface/field_trial_default.h"
-#else
-#include "webrtc/system_wrappers/interface/field_trial.h"
-#endif
-
 namespace cricket {
-
-class WebRtcMediaEngine
-    : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine> {
- public:
-  WebRtcMediaEngine() {}
-  WebRtcMediaEngine(webrtc::AudioDeviceModule* adm,
-                    webrtc::AudioDeviceModule* adm_sc,
-                    WebRtcVideoEncoderFactory* encoder_factory,
-                    WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm, adm_sc);
-    video_.SetExternalEncoderFactory(encoder_factory);
-    video_.SetExternalDecoderFactory(decoder_factory);
-  }
-};
 
 class WebRtcMediaEngine2
     : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2> {
  public:
   WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
-                     webrtc::AudioDeviceModule* adm_sc,
                      WebRtcVideoEncoderFactory* encoder_factory,
                      WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm, adm_sc);
+    voice_.SetAudioDeviceModule(adm);
     video_.SetExternalDecoderFactory(decoder_factory);
     video_.SetExternalEncoderFactory(encoder_factory);
   }
@@ -69,51 +45,27 @@ class WebRtcMediaEngine2
 
 }  // namespace cricket
 
-WRME_EXPORT
 cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm,
-    webrtc::AudioDeviceModule* adm_sc,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory) {
-#if defined(WINRT)
-	if (webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-NewVideoAPI") == "Disabled") {
-		return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
-			decoder_factory);
-	}
-#else
-	if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Disabled") {
-		return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
-			decoder_factory);
-	}
-#endif  
-  return new cricket::WebRtcMediaEngine2(adm, adm_sc, encoder_factory,
+  return new cricket::WebRtcMediaEngine2(adm, encoder_factory,
                                          decoder_factory);
 }
 
-WRME_EXPORT
 void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
   delete media_engine;
 }
 
 namespace cricket {
 
-// Used by ChannelManager when no media engine is passed in to it
-// explicitly (acts as a default).
-MediaEngineInterface* WebRtcMediaEngineFactory::Create() {
-  return new cricket::WebRtcMediaEngine();
-}
-
 // Used by PeerConnectionFactory to create a media engine passed into
 // ChannelManager.
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
-    webrtc::AudioDeviceModule* adm_sc,
     WebRtcVideoEncoderFactory* encoder_factory,
     WebRtcVideoDecoderFactory* decoder_factory) {
-  return CreateWebRtcMediaEngine(adm, adm_sc, encoder_factory, decoder_factory);
+  return CreateWebRtcMediaEngine(adm, encoder_factory, decoder_factory);
 }
 
 }  // namespace cricket
-
-#endif  // defined(LIBPEERCONNECTION_LIB) ||
-        // defined(LIBPEERCONNECTION_IMPLEMENTATION)

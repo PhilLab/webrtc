@@ -108,6 +108,11 @@ class BaseChannel
   bool writable() const { return writable_; }
   bool IsStreamMuted(uint32 ssrc);
 
+  // Activate RTCP mux, regardless of the state so far.  Once
+  // activated, it can not be deactivated, and if the remote
+  // description doesn't support RTCP mux, setting the remote
+  // description will fail.
+  void ActivateRtcpMux();
   bool PushdownLocalDescription(const SessionDescription* local_desc,
                                 ContentAction action,
                                 std::string* error_desc);
@@ -350,6 +355,7 @@ class BaseChannel
                  ContentAction action,
                  ContentSource src,
                  std::string* error_desc);
+  void ActivateRtcpMux_w();
   bool SetRtcpMux_w(bool enable,
                     ContentAction action,
                     ContentSource src,
@@ -522,10 +528,14 @@ class VideoChannel : public BaseChannel {
  public:
   VideoChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
                VideoMediaChannel* channel, BaseSession* session,
-               const std::string& content_name, bool rtcp,
-               VoiceChannel* voice_channel);
+               const std::string& content_name, bool rtcp);
   ~VideoChannel();
   bool Init();
+
+  // downcasts a MediaChannel
+  virtual VideoMediaChannel* media_channel() const {
+    return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
+  }
 
   bool SetRenderer(uint32 ssrc, VideoRenderer* renderer);
   bool ApplyViewRequest(const ViewRequest& request);
@@ -559,12 +569,6 @@ class VideoChannel : public BaseChannel {
 
   // Configuration and setting.
   bool SetChannelOptions(const VideoOptions& options);
-
- protected:
-  // downcasts a MediaChannel
-  virtual VideoMediaChannel* media_channel() const {
-    return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
-  }
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;
@@ -602,7 +606,6 @@ class VideoChannel : public BaseChannel {
   void OnVideoChannelError(uint32 ssrc, VideoMediaChannel::Error error);
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
-  VoiceChannel* voice_channel_;
   VideoRenderer* renderer_;
   ScreencastMap screencast_capturers_;
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;

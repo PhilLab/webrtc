@@ -512,7 +512,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
   // Protect if needed.
   if (srtp_filter_.IsActive()) {
     bool res;
-    uint8_t* data = packet->data<uint8_t>();
+    uint8_t* data = packet->data();
     int len = static_cast<int>(packet->size());
     if (!rtcp) {
     // If ENABLE_EXTERNAL_AUTH flag is on then packet authentication is not done
@@ -1042,6 +1042,18 @@ bool BaseChannel::SetSrtp_w(const std::vector<CryptoParams>& cryptos,
   return true;
 }
 
+void BaseChannel::ActivateRtcpMux() {
+  worker_thread_->Invoke<void>(Bind(
+      &BaseChannel::ActivateRtcpMux_w, this));
+}
+
+void BaseChannel::ActivateRtcpMux_w() {
+  if (!rtcp_mux_filter_.IsActive()) {
+    rtcp_mux_filter_.SetActive();
+    set_rtcp_transport_channel(NULL);
+  }
+}
+
 bool BaseChannel::SetRtcpMux_w(bool enable, ContentAction action,
                                ContentSource src,
                                std::string* error_desc) {
@@ -1063,6 +1075,7 @@ bool BaseChannel::SetRtcpMux_w(bool enable, ContentAction action,
     case CA_UPDATE:
       // No RTCP mux info.
       ret = true;
+      break;
     default:
       break;
   }
@@ -1723,11 +1736,9 @@ VideoChannel::VideoChannel(rtc::Thread* thread,
                            VideoMediaChannel* media_channel,
                            BaseSession* session,
                            const std::string& content_name,
-                           bool rtcp,
-                           VoiceChannel* voice_channel)
+                           bool rtcp)
     : BaseChannel(thread, media_engine, media_channel, session, content_name,
                   rtcp),
-      voice_channel_(voice_channel),
       renderer_(NULL),
       previous_we_(rtc::WE_CLOSE) {
 }

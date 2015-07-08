@@ -54,8 +54,8 @@ struct VCMJitterSample {
 
 class TimestampLessThan {
  public:
-  bool operator() (const uint32_t& timestamp1,
-                   const uint32_t& timestamp2) const {
+  bool operator() (uint32_t timestamp1,
+                   uint32_t timestamp2) const {
     return IsNewerTimestamp(timestamp2, timestamp1);
   }
 };
@@ -78,7 +78,7 @@ class VCMJitterBuffer {
  public:
   VCMJitterBuffer(Clock* clock,
                   EventFactory* event_factory);
-  virtual ~VCMJitterBuffer();
+  ~VCMJitterBuffer();
 
   // Initializes and starts jitter buffer.
   void Start();
@@ -213,6 +213,12 @@ class VCMJitterBuffer {
   // Returns true if |frame| is continuous in the |last_decoded_state_|, taking
   // all decodable frames into account.
   bool IsContinuous(const VCMFrameBuffer& frame) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  // Looks for frames in |incomplete_frames_| which are continuous in the
+  // provided |decoded_state|. Starts the search from the timestamp of
+  // |decoded_state|.
+  void FindAndInsertContinuousFramesWithState(
+      const VCMDecodingState& decoded_state)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   // Looks for frames in |incomplete_frames_| which are continuous in
   // |last_decoded_state_| taking all decodable frames into account. Starts

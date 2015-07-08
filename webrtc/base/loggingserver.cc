@@ -1,8 +1,6 @@
 #include "webrtc/base/loggingserver.h"
 #include "webrtc/base/socketaddress.h"
-#include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/base/socketstream.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -29,7 +27,7 @@ LoggingServer::~LoggingServer() {
   tw_->Stop();
 }
 
-int LoggingServer::Listen(const SocketAddress& addr, int level) {
+int LoggingServer::Listen(const SocketAddress& addr, LoggingSeverity level) {
   level_ = level;
   tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_, "LoggingServer");
   tw_->Start();
@@ -71,7 +69,7 @@ void LoggingServer::OnAcceptEvent(AsyncSocket* socket) {
 
   if (incoming) {
     // Attach the socket of accepted connection to a stream.
-    auto stream = new SocketStream(incoming);
+    LogSinkImpl* stream = new LogSinkImpl(incoming);
     connections_.push_back(std::make_pair(incoming, stream));
 
     // Add new non-blocking stream to log messages.

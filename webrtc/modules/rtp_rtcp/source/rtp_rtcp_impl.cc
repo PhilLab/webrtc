@@ -29,6 +29,7 @@ namespace webrtc {
 RtpRtcp::Configuration::Configuration()
     : id(-1),
       audio(false),
+      receiver_only(false),
       clock(NULL),
       receive_statistics(NullObjectReceiveStatistics()),
       outgoing_transport(NULL),
@@ -74,6 +75,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                    configuration.rtcp_packet_type_counter_observer),
       rtcp_receiver_(configuration.id,
                      configuration.clock,
+                     configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
                      configuration.bandwidth_callback,
                      configuration.intra_frame_callback,
@@ -85,7 +87,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       last_process_time_(configuration.clock->TimeInMilliseconds()),
       last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
       last_rtt_process_time_(configuration.clock->TimeInMilliseconds()),
-      packet_overhead_(28),  // IPV4 UDP.
+      packet_overhead_(28),                     // IPV4 UDP.
       padding_index_(static_cast<size_t>(-1)),  // Start padding at first child.
       nack_method_(kNackOff),
       nack_last_time_sent_full_(0),
@@ -206,11 +208,12 @@ void ModuleRtpRtcpImpl::SetRtxSsrc(uint32_t ssrc) {
   rtp_sender_.SetRtxSsrc(ssrc);
 }
 
-void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
-  rtp_sender_.SetRtxPayloadType(payload_type);
+void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
+                                              int associated_payload_type) {
+  rtp_sender_.SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
-int ModuleRtpRtcpImpl::RtxSendPayloadType() const {
+std::pair<int, int> ModuleRtpRtcpImpl::RtxSendPayloadType() const {
   return rtp_sender_.RtxPayloadType();
 }
 
@@ -426,13 +429,6 @@ size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
   return rtp_sender_.TimeToSendPadding(bytes);
 }
 
-bool ModuleRtpRtcpImpl::GetSendSideDelay(int* avg_send_delay_ms,
-                                         int* max_send_delay_ms) const {
-  DCHECK(avg_send_delay_ms);
-  DCHECK(max_send_delay_ms);
-  return rtp_sender_.GetSendSideDelay(avg_send_delay_ms, max_send_delay_ms);
-}
-
 uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
   return rtp_sender_.MaxPayloadLength();
 }
@@ -497,12 +493,6 @@ void ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
   rtcp_receiver_.SetRTCPStatus(method);
 }
 
-// Only for internal test.
-uint32_t ModuleRtpRtcpImpl::LastSendReport(
-    int64_t& last_rtcptime) {
-  return rtcp_sender_.LastSendReport(last_rtcptime);
-}
-
 int32_t ModuleRtpRtcpImpl::SetCNAME(const char c_name[RTCP_CNAME_SIZE]) {
   return rtcp_sender_.SetCNAME(c_name);
 }
@@ -559,8 +549,15 @@ int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
 
 // Force a send of an RTCP packet.
 // Normal SR and RR are triggered via the process function.
-int32_t ModuleRtpRtcpImpl::SendRTCP(uint32_t rtcp_packet_type) {
-  return rtcp_sender_.SendRTCP(GetFeedbackState(), rtcp_packet_type);
+int32_t ModuleRtpRtcpImpl::SendRTCP(RTCPPacketType packet_type) {
+  return rtcp_sender_.SendRTCP(GetFeedbackState(), packet_type);
+}
+
+// Force a send of an RTCP packet.
+// Normal SR and RR are triggered via the process function.
+int32_t ModuleRtpRtcpImpl::SendCompoundRTCP(
+    const std::set<RTCPPacketType>& packet_types) {
+  return rtcp_sender_.SendCompoundRTCP(GetFeedbackState(), packet_types);
 }
 
 int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
@@ -622,17 +619,6 @@ int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(
     std::vector<RTCPReportBlock>* receive_blocks) const {
   return rtcp_receiver_.StatisticsReceived(receive_blocks);
-}
-
-int32_t ModuleRtpRtcpImpl::AddRTCPReportBlock(
-    const uint32_t ssrc,
-    const RTCPReportBlock* report_block) {
-  return rtcp_sender_.AddExternalReportBlock(ssrc, report_block);
-}
-
-int32_t ModuleRtpRtcpImpl::RemoveRTCPReportBlock(
-  const uint32_t ssrc) {
-  return rtcp_sender_.RemoveExternalReportBlock(ssrc);
 }
 
 // (REMB) Receiver Estimated Max Bitrate.

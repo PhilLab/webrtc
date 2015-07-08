@@ -44,9 +44,9 @@ source_set("video_coding") {
     "main/source/nack_fec_tables.h",
     "main/source/packet.cc",
     "main/source/packet.h",
-    "main/source/qm_select_data.h",
     "main/source/qm_select.cc",
     "main/source/qm_select.h",
+    "main/source/qm_select_data.h",
     "main/source/receiver.cc",
     "main/source/receiver.h",
     "main/source/rtt_filter.cc",
@@ -94,8 +94,11 @@ source_set("video_coding_utility") {
   sources = [
     "utility/frame_dropper.cc",
     "utility/include/frame_dropper.h",
+    "utility/include/moving_average.h",
+    "utility/include/quality_scaler.h",
+    "utility/include/vp8_header_parser.h",
     "utility/quality_scaler.cc",
-    "utility/quality_scaler.h",
+    "utility/vp8_header_parser.cc",
   ]
 
   configs += [ "../..:common_config" ]
@@ -107,13 +110,15 @@ source_set("video_coding_utility") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../../system_wrappers" ]
+  deps = [
+    "../../system_wrappers",
+  ]
 }
 
 source_set("webrtc_i420") {
   sources = [
-    "codecs/i420/main/source/i420.cc",
     "codecs/i420/main/interface/i420.h",
+    "codecs/i420/main/source/i420.cc",
   ]
 
   configs += [ "../..:common_config" ]
@@ -125,7 +130,9 @@ source_set("webrtc_i420") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../../system_wrappers" ]
+  deps = [
+    "../../system_wrappers",
+  ]
 }
 
 source_set("webrtc_vp8") {
@@ -171,9 +178,7 @@ source_set("webrtc_vp8") {
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
-    deps += [
-      rtc_libvpx_dir,
-    ]
+    deps += [ rtc_libvpx_dir ]
   }
 }
 
@@ -181,11 +186,15 @@ source_set("webrtc_vp9") {
   if (rtc_build_vp9) {
     sources = [
       "codecs/vp9/include/vp9.h",
+      "codecs/vp9/vp9_frame_buffer_pool.cc",
+      "codecs/vp9/vp9_frame_buffer_pool.h",
       "codecs/vp9/vp9_impl.cc",
       "codecs/vp9/vp9_impl.h",
     ]
   } else {
-    sources = [ "codecs/vp9/vp9_dummy_impl.cc" ]
+    sources = [
+      "codecs/vp9/vp9_dummy_impl.cc",
+    ]
   }
 
   configs += [ "../..:common_config" ]
@@ -203,8 +212,6 @@ source_set("webrtc_vp9") {
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
-    deps += [
-      rtc_libvpx_dir,
-    ]
+    deps += [ rtc_libvpx_dir ]
   }
 }

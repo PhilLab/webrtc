@@ -106,8 +106,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_return;
   }
 
-  int32_t InitializeSender() override { return sender_->InitializeSender(); }
-
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,
                             uint32_t numberOfCores,
                             uint32_t maxPayloadSize) override {
@@ -193,24 +191,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->SentFrameCount(&frameCount);
   }
 
-  int StartDebugRecording(const char* file_name_utf8) override {
-    return sender_->StartDebugRecording(file_name_utf8);
-  }
-
-  int StopDebugRecording() override {
-    sender_->StopDebugRecording();
-    return VCM_OK;
-  }
-
   void SuspendBelowMinBitrate() override {
     return sender_->SuspendBelowMinBitrate();
   }
 
   bool VideoSuspended() const override { return sender_->VideoSuspended(); }
-
-  int32_t InitializeReceiver() override {
-    return receiver_->InitializeReceiver();
-  }
 
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,

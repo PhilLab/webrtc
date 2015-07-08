@@ -11,10 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
 
-#include <vector>
-
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/splitting_filter.h"
@@ -158,7 +155,7 @@ class AudioBuffer {
   rtc::scoped_ptr<SplittingFilter> splitting_filter_;
   rtc::scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   rtc::scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;
-  rtc::scoped_ptr<ChannelBuffer<float> > input_buffer_;
+  rtc::scoped_ptr<IFChannelBuffer> input_buffer_;
   rtc::scoped_ptr<ChannelBuffer<float> > process_buffer_;
   ScopedVector<PushSincResampler> input_resamplers_;
   ScopedVector<PushSincResampler> output_resamplers_;

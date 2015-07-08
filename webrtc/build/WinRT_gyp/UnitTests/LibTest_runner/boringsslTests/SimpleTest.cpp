@@ -1,5 +1,12 @@
 #include "common.h"
 
+#define WRAPPED_TEST(testMainFn) \
+    extern "C" int testMainFn(int argc, char *argv[]);\
+    int testMainFn##_wrapped(void) {\
+      char* argv[] = { "." };\
+      return testMainFn(1, argv);\
+    }
+
 namespace BoringSSLTests
 {
 
@@ -11,20 +18,20 @@ namespace BoringSSLTests
     int boringSSL_bn_test_main_wrapped(void);
     int boringSSL_bytestring_test_main(void);
     int boringSSL_constant_time_test_main(void);
-    int boringSSL_dh_test_main(void);
+    int boringSSL_dh_test_main_wrapped(void);
     int boringSSL_digest_test_main(void);
     int boringSSL_dsa_test_main(void);
     int boringSSL_ec_test_main(void);
     int boringSSL_ecdsa_test_main(void);
     int boringSSL_err_test_main(void);
     int boringSSL_gcm_test_main(void);
-    int boringSSL_hmac_test_main(void);
+    int boringSSL_hmac_test_main_wrapped(void);
     int boringSSL_lhash_test_main(void);
     int boringSSL_rsa_test_main(void);
     int boringSSL_pkcs7_test_main(void);
-    int boringSSL_pkcs12_test_main(void);
+    int boringSSL_pkcs12_test_main_wrapped(void);
     int boringSSL_example_mul_test_main(void);
-    int boringSSL_evp_test_main(void);
+    int boringSSL_evp_test_main_wrapped(void);
     int boringSSL_ssl_test_main(void);
     int boringSSL_pqueue_test_main(void);
     int boringSSL_hkdf_test_main(void);
@@ -39,20 +46,20 @@ namespace BoringSSLTests
     { L"bn_test", L"boringssl_bn_test", boringSSL_bn_test_main_wrapped },
     { L"bytestring_test", L"boringssl_bytestring_test", boringSSL_bytestring_test_main },
     { L"constant_time_test", L"boringssl_constant_time_test", boringSSL_constant_time_test_main },
-    { L"dh_test", L"boringssl_dh_test", boringSSL_dh_test_main },
+    { L"dh_test", L"boringssl_dh_test", boringSSL_dh_test_main_wrapped },
     { L"digest_test", L"boringssl_digest_test", boringSSL_digest_test_main },
     { L"dsa_test", L"boringssl_dsa_test", boringSSL_dsa_test_main },
     { L"ec_test", L"boringssl_ec_test", boringSSL_ec_test_main },
     { L"ecdsa_test", L"boringssl_ecdsa_test", boringSSL_ecdsa_test_main },
     { L"err_test", L"boringssl_err_test", boringSSL_err_test_main },
     { L"gcm_test", L"boringssl_gcm_test", boringSSL_gcm_test_main },
-    { L"hmac_test", L"boringssl_hmac_test", boringSSL_hmac_test_main },
+    { L"hmac_test", L"boringssl_hmac_test", boringSSL_hmac_test_main_wrapped },
     { L"lhash_test", L"boringssl_lhash_test", boringSSL_lhash_test_main },
     { L"rsa_test", L"boringssl_rsa_test", boringSSL_rsa_test_main },
     { L"pkcs7_test", L"boringssl_pkcs7_test", boringSSL_pkcs7_test_main },
-    { L"pkcs12_test", L"boringssl_pkcs12_test", boringSSL_pkcs12_test_main },
+    { L"pkcs12_test", L"boringssl_pkcs12_test", boringSSL_pkcs12_test_main_wrapped },
     { L"example_mul_test", L"boringssl_example_mul_test", boringSSL_example_mul_test_main },
-    { L"evp_test", L"boringssl_evp_test", boringSSL_evp_test_main },
+    { L"evp_test", L"boringssl_evp_test", boringSSL_evp_test_main_wrapped },
     { L"ssl_test", L"boringssl_ssl_test", boringSSL_ssl_test_main },
     { L"pqueue_test", L"boringssl_pqueue_test", boringSSL_pqueue_test_main },
     { L"hkdf_test", L"boringssl_hkdf_test", boringSSL_hkdf_test_main },
@@ -61,13 +68,11 @@ namespace BoringSSLTests
     { NULL, NULL, NULL },
   };
 
-  //boringSLL bn_test uses different type of main function, so it's wrapped
-  extern "C" int boringSSL_bn_test_main(int argc, char *argv[]);
-  int boringSSL_bn_test_main_wrapped(void)
-  {
-    char* argv[] = { "." };
-    return boringSSL_bn_test_main(1, argv);
-  }
+  WRAPPED_TEST(boringSSL_bn_test_main);
+  WRAPPED_TEST(boringSSL_dh_test_main);
+  WRAPPED_TEST(boringSSL_hmac_test_main);
+  WRAPPED_TEST(boringSSL_pkcs12_test_main);
+  WRAPPED_TEST(boringSSL_evp_test_main);
 
   // Automatic test inserter 
   BoringSSLSimpleTestInserter<SingleInstanceTestSolutionProvider> CBoringSSLSimpleTest::_inserter(SimpleTests);

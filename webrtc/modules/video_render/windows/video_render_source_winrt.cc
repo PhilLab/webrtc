@@ -20,33 +20,13 @@
 #include <assert.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 #include <ppltasks.h>
 
 using Microsoft::WRL::ComPtr;
 
 namespace webrtc {
-
-enum {
-  TRACE_LEVEL_LOW,
-  TRACE_LEVEL_NORMAL,
-  TRACE_LEVEL_HIGH,
-};
-
-DWORD g_dwLogLevel = TRACE_LEVEL_NORMAL;
-
-void Trace(DWORD dwLevel, LPCWSTR pszFormat, ...) {
-  if (g_dwLogLevel > dwLevel) {
-    return;
-  }
-  WCHAR szTextBuf[256];
-  va_list args;
-  va_start(args, pszFormat);
-
-  StringCchVPrintf(szTextBuf, _countof(szTextBuf), pszFormat, args);
-
-  OutputDebugString(szTextBuf);
-}
 
 inline void ThrowIfError(HRESULT hr) {
   if (FAILED(hr)) {
@@ -64,18 +44,14 @@ class VideoRenderMediaStreamWinRT::SourceLock
 {
 public:
   SourceLock(VideoRenderMediaSourceWinRT *pSource)
-    : _spSource(pSource)
-  {
-    if (_spSource)
-    {
+    : _spSource(pSource) {
+    if (_spSource) {
       _spSource->Lock();
     }
   }
 
-  ~SourceLock()
-  {
-    if (_spSource)
-    {
+  ~SourceLock() {
+    if (_spSource) {
       _spSource->Unlock();
     }
   }
@@ -84,31 +60,29 @@ private:
   ComPtr<VideoRenderMediaSourceWinRT> _spSource;
 };
 
-HRESULT VideoRenderMediaStreamWinRT::CreateInstance(StreamDescription *pStreamDescription, VideoRenderMediaSourceWinRT *pSource, VideoRenderMediaStreamWinRT **ppStream)
-{
-  if (pSource == nullptr || ppStream == nullptr)
-  {
+HRESULT VideoRenderMediaStreamWinRT::CreateInstance(StreamDescription *pStreamDescription,
+  VideoRenderMediaSourceWinRT *pSource, VideoRenderMediaStreamWinRT **ppStream) {
+  if (pSource == nullptr || ppStream == nullptr) {
     return E_INVALIDARG;
   }
 
   HRESULT hr = S_OK;
-  try
-  {
+  try {
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
     spStream.Attach(new (std::nothrow) VideoRenderMediaStreamWinRT(pSource));
-    if (!spStream)
-    {
+    if (!spStream) {
       Throw(E_OUTOFMEMORY);
     }
 
     spStream->Initialize(pStreamDescription);
 
-
     (*ppStream) = spStream.Detach();
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     hr = exc->HResult;
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
@@ -126,19 +100,15 @@ VideoRenderMediaStreamWinRT::VideoRenderMediaStreamWinRT(VideoRenderMediaSourceW
     _fInitDropTime(false),
     _fWaitingForCleanPoint(true),
     _hnsStartDroppingAt(0),
-    _hnsAmountToDrop(0)
-{
+    _hnsAmountToDrop(0) {
 }
 
-VideoRenderMediaStreamWinRT::~VideoRenderMediaStreamWinRT(void)
-{
+VideoRenderMediaStreamWinRT::~VideoRenderMediaStreamWinRT(void) {
 }
 
 // IUnknown methods
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueryInterface(REFIID riid, void **ppv)
-{
-  if (ppv == nullptr)
-  {
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueryInterface(REFIID riid, void **ppv) {
+  if (ppv == nullptr) {
     return E_POINTER;
   }
   (*ppv) = nullptr;
@@ -146,47 +116,36 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueryInterface(REFIID riid, void **p
   HRESULT hr = S_OK;
   if (riid == IID_IUnknown ||
     riid == IID_IMFMediaStream ||
-    riid == IID_IMFMediaEventGenerator)
-  {
+    riid == IID_IMFMediaEventGenerator) {
     (*ppv) = static_cast<IMFMediaStream*>(this);
     AddRef();
-  }
-  else if (riid == IID_IMFQualityAdvise || riid == IID_IMFQualityAdvise2)
-  {
+  } else if (riid == IID_IMFQualityAdvise || riid == IID_IMFQualityAdvise2) {
     (*ppv) = static_cast<IMFQualityAdvise2*>(this);
     AddRef();
-  }
-  else if (riid == IID_IMFGetService)
-  {
+  } else if (riid == IID_IMFGetService) {
     (*ppv) = static_cast<IMFGetService*>(this);
     AddRef();
-  }
-  else
-  {
+  } else {
     hr = E_NOINTERFACE;
   }
 
   return hr;
 }
 
-IFACEMETHODIMP_(ULONG) VideoRenderMediaStreamWinRT::AddRef()
-{
+IFACEMETHODIMP_(ULONG) VideoRenderMediaStreamWinRT::AddRef() {
   return InterlockedIncrement(&_cRef);
 }
 
-IFACEMETHODIMP_(ULONG) VideoRenderMediaStreamWinRT::Release()
-{
+IFACEMETHODIMP_(ULONG) VideoRenderMediaStreamWinRT::Release() {
   long cRef = InterlockedDecrement(&_cRef);
-  if (cRef == 0)
-  {
+  if (cRef == 0) {
     delete this;
   }
   return cRef;
 }
 
 // IMFMediaEventGenerator methods.
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::BeginGetEvent(IMFAsyncCallback *pCallback, IUnknown *punkState)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::BeginGetEvent(IMFAsyncCallback *pCallback, IUnknown *punkState) {
   HRESULT hr = S_OK;
 
   SourceLock lock(_spSource.Get());
@@ -195,16 +154,18 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::BeginGetEvent(IMFAsyncCallback *pCal
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spEventQueue->BeginGetEvent(pCallback, punkState);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
+  }
+
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEvent **ppEvent)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEvent **ppEvent) {
   HRESULT hr = S_OK;
 
   SourceLock lock(_spSource.Get());
@@ -213,16 +174,18 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::EndGetEvent(IMFAsyncResult *pResult,
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spEventQueue->EndGetEvent(pResult, ppEvent);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent) {
   // NOTE:
   // GetEvent can block indefinitely, so we don't hold the lock.
   // This requires some juggling with the event queue pointer.
@@ -240,24 +203,25 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetEvent(DWORD dwFlags, IMFMediaEven
     }
 
     // Get the pointer to the event queue.
-    if (SUCCEEDED(hr))
-    {
+    if (SUCCEEDED(hr)) {
       spQueue = _spEventQueue;
     }
   }
 
   // Now get the event.
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = spQueue->GetEvent(dwFlags, ppEvent);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
+  }
 
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, PROPVARIANT const *pvValue)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueueEvent(MediaEventType met, REFGUID guidExtendedType,
+  HRESULT hrStatus, PROPVARIANT const *pvValue) {
   HRESULT hr = S_OK;
 
   SourceLock lock(_spSource.Get());
@@ -266,8 +230,7 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueueEvent(MediaEventType met, REFGU
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spEventQueue->QueueEventParamVar(met, guidExtendedType, hrStatus, pvValue);
   }
 
@@ -275,10 +238,8 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::QueueEvent(MediaEventType met, REFGU
 }
 
 // IMFMediaStream methods
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetMediaSource(IMFMediaSource **ppMediaSource)
-{
-  if (ppMediaSource == nullptr)
-  {
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetMediaSource(IMFMediaSource **ppMediaSource) {
+  if (ppMediaSource == nullptr) {
     return E_INVALIDARG;
   }
 
@@ -290,19 +251,18 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetMediaSource(IMFMediaSource **ppMe
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     *ppMediaSource = _spSource.Get();
     (*ppMediaSource)->AddRef();
+  } else {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetStreamDescriptor(IMFStreamDescriptor **ppStreamDescriptor)
-{
-  if (ppStreamDescriptor == nullptr)
-  {
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetStreamDescriptor(IMFStreamDescriptor **ppStreamDescriptor) {
+  if (ppStreamDescriptor == nullptr) {
     return E_INVALIDARG;
   }
 
@@ -314,27 +274,25 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetStreamDescriptor(IMFStreamDescrip
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     *ppStreamDescriptor = _spStreamDescriptor.Get();
     (*ppStreamDescriptor)->AddRef();
+  } else {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::RequestSample(IUnknown *pToken)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::RequestSample(IUnknown *pToken) {
   SourceLock lock(_spSource.Get());
 
-  try
-  {
+  try {
     if (_eSourceState == SourceState_Shutdown) {
       Throw(MF_E_SHUTDOWN);
     }
 
-    if (_eSourceState != SourceState_Started)
-    {
+    if (_eSourceState != SourceState_Started) {
       // We cannot be asked for a sample unless we are in started state
       Throw(MF_E_INVALIDREQUEST);
     }
@@ -344,9 +302,7 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::RequestSample(IUnknown *pToken)
 
     // Trigger sample delivery
     DeliverSamples();
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     HandleError(exc->HResult);
   }
 
@@ -355,8 +311,7 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::RequestSample(IUnknown *pToken)
 
 // IMFQualityAdvise methods
 IFACEMETHODIMP VideoRenderMediaStreamWinRT::SetDropMode(
-  _In_ MF_QUALITY_DROP_MODE eDropMode)
-{
+  _In_ MF_QUALITY_DROP_MODE eDropMode) {
   HRESULT hr = S_OK;
   SourceLock lock(_spSource.Get());
 
@@ -368,33 +323,33 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::SetDropMode(
   // Only support one drop mode
   //
   if (SUCCEEDED(hr) &&
-    ((eDropMode < MF_DROP_MODE_NONE) || (eDropMode >= MF_DROP_MODE_2)))
-  {
+    ((eDropMode < MF_DROP_MODE_NONE) || (eDropMode >= MF_DROP_MODE_2))) {
     hr = MF_E_NO_MORE_DROP_MODES;
   }
 
-  if (SUCCEEDED(hr) && _eDropMode != eDropMode)
-  {
+  if (SUCCEEDED(hr) && _eDropMode != eDropMode) {
     _eDropMode = eDropMode;
     _fWaitingForCleanPoint = true;
+    LOG(LS_INFO) << "Setting drop mode to " << _eDropMode;
   }
 
-  return(hr);
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
+  }
+
+  return hr;
 }
 
 IFACEMETHODIMP VideoRenderMediaStreamWinRT::SetQualityLevel(
-  _In_ MF_QUALITY_LEVEL eQualityLevel)
-{
+  _In_ MF_QUALITY_LEVEL eQualityLevel) {
   return(MF_E_NO_MORE_QUALITY_LEVELS);
 }
 
 IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetDropMode(
-  _Out_  MF_QUALITY_DROP_MODE *peDropMode)
-{
+  _Out_  MF_QUALITY_DROP_MODE *peDropMode) {
   HRESULT hr = S_OK;
 
-  if (peDropMode == nullptr)
-  {
+  if (peDropMode == nullptr) {
     return E_POINTER;
   }
 
@@ -404,22 +359,21 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetDropMode(
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     *peDropMode = _eDropMode;
+  } else {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
 }
 
 IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetQualityLevel(
-  _Out_  MF_QUALITY_LEVEL *peQualityLevel)
-{
+  _Out_  MF_QUALITY_LEVEL *peQualityLevel) {
   return(E_NOTIMPL);
 }
 
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::DropTime(_In_ LONGLONG hnsAmountToDrop)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::DropTime(_In_ LONGLONG hnsAmountToDrop) {
   HRESULT hr = S_OK;
   SourceLock lock(_spSource.Get());
 
@@ -427,36 +381,34 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::DropTime(_In_ LONGLONG hnsAmountToDr
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
-    if (hnsAmountToDrop > 0)
-    {
+  if (SUCCEEDED(hr)) {
+    if (hnsAmountToDrop > 0) {
       _fDropTime = true;
       _fInitDropTime = true;
       _hnsAmountToDrop = hnsAmountToDrop;
-    }
-    else if (hnsAmountToDrop == 0)
-    {
+      LOG(LS_INFO) << "Dropping time hnsAmountToDrop=" << hnsAmountToDrop;
+    } else if (hnsAmountToDrop == 0) {
       // Reset time dropping
+      LOG(LS_INFO) << "Disabling dropping time";
       ResetDropTime();
-    }
-    else
-    {
+    } else {
       hr = E_INVALIDARG;
     }
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
 }
 
 // IMFQualityAdvise2 methods
-IFACEMETHODIMP VideoRenderMediaStreamWinRT::NotifyQualityEvent(_In_opt_ IMFMediaEvent *pEvent, _Out_ DWORD *pdwFlags)
-{
+IFACEMETHODIMP VideoRenderMediaStreamWinRT::NotifyQualityEvent(_In_opt_ IMFMediaEvent *pEvent, _Out_ DWORD *pdwFlags) {
   HRESULT hr = S_OK;
   SourceLock lock(_spSource.Get());
 
-  if (pdwFlags == nullptr || pEvent == nullptr)
-  {
+  if (pdwFlags == nullptr || pEvent == nullptr) {
     return E_POINTER;
   }
 
@@ -466,42 +418,40 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::NotifyQualityEvent(_In_opt_ IMFMedia
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     MediaEventType met;
     hr = pEvent->GetType(&met);
 
-    if (SUCCEEDED(hr) && met == MEQualityNotify)
-    {
+    if (SUCCEEDED(hr) && met == MEQualityNotify) {
       GUID guiExtendedType;
       hr = pEvent->GetExtendedType(&guiExtendedType);
 
-      if (SUCCEEDED(hr) && guiExtendedType == MF_QUALITY_NOTIFY_SAMPLE_LAG)
-      {
+      if (SUCCEEDED(hr) && guiExtendedType == MF_QUALITY_NOTIFY_SAMPLE_LAG) {
         PROPVARIANT var;
         PropVariantInit(&var);
 
         hr = pEvent->GetValue(&var);
         LONGLONG hnsSampleLatency = var.hVal.QuadPart;
 
-        if (SUCCEEDED(hr))
-        {
-          if (_eDropMode == MF_DROP_MODE_NONE && hnsSampleLatency > 30000000)
-          {
+        if (SUCCEEDED(hr)) {
+          if (_eDropMode == MF_DROP_MODE_NONE && hnsSampleLatency > 30000000) {
             hr = SetDropMode(MF_DROP_MODE_1);
-          }
-          else if (_eDropMode == MF_DROP_MODE_1 && hnsSampleLatency < 0)
-          {
+            LOG(LS_INFO) << "Entering drop mode";
+          } else if (_eDropMode == MF_DROP_MODE_1 && hnsSampleLatency < 0) {
             hr = SetDropMode(MF_DROP_MODE_NONE);
-          }
-          else
-          {
+            LOG(LS_INFO) << "Leaving drop mode";
+          } else {
+            LOG(LS_INFO) << "Sample latency = " << hnsSampleLatency;
           }
         }
 
         PropVariantClear(&var);
       }
     }
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return hr;
@@ -511,13 +461,11 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::NotifyQualityEvent(_In_opt_ IMFMedia
 IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetService(
   _In_ REFGUID guidService,
   _In_ REFIID riid,
-  _Out_ LPVOID *ppvObject)
-{
+  _Out_ LPVOID *ppvObject) {
   HRESULT hr = S_OK;
   SourceLock lock(_spSource.Get());
 
-  if (ppvObject == nullptr)
-  {
+  if (ppvObject == nullptr) {
     return E_POINTER;
   }
   *ppvObject = NULL;
@@ -526,14 +474,10 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetService(
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
-    if (MF_QUALITY_SERVICES == guidService)
-    {
+  if (SUCCEEDED(hr)) {
+    if (MF_QUALITY_SERVICES == guidService) {
       hr = QueryInterface(riid, ppvObject);
-    }
-    else
-    {
+    } else {
       hr = MF_E_UNSUPPORTED_SERVICE;
     }
   }
@@ -541,8 +485,7 @@ IFACEMETHODIMP VideoRenderMediaStreamWinRT::GetService(
   return hr;
 }
 
-HRESULT VideoRenderMediaStreamWinRT::Start()
-{
+HRESULT VideoRenderMediaStreamWinRT::Start() {
   HRESULT hr = S_OK;
   SourceLock lock(_spSource.Get());
 
@@ -550,31 +493,29 @@ HRESULT VideoRenderMediaStreamWinRT::Start()
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     if (_eSourceState == SourceState_Stopped ||
-      _eSourceState == SourceState_Started)
-    {
+      _eSourceState == SourceState_Started) {
       _eSourceState = SourceState_Started;
       // Inform the client that we've started
       hr = QueueEvent(MEStreamStarted, GUID_NULL, S_OK, nullptr);
-    }
-    else
-    {
+    } else {
       hr = MF_E_INVALID_STATE_TRANSITION;
     }
   }
 
-  if (FAILED(hr))
-  {
+  if (FAILED(hr)) {
     HandleError(hr);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return S_OK;
 }
 
-HRESULT VideoRenderMediaStreamWinRT::Stop()
-{
+HRESULT VideoRenderMediaStreamWinRT::Stop() {
   HRESULT hr = S_OK;
   SourceLock lock(_spSource.Get());
 
@@ -582,10 +523,8 @@ HRESULT VideoRenderMediaStreamWinRT::Stop()
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
-    if (_eSourceState == SourceState_Started)
-    {
+  if (SUCCEEDED(hr)) {
+    if (_eSourceState == SourceState_Started) {
       _eSourceState = SourceState_Stopped;
       while (!_tokens.empty())
         _tokens.pop_front();
@@ -593,47 +532,42 @@ HRESULT VideoRenderMediaStreamWinRT::Stop()
         _samples.pop_front();
       // Inform the client that we've stopped.
       hr = QueueEvent(MEStreamStopped, GUID_NULL, S_OK, nullptr);
-    }
-    else
-    {
+    } else {
       hr = MF_E_INVALID_STATE_TRANSITION;
     }
   }
 
-  if (FAILED(hr))
-  {
+  if (FAILED(hr)) {
     HandleError(hr);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
 
   return S_OK;
 }
 
-HRESULT VideoRenderMediaStreamWinRT::SetRate(float flRate)
-{
+HRESULT VideoRenderMediaStreamWinRT::SetRate(float flRate) {
   SourceLock lock(_spSource.Get());
 
-  try
-  {
+  try {
     if (_eSourceState == SourceState_Shutdown) {
       Throw(MF_E_SHUTDOWN);
     }
 
     _flRate = flRate;
-    if (_flRate != 1.0f)
-    {
+    if (_flRate != 1.0f) {
       CleanSampleQueue();
     }
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     HandleError(exc->HResult);
   }
 
   return S_OK;
 }
 
-HRESULT VideoRenderMediaStreamWinRT::Flush()
-{
+HRESULT VideoRenderMediaStreamWinRT::Flush() {
   SourceLock lock(_spSource.Get());
 
   while (!_tokens.empty())
@@ -648,8 +582,7 @@ HRESULT VideoRenderMediaStreamWinRT::Flush()
   return S_OK;
 }
 
-HRESULT VideoRenderMediaStreamWinRT::Shutdown()
-{
+HRESULT VideoRenderMediaStreamWinRT::Shutdown() {
   SourceLock lock(_spSource.Get());
 
   HRESULT hr = S_OK;
@@ -657,12 +590,10 @@ HRESULT VideoRenderMediaStreamWinRT::Shutdown()
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     Flush();
 
-    if (_spEventQueue)
-    {
+    if (_spEventQueue) {
       _spEventQueue->Shutdown();
       _spEventQueue.Reset();
     }
@@ -671,16 +602,18 @@ HRESULT VideoRenderMediaStreamWinRT::Shutdown()
     _eSourceState = SourceState_Shutdown;
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
+  }
+
   return hr;
 }
 
 // Processes media sample
-void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMFSample *pSample)
-{
+void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMFSample *pSample) {
   assert(pSample);
 
-  try
-  {
+  try {
     if (_eSourceState == SourceState_Shutdown) {
       Throw(MF_E_SHUTDOWN);
     }
@@ -688,32 +621,25 @@ void VideoRenderMediaStreamWinRT::ProcessSample(SampleHeader *pSampleHeader, IMF
     SetSampleAttributes(pSampleHeader, pSample);
 
     // Check if we are in propper state if so deliver the sample otherwise just skip it and don't treat it as an error.
-    if (_eSourceState == SourceState_Started)
-    {
+    if (_eSourceState == SourceState_Started) {
       // Put sample on the list
       _samples.push_back(pSample);
       // Deliver samples
       DeliverSamples();
-    }
-    else
-    {
+    } else {
       Throw(MF_E_UNEXPECTED);
     }
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     HandleError(exc->HResult);
   }
 }
 
-void VideoRenderMediaStreamWinRT::ProcessFormatChange(StreamDescription *pStreamDescription)
-{
+void VideoRenderMediaStreamWinRT::ProcessFormatChange(StreamDescription *pStreamDescription) {
   assert(pStreamDescription);
 
   _currentStreamDescription = *pStreamDescription;
 
-  try
-  {
+  try {
     if (_eSourceState == SourceState_Shutdown) {
       Throw(MF_E_SHUTDOWN);
     }
@@ -729,15 +655,12 @@ void VideoRenderMediaStreamWinRT::ProcessFormatChange(StreamDescription *pStream
 
     // Set current media type
     ThrowIfError(spMediaTypeHandler->SetCurrentMediaType(spMediaType.Get()));
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     HandleError(exc->HResult);
   }
 }
 
-HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
-{
+HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive) {
   SourceLock lock(_spSource.Get());
 
   HRESULT hr = S_OK;
@@ -745,30 +668,28 @@ HRESULT VideoRenderMediaStreamWinRT::SetActive(bool fActive)
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     if (_eSourceState != SourceState_Stopped &&
-      _eSourceState != SourceState_Started)
-    {
+      _eSourceState != SourceState_Started) {
       hr = MF_E_INVALIDREQUEST;
     }
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     _fActive = fActive;
+  } else {
+    LOG_F(LS_ERROR) << "Render media stream error: " << hr;
   }
+
 
   return hr;
 }
 
-void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription)
-{
+void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescription) {
   // Create the media event queue.
   Platform::Exception ^error = nullptr;
 
-  try
-  {
+  try {
     ThrowIfError(MFCreateEventQueue(&_spEventQueue));
     ComPtr<IMFMediaType> spMediaType;
     ComPtr<IMFStreamDescriptor> spSD;
@@ -791,24 +712,19 @@ void VideoRenderMediaStreamWinRT::Initialize(StreamDescription *pStreamDescripti
     _eSourceState = SourceState_Stopped;
 
     _currentStreamDescription = *pStreamDescription;
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     error = exc;
   }
 
-  if (error != nullptr)
-  {
+  if (error != nullptr) {
     throw error;
   }
 }
 
 // Deliver samples for every request client made
-void VideoRenderMediaStreamWinRT::DeliverSamples()
-{
+void VideoRenderMediaStreamWinRT::DeliverSamples() {
   // Check if we have both: samples available in the queue and requests in request list.
-  while (!_samples.empty() && !_tokens.empty())
-  {
+  while (!_samples.empty() && !_tokens.empty()) {
     ComPtr<IUnknown> spEntry;
     ComPtr<IMFSample> spSample;
     ComPtr<IUnknown> spToken;
@@ -817,8 +733,7 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
     spEntry = _samples.front();
     _samples.pop_front();
 
-    if (SUCCEEDED(spEntry.As(&spSample)))
-    {
+    if (SUCCEEDED(spEntry.As(&spSample))) {
       DWORD pcbTotalLength;
       LONGLONG phnsSampleTime;
       LONGLONG phnsSampleDuration;
@@ -827,20 +742,17 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
       spSample->GetSampleDuration(&phnsSampleDuration);
       fDrop = ShouldDropSample(spSample.Get());
 
-      if (!fDrop)
-      {
+      if (!fDrop) {
         // Get the request token
         spToken = _tokens.front();
         _tokens.pop_front();
 
-        if (spToken)
-        {
+        if (spToken) {
           // If token was not null set the sample attribute.
           ThrowIfError(spSample->SetUnknown(MFSampleExtension_Token, spToken.Get()));
         }
 
-        if (_fDiscontinuity)
-        {
+        if (_fDiscontinuity) {
           // If token was not null set the sample attribute.
           ThrowIfError(spSample->SetUINT32(MFSampleExtension_Discontinuity, TRUE));
           _fDiscontinuity = false;
@@ -848,14 +760,10 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
 
         // Send a sample event.
         ThrowIfError(_spEventQueue->QueueEventParamUnk(MEMediaSample, GUID_NULL, S_OK, spSample.Get()));
-      }
-      else
-      {
+      } else {
         _fDiscontinuity = true;
       }
-    }
-    else
-    {
+    } else {
       ComPtr<IMFMediaType> spMediaType;
       ThrowIfError(spEntry.As(&spMediaType));
       // Send a sample event.
@@ -864,16 +772,13 @@ void VideoRenderMediaStreamWinRT::DeliverSamples()
   }
 }
 
-void VideoRenderMediaStreamWinRT::HandleError(HRESULT hErrorCode)
-{
-  if (hErrorCode != MF_E_SHUTDOWN)
-  {
+void VideoRenderMediaStreamWinRT::HandleError(HRESULT hErrorCode) {
+  if (hErrorCode != MF_E_SHUTDOWN) {
     // Send MEError to the client
     hErrorCode = QueueEvent(MEError, GUID_NULL, hErrorCode, nullptr);
   }
 }
-void VideoRenderMediaStreamWinRT::SetMediaTypeAttributes(StreamDescription *pStreamDescription, IMFMediaType *pMediaType)
-{
+void VideoRenderMediaStreamWinRT::SetMediaTypeAttributes(StreamDescription *pStreamDescription, IMFMediaType *pMediaType) {
   ThrowIfError(pMediaType->SetGUID(MF_MT_MAJOR_TYPE, pStreamDescription->guiMajorType));
   ThrowIfError(pMediaType->SetGUID(MF_MT_SUBTYPE, pStreamDescription->guiSubType));
   ThrowIfError(pMediaType->SetUINT32(MF_MT_DEFAULT_STRIDE, pStreamDescription->dwFrameWidth));
@@ -886,58 +791,50 @@ void VideoRenderMediaStreamWinRT::SetMediaTypeAttributes(StreamDescription *pStr
   ThrowIfError(MFSetAttributeRatio(pMediaType, MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
 }
 
-void VideoRenderMediaStreamWinRT::SetSampleAttributes(SampleHeader *pSampleHeader, IMFSample *pSample)
-{
+void VideoRenderMediaStreamWinRT::SetSampleAttributes(SampleHeader *pSampleHeader, IMFSample *pSample) {
   ThrowIfError(pSample->SetSampleTime(pSampleHeader->ullTimestamp));
 
   ThrowIfError(pSample->SetUINT32(MFSampleExtension_CleanPoint, TRUE));
 }
 
-bool VideoRenderMediaStreamWinRT::ShouldDropSample(IMFSample *pSample)
-{
+bool VideoRenderMediaStreamWinRT::ShouldDropSample(IMFSample *pSample) {
   bool fCleanPoint = MFGetAttributeUINT32(pSample, MFSampleExtension_CleanPoint, 0) > 0;
   bool fDrop = _flRate != 1.0f && !fCleanPoint;
 
   LONGLONG hnsTimeStamp = 0;
   ThrowIfError(pSample->GetSampleTime(&hnsTimeStamp));
 
-  if (!fDrop && _fDropTime)
-  {
-    if (_fInitDropTime)
-    {
+  if (!fDrop && _fDropTime) {
+    if (_fInitDropTime) {
       _hnsStartDroppingAt = hnsTimeStamp;
       _fInitDropTime = false;
     }
 
     fDrop = hnsTimeStamp < (_hnsStartDroppingAt + _hnsAmountToDrop);
-    if (!fDrop)
-    {
+    if (!fDrop) {
+      LOG(LS_INFO) << "Ending dropping time on sample ts=" << hnsTimeStamp;
       ResetDropTime();
-    }
-    else
-    {
+    } else {
+      LOG(LS_INFO) << "Dropping sample ts=" << hnsTimeStamp;
     }
   }
 
-  if (!fDrop && (_eDropMode == MF_DROP_MODE_1 || _fWaitingForCleanPoint))
-  {
+  if (!fDrop && (_eDropMode == MF_DROP_MODE_1 || _fWaitingForCleanPoint)) {
     // Only key frames
     fDrop = !fCleanPoint;
-    if (fCleanPoint)
-    {
+    if (fCleanPoint) {
       _fWaitingForCleanPoint = false;
     }
 
-    if (fDrop)
-    {
+    if (fDrop) {
+      LOG(LS_INFO) << "Dropping sample ts=" << hnsTimeStamp;
     }
   }
 
   return fDrop;
 }
 
-void VideoRenderMediaStreamWinRT::CleanSampleQueue()
-{
+void VideoRenderMediaStreamWinRT::CleanSampleQueue() {
   ComPtr<IUnknown> spEntry;
   ComPtr<IMFSample> spSample;
 
@@ -946,8 +843,7 @@ void VideoRenderMediaStreamWinRT::CleanSampleQueue()
   while (iter != _samples.end()) {
     IUnknown **entry = spEntry.ReleaseAndGetAddressOf();
     *entry = iter->Get();
-    if (SUCCEEDED(spEntry.As(&spSample)) && MFGetAttributeUINT32(spSample.Get(), MFSampleExtension_CleanPoint, 0))
-    {
+    if (SUCCEEDED(spEntry.As(&spSample)) && MFGetAttributeUINT32(spSample.Get(), MFSampleExtension_CleanPoint, 0)) {
       break;
     }
   }
@@ -956,14 +852,12 @@ void VideoRenderMediaStreamWinRT::CleanSampleQueue()
     _samples.pop_front();
   }
 
-  if (spSample != nullptr)
-  {
+  if (spSample != nullptr) {
     _samples.push_back(spSample);
   }
 }
 
-void VideoRenderMediaStreamWinRT::ResetDropTime()
-{
+void VideoRenderMediaStreamWinRT::ResetDropTime() {
   _fDropTime = false;
   _fInitDropTime = false;
   _hnsStartDroppingAt = 0;
@@ -973,61 +867,50 @@ void VideoRenderMediaStreamWinRT::ResetDropTime()
 
 VideoRenderSourceOperation::VideoRenderSourceOperation(VideoRenderSourceOperation::Type opType)
   : _cRef(1),
-    _opType(opType)
-{
+    _opType(opType) {
   ZeroMemory(&_data, sizeof(_data));
 }
 
-VideoRenderSourceOperation::~VideoRenderSourceOperation()
-{
+VideoRenderSourceOperation::~VideoRenderSourceOperation() {
   PropVariantClear(&_data);
 }
 
 // IUnknown methods
-IFACEMETHODIMP VideoRenderSourceOperation::QueryInterface(REFIID riid, void **ppv)
-{
+IFACEMETHODIMP VideoRenderSourceOperation::QueryInterface(REFIID riid, void **ppv) {
   return E_NOINTERFACE;
 }
 
-IFACEMETHODIMP_(ULONG) VideoRenderSourceOperation::AddRef()
-{
+IFACEMETHODIMP_(ULONG) VideoRenderSourceOperation::AddRef() {
   return InterlockedIncrement(&_cRef);
 }
 
-IFACEMETHODIMP_(ULONG) VideoRenderSourceOperation::Release()
-{
+IFACEMETHODIMP_(ULONG) VideoRenderSourceOperation::Release() {
   long cRef = InterlockedDecrement(&_cRef);
-  if (cRef == 0)
-  {
+  if (cRef == 0) {
     delete this;
   }
   return cRef;
 }
 
-HRESULT VideoRenderSourceOperation::SetData(const PROPVARIANT &varData)
-{
+HRESULT VideoRenderSourceOperation::SetData(const PROPVARIANT &varData) {
   return PropVariantCopy(&_data, &varData);
 }
 
 VideoRenderSourceStartOperation::VideoRenderSourceStartOperation(IMFPresentationDescriptor *pPD)
   : VideoRenderSourceOperation(VideoRenderSourceOperation::Operation_Start),
-    _spPD(pPD)
-{
+    _spPD(pPD) {
 }
 
-VideoRenderSourceStartOperation::~VideoRenderSourceStartOperation()
-{
+VideoRenderSourceStartOperation::~VideoRenderSourceStartOperation() {
 }
 
 VideoRenderSourceSetRateOperation::VideoRenderSourceSetRateOperation(BOOL fThin, float flRate)
   : VideoRenderSourceOperation(VideoRenderSourceOperation::Operation_SetRate),
     _fThin(fThin),
-    _flRate(flRate)
-{
+    _flRate(flRate) {
 }
 
-VideoRenderSourceSetRateOperation::~VideoRenderSourceSetRateOperation()
-{
+VideoRenderSourceSetRateOperation::~VideoRenderSourceSetRateOperation() {
 }
 
 //-------------------------------------------------------------------
@@ -1035,8 +918,7 @@ VideoRenderSourceSetRateOperation::~VideoRenderSourceSetRateOperation()
 // Public method.
 //-------------------------------------------------------------------
 template <class T, class TOperation>
-HRESULT OpQueue<T, TOperation>::QueueOperation(TOperation *pOp)
-{
+HRESULT OpQueue<T, TOperation>::QueueOperation(TOperation *pOp) {
   HRESULT hr = S_OK;
 
   CriticalSectionScoped cs(m_critSec);
@@ -1055,11 +937,9 @@ HRESULT OpQueue<T, TOperation>::QueueOperation(TOperation *pOp)
 // Note: This method dispatches the operation to a work queue.
 //-------------------------------------------------------------------
 template <class T, class TOperation>
-HRESULT OpQueue<T, TOperation>::ProcessQueue()
-{
+HRESULT OpQueue<T, TOperation>::ProcessQueue() {
   HRESULT hr = S_OK;
-  if (m_OpQueue.size() > 0)
-  {
+  if (m_OpQueue.size() > 0) {
     hr = MFPutWorkItem2(
       MFASYNC_CALLBACK_QUEUE_STANDARD,    // Use the standard work queue.
       0,                                  // Default priority
@@ -1077,30 +957,25 @@ HRESULT OpQueue<T, TOperation>::ProcessQueue()
 // Note: This method is called from a work-queue thread.
 //-------------------------------------------------------------------
 template <class T, class TOperation>
-HRESULT OpQueue<T, TOperation>::ProcessQueueAsync(IMFAsyncResult *pResult)
-{
+HRESULT OpQueue<T, TOperation>::ProcessQueueAsync(IMFAsyncResult *pResult) {
   HRESULT hr = S_OK;
   TOperation *pOp = nullptr;
 
   CriticalSectionScoped cs(m_critSec);
 
-  if (m_OpQueue.size() > 0)
-  {
+  if (m_OpQueue.size() > 0) {
     pOp = m_OpQueue.front();
 
     hr = ValidateOperation(pOp);
-    if (SUCCEEDED(hr))
-    {
+    if (SUCCEEDED(hr)) {
       m_OpQueue.pop();
     }
-    if (SUCCEEDED(hr))
-    {
+    if (SUCCEEDED(hr)) {
       (void)DispatchOperation(pOp);
     }
   }
 
-  if (pOp != nullptr)
-  {
+  if (pOp != nullptr) {
     pOp->Release();
   }
 
@@ -1123,14 +998,11 @@ VideoRenderMediaSourceWinRT::~VideoRenderMediaSourceWinRT(void) {
   }
 }
 
-HRESULT VideoRenderMediaSourceWinRT::CreateInstance(VideoRenderMediaSourceWinRT **ppMediaSource)
-{
+HRESULT VideoRenderMediaSourceWinRT::CreateInstance(VideoRenderMediaSourceWinRT **ppMediaSource) {
   HRESULT hr = S_OK;
 
-  try
-  {
-    if (ppMediaSource == nullptr)
-    {
+  try {
+    if (ppMediaSource == nullptr) {
       Throw(E_INVALIDARG);
     }
 
@@ -1142,10 +1014,12 @@ HRESULT VideoRenderMediaSourceWinRT::CreateInstance(VideoRenderMediaSourceWinRT 
     spSource->Initialize();
 
     *ppMediaSource = spSource.Detach();
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     hr = exc->HResult;
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1153,8 +1027,7 @@ HRESULT VideoRenderMediaSourceWinRT::CreateInstance(VideoRenderMediaSourceWinRT 
 
 // IMFMediaEventGenerator methods.
 // Note: These methods call through to the event queue helper object.
-IFACEMETHODIMP VideoRenderMediaSourceWinRT::BeginGetEvent(IMFAsyncCallback *pCallback, IUnknown *punkState)
-{
+IFACEMETHODIMP VideoRenderMediaSourceWinRT::BeginGetEvent(IMFAsyncCallback *pCallback, IUnknown *punkState) {
   HRESULT hr = S_OK;
 
   CriticalSectionScoped cs(_critSec);
@@ -1163,16 +1036,18 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::BeginGetEvent(IMFAsyncCallback *pCal
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spEventQueue->BeginGetEvent(pCallback, punkState);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
+  }
+
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaSourceWinRT::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEvent **ppEvent)
-{
+IFACEMETHODIMP VideoRenderMediaSourceWinRT::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEvent **ppEvent) {
   HRESULT hr = S_OK;
 
   CriticalSectionScoped cs(_critSec);
@@ -1181,16 +1056,18 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::EndGetEvent(IMFAsyncResult *pResult,
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spEventQueue->EndGetEvent(pResult, ppEvent);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
 }
 
-IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent)
-{
+IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent) {
   // NOTE:
   // GetEvent can block indefinitely, so we don't hold the lock.
   // This requires some juggling with the event queue pointer.
@@ -1208,18 +1085,19 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetEvent(DWORD dwFlags, IMFMediaEven
     }
 
     // Get the pointer to the event queue.
-    if (SUCCEEDED(hr))
-    {
+    if (SUCCEEDED(hr)) {
       spQueue = _spEventQueue;
     }
   }
 
   // Now get the event.
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = spQueue->GetEvent(dwFlags, ppEvent);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
+  }
 
   return hr;
 }
@@ -1249,8 +1127,8 @@ HRESULT VideoRenderMediaSourceWinRT::requestSample(IUnknown* ptoken){
 
 }
 
-IFACEMETHODIMP VideoRenderMediaSourceWinRT::QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, PROPVARIANT const *pvValue)
-{
+IFACEMETHODIMP VideoRenderMediaSourceWinRT::QueueEvent(MediaEventType met, REFGUID guidExtendedType,
+  HRESULT hrStatus, PROPVARIANT const *pvValue) {
   HRESULT hr = S_OK;
 
   CriticalSectionScoped cs(_critSec);
@@ -1259,8 +1137,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::QueueEvent(MediaEventType met, REFGU
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spEventQueue->QueueEventParamVar(met, guidExtendedType, hrStatus, pvValue);
   }
 
@@ -1270,8 +1147,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::QueueEvent(MediaEventType met, REFGU
 // IMFMediaSource methods
 IFACEMETHODIMP VideoRenderMediaSourceWinRT::CreatePresentationDescriptor(
     IMFPresentationDescriptor **ppPresentationDescriptor) {
-  if (ppPresentationDescriptor == NULL)
-  {
+  if (ppPresentationDescriptor == NULL) {
     return E_POINTER;
   }
 
@@ -1283,14 +1159,16 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::CreatePresentationDescriptor(
   }
   
   if (SUCCEEDED(hr) &&
-    (_eSourceState == SourceState_Invalid || !_spPresentationDescriptor))
-  {
+    (_eSourceState == SourceState_Invalid || !_spPresentationDescriptor)) {
     hr = MF_E_NOT_INITIALIZED;
   }
   
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     hr = _spPresentationDescriptor->Clone(ppPresentationDescriptor);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1298,8 +1176,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::CreatePresentationDescriptor(
 
 IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetCharacteristics(
     DWORD *pdwCharacteristics) {
-  if (pdwCharacteristics == NULL)
-  {
+  if (pdwCharacteristics == NULL) {
     return E_POINTER;
   }
 
@@ -1310,9 +1187,10 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetCharacteristics(
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     *pdwCharacteristics = MFMEDIASOURCE_IS_LIVE;
+  } else {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1330,10 +1208,8 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Shutdown() {
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
-    if (_spEventQueue != nullptr)
-    {
+  if (SUCCEEDED(hr)) {
+    if (_spEventQueue != nullptr) {
       _spEventQueue->Shutdown();
     }
 
@@ -1344,6 +1220,10 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Shutdown() {
     _spStream.Reset();
 
     _spEventQueue.Reset();
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1358,21 +1238,18 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Start(
   // Check parameters.
 
   // Start position and presentation descriptor cannot be NULL.
-  if (pvarStartPos == nullptr || pPresentationDescriptor == nullptr)
-  {
+  if (pvarStartPos == nullptr || pPresentationDescriptor == nullptr) {
     return E_INVALIDARG;
   }
 
   // Check the time format.
-  if ((pguidTimeFormat != nullptr) && (*pguidTimeFormat != GUID_NULL))
-  {
+  if ((pguidTimeFormat != nullptr) && (*pguidTimeFormat != GUID_NULL)) {
     // Unrecognized time format GUID.
     return MF_E_UNSUPPORTED_TIME_FORMAT;
   }
 
   // Check the data type of the start position.
-  if (pvarStartPos->vt != VT_EMPTY && pvarStartPos->vt != VT_I8)
-  {
+  if (pvarStartPos->vt != VT_EMPTY && pvarStartPos->vt != VT_I8) {
     return MF_E_UNSUPPORTED_TIME_FORMAT;
   }
 
@@ -1380,36 +1257,34 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Start(
   ComPtr<VideoRenderSourceStartOperation> spStartOp;
 
   if (_eSourceState != SourceState_Stopped &&
-    _eSourceState != SourceState_Started)
-  {
+    _eSourceState != SourceState_Started) {
     hr = MF_E_INVALIDREQUEST;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     // Check if the presentation description is valid.
     hr = ValidatePresentationDescriptor(pPresentationDescriptor);
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     // Prepare asynchronous operation attributes
     spStartOp.Attach(new (std::nothrow) VideoRenderSourceStartOperation(pPresentationDescriptor));
-    if (!spStartOp)
-    {
+    if (!spStartOp) {
       hr = E_OUTOFMEMORY;
     }
 
-    if (SUCCEEDED(hr))
-    {
+    if (SUCCEEDED(hr)) {
       hr = spStartOp->SetData(*pvarStartPos);
     }
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     // Queue asynchronous operation
     hr = QueueOperation(spStartOp.Detach());
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1419,15 +1294,17 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::Stop() {
   HRESULT hr = S_OK;
   ComPtr<VideoRenderSourceOperation> spStopOp;
   spStopOp.Attach(new (std::nothrow) VideoRenderSourceOperation(VideoRenderSourceOperation::Operation_Stop));
-  if (!spStopOp)
-  {
+  if (!spStopOp) {
     hr = E_OUTOFMEMORY;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     // Queue asynchronous stop
     hr = QueueOperation(spStopOp.Detach());
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1439,17 +1316,13 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetService(
     _Out_opt_ LPVOID *ppvObject) {
   HRESULT hr = MF_E_UNSUPPORTED_SERVICE;
 
-  if (ppvObject == nullptr)
-  {
+  if (ppvObject == nullptr) {
     return E_POINTER;
   }
 
-  if (guidService == MF_RATE_CONTROL_SERVICE)
-  {
+  if (guidService == MF_RATE_CONTROL_SERVICE) {
     hr = QueryInterface(riid, ppvObject);
-  }
-  else if (guidService == MF_MEDIASOURCE_SERVICE)
-  {
+  } else if (guidService == MF_MEDIASOURCE_SERVICE) {
     hr = QueryInterface(riid, ppvObject);
   }
 
@@ -1457,34 +1330,33 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetService(
 }
 
 IFACEMETHODIMP VideoRenderMediaSourceWinRT::SetRate(BOOL fThin, float flRate) {
-  if (fThin)
-  {
+  if (fThin) {
     return MF_E_THINNING_UNSUPPORTED;
   }
-  if (!IsRateSupported(flRate, &flRate))
-  {
+  if (!IsRateSupported(flRate, &flRate)) {
     return MF_E_UNSUPPORTED_RATE;
   }
 
   CriticalSectionScoped cs(_critSec);
   HRESULT hr = S_OK;
 
-  if (flRate == _flRate)
-  {
+  if (flRate == _flRate) {
     return S_OK;
   }
 
   ComPtr<VideoRenderSourceOperation> spSetRateOp;
   spSetRateOp.Attach(new (std::nothrow) VideoRenderSourceSetRateOperation(fThin, flRate));
-  if (!spSetRateOp)
-  {
+  if (!spSetRateOp) {
     hr = E_OUTOFMEMORY;
   }
 
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     // Queue asynchronous stop
     hr = QueueOperation(spSetRateOp.Detach());
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
@@ -1494,8 +1366,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetRate(
     _Inout_opt_ BOOL *pfThin,
     _Inout_opt_ float *pflRate) {
   CriticalSectionScoped cs(_critSec);
-  if (pfThin == nullptr || pflRate == nullptr)
-  {
+  if (pfThin == nullptr || pflRate == nullptr) {
     return E_INVALIDARG;
   }
 
@@ -1505,8 +1376,7 @@ IFACEMETHODIMP VideoRenderMediaSourceWinRT::GetRate(
   return S_OK;
 }
 
-__override HRESULT VideoRenderMediaSourceWinRT::DispatchOperation(_In_ VideoRenderSourceOperation *pOp)
-{
+__override HRESULT VideoRenderMediaSourceWinRT::DispatchOperation(_In_ VideoRenderSourceOperation *pOp) {
   CriticalSectionScoped cs(_critSec);
 
   HRESULT hr = S_OK;
@@ -1514,10 +1384,8 @@ __override HRESULT VideoRenderMediaSourceWinRT::DispatchOperation(_In_ VideoRend
     hr = MF_E_SHUTDOWN;
   }
 
-  if (SUCCEEDED(hr))
-  {
-    switch (pOp->GetOperationType())
-    {
+  if (SUCCEEDED(hr)) {
+    switch (pOp->GetOperationType()) {
     case VideoRenderSourceOperation::Operation_Start:
       DoStart(static_cast<VideoRenderSourceStartOperation *>(pOp));
       break;
@@ -1533,18 +1401,19 @@ __override HRESULT VideoRenderMediaSourceWinRT::DispatchOperation(_In_ VideoRend
     }
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
+  }
+
   return hr;
 }
 
-__override HRESULT VideoRenderMediaSourceWinRT::ValidateOperation(_In_ VideoRenderSourceOperation *pOp)
-{
+__override HRESULT VideoRenderMediaSourceWinRT::ValidateOperation(_In_ VideoRenderSourceOperation *pOp) {
   return S_OK;
 }
 
-void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoFrame)
-{
-  if (_eSourceState == SourceState_Started)
-  {
+void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoFrame) {
+  if (_eSourceState == SourceState_Started) {
     // Convert packet to MF sample
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
     ComPtr<IMFSample> spSample;
@@ -1552,67 +1421,67 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
 
     ThrowIfError(GetStreamById(1, &spStream));
 
-    if (spStream->IsActive())
-    {
+    if (spStream->IsActive()) {
       HRESULT hr = MFCreateSample(&spSample);
 
-      if (SUCCEEDED(hr))
-      {
+      if (SUCCEEDED(hr)) {
         DWORD cbMaxLength = videoFrame.width() * videoFrame.height() * 3 / 2;
         hr = MFCreateMemoryBuffer(cbMaxLength, &spMediaBuffer);
-        BYTE* buffer;
-        DWORD maxLength;
-        DWORD currentLength;
-        spMediaBuffer->Lock(&buffer, &maxLength, &currentLength);
-        uint8_t* y_buffer = (uint8_t*)videoFrame.buffer(kYPlane);
-        for (int i = 0; i < videoFrame.height(); i++)
-        {
-          std::memcpy(buffer, y_buffer, videoFrame.width());
-          buffer += videoFrame.width();
-          y_buffer += videoFrame.stride(kYPlane);
+      }
+
+      BYTE* pbBuffer = NULL;
+      if (SUCCEEDED(hr)) {
+        DWORD cbMaxLength;
+        DWORD cbCurrentLength;
+        hr = spMediaBuffer->Lock(&pbBuffer, &cbMaxLength, &cbCurrentLength);
+      }
+
+      if (SUCCEEDED(hr)) {
+        uint8_t* yBuffer = (uint8_t*)videoFrame.buffer(kYPlane);
+        for (int i = 0; i < videoFrame.height(); i++) {
+          std::memcpy(pbBuffer, yBuffer, videoFrame.width());
+          pbBuffer += videoFrame.width();
+          yBuffer += videoFrame.stride(kYPlane);
         }
 #if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
         // I420 to NV12 conversion
-        uint8_t* u_buffer = (uint8_t*)videoFrame.buffer(kUPlane);
-        uint8_t* v_buffer = (uint8_t*)videoFrame.buffer(kVPlane);
-        for (int i = 0; i < videoFrame.height() / 2; i++)
-        {
-          for (int j = 0; j < videoFrame.width() / 2; j++)
-          {
-            buffer[2*j+0] = u_buffer[j];
-            buffer[2*j+1] = v_buffer[j];
+        uint8_t* uBuffer = (uint8_t*)videoFrame.buffer(kUPlane);
+        uint8_t* vBuffer = (uint8_t*)videoFrame.buffer(kVPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++) {
+          for (int j = 0; j < videoFrame.width() / 2; j++) {
+            pbBuffer[2*j+0] = uBuffer[j];
+            pbBuffer[2*j+1] = vBuffer[j];
           }
-          buffer += videoFrame.width();
-          u_buffer += videoFrame.stride(kUPlane);
-          v_buffer += videoFrame.stride(kVPlane);
+          pbBuffer += videoFrame.width();
+          uBuffer += videoFrame.stride(kUPlane);
+          vBuffer += videoFrame.stride(kVPlane);
         }
 #else
-        uint8_t* u_buffer = (uint8_t*)videoFrame.buffer(kUPlane);
-        for (int i = 0; i < videoFrame.height() / 2; i++)
-        {
-          std::memcpy(buffer, u_buffer, videoFrame.width() / 2);
-          buffer += videoFrame.width() / 2;
-          u_buffer += videoFrame.stride(kUPlane);
+        uint8_t* uBuffer = (uint8_t*)videoFrame.buffer(kUPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++) {
+          std::memcpy(pbBuffer, uBuffer, videoFrame.width() / 2);
+          pbBuffer += videoFrame.width() / 2;
+          uBuffer += videoFrame.stride(kUPlane);
         }
-        uint8_t* v_buffer = (uint8_t*)videoFrame.buffer(kVPlane);
-        for (int i = 0; i < videoFrame.height() / 2; i++)
-        {
-          std::memcpy(buffer, v_buffer, videoFrame.width() / 2);
-          buffer += videoFrame.width() / 2;
-          v_buffer += videoFrame.stride(kVPlane);
+        uint8_t* vBuffer = (uint8_t*)videoFrame.buffer(kVPlane);
+        for (int i = 0; i < videoFrame.height() / 2; i++) {
+          std::memcpy(pbBuffer, vBuffer, videoFrame.width() / 2);
+          pbBuffer += videoFrame.width() / 2;
+          vBuffer += videoFrame.stride(kVPlane);
         }
 #endif
-        spMediaBuffer->SetCurrentLength(videoFrame.width() * videoFrame.height() * 3 / 2);
+        hr  = spMediaBuffer->SetCurrentLength(videoFrame.width() * videoFrame.height() * 3 / 2);
+      }
+
+      if (SUCCEEDED(hr)) {
         spMediaBuffer->Unlock();
       }
 
-      if (SUCCEEDED(hr))
-      {
+      if (SUCCEEDED(hr)) {
         hr = spSample->AddBuffer(spMediaBuffer.Get());
       }
 
-      if (SUCCEEDED(hr))
-      {
+      if (SUCCEEDED(hr)) {
         // Forward sample to a proper stream.
         SampleHeader sampleHead;
         sampleHead.dwStreamId = 1;
@@ -1624,20 +1493,20 @@ void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoF
         // conversion from millisecond to 100-nanosecond units
         sampleHead.ullTimestamp = (videoFrame.render_time_ms() - _msRenderTimeOffset) * 10000;
         spStream->ProcessSample(&sampleHead, spSample.Get());
+      } else {
+      }
+
+      if (!SUCCEEDED(hr)) {
+        LOG_F(LS_ERROR) << "Render media source error: " << hr;
       }
     }
-  }
-  else
-  {
+  } else {
     //Throw(MF_E_UNEXPECTED);
   }
 }
 
-void VideoRenderMediaSourceWinRT::FrameSizeChange(int width, int height)
-{
-  if (_eSourceState == SourceState_Stopped)
-  {
-    Trace(TRACE_LEVEL_NORMAL, L"======== FrameSizeChange - width: %d, height: %d\n", width, height);
+void VideoRenderMediaSourceWinRT::FrameSizeChange(int width, int height) {
+  if (_eSourceState == SourceState_Stopped) {
     // Convert packet to MF sample
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
 
@@ -1663,26 +1532,21 @@ void VideoRenderMediaSourceWinRT::FrameSizeChange(int width, int height)
 }
 
 _Acquires_lock_(_critSec)
-HRESULT VideoRenderMediaSourceWinRT::Lock()
-{
+HRESULT VideoRenderMediaSourceWinRT::Lock() {
   _critSec->Enter();
   return S_OK;
 }
 
 _Releases_lock_(_critSec)
-HRESULT VideoRenderMediaSourceWinRT::Unlock()
-{
+HRESULT VideoRenderMediaSourceWinRT::Unlock() {
   _critSec->Leave();
   return S_OK;
 }
 
-void VideoRenderMediaSourceWinRT::Initialize()
-{
-  try
-  {
+void VideoRenderMediaSourceWinRT::Initialize() {
+  try {
     // Create the event queue helper.
     ThrowIfError(MFCreateEventQueue(&_spEventQueue));
-    ThrowIfError(BaseAttributes<>::Initialize());
 
     ComPtr<VideoRenderMediaStreamWinRT> spStream;
 
@@ -1694,6 +1558,7 @@ void VideoRenderMediaSourceWinRT::Initialize()
 #else
     description.guiSubType = MFVideoFormat_I420;
 #endif
+    // dummy initial values - chaned when first frame arrives
     description.dwFrameWidth = 320;
     description.dwFrameHeight = 240;
     description.dwFrameRateNumerator = 30;
@@ -1707,43 +1572,40 @@ void VideoRenderMediaSourceWinRT::Initialize()
     InitPresentationDescription();
 
     _eSourceState = SourceState_Stopped;
-  }
-  catch (Platform::Exception^)
-  {
+  } catch (Platform::Exception^) {
     Shutdown();
     throw;
   }
 }
 
 // Handle errors
-void VideoRenderMediaSourceWinRT::HandleError(HRESULT hResult)
-{
-  if (_eSourceState != SourceState_Shutdown)
-  {
+void VideoRenderMediaSourceWinRT::HandleError(HRESULT hResult) {
+  if (_eSourceState != SourceState_Shutdown) {
     // If we received an error at any other time (except shutdown) send MEError event.
     QueueEvent(MEError, GUID_NULL, hResult, nullptr);
   }
 }
 
 // Returns stream object associated with given identifier
-HRESULT VideoRenderMediaSourceWinRT::GetStreamById(DWORD dwId, VideoRenderMediaStreamWinRT **ppStream)
-{
+HRESULT VideoRenderMediaSourceWinRT::GetStreamById(DWORD dwId, VideoRenderMediaStreamWinRT **ppStream) {
   assert(ppStream);
   HRESULT hr = MF_E_NOT_FOUND;
 
   VideoRenderMediaStreamWinRT *pStream = static_cast<VideoRenderMediaStreamWinRT*>(_spStream.Get());
-  if (pStream->GetId() == dwId)
-  {
+  if (pStream->GetId() == dwId) {
     *ppStream = pStream;
     (*ppStream)->AddRef();
     hr = S_OK;
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
+  }
+
   return hr;
 }
 
-void VideoRenderMediaSourceWinRT::InitPresentationDescription()
-{
+void VideoRenderMediaSourceWinRT::InitPresentationDescription() {
   ComPtr<IMFPresentationDescriptor> spPresentationDescriptor;
 
   IMFStreamDescriptor *pStreamDescriptor = nullptr;
@@ -1759,40 +1621,38 @@ void VideoRenderMediaSourceWinRT::InitPresentationDescription()
   pStreamDescriptor->Release();
 }
 
-HRESULT VideoRenderMediaSourceWinRT::ValidatePresentationDescriptor(IMFPresentationDescriptor *pPD)
-{
+HRESULT VideoRenderMediaSourceWinRT::ValidatePresentationDescriptor(IMFPresentationDescriptor *pPD) {
   HRESULT hr = S_OK;
   BOOL fSelected = FALSE;
   DWORD cStreams = 0;
 
-  if (_spStream == nullptr)
-  {
+  if (_spStream == nullptr) {
     return E_UNEXPECTED;
   }
 
   // The caller's PD must have the same number of streams as ours.
   hr = pPD->GetStreamDescriptorCount(&cStreams);
 
-  if (SUCCEEDED(hr))
-  {
-    if (cStreams != 1)
-    {
+  if (SUCCEEDED(hr)) {
+    if (cStreams != 1) {
       hr = E_INVALIDARG;
     }
   }
 
   // The caller must select at least one stream.
-  if (SUCCEEDED(hr))
-  {
+  if (SUCCEEDED(hr)) {
     ComPtr<IMFStreamDescriptor> spSD;
     hr = pPD->GetStreamDescriptorByIndex(0, &fSelected, &spSD);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
   }
 
   return hr;
 }
 
-void VideoRenderMediaSourceWinRT::SelectStream(IMFPresentationDescriptor *pPD)
-{
+void VideoRenderMediaSourceWinRT::SelectStream(IMFPresentationDescriptor *pPD) {
   ComPtr<IMFStreamDescriptor> spSD;
   ComPtr<VideoRenderMediaStreamWinRT> spStream;
   DWORD nStreamId;
@@ -1811,8 +1671,7 @@ void VideoRenderMediaSourceWinRT::SelectStream(IMFPresentationDescriptor *pPD)
   bool fWasSelected = spStream->IsActive();
   ThrowIfError(spStream->SetActive(!!fSelected));
 
-  if (fSelected)
-  {
+  if (fSelected) {
     // Choose event type to send
     MediaEventType met = (fWasSelected) ? MEUpdatedStream : MENewStream;
     ComPtr<IUnknown> spStreamUnk;
@@ -1826,13 +1685,11 @@ void VideoRenderMediaSourceWinRT::SelectStream(IMFPresentationDescriptor *pPD)
   }
 }
 
-void VideoRenderMediaSourceWinRT::DoStart(VideoRenderSourceStartOperation *pOp)
-{
+void VideoRenderMediaSourceWinRT::DoStart(VideoRenderSourceStartOperation *pOp) {
   assert(pOp->GetOperationType() == VideoRenderSourceOperation::Operation_Start);
   ComPtr<IMFPresentationDescriptor> spPD = pOp->GetPresentationDescriptor();
 
-  try
-  {
+  try {
     SelectStream(spPD.Get());
 
     _eSourceState = SourceState_Starting;
@@ -1840,72 +1697,66 @@ void VideoRenderMediaSourceWinRT::DoStart(VideoRenderSourceStartOperation *pOp)
     _eSourceState = SourceState_Started;
 
     ThrowIfError(_spEventQueue->QueueEventParamVar(MESourceStarted, GUID_NULL, S_OK, &pOp->GetData()));
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     _spEventQueue->QueueEventParamVar(MESourceStarted, GUID_NULL, exc->HResult, nullptr);
   }
 }
 
-void VideoRenderMediaSourceWinRT::DoStop(VideoRenderSourceOperation *pOp)
-{
+void VideoRenderMediaSourceWinRT::DoStop(VideoRenderSourceOperation *pOp) {
   assert(pOp->GetOperationType() == VideoRenderSourceOperation::Operation_Stop);
 
   HRESULT hr = S_OK;
-  try
-  {
+  try {
     VideoRenderMediaStreamWinRT *pStream = static_cast<VideoRenderMediaStreamWinRT*>(_spStream.Get());
-    if (pStream->IsActive())
-    {
+    if (pStream->IsActive()) {
       ThrowIfError(pStream->Flush());
       ThrowIfError(pStream->Stop());
     }
     _eSourceState = SourceState_Stopped;
     _bRenderTimeOffsetSet = false;
     _msRenderTimeOffset = 0;
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     hr = exc->HResult;
   }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
+  }
+
   // Send the "stopped" event. This might include a failure code.
   (void)_spEventQueue->QueueEventParamVar(MESourceStopped, GUID_NULL, hr, nullptr);
 }
 
-void VideoRenderMediaSourceWinRT::DoSetRate(VideoRenderSourceSetRateOperation *pOp)
-{
+void VideoRenderMediaSourceWinRT::DoSetRate(VideoRenderSourceSetRateOperation *pOp) {
   assert(pOp->GetOperationType() == VideoRenderSourceOperation::Operation_SetRate);
 
   HRESULT hr = S_OK;
-  try
-  {
+  try {
     VideoRenderMediaStreamWinRT *pStream = static_cast<VideoRenderMediaStreamWinRT*>(_spStream.Get());
 
-    if (pStream->IsActive())
-    {
+    if (pStream->IsActive()) {
       ThrowIfError(pStream->Flush());
       ThrowIfError(pStream->SetRate(pOp->GetRate()));
     }
 
     _flRate = pOp->GetRate();
-  }
-  catch (Platform::Exception ^exc)
-  {
+  } catch (Platform::Exception ^exc) {
     hr = exc->HResult;
   }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Render media source error: " << hr;
+  }
+
   // Send the "rate changed" event. This might include a failure code.
   (void)_spEventQueue->QueueEventParamVar(MESourceRateChanged, GUID_NULL, hr, nullptr);
 }
 
-bool VideoRenderMediaSourceWinRT::IsRateSupported(float flRate, float *pflAdjustedRate)
-{
-  if (flRate < 0.00001f && flRate > -0.00001f)
-  {
+bool VideoRenderMediaSourceWinRT::IsRateSupported(float flRate, float *pflAdjustedRate) {
+  if (flRate < 0.00001f && flRate > -0.00001f) {
     *pflAdjustedRate = 0.0f;
     return true;
-  }
-  else if (flRate < 1.0001f && flRate > 0.9999f)
-  {
+  } else if (flRate < 1.0001f && flRate > 0.9999f) {
     *pflAdjustedRate = 1.0f;
     return true;
   }

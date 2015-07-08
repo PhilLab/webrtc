@@ -88,7 +88,6 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual VoiceMediaChannel* CreateChannel();
   virtual VideoMediaChannel* CreateVideoChannel(const VideoOptions& options,
                                                 VoiceMediaChannel* voice_ch);
-  virtual SoundclipMedia* CreateSoundclip() { return NULL; }
   virtual AudioOptions GetAudioOptions() const { return AudioOptions(); }
   virtual bool SetAudioOptions(const AudioOptions& options) { return true; }
   virtual bool SetAudioDelayOffset(int offset) { return true; }
@@ -262,8 +261,8 @@ class FileVideoChannel : public VideoMediaChannel {
       rtc::StreamInterface* output_file_stream,
       rtc::Thread* rtp_sender_thread);
   virtual ~FileVideoChannel();
-
   // Implement pure virtual methods of VideoMediaChannel.
+  void DetachVoiceChannel() override {}
   virtual bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
     return true;
   }

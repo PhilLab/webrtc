@@ -30,7 +30,6 @@ class AudioCodingImpl;
 namespace acm2 {
 
 class ACMDTMFDetection;
-class ACMGenericCodec;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
@@ -49,6 +48,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Can be called multiple times for Codec, CNG, RED.
   int RegisterSendCodec(const CodecInst& send_codec) override;
 
+  void RegisterExternalSendCodec(
+      AudioEncoderMutable* external_speech_encoder) override;
+
   // Get current send codec.
   int SendCodec(CodecInst* current_codec) const override;
 
@@ -59,6 +61,11 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Adaptive rate codecs return their current encode target rate, while other
   // codecs return there long-term average or their fixed rate.
   int SendBitrate() const override;
+
+  // Sets the bitrate to the specified value in bits/sec. In case the codec does
+  // not support the requested value it will choose an appropriate value
+  // instead.
+  void SetBitRate(int bitrate_bps) override;
 
   // Set available bandwidth, inform the encoder about the
   // estimated bandwidth received from the remote party.
@@ -132,11 +139,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;
-
-  int RegisterDecoder(int acm_codec_id,
-                      uint8_t payload_type,
-                      int channels,
-                      AudioDecoder* audio_decoder);
 
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
@@ -217,14 +219,13 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                                    int rate_bit_per_sec,
                                    bool enforce_frame_size = false) override;
 
-  int SetOpusApplication(OpusApplicationMode application,
-                         bool disable_dtx_if_needed) override;
+  int SetOpusApplication(OpusApplicationMode application) override;
 
   // If current send codec is Opus, informs it about the maximum playback rate
   // the receiver will render.
   int SetOpusMaxPlaybackRate(int frequency_hz) override;
 
-  int EnableOpusDtx(bool force_voip) override;
+  int EnableOpusDtx() override;
 
   int DisableOpusDtx() override;
 
@@ -249,8 +250,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
     int16_t buffer[WEBRTC_10MS_PCM_AUDIO];
   };
 
-  int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data);
-  int Encode(const InputData& input_data);
+  int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+  int Encode(const InputData& input_data)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 

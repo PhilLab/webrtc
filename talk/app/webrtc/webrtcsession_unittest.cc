@@ -383,8 +383,7 @@ class WebRtcSessionTest : public testing::Test {
 
   void Init(
       DTLSIdentityServiceInterface* identity_service,
-      PeerConnectionInterface::IceTransportsType ice_transport_type,
-      PeerConnectionInterface::BundlePolicy bundle_policy) {
+      const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
         channel_manager_.get(), rtc::Thread::Current(),
@@ -398,33 +397,41 @@ class WebRtcSessionTest : public testing::Test {
         observer_.ice_gathering_state_);
 
     EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
-                                     identity_service, ice_transport_type,
-                                     bundle_policy));
+                                     identity_service, rtc_configuration));
     session_->set_metrics_observer(&metrics_observer_);
   }
 
   void Init() {
-    Init(NULL, PeerConnectionInterface::kAll,
-         PeerConnectionInterface::kBundlePolicyBalanced);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    Init(NULL, configuration);
   }
 
   void InitWithIceTransport(
       PeerConnectionInterface::IceTransportsType ice_transport_type) {
-    Init(NULL, ice_transport_type,
-         PeerConnectionInterface::kBundlePolicyBalanced);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.type = ice_transport_type;
+    Init(NULL, configuration);
   }
 
   void InitWithBundlePolicy(
       PeerConnectionInterface::BundlePolicy bundle_policy) {
-    Init(NULL, PeerConnectionInterface::kAll, bundle_policy);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.bundle_policy = bundle_policy;
+    Init(NULL, configuration);
+  }
+
+  void InitWithRtcpMuxPolicy(
+      PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.rtcp_mux_policy = rtcp_mux_policy;
+    Init(NULL, configuration);
   }
 
   void InitWithDtls(bool identity_request_should_fail = false) {
     FakeIdentityService* identity_service = new FakeIdentityService();
     identity_service->set_should_fail(identity_request_should_fail);
-    Init(identity_service,
-         PeerConnectionInterface::kAll,
-         PeerConnectionInterface::kBundlePolicyBalanced);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    Init(identity_service, configuration);
   }
 
   void InitWithDtmfCodec() {
@@ -2595,7 +2602,7 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
 }
 
-// kBundlePolicyBalanced bundle policy with and answer contains BUNDLE.
+// kBundlePolicyBalanced bundle policy and answer contains BUNDLE.
 TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2622,6 +2629,7 @@ TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
 TEST_F(WebRtcSessionTest, TestBalancedNoBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
   mediastream_signaling_.SendAudioVideoStream1();
+
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   options.use_rtp_mux = true;
 
@@ -2674,6 +2682,7 @@ TEST_F(WebRtcSessionTest, TestMaxBundleBundleInAnswer) {
 TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
   mediastream_signaling_.SendAudioVideoStream1();
+
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   options.use_rtp_mux = true;
 
@@ -2699,7 +2708,7 @@ TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
             session_->GetTransportProxy("video")->impl());
 }
 
-// kBundlePolicyMaxCompat bundle policy with and answer contains BUNDLE.
+// kBundlePolicyMaxCompat bundle policy and answer contains BUNDLE.
 TEST_F(WebRtcSessionTest, TestMaxCompatBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxCompat);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2751,6 +2760,61 @@ TEST_F(WebRtcSessionTest, TestMaxCompatNoBundleInAnswer) {
 
   EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
             session_->GetTransportProxy("video")->impl());
+}
+
+// kBundlePolicyMaxbundle and then we call SetRemoteDescription first.
+TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetRemoteDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
+}
+
+TEST_F(WebRtcSessionTest, TestRequireRtcpMux) {
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyRequire);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
+
+  mediastream_signaling_.SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
+}
+
+TEST_F(WebRtcSessionTest, TestNegotiateRtcpMux) {
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_TRUE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_TRUE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
+
+  mediastream_signaling_.SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
 }
 
 // This test verifies that SetLocalDescription and SetRemoteDescription fails

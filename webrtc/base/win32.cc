@@ -462,4 +462,5 @@ bool GetCurrentProcessIntegrityLevel(int* level) {
   return ret;
 }
 #endif
+
 }  // namespace rtc

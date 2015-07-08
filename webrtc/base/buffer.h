@@ -72,15 +72,14 @@ class Buffer final {
 
   ~Buffer();
 
-  // Get a pointer to the data. Just .data() will give you a (const) char*,
-  // but you may also use .data<int8_t>() and .data<uint8_t>().
-  // TODO(kwiberg): Change default to uint8_t
-  template <typename T = char, typename internal::ByteType<T>::t = 0>
+  // Get a pointer to the data. Just .data() will give you a (const) uint8_t*,
+  // but you may also use .data<int8_t>() and .data<char>().
+  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
   const T* data() const {
     assert(IsConsistent());
     return reinterpret_cast<T*>(data_.get());
   }
-  template <typename T = char, typename internal::ByteType<T>::t = 0>
+  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
   T* data() {
     assert(IsConsistent());
     return reinterpret_cast<T*>(data_.get());

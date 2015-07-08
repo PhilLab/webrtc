@@ -218,38 +218,25 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
   // Create an internal ADM if the user has not added an external
   // ADM implementation as input to Init().
   if (external_adm == nullptr) {
+#if !defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
+    return -1;
+#else
     // Create the internal ADM implementation.
-    shared_->set_audio_device(AudioDeviceModuleImpl::Create(
-        VoEId(shared_->instance_id(), -1), shared_->audio_device_layer()));
-
-    // Create an internal ADM if the user has not added an external
-    // ADM implementation as input to Init().
-    if (external_adm == NULL)
-    {
-        // Create the internal ADM implementation.
 #if defined (WINRT)
-      // Use AudioDeviceModule::kWindowsWasapiAudio for WinRT
-      shared_->set_audio_device(AudioDeviceModuleImpl::Create(
+    // Use AudioDeviceModule::kWindowsWasapiAudio for WinRT
+    shared_->set_audio_device(AudioDeviceModuleImpl::Create(
         VoEId(shared_->instance_id(), -1), AudioDeviceModule::kWindowsWasapiAudio));
 #else
-      shared_->set_audio_device(AudioDeviceModuleImpl::Create(
+    shared_->set_audio_device(AudioDeviceModuleImpl::Create(
         VoEId(shared_->instance_id(), -1), shared_->audio_device_layer()));
 #endif
 
-        if (shared_->audio_device() == nullptr)
-        {
-            shared_->SetLastError(VE_NO_MEMORY, kTraceCritical,
-                "Init() failed to create the ADM");
-            return -1;
-        }
+    if (shared_->audio_device() == nullptr) {
+      shared_->SetLastError(VE_NO_MEMORY, kTraceCritical,
+                            "Init() failed to create the ADM");
+      return -1;
     }
-    else
-    {
-        // Use the already existing external ADM implementation.
-        shared_->set_audio_device(external_adm);
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(shared_->instance_id(), -1),
-            "An external ADM implementation will be used in VoiceEngine");
-    }
+#endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
   } else {
     // Use the already existing external ADM implementation.
     shared_->set_audio_device(external_adm);
@@ -348,29 +335,30 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
   shared_->SetLastError(VE_APM_ERROR);
   // Configure AudioProcessing components.
   if (audioproc->high_pass_filter()->Enable(true) != 0) {
-    LOG_FERR1(LS_ERROR, high_pass_filter()->Enable, true);
+    LOG_F(LS_ERROR) << "Failed to enable high pass filter.";
     return -1;
   }
   if (audioproc->echo_cancellation()->enable_drift_compensation(false) != 0) {
-    LOG_FERR1(LS_ERROR, enable_drift_compensation, false);
+    LOG_F(LS_ERROR) << "Failed to disable drift compensation.";
     return -1;
   }
   if (audioproc->noise_suppression()->set_level(kDefaultNsMode) != 0) {
-    LOG_FERR1(LS_ERROR, noise_suppression()->set_level, kDefaultNsMode);
+    LOG_F(LS_ERROR) << "Failed to set noise suppression level: "
+        << kDefaultNsMode;
     return -1;
   }
   GainControl* agc = audioproc->gain_control();
   if (agc->set_analog_level_limits(kMinVolumeLevel, kMaxVolumeLevel) != 0) {
-    LOG_FERR2(LS_ERROR, agc->set_analog_level_limits, kMinVolumeLevel,
-              kMaxVolumeLevel);
+    LOG_F(LS_ERROR) << "Failed to set analog level limits with minimum: "
+        << kMinVolumeLevel << " and maximum: " << kMaxVolumeLevel;
     return -1;
   }
   if (agc->set_mode(kDefaultAgcMode) != 0) {
-    LOG_FERR1(LS_ERROR, agc->set_mode, kDefaultAgcMode);
+    LOG_F(LS_ERROR) << "Failed to set mode: " << kDefaultAgcMode;
     return -1;
   }
   if (agc->Enable(kDefaultAgcState) != 0) {
-    LOG_FERR1(LS_ERROR, agc->Enable, kDefaultAgcState);
+    LOG_F(LS_ERROR) << "Failed to set agc state: " << kDefaultAgcState;
     return -1;
   }
   shared_->SetLastError(0);  // Clear error state.
@@ -379,7 +367,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
   bool agc_enabled =
       agc->mode() == GainControl::kAdaptiveAnalog && agc->is_enabled();
   if (shared_->audio_device()->SetAGC(agc_enabled) != 0) {
-    LOG_FERR1(LS_ERROR, audio_device()->SetAGC, agc_enabled);
+    LOG_F(LS_ERROR) << "Failed to set agc to enabled: " << agc_enabled;
     shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR);
     // TODO(ajm): No error return here due to
     // https://code.google.com/p/webrtc/issues/detail?id=1464
@@ -590,7 +578,7 @@ int VoEBaseImpl::StopSend(int channel) {
 }
 
 int VoEBaseImpl::GetVersion(char version[1024]) {
-  assert(kVoiceEngineVersionMaxMessageSize == 1024);
+  static_assert(kVoiceEngineVersionMaxMessageSize == 1024, "");
 
   if (version == nullptr) {
     shared_->SetLastError(VE_INVALID_ARGUMENT, kTraceError);
@@ -857,6 +845,35 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
 
   *elapsed_time_ms = audioFrame_.elapsed_time_ms_;
   *ntp_time_ms = audioFrame_.ntp_time_ms_;
+}
+
+int VoEBaseImpl::AssociateSendChannel(int channel,
+                                      int accociate_send_channel) {
+  CriticalSectionScoped cs(shared_->crit_sec());
+
+  if (!shared_->statistics().Initialized()) {
+      shared_->SetLastError(VE_NOT_INITED, kTraceError);
+      return -1;
+  }
+
+  voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
+  voe::Channel* channel_ptr = ch.channel();
+  if (channel_ptr == NULL) {
+    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "AssociateSendChannel() failed to locate channel");
+    return -1;
+  }
+
+  ch = shared_->channel_manager().GetChannel(accociate_send_channel);
+  voe::Channel* accociate_send_channel_ptr = ch.channel();
+  if (accociate_send_channel_ptr == NULL) {
+    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "AssociateSendChannel() failed to locate accociate_send_channel");
+    return -1;
+  }
+
+  channel_ptr->set_associate_send_channel(ch);
+  return 0;
 }
 
 }  // namespace webrtc

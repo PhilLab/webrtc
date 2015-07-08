@@ -18,7 +18,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -28,7 +27,6 @@ class FecReceiver;
 class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
-class RtpDump;
 class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
@@ -47,7 +45,7 @@ class ViEReceiver : public RtpData {
   bool RegisterPayload(const VideoCodec& video_codec);
 
   void SetNackStatus(bool enable, int max_nack_reordering_threshold);
-  void SetRtxPayloadType(int payload_type);
+  void SetRtxPayloadType(int payload_type, int associated_payload_type);
   void SetRtxSsrc(uint32_t ssrc);
   bool GetRtxSsrc(uint32_t* ssrc) const;
 
@@ -60,15 +58,14 @@ class ViEReceiver : public RtpData {
 
   RtpReceiver* GetRtpReceiver() const;
 
+  void RegisterSimulcastRtpRtcpModules(const std::list<RtpRtcp*>& rtp_modules);
+
   bool SetReceiveTimestampOffsetStatus(bool enable, int id);
   bool SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   bool SetReceiveVideoRotationStatus(bool enable, int id);
 
   void StartReceive();
   void StopReceive();
-
-  int StartRTPDump(const char file_nameUTF8[1024]);
-  int StopRTPDump();
 
   // Receives packets from external transport.
   int ReceivedRTPPacket(const void* rtp_packet, size_t rtp_packet_length,
@@ -82,9 +79,6 @@ class ViEReceiver : public RtpData {
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   ReceiveStatistics* GetReceiveStatistics() const;
-
-  void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,
-                         const RTPHeader& header);
  private:
   int InsertRTPPacket(const uint8_t* rtp_packet, size_t rtp_packet_length,
                       const PacketTime& packet_time);
@@ -111,12 +105,12 @@ class ViEReceiver : public RtpData {
   rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
   rtc::scoped_ptr<FecReceiver> fec_receiver_;
   RtpRtcp* rtp_rtcp_;
+  std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
   rtc::scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
-  RtpDump* rtp_dump_;
   bool receiving_;
   uint8_t restored_packet_[kViEMaxMtu];
   bool restored_packet_in_use_;

@@ -15,6 +15,9 @@
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -34,6 +37,10 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
+
+using ::testing::AtLeast;
+using ::testing::Invoke;
+using ::testing::_;
 
 namespace webrtc {
 
@@ -743,7 +750,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 };
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_8kHzOutput DISABLED_8kHzOutput
 #else
 #define MAYBE_8kHzOutput 8kHzOutput
@@ -756,7 +763,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_16kHzOutput DISABLED_16kHzOutput
 #else
 #define MAYBE_16kHzOutput 16kHzOutput
@@ -769,7 +776,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_32kHzOutput DISABLED_32kHzOutput
 #else
 #define MAYBE_32kHzOutput 32kHzOutput
@@ -782,7 +789,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_48kHzOutput DISABLED_48kHzOutput
 #else
 #define MAYBE_48kHzOutput 48kHzOutput
@@ -847,6 +854,15 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                      channels,
                                      payload_type,
                                      frame_size_samples);
+  }
+
+  bool RegisterExternalSendCodec(AudioEncoderMutable* external_speech_encoder,
+                                 int payload_type) {
+    payload_type_ = payload_type;
+    frame_size_rtp_timestamps_ =
+        external_speech_encoder->Num10MsFramesInNextPacket() *
+        external_speech_encoder->RtpTimestampRateHz() / 100;
+    return send_test_->RegisterExternalCodec(external_speech_encoder);
   }
 
   // Runs the test. SetUpSender() and RegisterSendCodec() must have been called
@@ -942,6 +958,13 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                   codec_frame_size_rtp_timestamps));
   }
 
+  void SetUpTestExternalEncoder(AudioEncoderMutable* external_speech_encoder,
+                                int payload_type) {
+    ASSERT_TRUE(SetUpSender());
+    ASSERT_TRUE(
+        RegisterExternalSendCodec(external_speech_encoder, payload_type));
+  }
+
   rtc::scoped_ptr<test::AcmSendTestOldApi> send_test_;
   rtc::scoped_ptr<test::InputAudioFile> audio_source_;
   uint32_t frame_size_rtp_timestamps_;
@@ -953,7 +976,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
 };
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_IsacWb30ms DISABLED_IsacWb30ms
 #else
 #define MAYBE_IsacWb30ms IsacWb30ms
@@ -973,7 +996,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacWb30ms) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_IsacWb60ms DISABLED_IsacWb60ms
 #else
 #define MAYBE_IsacWb60ms IsacWb60ms
@@ -1134,7 +1157,7 @@ TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(G722_stereo_20ms)) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_Opus_stereo_20ms DISABLED_Opus_stereo_20ms
 #else
 #define MAYBE_Opus_stereo_20ms Opus_stereo_20ms
@@ -1154,7 +1177,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_Opus_stereo_20ms_voip DISABLED_Opus_stereo_20ms_voip
 #else
 #define MAYBE_Opus_stereo_20ms_voip Opus_stereo_20ms_voip
@@ -1162,7 +1185,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
-  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip, false));
+  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "9b9e12bc3cc793740966e11cbfa8b35b",
           "57412a4b5771d19ff03ec35deffe7067",
@@ -1173,6 +1196,225 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
           "c7340b1189652ab6b5e80dade7390cb4"),
       50,
       test::AcmReceiveTestOldApi::kStereoOutput);
+}
+
+// This test is for verifying the SetBitRate function. The bitrate is changed at
+// the beginning, and the number of generated bytes are checked.
+class AcmSetBitRateOldApi : public ::testing::Test {
+ protected:
+  static const int kTestDurationMs = 1000;
+
+  // Sets up the test::AcmSendTest object. Returns true on success, otherwise
+  // false.
+  bool SetUpSender() {
+    const std::string input_file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+    // Note that |audio_source_| will loop forever. The test duration is set
+    // explicitly by |kTestDurationMs|.
+    audio_source_.reset(new test::InputAudioFile(input_file_name));
+    static const int kSourceRateHz = 32000;
+    send_test_.reset(new test::AcmSendTestOldApi(
+        audio_source_.get(), kSourceRateHz, kTestDurationMs));
+    return send_test_.get();
+  }
+
+  // Registers a send codec in the test::AcmSendTest object. Returns true on
+  // success, false on failure.
+  virtual bool RegisterSendCodec(const char* payload_name,
+                                 int sampling_freq_hz,
+                                 int channels,
+                                 int payload_type,
+                                 int frame_size_samples,
+                                 int frame_size_rtp_timestamps) {
+    return send_test_->RegisterCodec(payload_name, sampling_freq_hz, channels,
+                                     payload_type, frame_size_samples);
+  }
+
+  // Runs the test. SetUpSender() and RegisterSendCodec() must have been called
+  // before calling this method.
+  void Run(int target_bitrate_bps, int expected_total_bits) {
+    ASSERT_TRUE(send_test_->acm());
+    send_test_->acm()->SetBitRate(target_bitrate_bps);
+    int nr_bytes = 0;
+    while (test::Packet* next_packet = send_test_->NextPacket()) {
+      nr_bytes += next_packet->payload_length_bytes();
+      delete next_packet;
+    }
+    EXPECT_EQ(expected_total_bits, nr_bytes * 8);
+  }
+
+  void SetUpTest(const char* codec_name,
+                 int codec_sample_rate_hz,
+                 int channels,
+                 int payload_type,
+                 int codec_frame_size_samples,
+                 int codec_frame_size_rtp_timestamps) {
+    ASSERT_TRUE(SetUpSender());
+    ASSERT_TRUE(RegisterSendCodec(codec_name, codec_sample_rate_hz, channels,
+                                  payload_type, codec_frame_size_samples,
+                                  codec_frame_size_rtp_timestamps));
+  }
+
+  rtc::scoped_ptr<test::AcmSendTestOldApi> send_test_;
+  rtc::scoped_ptr<test::InputAudioFile> audio_source_;
+};
+
+TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
+#if defined(WEBRTC_ANDROID)
+  Run(10000, 9328);
+#else
+  Run(10000, 9072);
+#endif // WEBRTC_ANDROID
+
+}
+
+TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
+#if defined(WEBRTC_ANDROID)
+  Run(50000, 47952);
+#else
+  Run(50000, 49600);
+#endif // WEBRTC_ANDROID
+}
+
+// The result on the Android platforms is inconsistent for this test case.
+// On android_rel the result is different from android and android arm64 rel.
+TEST_F(AcmSetBitRateOldApi, DISABLED_ON_ANDROID(Opus_48khz_20ms_100kbps)) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
+  Run(100000, 100888);
+}
+
+// These next 2 tests ensure that the SetBitRate function has no effect on PCM
+TEST_F(AcmSetBitRateOldApi, Pcm16_8khz_10ms_8kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
+  Run(8000, 128000);
+}
+
+TEST_F(AcmSetBitRateOldApi, Pcm16_8khz_10ms_32kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
+  Run(32000, 128000);
+}
+
+// This test is for verifying the SetBitRate function. The bitrate is changed
+// in the middle, and the number of generated bytes are before and after the
+// change are checked.
+class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
+ protected:
+  AcmChangeBitRateOldApi() : sampling_freq_hz_(0), frame_size_samples_(0) {}
+
+  // Registers a send codec in the test::AcmSendTest object. Returns true on
+  // success, false on failure.
+  bool RegisterSendCodec(const char* payload_name,
+                         int sampling_freq_hz,
+                         int channels,
+                         int payload_type,
+                         int frame_size_samples,
+                         int frame_size_rtp_timestamps) override {
+    frame_size_samples_ = frame_size_samples;
+    sampling_freq_hz_ = sampling_freq_hz;
+    return AcmSetBitRateOldApi::RegisterSendCodec(
+        payload_name, sampling_freq_hz, channels, payload_type,
+        frame_size_samples, frame_size_rtp_timestamps);
+  }
+
+  // Runs the test. SetUpSender() and RegisterSendCodec() must have been called
+  // before calling this method.
+  void Run(int target_bitrate_bps,
+           int expected_before_switch_bits,
+           int expected_after_switch_bits) {
+    ASSERT_TRUE(send_test_->acm());
+    int nr_packets =
+        sampling_freq_hz_ * kTestDurationMs / (frame_size_samples_ * 1000);
+    int nr_bytes_before = 0, nr_bytes_after = 0;
+    int packet_counter = 0;
+    while (test::Packet* next_packet = send_test_->NextPacket()) {
+      if (packet_counter == nr_packets / 2)
+        send_test_->acm()->SetBitRate(target_bitrate_bps);
+      if (packet_counter < nr_packets / 2)
+        nr_bytes_before += next_packet->payload_length_bytes();
+      else
+        nr_bytes_after += next_packet->payload_length_bytes();
+      packet_counter++;
+      delete next_packet;
+    }
+    EXPECT_EQ(expected_before_switch_bits, nr_bytes_before * 8);
+    EXPECT_EQ(expected_after_switch_bits, nr_bytes_after * 8);
+  }
+
+  uint32_t sampling_freq_hz_;
+  uint32_t frame_size_samples_;
+};
+
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
+#if defined(WEBRTC_ANDROID)
+  Run(10000, 32200, 5496);
+#else
+  Run(10000, 32200, 5432);
+#endif // WEBRTC_ANDROID
+}
+
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
+#if defined(WEBRTC_ANDROID)
+  Run(50000, 32200, 24912);
+#else
+  Run(50000, 32200, 24792);
+#endif // WEBRTC_ANDROID
+}
+
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
+#if defined(WEBRTC_ANDROID)
+  Run(100000, 32200, 51480);
+#else
+  Run(100000, 32200, 50584);
+#endif // WEBRTC_ANDROID
+}
+
+// These next 2 tests ensure that the SetBitRate function has no effect on PCM
+TEST_F(AcmChangeBitRateOldApi, Pcm16_8khz_10ms_8kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
+  Run(8000, 64000, 64000);
+}
+
+TEST_F(AcmChangeBitRateOldApi, Pcm16_8khz_10ms_32kbps) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
+  Run(32000, 64000, 64000);
+}
+
+TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
+  CodecInst codec_inst;
+  codec_inst.channels = 1;
+  codec_inst.pacsize = 160;
+  codec_inst.pltype = 0;
+  AudioEncoderMutablePcmU encoder(codec_inst);
+  MockAudioEncoderMutable mock_encoder;
+  // Set expectations on the mock encoder and also delegate the calls to the
+  // real encoder.
+  EXPECT_CALL(mock_encoder, Num10MsFramesInNextPacket())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(
+          &encoder, &AudioEncoderMutablePcmU::Num10MsFramesInNextPacket));
+  EXPECT_CALL(mock_encoder, Max10MsFramesInAPacket())
+      .Times(AtLeast(1))
+      .WillRepeatedly(
+          Invoke(&encoder, &AudioEncoderMutablePcmU::Max10MsFramesInAPacket));
+  EXPECT_CALL(mock_encoder, SampleRateHz())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::SampleRateHz));
+  EXPECT_CALL(mock_encoder, NumChannels())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::NumChannels));
+  EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(
+          Invoke(&encoder, &AudioEncoderMutablePcmU::EncodeInternal));
+  ASSERT_NO_FATAL_FAILURE(
+      SetUpTestExternalEncoder(&mock_encoder, codec_inst.pltype));
+  Run("81a9d4c0bb72e9becc43aef124c981e9", "8f9b8750bd80fe26b6cbf6659b89f0f9",
+      50, test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
 // This test fixture is implemented to run ACM and change the desired output

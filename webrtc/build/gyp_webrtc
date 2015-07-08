@@ -17,7 +17,6 @@ import shlex
 import sys
 import pipes
 import xml.etree.ElementTree as ET
-from _winreg import *
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir, os.pardir))
@@ -108,6 +107,13 @@ if __name__ == '__main__':
     os.environ['GYP_GENERATORS'] = 'ninja'
 
   fixVS2015Ninja()
+
+  # Enable check for missing sources in GYP files on Windows.
+  if sys.platform.startswith('win'):
+    gyp_generator_flags = os.getenv('GYP_GENERATOR_FLAGS', '')
+    if not 'msvs_error_on_missing_sources' in gyp_generator_flags:
+      os.environ['GYP_GENERATOR_FLAGS'] = (
+          gyp_generator_flags + ' msvs_error_on_missing_sources=1')
 
   vs2013_runtime_dll_dirs = None
   if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):

@@ -20,6 +20,7 @@
 #include <windows.foundation.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 using Microsoft::WRL::ComPtr;
 using Windows::Foundation::IPropertyValue;
@@ -28,27 +29,6 @@ using Windows::Media::IMediaExtension;
 using Windows::Media::MediaProperties::IMediaEncodingProperties;
 
 namespace {
-
-enum {
-  TRACE_LEVEL_LOW,
-  TRACE_LEVEL_NORMAL,
-  TRACE_LEVEL_HIGH,
-};
-
-DWORD g_dwLogLevel = TRACE_LEVEL_NORMAL;
-
-void Trace(DWORD dwLevel, LPCWSTR pszFormat, ...) {
-  if (g_dwLogLevel > dwLevel) {
-    return;
-  }
-  WCHAR szTextBuf[256];
-  va_list args;
-  va_start(args, pszFormat);
-
-  StringCchVPrintf(szTextBuf, _countof(szTextBuf), pszFormat, args);
-
-  OutputDebugString(szTextBuf);
-}
 
 inline void ThrowIfError(HRESULT hr) {
   if (FAILED(hr)) {
@@ -215,6 +195,10 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::BeginGetEvent(
     hr = _spEventQueue->BeginGetEvent(pCallback, punkState);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -231,6 +215,10 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::EndGetEvent(
 
   if (SUCCEEDED(hr)) {
     hr = _spEventQueue->EndGetEvent(pResult, ppEvent);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -266,6 +254,10 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetEvent(
     hr = spQueue->GetEvent(dwFlags, ppEvent);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -287,6 +279,10 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::QueueEvent(
       met, guidExtendedType, hrStatus, pvValue);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -306,6 +302,8 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaSink(
 
   if (SUCCEEDED(hr)) {
     _spSink.Get()->QueryInterface(IID_IMFMediaSink, (void**)ppMediaSink);
+  } else {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -326,6 +324,8 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetIdentifier(
 
   if (SUCCEEDED(hr)) {
     *pdwIdentifier = _dwIdentifier;
+  } else {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -347,6 +347,10 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeHandler(
   // This stream object acts as its own type handler, so we QI ourselves.
   if (SUCCEEDED(hr)) {
     hr = QueryInterface(IID_IMFMediaTypeHandler, (void**)ppHandler);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -387,16 +391,13 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::ProcessSample(IMFSample *pSample) {
     }
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
-// The client can call PlaceMarker at any time. In response,
-// we need to queue an MEStreamSinkMarker event, but not until
-// *after *we have processed all samples that we have received
-// up to this point.
-//
-// Also, in general you might need to handle specific marker
-// types, although this sink does not.
 IFACEMETHODIMP VideoCaptureStreamSinkWinRT::PlaceMarker(
     MFSTREAMSINK_MARKER_TYPE eMarkerType,
     const PROPVARIANT *pvarMarkerValue,
@@ -414,11 +415,13 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::Flush() {
     }
     ThrowIfError(hr);
 
-    // Note: Even though we are flushing data, we still need to send
-    // any marker events that were queued.
     DropSamplesFromQueue();
   } catch (Platform::Exception ^exc) {
     hr = exc->HResult;
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -461,9 +464,12 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::IsMediaTypeSupported(
     }
   }
 
-  // We don't return any "close match" types.
   if (ppMediaType) {
     *ppMediaType = nullptr;
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -484,8 +490,9 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeCount(
   }
 
   if (SUCCEEDED(hr)) {
-    // We've got only one media type
     *pdwTypeCount = 1;
+  } else {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -514,6 +521,10 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeByIndex(
     if (*ppType != nullptr) {
       (*ppType)->AddRef();
     }
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -560,6 +571,11 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::SetCurrentMediaType(
   } catch (Platform::Exception ^exc) {
     hr = exc->HResult;
   }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -586,6 +602,8 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetCurrentMediaType(
   if (SUCCEEDED(hr)) {
     *ppMediaType = _spCurrentType.Get();
     (*ppMediaType)->AddRef();
+  } else {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -629,6 +647,8 @@ HRESULT VideoCaptureStreamSinkWinRT::Initialize(
     _spSink = pParent;
     _pParent = pParent;
     _callback = callback;
+  } else {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -654,6 +674,10 @@ HRESULT VideoCaptureStreamSinkWinRT::Start(MFTIME start) {
     hr = QueueAsyncOperation(OpStart);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -668,6 +692,10 @@ HRESULT VideoCaptureStreamSinkWinRT::Stop() {
   if (SUCCEEDED(hr)) {
     _state = State_Stopped;
     hr = QueueAsyncOperation(OpStop);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -686,6 +714,10 @@ HRESULT VideoCaptureStreamSinkWinRT::Pause() {
     hr = QueueAsyncOperation(OpPause);
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -700,6 +732,10 @@ HRESULT VideoCaptureStreamSinkWinRT::Restart() {
   if (SUCCEEDED(hr)) {
     _state = State_Started;
     hr = QueueAsyncOperation(OpRestart);
+  }
+
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
 
   return hr;
@@ -775,20 +811,21 @@ HRESULT VideoCaptureStreamSinkWinRT::QueueAsyncOperation(StreamOperation op) {
     hr = MFPutWorkItem2(_workQueueId, 0, &_workQueueCB, spOp.Get());
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
+  }
+
   return hr;
 }
 
 HRESULT VideoCaptureStreamSinkWinRT::OnDispatchWorkItem(
     IMFAsyncResult *pAsyncResult) {
-  // Called by work queue thread. Need to hold the critical section.
-  CriticalSectionScoped cs(_critSec);
-
   try {
     ComPtr<IUnknown> spState;
 
     ThrowIfError(pAsyncResult->GetState(&spState));
 
-    // The state object is a CAsncOperation object.
+    // The state object is a AsyncOperation object.
     AsyncOperation *pOp = static_cast<AsyncOperation *>(spState.Get());
     StreamOperation op = pOp->m_op;
 
@@ -801,10 +838,10 @@ HRESULT VideoCaptureStreamSinkWinRT::OnDispatchWorkItem(
       // There might be samples queue from earlier (ie, while paused).
       bool fRequestMoreSamples;
       fRequestMoreSamples = DropSamplesFromQueue();
-      if (fRequestMoreSamples) {
+      if (fRequestMoreSamples && !_isShutdown) {
         // If false there is no samples in the queue now so request one
         ThrowIfError(
-            QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+          QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
       }
       break;
 
@@ -837,10 +874,10 @@ void VideoCaptureStreamSinkWinRT::DispatchProcessSample(AsyncOperation *pOp) {
   bool fRequestMoreSamples = SendSampleFromQueue();
 
   // Ask for another sample
-  if (fRequestMoreSamples) {
+  if (fRequestMoreSamples && !_isShutdown) {
     if (pOp->m_op == OpProcessSample) {
       ThrowIfError(
-          QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+        QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
     }
   }
 }
@@ -863,12 +900,16 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
 
   bool fSendSamples = true;
 
-  if (_sampleQueue.size() == 0) {
-    fNeedMoreSamples = true;
-    fSendSamples = false;
-  } else {
-    spunkSample = _sampleQueue.front();
-    _sampleQueue.pop();
+  {
+    CriticalSectionScoped cs(_critSec);
+
+    if (_sampleQueue.size() == 0) {
+      fNeedMoreSamples = true;
+      fSendSamples = false;
+    } else {
+      spunkSample = _sampleQueue.front();
+      _sampleQueue.pop();
+    }
   }
 
   while (fSendSamples) {
@@ -890,17 +931,21 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
       }
     }
 
-    if (_state == State_Started && fProcessingSample) {
-      // If we are still in started state request another sample
-      ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
-    }
+    {
+      CriticalSectionScoped cs(_critSec);
 
-    if (_sampleQueue.size() == 0) {
-      fNeedMoreSamples = true;
-      fSendSamples = false;
-    } else {
-      spunkSample = _sampleQueue.front();
-      _sampleQueue.pop();
+      if (_state == State_Started && fProcessingSample && !_isShutdown) {
+        // If we are still in started state request another sample
+        ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+      }
+
+      if (_sampleQueue.size() == 0) {
+        fNeedMoreSamples = true;
+        fSendSamples = false;
+      } else {
+        spunkSample = _sampleQueue.front();
+        _sampleQueue.pop();
+      }
     }
   }
 
@@ -1018,6 +1063,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetCharacteristics(
   if (SUCCEEDED(hr)) {
     // Rateless sink.
     *pdwCharacteristics = MEDIASINK_RATELESS;
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;
@@ -1069,6 +1116,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::AddStreamSink(
   if (SUCCEEDED(hr)) {
     _spStreamSink = spMFStream;
     *ppStreamSink = spMFStream.Detach();
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;
@@ -1091,6 +1140,10 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::RemoveStreamSink(
     static_cast<VideoCaptureStreamSinkWinRT *>(spStream.Get())->Shutdown();
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -1109,6 +1162,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkCount(
 
   if (SUCCEEDED(hr)) {
     *pcStreamSinkCount = 1;
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;
@@ -1136,6 +1191,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkByIndex(
     assert(_spStreamSink);
     ComPtr<IMFStreamSink> spResult = _spStreamSink;
     *ppStreamSink = spResult.Detach();
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;
@@ -1195,6 +1252,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::SetPresentationClock(
     // Release the pointer to the old clock.
     // Store the pointer to the new clock.
     _spClock = pPresentationClock;
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;
@@ -1223,6 +1282,10 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetPresentationClock(
     }
   }
 
+  if (!SUCCEEDED(hr)) {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
+  }
+
   return hr;
 }
 
@@ -1245,8 +1308,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::Shutdown() {
     }
   }
 
-  if (callback != nullptr)
-  {
+  if (callback != nullptr) {
     callback->OnShutdown();
   }
 
@@ -1267,6 +1329,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockStart(
   if (SUCCEEDED(hr)) {
     _llStartTime = llClockStartOffset;
     static_cast<VideoCaptureStreamSinkWinRT *>(_spStreamSink.Get())->Start(_llStartTime);
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;
@@ -1283,6 +1347,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockStop(
 
   if (SUCCEEDED(hr)) {
     static_cast<VideoCaptureStreamSinkWinRT *>(_spStreamSink.Get())->Stop();
+  } else {
+    LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
 
   return hr;

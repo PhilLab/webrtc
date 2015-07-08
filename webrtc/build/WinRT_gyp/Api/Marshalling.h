@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "talk/app/webrtc/peerconnectioninterface.h"
+#include "Media.h"
 #include "talk/app/webrtc/jsep.h"
 #include "PeerConnectionInterface.h"
 
@@ -59,6 +60,11 @@ namespace webrtc_winrt_api_internal {
   void FromCx(
     webrtc_winrt_api::RTCIceServer^ inObj,
     webrtc::PeerConnectionInterface::IceServer* outObj);
+
+  // =========================
+  void FromCx(
+    webrtc_winrt_api::RTCMediaStreamConstraints^ inObj,
+    webrtc_winrt_api::MediaConstraints* outObj);
 
   // ==========================
   void FromCx(

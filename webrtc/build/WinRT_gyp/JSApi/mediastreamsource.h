@@ -76,6 +76,8 @@ namespace webrtc_winjs_api
     MediaElementWrapper() :_mss(nullptr), _jsMss(nullptr){};
     virtual void Play(){
     };
+    virtual void Stop(){
+    };
     virtual void SetMediaStreamSource(Windows::Media::Core::IMediaSource^ mss){
       _mss = mss;
 

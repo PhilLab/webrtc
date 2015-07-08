@@ -1,5 +1,4 @@
-﻿
-// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+﻿// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -232,55 +231,62 @@ Media::Media() {
   
 }
 
-IAsyncOperation<MediaStream^>^ Media::GetUserMedia() {
+IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ constraints) {
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
-    [this]() -> MediaStream^ {
+    [this, constraints]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
-    return globals::RunOnGlobalThread<MediaStream^>([this]()->MediaStream^ {
+    return globals::RunOnGlobalThread<MediaStream^>([this, constraints]()->MediaStream^ {
 
-      cricket::VideoCapturer* videoCapturer = NULL;
-      if (_selectedVideoDevice.id == "") {
-        // Select the first video device as the capturer.
-        webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
-        for (auto videoDev : g_videoDevices) {
-          videoCapturer = _dev_manager->CreateVideoCapturer(videoDev);
-          if (videoCapturer != NULL)
-            break;
-        }
-      }
-      else {
-        videoCapturer = _dev_manager->CreateVideoCapturer(_selectedVideoDevice);
-      }
+      MediaConstraints mediaConstraints;
+      FromCx(constraints, &mediaConstraints);
 
       // This is the stream returned.
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 
-      if (_selectedAudioDevice == -1) {
-        // select default device if wasn't set
-        _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
+      if (constraints->audio) {
+        if (_selectedAudioDevice == -1) {
+          // select default device if wasn't set
+          _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
+        }
+        else {
+          _audioDevice->SetRecordingDevice(_selectedAudioDevice);
+        }
+        // Add an audio track.
+        LOG(LS_INFO) << "Creating audio track.";
+        rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+          globals::gPeerConnectionFactory->CreateAudioTrack(
+          kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(&mediaConstraints)));
+        LOG(LS_INFO) << "Adding audio track to stream.";
+        stream->AddTrack(audio_track);
       }
-      else {
-        _audioDevice->SetRecordingDevice(_selectedAudioDevice);
-      }
-      // Add an audio track.
-      LOG(LS_INFO) << "Creating audio track.";
-      rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-        globals::gPeerConnectionFactory->CreateAudioTrack(
-        kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
-      LOG(LS_INFO) << "Adding audio track to stream.";
-      stream->AddTrack(audio_track);
 
-      // Add a video track
-      if (videoCapturer != nullptr) {
-        LOG(LS_INFO) << "Creating video track.";
-        rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-          globals::gPeerConnectionFactory->CreateVideoTrack(
-          kVideoLabel,
-          globals::gPeerConnectionFactory->CreateVideoSource(
-            videoCapturer, NULL)));
-        LOG(LS_INFO) << "Adding video track to stream.";
-        stream->AddTrack(video_track);
+      if (constraints->video) {
+        cricket::VideoCapturer* videoCapturer = NULL;
+        if (_selectedVideoDevice.id == "") {
+          // Select the first video device as the capturer.
+          webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+          for (auto videoDev : g_videoDevices) {
+            videoCapturer = _dev_manager->CreateVideoCapturer(videoDev);
+            if (videoCapturer != NULL)
+              break;
+          }
+        }
+        else {
+          videoCapturer = _dev_manager->CreateVideoCapturer(_selectedVideoDevice);
+        }
+
+        // Add a video track
+        if (videoCapturer != nullptr) {
+          LOG(LS_INFO) << "Creating video track.";
+          rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+            globals::gPeerConnectionFactory->CreateVideoTrack(
+            kVideoLabel,
+            globals::gPeerConnectionFactory->CreateVideoSource(
+            videoCapturer, &mediaConstraints)));
+          LOG(LS_INFO) << "Adding video track to stream.";
+          stream->AddTrack(video_track);
+        }
       }
 
       auto ret = ref new MediaStream(stream);

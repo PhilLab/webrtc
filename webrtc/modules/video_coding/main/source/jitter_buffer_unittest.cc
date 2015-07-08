@@ -20,6 +20,8 @@
 #include "webrtc/modules/video_coding/main/source/test/stream_generator.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
+#include "webrtc/test/histogram.h"
 
 namespace webrtc {
 
@@ -275,6 +277,48 @@ TEST_F(TestBasicJitterBuffer, SinglePacketFrame) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
+TEST_F(TestBasicJitterBuffer, VerifyHistogramStats) {
+  test::ClearHistograms();
+  // Always start with a complete key frame when not allowing errors.
+  jitter_buffer_->SetDecodeErrorMode(kNoErrors);
+  packet_->frameType = kVideoFrameKey;
+  packet_->isFirstPacket = true;
+  packet_->markerBit = true;
+  packet_->timestamp += 123 * 90;
+
+  // Insert single packet frame to the jitter buffer and get a frame.
+  bool retransmitted = false;
+  EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_,
+                                                           &retransmitted));
+  VCMEncodedFrame* frame_out = DecodeCompleteFrame();
+  CheckOutFrame(frame_out, size_, false);
+  EXPECT_EQ(kVideoFrameKey, frame_out->FrameType());
+  jitter_buffer_->ReleaseFrame(frame_out);
+
+  // Verify that histograms are updated when the jitter buffer is stopped.
+  clock_->AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
+  jitter_buffer_->Stop();
+  EXPECT_EQ(0, test::LastHistogramSample(
+      "WebRTC.Video.DiscardedPacketsInPercent"));
+  EXPECT_EQ(0, test::LastHistogramSample(
+      "WebRTC.Video.DuplicatedPacketsInPercent"));
+  EXPECT_NE(-1, test::LastHistogramSample(
+      "WebRTC.Video.CompleteFramesReceivedPerSecond"));
+  EXPECT_EQ(1000, test::LastHistogramSample(
+      "WebRTC.Video.KeyFramesReceivedInPermille"));
+
+  // Verify that histograms are not updated if stop is called again.
+  jitter_buffer_->Stop();
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.DiscardedPacketsInPercent"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.DuplicatedPacketsInPercent"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.CompleteFramesReceivedPerSecond"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.KeyFramesReceivedInPermille"));
+}
+
 TEST_F(TestBasicJitterBuffer, DualPacketFrame) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
@@ -505,6 +549,63 @@ TEST_F(TestBasicJitterBuffer, FrameReordering2Frames2PacketsEach) {
   frame_out = DecodeCompleteFrame();
   CheckOutFrame(frame_out, 2 * size_, false);
   EXPECT_EQ(kVideoFrameDelta, frame_out->FrameType());
+  jitter_buffer_->ReleaseFrame(frame_out);
+}
+
+TEST_F(TestBasicJitterBuffer, TestReorderingWithPadding) {
+  packet_->frameType = kVideoFrameKey;
+  packet_->isFirstPacket = true;
+  packet_->markerBit = true;
+
+  // Send in an initial good packet/frame (Frame A) to start things off.
+  bool retransmitted = false;
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  VCMEncodedFrame* frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out != NULL);
+  jitter_buffer_->ReleaseFrame(frame_out);
+
+  // Now send in a complete delta frame (Frame C), but with a sequence number
+  // gap. No pic index either, so no temporal scalability cheating :)
+  packet_->frameType = kVideoFrameDelta;
+  // Leave a gap of 2 sequence numbers and two frames.
+  packet_->seqNum = seq_num_ + 3;
+  packet_->timestamp = timestamp_ + (66 * 90);
+  // Still isFirst = marker = true.
+  // Session should be complete (frame is complete), but there's nothing to
+  // decode yet.
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out == NULL);
+
+  // Now send in a complete delta frame (Frame B) that is continuous from A, but
+  // doesn't fill the full gap to C. The rest of the gap is going to be padding.
+  packet_->seqNum = seq_num_ + 1;
+  packet_->timestamp = timestamp_ + (33 * 90);
+  // Still isFirst = marker = true.
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out != NULL);
+  jitter_buffer_->ReleaseFrame(frame_out);
+
+  // But Frame C isn't continuous yet.
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out == NULL);
+
+  // Add in the padding. These are empty packets (data length is 0) with no
+  // marker bit and matching the timestamp of Frame B.
+  VCMPacket empty_packet(data_, 0, seq_num_ + 2, timestamp_ + (33 * 90), false);
+  EXPECT_EQ(kOldPacket,
+            jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
+  empty_packet.seqNum += 1;
+  EXPECT_EQ(kOldPacket,
+            jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
+
+  // But now Frame C should be ready!
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out != NULL);
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 

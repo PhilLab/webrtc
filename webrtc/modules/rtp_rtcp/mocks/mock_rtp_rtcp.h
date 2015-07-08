@@ -97,10 +97,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(RtxSendStatus, int());
   MOCK_METHOD1(SetRtxSsrc,
       void(uint32_t));
-  MOCK_METHOD1(SetRtxSendPayloadType,
-      void(int));
-  MOCK_CONST_METHOD0(RtxSendPayloadType,
-      int());
+  MOCK_METHOD2(SetRtxSendPayloadType, void(int, int));
+  MOCK_CONST_METHOD0(RtxSendPayloadType, std::pair<int, int>());
   MOCK_METHOD1(SetSendingStatus,
       int32_t(const bool sending));
   MOCK_CONST_METHOD0(Sending,
@@ -128,8 +126,6 @@ class MockRtpRtcp : public RtpRtcp {
            bool retransmission));
   MOCK_METHOD1(TimeToSendPadding,
       size_t(size_t bytes));
-  MOCK_CONST_METHOD2(GetSendSideDelay,
-      bool(int* avg_send_delay_ms, int* max_send_delay_ms));
   MOCK_METHOD2(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
            RtcpBandwidthObserver* bandwidthCallback));
@@ -158,8 +154,9 @@ class MockRtpRtcp : public RtpRtcp {
               int64_t* avgRTT,
               int64_t* minRTT,
               int64_t* maxRTT));
-  MOCK_METHOD1(SendRTCP,
-      int32_t(uint32_t rtcpPacketType));
+  MOCK_METHOD1(SendRTCP, int32_t(RTCPPacketType packetType));
+  MOCK_METHOD1(SendCompoundRTCP,
+               int32_t(const std::set<RTCPPacketType>& packetTypes));
   MOCK_METHOD1(SendRTCPReferencePictureSelection,
       int32_t(const uint64_t pictureID));
   MOCK_METHOD1(SendRTCPSliceLossIndication,
@@ -174,10 +171,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(RTCPSenderInfo* senderInfo));
   MOCK_CONST_METHOD1(RemoteRTCPStat,
       int32_t(std::vector<RTCPReportBlock>* receiveBlocks));
-  MOCK_METHOD2(AddRTCPReportBlock,
-      int32_t(const uint32_t SSRC, const RTCPReportBlock* receiveBlock));
-  MOCK_METHOD1(RemoveRTCPReportBlock,
-      int32_t(const uint32_t SSRC));
   MOCK_METHOD4(SetRTCPApplicationSpecificData,
       int32_t(const uint8_t subType, const uint32_t name, const uint8_t* data, const uint16_t length));
   MOCK_METHOD1(SetRTCPVoIPMetrics,

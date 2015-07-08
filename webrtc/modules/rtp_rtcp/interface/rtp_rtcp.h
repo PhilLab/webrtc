@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 
+#include <set>
 #include <vector>
 
 #include "webrtc/modules/interface/module.h"
@@ -54,6 +55,7 @@ class RtpRtcp : public Module {
     */
     int32_t id;
     bool audio;
+    bool receiver_only;
     Clock* clock;
     ReceiveStatistics* receive_statistics;
     Transport* outgoing_transport;
@@ -235,10 +237,12 @@ class RtpRtcp : public Module {
 
     // Sets the payload type to use when sending RTX packets. Note that this
     // doesn't enable RTX, only the payload type is set.
-    virtual void SetRtxSendPayloadType(int payload_type) = 0;
+    virtual void SetRtxSendPayloadType(int payload_type,
+                                       int associated_payload_type) = 0;
 
-    // Gets the payload type to use when sending RTX packets.
-    virtual int RtxSendPayloadType() const = 0;
+    // Gets the payload type pair of (RTX, associated) to use when sending RTX
+    // packets.
+    virtual std::pair<int, int> RtxSendPayloadType() const = 0;
 
     /*
     *   sends kRtcpByeCode when going from true to false
@@ -304,9 +308,6 @@ class RtpRtcp : public Module {
                                   bool retransmission) = 0;
 
     virtual size_t TimeToSendPadding(size_t bytes) = 0;
-
-    virtual bool GetSendSideDelay(int* avg_send_delay_ms,
-                                  int* max_send_delay_ms) const = 0;
 
     // Called on generation of new statistics after an RTP send.
     virtual void RegisterSendChannelRtpStatisticsCallback(
@@ -387,12 +388,20 @@ class RtpRtcp : public Module {
 
     /*
     *   Force a send of a RTCP packet
-    *   normal SR and RR are triggered via the process function
+    *   periodic SR and RR are triggered via the process function
     *
     *   return -1 on failure else 0
     */
-    virtual int32_t SendRTCP(
-        uint32_t rtcpPacketType = kRtcpReport) = 0;
+    virtual int32_t SendRTCP(RTCPPacketType rtcpPacketType) = 0;
+
+    /*
+    *   Force a send of a RTCP packet with more than one packet type.
+    *   periodic SR and RR are triggered via the process function
+    *
+    *   return -1 on failure else 0
+    */
+    virtual int32_t SendCompoundRTCP(
+        const std::set<RTCPPacketType>& rtcpPacketTypes) = 0;
 
     /*
     *    Good state of RTP receiver inform sender
@@ -443,21 +452,6 @@ class RtpRtcp : public Module {
     */
     virtual int32_t RemoteRTCPStat(
         std::vector<RTCPReportBlock>* receiveBlocks) const = 0;
-
-    /*
-    *   Set received RTCP report block
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t AddRTCPReportBlock(uint32_t SSRC,
-                                       const RTCPReportBlock* receiveBlock) = 0;
-
-    /*
-    *   RemoveRTCPReportBlock
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t RemoveRTCPReportBlock(uint32_t SSRC) = 0;
 
     /*
     *   (APP) Application specific data

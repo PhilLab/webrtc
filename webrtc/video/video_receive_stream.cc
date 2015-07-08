@@ -20,14 +20,6 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_encoder.h"
-#include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_capture.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_external_codec.h"
-#include "webrtc/video_engine/include/vie_image_process.h"
-#include "webrtc/video_engine/include/vie_network.h"
-#include "webrtc/video_engine/include/vie_render.h"
-#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -131,25 +123,25 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }
 }  // namespace
 
-VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
+VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
+                                       int base_channel_id,
                                        ChannelGroup* channel_group,
+                                       int channel_id,
                                        const VideoReceiveStream::Config& config,
                                        newapi::Transport* transport,
-                                       webrtc::VoiceEngine* voice_engine,
-                                       int base_channel)
+                                       webrtc::VoiceEngine* voice_engine)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
       clock_(Clock::GetRealTimeClock()),
       channel_group_(channel_group),
-      voe_sync_interface_(nullptr),
-      channel_(-1) {
-  video_engine_base_ = ViEBase::GetInterface(video_engine);
-  video_engine_base_->CreateReceiveChannel(channel_, base_channel);
-  DCHECK(channel_ != -1);
+      channel_id_(channel_id),
+      voe_sync_interface_(nullptr) {
+  CHECK(channel_group_->CreateReceiveChannel(channel_id_, 0, base_channel_id,
+                                             &transport_adapter_, num_cpu_cores,
+                                             true));
 
-  vie_channel_ = video_engine_base_->GetChannel(channel_);
-  vie_render_manager_ = video_engine_base_->GetRenderManager();
+  vie_channel_ = channel_group_->GetChannel(channel_id_);
 
   // TODO(pbos): This is not fine grained enough...
   vie_channel_->SetNACKStatus(config_.rtp.nack.rtp_history_ms > 0);
@@ -164,12 +156,12 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   vie_channel_->SetSSRC(config_.rtp.local_ssrc, kViEStreamTypeNormal, 0);
   // TODO(pbos): Support multiple RTX, per video payload.
   Config::Rtp::RtxMap::const_iterator it = config_.rtp.rtx.begin();
-  if (it != config_.rtp.rtx.end()) {
+  for (; it != config_.rtp.rtx.end(); ++it) {
     DCHECK(it->second.ssrc != 0);
     DCHECK(it->second.payload_type != 0);
 
     vie_channel_->SetRemoteSSRCType(kViEStreamTypeRtx, it->second.ssrc);
-    vie_channel_->SetRtxReceivePayloadType(it->second.payload_type);
+    vie_channel_->SetRtxReceivePayloadType(it->second.payload_type, it->first);
   }
 
   // TODO(pbos): Remove channel_group_ usage from VideoReceiveStream. This
@@ -193,8 +185,6 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     }
   }
 
-  vie_channel_->RegisterSendTransport(&transport_adapter_);
-
   if (config_.rtp.fec.ulpfec_payload_type != -1) {
     // ULPFEC without RED doesn't make sense.
     DCHECK(config_.rtp.fec.red_payload_type != -1);
@@ -212,6 +202,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     strcpy(codec.plName, "red");
     codec.plType = config_.rtp.fec.red_payload_type;
     CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
+    if (config_.rtp.fec.red_rtx_payload_type != -1) {
+      vie_channel_->SetRtxReceivePayloadType(
+          config_.rtp.fec.red_rtx_payload_type,
+          config_.rtp.fec.red_payload_type);
+    }
   }
 
   if (config.rtp.rtcp_xr.receiver_reference_time_report)
@@ -233,20 +228,18 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     const Decoder& decoder = config_.decoders[i];
     CHECK_EQ(0, vie_channel_->RegisterExternalDecoder(
                     decoder.payload_type, decoder.decoder, decoder.is_renderer,
-                    decoder.expected_delay_ms));
+                    decoder.is_renderer ? decoder.expected_delay_ms
+                                        : config.render_delay_ms));
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
     CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
 
-  // Register a renderer without a window handle, at depth 0, that covers the
-  // entire rendered area (0->1 both axes). This registers a renderer that
-  // renders the entire video.
-  vie_renderer_ = vie_render_manager_->AddRenderStream(channel_, nullptr, 0,
-                                                       0.0f, 0.0f, 1.0f, 1.0f);
-  vie_renderer_->SetExternalRenderer(channel_, kVideoI420, this);
-  vie_channel_->RegisterFrameCallback(channel_, vie_renderer_);
+  incoming_video_stream_.reset(new IncomingVideoStream(0));
+  incoming_video_stream_->SetExpectedRenderDelay(config.render_delay_ms);
+  incoming_video_stream_->SetExternalCallback(this);
+  vie_channel_->SetIncomingVideoStream(incoming_video_stream_.get());
 
   if (voice_engine && config_.audio_channel_id != -1) {
     voe_sync_interface_ = VoEVideoSync::GetInterface(voice_engine);
@@ -259,16 +252,12 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  incoming_video_stream_->Stop();
   vie_channel_->RegisterPreRenderCallback(nullptr);
   vie_channel_->RegisterPreDecodeImageCallback(nullptr);
 
-  vie_channel_->DeregisterFrameCallback(vie_renderer_);
-  vie_render_manager_->RemoveRenderStream(channel_);
-
   for (size_t i = 0; i < config_.decoders.size(); ++i)
     vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
-
-  vie_channel_->DeregisterSendTransport();
 
   if (voe_sync_interface_ != nullptr) {
     vie_channel_->SetVoiceChannel(-1, nullptr);
@@ -278,18 +267,17 @@ VideoReceiveStream::~VideoReceiveStream() {
   vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(nullptr);
   vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(nullptr);
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
-  video_engine_base_->DeleteChannel(channel_);
-  video_engine_base_->Release();
+  channel_group_->DeleteChannel(channel_id_);
 }
 
 void VideoReceiveStream::Start() {
   transport_adapter_.Enable();
-  vie_renderer_->StartRender();
+  incoming_video_stream_->Start();
   vie_channel_->StartReceive();
 }
 
 void VideoReceiveStream::Stop() {
-  vie_renderer_->StopRender();
+  incoming_video_stream_->Stop();
   vie_channel_->StopReceive();
   transport_adapter_.Disable();
 }
@@ -313,24 +301,12 @@ void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
     config_.pre_render_callback->FrameCallback(video_frame);
 }
 
-int VideoReceiveStream::FrameSizeChange(unsigned int width,
-                                        unsigned int height,
-                                        unsigned int number_of_streams) {
-  return 0;
-}
+int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
+                                    const I420VideoFrame& video_frame) {
+  // TODO(pbos): Wire up config_.render->IsTextureSupported() and convert if not
+  // supported. Or provide methods for converting a texture frame in
+  // I420VideoFrame.
 
-int VideoReceiveStream::DeliverFrame(unsigned char* buffer,
-                                     size_t buffer_size,
-                                     uint32_t timestamp,
-                                     int64_t ntp_time_ms,
-                                     int64_t render_time_ms,
-                                     void* handle) {
-  CHECK(false) << "Renderer should be configured as kVideoI420 and never "
-                  "receive callbacks on DeliverFrame.";
-  return 0;
-}
-
-int VideoReceiveStream::DeliverI420Frame(const I420VideoFrame& video_frame) {
   if (config_.renderer != nullptr)
     config_.renderer->RenderFrame(
         video_frame,
@@ -339,12 +315,6 @@ int VideoReceiveStream::DeliverI420Frame(const I420VideoFrame& video_frame) {
   stats_proxy_->OnRenderedFrame();
 
   return 0;
-}
-
-bool VideoReceiveStream::IsTextureSupported() {
-  if (config_.renderer == nullptr)
-    return false;
-  return config_.renderer->IsTextureSupported();
 }
 
 void VideoReceiveStream::SignalNetworkState(Call::NetworkState state) {
