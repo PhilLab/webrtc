@@ -156,6 +156,9 @@
               ],
               'conditions': [
                 ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+                  'defines': [
+                    'WEBRTC_HAS_NEON',
+                  ],
                   'rules': [
                   {
                     'rule_name': 'gas_preprocessor',
@@ -258,6 +261,11 @@
               'cflags!': [
                 '-flto',
                 '-ffat-lto-objects',
+              ],
+            }],
+            ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+              'defines': [
+                'WEBRTC_HAS_NEON',
               ],
             }],
           ],
