@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+  # Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -17,6 +17,7 @@
       'type': 'shared_library',
       'dependencies': [
         '../../../../talk/libjingle.gyp:libjingle_peerconnection',
+        '../../../../third_party/h264_winrt/h264_winrt.gyp:webrtc_h264_winrt',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -69,6 +70,9 @@
                 '../../../../third_party/libyuv/source/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_armv7/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_neon/*.obj',
+                '<(PRODUCT_DIR)/obj/common_audio/spl_sqrt_floor_arm.obj',
+                '<(PRODUCT_DIR)/obj/common_audio/filter_ar_fast_q12_armv7.obj',
+                '<(PRODUCT_DIR)/obj/common_audio/complex_bit_reverse_arm.obj',
               ],
             }],
           ],

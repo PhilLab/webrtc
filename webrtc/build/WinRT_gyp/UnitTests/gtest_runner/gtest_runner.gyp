@@ -166,6 +166,9 @@
                 '../../../../../third_party/libyuv/source/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_armv7/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_neon/*.obj',
+                '<(PRODUCT_DIR)/obj/common_audio/spl_sqrt_floor_arm.obj',
+                '<(PRODUCT_DIR)/obj/common_audio/filter_ar_fast_q12_armv7.obj',
+                '<(PRODUCT_DIR)/obj/common_audio/complex_bit_reverse_arm.obj',
               ],
             }],
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {

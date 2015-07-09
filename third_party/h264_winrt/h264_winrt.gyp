@@ -23,6 +23,8 @@
       'sources': [
         'h264_winrt_impl.cc',
         'h264_winrt_impl.h',
+        'h264_winrt_factory.cc',
+        'h264_winrt_factory.h',
       ],
     },
   ], # targets

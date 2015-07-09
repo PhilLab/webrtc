@@ -604,6 +604,11 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory();
 
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
+    cricket::WebRtcVideoEncoderFactory* encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* decoder_factory);
+
 // Create a new instance of PeerConnectionFactoryInterface.
 // Ownership of |factory|, |default_adm|, and optionally |encoder_factory| and
 // |decoder_factory| transferred to the returned factory.

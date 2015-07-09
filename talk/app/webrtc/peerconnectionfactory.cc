@@ -70,6 +70,27 @@ CreatePeerConnectionFactory() {
 }
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                            cricket::WebRtcVideoDecoderFactory* decoder_factory) {
+    rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
+        new rtc::RefCountedObject<PeerConnectionFactory>(encoder_factory, decoder_factory));
+
+
+    // Call Initialize synchronously but make sure its executed on
+    // |signaling_thread|.
+    MethodCall0<PeerConnectionFactory, bool> call(
+        pc_factory.get(),
+        &PeerConnectionFactory::Initialize);
+    bool result = call.Marshal(pc_factory->signaling_thread());
+
+    if (!result) {
+        return NULL;
+    }
+    return PeerConnectionFactoryProxy::Create(pc_factory->signaling_thread(),
+        pc_factory);
+}
+
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
@@ -106,6 +127,25 @@ PeerConnectionFactory::PeerConnectionFactory()
     wraps_current_thread_ = true;
   }
   worker_thread_->Start();
+}
+
+PeerConnectionFactory::PeerConnectionFactory(
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory)
+    : owns_ptrs_(true),
+    wraps_current_thread_(false),
+    signaling_thread_(rtc::ThreadManager::Instance()->CurrentThread()),
+    worker_thread_(new rtc::Thread),
+    video_encoder_factory_(video_encoder_factory),
+    video_decoder_factory_(video_decoder_factory) {
+    ASSERT(video_encoder_factory != NULL);
+    ASSERT(video_decoder_factory != NULL);
+
+    if (!signaling_thread_) {
+        signaling_thread_ = rtc::ThreadManager::Instance()->WrapCurrentThread();
+        wraps_current_thread_ = true;
+    }
+    worker_thread_->Start();
 }
 
 PeerConnectionFactory::PeerConnectionFactory(

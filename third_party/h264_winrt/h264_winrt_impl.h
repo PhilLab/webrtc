@@ -59,7 +59,7 @@ namespace webrtc {
 
         int Reset() override;
 
-        VideoDecoder* Copy() override;
+        VideoDecoder* Copy();
 
     private:
 
