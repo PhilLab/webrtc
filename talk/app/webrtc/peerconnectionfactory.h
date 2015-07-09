@@ -83,7 +83,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
  protected:
   PeerConnectionFactory();
-  PeerConnectionFactory::PeerConnectionFactory(
+  PeerConnectionFactory(
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
       cricket::WebRtcVideoDecoderFactory* video_decoder_factory);
   PeerConnectionFactory(
