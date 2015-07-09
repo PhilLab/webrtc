@@ -26,12 +26,6 @@
 #include "webrtc/voice_engine/include/voe_hardware.h"
 #include "webrtc/voice_engine/include/voe_file.h"
 
-#include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_network.h"
-#include "webrtc/video_engine/include/vie_render.h"
-#include "webrtc/video_engine/include/vie_capture.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 
 
 //-----
@@ -55,26 +49,12 @@ namespace webrtc_winjs_api {
     }
 
 
-    /**
-     * start the media engine
-     */
-    Windows::Foundation::IAsyncAction^ start();
-
-    /**
-    *stop the media engine
-    */
-    Windows::Foundation::IAsyncAction^ stop();
-
-    Windows::Media::Core::IMediaSource^ getLocalMediaStreamSource() { return this->localMediaWrapper_->getMediaStreamSource(); };
-
-    Windows::Media::Core::IMediaSource^ getRemoteMediaStreamSource(){ return this->remoteMediaWrapper_->getMediaStreamSource(); };
-
     virtual ~WinJSMediaEngine();
 
     //ToDo: remove this function and the global windows dispatcher
     void OnLaunched()
     {
-      g_windowDispatcher = dispatcher_ = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+      g_windowDispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
 
     }
 
@@ -89,11 +69,10 @@ namespace webrtc_winjs_api {
 
     }
 
-    static Windows::Foundation::IAsyncAction^ initialize(){
-      return webrtc_winrt_api::WebRTC::InitializeMediaEngine();
+    static Windows::Foundation::IAsyncOperation<bool>^ initialize(){
+      return webrtc_winrt_api::WebRTC::RequestAccessForMediaCapture();
     }
 
-    bool initialized(){ return this->started_; }
 
 
   private:
@@ -102,54 +81,6 @@ namespace webrtc_winjs_api {
     */
     WinJSMediaEngine();
 
-  private:
-
-//Reviewer: you can ignore all the private memebers for now.
-//They are used to testing the winjs app. eventually, most of them will be gone or move to c++/CX API for C#
-    /**
-    * string representation of raw video format.
-    */
-    std::string getRawVideoFormatString(webrtc::RawVideoType videoType);
-
-    MediaElementWrapper* localMediaWrapper_;
-    MediaElementWrapper* remoteMediaWrapper_;
-    Concurrency::event stopEvent_;
-
-    webrtc::VideoRender* vrm_;
-    webrtc::VideoCaptureDataCallback* captureCallback_;
-    webrtc::TraceCallback* traceCallback_;
-    Windows::UI::Core::CoreDispatcher^ dispatcher_;
-    bool started_;
-    bool startedVideo_;
-
-    int audioPort_;
-    int videoPort_;
-    std::string remoteIpAddress_;
-
-    int voiceChannel_;
-    webrtc::test::VoiceChannelTransport* voiceTransport_;
-    webrtc::VoiceEngine* voiceEngine_;
-    webrtc::VoEBase* voiceBase_;
-    webrtc::VoECodec* voiceCodec_;
-    webrtc::VoENetwork* voiceNetwork_;
-    webrtc::VoERTP_RTCP* voiceRtpRtcp_;
-    webrtc::VoEAudioProcessing* voiceAudioProcessing_;
-    webrtc::VoEVolumeControl* voiceVolumeControl_;
-    webrtc::VoEHardware* voiceHardware_;
-    webrtc::VoEFile* voiceFile_;
-
-    int videoChannel_;
-    webrtc::test::VideoChannelTransport* videoTransport_;
-    int captureId_;
-    char deviceUniqueId_[512];
-    webrtc::VideoCaptureModule* vcpm_;
-    webrtc::VideoEngine* videoEngine_;
-    webrtc::ViEBase* videoBase_;
-    webrtc::ViENetwork* videoNetwork_;
-    webrtc::ViERender* videoRender_;
-    webrtc::ViECapture* videoCapture_;
-    webrtc::ViERTP_RTCP* videoRtpRtcp_;
-    webrtc::ViECodec* videoCodec_;
 
   };
 
