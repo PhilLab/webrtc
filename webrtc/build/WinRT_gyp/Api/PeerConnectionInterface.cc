@@ -29,7 +29,7 @@
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/session/media/channelmanager.h"
-#include "third_party\h264_winrt\h264_winrt_factory.h"
+#include "third_party/h264_winrt/h264_winrt_factory.h"
 
 
 using webrtc_winrt_api_internal::FromCx;
@@ -73,7 +73,6 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
   globals::RunOnGlobalThread<void>([this, cc_configuration] {
-
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
     _observer.SetPeerConnection(this);
@@ -411,7 +410,8 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     auto decoderFactory = new webrtc::H264WinRTDecoderFactory();
 
     LOG(LS_INFO) << "Creating PeerConnectionFactory.";
-    globals::gPeerConnectionFactory = webrtc::CreatePeerConnectionFactory(encoderFactory, decoderFactory);
+    globals::gPeerConnectionFactory =
+        webrtc::CreatePeerConnectionFactory(encoderFactory, decoderFactory);
 
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
@@ -459,24 +459,22 @@ IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   cricket::ChannelManager* chmng =
       globals::gPeerConnectionFactory->channel_manager();
   chmng->GetSupportedAudioCodecs(&codecs);
-    for (auto it = codecs.begin(); it != codecs.end(); ++it)
-    {
+    for (auto it = codecs.begin(); it != codecs.end(); ++it) {
       ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-  }
+    }
   return ret;
 }
 
 IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
   std::vector<VideoCodec> codecs;
-  cricket::ChannelManager* chmng = globals::gPeerConnectionFactory->channel_manager();
+  cricket::ChannelManager* chmng =
+      globals::gPeerConnectionFactory->channel_manager();
   chmng->GetSupportedVideoCodecs(&codecs);
-    for (auto it = codecs.begin(); it != codecs.end(); ++it)
-    {
+    for (auto it = codecs.begin(); it != codecs.end(); ++it) {
     if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
       ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-
-  }
+    }
   return ret;
 }
 
