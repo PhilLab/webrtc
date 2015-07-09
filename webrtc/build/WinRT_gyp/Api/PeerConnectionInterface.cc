@@ -43,6 +43,11 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 // Any globals we need to keep around.
 namespace webrtc_winrt_api {
 namespace globals {
+
+  bool certificateVerifyCallBack(void* cert) {
+    return true;
+  }
+
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   gPeerConnectionFactory;
   // The worker thread for webrtc.
@@ -403,7 +408,7 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   globals::gThread.Start();
   globals::RunOnGlobalThread<void>([] {
     rtc::EnsureWinsockInit();
-    rtc::InitializeSSL();
+    rtc::InitializeSSL(globals::certificateVerifyCallBack);
 
     auto encoderFactory = new webrtc::H264WinRTEncoderFactory();
     auto decoderFactory = new webrtc::H264WinRTDecoderFactory();

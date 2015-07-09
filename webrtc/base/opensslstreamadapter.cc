@@ -979,7 +979,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX_set_info_callback(ctx, OpenSSLAdapter::SSLInfoCallback);
 #endif
 
-  int mode = SSL_VERIFY_NONE;
+  int mode = SSL_VERIFY_PEER;
   if (client_auth_enabled()) {
     // Require a certificate from the client.
     // Note: Normally this is always true in production, but it may be disabled
