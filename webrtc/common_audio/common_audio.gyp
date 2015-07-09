@@ -136,7 +136,7 @@
         ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
           'dependencies': ['common_audio_sse2',],
         }],
-        ['target_arch=="arm"', {
+        ['target_arch=="arm" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"' , {
           'sources': [
             'signal_processing/complex_bit_reverse_arm.S',
             'signal_processing/spl_sqrt_floor_arm.S',
@@ -146,13 +146,43 @@
             'signal_processing/spl_sqrt_floor.c',
           ],
           'conditions': [
-            ['arm_version>=7', {
+            ['arm_version>=7 or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
               'dependencies': ['common_audio_neon',],
               'sources': [
                 'signal_processing/filter_ar_fast_q12_armv7.S',
               ],
               'sources!': [
                 'signal_processing/filter_ar_fast_q12.c',
+              ],
+              'conditions': [
+                ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+                  'defines': [
+                    'WEBRTC_HAS_NEON',
+                  ],
+                  'rules': [
+                  {
+                    'rule_name': 'gas_preprocessor',
+                    'extension': 'S',
+                    'inputs': [
+                    ],
+                    'outputs': [
+                      '<(INTERMEDIATE_DIR)/<(RULE_INPUT_ROOT).obj',
+                    ],
+                   'action': [
+                   'perl ../build/gas-preprocessor/gas-preprocessor.pl -as-type armasm -force-thumb -- armasm -oldit -I../../ -c <(RULE_INPUT_PATH) -o <(INTERMEDIATE_DIR)/<(RULE_INPUT_ROOT).obj'
+                    ],
+                    'process_outputs_as_sources': 0,
+                    'message': 'Compiling <(RULE_INPUT_PATH)',
+                  }],
+                }],
+                # Disable LTO due to NEON issues
+                # crbug.com/408997
+                ['use_lto==1', {
+                  'cflags!': [
+                    '-flto',
+                    '-ffat-lto-objects',
+                  ],
+                }],
               ],
             }],
           ],  # conditions
@@ -212,7 +242,7 @@
         },
       ],  # targets
     }],
-    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64"', {
+    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
       'targets': [
         {
           'target_name': 'common_audio_neon',
@@ -231,6 +261,11 @@
               'cflags!': [
                 '-flto',
                 '-ffat-lto-objects',
+              ],
+            }],
+            ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+              'defines': [
+                'WEBRTC_HAS_NEON',
               ],
             }],
           ],
