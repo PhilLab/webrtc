@@ -29,8 +29,6 @@
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/session/media/channelmanager.h"
-#include "third_party/h264_winrt/h264_winrt_factory.h"
-
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
@@ -410,12 +408,9 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL(globals::certificateVerifyCallBack);
 
-    auto encoderFactory = new webrtc::H264WinRTEncoderFactory();
-    auto decoderFactory = new webrtc::H264WinRTDecoderFactory();
-
     LOG(LS_INFO) << "Creating PeerConnectionFactory.";
     globals::gPeerConnectionFactory =
-        webrtc::CreatePeerConnectionFactory(encoderFactory, decoderFactory);
+        webrtc::CreatePeerConnectionFactory();
 
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
