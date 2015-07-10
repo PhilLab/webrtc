@@ -61,11 +61,6 @@ namespace webrtc_winrt_api_internal {
     webrtc_winrt_api::RTCIceServer^ inObj,
     webrtc::PeerConnectionInterface::IceServer* outObj);
 
-  // =========================
-  void FromCx(
-    webrtc_winrt_api::RTCMediaStreamConstraints^ inObj,
-    webrtc_winrt_api::MediaConstraints* outObj);
-
   // ==========================
   void FromCx(
     webrtc_winrt_api::RTCConfiguration^ inObj,

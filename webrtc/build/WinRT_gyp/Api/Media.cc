@@ -220,20 +220,17 @@ Media::Media() {
   
 }
 
-IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ constraints) {
+IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audio, bool video) {
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
-    [this, constraints]() -> MediaStream^ {
+    [this, audio, video]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
-    return globals::RunOnGlobalThread<MediaStream^>([this, constraints]()->MediaStream^ {
-
-      MediaConstraints mediaConstraints;
-      FromCx(constraints, &mediaConstraints);
+    return globals::RunOnGlobalThread<MediaStream^>([this, audio, video]()->MediaStream^ {
 
       // This is the stream returned.
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 
-      if (constraints->audio) {
+      if (audio) {
         if (_selectedAudioDevice == -1) {
           // select default device if wasn't set
           _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
@@ -245,12 +242,12 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ co
         LOG(LS_INFO) << "Creating audio track.";
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
-          kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(&mediaConstraints)));
+          kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
         LOG(LS_INFO) << "Adding audio track to stream.";
         stream->AddTrack(audio_track);
       }
 
-      if (constraints->video) {
+      if (video) {
         cricket::VideoCapturer* videoCapturer = NULL;
         if (_selectedVideoDevice.id == "") {
           // Select the first video device as the capturer.
@@ -272,7 +269,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ co
             globals::gPeerConnectionFactory->CreateVideoTrack(
             kVideoLabel,
             globals::gPeerConnectionFactory->CreateVideoSource(
-            videoCapturer, &mediaConstraints)));
+            videoCapturer, NULL)));
           LOG(LS_INFO) << "Adding video track to stream.";
           stream->AddTrack(video_track);
         }

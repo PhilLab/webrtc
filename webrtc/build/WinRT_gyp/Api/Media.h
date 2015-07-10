@@ -115,18 +115,12 @@ namespace webrtc_winrt_api {
     }
   };
 
-  public ref class RTCMediaStreamConstraints sealed {
-  public:
-    property bool audio;
-    property bool video;
-  };
-
   public ref class Media sealed {
   public:
     Media();
 
     // TODO(WINRT): Arguments
-    IAsyncOperation<MediaStream^>^ GetUserMedia(RTCMediaStreamConstraints^ constraints);
+    IAsyncOperation<MediaStream^>^ GetUserMedia(bool audio, bool video);
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate);
 
@@ -142,52 +136,6 @@ namespace webrtc_winrt_api {
     cricket::Device _selectedVideoDevice;
     webrtc::AudioDeviceModule *_audioDevice;
     uint16_t _selectedAudioDevice;
-  };
-
-  class MediaConstraints : public webrtc::MediaConstraintsInterface {
-  public:
-    MediaConstraints() { }
-    virtual ~MediaConstraints() { }
-
-    virtual const Constraints& GetMandatory() const {
-      return mandatory_;
-    }
-
-    virtual const Constraints& GetOptional() const {
-      return optional_;
-    }
-
-    template <class T>
-    void AddMandatory(const std::string& key, const T& value) {
-      mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
-    }
-
-    template <class T>
-    void SetMandatory(const std::string& key, const T& value) {
-      std::string value_str;
-      if (mandatory_.FindFirst(key, &value_str)) {
-        for (Constraints::iterator iter = mandatory_.begin();
-          iter != mandatory_.end(); ++iter) {
-          if (iter->key == key) {
-            mandatory_.erase(iter);
-            break;
-          }
-        }
-      }
-      AddMandatory(key, value);
-    }
-
-    void SetMandatoryReceiveAudio(bool enable) {
-      SetMandatory(MediaConstraintsInterface::kOfferToReceiveAudio, enable);
-    }
-
-    void SetMandatoryReceiveVideo(bool enable) {
-      SetMandatory(MediaConstraintsInterface::kOfferToReceiveVideo, enable);
-    }
-
-  private:
-    Constraints mandatory_;
-    Constraints optional_;
   };
 
 }  // namespace webrtc_winrt_api
