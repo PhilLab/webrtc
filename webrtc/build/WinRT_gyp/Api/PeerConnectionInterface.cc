@@ -406,12 +406,9 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL();
 
-    auto encoderFactory = new webrtc::H264WinRTEncoderFactory();
-    auto decoderFactory = new webrtc::H264WinRTDecoderFactory();
-
     LOG(LS_INFO) << "Creating PeerConnectionFactory.";
     globals::gPeerConnectionFactory =
-        webrtc::CreatePeerConnectionFactory(encoderFactory, decoderFactory);
+        webrtc::CreatePeerConnectionFactory();
 
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
