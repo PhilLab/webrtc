@@ -42,6 +42,8 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
     VideoEncodingProperties::CreateUncompressed(
     MediaEncodingSubtypes::Nv12, 10, 10);
   streamState->_videoDesc= ref new VideoStreamDescriptor(videoProperties);
+  streamState->_videoDesc->EncodingProperties->Width = 320; //dummy data
+  streamState->_videoDesc->EncodingProperties->Height = 240;// dummy data
   streamState->_videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
