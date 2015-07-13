@@ -12,10 +12,23 @@
 
 #include "Media.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 using Windows::Media::Core::MediaStreamSource;
 using Platform::WeakReference;
 using webrtc_winrt_api::MediaVideoTrack;
+
+namespace webrtc_winrt_api {
+public delegate void FramesPerSecondChangedEventHandler(Platform::String^ fps);
+public ref class FrameCounterHelper sealed {
+  public:
+    static event FramesPerSecondChangedEventHandler^ FramesPerSecondChanged;
+  internal:
+    static void FireEvent(Platform::String^ str) {
+      FramesPerSecondChanged(str);
+    }
+  };
+}  // namespace webrtc_winrt_api
 
 namespace webrtc_winrt_api_internal {
 ref class RTMediaStreamSource sealed {
@@ -55,6 +68,9 @@ ref class RTMediaStreamSource sealed {
     uint64 _timeStamp;
     uint32 _frameRate;
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
+    int _frameCounter;
+    webrtc::TickTime _lastTimeFPSCalculated;
+    bool _framePassedToUI;
 };
 
 }  // namespace webrtc_winrt_api_internal

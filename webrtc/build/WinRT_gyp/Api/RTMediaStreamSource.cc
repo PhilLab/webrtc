@@ -66,7 +66,9 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
     _videoTrack(videoTrack), _stride(0),
-    _timeStamp(0), _frameRate(0) {
+    _timeStamp(0), _frameRate(0), _frameCounter(0),
+    _lastTimeFPSCalculated(webrtc::TickTime::Now()),
+    _framePassedToUI(false) {
   InitializeCriticalSection(&_lock);
 }
 
@@ -121,6 +123,27 @@ void RTMediaStreamSource::OnSampleRequested(
   if (FAILED(hr)) {
     return;
   }
+
+  // TODO Check the value of _framePassedToUI. If it is already passed do
+  // not do any change in _frameCounter
+  if (_frame.get() != nullptr) {
+    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+    for (unsigned int i = 0; i < gMediaStreamList->Size; i++) {
+      auto obj = gMediaStreamList->GetAt(i);
+      if (obj->_mediaStreamSource == sender) {
+        // make sure the sender is the current mediaStreamSource
+        _frameCounter++;
+        webrtc::TickTime now = webrtc::TickTime::Now();
+        if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
+          webrtc_winrt_api::FrameCounterHelper::FireEvent(_frameCounter.ToString());
+          _frameCounter = 0;
+          _lastTimeFPSCalculated = now;
+        }
+        break;
+      }
+    }
+  }
+
   ComPtr<IMFMediaBuffer> mediaBuffer;
   EnterCriticalSection(&_lock);
   if (_frame.get() != nullptr)
@@ -157,6 +180,7 @@ void RTMediaStreamSource::OnSampleRequested(
 void RTMediaStreamSource::ProcessReceivedFrame(
   const cricket::VideoFrame *frame) {
   EnterCriticalSection(&_lock);
+  _framePassedToUI = false;
   _frame.reset(frame->Copy());
   LeaveCriticalSection(&_lock);
 }
