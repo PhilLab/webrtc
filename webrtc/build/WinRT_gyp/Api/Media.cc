@@ -220,17 +220,19 @@ Media::Media() {
   
 }
 
-IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audio, bool video) {
+IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ mediaStreamConstraints) {
+
+  /// add to separate sets of constraints
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
-    [this, audio, video]() -> MediaStream^ {
+    [this, mediaStreamConstraints]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
-    return globals::RunOnGlobalThread<MediaStream^>([this, audio, video]()->MediaStream^ {
+    return globals::RunOnGlobalThread<MediaStream^>([this, mediaStreamConstraints]()->MediaStream^ {
 
       // This is the stream returned.
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
 
-      if (audio) {
+      if (mediaStreamConstraints->audioEnabled) {
         if (_selectedAudioDevice == -1) {
           // select default device if wasn't set
           _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
@@ -247,7 +249,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audio, bool video) {
         stream->AddTrack(audio_track);
       }
 
-      if (video) {
+      if (mediaStreamConstraints->videoEnabled) {
         cricket::VideoCapturer* videoCapturer = NULL;
         if (_selectedVideoDevice.id == "") {
           // Select the first video device as the capturer.
