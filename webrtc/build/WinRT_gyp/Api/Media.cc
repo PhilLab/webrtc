@@ -284,10 +284,10 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(bool audio, bool video) {
 }
 
 IMediaSource^ Media::CreateMediaStreamSource(
-    MediaVideoTrack^ track, uint32 framerate) {
-    return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate]()->MediaStreamSource^{
+    MediaVideoTrack^ track, uint32 framerate, String^ id) {
+    return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate, id]()->MediaStreamSource^{
         return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
-            track, framerate);
+            track, framerate, id);
     });
 }
 
