@@ -115,12 +115,19 @@ namespace webrtc_winrt_api {
     }
   };
 
+  public ref class RTCMediaStreamConstraints sealed {
+  public:
+    property bool audioEnabled;
+    property bool videoEnabled;
+  };
+
+
   public ref class Media sealed {
   public:
     Media();
 
     // TODO(WINRT): Arguments
-    IAsyncOperation<MediaStream^>^ GetUserMedia(bool audio, bool video);
+    IAsyncOperation<MediaStream^>^ GetUserMedia(RTCMediaStreamConstraints^ mediaStreamConstraints);
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate);
 
