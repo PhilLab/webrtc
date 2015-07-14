@@ -93,6 +93,8 @@ class ChannelManager : public rtc::MessageHandler,
   void GetSupportedVideoRtpHeaderExtensions(RtpHeaderExtensions* ext) const;
   void GetSupportedDataCodecs(std::vector<DataCodec>* codecs) const;
 
+  void setPreferredCaptureFormat(const cricket::VideoFormat& aFormat);
+
   // Indicates whether the media engine is started.
   bool initialized() const { return initialized_; }
   // Starts up the media engine.
@@ -247,6 +249,8 @@ class ChannelManager : public rtc::MessageHandler,
   typedef std::vector<VideoChannel*> VideoChannels;
   typedef std::vector<DataChannel*> DataChannels;
 
+  cricket::VideoFormat generateDesiredFormat(const cricket::VideoFormat& desiredFormat);
+
   void Construct(MediaEngineInterface* me,
                  DataEngineInterface* dme,
                  DeviceManagerInterface* dm,
@@ -289,6 +293,7 @@ class ChannelManager : public rtc::MessageHandler,
   rtc::scoped_ptr<DataEngineInterface> data_media_engine_;
   rtc::scoped_ptr<DeviceManagerInterface> device_manager_;
   rtc::scoped_ptr<CaptureManager> capture_manager_;
+  cricket::VideoFormat preferred_format_;
   bool initialized_;
   rtc::Thread* main_thread_;
   rtc::Thread* worker_thread_;

@@ -101,6 +101,7 @@ public:
 
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
+  static void SetPreferredVideoCaptureFormat(int frame_width, int frame_height, int fps);
 
 private:
   // This type is not meant to be created.

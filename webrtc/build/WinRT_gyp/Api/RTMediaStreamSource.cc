@@ -42,6 +42,11 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
     VideoEncodingProperties::CreateUncompressed(
     MediaEncodingSubtypes::Nv12, 10, 10);
   streamState->_videoDesc= ref new VideoStreamDescriptor(videoProperties);
+  streamState->_videoDesc->EncodingProperties->Width = 320; // initial value, this will be override by incoming frame from webrtc.
+  streamState->_videoDesc->EncodingProperties->Height = 240;// this is needed since the UI element might request sample before webrtc has
+                                                            //incoming frame ready(ex.: remote stream), in this case, this initial value will
+                                                            //make sure we will at least create a small dumy frame.
+
   streamState->_videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
