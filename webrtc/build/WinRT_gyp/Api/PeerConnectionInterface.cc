@@ -402,6 +402,13 @@ IAsyncOperation<bool>^  WebRTC::RequestAccessForMediaCapture() {
     return accessRequestAccepted;
   });
 }
+
+void WinJSHooks::initialize() {
+  g_windowDispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+
+  webrtc_winrt_api::WebRTC::Initialize(g_windowDispatcher);
+}
+
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   g_windowDispatcher = dispatcher;
 
