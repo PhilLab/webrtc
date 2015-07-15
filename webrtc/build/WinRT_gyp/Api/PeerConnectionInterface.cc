@@ -77,7 +77,7 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
 
     cricket::ChannelManager* chmng =
       globals::gPeerConnectionFactory->channel_manager();
-    chmng->setPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
+    chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
     _observer.SetPeerConnection(this);

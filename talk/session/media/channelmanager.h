@@ -93,7 +93,7 @@ class ChannelManager : public rtc::MessageHandler,
   void GetSupportedVideoRtpHeaderExtensions(RtpHeaderExtensions* ext) const;
   void GetSupportedDataCodecs(std::vector<DataCodec>* codecs) const;
 
-  void setPreferredCaptureFormat(const cricket::VideoFormat& aFormat);
+  void SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat);
 
   // Indicates whether the media engine is started.
   bool initialized() const { return initialized_; }

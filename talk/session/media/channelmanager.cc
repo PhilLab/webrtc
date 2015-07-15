@@ -199,7 +199,7 @@ void ChannelManager::GetSupportedDataCodecs(
   *codecs = data_media_engine_->data_codecs();
 }
 
-void ChannelManager::setPreferredCaptureFormat(const cricket::VideoFormat& aFormat){
+void ChannelManager::SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat){
 
   preferred_format_ = aFormat;
 }
