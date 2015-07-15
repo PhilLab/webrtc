@@ -18,6 +18,7 @@
       'dependencies': [
         '../../../../talk/libjingle.gyp:libjingle_peerconnection',
         '../../../../third_party/h264_winrt/h264_winrt.gyp:webrtc_h264_winrt',
+        '../etw/etw.gyp:stats_observer_etw',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -25,6 +26,7 @@
       ],
       'include_dirs': [
         '../../../../third_party/libyuv/include',
+        '../etw',
         '.',
       ],
       'sources': [

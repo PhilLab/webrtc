@@ -17,6 +17,7 @@
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
 #include "webrtc/base/event.h"
+#include "stats_observer_etw.h"
 
 namespace webrtc_winrt_api {
 ref class RTCPeerConnection;
@@ -55,6 +56,7 @@ class GlobalObserver : public webrtc::PeerConnectionObserver {
 
  private:
   webrtc_winrt_api::RTCPeerConnection^ _pc;
+  rtc::scoped_refptr<webrtc::StatsObserverETW> _stats_observer_etw;
 };
 
 // There is one of those per call to CreateOffer().

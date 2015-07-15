@@ -9,7 +9,8 @@ from NugetUtils import createDirIfNotExist, log, getVersionFromArguments
 
 win_dir = '..\\..\\..\\..\\build_win\\Release\\'
 win_dir_dst = 'lib\\netcore45'
-win_dir_files = ['webrtc_winrt_api.dll', 'webrtc_winrt_api.winmd']
+win_dir_files = ['webrtc_winrt_api_win.dll', 'webrtc_winrt_api.winmd']
+win_renames ={'webrtc_winrt_api_win.dll' : 'webrtc_winrt_api.dll' }
 
 win_phone_dir = '..\\..\\..\\..\\build_win_phone\\Release\\'
 win_phone_dir_dst = 'lib\\portable-wpa81'
@@ -39,6 +40,13 @@ def main():
     for k, v in win_phone_renames.iteritems():
         file_path_initial = os.path.join(os.getcwd(), win_phone_dir_dst, k)
         file_path_final = os.path.join(os.getcwd(), win_phone_dir_dst, v)
+        if os.path.isfile(file_path_final):
+            os.remove(file_path_final)
+        os.rename(file_path_initial, file_path_final)
+
+    for k, v in win_renames.iteritems():
+        file_path_initial = os.path.join(os.getcwd(), win_dir_dst, k)
+        file_path_final = os.path.join(os.getcwd(), win_dir_dst, v)
         if os.path.isfile(file_path_final):
             os.remove(file_path_final)
         os.rename(file_path_initial, file_path_final)

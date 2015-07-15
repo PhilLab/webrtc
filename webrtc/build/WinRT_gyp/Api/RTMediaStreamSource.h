@@ -12,10 +12,23 @@
 
 #include "Media.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 using Windows::Media::Core::MediaStreamSource;
 using Platform::WeakReference;
 using webrtc_winrt_api::MediaVideoTrack;
+
+namespace webrtc_winrt_api {
+// Delegate used to notify an update of the frame per second on a video stream.
+public delegate void FramesPerSecondChangedEventHandler(String^ id, Platform::String^ fps);
+
+public ref class FrameCounterHelper sealed {
+  public:
+    static event FramesPerSecondChangedEventHandler^ FramesPerSecondChanged;
+  internal:
+    static void FireEvent(String^ id, Platform::String^ str);
+  };
+}  // namespace webrtc_winrt_api
 
 namespace webrtc_winrt_api_internal {
 ref class RTMediaStreamSource sealed {
@@ -23,7 +36,7 @@ ref class RTMediaStreamSource sealed {
     virtual ~RTMediaStreamSource();
   internal:
     static MediaStreamSource^ CreateMediaSource(
-      MediaVideoTrack^ track, uint32 frameRate);
+      MediaVideoTrack^ track, uint32 frameRate, String^ id);
   private:
     class RTCRenderer : public webrtc::VideoRendererInterface {
      public:
@@ -47,14 +60,20 @@ ref class RTMediaStreamSource sealed {
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);
 
     MediaVideoTrack^ _videoTrack;
+    String^ _id; // Provided by the calling API.
     MediaStreamSource^ _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
-    CRITICAL_SECTION _lock;
+    rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
     rtc::scoped_ptr<cricket::VideoFrame> _frame;
+    Microsoft::WRL::ComPtr<IMFSample> _sample;  // Cached sample
     uint32 _stride;
     uint64 _timeStamp;
     uint32 _frameRate;
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
+
+    // State related to calculating FPS.
+    int _frameCounter;
+    webrtc::TickTime _lastTimeFPSCalculated;
 };
 
 }  // namespace webrtc_winrt_api_internal

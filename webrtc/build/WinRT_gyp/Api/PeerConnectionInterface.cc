@@ -52,6 +52,7 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   rtc::Thread gThread;
   rtc::TraceLog gTraceLog;
   rtc::scoped_ptr<rtc::LoggingServer> gLoggingServer;
+  cricket::VideoFormat gPreferredVideoCaptureFormat;
 }  // namespace globals
 
 RTCIceCandidate::RTCIceCandidate() {
@@ -76,6 +77,10 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
   globals::RunOnGlobalThread<void>([this, cc_configuration] {
+
+    cricket::ChannelManager* chmng =
+      globals::gPeerConnectionFactory->channel_manager();
+    chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
     _observer.SetPeerConnection(this);
@@ -399,6 +404,13 @@ IAsyncOperation<bool>^  WebRTC::RequestAccessForMediaCapture() {
     return accessRequestAccepted;
   });
 }
+
+void WinJSHooks::initialize() {
+  g_windowDispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+
+  webrtc_winrt_api::WebRTC::Initialize(g_windowDispatcher);
+}
+
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   g_windowDispatcher = dispatcher;
 
@@ -475,6 +487,16 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
       ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
     }
   return ret;
+}
+
+void WebRTC::SetPreferredVideoCaptureFormat(int frame_width, int frame_height, int fps){
+
+  globals::gPreferredVideoCaptureFormat.interval = globals::gPreferredVideoCaptureFormat.FpsToInterval(fps);
+
+  globals::gPreferredVideoCaptureFormat.width = frame_width;
+
+  globals::gPreferredVideoCaptureFormat.height = frame_height;
+
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(

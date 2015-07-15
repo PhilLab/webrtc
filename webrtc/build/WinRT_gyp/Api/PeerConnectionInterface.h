@@ -85,11 +85,17 @@ public:
     }
 };
 
+public ref class WinJSHooks sealed {
+public:
+  static void initialize();
+};
+
 [Windows::Foundation::Metadata::WebHostHidden]
 public ref class WebRTC sealed {
 public:
   static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
   static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
+
   static bool IsTracing();
   static void StartTracing();
   static void StopTracing();
@@ -101,6 +107,7 @@ public:
 
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
+  static void SetPreferredVideoCaptureFormat(int frame_width, int frame_height, int fps);
 
 private:
   // This type is not meant to be created.
