@@ -132,8 +132,6 @@ void RTMediaStreamSource::OnSampleRequested(
       return;
     }
 
-    // TODO Check the value of _framePassedToUI. If it is already passed do
-    // not do any change in _frameCounter
     webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
 
     // Do FPS calculation and notification.
