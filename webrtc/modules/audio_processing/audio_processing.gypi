@@ -144,6 +144,12 @@
         ['agc_debug_dump==1', {
           'defines': ['WEBRTC_AGC_DEBUG_DUMP',],
         }],
+        # TODO(winrt): this should be removed when WEBRTC_HAS_NEON is enabled for entire WebRTC
+        ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+           'defines': [
+             'WEBRTC_HAS_NEON',
+           ],
+        }],
         # TODO(winrt) disabled protobuf to temporary fix the ARM build
         ['enable_protobuf==1 and winrt_platform!="win_phone"', {
           'dependencies': ['audioproc_debug_proto'],
@@ -183,7 +189,7 @@
         ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
           'dependencies': ['audio_processing_sse2',],
         }],
-        ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
+        ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
           'dependencies': ['audio_processing_neon',],
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
@@ -246,7 +252,7 @@
         },
       ],
     }],
-    ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
+    ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
       'targets': [{
         'target_name': 'audio_processing_neon',
         'type': 'static_library',
