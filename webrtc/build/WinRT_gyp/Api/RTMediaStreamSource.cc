@@ -13,6 +13,7 @@
 #include <mfidl.h>
 #include "talk/media/base/videoframe.h"
 #include "libyuv/video_common.h"
+#include "libyuv/convert.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
@@ -209,35 +210,13 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
   try {
     _frame->MakeExclusive();
     // Convert to NV12
-    uint8* y_buffer = _frame->GetYPlane();
-    const size_t width = _frame->GetWidth();
-    const int32 yPitch = _frame->GetYPitch();
-    uint8* originalBuf = destRawData;
-    for (size_t i = 0; i < _frame->GetHeight(); i++)
-    {
-      memcpy(destRawData, y_buffer, width);
-      destRawData += pitch;
-      y_buffer += yPitch;
-    }
-    destRawData = originalBuf + (pitch*_videoDesc->EncodingProperties->Height);
-    uint8* u_buffer = _frame->GetUPlane();
-    uint8* v_buffer = _frame->GetVPlane();
-    const int32 uPitch = _frame->GetUPitch();
-    const int32 vPitch = _frame->GetVPitch();
-    const size_t uvHeight = _frame->GetHeight() / 2;
-    const size_t uvWidth = _frame->GetWidth() / 2;
-    for (size_t y = 0; y < uvHeight; y++)
-    {
-      uint8* lineBuffer = destRawData;
-      for (size_t x = 0; x < uvWidth; x++)
-      {
-        *lineBuffer++ = u_buffer[x];
-        *lineBuffer++ = v_buffer[x];
-      }
-      destRawData += pitch;
-      u_buffer += uPitch;
-      v_buffer += vPitch;
-    }
+    uint8* uvDest = destRawData + (pitch * _frame->GetHeight());
+    libyuv::I420ToNV12(_frame->GetYPlane(), _frame->GetYPitch(),
+      _frame->GetUPlane(), _frame->GetUPitch(),
+      _frame->GetVPlane(), _frame->GetVPitch(),
+      (uint8*)destRawData, pitch,
+      uvDest, pitch,
+      _frame->GetWidth(), _frame->GetHeight());
   }
   catch (...) {
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
