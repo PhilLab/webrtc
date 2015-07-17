@@ -74,7 +74,7 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
     _videoTrack(videoTrack), _stride(0),
     _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-    _timeStamp(0), _frameRate(0), _frameCounter(0),
+    _timeStamp(0), _isNewFrame(true), _frameRate(0), _frameCounter(0),
     _lastTimeFPSCalculated(webrtc::TickTime::Now()) {
 }
 
@@ -118,6 +118,7 @@ void RTMediaStreamSource::OnSampleRequested(
     if (request == nullptr) {
       return;
     }
+
     ComPtr<IMFMediaStreamSourceSampleRequest> spRequest;
     HRESULT hr = reinterpret_cast<IInspectable*>(request)->QueryInterface(
       spRequest.ReleaseAndGetAddressOf());
@@ -125,29 +126,33 @@ void RTMediaStreamSource::OnSampleRequested(
       return;
     }
 
+    webrtc::TickTime now = webrtc::TickTime::Now();
+
     webrtc::CriticalSectionScoped csLock(_lock.get());
 
-    // Use the cached sample if we have one.
-    if (_sample.Get() != nullptr) {
-      hr = spRequest->SetSample(_sample.Get());
-      return;
-    }
-
-    hr = MFCreateSample(_sample.ReleaseAndGetAddressOf());
+    ComPtr<IMFSample> spSample;
+    hr = MFCreateSample(spSample.GetAddressOf());
     if (FAILED(hr)) {
       return;
     }
 
+    LONGLONG duration = (LONGLONG)((1.0 / _frameRate) * 1000 * 1000 * 10);
+    spSample->SetSampleDuration(duration);
+    spSample->SetSampleTime((LONGLONG)_timeStamp);
+    _timeStamp += duration;
+
     webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
 
     // Do FPS calculation and notification.
-    _frameCounter++;
-    webrtc::TickTime now = webrtc::TickTime::Now();
-    // If we have about a second worth of frames
-    if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
-      webrtc_winrt_api::FrameCounterHelper::FireEvent(_id, _frameCounter.ToString());
-      _frameCounter = 0;
-      _lastTimeFPSCalculated = now;
+    if (_isNewFrame) {
+      _isNewFrame = false;
+      _frameCounter++;
+      // If we have about a second worth of frames
+      if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
+        webrtc_winrt_api::FrameCounterHelper::FireEvent(_id, _frameCounter.ToString());
+        _frameCounter = 0;
+        _lastTimeFPSCalculated = now;
+      }
     }
 
     ComPtr<IMFMediaBuffer> mediaBuffer;
@@ -166,14 +171,13 @@ void RTMediaStreamSource::OnSampleRequested(
     if (FAILED(hr)) {
       return;
     }
-    _sample->AddBuffer(mediaBuffer.Get());
-    _sample->SetSampleTime(0);
+    spSample->AddBuffer(mediaBuffer.Get());
+
     if (_frame.get() != nullptr)
     {
       ConvertFrame(mediaBuffer.Get());
     }
-
-    hr = spRequest->SetSample(_sample.Get());
+    hr = spRequest->SetSample(spSample.Get());
     if (FAILED(hr))
     {
       return;
@@ -188,7 +192,7 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   const cricket::VideoFrame *frame) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   _frame.reset(frame->Copy());
-  _sample = nullptr;
+  _isNewFrame = true;
 }
 
 bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
