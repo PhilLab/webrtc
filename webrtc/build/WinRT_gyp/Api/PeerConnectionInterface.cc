@@ -321,6 +321,10 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
 
 void RTCPeerConnection::Close() {
   globals::RunOnGlobalThread<void>([this] {
+    if (_impl.get()) {
+      _impl->Close();
+    }
+
     // Needed to remove the circular references and allow
     // this object to be garbage collected.
     _observer.SetPeerConnection(nullptr);
