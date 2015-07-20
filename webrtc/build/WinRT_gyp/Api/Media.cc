@@ -180,6 +180,9 @@ void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
 
 void MediaStream::Stop()
 {
+  // TODO: Investigate if this is the proper way
+  // to stop the stream. If something else holds
+  // a reference, the stream may not stop.
   _impl.release();
 }
 
