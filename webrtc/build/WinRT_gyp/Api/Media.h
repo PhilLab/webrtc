@@ -81,6 +81,7 @@ namespace webrtc_winrt_api {
     IMediaStreamTrack^ GetTrackById(String^ trackId);
     void AddTrack(IMediaStreamTrack^ track);
     void RemoveTrack(IMediaStreamTrack^ track);
+    void Stop();
 
     property bool Active { bool get(); }
   private:

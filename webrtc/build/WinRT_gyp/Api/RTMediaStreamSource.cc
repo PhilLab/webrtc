@@ -13,6 +13,7 @@
 #include <mfidl.h>
 #include "talk/media/base/videoframe.h"
 #include "libyuv/video_common.h"
+#include "libyuv/convert.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
@@ -43,6 +44,11 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
     VideoEncodingProperties::CreateUncompressed(
     MediaEncodingSubtypes::Nv12, 10, 10);
   streamState->_videoDesc= ref new VideoStreamDescriptor(videoProperties);
+  streamState->_videoDesc->EncodingProperties->Width = 320; // initial value, this will be override by incoming frame from webrtc.
+  streamState->_videoDesc->EncodingProperties->Height = 240;// this is needed since the UI element might request sample before webrtc has
+                                                            //incoming frame ready(ex.: remote stream), in this case, this initial value will
+                                                            //make sure we will at least create a small dumy frame.
+
   streamState->_videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
@@ -132,8 +138,6 @@ void RTMediaStreamSource::OnSampleRequested(
       return;
     }
 
-    // TODO Check the value of _framePassedToUI. If it is already passed do
-    // not do any change in _frameCounter
     webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
 
     // Do FPS calculation and notification.
@@ -206,41 +210,40 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
   try {
     _frame->MakeExclusive();
     // Convert to NV12
-    uint8* y_buffer = _frame->GetYPlane();
-    const size_t width = _frame->GetWidth();
-    const int32 yPitch = _frame->GetYPitch();
-    uint8* originalBuf = destRawData;
-    for (size_t i = 0; i < _frame->GetHeight(); i++)
-    {
-      memcpy(destRawData, y_buffer, width);
-      destRawData += pitch;
-      y_buffer += yPitch;
-    }
-    destRawData = originalBuf + (pitch*_videoDesc->EncodingProperties->Height);
-    uint8* u_buffer = _frame->GetUPlane();
-    uint8* v_buffer = _frame->GetVPlane();
-    const int32 uPitch = _frame->GetUPitch();
-    const int32 vPitch = _frame->GetVPitch();
-    const size_t uvHeight = _frame->GetHeight() / 2;
-    const size_t uvWidth = _frame->GetWidth() / 2;
-    for (size_t y = 0; y < uvHeight; y++)
-    {
-      uint8* lineBuffer = destRawData;
-      for (size_t x = 0; x < uvWidth; x++)
-      {
-        *lineBuffer++ = u_buffer[x];
-        *lineBuffer++ = v_buffer[x];
-      }
-      destRawData += pitch;
-      u_buffer += uPitch;
-      v_buffer += vPitch;
-    }
+    uint8* uvDest = destRawData + (pitch * _frame->GetHeight());
+    libyuv::I420ToNV12(_frame->GetYPlane(), _frame->GetYPitch(),
+      _frame->GetUPlane(), _frame->GetUPitch(),
+      _frame->GetVPlane(), _frame->GetVPitch(),
+      (uint8*)destRawData, pitch,
+      uvDest, pitch,
+      _frame->GetWidth(), _frame->GetHeight());
   }
   catch (...) {
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
   }
   imageBuffer->Unlock2D();
   return true;
+}
+
+void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer)
+{
+  ComPtr<IMF2DBuffer2> imageBuffer;
+  if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf()))) {
+    return;
+  }
+  BYTE* destRawData;
+  BYTE* buffer;
+  LONG pitch;
+  DWORD destMediaBufferSize;
+
+
+  if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
+    &destRawData, &pitch, &buffer, &destMediaBufferSize)))
+  {
+    return;
+  }
+  memset(destRawData, 0, destMediaBufferSize);
+  imageBuffer->Unlock2D();
 }
 
 void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {
