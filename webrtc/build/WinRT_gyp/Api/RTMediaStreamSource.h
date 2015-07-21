@@ -66,9 +66,10 @@ ref class RTMediaStreamSource sealed {
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
     rtc::scoped_ptr<cricket::VideoFrame> _frame;
-    Microsoft::WRL::ComPtr<IMFSample> _sample;  // Cached sample
+    bool _isNewFrame;  // If the frame in _frame hasn't been rendered yet.
     uint32 _stride;
     uint64 _timeStamp;
+
     uint32 _frameRate;
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 
