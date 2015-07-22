@@ -89,6 +89,8 @@ class WebRtcVoiceEngine
     : public webrtc::VoiceEngineObserver,
       public webrtc::TraceCallback,
       public webrtc::VoEMediaProcess  {
+  friend class WebRtcVoiceMediaChannel;
+
  public:
   WebRtcVoiceEngine();
   // Dependency injection for testing.
@@ -98,23 +100,10 @@ class WebRtcVoiceEngine
   void Terminate();
 
   int GetCapabilities();
-  VoiceMediaChannel* CreateChannel();
+  VoiceMediaChannel* CreateChannel(const AudioOptions& options);
 
   AudioOptions GetOptions() const { return options_; }
   bool SetOptions(const AudioOptions& options);
-  // Overrides, when set, take precedence over the options on a
-  // per-option basis.  For example, if AGC is set in options and AEC
-  // is set in overrides, AGC and AEC will be both be set.  Overrides
-  // can also turn off options.  For example, if AGC is set to "on" in
-  // options and AGC is set to "off" in overrides, the result is that
-  // AGC will be off until different overrides are applied or until
-  // the overrides are cleared.  Only one set of overrides is present
-  // at a time (they do not "stack").  And when the overrides are
-  // cleared, the media engine's state reverts back to the options set
-  // via SetOptions.  This allows us to have both "persistent options"
-  // (the normal options) and "temporary options" (overrides).
-  bool SetOptionOverrides(const AudioOptions& options);
-  bool ClearOptionOverrides();
   bool SetDelayOffset(int offset);
   bool SetDevices(const Device* in_device, const Device* out_device);
   bool GetOutputVolume(int* level);
@@ -186,6 +175,19 @@ class WebRtcVoiceEngine
   // allows us to selectively turn on and off different options easily
   // at any time.
   bool ApplyOptions(const AudioOptions& options);
+  // Overrides, when set, take precedence over the options on a
+  // per-option basis.  For example, if AGC is set in options and AEC
+  // is set in overrides, AGC and AEC will be both be set.  Overrides
+  // can also turn off options.  For example, if AGC is set to "on" in
+  // options and AGC is set to "off" in overrides, the result is that
+  // AGC will be off until different overrides are applied or until
+  // the overrides are cleared.  Only one set of overrides is present
+  // at a time (they do not "stack").  And when the overrides are
+  // cleared, the media engine's state reverts back to the options set
+  // via SetOptions.  This allows us to have both "persistent options"
+  // (the normal options) and "temporary options" (overrides).
+  bool SetOptionOverrides(const AudioOptions& options);
+  bool ClearOptionOverrides();
 
   // webrtc::TraceCallback:
   void Print(webrtc::TraceLevel level, const char* trace, int length) override;
@@ -264,11 +266,11 @@ class WebRtcVoiceEngine
 
   rtc::CriticalSection signal_media_critical_;
 
-  // Cache received experimental_aec, delay_agnostic_aec and experimental_ns
+  // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
   // values, and apply them in case they are missing in the audio options. We
   // need to do this because SetExtraOptions() will revert to defaults for
   // options which are not provided.
-  Settable<bool> experimental_aec_;
+  Settable<bool> extended_filter_aec_;
   Settable<bool> delay_agnostic_aec_;
   Settable<bool> experimental_ns_;
 };
@@ -442,10 +444,10 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   // case it will only be there if a non-zero default_receive_ssrc_ is set.
   ChannelMap receive_channels_;  // for multiple sources
   std::map<uint32, webrtc::AudioReceiveStream*> receive_streams_;
+  std::map<uint32, StreamParams> receive_stream_params_;
   // receive_channels_ can be read from WebRtc callback thread.  Access from
   // the WebRtc thread must be synchronized with edits on the worker thread.
   // Reads on the worker thread are ok.
-  //
   std::vector<RtpHeaderExtension> receive_extensions_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
 

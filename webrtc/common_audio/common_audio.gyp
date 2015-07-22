@@ -136,6 +136,9 @@
         ['(target_arch=="ia32" or target_arch=="x64") and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
           'dependencies': ['common_audio_sse2',],
         }],
+        ['build_with_neon==1', {
+          'dependencies': ['common_audio_neon',],
+        }],
         ['target_arch=="arm" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"' , {
           'sources': [
             'signal_processing/complex_bit_reverse_arm.S',
@@ -147,7 +150,6 @@
           ],
           'conditions': [
             ['arm_version>=7 or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
-              'dependencies': ['common_audio_neon',],
               'sources': [
                 'signal_processing/filter_ar_fast_q12_armv7.S',
               ],
@@ -186,9 +188,6 @@
               ],
             }],
           ],  # conditions
-        }],
-        ['target_arch=="arm64"', {
-          'dependencies': ['common_audio_neon',],
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
@@ -242,7 +241,7 @@
         },
       ],  # targets
     }],
-    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+    ['build_with_neon==1', {
       'targets': [
         {
           'target_name': 'common_audio_neon',
@@ -254,20 +253,11 @@
             'signal_processing/cross_correlation_neon.c',
             'signal_processing/downsample_fast_neon.c',
             'signal_processing/min_max_operations_neon.c',
-          ],
-          'conditions': [
-            # Disable LTO in common_audio_neon target due to compiler bug
-            ['use_lto==1', {
-              'cflags!': [
-                '-flto',
-                '-ffat-lto-objects',
               ],
             }],
             ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
               'defines': [
                 'WEBRTC_HAS_NEON',
-              ],
-            }],
           ],
         },
       ],  # targets

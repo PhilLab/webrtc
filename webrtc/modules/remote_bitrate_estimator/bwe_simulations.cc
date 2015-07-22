@@ -86,15 +86,15 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
   RateCounterFilter counter2(&downlink_, kFlowIds[1], "receiver_input_1");
   PacketReceiver receiver2(&downlink_, kFlowIds[1], GetParam(), true, false);
 
-  choke2.SetCapacity(500);
-  delay.SetDelayMs(0);
+  choke2.set_capacity_kbps(500);
+  delay.SetOneWayDelayMs(0);
 
-  choke.SetCapacity(1000);
-  choke.SetMaxDelay(500);
+  choke.set_capacity_kbps(1000);
+  choke.set_max_delay_ms(500);
   RunFor(60 * 1000);
-  choke.SetCapacity(500);
+  choke.set_capacity_kbps(500);
   RunFor(60 * 1000);
-  choke.SetCapacity(1000);
+  choke.set_capacity_kbps(1000);
   RunFor(60 * 1000);
 }
 
@@ -106,27 +106,27 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, false);
 
-  choke.SetCapacity(1000);
-  choke.SetMaxDelay(500);
+  choke.set_capacity_kbps(1000);
+  choke.set_max_delay_ms(500);
   RunFor(60 * 1000);
-  choke.SetCapacity(500);
+  choke.set_capacity_kbps(500);
   RunFor(60 * 1000);
-  choke.SetCapacity(1000);
+  choke.set_capacity_kbps(1000);
   RunFor(60 * 1000);
 }
 
 TEST_P(BweSimulation, PacerChoke1000kbps500kbps1000kbps) {
-  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
-  filter.SetCapacity(1000);
-  filter.SetMaxDelay(500);
+  filter.set_capacity_kbps(1000);
+  filter.set_max_delay_ms(500);
   RunFor(60 * 1000);
-  filter.SetCapacity(500);
+  filter.set_capacity_kbps(500);
   RunFor(60 * 1000);
-  filter.SetCapacity(1000);
+  filter.set_capacity_kbps(1000);
   RunFor(60 * 1000);
 }
 
@@ -136,23 +136,23 @@ TEST_P(BweSimulation, PacerChoke10000kbps) {
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
-  filter.SetCapacity(10000);
-  filter.SetMaxDelay(500);
+  filter.set_capacity_kbps(10000);
+  filter.set_max_delay_ms(500);
   RunFor(60 * 1000);
 }
 
 TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
-  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
-  filter.SetCapacity(200);
-  filter.SetMaxDelay(500);
+  filter.set_capacity_kbps(200);
+  filter.set_max_delay_ms(500);
   RunFor(60 * 1000);
-  filter.SetCapacity(30);
+  filter.set_capacity_kbps(30);
   RunFor(60 * 1000);
-  filter.SetCapacity(200);
+  filter.set_capacity_kbps(200);
   RunFor(60 * 1000);
 }
 
@@ -162,12 +162,12 @@ TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
-  filter.SetCapacity(200);
-  filter.SetMaxDelay(500);
+  filter.set_capacity_kbps(200);
+  filter.set_max_delay_ms(500);
   RunFor(60 * 1000);
-  filter.SetCapacity(30);
+  filter.set_capacity_kbps(30);
   RunFor(60 * 1000);
-  filter.SetCapacity(200);
+  filter.set_capacity_kbps(200);
   RunFor(60 * 1000);
 }
 
@@ -176,11 +176,49 @@ TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
   VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
-  filter.SetMaxDelay(500);
+  filter.set_max_delay_ms(500);
   RateCounterFilter counter2(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
   ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
   RunFor(300 * 1000);
+}
+
+TEST_P(BweSimulation, LinearIncreasingCapacity) {
+  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000000);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
+  ChokeFilter filter(&uplink_, 0);
+  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
+  filter.set_max_delay_ms(500);
+  const int kStartingCapacityKbps = 150;
+  const int kEndingCapacityKbps = 1500;
+  const int kStepKbps = 5;
+  const int kStepTimeMs = 1000;
+
+  for (int i = kStartingCapacityKbps; i <= kEndingCapacityKbps;
+       i += kStepKbps) {
+    filter.set_capacity_kbps(i);
+    RunFor(kStepTimeMs);
+  }
+}
+
+TEST_P(BweSimulation, LinearDecreasingCapacity) {
+  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000000);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
+  ChokeFilter filter(&uplink_, 0);
+  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
+  filter.set_max_delay_ms(500);
+  const int kStartingCapacityKbps = 1500;
+  const int kEndingCapacityKbps = 150;
+  const int kStepKbps = -5;
+  const int kStepTimeMs = 1000;
+
+  for (int i = kStartingCapacityKbps; i >= kEndingCapacityKbps;
+       i += kStepKbps) {
+    filter.set_capacity_kbps(i);
+    RunFor(kStepTimeMs);
+  }
 }
 
 TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
@@ -188,7 +226,7 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
   PacedVideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
-  filter.SetMaxDelay(500);
+  filter.set_max_delay_ms(500);
   RateCounterFilter counter2(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
   ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
@@ -196,20 +234,21 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweSimulation, SelfFairnessTest) {
-  const int kAllFlowIds[] = {0, 1, 2};
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  const int kAllFlowIds[] = {0, 1, 2, 3};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  rtc::scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
+  rtc::scoped_ptr<VideoSource> sources[kNumFlows];
   rtc::scoped_ptr<VideoSender> senders[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
-    sources[i].reset(
-        new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0, i * 20000));
+    sources[i].reset(new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0,
+                                             i * (rand() % 40000)));
     senders[i].reset(new VideoSender(&uplink_, sources[i].get(), GetParam()));
   }
 
   ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
-  choke.SetCapacity(1000);
+  choke.set_capacity_kbps(1000);
 
   rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
@@ -229,12 +268,12 @@ TEST_P(BweSimulation, SelfFairnessTest) {
   RunFor(30 * 60 * 1000);
 }
 
-TEST_P(BweSimulation, PacedSelfFairnessTest) {
+TEST_P(BweSimulation, PacedSelfFairness50msTest) {
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 50);
 }
 
-TEST_P(BweSimulation, PacedTcpFairnessTest) {
+TEST_P(BweSimulation, PacedSelfFairness500msTest) {
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 500);
 }
@@ -258,6 +297,7 @@ TEST_P(BweSimulation, TcpFairness1000msTest) {
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000);
 }
+
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe
 }  // namespace testing

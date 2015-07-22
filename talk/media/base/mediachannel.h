@@ -152,12 +152,14 @@ struct AudioOptions {
     stereo_swapping.SetFrom(change.stereo_swapping);
     audio_jitter_buffer_max_packets.SetFrom(
         change.audio_jitter_buffer_max_packets);
+    audio_jitter_buffer_fast_accelerate.SetFrom(
+        change.audio_jitter_buffer_fast_accelerate);
     typing_detection.SetFrom(change.typing_detection);
     aecm_generate_comfort_noise.SetFrom(change.aecm_generate_comfort_noise);
     conference_mode.SetFrom(change.conference_mode);
     adjust_agc_delta.SetFrom(change.adjust_agc_delta);
     experimental_agc.SetFrom(change.experimental_agc);
-    experimental_aec.SetFrom(change.experimental_aec);
+    extended_filter_aec.SetFrom(change.extended_filter_aec);
     delay_agnostic_aec.SetFrom(change.delay_agnostic_aec);
     experimental_ns.SetFrom(change.experimental_ns);
     aec_dump.SetFrom(change.aec_dump);
@@ -183,11 +185,13 @@ struct AudioOptions {
         highpass_filter == o.highpass_filter &&
         stereo_swapping == o.stereo_swapping &&
         audio_jitter_buffer_max_packets == o.audio_jitter_buffer_max_packets &&
+        audio_jitter_buffer_fast_accelerate ==
+            o.audio_jitter_buffer_fast_accelerate &&
         typing_detection == o.typing_detection &&
         aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
         conference_mode == o.conference_mode &&
         experimental_agc == o.experimental_agc &&
-        experimental_aec == o.experimental_aec &&
+        extended_filter_aec == o.extended_filter_aec &&
         delay_agnostic_aec == o.delay_agnostic_aec &&
         experimental_ns == o.experimental_ns &&
         adjust_agc_delta == o.adjust_agc_delta &&
@@ -215,12 +219,14 @@ struct AudioOptions {
     ost << ToStringIfSet("swap", stereo_swapping);
     ost << ToStringIfSet("audio_jitter_buffer_max_packets",
                          audio_jitter_buffer_max_packets);
+    ost << ToStringIfSet("audio_jitter_buffer_fast_accelerate",
+                         audio_jitter_buffer_fast_accelerate);
     ost << ToStringIfSet("typing", typing_detection);
     ost << ToStringIfSet("comfort_noise", aecm_generate_comfort_noise);
     ost << ToStringIfSet("conference", conference_mode);
     ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
-    ost << ToStringIfSet("experimental_aec", experimental_aec);
+    ost << ToStringIfSet("extended_filter_aec", extended_filter_aec);
     ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("aec_dump", aec_dump);
@@ -255,13 +261,15 @@ struct AudioOptions {
   Settable<bool> stereo_swapping;
   // Audio receiver jitter buffer (NetEq) max capacity in number of packets.
   Settable<int> audio_jitter_buffer_max_packets;
+  // Audio receiver jitter buffer (NetEq) fast accelerate mode.
+  Settable<bool> audio_jitter_buffer_fast_accelerate;
   // Audio processing to detect typing.
   Settable<bool> typing_detection;
   Settable<bool> aecm_generate_comfort_noise;
   Settable<bool> conference_mode;
   Settable<int> adjust_agc_delta;
   Settable<bool> experimental_agc;
-  Settable<bool> experimental_aec;
+  Settable<bool> extended_filter_aec;
   Settable<bool> delay_agnostic_aec;
   Settable<bool> experimental_ns;
   Settable<bool> aec_dump;
@@ -319,7 +327,6 @@ struct VideoOptions {
         change.system_low_adaptation_threshhold);
     system_high_adaptation_threshhold.SetFrom(
         change.system_high_adaptation_threshhold);
-    buffered_mode_latency.SetFrom(change.buffered_mode_latency);
     dscp.SetFrom(change.dscp);
     suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
     unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
@@ -348,7 +355,7 @@ struct VideoOptions {
                o.system_low_adaptation_threshhold &&
            system_high_adaptation_threshhold ==
                o.system_high_adaptation_threshhold &&
-           buffered_mode_latency == o.buffered_mode_latency && dscp == o.dscp &&
+           dscp == o.dscp &&
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
            unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
            use_simulcast_adapter == o.use_simulcast_adapter &&
@@ -377,7 +384,6 @@ struct VideoOptions {
     ost << ToStringIfSet("process", process_adaptation_threshhold);
     ost << ToStringIfSet("low", system_low_adaptation_threshhold);
     ost << ToStringIfSet("high", system_high_adaptation_threshhold);
-    ost << ToStringIfSet("buffered mode latency", buffered_mode_latency);
     ost << ToStringIfSet("dscp", dscp);
     ost << ToStringIfSet("suspend below min bitrate",
                          suspend_below_min_bitrate);
@@ -431,8 +437,6 @@ struct VideoOptions {
   Settable<float> system_low_adaptation_threshhold;
   // High threshhold for cpu adaptation.  (Adapt down)
   Settable<float> system_high_adaptation_threshhold;
-  // Specify buffered mode latency in milliseconds.
-  Settable<int> buffered_mode_latency;
   // Set DSCP value for packet sent from video channel.
   Settable<bool> dscp;
   // Enable WebRTC suspension of video. No video frames will be sent when the
@@ -776,14 +780,15 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         expand_rate(0),
         speech_expand_rate(0),
         secondary_decoded_rate(0),
+        accelerate_rate(0),
+        preemptive_expand_rate(0),
         decoding_calls_to_silence_generator(0),
         decoding_calls_to_neteq(0),
         decoding_normal(0),
         decoding_plc(0),
         decoding_cng(0),
         decoding_plc_cng(0),
-        capture_start_ntp_time_ms(-1) {
-  }
+        capture_start_ntp_time_ms(-1) {}
 
   int ext_seqnum;
   int jitter_ms;
@@ -797,6 +802,10 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   float speech_expand_rate;
   // fraction of data out of secondary decoding, including FEC and RED.
   float secondary_decoded_rate;
+  // Fraction of data removed through time compression.
+  float accelerate_rate;
+  // Fraction of data inserted through time stretching.
+  float preemptive_expand_rate;
   int decoding_calls_to_silence_generator;
   int decoding_calls_to_neteq;
   int decoding_normal;

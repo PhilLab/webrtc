@@ -269,7 +269,7 @@ std::string OutputFilePath(std::string name,
   ss << output_rate / 1000 << "_pcm";
 
   std::string filename = ss.str();
-  if (temp_filenames[filename] == "")
+  if (temp_filenames[filename].empty())
     temp_filenames[filename] = test::TempFilename(test::OutputPath(), filename);
   return temp_filenames[filename];
 }
@@ -893,7 +893,7 @@ TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
             apm_->echo_cancellation()->enable_delay_logging(true));
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
   Config config;
-  config.Set<ReportedDelay>(new ReportedDelay(true));
+  config.Set<DelayAgnostic>(new DelayAgnostic(false));
   apm_->SetExtraOptions(config);
 
   // Internally in the AEC the amount of lookahead the delay estimation can
@@ -1588,7 +1588,7 @@ TEST_F(ApmTest, SplittingFilter) {
   // Make sure we have extended filter enabled. This makes sure nothing is
   // touched until we have a farend frame.
   Config config;
-  config.Set<DelayCorrection>(new DelayCorrection(true));
+  config.Set<ExtendedFilter>(new ExtendedFilter(true));
   apm_->SetExtraOptions(config);
   SetFrameTo(frame_, 1000);
   frame_copy.CopyFrom(*frame_);
@@ -1970,8 +1970,8 @@ TEST_F(ApmTest, Process) {
 
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    config.Set<DelayCorrection>(
-        new DelayCorrection(test->use_aec_extended_filter()));
+    config.Set<ExtendedFilter>(
+        new ExtendedFilter(test->use_aec_extended_filter()));
     apm_.reset(AudioProcessing::Create(config));
 
     EnableAllComponents();

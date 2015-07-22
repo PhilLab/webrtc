@@ -16,7 +16,8 @@
 #include "webrtc/experiments.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/pacing/include/packet_router.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -43,22 +44,21 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         clock_(clock),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
-        rbe_(RemoteBitrateEstimatorFactory().Create(observer_,
+        rbe_(new RemoteBitrateEstimatorSingleStream(observer_,
                                                     clock_,
-                                                    kAimdControl,
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
-        packets_since_absolute_send_time_(0) {
-  }
+        packets_since_absolute_send_time_(0) {}
 
   virtual ~WrappingBitrateEstimator() {}
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
-                      const RTPHeader& header) override {
+                      const RTPHeader& header,
+                      bool was_paced) override {
     CriticalSectionScoped cs(crit_sect_.get());
     PickEstimatorFromHeader(header);
-    rbe_->IncomingPacket(arrival_time_ms, payload_size, header);
+    rbe_->IncomingPacket(arrival_time_ms, payload_size, header, was_paced);
   }
 
   int32_t Process() override {
@@ -121,11 +121,11 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
     if (using_absolute_send_time_) {
-      rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-          observer_, clock_, kAimdControl, min_bitrate_bps_));
+      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_, clock_,
+                                                       min_bitrate_bps_));
     } else {
-      rbe_.reset(RemoteBitrateEstimatorFactory().Create(
-          observer_, clock_, kAimdControl, min_bitrate_bps_));
+      rbe_.reset(new RemoteBitrateEstimatorSingleStream(observer_, clock_,
+                                                        min_bitrate_bps_));
     }
   }
 
@@ -193,7 +193,11 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int engine_id,
                                      Transport* transport,
                                      int number_of_cores,
+                                     const std::vector<uint32_t>& ssrcs,
                                      bool disable_default_encoder) {
+  // TODO(pbos): Remove checks for empty ssrcs and add this check when there's
+  // no base channel.
+  // DCHECK(!ssrcs.empty());
   rtc::scoped_ptr<ViEEncoder> vie_encoder(
       new ViEEncoder(channel_id, number_of_cores, *config_.get(),
                      *process_thread_, pacer_.get(), bitrate_allocator_.get(),
@@ -203,7 +207,8 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   }
   ViEEncoder* encoder = vie_encoder.get();
   if (!CreateChannel(channel_id, engine_id, transport, number_of_cores,
-                     vie_encoder.release(), true, disable_default_encoder)) {
+                     vie_encoder.release(), ssrcs.empty() ? 1 : ssrcs.size(),
+                     true, disable_default_encoder)) {
     return false;
   }
   ViEChannel* channel = channel_map_[channel_id];
@@ -211,14 +216,11 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   encoder->StartThreadsAndSetSharedMembers(channel->send_payload_router(),
                                            channel->vcm_protection_callback());
 
-  // Register the ViEEncoder to get key frame requests for this channel.
-  unsigned int ssrc = 0;
-  int stream_idx = 0;
-  channel->GetLocalSSRC(stream_idx, &ssrc);
-  encoder_state_feedback_->AddEncoder(ssrc, encoder);
-  std::vector<uint32_t> ssrcs;
-  ssrcs.push_back(ssrc);
-  encoder->SetSsrcs(ssrcs);
+  if (!ssrcs.empty()) {
+    encoder_state_feedback_->AddEncoder(ssrcs, encoder);
+    std::vector<uint32_t> first_ssrc(1, ssrcs[0]);
+    encoder->SetSsrcs(first_ssrc);
+  }
   return true;
 }
 
@@ -230,7 +232,7 @@ bool ChannelGroup::CreateReceiveChannel(int channel_id,
                                         bool disable_default_encoder) {
   ViEEncoder* encoder = GetEncoder(base_channel_id);
   return CreateChannel(channel_id, engine_id, transport, number_of_cores,
-                       encoder, false, disable_default_encoder);
+                       encoder, 1, false, disable_default_encoder);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
@@ -238,16 +240,18 @@ bool ChannelGroup::CreateChannel(int channel_id,
                                  Transport* transport,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
+                                 size_t max_rtp_streams,
                                  bool sender,
                                  bool disable_default_encoder) {
   DCHECK(vie_encoder);
 
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
       channel_id, engine_id, number_of_cores, *config_.get(), transport,
-      *process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
+      process_thread_, encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      pacer_.get(), packet_router_.get(), sender, disable_default_encoder));
+      pacer_.get(), packet_router_.get(), max_rtp_streams, sender,
+      disable_default_encoder));
   if (channel->Init() != 0) {
     return false;
   }
@@ -474,10 +478,8 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
   int pad_up_to_bitrate_bps = 0;
   {
     CriticalSectionScoped lock(encoder_map_cs_.get());
-    for (const auto& encoder : send_encoders_) {
-      pad_up_to_bitrate_bps +=
-          encoder.second->GetPaddingNeededBps(target_bitrate_bps);
-    }
+    for (const auto& encoder : send_encoders_)
+      pad_up_to_bitrate_bps += encoder.second->GetPaddingNeededBps();
   }
   pacer_->UpdateBitrate(
       target_bitrate_bps / 1000,

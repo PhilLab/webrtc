@@ -151,6 +151,7 @@ class BitrateEstimatorTest : public test::CallTest {
     // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
+    receive_config_.rtp.remb = true;
     receive_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
     receive_config_.rtp.extensions.push_back(
@@ -203,6 +204,10 @@ class BitrateEstimatorTest : public test::CallTest {
       if (receive_audio) {
         AudioReceiveStream::Config receive_config;
         receive_config.rtp.remote_ssrc = test_->send_config_.rtp.ssrcs[0];
+        // Bogus non-default id to prevent hitting a DCHECK when creating the
+        // AudioReceiveStream. Every receive stream has to correspond to an
+        // underlying channel id.
+        receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
         audio_receive_stream_ = test_->receiver_call_->CreateAudioReceiveStream(
@@ -271,13 +276,16 @@ class BitrateEstimatorTest : public test::CallTest {
   std::vector<Stream*> streams_;
 };
 
+static const char* kAbsSendTimeLog =
+    "RemoteBitrateEstimatorAbsSendTime: Instantiating.";
+static const char* kSingleStreamLog =
+    "RemoteBitrateEstimatorSingleStream: Instantiating.";
+
 TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
@@ -285,13 +293,10 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
 TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForAudio) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   receiver_trace_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_trace_.PushExpectedLogLine(
-      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, true));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
@@ -299,30 +304,24 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForAudio) {
 TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   receiver_trace_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_trace_.PushExpectedLogLine(
-      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
 
 TEST_F(BitrateEstimatorTest, SwitchesToASTForAudio) {
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, true));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
   receiver_trace_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_trace_.PushExpectedLogLine(
-      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, true));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
@@ -330,18 +329,15 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForAudio) {
 TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 
   send_config_.rtp.extensions[0] =
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId);
   receiver_trace_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_trace_.PushExpectedLogLine(
-      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
@@ -349,18 +345,15 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
 TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 
   send_config_.rtp.extensions[0] =
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId);
   receiver_trace_.PushExpectedLogLine("Switching to absolute send time RBE.");
-  receiver_trace_.PushExpectedLogLine(
-      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kAbsSendTimeLog);
   streams_.push_back(new Stream(this, false));
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 
@@ -368,8 +361,7 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOFForVideo) {
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId);
   receiver_trace_.PushExpectedLogLine(
       "WrappingBitrateEstimator: Switching to transmission time offset RBE.");
-  receiver_trace_.PushExpectedLogLine(
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(kSingleStreamLog);
   streams_.push_back(new Stream(this, false));
   streams_[0]->StopSending();
   streams_[1]->StopSending();

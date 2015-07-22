@@ -99,6 +99,7 @@ class PeerConnection : public PeerConnectionInterface,
                                    SessionDescriptionInterface* desc);
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc);
+  virtual void SetIceConnectionReceivingTimeout(int timeout_ms);
   // TODO(mallinath) : Deprecated version, remove after all clients are updated.
   virtual bool UpdateIce(const IceServers& configuration,
                          const MediaConstraintsInterface* constraints);
@@ -142,13 +143,14 @@ class PeerConnection : public PeerConnectionInterface,
                                uint32 ssrc) override;
   void OnRemoveLocalVideoTrack(MediaStreamInterface* stream,
                                VideoTrackInterface* video_track) override;
-  virtual void OnRemoveLocalStream(MediaStreamInterface* stream);
+  void OnRemoveLocalStream(MediaStreamInterface* stream) override;
 
   // Implements IceObserver
-  virtual void OnIceConnectionChange(IceConnectionState new_state);
-  virtual void OnIceGatheringChange(IceGatheringState new_state);
-  virtual void OnIceCandidate(const IceCandidateInterface* candidate);
-  virtual void OnIceComplete();
+  void OnIceConnectionChange(IceConnectionState new_state) override;
+  void OnIceGatheringChange(IceGatheringState new_state) override;
+  void OnIceCandidate(const IceCandidateInterface* candidate) override;
+  void OnIceComplete() override;
+  void OnIceConnectionReceivingChange(bool receiving) override;
 
   // Signals from WebRtcSession.
   void OnSessionStateChange(cricket::BaseSession* session,

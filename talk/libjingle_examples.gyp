@@ -201,9 +201,36 @@
 
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.8")', {
       'targets': [
-        { 'target_name': 'apprtc_signaling',
+        {
+          'target_name': 'apprtc_common',
+          'type': 'static_library',
+          'sources': [
+            'examples/objc/AppRTCDemo/common/ARDLogging.h',
+            'examples/objc/AppRTCDemo/common/ARDLogging.mm',
+            'examples/objc/AppRTCDemo/common/ARDUtilities.h',
+            'examples/objc/AppRTCDemo/common/ARDUtilities.m',
+          ],
+          'include_dirs': [
+            'examples/objc/AppRTCDemo/common',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'examples/objc/AppRTCDemo/common',
+            ],
+          },
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+              },
+            }],
+          ],
+        },
+        {
+          'target_name': 'apprtc_signaling',
           'type': 'static_library',
           'dependencies': [
+            'apprtc_common',
             'libjingle.gyp:libjingle_peerconnection_objc',
             'socketrocket',
           ],
@@ -222,12 +249,12 @@
             'examples/objc/AppRTCDemo/ARDMessageResponse.m',
             'examples/objc/AppRTCDemo/ARDMessageResponse+Internal.h',
             'examples/objc/AppRTCDemo/ARDRoomServerClient.h',
+            'examples/objc/AppRTCDemo/ARDSDPUtils.h',
+            'examples/objc/AppRTCDemo/ARDSDPUtils.m',
             'examples/objc/AppRTCDemo/ARDSignalingChannel.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
             'examples/objc/AppRTCDemo/ARDSignalingMessage.m',
             'examples/objc/AppRTCDemo/ARDTURNClient.h',
-            'examples/objc/AppRTCDemo/ARDUtilities.h',
-            'examples/objc/AppRTCDemo/ARDUtilities.m',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
             'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
             'examples/objc/AppRTCDemo/RTCICECandidate+JSON.h',
@@ -264,12 +291,15 @@
           'product_name': 'AppRTCDemo',
           'mac_bundle': 1,
           'dependencies': [
+            'apprtc_common',
             'apprtc_signaling',
           ],
           'conditions': [
             ['OS=="ios"', {
               'mac_bundle_resources': [
-                'examples/objc/AppRTCDemo/ios/resources/Default-568h.png',
+                'examples/objc/AppRTCDemo/ios/resources/iPhone5@2x.png',
+                'examples/objc/AppRTCDemo/ios/resources/iPhone6@2x.png',
+                'examples/objc/AppRTCDemo/ios/resources/iPhone6p@3x.png',
                 'examples/objc/AppRTCDemo/ios/resources/Roboto-Regular.ttf',
                 'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp.png',
                 'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp@2x.png',
@@ -339,6 +369,9 @@
                 # warning so we can compile successfully.
                 'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
                 'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+                # SRWebSocket.m uses code with partial availability.
+                # https://code.google.com/p/webrtc/issues/detail?id=4695
+                'WARNING_CFLAGS!': ['-Wpartial-availability'],
               },
             }],
           ],

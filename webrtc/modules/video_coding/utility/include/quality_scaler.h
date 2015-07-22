@@ -15,37 +15,45 @@
 #include "webrtc/modules/video_coding/utility/include/moving_average.h"
 
 namespace webrtc {
-const int kDefaultLowQpDenominator = 3;
 class QualityScaler {
  public:
+  static const int kDefaultLowQpDenominator;
+  static const int kDefaultMinDownscaleDimension;
   struct Resolution {
     int width;
     int height;
   };
 
   QualityScaler();
-  void Init(int low_qp_threshold);
+  void Init(int low_qp_threshold, bool use_framerate_reduction);
   void SetMinResolution(int min_width, int min_height);
   void ReportFramerate(int framerate);
   void ReportQP(int qp);
   void ReportDroppedFrame();
   void Reset(int framerate, int bitrate, int width, int height);
-  Resolution GetScaledResolution(const I420VideoFrame& frame);
-  const I420VideoFrame& GetScaledFrame(const I420VideoFrame& frame);
+  void OnEncodeFrame(const VideoFrame& frame);
+  Resolution GetScaledResolution() const;
+  const VideoFrame& GetScaledFrame(const VideoFrame& frame);
+  int GetTargetFramerate() const;
 
  private:
   void AdjustScale(bool up);
   void ClearSamples();
 
   Scaler scaler_;
-  I420VideoFrame scaled_frame_;
+  VideoFrame scaled_frame_;
 
   size_t num_samples_;
+  int framerate_;
+  int target_framerate_;
   int low_qp_threshold_;
   MovingAverage<int> framedrop_percent_;
   MovingAverage<int> average_qp_;
+  Resolution res_;
 
   int downscale_shift_;
+  int framerate_down_;
+  bool use_framerate_reduction_;
   int min_width_;
   int min_height_;
 };

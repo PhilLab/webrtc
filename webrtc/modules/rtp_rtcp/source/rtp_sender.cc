@@ -355,10 +355,8 @@ int RTPSender::SendPayloadFrequency() const {
 int32_t RTPSender::SetMaxPayloadLength(size_t max_payload_length,
                                        uint16_t packet_over_head) {
   // Sanity check.
-  if (max_payload_length < 100 || max_payload_length > IP_PACKET_SIZE) {
-    LOG(LS_ERROR) << "Invalid max payload length: " << max_payload_length;
-    return -1;
-  }
+  DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)
+      << "Invalid max payload length: " << max_payload_length;
   CriticalSectionScoped cs(send_critsect_.get());
   max_payload_length_ = max_payload_length;
   packet_over_head_ = packet_over_head;
@@ -504,7 +502,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
     return -1;
   }
 
-  uint32_t ret_val;
+  int32_t ret_val;
   if (audio_configured_) {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", capture_timestamp,
                             "Send", "type", FrameTypeToString(frame_type));
@@ -958,12 +956,12 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes) {
+  if (bytes == 0)
+    return 0;
   {
     CriticalSectionScoped cs(send_critsect_.get());
     if (!sending_media_) return 0;
   }
-  if (bytes == 0)
-    return 0;
   size_t bytes_sent = TrySendRedundantPayloads(bytes);
   if (bytes_sent < bytes)
     bytes_sent += TrySendPadData(bytes - bytes_sent);
@@ -1099,26 +1097,6 @@ uint16_t RTPSender::AllocateSequenceNumber(uint16_t packets_to_send) {
   uint16_t first_allocated_sequence_number = sequence_number_;
   sequence_number_ += packets_to_send;
   return first_allocated_sequence_number;
-}
-
-void RTPSender::ResetDataCounters() {
-  uint32_t ssrc;
-  uint32_t ssrc_rtx;
-  bool report_rtx;
-  {
-    CriticalSectionScoped ssrc_lock(send_critsect_.get());
-    ssrc = ssrc_;
-    ssrc_rtx = ssrc_rtx_;
-    report_rtx = rtx_ != kRtxOff;
-  }
-  CriticalSectionScoped lock(statistics_crit_.get());
-  rtp_stats_ = StreamDataCounters();
-  rtx_rtp_stats_ = StreamDataCounters();
-  if (rtp_stats_callback_) {
-    rtp_stats_callback_->DataCountersUpdated(rtp_stats_, ssrc);
-    if (report_rtx)
-      rtp_stats_callback_->DataCountersUpdated(rtx_rtp_stats_, ssrc_rtx);
-  }
 }
 
 void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
@@ -1758,24 +1736,18 @@ int32_t RTPSender::SendRTPIntraRequest() {
   return video_->SendRTPIntraRequest();
 }
 
-int32_t RTPSender::SetGenericFECStatus(bool enable,
-                                       uint8_t payload_type_red,
-                                       uint8_t payload_type_fec) {
-  if (audio_configured_) {
-    return -1;
-  }
+void RTPSender::SetGenericFECStatus(bool enable,
+                                    uint8_t payload_type_red,
+                                    uint8_t payload_type_fec) {
+  DCHECK(!audio_configured_);
   video_->SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
-  return 0;
 }
 
-int32_t RTPSender::GenericFECStatus(bool* enable,
+void RTPSender::GenericFECStatus(bool* enable,
                                     uint8_t* payload_type_red,
                                     uint8_t* payload_type_fec) const {
-  if (audio_configured_) {
-    return -1;
-  }
+  DCHECK(!audio_configured_);
   video_->GenericFECStatus(*enable, *payload_type_red, *payload_type_fec);
-  return 0;
 }
 
 int32_t RTPSender::SetFecParameters(

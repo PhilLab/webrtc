@@ -250,6 +250,14 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
+  void OnIceConnectionReceivingChange(bool receiving) override {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jmethodID m = GetMethodID(
+        jni(), *j_observer_class_, "onIceConnectionReceivingChange", "(Z)V");
+    jni()->CallVoidMethod(*j_observer_global_, m, receiving);
+    CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  }
+
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {
     ScopedLocalRefFrame local_ref_frame(jni());
@@ -559,15 +567,23 @@ class DataChannelObserverWrapper : public DataChannelObserver {
       : j_observer_global_(jni, j_observer),
         j_observer_class_(jni, GetObjectClass(jni, j_observer)),
         j_buffer_class_(jni, FindClass(jni, "org/webrtc/DataChannel$Buffer")),
-        j_on_state_change_mid_(GetMethodID(jni, *j_observer_class_,
-                                           "onStateChange", "()V")),
+        j_on_buffered_amount_change_mid_(GetMethodID(
+            jni, *j_observer_class_, "onBufferedAmountChange", "(J)V")),
+        j_on_state_change_mid_(
+            GetMethodID(jni, *j_observer_class_, "onStateChange", "()V")),
         j_on_message_mid_(GetMethodID(jni, *j_observer_class_, "onMessage",
                                       "(Lorg/webrtc/DataChannel$Buffer;)V")),
-        j_buffer_ctor_(GetMethodID(jni, *j_buffer_class_,
-                                   "<init>", "(Ljava/nio/ByteBuffer;Z)V")) {
-  }
+        j_buffer_ctor_(GetMethodID(jni, *j_buffer_class_, "<init>",
+                                   "(Ljava/nio/ByteBuffer;Z)V")) {}
 
   virtual ~DataChannelObserverWrapper() {}
+
+  void OnBufferedAmountChange(uint64 previous_amount) override {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jni()->CallVoidMethod(*j_observer_global_, j_on_buffered_amount_change_mid_,
+                          previous_amount);
+    CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  }
 
   void OnStateChange() override {
     ScopedLocalRefFrame local_ref_frame(jni());
@@ -593,6 +609,7 @@ class DataChannelObserverWrapper : public DataChannelObserver {
   const ScopedGlobalRef<jobject> j_observer_global_;
   const ScopedGlobalRef<jclass> j_observer_class_;
   const ScopedGlobalRef<jclass> j_buffer_class_;
+  const jmethodID j_on_buffered_amount_change_mid_;
   const jmethodID j_on_state_change_mid_;
   const jmethodID j_on_message_mid_;
   const jmethodID j_buffer_ctor_;
@@ -1157,11 +1174,18 @@ JOW(void, PeerConnectionFactory_nativeSetOptions)(
       jni->GetFieldID(options_class, "networkIgnoreMask", "I");
   int network_ignore_mask =
       jni->GetIntField(options, network_ignore_mask_field);
+
+  jfieldID disable_encryption_field =
+      jni->GetFieldID(options_class, "disableEncryption", "Z");
+  bool disable_encryption =
+      jni->GetBooleanField(options, disable_encryption_field);
+
   PeerConnectionFactoryInterface::Options options_to_set;
 
   // This doesn't necessarily match the c++ version of this struct; feel free
   // to add more parameters as necessary.
   options_to_set.network_ignore_mask = network_ignore_mask;
+  options_to_set.disable_encryption = disable_encryption;
   factory->SetOptions(options_to_set);
 }
 
@@ -1330,6 +1354,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   jfieldID j_audio_jitter_buffer_max_packets_id = GetFieldID(
       jni, j_rtc_config_class, "audioJitterBufferMaxPackets",
       "I");
+  jfieldID j_audio_jitter_buffer_fast_accelerate_id = GetFieldID(
+      jni, j_rtc_config_class, "audioJitterBufferFastAccelerate", "Z");
   PeerConnectionInterface::RTCConfiguration rtc_config;
 
   rtc_config.type =
@@ -1342,6 +1368,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   JavaIceServersToJsepIceServers(jni, j_ice_servers, &rtc_config.servers);
   rtc_config.audio_jitter_buffer_max_packets =
       GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);
+  rtc_config.audio_jitter_buffer_fast_accelerate = GetBooleanField(
+      jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
 
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
@@ -1456,6 +1484,13 @@ JOW(void, PeerConnection_setRemoteDescription)(
           jni, j_observer, reinterpret_cast<ConstraintsWrapper*>(NULL)));
   ExtractNativePC(jni, j_pc)->SetRemoteDescription(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
+}
+
+JOW(void, PeerConnection_setIceConnectionReceivingTimeout)(JNIEnv* jni,
+                                                           jobject j_pc,
+                                                           jint timeout_ms) {
+  return ExtractNativePC(jni, j_pc)
+      ->SetIceConnectionReceivingTimeout(timeout_ms);
 }
 
 JOW(jboolean, PeerConnection_updateIce)(

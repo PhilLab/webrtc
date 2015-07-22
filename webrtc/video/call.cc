@@ -72,6 +72,10 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   PacketReceiver* Receiver() override;
 
+  webrtc::AudioSendStream* CreateAudioSendStream(
+      const webrtc::AudioSendStream::Config& config) override;
+  void DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) override;
+
   webrtc::AudioReceiveStream* CreateAudioReceiveStream(
       const webrtc::AudioReceiveStream::Config& config) override;
   void DestroyAudioReceiveStream(
@@ -105,6 +109,9 @@ class Call : public webrtc::Call, public PacketReceiver {
   void SetBitrateControllerConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config);
 
+  void ConfigureSync(const std::string& sync_group)
+      EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
+
   const int num_cpu_cores_;
   const rtc::scoped_ptr<ProcessThread> module_process_thread_;
   const rtc::scoped_ptr<ChannelGroup> channel_group_;
@@ -125,6 +132,8 @@ class Call : public webrtc::Call, public PacketReceiver {
   std::map<uint32_t, VideoReceiveStream*> video_receive_ssrcs_
       GUARDED_BY(receive_crit_);
   std::set<VideoReceiveStream*> video_receive_streams_
+      GUARDED_BY(receive_crit_);
+  std::map<std::string, AudioReceiveStream*> sync_stream_mapping_
       GUARDED_BY(receive_crit_);
 
   rtc::scoped_ptr<RWLockWrapper> send_crit_;
@@ -171,8 +180,9 @@ Call::Call(const Call::Config& config)
 
   // TODO(pbos): Remove base channel when CreateReceiveChannel no longer
   // requires one.
-  CHECK(channel_group_->CreateSendChannel(
-      base_channel_id_, 0, &transport_adapter_, num_cpu_cores_, true));
+  CHECK(channel_group_->CreateSendChannel(base_channel_id_, 0,
+                                          &transport_adapter_, num_cpu_cores_,
+                                          std::vector<uint32_t>(), true));
 
   if (config.overuse_callback) {
     overuse_observer_proxy_.reset(
@@ -196,6 +206,14 @@ Call::~Call() {
 
 PacketReceiver* Call::Receiver() { return this; }
 
+webrtc::AudioSendStream* Call::CreateAudioSendStream(
+    const webrtc::AudioSendStream::Config& config) {
+  return nullptr;
+}
+
+void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
+}
+
 webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
@@ -207,6 +225,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
         audio_receive_ssrcs_.end());
     audio_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
+    ConfigureSync(config.sync_group);
   }
   return receive_stream;
 }
@@ -222,6 +241,13 @@ void Call::DestroyAudioReceiveStream(
     size_t num_deleted = audio_receive_ssrcs_.erase(
         audio_receive_stream->config().rtp.remote_ssrc);
     DCHECK(num_deleted == 1);
+    const std::string& sync_group = audio_receive_stream->config().sync_group;
+    const auto it = sync_stream_mapping_.find(sync_group);
+    if (it != sync_stream_mapping_.end() &&
+        it->second == audio_receive_stream) {
+      sync_stream_mapping_.erase(it);
+      ConfigureSync(sync_group);
+    }
   }
   delete audio_receive_stream;
 }
@@ -312,8 +338,11 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
     video_receive_ssrcs_[it->second.ssrc] = receive_stream;
   video_receive_streams_.insert(receive_stream);
 
+  ConfigureSync(config.sync_group);
+
   if (!network_enabled_)
     receive_stream->SignalNetworkState(kNetworkDown);
+
   return receive_stream;
 }
 
@@ -321,7 +350,6 @@ void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
   DCHECK(receive_stream != nullptr);
-
   VideoReceiveStream* receive_stream_impl = nullptr;
   {
     WriteLockScoped write_lock(*receive_crit_);
@@ -339,8 +367,9 @@ void Call::DestroyVideoReceiveStream(
       }
     }
     video_receive_streams_.erase(receive_stream_impl);
+    CHECK(receive_stream_impl != nullptr);
+    ConfigureSync(receive_stream_impl->config().sync_group);
   }
-  CHECK(receive_stream_impl != nullptr);
   delete receive_stream_impl;
 }
 
@@ -412,6 +441,54 @@ void Call::SignalNetworkState(NetworkState state) {
     ReadLockScoped write_lock(*receive_crit_);
     for (auto& kv : video_receive_ssrcs_) {
       kv.second->SignalNetworkState(state);
+    }
+  }
+}
+
+void Call::ConfigureSync(const std::string& sync_group) {
+  // Set sync only if there was no previous one.
+  if (config_.voice_engine == nullptr || sync_group.empty())
+    return;
+
+  AudioReceiveStream* sync_audio_stream = nullptr;
+  // Find existing audio stream.
+  const auto it = sync_stream_mapping_.find(sync_group);
+  if (it != sync_stream_mapping_.end()) {
+    sync_audio_stream = it->second;
+  } else {
+    // No configured audio stream, see if we can find one.
+    for (const auto& kv : audio_receive_ssrcs_) {
+      if (kv.second->config().sync_group == sync_group) {
+        if (sync_audio_stream != nullptr) {
+          LOG(LS_WARNING) << "Attempting to sync more than one audio stream "
+                             "within the same sync group. This is not "
+                             "supported in the current implementation.";
+          break;
+        }
+        sync_audio_stream = kv.second;
+      }
+    }
+  }
+  if (sync_audio_stream)
+    sync_stream_mapping_[sync_group] = sync_audio_stream;
+  size_t num_synced_streams = 0;
+  for (VideoReceiveStream* video_stream : video_receive_streams_) {
+    if (video_stream->config().sync_group != sync_group)
+      continue;
+    ++num_synced_streams;
+    if (num_synced_streams > 1) {
+      // TODO(pbos): Support synchronizing more than one A/V pair.
+      // https://code.google.com/p/webrtc/issues/detail?id=4762
+      LOG(LS_WARNING) << "Attempting to sync more than one audio/video pair "
+                         "within the same sync group. This is not supported in "
+                         "the current implementation.";
+    }
+    // Only sync the first A/V pair within this sync group.
+    if (sync_audio_stream != nullptr && num_synced_streams == 1) {
+      video_stream->SetSyncChannel(config_.voice_engine,
+                                   sync_audio_stream->config().voe_channel_id);
+    } else {
+      video_stream->SetSyncChannel(config_.voice_engine, -1);
     }
   }
 }

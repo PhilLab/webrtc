@@ -15,17 +15,17 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/frame_callback.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/frame_callback.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
-#include "webrtc/video_engine/vie_capturer.h"
+#include "webrtc/video/video_capture_input.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -63,12 +63,11 @@ class ViEEncoderObserver {
   virtual ~ViEEncoderObserver() {}
 };
 
-class ViEEncoder
-    : public RtcpIntraFrameObserver,
-      public VideoEncoderRateObserver,
-      public VCMPacketizationCallback,
-      public VCMSendStatisticsCallback,
-      public ViEFrameCallback {
+class ViEEncoder : public RtcpIntraFrameObserver,
+                   public VideoEncoderRateObserver,
+                   public VCMPacketizationCallback,
+                   public VCMSendStatisticsCallback,
+                   public VideoCaptureCallback {
  public:
   friend class ViEBitrateObserver;
 
@@ -89,7 +88,7 @@ class ViEEncoder
   // Ideally this would be done in Init, but the dependencies between ViEEncoder
   // and ViEChannel makes it really hard to do in a good way.
   void StartThreadsAndSetSharedMembers(
-      scoped_refptr<PayloadRouter> send_payload_router,
+      rtc::scoped_refptr<PayloadRouter> send_payload_router,
       VCMProtectionCallback* vcm_protection_callback);
 
   // This function must be called before the corresponding ViEChannel is
@@ -122,8 +121,8 @@ class ViEEncoder
   // Scale or crop/pad image.
   int32_t ScaleInputImage(bool enable);
 
-  // Implementing ViEFrameCallback.
-  void DeliverFrame(I420VideoFrame video_frame) override;
+  // Implementing VideoCaptureCallback.
+  void DeliverFrame(VideoFrame video_frame) override;
 
   int32_t SendKeyFrame();
   int32_t SendCodecStatistics(uint32_t* num_key_frames,
@@ -178,7 +177,7 @@ class ViEEncoder
 
   int channel_id() const { return channel_id_; }
 
-  int GetPaddingNeededBps(int bitrate_bps) const;
+  int GetPaddingNeededBps() const;
 
  protected:
   // Called by BitrateObserver.
@@ -200,7 +199,7 @@ class ViEEncoder
   const rtc::scoped_ptr<VideoProcessingModule> vpm_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
   const rtc::scoped_ptr<VideoCodingModule> vcm_;
-  scoped_refptr<PayloadRouter> send_payload_router_;
+  rtc::scoped_refptr<PayloadRouter> send_payload_router_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;

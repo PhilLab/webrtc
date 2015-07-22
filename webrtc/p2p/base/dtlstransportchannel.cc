@@ -118,6 +118,8 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       &DtlsTransportChannelWrapper::OnRouteChange);
   channel_->SignalConnectionRemoved.connect(this,
       &DtlsTransportChannelWrapper::OnConnectionRemoved);
+  channel_->SignalReceivingState.connect(this,
+      &DtlsTransportChannelWrapper::OnReceivingState);
 }
 
 DtlsTransportChannelWrapper::~DtlsTransportChannelWrapper() {
@@ -163,15 +165,16 @@ bool DtlsTransportChannelWrapper::GetLocalIdentity(
   return true;
 }
 
-void DtlsTransportChannelWrapper::SetMaxProtocolVersion(
+bool DtlsTransportChannelWrapper::SetSslMaxProtocolVersion(
     rtc::SSLProtocolVersion version) {
   if (dtls_state_ != STATE_NONE) {
     LOG(LS_ERROR) << "Not changing max. protocol version "
                   << "while DTLS is negotiating";
-    return;
+    return false;
   }
 
   ssl_max_version_ = version;
+  return true;
 }
 
 bool DtlsTransportChannelWrapper::SetSslRole(rtc::SSLRole role) {
@@ -452,6 +455,18 @@ void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
     case STATE_CLOSED:
       // Should not happen. Do nothing
       break;
+  }
+}
+
+void DtlsTransportChannelWrapper::OnReceivingState(TransportChannel* channel) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+  ASSERT(channel == channel_);
+  LOG_J(LS_VERBOSE, this)
+      << "DTLSTransportChannelWrapper: channel receiving state changed to "
+      << channel_->receiving();
+  if (dtls_state_ == STATE_NONE || dtls_state_ == STATE_OPEN) {
+    // Note: SignalReceivingState fired by set_receiving.
+    set_receiving(channel_->receiving());
   }
 }
 

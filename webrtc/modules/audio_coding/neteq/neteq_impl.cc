@@ -315,9 +315,10 @@ NetEqPlayoutMode NetEqImpl::PlayoutMode() const {
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
   CriticalSectionScoped lock(crit_sect_.get());
   assert(decoder_database_.get());
-  const int total_samples_in_buffers = packet_buffer_->NumSamplesInBuffer(
-      decoder_database_.get(), decoder_frame_length_) +
-          static_cast<int>(sync_buffer_->FutureLength());
+  const int total_samples_in_buffers =
+      packet_buffer_->NumSamplesInBuffer(decoder_database_.get(),
+                                         decoder_frame_length_) +
+      static_cast<int>(sync_buffer_->FutureLength());
   assert(delay_manager_.get());
   assert(decision_logic_.get());
   stats_.GetNetworkStatistics(fs_hz_, total_samples_in_buffers,
@@ -704,8 +705,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   return 0;
 }
 
-int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
-                                int* samples_per_channel, int* num_channels) {
+int NetEqImpl::GetAudioInternal(size_t max_length,
+                                int16_t* output,
+                                int* samples_per_channel,
+                                int* num_channels) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
   Operations operation;
@@ -788,7 +791,8 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     }
     case kAudioRepetitionIncreaseTimestamp: {
       // TODO(hlundin): Write test for this.
-      sync_buffer_->IncreaseEndTimestamp(output_size_samples_);
+      sync_buffer_->IncreaseEndTimestamp(
+          static_cast<uint32_t>(output_size_samples_));
       // Skipping break on purpose. Execution should move on into the
       // next case.
       FALLTHROUGH();
@@ -881,7 +885,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     }
   } else {
     // Use dead reckoning to estimate the |playout_timestamp_|.
-    playout_timestamp_ += output_size_samples_;
+    playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
   }
 
   if (decode_return_value) return decode_return_value;
@@ -940,9 +944,10 @@ int NetEqImpl::GetDecision(Operations* operation,
   }
 
   // Check if it is time to play a DTMF event.
-  if (dtmf_buffer_->GetEvent(end_timestamp +
-                             decision_logic_->generated_noise_samples(),
-                             dtmf_event)) {
+  if (dtmf_buffer_->GetEvent(
+      static_cast<uint32_t>(
+          end_timestamp + decision_logic_->generated_noise_samples()),
+      dtmf_event)) {
     *play_dtmf = true;
   }
 
@@ -1030,7 +1035,8 @@ int NetEqImpl::GetDecision(Operations* operation,
       if (decision_logic_->generated_noise_samples() > 0 &&
           last_mode_ != kModeDtmf) {
         // Make a jump in timestamp due to the recently played comfort noise.
-        uint32_t timestamp_jump = decision_logic_->generated_noise_samples();
+        uint32_t timestamp_jump =
+            static_cast<uint32_t>(decision_logic_->generated_noise_samples());
         sync_buffer_->IncreaseEndTimestamp(timestamp_jump);
         timestamp_ += timestamp_jump;
       }
@@ -1224,7 +1230,8 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
   if (*decoded_length < 0) {
     // Error returned from the decoder.
     *decoded_length = 0;
-    sync_buffer_->IncreaseEndTimestamp(decoder_frame_length_);
+    sync_buffer_->IncreaseEndTimestamp(
+        static_cast<uint32_t>(decoder_frame_length_));
     int error_code = 0;
     if (decoder)
       error_code = decoder->ErrorCode();
@@ -1271,7 +1278,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
            *operation == kPreemptiveExpand);
     packet_list->pop_front();
     size_t payload_length = packet->payload_length;
-    int16_t decode_length;
+    int decode_length;
     if (packet->sync_packet) {
       // Decode to silence with the same frame size as the last decode.
       LOG(LS_VERBOSE) << "Decoding sync-packet: " <<
@@ -1520,10 +1527,10 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
     borrowed_samples_per_channel = static_cast<int>(required_samples -
         decoded_length_per_channel);
     // Calculate how many of these were already played out.
-    old_borrowed_samples_per_channel = static_cast<int>(
-        borrowed_samples_per_channel - sync_buffer_->FutureLength());
-    old_borrowed_samples_per_channel = std::max(
-        0, old_borrowed_samples_per_channel);
+    const int future_length = static_cast<int>(sync_buffer_->FutureLength());
+    old_borrowed_samples_per_channel =
+        (borrowed_samples_per_channel > future_length) ?
+        (borrowed_samples_per_channel - future_length) : 0;
     memmove(&decoded_buffer[borrowed_samples_per_channel * num_channels],
             decoded_buffer,
             sizeof(int16_t) * decoded_length);
@@ -1719,7 +1726,8 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   //    algorithm_buffer_->PopFront(sync_buffer_->FutureLength());
   //  }
 
-  sync_buffer_->IncreaseEndTimestamp(output_size_samples_);
+  sync_buffer_->IncreaseEndTimestamp(
+      static_cast<uint32_t>(output_size_samples_));
   expand_->Reset();
   last_mode_ = kModeDtmf;
 
@@ -1749,7 +1757,7 @@ void NetEqImpl::DoAlternativePlc(bool increase_timestamp) {
     stats_.AddZeros(length);
   }
   if (increase_timestamp) {
-    sync_buffer_->IncreaseEndTimestamp(length);
+    sync_buffer_->IncreaseEndTimestamp(static_cast<uint32_t>(length));
   }
   expand_->Reset();
 }

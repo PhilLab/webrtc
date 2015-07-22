@@ -472,10 +472,7 @@ int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
 }
 
 int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
-  if (mtu > IP_PACKET_SIZE) {
-    LOG(LS_ERROR) << "Invalid mtu: " << mtu;
-    return -1;
-  }
+  DCHECK_LE(mtu, IP_PACKET_SIZE) << "Invalid mtu: " << mtu;
   return rtp_sender_.SetMaxPayloadLength(mtu - packet_overhead_,
                                          packet_overhead_);
 }
@@ -493,12 +490,11 @@ void ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
   rtcp_receiver_.SetRTCPStatus(method);
 }
 
-int32_t ModuleRtpRtcpImpl::SetCNAME(const char c_name[RTCP_CNAME_SIZE]) {
+int32_t ModuleRtpRtcpImpl::SetCNAME(const char* c_name) {
   return rtcp_sender_.SetCNAME(c_name);
 }
 
-int32_t ModuleRtpRtcpImpl::AddMixedCNAME(uint32_t ssrc,
-                                         const char c_name[RTCP_CNAME_SIZE]) {
+int32_t ModuleRtpRtcpImpl::AddMixedCNAME(uint32_t ssrc, const char* c_name) {
   return rtcp_sender_.AddMixedCNAME(ssrc, c_name);
 }
 
@@ -539,12 +535,6 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
     *rtt = rtt_ms();
   }
   return ret;
-}
-
-// Reset RTP data counters for the sending side.
-int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
-  rtp_sender_.ResetDataCounters();
-  return 0;  // TODO(pwestin): change to void.
 }
 
 // Force a send of an RTCP packet.
@@ -609,6 +599,31 @@ void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
     StreamDataCounters* rtp_counters,
     StreamDataCounters* rtx_counters) const {
   rtp_sender_.GetDataCounters(rtp_counters, rtx_counters);
+}
+
+void ModuleRtpRtcpImpl::GetRtpPacketLossStats(
+    bool outgoing,
+    uint32_t ssrc,
+    struct RtpPacketLossStats* loss_stats) const {
+  if (!loss_stats) return;
+  const PacketLossStats* stats_source = NULL;
+  if (outgoing) {
+    if (SSRC() == ssrc) {
+      stats_source = &send_loss_stats_;
+    }
+  } else {
+    if (rtcp_receiver_.RemoteSSRC() == ssrc) {
+      stats_source = &receive_loss_stats_;
+    }
+  }
+  if (stats_source) {
+    loss_stats->single_packet_loss_count =
+        stats_source->GetSingleLossCount();
+    loss_stats->multiple_packet_loss_event_count =
+        stats_source->GetMultipleLossEventCount();
+    loss_stats->multiple_packet_loss_packet_count =
+        stats_source->GetMultipleLossPacketCount();
+  }
 }
 
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {
@@ -684,6 +699,9 @@ int ModuleRtpRtcpImpl::SetSelectiveRetransmissions(uint8_t settings) {
 // Send a Negative acknowledgment packet.
 int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                                     const uint16_t size) {
+  for (int i = 0; i < size; ++i) {
+    receive_loss_stats_.AddLostPacket(nack_list[i]);
+  }
   uint16_t nack_length = size;
   uint16_t start_id = 0;
   int64_t now = clock_->TimeInMilliseconds();
@@ -816,20 +834,17 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
       GetFeedbackState(), kRtcpSli, 0, 0, false, picture_id);
 }
 
-int32_t ModuleRtpRtcpImpl::SetGenericFECStatus(
+void ModuleRtpRtcpImpl::SetGenericFECStatus(
     const bool enable,
     const uint8_t payload_type_red,
     const uint8_t payload_type_fec) {
-  return rtp_sender_.SetGenericFECStatus(enable,
-                                         payload_type_red,
-                                         payload_type_fec);
+  rtp_sender_.SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
 }
 
-int32_t ModuleRtpRtcpImpl::GenericFECStatus(
-    bool& enable,
-    uint8_t& payload_type_red,
-    uint8_t& payload_type_fec) {
-  return rtp_sender_.GenericFECStatus(&enable, &payload_type_red,
+void ModuleRtpRtcpImpl::GenericFECStatus(bool& enable,
+                                         uint8_t& payload_type_red,
+                                         uint8_t& payload_type_fec) {
+  rtp_sender_.GenericFECStatus(&enable, &payload_type_red,
                                       &payload_type_fec);
 }
 
@@ -899,6 +914,9 @@ bool ModuleRtpRtcpImpl::SendTimeOfXrRrReport(
 
 void ModuleRtpRtcpImpl::OnReceivedNACK(
     const std::list<uint16_t>& nack_sequence_numbers) {
+  for (uint16_t nack_sequence_number : nack_sequence_numbers) {
+    send_loss_stats_.AddLostPacket(nack_sequence_number);
+  }
   if (!rtp_sender_.StorePackets() ||
       nack_sequence_numbers.size() == 0) {
     return;
