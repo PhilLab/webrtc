@@ -254,10 +254,11 @@
             'signal_processing/downsample_fast_neon.c',
             'signal_processing/min_max_operations_neon.c',
           ],
-          'conditions': [
-            ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
-              'defines': [
-                'WEBRTC_HAS_NEON',
+          # Disable LTO in common_audio_neon target due to compiler bug
+          ['use_lto==1', {
+            'cflags!': [
+              '-flto',
+              '-ffat-lto-objects',
               ],
             }],
           ],
