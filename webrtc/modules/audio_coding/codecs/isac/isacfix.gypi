@@ -80,7 +80,24 @@
             'WEBRTC_LINUX',
           ],
         }],
-        ['target_arch=="arm" and arm_version>=7', {
+        ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+          'rules': [
+          {
+            'rule_name': 'gas_preprocessor',
+            'extension': 'S',
+            'inputs': [
+             ],
+             'outputs': [
+               '<(INTERMEDIATE_DIR)/<(RULE_INPUT_ROOT).obj',
+             ],
+             'action': [
+               'perl ../build/gas-preprocessor/gas-preprocessor.pl -as-type armasm -force-thumb -- armasm -oldit -I../../ -c <(RULE_INPUT_PATH) -o <(INTERMEDIATE_DIR)/<(RULE_INPUT_ROOT).obj'
+             ],
+             'process_outputs_as_sources': 0,
+             'message': 'Compiling <(RULE_INPUT_PATH)',
+           }],
+         }],
+        ['(target_arch=="arm" and arm_version>=7) or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
           'sources': [
             'fix/source/lattice_armv7.S',
             'fix/source/pitch_filter_armv6.S',
@@ -131,7 +148,7 @@
     },
   ],
   'conditions': [
-    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64"', {
+    ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64" or target_arch=="arm64" or winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
       'targets': [
         {
           'target_name': 'isac_neon',
@@ -153,6 +170,23 @@
                 '-flto',
                 '-ffat-lto-objects',
               ],
+            }],
+          ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+            'rules': [
+            {
+              'rule_name': 'gas_preprocessor',
+              'extension': 'S',
+              'inputs': [
+               ],
+               'outputs': [
+                 '<(INTERMEDIATE_DIR)/<(RULE_INPUT_ROOT).obj',
+               ],
+               'action': [
+                 'perl ../build/gas-preprocessor/gas-preprocessor.pl -as-type armasm -force-thumb -- armasm -oldit -I../../ -c <(RULE_INPUT_PATH) -o <(INTERMEDIATE_DIR)/<(RULE_INPUT_ROOT).obj'
+               ],
+               'process_outputs_as_sources': 0,
+               'message': 'Compiling <(RULE_INPUT_PATH)',
+             }],
             }],
             # Disable AllpassFilter2FixDec16Neon function due to a clang
             # bug. Refer more details at:

@@ -353,6 +353,13 @@
         ],
         # Re-enable some warnings that Chromium disables.
         'msvs_disabled_warnings!': [4189,],
+        'conditions': [
+          ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
+           'defines': [
+             'WEBRTC_HAS_NEON',
+           ],
+          }],
+        ],
       }],
       ['OS=="android"', {
         'defines': [

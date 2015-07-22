@@ -144,12 +144,6 @@
         ['agc_debug_dump==1', {
           'defines': ['WEBRTC_AGC_DEBUG_DUMP',],
         }],
-        # TODO(winrt): this should be removed when WEBRTC_HAS_NEON is enabled for entire WebRTC
-        ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
-           'defines': [
-             'WEBRTC_HAS_NEON',
-           ],
-        }],
         # TODO(winrt) disabled protobuf to temporary fix the ARM build
         ['enable_protobuf==1 and winrt_platform!="win_phone"', {
           'dependencies': ['audioproc_debug_proto'],

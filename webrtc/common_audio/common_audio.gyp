@@ -263,11 +263,6 @@
                 '-ffat-lto-objects',
               ],
             }],
-            ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
-              'defines': [
-                'WEBRTC_HAS_NEON',
-              ],
-            }],
           ],
         },
       ],  # targets
