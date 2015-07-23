@@ -18,6 +18,7 @@ namespace webrtc {
 namespace videocapturemodule {
 
 ref class CaptureDevice;
+ref class DisplayOrientation;
 
 class CaptureDeviceListener {
  public:
@@ -28,9 +29,15 @@ class CaptureDeviceListener {
     Platform::String^ message) = 0;
 };
 
+class DisplayOrientationListener {
+  public:
+    virtual void DisplayOrientationChanged(Windows::Graphics::Display::DisplayOrientations orientation) = 0;
+};
+
 class VideoCaptureWinRT
     : public VideoCaptureImpl,
-      public CaptureDeviceListener {
+      public CaptureDeviceListener,
+      public DisplayOrientationListener{
  public:
   explicit VideoCaptureWinRT(const int32_t id);
 
@@ -52,9 +59,16 @@ class VideoCaptureWinRT
   virtual void OnCaptureDeviceFailed(HRESULT code,
                                      Platform::String^ message);
 
+  virtual void DisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations orientation);
+  virtual void ApplyDisplayOrientation(
+    Windows::Graphics::Display::DisplayOrientations orientation);
+
  private:
   Platform::String^ device_id_;
   CaptureDevice^ device_;
+  Windows::Devices::Enumeration::Panel camera_location_;
+  DisplayOrientation^ display_orientation_;
 };
 
 }  // namespace videocapturemodule

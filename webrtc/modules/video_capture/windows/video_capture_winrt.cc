@@ -31,6 +31,8 @@ using Windows::Media::MediaProperties::IVideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingProfile;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
 using Windows::Media::MediaProperties::VideoEncodingProperties;
+using Windows::Graphics::Display::DisplayInformation;
+using Windows::Graphics::Display::DisplayOrientations;
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -315,9 +317,61 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
   }
 }
 
+ref class DisplayOrientation sealed {
+ public:
+  virtual ~DisplayOrientation();
+
+ internal:
+  DisplayOrientation(DisplayOrientationListener* listener);
+  void OnOrientationChanged(
+    Windows::Graphics::Display::DisplayInformation^ sender,
+    Platform::Object^ args);
+
+  property DisplayOrientations orientation;
+ private:
+  DisplayOrientationListener* listener_;
+  DisplayInformation^ display_info;
+  Windows::Foundation::EventRegistrationToken
+    orientation_changed_registration_token_;
+};
+
+DisplayOrientation::~DisplayOrientation() {
+  display_info->OrientationChanged::remove(
+    orientation_changed_registration_token_);
+}
+
+DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
+  : listener_(listener) {
+  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+  Windows::UI::Core::CoreDispatcherPriority priority =
+    Windows::UI::Core::CoreDispatcherPriority::Normal;
+  Windows::UI::Core::DispatchedHandler^ handler =
+    ref new Windows::UI::Core::DispatchedHandler(
+      [this]() {
+        display_info = DisplayInformation::GetForCurrentView();
+        orientation = display_info->CurrentOrientation;
+        orientation_changed_registration_token_ =
+          display_info->OrientationChanged::add(
+          ref new Windows::Foundation::TypedEventHandler<DisplayInformation^,
+          Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
+    });
+  Windows::Foundation::IAsyncAction^ action =
+    dispatcher->RunAsync(priority, handler);
+  Concurrency::create_task(action).wait();
+}
+
+void DisplayOrientation::OnOrientationChanged(DisplayInformation^ sender,
+  Platform::Object^ args) {
+  orientation = sender->CurrentOrientation;
+  if (listener_)
+    listener_->DisplayOrientationChanged(sender->CurrentOrientation);
+}
+
 VideoCaptureWinRT::VideoCaptureWinRT(const int32_t id)
   : VideoCaptureImpl(id),
-    device_(nullptr) {
+    device_(nullptr),
+    camera_location_(Windows::Devices::Enumeration::Panel::Unknown),
+    display_orientation_(ref new DisplayOrientation(this)) {
   _captureDelay = 120;
 }
 
@@ -366,6 +420,10 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
           (const char*)device_unique_id,
           device_unique_id_length) == 0) {
           device_id_ = dev_info->Id;
+          if (dev_info->EnclosureLocation != nullptr)
+            camera_location_ = dev_info->EnclosureLocation->Panel;
+          else
+            camera_location_ = Windows::Devices::Enumeration::Panel::Unknown;
           break;
         }
       }
@@ -482,6 +540,7 @@ int32_t VideoCaptureWinRT::StartCapture(
   }
 
   try {
+    ApplyDisplayOrientation(display_orientation_->orientation);
     device_->StartCapture(media_encoding_profile, video_encoding_properties);
   } catch (Platform::Exception^ e) {
     int message_size = WideCharToMultiByte(
@@ -498,6 +557,40 @@ int32_t VideoCaptureWinRT::StartCapture(
   }
 
   return 0;
+}
+
+void VideoCaptureWinRT::DisplayOrientationChanged(
+  DisplayOrientations orientation) {
+  ApplyDisplayOrientation(orientation);
+}
+
+void VideoCaptureWinRT::ApplyDisplayOrientation(
+  DisplayOrientations orientation) {
+  if (camera_location_ == Windows::Devices::Enumeration::Panel::Unknown)
+    return;
+  switch (orientation) {
+    case Windows::Graphics::Display::DisplayOrientations::Portrait:
+      if (camera_location_ == Windows::Devices::Enumeration::Panel::Front)
+        SetCaptureRotation(VideoRotation::kVideoRotation_270);
+      else
+        SetCaptureRotation(VideoRotation::kVideoRotation_90);
+      break;
+    case Windows::Graphics::Display::DisplayOrientations::PortraitFlipped:
+      if (camera_location_ == Windows::Devices::Enumeration::Panel::Front)
+        SetCaptureRotation(VideoRotation::kVideoRotation_90);
+      else
+        SetCaptureRotation(VideoRotation::kVideoRotation_270);
+      break;
+    case Windows::Graphics::Display::DisplayOrientations::Landscape:
+      SetCaptureRotation(VideoRotation::kVideoRotation_0);
+      break;
+    case Windows::Graphics::Display::DisplayOrientations::LandscapeFlipped:
+      SetCaptureRotation(VideoRotation::kVideoRotation_180);
+      break;
+    default:
+      SetCaptureRotation(VideoRotation::kVideoRotation_0);
+      break;
+  }
 }
 
 int32_t VideoCaptureWinRT::StopCapture() {
