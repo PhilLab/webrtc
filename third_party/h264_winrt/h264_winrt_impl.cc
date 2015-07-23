@@ -78,7 +78,7 @@ namespace webrtc {
     }
 
     int H264WinRTEncoderImpl::Encode(
-        const I420VideoFrame& frame,
+        const VideoFrame& frame,
         const CodecSpecificInfo* codec_specific_info,
         const std::vector<VideoFrameType>* frame_types) {
         TRACE_EVENT1("webrtc", "h264_winrt::Encode", "timestamp", frame.timestamp());

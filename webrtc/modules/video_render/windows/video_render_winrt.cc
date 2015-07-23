@@ -118,7 +118,7 @@ void VideoChannelWinRT::Unlock() {
   crit_sect_->Leave();
 }
 
-webrtc::I420VideoFrame& VideoChannelWinRT::GetVideoFrame() {
+webrtc::VideoFrame& VideoChannelWinRT::GetVideoFrame() {
   return video_frame_;
 }
 
@@ -164,7 +164,7 @@ int VideoChannelWinRT::FrameSizeChange(int width,
 }
 
 int32_t VideoChannelWinRT::RenderFrame(const uint32_t stream_id,
-  const I420VideoFrame& video_frame) {
+  const VideoFrame& video_frame) {
   if (width_ != video_frame.width() || height_ != video_frame.height()) {
     if (FrameSizeChange(video_frame.width(), video_frame.height(), 1) == -1) {
       return -1;
@@ -174,7 +174,7 @@ int32_t VideoChannelWinRT::RenderFrame(const uint32_t stream_id,
 }
 
 // Called from video engine when a new frame should be rendered.
-int VideoChannelWinRT::DeliverFrame(const I420VideoFrame& video_frame) {
+int VideoChannelWinRT::DeliverFrame(const VideoFrame& video_frame) {
   CriticalSectionScoped cs(crit_sect_);
 
   LOG(LS_VERBOSE) << "DeliverFrame to VideoChannelWinRT";

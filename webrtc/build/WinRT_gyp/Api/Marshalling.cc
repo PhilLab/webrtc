@@ -190,7 +190,7 @@ namespace webrtc_winrt_api_internal {
     outObj->reset(webrtc::CreateIceCandidate(
       FromCx(inObj->SdpMid),
       inObj->SdpMLineIndex,
-      FromCx(inObj->Candidate)));
+      FromCx(inObj->Candidate), nullptr));
   }
 
   void ToCx(
@@ -230,7 +230,7 @@ namespace webrtc_winrt_api_internal {
     rtc::scoped_ptr<webrtc::SessionDescriptionInterface>* outObj) {
     outObj->reset(webrtc::CreateSessionDescription(
       FromCx(inObj->Type->Value),
-      FromCx(inObj->Sdp)));
+      FromCx(inObj->Sdp), nullptr));
   }
 
   void ToCx(

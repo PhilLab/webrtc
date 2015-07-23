@@ -1412,7 +1412,7 @@ __override HRESULT VideoRenderMediaSourceWinRT::ValidateOperation(_In_ VideoRend
   return S_OK;
 }
 
-void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const I420VideoFrame& videoFrame) {
+void VideoRenderMediaSourceWinRT::ProcessVideoFrame(const VideoFrame& videoFrame) {
   if (_eSourceState == SourceState_Started) {
     // Convert packet to MF sample
     ComPtr<VideoRenderMediaStreamWinRT> spStream;

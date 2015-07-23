@@ -14,9 +14,9 @@
 #include <functional>
 #include <string>
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "stats_observer_etw.h"
 
 namespace webrtc_winrt_api {
