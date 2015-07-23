@@ -49,6 +49,8 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
                                                             //incoming frame ready(ex.: remote stream), in this case, this initial value will
                                                             //make sure we will at least create a small dumy frame.
 
+  webrtc_winrt_api::ResolutionHelper::FireEvent(id, streamState->_videoDesc->EncodingProperties->Width, streamState->_videoDesc->EncodingProperties->Height);
+
   streamState->_videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
@@ -164,6 +166,7 @@ void RTMediaStreamSource::OnSampleRequested(
       {
         _videoDesc->EncodingProperties->Width = _frame->GetWidth();
         _videoDesc->EncodingProperties->Height = _frame->GetHeight();
+        webrtc_winrt_api::ResolutionHelper::FireEvent(_id, _videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height);
       }
     }
     hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height, libyuv::FOURCC_NV12, FALSE,
@@ -171,6 +174,7 @@ void RTMediaStreamSource::OnSampleRequested(
     if (FAILED(hr)) {
       return;
     }
+
     spSample->AddBuffer(mediaBuffer.Get());
 
     if (_frame.get() != nullptr)
@@ -276,6 +280,14 @@ void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id, Platform::Strin
     Windows::UI::Core::CoreDispatcherPriority::Normal,
     ref new Windows::UI::Core::DispatchedHandler([id, str] {
       FramesPerSecondChanged(id, str);
+  }));
+}
+
+void webrtc_winrt_api::ResolutionHelper::FireEvent(String^ id, unsigned int width, unsigned int heigth) {
+  g_windowDispatcher->RunAsync(
+    Windows::UI::Core::CoreDispatcherPriority::Normal,
+    ref new Windows::UI::Core::DispatchedHandler([id, width, heigth] {
+    ResolutionChanged(id, width, heigth);
   }));
 }
 
