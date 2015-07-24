@@ -162,7 +162,7 @@
       ['target_arch=="arm" or target_arch=="arm64"', {
         'prefer_fixed_point%': 1,
       }],
-      ['(target_arch=="arm" and (arm_neon==1 or arm_neon_optional==1)) or target_arch=="arm64"', {
+      ['(target_arch=="arm" and (arm_neon==1 or arm_neon_optional==1)) or target_arch=="arm64" or (winrt_platform=="win_phone" or  winrt_platform=="win10_arm")', {
         'build_with_neon%': 1,
       }],
       ['(OS!="ios" and (target_arch!="arm" or arm_version>=7) and target_arch!="mips64el") or (winrt_platform=="win_phone" or  winrt_platform=="win10_arm")', {
