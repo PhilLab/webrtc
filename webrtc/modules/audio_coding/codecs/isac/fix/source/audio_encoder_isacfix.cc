@@ -15,7 +15,7 @@
 
 namespace webrtc {
 
-const uint16_t IsacFix::kFixSampleRate;
+const uint16_t IsacFix::kFixSampleRate = 16000;
 
 // Explicit instantiation of AudioEncoderDecoderIsacT<IsacFix>, a.k.a.
 // AudioEncoderDecoderIsacFix.

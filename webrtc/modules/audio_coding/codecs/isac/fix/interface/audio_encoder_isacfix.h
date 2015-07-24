@@ -22,7 +22,7 @@ namespace webrtc {
 struct IsacFix {
   typedef ISACFIX_MainStruct instance_type;
   static const bool has_swb = false;
-  static const uint16_t kFixSampleRate = 16000;
+  static const uint16_t kFixSampleRate;
   static inline int16_t Control(instance_type* inst,
                                 int32_t rate,
                                 int framesize) {
