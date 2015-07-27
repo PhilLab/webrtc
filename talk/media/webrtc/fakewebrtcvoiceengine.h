@@ -152,6 +152,7 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB(StartDebugRecording, (const char filename[kMaxFilenameSize]));
   WEBRTC_STUB(StartDebugRecording, (FILE* handle));
   WEBRTC_STUB(StopDebugRecording, ());
+  WEBRTC_VOID_STUB(UpdateHistogramsOnCallEnd, ());
   webrtc::EchoCancellation* echo_cancellation() const override { return NULL; }
   webrtc::EchoControlMobile* echo_control_mobile() const override {
     return NULL;
@@ -216,7 +217,8 @@ class FakeWebRtcVoiceEngine
           send_absolute_sender_time_ext_(-1),
           receive_absolute_sender_time_ext_(-1),
           associate_send_channel(-1),
-          neteq_capacity(-1) {
+          neteq_capacity(-1),
+          neteq_fast_accelerate(false) {
       memset(&send_codec, 0, sizeof(send_codec));
       memset(&rx_agc_config, 0, sizeof(rx_agc_config));
     }
@@ -254,6 +256,7 @@ class FakeWebRtcVoiceEngine
     webrtc::PacketTime last_rtp_packet_time;
     std::list<std::string> packets;
     int neteq_capacity;
+    bool neteq_fast_accelerate;
   };
 
   FakeWebRtcVoiceEngine(const cricket::AudioCodec* const* codecs,
@@ -409,6 +412,8 @@ class FakeWebRtcVoiceEngine
     if (config.Get<webrtc::NetEqCapacityConfig>().enabled) {
       ch->neteq_capacity = config.Get<webrtc::NetEqCapacityConfig>().capacity;
     }
+    ch->neteq_fast_accelerate =
+        config.Get<webrtc::NetEqFastAccelerate>().enabled;
     channels_[++last_channel_] = ch;
     return last_channel_;
   }
@@ -1192,6 +1197,11 @@ class FakeWebRtcVoiceEngine
     auto ch = channels_.find(last_channel_);
     ASSERT(ch != channels_.end());
     return ch->second->neteq_capacity;
+  }
+  bool GetNetEqFastAccelerate() const {
+    auto ch = channels_.find(last_channel_);
+    ASSERT(ch != channels_.end());
+    return ch->second->neteq_fast_accelerate;
   }
 
  private:

@@ -15,13 +15,14 @@ function rtpAnalyze( input_file )
 % in the file PATENTS.  All contributing project authors may
 % be found in the AUTHORS file in the root of the source tree.
 
-
-
 [SeqNo,TimeStamp,ArrTime,Size,PT,M,SSRC] = importfile(input_file);
 
-%% Find streams
+%% Find streams.
 [uSSRC, ~, uix] = unique(SSRC);
 
+% If there are multiple streams, select one and purge the other
+% streams from the data vectors. If there is only one stream, the
+% vectors are good to use as they are.
 if length(uSSRC) > 1
     for i=1:length(uSSRC)
         uPT = unique(PT(uix == i));
@@ -36,7 +37,8 @@ if length(uSSRC) > 1
     if sel < 1 || sel > length(uSSRC)
         error('Out of range');
     end
-    ix = find(uix==sel);
+    ix = find(uix == sel);
+    % This is where the data vectors are trimmed.
     SeqNo = SeqNo(ix);
     TimeStamp = TimeStamp(ix);
     ArrTime = ArrTime(ix);
@@ -46,11 +48,11 @@ if length(uSSRC) > 1
     SSRC = SSRC(ix);
 end
 
-%% Unwrap SeqNo and TimeStamp
+%% Unwrap SeqNo and TimeStamp.
 SeqNoUW = maxUnwrap(SeqNo, 65535);
 TimeStampUW = maxUnwrap(TimeStamp, 4294967295);
 
-%% Generate some stats for the stream
+%% Generate some stats for the stream.
 fprintf('Statistics:\n');
 fprintf('SSRC: %s\n', SSRC{1});
 uPT = unique(PT);
@@ -63,9 +65,12 @@ if length(uPT) > 1
 end
 fprintf('\n');
 fprintf('Packets: %i\n', length(SeqNo));
+SortSeqNo = sort(SeqNoUW);
 fprintf('Missing sequence numbers: %i\n', ...
-    length(find(diff(sort(SeqNoUW)) > 1)));
-fprintf('Reordered packets: %i\n', length(find(diff(sort(SeqNoUW)) < 1)));
+    length(find(diff(SortSeqNo) > 1)));
+fprintf('Duplicated packets: %i\n', length(find(diff(SortSeqNo) == 0)));
+reorderIx = findReorderedPackets(SeqNoUW);
+fprintf('Reordered packets: %i\n', length(reorderIx));
 tsdiff = diff(TimeStampUW);
 tsdiff = tsdiff(diff(SeqNoUW) == 1);
 [utsdiff, ~, ixtsdiff] = unique(tsdiff);
@@ -73,10 +78,10 @@ fprintf('Common packet sizes:\n');
 for i = 1:length(utsdiff)
     fprintf('  %i samples (%i%%)\n', ...
         utsdiff(i), ...
-        round(100 * length(find(ixtsdiff==i))/length(ixtsdiff)));
+        round(100 * length(find(ixtsdiff == i))/length(ixtsdiff)));
 end
 
-%% Trying to figure out sample rate
+%% Trying to figure out sample rate.
 fs_est = (TimeStampUW(end) - TimeStampUW(1)) / (ArrTime(end) - ArrTime(1));
 fs_vec = [8, 16, 32, 48];
 fs = 0;
@@ -108,14 +113,27 @@ fprintf('Clock drift: %.2f%%\n', ...
 
 fprintf('Sent average bitrate: %i kbps\n', ...
     round(sum(Size) * 8 / (SendTimeMs(end)-SendTimeMs(1))));
+
 fprintf('Received average bitrate: %i kbps\n', ...
     round(sum(Size) * 8 / (ArrTime(end)-ArrTime(1))));
 
-%% Plots
+%% Plots.
 delay = ArrTime - SendTimeMs;
 delay = delay - min(delay);
+delayOrdered = delay;
+delayOrdered(reorderIx) = nan;  % Set reordered packets to NaN.
+delayReordered = delay(reorderIx);  % Pick the reordered packets.
+sendTimeMsReordered = SendTimeMs(reorderIx);
+
+% Sort time arrays in packet send order.
+[~, sortix] = sort(SeqNoUW);
+SendTimeMs = SendTimeMs(sortix);
+Size = Size(sortix);
+delayOrdered = delayOrdered(sortix);
+
 figure
-plot(SendTimeMs / 1000, delay);
+plot(SendTimeMs / 1000, delayOrdered, ...
+    sendTimeMsReordered / 1000, delayReordered, 'r.');
 xlabel('Send time [s]');
 ylabel('Relative transport delay [ms]');
 title(sprintf('SSRC: %s', SSRC{1}));
@@ -127,6 +145,24 @@ xlabel('Send time [s]');
 ylabel('Send bitrate [kbps]');
 end
 
+%% Subfunctions.
+
+% findReorderedPackets returns the index to all packets that are considered
+% old compared with the largest seen sequence number. The input seqNo must
+% be unwrapped for this to work.
+function reorderIx = findReorderedPackets(seqNo)
+largestSeqNo = seqNo(1);
+reorderIx = [];
+for i = 2:length(seqNo)
+    if seqNo(i) < largestSeqNo
+        reorderIx = [reorderIx; i]; %#ok<AGROW>
+    else
+        largestSeqNo = seqNo(i);
+    end
+end
+end
+
+%% Auto-generated subfunction.
 function [SeqNo,TimeStamp,SendTime,Size,PT,M,SSRC] = ...
     importfile(filename, startRow, endRow)
 %IMPORTFILE Import numeric data from a text file as column vectors.

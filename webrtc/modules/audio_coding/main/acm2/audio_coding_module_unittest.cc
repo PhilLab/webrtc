@@ -507,6 +507,10 @@ TEST_F(AcmIsacMtTest, DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
+// Disabling all of these tests on iOS for now.
+// See https://code.google.com/p/webrtc/issues/detail?id=4768 for details.
+#if !defined(WEBRTC_IOS)
+
 class AcmReceiverBitExactness : public ::testing::Test {
  public:
   static std::string PlatformChecksum(std::string win64,
@@ -969,5 +973,7 @@ TEST_F(AcmSenderBitExactness, MAYBE_Opus_stereo_20ms) {
       50,
       test::AcmReceiveTest::kStereoOutput);
 }
+
+#endif
 
 }  // namespace webrtc

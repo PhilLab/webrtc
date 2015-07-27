@@ -352,11 +352,12 @@ static AudioOptions GetDefaultEngineOptions() {
   options.highpass_filter.Set(true);
   options.stereo_swapping.Set(false);
   options.audio_jitter_buffer_max_packets.Set(50);
+  options.audio_jitter_buffer_fast_accelerate.Set(false);
   options.typing_detection.Set(true);
   options.conference_mode.Set(false);
   options.adjust_agc_delta.Set(0);
   options.experimental_agc.Set(false);
-  options.experimental_aec.Set(false);
+  options.extended_filter_aec.Set(false);
   options.delay_agnostic_aec.Set(false);
   options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
@@ -584,11 +585,15 @@ int WebRtcVoiceEngine::GetCapabilities() {
   return AUDIO_SEND | AUDIO_RECV;
 }
 
-VoiceMediaChannel *WebRtcVoiceEngine::CreateChannel() {
+VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(
+    const AudioOptions& options) {
   WebRtcVoiceMediaChannel* ch = new WebRtcVoiceMediaChannel(this);
   if (!ch->valid()) {
     delete ch;
-    ch = NULL;
+    return nullptr;
+  }
+  if (!ch->SetOptions(options)) {
+    LOG(LS_WARNING) << "Failed to set options while creating channel.";
   }
   return ch;
 }
@@ -656,7 +661,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   agc_mode = webrtc::kAgcFixedDigital;
   options.typing_detection.Set(false);
   options.experimental_agc.Set(false);
-  options.experimental_aec.Set(false);
+  options.extended_filter_aec.Set(false);
   options.experimental_ns.Set(false);
 #endif
 
@@ -667,7 +672,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.delay_agnostic_aec.Get(&use_delay_agnostic_aec)) {
     if (use_delay_agnostic_aec) {
       options.echo_cancellation.Set(true);
-      options.experimental_aec.Set(true);
+      options.extended_filter_aec.Set(true);
       ec_mode = webrtc::kEcConference;
     }
   }
@@ -684,12 +689,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // TODO(henrika): investigate possibility to support built-in EC also
     // in combination with Open SL ES audio.
     const bool built_in_aec = voe_wrapper_->hw()->BuiltInAECIsAvailable();
-    if (built_in_aec && !use_delay_agnostic_aec) {
+    if (built_in_aec) {
       // Built-in EC exists on this device and use_delay_agnostic_aec is not
       // overriding it. Enable/Disable it according to the echo_cancellation
       // audio option.
-      if (voe_wrapper_->hw()->EnableBuiltInAEC(echo_cancellation) == 0 &&
-          echo_cancellation) {
+      const bool enable_built_in_aec =
+          echo_cancellation && !use_delay_agnostic_aec;
+      if (voe_wrapper_->hw()->EnableBuiltInAEC(enable_built_in_aec) == 0 &&
+          enable_built_in_aec) {
         // Disable internal software EC if built-in EC is enabled,
         // i.e., replace the software EC with the built-in EC.
         options.echo_cancellation.Set(false);
@@ -797,6 +804,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         new webrtc::NetEqCapacityConfig(audio_jitter_buffer_max_packets));
   }
 
+  bool audio_jitter_buffer_fast_accelerate;
+  if (options.audio_jitter_buffer_fast_accelerate.Get(
+          &audio_jitter_buffer_fast_accelerate)) {
+    LOG(LS_INFO) << "NetEq fast mode? " << audio_jitter_buffer_fast_accelerate;
+    voe_config_.Set<webrtc::NetEqFastAccelerate>(
+        new webrtc::NetEqFastAccelerate(audio_jitter_buffer_fast_accelerate));
+  }
+
   bool typing_detection;
   if (options.typing_detection.Get(&typing_detection)) {
     LOG(LS_INFO) << "Typing detection is enabled? " << typing_detection;
@@ -829,16 +844,16 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   bool delay_agnostic_aec;
   if (delay_agnostic_aec_.Get(&delay_agnostic_aec)) {
     LOG(LS_INFO) << "Delay agnostic aec is enabled? " << delay_agnostic_aec;
-    config.Set<webrtc::ReportedDelay>(
-        new webrtc::ReportedDelay(!delay_agnostic_aec));
+    config.Set<webrtc::DelayAgnostic>(
+        new webrtc::DelayAgnostic(delay_agnostic_aec));
   }
 
-  experimental_aec_.SetFrom(options.experimental_aec);
-  bool experimental_aec;
-  if (experimental_aec_.Get(&experimental_aec)) {
-    LOG(LS_INFO) << "Experimental aec is enabled? " << experimental_aec;
-    config.Set<webrtc::DelayCorrection>(
-        new webrtc::DelayCorrection(experimental_aec));
+  extended_filter_aec_.SetFrom(options.extended_filter_aec);
+  bool extended_filter;
+  if (extended_filter_aec_.Get(&extended_filter)) {
+    LOG(LS_INFO) << "Extended filter aec is enabled? " << extended_filter;
+    config.Set<webrtc::ExtendedFilter>(
+        new webrtc::ExtendedFilter(extended_filter));
   }
 
   experimental_ns_.SetFrom(options.experimental_ns);
@@ -1609,8 +1624,7 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
                              webrtc::AudioTransport* voe_audio_transport)
       : channel_(ch),
         voe_audio_transport_(voe_audio_transport),
-        renderer_(NULL) {
-  }
+        renderer_(NULL) {}
   ~WebRtcVoiceChannelRenderer() override { Stop(); }
 
   // Starts the rendering by setting a sink to the renderer to get data
@@ -2464,9 +2478,9 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   // delete the channel in case failure happens below.
   webrtc::AudioTransport* audio_transport =
       engine()->voe()->base()->audio_transport();
-  send_channels_.insert(std::make_pair(
-      sp.first_ssrc(),
-      new WebRtcVoiceChannelRenderer(channel, audio_transport)));
+  send_channels_.insert(
+      std::make_pair(sp.first_ssrc(),
+                     new WebRtcVoiceChannelRenderer(channel, audio_transport)));
 
   // Set the send (local) SSRC.
   // If there are multiple send SSRCs, we can only set the first one here, and
@@ -2559,7 +2573,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  TryAddAudioRecvStream(ssrc);
+  DCHECK(receive_stream_params_.find(ssrc) == receive_stream_params_.end());
 
   // Reuse default channel for recv stream in non-conference mode call
   // when the default channel is not being used.
@@ -2568,9 +2582,11 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   if (!InConferenceMode() && default_receive_ssrc_ == 0) {
     LOG(LS_INFO) << "Recv stream " << ssrc << " reuse default channel";
     default_receive_ssrc_ = ssrc;
-    receive_channels_.insert(std::make_pair(
-        default_receive_ssrc_,
-        new WebRtcVoiceChannelRenderer(voe_channel(), audio_transport)));
+    WebRtcVoiceChannelRenderer* channel_renderer =
+        new WebRtcVoiceChannelRenderer(voe_channel(), audio_transport);
+    receive_channels_.insert(std::make_pair(ssrc, channel_renderer));
+    receive_stream_params_[ssrc] = sp;
+    TryAddAudioRecvStream(ssrc);
     return SetPlayout(voe_channel(), playout_);
   }
 
@@ -2586,9 +2602,11 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  receive_channels_.insert(
-      std::make_pair(
-          ssrc, new WebRtcVoiceChannelRenderer(channel, audio_transport)));
+  WebRtcVoiceChannelRenderer* channel_renderer =
+      new WebRtcVoiceChannelRenderer(channel, audio_transport);
+  receive_channels_.insert(std::make_pair(ssrc, channel_renderer));
+  receive_stream_params_[ssrc] = sp;
+  TryAddAudioRecvStream(ssrc);
 
   LOG(LS_INFO) << "New audio stream " << ssrc
                << " registered to VoiceEngine channel #"
@@ -2679,6 +2697,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32 ssrc) {
   }
 
   TryRemoveAudioRecvStream(ssrc);
+  receive_stream_params_.erase(ssrc);
 
   // Delete the WebRtcVoiceChannelRenderer object connected to the channel, this
   // will disconnect the audio renderer with the receive channel.
@@ -3332,6 +3351,10 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
             static_cast<float>(ns.currentSpeechExpandRate) / (1 << 14);
         rinfo.secondary_decoded_rate =
             static_cast<float>(ns.currentSecondaryDecodedRate) / (1 << 14);
+        rinfo.accelerate_rate =
+            static_cast<float>(ns.currentAccelerateRate) / (1 << 14);
+        rinfo.preemptive_expand_rate =
+            static_cast<float>(ns.currentPreemptiveRate) / (1 << 14);
       }
 
       webrtc::AudioDecodingCallStats ds;
@@ -3431,7 +3454,7 @@ int WebRtcVoiceMediaChannel::GetReceiveChannelNum(uint32 ssrc) {
   ChannelMap::iterator it = receive_channels_.find(ssrc);
   if (it != receive_channels_.end())
     return it->second->channel();
-  return (ssrc == default_receive_ssrc_) ?  voe_channel() : -1;
+  return (ssrc == default_receive_ssrc_) ? voe_channel() : -1;
 }
 
 int WebRtcVoiceMediaChannel::GetSendChannelNum(uint32 ssrc) {
@@ -3604,15 +3627,23 @@ bool WebRtcVoiceMediaChannel::SetHeaderExtension(ExtensionSetterFunction setter,
 
 void WebRtcVoiceMediaChannel::TryAddAudioRecvStream(uint32 ssrc) {
   DCHECK(thread_checker_.CalledOnValidThread());
+  WebRtcVoiceChannelRenderer* channel = receive_channels_[ssrc];
+  DCHECK(channel != nullptr);
+  DCHECK(receive_streams_.find(ssrc) == receive_streams_.end());
   // If we are hooked up to a webrtc::Call, create an AudioReceiveStream too.
-  if (call_ && options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false)) {
-    DCHECK(receive_streams_.find(ssrc) == receive_streams_.end());
-    webrtc::AudioReceiveStream::Config config;
-    config.rtp.remote_ssrc = ssrc;
-    config.rtp.extensions = recv_rtp_extensions_;
-    webrtc::AudioReceiveStream* s = call_->CreateAudioReceiveStream(config);
-    receive_streams_.insert(std::make_pair(ssrc, s));
+  if (!call_) {
+    return;
   }
+  webrtc::AudioReceiveStream::Config config;
+  config.rtp.remote_ssrc = ssrc;
+  // Only add RTP extensions if we support combined A/V BWE.
+  if (options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false)) {
+    config.rtp.extensions = recv_rtp_extensions_;
+  }
+  config.voe_channel_id = channel->channel();
+  config.sync_group = receive_stream_params_[ssrc].sync_label;
+  webrtc::AudioReceiveStream* s = call_->CreateAudioReceiveStream(config);
+  receive_streams_.insert(std::make_pair(ssrc, s));
 }
 
 void WebRtcVoiceMediaChannel::TryRemoveAudioRecvStream(uint32 ssrc) {

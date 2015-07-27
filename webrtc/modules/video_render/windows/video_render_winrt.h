@@ -48,9 +48,9 @@ class VideoChannelWinRT : public VideoRenderCallback {
   virtual int FrameSizeChange(int width, int height, int number_of_streams);
 
   // A new frame is delivered.
-  virtual int DeliverFrame(const I420VideoFrame& video_frame);
+  virtual int DeliverFrame(const VideoFrame& video_frame);
   virtual int32_t RenderFrame(const uint32_t stream_id,
-                              const I420VideoFrame& video_frame);
+                              const VideoFrame& video_frame);
 
   // Called to check if the video frame is updated.
   int IsUpdated(bool& is_updated);
@@ -60,7 +60,7 @@ class VideoChannelWinRT : public VideoRenderCallback {
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> GetMediaSource();
   void Lock();
   void Unlock();
-  webrtc::I420VideoFrame& GetVideoFrame();
+  webrtc::VideoFrame& GetVideoFrame();
   int GetWidth();
   int GetHeight();
 
@@ -84,7 +84,7 @@ class VideoChannelWinRT : public VideoRenderCallback {
   IWinRTMediaElement* media_element_;
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT> render_media_source_;
 
-  webrtc::I420VideoFrame video_frame_;
+  webrtc::VideoFrame video_frame_;
 
   bool buffer_is_updated_;
   // the frame size

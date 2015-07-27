@@ -33,8 +33,11 @@ AudioManager::JavaAudioManager::JavaAudioManager(
     : audio_manager_(audio_manager.Pass()),
       init_(native_reg->GetMethodId("init", "()Z")),
       dispose_(native_reg->GetMethodId("dispose", "()V")),
-      set_communication_mode_(
-          native_reg->GetMethodId("setCommunicationMode", "(Z)V")) {
+      is_communication_mode_enabled_(
+          native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")),
+      is_device_blacklisted_for_open_sles_usage_(
+          native_reg->GetMethodId(
+              "isDeviceBlacklistedForOpenSLESUsage", "()Z")) {
   ALOGD("JavaAudioManager::ctor%s", GetThreadInfo().c_str());
 }
 
@@ -50,9 +53,13 @@ void AudioManager::JavaAudioManager::Close() {
   audio_manager_->CallVoidMethod(dispose_);
 }
 
-void AudioManager::JavaAudioManager::SetCommunicationMode(bool enable) {
-  audio_manager_->CallVoidMethod(set_communication_mode_,
-                                 static_cast<jboolean>(enable));
+bool AudioManager::JavaAudioManager::IsCommunicationModeEnabled() {
+  return audio_manager_->CallBooleanMethod(is_communication_mode_enabled_);
+}
+
+bool AudioManager::JavaAudioManager::IsDeviceBlacklistedForOpenSLESUsage() {
+  return audio_manager_->CallBooleanMethod(
+      is_device_blacklisted_for_open_sles_usage_);
 }
 
 // AudioManager implementation
@@ -126,11 +133,10 @@ bool AudioManager::Close() {
   return true;
 }
 
-void AudioManager::SetCommunicationMode(bool enable) {
-  ALOGD("SetCommunicationMode(%d)%s", enable, GetThreadInfo().c_str());
+bool AudioManager::IsCommunicationModeEnabled() const {
+  ALOGD("IsCommunicationModeEnabled()");
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(initialized_);
-  j_audio_manager_->SetCommunicationMode(enable);
+  return j_audio_manager_->IsCommunicationModeEnabled();
 }
 
 bool AudioManager::IsAcousticEchoCancelerSupported() const {
@@ -141,7 +147,10 @@ bool AudioManager::IsAcousticEchoCancelerSupported() const {
 bool AudioManager::IsLowLatencyPlayoutSupported() const {
   DCHECK(thread_checker_.CalledOnValidThread());
   ALOGD("IsLowLatencyPlayoutSupported()");
-  return low_latency_playout_;
+  // Some devices are blacklisted for usage of OpenSL ES even if they report
+  // that low-latency playout is supported. See b/21485703 for details.
+  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage() ?
+      false : low_latency_playout_;
 }
 
 int AudioManager::GetDelayEstimateInMilliseconds() const {

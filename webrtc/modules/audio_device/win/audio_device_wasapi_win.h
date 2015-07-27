@@ -28,7 +28,7 @@
 #include<ppltasks.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;

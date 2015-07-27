@@ -140,6 +140,10 @@
                 # included here, or better yet, build a proper .jar in webrtc
                 # and include it here.
                 'android_java_files': [
+                  'app/webrtc/java/android/org/webrtc/EglBase.java',
+                  'app/webrtc/java/android/org/webrtc/GlRectDrawer.java',
+                  'app/webrtc/java/android/org/webrtc/GlShader.java',
+                  'app/webrtc/java/android/org/webrtc/GlUtil.java',
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',
@@ -236,6 +240,7 @@
             'app/webrtc/objc/RTCDataChannel.mm',
             'app/webrtc/objc/RTCEnumConverter.h',
             'app/webrtc/objc/RTCEnumConverter.mm',
+            'app/webrtc/objc/RTCFileLogger.mm',
             'app/webrtc/objc/RTCI420Frame+Internal.h',
             'app/webrtc/objc/RTCI420Frame.mm',
             'app/webrtc/objc/RTCICECandidate+Internal.h',
@@ -257,6 +262,8 @@
             'app/webrtc/objc/RTCPeerConnection+Internal.h',
             'app/webrtc/objc/RTCPeerConnection.mm',
             'app/webrtc/objc/RTCPeerConnectionFactory.mm',
+            'app/webrtc/objc/RTCPeerConnectionInterface+Internal.h',
+            'app/webrtc/objc/RTCPeerConnectionInterface.mm',
             'app/webrtc/objc/RTCPeerConnectionObserver.h',
             'app/webrtc/objc/RTCPeerConnectionObserver.mm',
             'app/webrtc/objc/RTCSessionDescription+Internal.h',
@@ -274,6 +281,7 @@
             'app/webrtc/objc/public/RTCAudioSource.h',
             'app/webrtc/objc/public/RTCAudioTrack.h',
             'app/webrtc/objc/public/RTCDataChannel.h',
+            'app/webrtc/objc/public/RTCFileLogger.h',
             'app/webrtc/objc/public/RTCI420Frame.h',
             'app/webrtc/objc/public/RTCICECandidate.h',
             'app/webrtc/objc/public/RTCICEServer.h',
@@ -286,6 +294,7 @@
             'app/webrtc/objc/public/RTCPeerConnection.h',
             'app/webrtc/objc/public/RTCPeerConnectionDelegate.h',
             'app/webrtc/objc/public/RTCPeerConnectionFactory.h',
+            'app/webrtc/objc/public/RTCPeerConnectionInterface.h',
             'app/webrtc/objc/public/RTCSessionDescription.h',
             'app/webrtc/objc/public/RTCSessionDescriptionDelegate.h',
             'app/webrtc/objc/public/RTCStatsDelegate.h',
@@ -351,6 +360,9 @@
                 # Need to build against 10.7 framework for full ARC support
                 # on OSX.
                 'MACOSX_DEPLOYMENT_TARGET' : '10.7',
+                # RTCVideoTrack.mm uses code with partial availability.
+                # https://code.google.com/p/webrtc/issues/detail?id=4695
+                'WARNING_CFLAGS!': ['-Wpartial-availability'],
               },
               'link_settings': {
                 'xcode_settings': {
@@ -429,8 +441,6 @@
         'media/base/cryptoparams.h',
         'media/base/device.h',
         'media/base/fakescreencapturerfactory.h',
-        'media/base/filemediaengine.cc',
-        'media/base/filemediaengine.h',
         'media/base/hybriddataengine.h',
         'media/base/mediachannel.h',
         'media/base/mediacommon.h',
@@ -612,6 +622,10 @@
               # deprecated functions and remove this flag.
               '-Wno-deprecated-declarations',
             ],
+            # Disable partial availability warning to prevent errors
+            # in macdevicemanagermm.mm using AVFoundation.
+            # https://code.google.com/p/webrtc/issues/detail?id=4695
+            'WARNING_CFLAGS!': ['-Wpartial-availability'],
           },
           'link_settings': {
             'xcode_settings': {
@@ -678,8 +692,6 @@
         'session/media/currentspeakermonitor.h',
         'session/media/mediamonitor.cc',
         'session/media/mediamonitor.h',
-        'session/media/mediarecorder.cc',
-        'session/media/mediarecorder.h',
         'session/media/mediasession.cc',
         'session/media/mediasession.h',
         'session/media/mediasink.h',

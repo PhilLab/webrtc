@@ -336,7 +336,7 @@ class VideoRenderMediaSourceWinRT :
   __override HRESULT DispatchOperation(_In_ VideoRenderSourceOperation *pOp);
   __override HRESULT ValidateOperation(_In_ VideoRenderSourceOperation *pOp);
 
-  void ProcessVideoFrame(const I420VideoFrame& videoFrame);
+  void ProcessVideoFrame(const VideoFrame& videoFrame);
   void FrameSizeChange(int width, int height);
   //start source triggerred by WinJs
   HRESULT jSStart();

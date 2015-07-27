@@ -58,101 +58,17 @@ int ShakeDelay() {
 }  // namespace
 
 namespace cricket {
-
 const uint32 DISABLE_ALL_PHASES =
-  PORTALLOCATOR_DISABLE_UDP
-  | PORTALLOCATOR_DISABLE_TCP
-  | PORTALLOCATOR_DISABLE_STUN
-  | PORTALLOCATOR_DISABLE_RELAY;
-
-// Performs the allocation of ports, in a sequenced (timed) manner, for a given
-// network and IP address.
-class AllocationSequence : public rtc::MessageHandler,
-                           public sigslot::has_slots<> {
- public:
-  enum State {
-    kInit,       // Initial state.
-    kRunning,    // Started allocating ports.
-    kStopped,    // Stopped from running.
-    kCompleted,  // All ports are allocated.
-
-    // kInit --> kRunning --> {kCompleted|kStopped}
-  };
-
-  AllocationSequence(BasicPortAllocatorSession* session,
-                     rtc::Network* network,
-                     PortConfiguration* config,
-                     uint32 flags);
-  ~AllocationSequence();
-  bool Init();
-  void Clear();
-
-  State state() const { return state_; }
-
-  // Disables the phases for a new sequence that this one already covers for an
-  // equivalent network setup.
-  void DisableEquivalentPhases(rtc::Network* network,
-      PortConfiguration* config, uint32* flags);
-
-  // Starts and stops the sequence.  When started, it will continue allocating
-  // new ports on its own timed schedule.
-  void Start();
-  void Stop();
-
-  // MessageHandler
-  void OnMessage(rtc::Message* msg);
-
-  void EnableProtocol(ProtocolType proto);
-  bool ProtocolEnabled(ProtocolType proto) const;
-
-  // Signal from AllocationSequence, when it's done with allocating ports.
-  // This signal is useful, when port allocation fails which doesn't result
-  // in any candidates. Using this signal BasicPortAllocatorSession can send
-  // its candidate discovery conclusion signal. Without this signal,
-  // BasicPortAllocatorSession doesn't have any event to trigger signal. This
-  // can also be achieved by starting timer in BPAS.
-  sigslot::signal1<AllocationSequence*> SignalPortAllocationComplete;
-
- private:
-  typedef std::vector<ProtocolType> ProtocolList;
-
-  bool IsFlagSet(uint32 flag) {
-    return ((flags_ & flag) != 0);
-  }
-  void CreateUDPPorts();
-  void CreateTCPPorts();
-  void CreateStunPorts();
-  void CreateRelayPorts();
-  void CreateGturnPort(const RelayServerConfig& config);
-  void CreateTurnPort(const RelayServerConfig& config);
-
-  void OnReadPacket(rtc::AsyncPacketSocket* socket,
-                    const char* data, size_t size,
-                    const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time);
-
-  void OnPortDestroyed(PortInterface* port);
-
-  BasicPortAllocatorSession* session_;
-  rtc::Network* network_;
-  rtc::IPAddress ip_;
-  PortConfiguration* config_;
-  State state_;
-  uint32 flags_;
-  ProtocolList protocols_;
-  rtc::scoped_ptr<rtc::AsyncPacketSocket> udp_socket_;
-  // There will be only one udp port per AllocationSequence.
-  UDPPort* udp_port_;
-  std::vector<TurnPort*> turn_ports_;
-  int phase_;
-};
+    PORTALLOCATOR_DISABLE_UDP | PORTALLOCATOR_DISABLE_TCP |
+    PORTALLOCATOR_DISABLE_STUN | PORTALLOCATOR_DISABLE_RELAY;
 
 // BasicPortAllocator
 BasicPortAllocator::BasicPortAllocator(
     rtc::NetworkManager* network_manager,
     rtc::PacketSocketFactory* socket_factory)
     : network_manager_(network_manager),
-      socket_factory_(socket_factory) {
+      socket_factory_(socket_factory),
+      stun_servers_() {
   ASSERT(socket_factory_ != NULL);
   Construct();
 }
@@ -160,7 +76,8 @@ BasicPortAllocator::BasicPortAllocator(
 BasicPortAllocator::BasicPortAllocator(
     rtc::NetworkManager* network_manager)
     : network_manager_(network_manager),
-      socket_factory_(NULL) {
+      socket_factory_(NULL),
+      stun_servers_() {
   Construct();
 }
 
@@ -206,7 +123,7 @@ void BasicPortAllocator::Construct() {
 BasicPortAllocator::~BasicPortAllocator() {
 }
 
-PortAllocatorSession *BasicPortAllocator::CreateSessionInternal(
+PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
   return new BasicPortAllocatorSession(
@@ -925,18 +842,10 @@ void AllocationSequence::CreateUDPPorts() {
 
       // If STUN is not disabled, setting stun server address to port.
       if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
-        // If config has stun_servers, use it to get server reflexive candidate
-        // otherwise use first TURN server which supports UDP.
         if (config_ && !config_->StunServers().empty()) {
           LOG(LS_INFO) << "AllocationSequence: UDPPort will be handling the "
                        <<  "STUN candidate generation.";
           port->set_server_addresses(config_->StunServers());
-        } else if (config_ &&
-                   config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
-          port->set_server_addresses(config_->GetRelayServerAddresses(
-              RELAY_TURN, PROTO_UDP));
-          LOG(LS_INFO) << "AllocationSequence: TURN Server address will be "
-                       << " used for generating STUN candidate.";
         }
       }
     }
@@ -1065,7 +974,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled
     // due to webrtc bug https://code.google.com/p/webrtc/issues/detail?id=3537
     if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
-        relay_port->proto == PROTO_UDP) {
+        relay_port->proto == PROTO_UDP && udp_socket_) {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
                               network_, udp_socket_.get(),
@@ -1168,6 +1077,13 @@ ServerAddresses PortConfiguration::StunServers() {
   if (!stun_address.IsNil() &&
       stun_servers.find(stun_address) == stun_servers.end()) {
     stun_servers.insert(stun_address);
+  }
+  // Every UDP TURN server should also be used as a STUN server.
+  ServerAddresses turn_servers = GetRelayServerAddresses(RELAY_TURN, PROTO_UDP);
+  for (const rtc::SocketAddress& turn_server : turn_servers) {
+    if (stun_servers.find(turn_server) == stun_servers.end()) {
+      stun_servers.insert(turn_server);
+    }
   }
   return stun_servers;
 }

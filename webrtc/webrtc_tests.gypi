@@ -91,7 +91,7 @@
         'webrtc',
       ],
     },
-        {
+    {
       'target_name': 'screenshare_loopback',
       'type': 'executable',
       'sources': [
@@ -156,6 +156,7 @@
         'video/bitrate_estimator_tests.cc',
         'video/end_to_end_tests.cc',
         'video/send_statistics_proxy_unittest.cc',
+        'video/video_capture_input_unittest.cc',
         'video/video_decoder_unittest.cc',
         'video/video_encoder_unittest.cc',
         'video/video_send_stream_tests.cc',

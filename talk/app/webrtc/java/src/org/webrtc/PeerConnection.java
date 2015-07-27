@@ -66,6 +66,9 @@ public class PeerConnection {
     /** Triggered when the IceConnectionState changes. */
     public void onIceConnectionChange(IceConnectionState newState);
 
+    /** Triggered when the ICE connection receiving status changes. */
+    public void onIceConnectionReceivingChange(boolean receiving);
+
     /** Triggered when the IceGatheringState changes. */
     public void onIceGatheringChange(IceGatheringState newState);
 
@@ -134,6 +137,7 @@ public class PeerConnection {
     public RtcpMuxPolicy rtcpMuxPolicy;
     public TcpCandidatePolicy tcpCandidatePolicy;
     public int audioJitterBufferMaxPackets;
+    public boolean audioJitterBufferFastAccelerate;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -142,6 +146,7 @@ public class PeerConnection {
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;
+      audioJitterBufferFastAccelerate = false;
     }
   };
 
@@ -174,6 +179,8 @@ public class PeerConnection {
 
   public native void setRemoteDescription(
       SdpObserver observer, SessionDescription sdp);
+
+  public native void setIceConnectionReceivingTimeout(int timeoutMs);
 
   public native boolean updateIce(
       List<IceServer> iceServers, MediaConstraints constraints);

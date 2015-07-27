@@ -47,7 +47,8 @@ std::string VideoReceiveStream::Config::ToString() const {
   ss << ", rtp: " << rtp.ToString();
   ss << ", renderer: " << (renderer != nullptr ? "(renderer)" : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;
-  ss << ", audio_channel_id: " << audio_channel_id;
+  if (!sync_group.empty())
+    ss << ", sync_group: " << sync_group;
   ss << ", pre_decode_callback: "
      << (pre_decode_callback != nullptr ? "(EncodedFrameObserver)" : "nullptr");
   ss << ", pre_render_callback: "
@@ -135,8 +136,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       config_(config),
       clock_(Clock::GetRealTimeClock()),
       channel_group_(channel_group),
-      channel_id_(channel_id),
-      voe_sync_interface_(nullptr) {
+      channel_id_(channel_id) {
   CHECK(channel_group_->CreateReceiveChannel(channel_id_, 0, base_channel_id,
                                              &transport_adapter_, num_cpu_cores,
                                              true));
@@ -144,7 +144,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   vie_channel_ = channel_group_->GetChannel(channel_id_);
 
   // TODO(pbos): This is not fine grained enough...
-  vie_channel_->SetNACKStatus(config_.rtp.nack.rtp_history_ms > 0);
+  vie_channel_->SetProtectionMode(config_.rtp.nack.rtp_history_ms > 0, false,
+                                  -1, -1);
   vie_channel_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   SetRtcpMode(config_.rtp.rtcp_mode);
 
@@ -241,11 +242,6 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   incoming_video_stream_->SetExternalCallback(this);
   vie_channel_->SetIncomingVideoStream(incoming_video_stream_.get());
 
-  if (voice_engine && config_.audio_channel_id != -1) {
-    voe_sync_interface_ = VoEVideoSync::GetInterface(voice_engine);
-    vie_channel_->SetVoiceChannel(config.audio_channel_id, voe_sync_interface_);
-  }
-
   if (config.pre_decode_callback)
     vie_channel_->RegisterPreDecodeImageCallback(&encoded_frame_proxy_);
   vie_channel_->RegisterPreRenderCallback(this);
@@ -259,10 +255,6 @@ VideoReceiveStream::~VideoReceiveStream() {
   for (size_t i = 0; i < config_.decoders.size(); ++i)
     vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
 
-  if (voe_sync_interface_ != nullptr) {
-    vie_channel_->SetVoiceChannel(-1, nullptr);
-    voe_sync_interface_->Release();
-  }
   vie_channel_->RegisterCodecObserver(nullptr);
   vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(nullptr);
   vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(nullptr);
@@ -282,6 +274,17 @@ void VideoReceiveStream::Stop() {
   transport_adapter_.Disable();
 }
 
+void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
+                                        int audio_channel_id) {
+  if (voice_engine != nullptr && audio_channel_id != -1) {
+    VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
+    vie_channel_->SetVoiceChannel(audio_channel_id, voe_sync_interface);
+    voe_sync_interface->Release();
+  } else {
+    vie_channel_->SetVoiceChannel(-1, nullptr);
+  }
+}
+
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_->GetStats();
 }
@@ -294,33 +297,36 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   return vie_channel_->ReceivedRTPPacket(packet, length, PacketTime()) == 0;
 }
 
-void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
+void VideoReceiveStream::FrameCallback(VideoFrame* video_frame) {
   stats_proxy_->OnDecodedFrame();
 
-  if (config_.pre_render_callback)
-    config_.pre_render_callback->FrameCallback(video_frame);
+  // Post processing is not supported if the frame is backed by a texture.
+  if (video_frame->native_handle() == NULL) {
+    if (config_.pre_render_callback)
+      config_.pre_render_callback->FrameCallback(video_frame);
+  }
 }
 
 int VideoReceiveStream::RenderFrame(const uint32_t /*stream_id*/,
-                                    const I420VideoFrame& video_frame) {
+                                    const VideoFrame& video_frame) {
   // TODO(pbos): Wire up config_.render->IsTextureSupported() and convert if not
   // supported. Or provide methods for converting a texture frame in
-  // I420VideoFrame.
+  // VideoFrame.
 
   if (config_.renderer != nullptr)
     config_.renderer->RenderFrame(
         video_frame,
         video_frame.render_time_ms() - clock_->TimeInMilliseconds());
 
-  stats_proxy_->OnRenderedFrame();
+  stats_proxy_->OnRenderedFrame(video_frame.width(), video_frame.height());
 
   return 0;
 }
 
-void VideoReceiveStream::SignalNetworkState(Call::NetworkState state) {
-  if (state == Call::kNetworkUp)
+void VideoReceiveStream::SignalNetworkState(NetworkState state) {
+  if (state == kNetworkUp)
     SetRtcpMode(config_.rtp.rtcp_mode);
-  if (state == Call::kNetworkDown)
+  if (state == kNetworkDown)
     vie_channel_->SetRTCPMode(kRtcpOff);
 }
 

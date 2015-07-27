@@ -20,6 +20,7 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/build_info.h"
@@ -28,7 +29,6 @@
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -536,7 +536,7 @@ class AudioDeviceTest : public ::testing::Test {
     return audio_manager()->GetDelayEstimateInMilliseconds();
   }
 
-  scoped_refptr<AudioDeviceModule> audio_device() const {
+  rtc::scoped_refptr<AudioDeviceModule> audio_device() const {
     return audio_device_;
   }
 
@@ -557,9 +557,9 @@ class AudioDeviceTest : public ::testing::Test {
     return audio_device_impl()->GetAudioDeviceBuffer();
   }
 
-  scoped_refptr<AudioDeviceModule> CreateAudioDevice(
+  rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice(
       AudioDeviceModule::AudioLayer audio_layer) {
-    scoped_refptr<AudioDeviceModule> module(
+    rtc::scoped_refptr<AudioDeviceModule> module(
         AudioDeviceModuleImpl::Create(0, audio_layer));
     return module;
   }
@@ -594,7 +594,7 @@ class AudioDeviceTest : public ::testing::Test {
 
   int TestDelayOnAudioLayer(
       const AudioDeviceModule::AudioLayer& layer_to_test) {
-    scoped_refptr<AudioDeviceModule> audio_device;
+    rtc::scoped_refptr<AudioDeviceModule> audio_device;
     audio_device = CreateAudioDevice(layer_to_test);
     EXPECT_NE(audio_device.get(), nullptr);
     AudioManager* audio_manager = GetAudioManager(audio_device.get());
@@ -604,7 +604,7 @@ class AudioDeviceTest : public ::testing::Test {
 
   AudioDeviceModule::AudioLayer TestActiveAudioLayer(
       const AudioDeviceModule::AudioLayer& layer_to_test) {
-    scoped_refptr<AudioDeviceModule> audio_device;
+    rtc::scoped_refptr<AudioDeviceModule> audio_device;
     audio_device = CreateAudioDevice(layer_to_test);
     EXPECT_NE(audio_device.get(), nullptr);
     AudioDeviceModule::AudioLayer active;
@@ -685,7 +685,7 @@ class AudioDeviceTest : public ::testing::Test {
   }
 
   rtc::scoped_ptr<EventWrapper> test_is_done_;
-  scoped_refptr<AudioDeviceModule> audio_device_;
+  rtc::scoped_refptr<AudioDeviceModule> audio_device_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
   rtc::scoped_ptr<BuildInfo> build_info_;
@@ -820,13 +820,7 @@ TEST_F(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
-// TODO(henrika): figure out why this test can fail on Nexus 9.
-// See https://code.google.com/p/webrtc/issues/detail?id=4682 for details.
 TEST_F(AudioDeviceTest, StartStopPlayout) {
-  if (DisableTestForThisDevice("Nexus 9")) {
-    PRINT("Test is disabled for Nexus 9!\n");
-    return;
-  }
   StartPlayout();
   StopPlayout();
   StartPlayout();

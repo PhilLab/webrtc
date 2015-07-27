@@ -22,6 +22,10 @@ extern const int16_t WebRtcIsacfix_kSinTab1[FRAMESAMPLES/2];
 // Sine table 2 in Q14.
 extern const int16_t WebRtcIsacfix_kSinTab2[FRAMESAMPLES/4];
 
+#ifdef WINRT
+#define inline __inline
+#endif
+
 static inline int32_t ComplexMulAndFindMaxNeon(int16_t* inre1Q9,
                                                int16_t* inre2Q9,
                                                int32_t* outreQ16,

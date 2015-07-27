@@ -17,6 +17,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 
 namespace webrtc {
 namespace testing {
@@ -29,6 +30,12 @@ class PacketReceiver : public PacketProcessor {
                  BandwidthEstimatorType bwe_type,
                  bool plot_delay,
                  bool plot_bwe);
+  PacketReceiver(PacketProcessorListener* listener,
+                 int flow_id,
+                 BandwidthEstimatorType bwe_type,
+                 bool plot_delay,
+                 bool plot_bwe,
+                 MetricRecorder* metric_recorder);
   ~PacketReceiver();
 
   // Implements PacketProcessor.
@@ -38,17 +45,19 @@ class PacketReceiver : public PacketProcessor {
 
   Stats<double> GetDelayStats() const;
 
- protected:
-  void PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms);
+  float GlobalPacketLoss();
 
-  int64_t now_ms_;
-  std::string delay_log_prefix_;
-  int64_t last_delay_plot_ms_;
-  bool plot_delay_;
+ protected:
+  void UpdateMetrics(int64_t arrival_time_ms,
+                     int64_t send_time_ms,
+                     size_t payload_size);
+
   Stats<double> delay_stats_;
   rtc::scoped_ptr<BweReceiver> bwe_receiver_;
 
  private:
+  MetricRecorder* metric_recorder_;
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
 };
 }  // namespace bwe

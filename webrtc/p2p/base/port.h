@@ -519,6 +519,7 @@ class Connection : public rtc::MessageHandler,
   // Called when this connection should try checking writability again.
   uint32 last_ping_sent() const { return last_ping_sent_; }
   void Ping(uint32 now);
+  void ReceivedPingResponse();
 
   // Called whenever a valid ping is received on this connection.  This is
   // public because the connection intercepts the first ping for us.
@@ -539,6 +540,7 @@ class Connection : public rtc::MessageHandler,
   // transmission. This connection will send STUN ping with USE-CANDIDATE
   // attribute.
   sigslot::signal1<Connection*> SignalUseCandidate;
+
   // Invoked when Connection receives STUN error response with 487 code.
   void HandleRoleConflictFromPeer();
 
@@ -555,6 +557,10 @@ class Connection : public rtc::MessageHandler,
   // |new_candidate| except the type, update |remote_candidate_| to
   // |new_candidate|.
   void MaybeUpdatePeerReflexiveCandidate(const Candidate& new_candidate);
+
+  // Returns the last received time of any data, stun request, or stun
+  // response in milliseconds
+  uint32 last_received();
 
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };

@@ -204,11 +204,6 @@ bool BaseChannel::Init() {
     return false;
   }
 
-  session_->SignalNewLocalDescription.connect(
-      this, &BaseChannel::OnNewLocalDescription);
-  session_->SignalNewRemoteDescription.connect(
-      this, &BaseChannel::OnNewRemoteDescription);
-
   // Both RTP and RTCP channels are set, we can call SetInterface on
   // media channel and it can set network options.
   media_channel_->SetInterface(this);
@@ -502,12 +497,6 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
     return false;
   }
 
-  // Signal to the media sink before protecting the packet.
-  {
-    rtc::CritScope cs(&signal_send_packet_cs_);
-    SignalSendPacketPreCrypto(packet->data(), packet->size(), rtcp);
-  }
-
   rtc::PacketOptions options(dscp);
   // Protect if needed.
   if (srtp_filter_.IsActive()) {
@@ -576,12 +565,6 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
     return false;
   }
 
-  // Signal to the media sink after protecting the packet.
-  {
-    rtc::CritScope cs(&signal_send_packet_cs_);
-    SignalSendPacketPostCrypto(packet->data(), packet->size(), rtcp);
-  }
-
   // Bon voyage.
   int ret =
       channel->SendPacket(packet->data<char>(), packet->size(), options,
@@ -620,12 +603,6 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
   if (!has_received_packet_ && !rtcp) {
     has_received_packet_ = true;
     signaling_thread()->Post(this, MSG_FIRSTPACKETRECEIVED);
-  }
-
-  // Signal to the media sink before unprotecting the packet.
-  {
-    rtc::CritScope cs(&signal_recv_packet_cs_);
-    SignalRecvPacketPostCrypto(packet->data(), packet->size(), rtcp);
   }
 
   // Unprotect the packet, if needed.
@@ -673,35 +650,11 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
     return;
   }
 
-  // Signal to the media sink after unprotecting the packet.
-  {
-    rtc::CritScope cs(&signal_recv_packet_cs_);
-    SignalRecvPacketPreCrypto(packet->data(), packet->size(), rtcp);
-  }
-
   // Push it down to the media channel.
   if (!rtcp) {
     media_channel_->OnPacketReceived(packet, packet_time);
   } else {
     media_channel_->OnRtcpReceived(packet, packet_time);
-  }
-}
-
-void BaseChannel::OnNewLocalDescription(
-    BaseSession* session, ContentAction action) {
-  std::string error_desc;
-  if (!PushdownLocalDescription(
-          session->local_description(), action, &error_desc))  {
-    SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
-  }
-}
-
-void BaseChannel::OnNewRemoteDescription(
-    BaseSession* session, ContentAction action) {
-  std::string error_desc;
-  if (!PushdownRemoteDescription(
-          session->remote_description(), action, &error_desc))  {
-    SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
   }
 }
 
@@ -1905,8 +1858,6 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   if (action != CA_UPDATE) {
     VideoOptions video_options;
     media_channel()->GetOptions(&video_options);
-    video_options.buffered_mode_latency.Set(video->buffered_mode_latency());
-
     if (!media_channel()->SetOptions(video_options)) {
       // Log an error on failure, but don't abort the call.
       LOG(LS_ERROR) << "Failed to set video channel options";
@@ -1958,7 +1909,6 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
     if (video->conference_mode()) {
       video_options.conference_mode.Set(true);
     }
-    video_options.buffered_mode_latency.Set(video->buffered_mode_latency());
 
     if (!media_channel()->SetOptions(video_options)) {
       // Log an error on failure, but don't abort the call.
