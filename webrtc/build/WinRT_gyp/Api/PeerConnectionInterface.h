@@ -88,6 +88,7 @@ public:
 public ref class WinJSHooks sealed {
 public:
   static void initialize();
+  static IAsyncOperation<bool>^ requestAccessForMediaCapture();
 };
 
 [Windows::Foundation::Metadata::WebHostHidden]

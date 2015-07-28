@@ -126,14 +126,19 @@ void RTMediaStreamSource::OnSampleRequested(
 
     webrtc::CriticalSectionScoped csLock(_lock.get());
 
+    auto referral = request->GetDeferral();
+
     // Use the cached sample if we have one.
     if (_sample.Get() != nullptr) {
       hr = spRequest->SetSample(_sample.Get());
+      referral->Complete();
       return;
     }
 
     hr = MFCreateSample(_sample.ReleaseAndGetAddressOf());
     if (FAILED(hr)) {
+
+      referral->Complete();
       return;
     }
 
@@ -163,6 +168,7 @@ void RTMediaStreamSource::OnSampleRequested(
     hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height, libyuv::FOURCC_NV12, FALSE,
       mediaBuffer.GetAddressOf());
     if (FAILED(hr)) {
+      referral->Complete();
       return;
     }
     _sample->AddBuffer(mediaBuffer.Get());
@@ -173,6 +179,7 @@ void RTMediaStreamSource::OnSampleRequested(
     }
 
     hr = spRequest->SetSample(_sample.Get());
+    referral->Complete();
     if (FAILED(hr))
     {
       return;
