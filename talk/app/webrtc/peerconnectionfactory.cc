@@ -46,6 +46,9 @@
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
+#ifdef WINRT
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#endif
 
 namespace webrtc {
 
@@ -54,7 +57,9 @@ CreatePeerConnectionFactory() {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>());
 
-
+#ifdef WINRT
+  webrtc::field_trial::InitFieldTrialsFromString("WebRTC-SupportVP9/Enabled/");
+#endif
   // Call Initialize synchronously but make sure its executed on
   // |signaling_thread|.
   MethodCall0<PeerConnectionFactory, bool> call(
