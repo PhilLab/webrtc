@@ -18,6 +18,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/cpu_info.h"
@@ -37,6 +38,7 @@
 namespace webrtc {
 
 static const int kFullStackTestDurationSecs = 60;
+static const int kSendStatsPollingIntervalMs = 1000;
 
 struct FullStackTestParams {
   const char* test_label;
@@ -63,9 +65,10 @@ class FullStackTest : public test::CallTest {
 class VideoAnalyzer : public PacketReceiver,
                       public newapi::Transport,
                       public VideoRenderer,
-                      public VideoSendStreamInput {
+                      public VideoCaptureInput,
+                      public EncodedFrameObserver {
  public:
-  VideoAnalyzer(VideoSendStreamInput* input,
+  VideoAnalyzer(VideoCaptureInput* input,
                 Transport* transport,
                 const char* test_label,
                 double avg_psnr_threshold,
@@ -74,6 +77,7 @@ class VideoAnalyzer : public PacketReceiver,
       : input_(input),
         transport_(transport),
         receiver_(nullptr),
+        send_stream_(nullptr),
         test_label_(test_label),
         frames_to_process_(duration_frames),
         frames_recorded_(0),
@@ -110,6 +114,10 @@ class VideoAnalyzer : public PacketReceiver,
       EXPECT_TRUE(thread->Start());
       comparison_thread_pool_.push_back(thread.release());
     }
+
+    stats_polling_thread_ =
+        ThreadWrapper::CreateThread(&PollStatsThread, this, "StatsPoller");
+    EXPECT_TRUE(stats_polling_thread_->Start());
   }
 
   ~VideoAnalyzer() {
@@ -135,8 +143,8 @@ class VideoAnalyzer : public PacketReceiver,
     return receiver_->DeliverPacket(media_type, packet, length);
   }
 
-  void IncomingCapturedFrame(const I420VideoFrame& video_frame) override {
-    I420VideoFrame copy = video_frame;
+  void IncomingCapturedFrame(const VideoFrame& video_frame) override {
+    VideoFrame copy = video_frame;
     copy.set_timestamp(copy.ntp_time_ms() * 90);
 
     {
@@ -173,7 +181,13 @@ class VideoAnalyzer : public PacketReceiver,
     return transport_->SendRtcp(packet, length);
   }
 
-  void RenderFrame(const I420VideoFrame& video_frame,
+  void EncodedFrameCallback(const EncodedFrame& frame) override {
+    rtc::CritScope lock(&comparison_lock_);
+    if (frames_recorded_ < frames_to_process_)
+      encoded_frame_size_.AddSample(frame.length_);
+  }
+
+  void RenderFrame(const VideoFrame& video_frame,
                    int time_to_render_ms) override {
     int64_t render_time_ms =
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
@@ -187,7 +201,7 @@ class VideoAnalyzer : public PacketReceiver,
       frames_.pop_front();
     }
 
-    I420VideoFrame reference_frame = frames_.front();
+    VideoFrame reference_frame = frames_.front();
     frames_.pop_front();
     assert(!reference_frame.IsZeroSize());
     EXPECT_EQ(reference_frame.timestamp(), send_timestamp);
@@ -222,19 +236,26 @@ class VideoAnalyzer : public PacketReceiver,
           << "Analyzer stalled while waiting for test to finish.";
       last_frames_processed = frames_processed;
     }
+
+    // Signal stats polling thread if that is still waiting and stop it now,
+    // since it uses the send_stream_ reference that might be reclaimed after
+    // returning from this method.
+    done_->Set();
+    EXPECT_TRUE(stats_polling_thread_->Stop());
   }
 
-  VideoSendStreamInput* input_;
+  VideoCaptureInput* input_;
   Transport* transport_;
   PacketReceiver* receiver_;
+  VideoSendStream* send_stream_;
 
  private:
   struct FrameComparison {
     FrameComparison()
         : dropped(false), send_time_ms(0), recv_time_ms(0), render_time_ms(0) {}
 
-    FrameComparison(const I420VideoFrame& reference,
-                    const I420VideoFrame& render,
+    FrameComparison(const VideoFrame& reference,
+                    const VideoFrame& render,
                     bool dropped,
                     int64_t send_time_ms,
                     int64_t recv_time_ms,
@@ -246,16 +267,16 @@ class VideoAnalyzer : public PacketReceiver,
           recv_time_ms(recv_time_ms),
           render_time_ms(render_time_ms) {}
 
-    I420VideoFrame reference;
-    I420VideoFrame render;
+    VideoFrame reference;
+    VideoFrame render;
     bool dropped;
     int64_t send_time_ms;
     int64_t recv_time_ms;
     int64_t render_time_ms;
   };
 
-  void AddFrameComparison(const I420VideoFrame& reference,
-                          const I420VideoFrame& render,
+  void AddFrameComparison(const VideoFrame& reference,
+                          const VideoFrame& render,
                           bool dropped,
                           int64_t render_time_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_) {
@@ -265,13 +286,37 @@ class VideoAnalyzer : public PacketReceiver,
     recv_times_.erase(reference.timestamp());
 
     rtc::CritScope crit(&comparison_lock_);
-    comparisons_.push_back(FrameComparison(reference,
-                                           render,
-                                           dropped,
-                                           send_time_ms,
-                                           recv_time_ms,
+    comparisons_.push_back(FrameComparison(reference, render, dropped,
+                                           send_time_ms, recv_time_ms,
                                            render_time_ms));
     comparison_available_event_->Set();
+  }
+
+  static bool PollStatsThread(void* obj) {
+    return static_cast<VideoAnalyzer*>(obj)->PollStats();
+  }
+
+  bool PollStats() {
+    switch (done_->Wait(kSendStatsPollingIntervalMs)) {
+      case kEventSignaled:
+      case kEventError:
+        done_->Set();  // Make sure main thread is also signaled.
+        return false;
+      case kEventTimeout:
+        break;
+      default:
+        RTC_NOTREACHED();
+    }
+
+    VideoSendStream::Stats stats = send_stream_->GetStats();
+
+    rtc::CritScope crit(&comparison_lock_);
+    encode_frame_rate_.AddSample(stats.encode_frame_rate);
+    encode_time_ms.AddSample(stats.avg_encode_time_ms);
+    encode_usage_percent.AddSample(stats.encode_usage_percent);
+    media_bitrate_bps.AddSample(stats.media_bitrate_bps);
+
+    return true;
   }
 
   static bool FrameComparisonThread(void* obj) {
@@ -282,8 +327,8 @@ class VideoAnalyzer : public PacketReceiver,
     if (AllFramesRecorded())
       return false;
 
-    I420VideoFrame reference;
-    I420VideoFrame render;
+    VideoFrame reference;
+    VideoFrame render;
     FrameComparison comparison;
 
     if (!PopComparison(&comparison)) {
@@ -358,6 +403,12 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("receiver_time", receiver_time_, " ms");
     PrintResult("total_delay_incl_network", end_to_end_, " ms");
     PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
+    PrintResult("encoded_frame_size", encoded_frame_size_, " bytes");
+    PrintResult("encode_frame_rate", encode_frame_rate_, " fps");
+    PrintResult("encode_time", encode_time_ms, " ms");
+    PrintResult("encode_usage_percent", encode_usage_percent, " percent");
+    PrintResult("media_bitrate", media_bitrate_bps, " bps");
+
     EXPECT_GT(psnr_.Mean(), avg_psnr_threshold_);
     EXPECT_GT(ssim_.Mean(), avg_ssim_threshold_);
   }
@@ -397,12 +448,18 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   const char* const test_label_;
-  test::Statistics sender_time_;
-  test::Statistics receiver_time_;
-  test::Statistics psnr_;
-  test::Statistics ssim_;
-  test::Statistics end_to_end_;
-  test::Statistics rendered_delta_;
+  test::Statistics sender_time_ GUARDED_BY(comparison_lock_);
+  test::Statistics receiver_time_ GUARDED_BY(comparison_lock_);
+  test::Statistics psnr_ GUARDED_BY(comparison_lock_);
+  test::Statistics ssim_ GUARDED_BY(comparison_lock_);
+  test::Statistics end_to_end_ GUARDED_BY(comparison_lock_);
+  test::Statistics rendered_delta_ GUARDED_BY(comparison_lock_);
+  test::Statistics encoded_frame_size_ GUARDED_BY(comparison_lock_);
+  test::Statistics encode_frame_rate_ GUARDED_BY(comparison_lock_);
+  test::Statistics encode_time_ms GUARDED_BY(comparison_lock_);
+  test::Statistics encode_usage_percent GUARDED_BY(comparison_lock_);
+  test::Statistics media_bitrate_bps GUARDED_BY(comparison_lock_);
+
   const int frames_to_process_;
   int frames_recorded_;
   int frames_processed_;
@@ -411,16 +468,17 @@ class VideoAnalyzer : public PacketReceiver,
   uint32_t rtp_timestamp_delta_;
 
   rtc::CriticalSection crit_;
-  std::deque<I420VideoFrame> frames_ GUARDED_BY(crit_);
-  I420VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
+  std::deque<VideoFrame> frames_ GUARDED_BY(crit_);
+  VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> recv_times_ GUARDED_BY(crit_);
-  I420VideoFrame first_send_frame_ GUARDED_BY(crit_);
+  VideoFrame first_send_frame_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
 
   rtc::CriticalSection comparison_lock_;
   std::vector<ThreadWrapper*> comparison_thread_pool_;
+  rtc::scoped_ptr<ThreadWrapper> stats_polling_thread_;
   const rtc::scoped_ptr<EventWrapper> comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
   const rtc::scoped_ptr<EventWrapper> done_;
@@ -478,8 +536,11 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   receive_configs_[0].rtp.rtx[kSendRtxPayloadType].payload_type =
       kSendRtxPayloadType;
 
+  for (auto& config : receive_configs_)
+    config.pre_decode_callback = &analyzer;
   CreateStreams();
   analyzer.input_ = send_stream_->Input();
+  analyzer.send_stream_ = send_stream_;
 
   if (params.screenshare) {
     std::vector<std::string> slides;
@@ -649,8 +710,8 @@ TEST_F(FullStackTest, ScreenshareSlides) {
       {"screenshare_slides", 1850, 1110, 5},
       true,
       50000,
-      100000,
-      1000000,
+      200000,
+      2000000,
       0.0,
       0.0,
       kFullStackTestDurationSecs};

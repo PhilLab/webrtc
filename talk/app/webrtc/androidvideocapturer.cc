@@ -67,10 +67,14 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
 
   void UpdateCapturedFrame(void* frame_data,
                            int length,
+                           int width,
+                           int height,
                            int rotation,
                            int64 time_stamp_in_ns) {
     captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_YV12);
     captured_frame_.data = frame_data;
+    captured_frame_.width = width;
+    captured_frame_.height = height;
     captured_frame_.elapsed_time = rtc::TimeNanos() - start_time_;
     captured_frame_.time_stamp = time_stamp_in_ns;
     captured_frame_.rotation = rotation;
@@ -235,11 +239,23 @@ void AndroidVideoCapturer::OnCapturerStarted(bool success) {
 
 void AndroidVideoCapturer::OnIncomingFrame(void* frame_data,
                                            int length,
+                                           int width,
+                                           int height,
                                            int rotation,
                                            int64 time_stamp) {
   CHECK(thread_checker_.CalledOnValidThread());
-  frame_factory_->UpdateCapturedFrame(frame_data, length, rotation, time_stamp);
+  frame_factory_->UpdateCapturedFrame(frame_data, length, width, height,
+                                      rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());
+}
+
+void AndroidVideoCapturer::OnOutputFormatRequest(
+    int width, int height, int fps) {
+  CHECK(thread_checker_.CalledOnValidThread());
+  const cricket::VideoFormat& current = video_adapter()->output_format();
+  cricket::VideoFormat format(
+      width, height, cricket::VideoFormat::FpsToInterval(fps), current.fourcc);
+  video_adapter()->OnOutputFormatRequest(format);
 }
 
 }  // namespace webrtc

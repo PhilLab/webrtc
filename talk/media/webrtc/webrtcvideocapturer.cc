@@ -384,7 +384,7 @@ static bool hasFramePending = false;
 
 void WebRtcVideoCapturer::OnIncomingCapturedFrame(
     const int32_t id,
-    const webrtc::I420VideoFrame& sample) {
+    const webrtc::VideoFrame& sample) {
   if (hasFramePending)
     return;
   hasFramePending = true;
@@ -413,7 +413,7 @@ void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
 }
 
 void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
-    const webrtc::I420VideoFrame frame) {
+    const webrtc::VideoFrame frame) {
   // This can only happen between Start() and Stop().
   DCHECK(start_thread_);
   DCHECK(start_thread_->IsCurrent());
@@ -442,7 +442,7 @@ void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
 }
 
 // WebRtcCapturedFrame
-WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::I420VideoFrame& sample,
+WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::VideoFrame& sample,
                                          void* buffer,
                                          size_t length) {
   width = sample.width();

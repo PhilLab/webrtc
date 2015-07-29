@@ -545,24 +545,24 @@ typedef void (*CrossCorrelation)(int32_t* cross_correlation,
                                  const int16_t* seq2,
                                  int16_t dim_seq,
                                  int16_t dim_cross_correlation,
-                                 int16_t right_shifts,
-                                 int16_t step_seq2);
+                                 int right_shifts,
+                                 int step_seq2);
 extern CrossCorrelation WebRtcSpl_CrossCorrelation;
 void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
                                  const int16_t* seq1,
                                  const int16_t* seq2,
                                  int16_t dim_seq,
                                  int16_t dim_cross_correlation,
-                                 int16_t right_shifts,
-                                 int16_t step_seq2);
+                                 int right_shifts,
+                                 int step_seq2);
 #if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 void WebRtcSpl_CrossCorrelationNeon(int32_t* cross_correlation,
                                     const int16_t* seq1,
                                     const int16_t* seq2,
                                     int16_t dim_seq,
                                     int16_t dim_cross_correlation,
-                                    int16_t right_shifts,
-                                    int16_t step_seq2);
+                                    int right_shifts,
+                                    int step_seq2);
 #endif
 #if defined(MIPS32_LE)
 void WebRtcSpl_CrossCorrelation_mips(int32_t* cross_correlation,
@@ -570,8 +570,8 @@ void WebRtcSpl_CrossCorrelation_mips(int32_t* cross_correlation,
                                      const int16_t* seq2,
                                      int16_t dim_seq,
                                      int16_t dim_cross_correlation,
-                                     int16_t right_shifts,
-                                     int16_t step_seq2);
+                                     int right_shifts,
+                                     int step_seq2);
 #endif
 
 // Creates (the first half of) a Hanning window. Size must be at least 1 and
@@ -847,14 +847,11 @@ void WebRtcSpl_ResetResample8khzTo22khz(WebRtcSpl_State8khzTo22khz* state);
  *
  ******************************************************************/
 
-void WebRtcSpl_Resample48khzTo32khz(const int32_t* In, int32_t* Out,
-                                    int32_t K);
+void WebRtcSpl_Resample48khzTo32khz(const int32_t* In, int32_t* Out, int32_t K);
 
-void WebRtcSpl_Resample32khzTo24khz(const int32_t* In, int32_t* Out,
-                                    int32_t K);
+void WebRtcSpl_Resample32khzTo24khz(const int32_t* In, int32_t* Out, int32_t K);
 
-void WebRtcSpl_Resample44khzTo32khz(const int32_t* In, int32_t* Out,
-                                    int32_t K);
+void WebRtcSpl_Resample44khzTo32khz(const int32_t* In, int32_t* Out, int32_t K);
 
 /*******************************************************************
  * resample_48khz.c

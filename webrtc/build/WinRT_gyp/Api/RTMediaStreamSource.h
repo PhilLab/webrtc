@@ -21,6 +21,7 @@ using webrtc_winrt_api::MediaVideoTrack;
 namespace webrtc_winrt_api {
 // Delegate used to notify an update of the frame per second on a video stream.
 public delegate void FramesPerSecondChangedEventHandler(String^ id, Platform::String^ fps);
+public delegate void ResolutionChangedEventHandler(String^ id, unsigned int width, unsigned int height);
 
 public ref class FrameCounterHelper sealed {
   public:
@@ -28,6 +29,13 @@ public ref class FrameCounterHelper sealed {
   internal:
     static void FireEvent(String^ id, Platform::String^ str);
   };
+
+public ref class ResolutionHelper sealed {
+public:
+  static event ResolutionChangedEventHandler^ ResolutionChanged;
+internal:
+  static void FireEvent(String^ id, unsigned int width, unsigned int height);
+};
 }  // namespace webrtc_winrt_api
 
 namespace webrtc_winrt_api_internal {
@@ -55,6 +63,7 @@ ref class RTMediaStreamSource sealed {
       Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
+    void BlankFrame(IMFMediaBuffer* mediaBuffer);
     void ResizeSource(uint32 width, uint32 height);
     static void OnClosed(Windows::Media::Core::MediaStreamSource ^sender,
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);
@@ -65,9 +74,10 @@ ref class RTMediaStreamSource sealed {
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
     rtc::scoped_ptr<cricket::VideoFrame> _frame;
-    Microsoft::WRL::ComPtr<IMFSample> _sample;  // Cached sample
+    bool _isNewFrame;  // If the frame in _frame hasn't been rendered yet.
     uint32 _stride;
     uint64 _timeStamp;
+
     uint32 _frameRate;
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 

@@ -13,6 +13,7 @@
 #include <mfidl.h>
 #include "talk/media/base/videoframe.h"
 #include "libyuv/video_common.h"
+#include "libyuv/convert.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
@@ -48,6 +49,8 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
                                                             //incoming frame ready(ex.: remote stream), in this case, this initial value will
                                                             //make sure we will at least create a small dumy frame.
 
+  webrtc_winrt_api::ResolutionHelper::FireEvent(id, streamState->_videoDesc->EncodingProperties->Width, streamState->_videoDesc->EncodingProperties->Height);
+
   streamState->_videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
@@ -73,7 +76,7 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
     _videoTrack(videoTrack), _stride(0),
     _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-    _timeStamp(0), _frameRate(0), _frameCounter(0),
+    _timeStamp(0), _isNewFrame(true), _frameRate(0), _frameCounter(0),
     _lastTimeFPSCalculated(webrtc::TickTime::Now()) {
 }
 
@@ -117,6 +120,7 @@ void RTMediaStreamSource::OnSampleRequested(
     if (request == nullptr) {
       return;
     }
+
     ComPtr<IMFMediaStreamSourceSampleRequest> spRequest;
     HRESULT hr = reinterpret_cast<IInspectable*>(request)->QueryInterface(
       spRequest.ReleaseAndGetAddressOf());
@@ -124,34 +128,37 @@ void RTMediaStreamSource::OnSampleRequested(
       return;
     }
 
-    webrtc::CriticalSectionScoped csLock(_lock.get());
+    webrtc::TickTime now = webrtc::TickTime::Now();
 
     auto deferral = request->GetDeferral();
 
-    // Use the cached sample if we have one.
-    if (_sample.Get() != nullptr) {
-      hr = spRequest->SetSample(_sample.Get());
-      deferral->Complete();
-      return;
-    }
+    webrtc::CriticalSectionScoped csLock(_lock.get());
 
-    hr = MFCreateSample(_sample.ReleaseAndGetAddressOf());
+    ComPtr<IMFSample> spSample;
+    hr = MFCreateSample(spSample.GetAddressOf());
     if (FAILED(hr)) {
 
       deferral->Complete();
       return;
     }
 
+    LONGLONG duration = (LONGLONG)((1.0 / _frameRate) * 1000 * 1000 * 10);
+    spSample->SetSampleDuration(duration);
+    spSample->SetSampleTime((LONGLONG)_timeStamp);
+    _timeStamp += duration;
+
     webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
 
     // Do FPS calculation and notification.
-    _frameCounter++;
-    webrtc::TickTime now = webrtc::TickTime::Now();
-    // If we have about a second worth of frames
-    if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
-      webrtc_winrt_api::FrameCounterHelper::FireEvent(_id, _frameCounter.ToString());
-      _frameCounter = 0;
-      _lastTimeFPSCalculated = now;
+    if (_isNewFrame) {
+      _isNewFrame = false;
+      _frameCounter++;
+      // If we have about a second worth of frames
+      if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
+        webrtc_winrt_api::FrameCounterHelper::FireEvent(_id, _frameCounter.ToString());
+        _frameCounter = 0;
+        _lastTimeFPSCalculated = now;
+      }
     }
 
     ComPtr<IMFMediaBuffer> mediaBuffer;
@@ -163,6 +170,7 @@ void RTMediaStreamSource::OnSampleRequested(
       {
         _videoDesc->EncodingProperties->Width = _frame->GetWidth();
         _videoDesc->EncodingProperties->Height = _frame->GetHeight();
+        webrtc_winrt_api::ResolutionHelper::FireEvent(_id, _videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height);
       }
     }
     hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height, libyuv::FOURCC_NV12, FALSE,
@@ -171,14 +179,15 @@ void RTMediaStreamSource::OnSampleRequested(
       deferral->Complete();
       return;
     }
-    _sample->AddBuffer(mediaBuffer.Get());
-    _sample->SetSampleTime(0);
+
+    spSample->AddBuffer(mediaBuffer.Get());
+
     if (_frame.get() != nullptr)
     {
       ConvertFrame(mediaBuffer.Get());
     }
 
-    hr = spRequest->SetSample(_sample.Get());
+    hr = spRequest->SetSample(spSample.Get());
     deferral->Complete();
     if (FAILED(hr))
     {
@@ -194,7 +203,7 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   const cricket::VideoFrame *frame) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   _frame.reset(frame->Copy());
-  _sample = nullptr;
+  _isNewFrame = true;
 }
 
 bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
@@ -216,41 +225,40 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
   try {
     _frame->MakeExclusive();
     // Convert to NV12
-    uint8* y_buffer = _frame->GetYPlane();
-    const size_t width = _frame->GetWidth();
-    const int32 yPitch = _frame->GetYPitch();
-    uint8* originalBuf = destRawData;
-    for (size_t i = 0; i < _frame->GetHeight(); i++)
-    {
-      memcpy(destRawData, y_buffer, width);
-      destRawData += pitch;
-      y_buffer += yPitch;
-    }
-    destRawData = originalBuf + (pitch*_videoDesc->EncodingProperties->Height);
-    uint8* u_buffer = _frame->GetUPlane();
-    uint8* v_buffer = _frame->GetVPlane();
-    const int32 uPitch = _frame->GetUPitch();
-    const int32 vPitch = _frame->GetVPitch();
-    const size_t uvHeight = _frame->GetHeight() / 2;
-    const size_t uvWidth = _frame->GetWidth() / 2;
-    for (size_t y = 0; y < uvHeight; y++)
-    {
-      uint8* lineBuffer = destRawData;
-      for (size_t x = 0; x < uvWidth; x++)
-      {
-        *lineBuffer++ = u_buffer[x];
-        *lineBuffer++ = v_buffer[x];
-      }
-      destRawData += pitch;
-      u_buffer += uPitch;
-      v_buffer += vPitch;
-    }
+    uint8* uvDest = destRawData + (pitch * _frame->GetHeight());
+    libyuv::I420ToNV12(_frame->GetYPlane(), _frame->GetYPitch(),
+      _frame->GetUPlane(), _frame->GetUPitch(),
+      _frame->GetVPlane(), _frame->GetVPitch(),
+      (uint8*)destRawData, pitch,
+      uvDest, pitch,
+      _frame->GetWidth(), _frame->GetHeight());
   }
   catch (...) {
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
   }
   imageBuffer->Unlock2D();
   return true;
+}
+
+void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer)
+{
+  ComPtr<IMF2DBuffer2> imageBuffer;
+  if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf()))) {
+    return;
+  }
+  BYTE* destRawData;
+  BYTE* buffer;
+  LONG pitch;
+  DWORD destMediaBufferSize;
+
+
+  if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
+    &destRawData, &pitch, &buffer, &destMediaBufferSize)))
+  {
+    return;
+  }
+  memset(destRawData, 0, destMediaBufferSize);
+  imageBuffer->Unlock2D();
 }
 
 void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {
@@ -279,6 +287,14 @@ void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id, Platform::Strin
     Windows::UI::Core::CoreDispatcherPriority::Normal,
     ref new Windows::UI::Core::DispatchedHandler([id, str] {
       FramesPerSecondChanged(id, str);
+  }));
+}
+
+void webrtc_winrt_api::ResolutionHelper::FireEvent(String^ id, unsigned int width, unsigned int heigth) {
+  g_windowDispatcher->RunAsync(
+    Windows::UI::Core::CoreDispatcherPriority::Normal,
+    ref new Windows::UI::Core::DispatchedHandler([id, width, heigth] {
+    ResolutionChanged(id, width, heigth);
   }));
 }
 

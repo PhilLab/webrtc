@@ -102,10 +102,7 @@ struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayers::Factory {
 
   virtual webrtc::TemporalLayers* Create(int num_temporal_layers,
                                          uint8_t initial_tl0_pic_idx) const {
-    return new webrtc::ScreenshareLayers(num_temporal_layers,
-                                         rand(),
-                                         &tl0_frame_dropper_,
-                                         &tl1_frame_dropper_);
+    return new webrtc::ScreenshareLayers(num_temporal_layers, rand());
   }
 
   mutable webrtc::FrameDropper tl0_frame_dropper_;
@@ -233,7 +230,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 }
 
 int SimulcastEncoderAdapter::Encode(
-    const I420VideoFrame& input_image,
+    const VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
   if (!Initialized()) {
@@ -286,7 +283,7 @@ int SimulcastEncoderAdapter::Encode(
                                                codec_specific_info,
                                                &stream_frame_types);
     } else {
-      I420VideoFrame dst_frame;
+      VideoFrame dst_frame;
       // Making sure that destination frame is of sufficient size.
       // Aligning stride values based on width.
       dst_frame.CreateEmptyFrame(dst_width, dst_height,
@@ -505,6 +502,10 @@ bool SimulcastEncoderAdapter::Initialized() const {
 
 void SimulcastEncoderAdapter::OnDroppedFrame() {
   streaminfos_[0].encoder->OnDroppedFrame();
+}
+
+int SimulcastEncoderAdapter::GetTargetFramerate() {
+  return streaminfos_[0].encoder->GetTargetFramerate();
 }
 
 }  // namespace webrtc

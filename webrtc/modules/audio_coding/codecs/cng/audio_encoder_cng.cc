@@ -97,6 +97,10 @@ int AudioEncoderCng::Max10MsFramesInAPacket() const {
   return speech_encoder_->Max10MsFramesInAPacket();
 }
 
+int AudioEncoderCng::GetTargetBitrate() const {
+  return speech_encoder_->GetTargetBitrate();
+}
+
 void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
   speech_encoder_->SetTargetBitrate(bits_per_second);
 }
@@ -136,9 +140,9 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeInternal(
       (frames_to_encode > 3 ? 3 : frames_to_encode);
   if (frames_to_encode == 4)
     blocks_in_first_vad_call = 2;
+  CHECK_GE(frames_to_encode, blocks_in_first_vad_call);
   const int blocks_in_second_vad_call =
       frames_to_encode - blocks_in_first_vad_call;
-  CHECK_GE(blocks_in_second_vad_call, 0);
 
   // Check if all of the buffer is passive speech. Start with checking the first
   // block.
@@ -217,7 +221,7 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeActive(
     info = speech_encoder_->Encode(
         rtp_timestamps_.front(), &speech_buffer_[i * samples_per_10ms_frame],
         samples_per_10ms_frame, max_encoded_bytes, encoded);
-    if (i == frames_to_encode - 1) {
+    if (i + 1 == frames_to_encode) {
       CHECK_GT(info.encoded_bytes, 0u) << "Encoder didn't deliver data.";
     } else {
       CHECK_EQ(info.encoded_bytes, 0u) << "Encoder delivered data too early.";

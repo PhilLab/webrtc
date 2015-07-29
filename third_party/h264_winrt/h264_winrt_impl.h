@@ -24,7 +24,7 @@ namespace webrtc {
 
         int Release() override;
 
-        int Encode(const I420VideoFrame& input_image,
+        int Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<VideoFrameType>* frame_types) override;
 

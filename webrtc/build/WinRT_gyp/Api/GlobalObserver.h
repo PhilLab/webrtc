@@ -14,9 +14,10 @@
 #include <functional>
 #include <string>
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "stats_observer_etw.h"
 
 namespace webrtc_winrt_api {
@@ -28,6 +29,8 @@ namespace webrtc_winrt_api_internal {
 
 class GlobalObserver : public webrtc::PeerConnectionObserver {
  public:
+  GlobalObserver();
+
   void SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc);
 
   // PeerConnectionObserver functions
@@ -57,6 +60,7 @@ class GlobalObserver : public webrtc::PeerConnectionObserver {
  private:
   webrtc_winrt_api::RTCPeerConnection^ _pc;
   rtc::scoped_refptr<webrtc::StatsObserverETW> _stats_observer_etw;
+  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
 };
 
 // There is one of those per call to CreateOffer().

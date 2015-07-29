@@ -32,13 +32,13 @@ int WebRtcIsacfix_EstimateBandwidth(BwEstimatorstr* bwest_str,
                                     uint32_t send_ts,
                                     uint32_t arr_ts);
 
-int16_t WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
-                                       IsacFixDecoderInstance* ISACdec_obj,
-                                       int16_t* current_framesamples);
+int WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
+                             IsacFixDecoderInstance* ISACdec_obj,
+                             int16_t* current_framesamples);
 
-int16_t WebRtcIsacfix_DecodePlcImpl(int16_t* decoded,
-                                          IsacFixDecoderInstance* ISACdec_obj,
-                                          int16_t* current_framesample );
+void WebRtcIsacfix_DecodePlcImpl(int16_t* decoded,
+                                 IsacFixDecoderInstance* ISACdec_obj,
+                                 int16_t* current_framesample );
 
 int WebRtcIsacfix_EncodeImpl(int16_t* in,
                              IsacFixEncoderInstance* ISACenc_obj,

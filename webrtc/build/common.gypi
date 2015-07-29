@@ -121,6 +121,13 @@
     # enable schannel on windows.
     'use_legacy_ssl_defaults%': 0,
 
+    # Determines whether NEON code will be built.
+    'build_with_neon%': 0,
+
+    # Enable this to use HW H.264 encoder/decoder on iOS/Mac PeerConnections.
+    # Enabling this may break interop with Android clients that support H264.
+    'use_objc_h264%': 0,
+
     'conditions': [
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
@@ -154,6 +161,9 @@
       }],
       ['target_arch=="arm" or target_arch=="arm64"', {
         'prefer_fixed_point%': 1,
+      }],
+      ['(target_arch=="arm" and (arm_neon==1 or arm_neon_optional==1)) or target_arch=="arm64" or (winrt_platform=="win_phone" or  winrt_platform=="win10_arm")', {
+        'build_with_neon%': 1,
       }],
       ['(OS!="ios" and (target_arch!="arm" or arm_version>=7) and target_arch!="mips64el") or (winrt_platform=="win_phone" or  winrt_platform=="win10_arm")', {
         'rtc_use_openmax_dl%': 1,
@@ -328,6 +338,11 @@
         'defines': [
           'WEBRTC_MAC',
           'WEBRTC_IOS',
+        ],
+      }],
+      ['OS=="ios" and use_objc_h264==1', {
+        'defines': [
+          'WEBRTC_OBJC_H264',
         ],
       }],
       ['OS=="linux"', {

@@ -19,30 +19,39 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace webrtc_winrt_api_internal {
 
-#define POST_EVENT(evt, statement) \
+#define POST_PC_EVENT(fn, evt) \
   g_windowDispatcher->RunAsync(\
     Windows::UI::Core::CoreDispatcherPriority::Normal, \
     ref new Windows::UI::Core::DispatchedHandler([this, evt] {\
-    statement;\
+    webrtc::CriticalSectionScoped csLock(_lock.get()); \
+    if (_pc != nullptr) {\
+      _pc->##fn(evt);\
+    }\
   }));
-#define POST_ACTION(statement) \
+#define POST_PC_ACTION(fn) \
   g_windowDispatcher->RunAsync(\
     Windows::UI::Core::CoreDispatcherPriority::Normal, \
     ref new Windows::UI::Core::DispatchedHandler([this] {\
-    statement;\
+    webrtc::CriticalSectionScoped csLock(_lock.get()); \
+    if (_pc != nullptr) {\
+      _pc->##fn();\
+    }\
   }));
+
+GlobalObserver::GlobalObserver()
+  : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
+}
 
 void GlobalObserver::SetPeerConnection(
   webrtc_winrt_api::RTCPeerConnection^ pc) {
+  webrtc::CriticalSectionScoped csLock(_lock.get()); \
   _pc = pc;
 }
 
 // Triggered when the SignalingState changed.
 void GlobalObserver::OnSignalingChange(
   webrtc::PeerConnectionInterface::SignalingState new_state) {
-  if (_pc != nullptr) {
-    POST_ACTION(_pc->OnSignalingStateChange());
-  }
+  POST_PC_ACTION(OnSignalingStateChange);
 }
 
 // Triggered when SignalingState or IceState have changed.
@@ -52,38 +61,30 @@ void GlobalObserver::OnStateChange(StateType state_changed) {
 
 // Triggered when media is received on a new stream from remote peer.
 void GlobalObserver::OnAddStream(webrtc::MediaStreamInterface* stream) {
-  if (_pc != nullptr) {
-    auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
-    evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
-    POST_EVENT(evt, _pc->OnAddStream(evt));
-  }
+  auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
+  evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
+  POST_PC_EVENT(OnAddStream, evt);
 }
 
 // Triggered when a remote peer close a stream.
 void GlobalObserver::OnRemoveStream(webrtc::MediaStreamInterface* stream) {
-  if (_pc != nullptr) {
-    auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
-    evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
-    POST_EVENT(evt, _pc->OnRemoveStream(evt));
-  }
+  auto evt = ref new webrtc_winrt_api::MediaStreamEvent();
+  evt->Stream = ref new webrtc_winrt_api::MediaStream(stream);
+  POST_PC_EVENT(OnRemoveStream, evt);
 }
 
 // Triggered when a remote peer open a data channel.
 void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
-  if (_pc != nullptr) {
-    auto evt = ref new webrtc_winrt_api::RTCDataChannelEvent();
-    evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
-    // TODO(WINRT): Figure out when this observer can be deleted.
-    data_channel->RegisterObserver(new DataChannelObserver(evt->Channel));
-    POST_EVENT(evt, _pc->OnDataChannel(evt));
-  }
+  auto evt = ref new webrtc_winrt_api::RTCDataChannelEvent();
+  evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
+  // TODO(WINRT): Figure out when this observer can be deleted.
+  data_channel->RegisterObserver(new DataChannelObserver(evt->Channel));
+  POST_PC_EVENT(OnDataChannel, evt);
 }
 
 // Triggered when renegotiation is needed, for example the ICE has restarted.
 void GlobalObserver::OnRenegotiationNeeded() {
-  if (_pc != nullptr) {
-    POST_ACTION(_pc->OnNegotiationNeeded());
-  }
+  POST_PC_ACTION(OnNegotiationNeeded);
 }
 
 // Called any time the IceConnectionState changes
@@ -101,23 +102,35 @@ void GlobalObserver::OnIceConnectionChange(
 // Called any time the IceGatheringState changes
 void GlobalObserver::OnIceGatheringChange(
   webrtc::PeerConnectionInterface::IceGatheringState new_state) {
+  LOG(LS_INFO) << "OnIceGatheringChange";
 }
 
 // New Ice candidate have been found.
 void GlobalObserver::OnIceCandidate(
   const webrtc::IceCandidateInterface* candidate) {
-  if (_pc != nullptr && candidate != nullptr) {
-    auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceEvent();
-    webrtc_winrt_api::RTCIceCandidate^ cxCandidate;
+  std::string c;
+  candidate->ToString(&c);
+  LOG(LS_INFO) << "Ice candidate = " << c;
+  auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceEvent();
+  webrtc_winrt_api::RTCIceCandidate^ cxCandidate;
+  if (candidate == nullptr)
+  {
+    evt->Candidate = nullptr;
+  }
+  else
+  {
     ToCx(*candidate, &cxCandidate);
     evt->Candidate = cxCandidate;
-    POST_EVENT(evt, _pc->OnIceCandidate(evt));
   }
+  POST_PC_EVENT(OnIceCandidate, evt);
 }
 
 // TODO(bemasc): Remove this once callers transition to OnIceGatheringChange.
 // All Ice candidates have been found.
 void GlobalObserver::OnIceComplete() {
+  auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceEvent();
+  evt->Candidate = nullptr;
+  POST_PC_EVENT(OnIceCandidate, evt);
 }
 
 //============================================================================
@@ -175,7 +188,12 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
     // TODO(WINRT)
     evt->Data = "<binary>";
   }
-  POST_EVENT(evt, _channel->OnMessage(evt));
+
+  g_windowDispatcher->RunAsync(
+    Windows::UI::Core::CoreDispatcherPriority::Normal,
+    ref new Windows::UI::Core::DispatchedHandler([this, evt] {
+    _channel->OnMessage(evt);
+  }));
 }
 
 }  // namespace webrtc_winrt_api_internal

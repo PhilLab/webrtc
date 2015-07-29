@@ -63,6 +63,8 @@
         'platform_file.h',
         'platform_thread.cc',
         'platform_thread.h',
+        'ratetracker.cc',
+        'ratetracker.h',
         'safe_conversions.h',
         'safe_conversions_impl.h',
         'stringencode.cc',
@@ -242,8 +244,6 @@
         'proxyserver.h',
         'ratelimiter.cc',
         'ratelimiter.h',
-        'ratetracker.cc',
-        'ratetracker.h',
         'refcount.h',
         'referencecountedsingletonfactory.h',
         'rollingaccumulator.h',
@@ -379,9 +379,6 @@
             '../../boringssl/src/include',
           ],
           'sources!': [
-            'asyncinvoker.cc',
-            'asyncinvoker.h',
-            'asyncinvoker-inl.h',
             'atomicops.h',
             'bandwidthsmoother.cc',
             'bandwidthsmoother.h',
@@ -595,6 +592,7 @@
           'all_dependent_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
+                '-framework CFNetwork',
                 '-framework Foundation',
                 '-framework Security',
                 '-framework SystemConfiguration',

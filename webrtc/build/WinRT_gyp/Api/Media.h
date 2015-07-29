@@ -82,6 +82,7 @@ namespace webrtc_winrt_api {
     void AddTrack(IMediaStreamTrack^ track);
     void RemoveTrack(IMediaStreamTrack^ track);
     property String^ Id { String^ get();}
+    void Stop();
     property bool Active { bool get(); }
   private:
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;

@@ -129,7 +129,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     return channel_->SessionId();
   }
 
-  virtual void SetMaxProtocolVersion(rtc::SSLProtocolVersion version);
+  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 
   // Set up the ciphers to use for DTLS-SRTP. If this method is not called
   // before DTLS starts, or |ciphers| is empty, SRTP keys won't be negotiated.
@@ -204,6 +204,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     channel_->OnCandidate(candidate);
   }
 
+  void SetReceivingTimeout(int receiving_timeout_ms) {
+    channel_->SetReceivingTimeout(receiving_timeout_ms);
+  }
+
   // Needed by DtlsTransport.
   TransportChannelImpl* channel() { return channel_; }
 
@@ -213,6 +217,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
                     const rtc::PacketTime& packet_time, int flags);
   void OnReadyToSend(TransportChannel* channel);
+  void OnReceivingState(TransportChannel* channel);
   void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
   bool SetupDtls();
   bool MaybeStartDtls();

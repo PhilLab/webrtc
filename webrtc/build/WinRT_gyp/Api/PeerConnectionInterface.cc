@@ -316,13 +316,16 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
   return Concurrency::create_async([this, candidate] {
     rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
     FromCx(candidate, &nativeCandidate);
-
     _impl->AddIceCandidate(nativeCandidate.get());
   });
 }
 
 void RTCPeerConnection::Close() {
   globals::RunOnGlobalThread<void>([this] {
+    if (_impl.get()) {
+      _impl->Close();
+    }
+
     // Needed to remove the circular references and allow
     // this object to be garbage collected.
     _observer.SetPeerConnection(nullptr);

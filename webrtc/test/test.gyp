@@ -147,6 +147,7 @@
         'testsupport/frame_writer.cc',
         'testsupport/frame_writer.h',
         'testsupport/gtest_disable.h',
+        'testsupport/iosfileutils.mm',
         'testsupport/mock/mock_frame_reader.h',
         'testsupport/mock/mock_frame_writer.h',
         'testsupport/packet_reader.cc',
@@ -155,6 +156,13 @@
         'testsupport/perf_test.h',
         'testsupport/trace_to_stderr.cc',
         'testsupport/trace_to_stderr.h',
+      ],
+      'conditions': [
+        ['OS=="ios"', {
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+          },
+        }],
       ],
     },
     {

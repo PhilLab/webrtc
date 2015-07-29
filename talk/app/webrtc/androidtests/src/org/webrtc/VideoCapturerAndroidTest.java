@@ -82,8 +82,8 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     }
 
     @Override
-    public void OnFrameCaptured(byte[] frame, int length, int rotation,
-        long timeStamp) {
+    public void OnFrameCaptured(byte[] frame, int length, int width, int height,
+        int rotation, long timeStamp) {
       synchronized (frameLock) {
         ++framesCaptured;
         frameSize = length;
@@ -91,6 +91,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
         frameLock.notify();
       }
     }
+
+    @Override
+    public void OnOutputFormatRequest(int width, int height, int fps) {}
 
     public boolean WaitForCapturerToStart() throws InterruptedException {
       synchronized (capturerStartLock) {

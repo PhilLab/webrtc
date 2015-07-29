@@ -30,7 +30,7 @@
         '../../../../../webrtc/test/test.gyp:test_support',
         '../../../../../webrtc/test/test.gyp:test_support_main',
         '../../../../../webrtc/test/test.gyp:test_support_unittests',
-        '../../../../../webrtc/video_engine/video_engine.gyp:video_engine_core_unittests',
+        '../../../../../webrtc/video_engine/video_engine_core_unittests.gyp:video_engine_core_unittests',
         '../../../../../webrtc/voice_engine/voice_engine.gyp:voice_engine_unittests',
         '../../../../../webrtc/webrtc.gyp:rtc_unittests',
         '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
