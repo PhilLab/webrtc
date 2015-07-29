@@ -169,12 +169,14 @@
                 '<(PRODUCT_DIR)/obj/common_audio/spl_sqrt_floor_arm.obj',
                 '<(PRODUCT_DIR)/obj/common_audio/filter_ar_fast_q12_armv7.obj',
                 '<(PRODUCT_DIR)/obj/common_audio/complex_bit_reverse_arm.obj',
+                '<(PRODUCT_DIR)/obj/isac_fix/lattice_armv7.obj',
+                '<(PRODUCT_DIR)/obj/isac_fix/pitch_filter_armv6.obj',
               ],
             }],
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
-			  'AdditionalDependencies': [
-			   'ws2_32.lib',
-		       'WindowsApp.lib',
+        'AdditionalDependencies': [
+         'ws2_32.lib',
+           'WindowsApp.lib',
               ],
             }],
           ],
