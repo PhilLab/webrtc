@@ -64,7 +64,7 @@
                 'WindowsApp.lib',
               ],
             }],
-            ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
+            ['OS_RUNTIME=="winrt" and (winrt_platform=="win_phone" or winrt_platform=="win10_arm")', {
               'AdditionalOptions': [
                 # Fixes linking for assembler opus source files 
                 '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
