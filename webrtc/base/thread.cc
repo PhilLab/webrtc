@@ -519,21 +519,24 @@ void Thread::Clear(MessageHandler *phandler, uint32 id,
   // Object target cleared: remove from send list, wakeup/set ready
   // if sender not NULL.
 
-  std::list<_SendMessage>::iterator iter = sendlist_.begin();
-  while (iter != sendlist_.end()) {
-    _SendMessage smsg = *iter;
-    if (smsg.msg.Match(phandler, id)) {
-      if (removed) {
-        removed->push_back(smsg.msg);
-      } else {
-        delete smsg.msg.pdata;
+  if (!sendlist_.empty()) {
+    std::list<_SendMessage>::iterator iter = sendlist_.begin();
+    while (iter != sendlist_.end()) {
+      _SendMessage smsg = *iter;
+      if (smsg.msg.Match(phandler, id)) {
+        if (removed) {
+          removed->push_back(smsg.msg);
+        }
+        else {
+          delete smsg.msg.pdata;
+        }
+        iter = sendlist_.erase(iter);
+        *smsg.ready = true;
+        smsg.thread->socketserver()->WakeUp();
+        continue;
       }
-      iter = sendlist_.erase(iter);
-      *smsg.ready = true;
-      smsg.thread->socketserver()->WakeUp();
-      continue;
+      ++iter;
     }
-    ++iter;
   }
 
   MessageQueue::Clear(phandler, id, removed);

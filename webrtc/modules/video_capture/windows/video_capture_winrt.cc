@@ -336,8 +336,19 @@ ref class DisplayOrientation sealed {
 };
 
 DisplayOrientation::~DisplayOrientation() {
-  display_info->OrientationChanged::remove(
-    orientation_changed_registration_token_);
+
+  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
+  Windows::UI::Core::CoreDispatcherPriority priority =
+    Windows::UI::Core::CoreDispatcherPriority::Normal;
+  Windows::UI::Core::DispatchedHandler^ handler =
+    ref new Windows::UI::Core::DispatchedHandler(
+    [this]() {
+      display_info->OrientationChanged::remove(
+      orientation_changed_registration_token_);
+  });
+  Windows::Foundation::IAsyncAction^ action =
+    dispatcher->RunAsync(priority, handler);
+  Concurrency::create_task(action).wait();
 }
 
 DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
