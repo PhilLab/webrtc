@@ -170,6 +170,12 @@ Thread::Thread(SocketServer* ss)
 Thread::~Thread() {
   Stop();
   Clear(NULL);
+  // HACK(winrt): The parent class MessageQueue also calls Remove()
+  //  but by that time this Thread object is destroyed.
+  //  There's a race condition in MessageQueueManager::ClearInternal()
+  //  where it calls the Clear() function of class Thread but
+  //  its sendlist_ has already been destroyed and we get a crash.
+  MessageQueueManager::Remove(this);
 }
 
 bool Thread::SleepMs(int milliseconds) {
