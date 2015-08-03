@@ -133,7 +133,9 @@ IAsyncAction^ CreateCallbackBridge(
 
   // Start the initial async operation
   Concurrency::create_async([tce, init] {
-    init(tce);
+    globals::RunOnGlobalThread<void>([tce, init] {
+      init(tce);
+    });
   });
 
   // Create the task that waits on the completion event.
@@ -314,9 +316,11 @@ RTCDataChannel^ RTCPeerConnection::CreateDataChannel(
 
 IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
   return Concurrency::create_async([this, candidate] {
-    rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
-    FromCx(candidate, &nativeCandidate);
-    _impl->AddIceCandidate(nativeCandidate.get());
+    globals::RunOnGlobalThread<void>([this, candidate] {
+      rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
+      FromCx(candidate, &nativeCandidate);
+      _impl->AddIceCandidate(nativeCandidate.get());
+    });
   });
 }
 
@@ -422,6 +426,7 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   g_windowDispatcher = dispatcher;
 
   // Create a worker thread
+  globals::gThread.SetName("WinRTApiWorker", nullptr);
   globals::gThread.Start();
   globals::RunOnGlobalThread<void>([] {
     rtc::EnsureWinsockInit();
