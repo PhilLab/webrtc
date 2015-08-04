@@ -209,7 +209,7 @@ bool MediaStream::Active::get() {
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
-const char kStreamLabel[] = "stream_label";
+const char kStreamLabel[] = "stream_label_%x"; //we will append current time (uint32 in Hex, e.g.: 8chars to the end to generate a unique string)
 
 Media::Media() {
   _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>(cricket::DeviceManagerFactory::Create());
@@ -241,8 +241,10 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ me
     return globals::RunOnGlobalThread<MediaStream^>([this, mediaStreamConstraints]()->MediaStream^ {
 
       // This is the stream returned.
+      char streamLabel[32];
+      sprintf(streamLabel, kStreamLabel, rtc::Time());
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-        globals::gPeerConnectionFactory->CreateLocalMediaStream(kStreamLabel);
+        globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
       if (mediaStreamConstraints->audioEnabled) {
         if (_selectedAudioDevice == -1) {
