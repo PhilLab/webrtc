@@ -379,6 +379,11 @@ bool MediaStreamSignaling::AddLocalStream(MediaStreamInterface* local_stream) {
 
 void MediaStreamSignaling::RemoveLocalStream(
     MediaStreamInterface* local_stream) {
+  if (local_streams_->find(local_stream->label()) == NULL) {
+    LOG(LS_WARNING) << "MediaStream with label " << local_stream->label()
+      << "does not exist.";
+    return;
+  }
   AudioTrackVector audio_tracks = local_stream->GetAudioTracks();
   for (AudioTrackVector::const_iterator it = audio_tracks.begin();
        it != audio_tracks.end(); ++it) {
