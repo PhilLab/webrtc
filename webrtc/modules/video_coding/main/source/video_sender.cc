@@ -93,6 +93,8 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
     return VCM_PARAMETER_ERROR;
   }
 
+  LOG(LS_INFO) << "Send Codec type: " << sendCodec->plName;
+
   bool ret = _codecDataBase.SetSendCodec(
       sendCodec, numberOfCores, maxPayloadSize, &_encodedFrameCallback);
 
