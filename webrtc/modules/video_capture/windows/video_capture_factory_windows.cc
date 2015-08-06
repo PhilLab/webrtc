@@ -23,7 +23,7 @@ namespace videocapturemodule {
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
     const int32_t id) {
 #ifdef WINRT
-  return DeviceInfoWinRT::Create(id);
+  return DeviceInfoWinRT::Create(id).release();
 #else
   // TODO(tommi): Use the Media Foundation version on Vista and up.
   return DeviceInfoDS::Create(id);

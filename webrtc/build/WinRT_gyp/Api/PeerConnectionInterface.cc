@@ -503,7 +503,7 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
 
 void WebRTC::SetPreferredVideoCaptureFormat(int frame_width, int frame_height, int fps){
 
-  globals::gPreferredVideoCaptureFormat.interval = globals::gPreferredVideoCaptureFormat.FpsToInterval(fps);
+  globals::gPreferredVideoCaptureFormat.interval = cricket::VideoFormat::FpsToInterval(fps);
 
   globals::gPreferredVideoCaptureFormat.width = frame_width;
 

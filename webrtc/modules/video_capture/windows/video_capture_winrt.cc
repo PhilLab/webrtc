@@ -16,6 +16,7 @@
 
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
+#include "webrtc/base/Win32.h"
 
 using Microsoft::WRL::ComPtr;
 using Windows::Devices::Enumeration::DeviceClass;
@@ -33,11 +34,26 @@ using Windows::Media::MediaProperties::MediaEncodingSubtypes;
 using Windows::Media::MediaProperties::VideoEncodingProperties;
 using Windows::Graphics::Display::DisplayInformation;
 using Windows::Graphics::Display::DisplayOrientations;
+using Windows::UI::Core::DispatchedHandler;
+using Windows::UI::Core::CoreDispatcherPriority;
+using Windows::Foundation::IAsyncAction;
+using Windows::Foundation::TypedEventHandler;
 
+// Necessary to access CoreDispatcher for operations that can
+// only be done on the UI thread.
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace webrtc {
 namespace videocapturemodule {
+
+void RunOnCoreDispatcher(std::function<void()> fn) {
+  auto handler = ref new Windows::UI::Core::DispatchedHandler([fn]() {
+    fn();
+  });
+  auto action = g_windowDispatcher->RunAsync(
+    CoreDispatcherPriority::Normal, handler);
+  Concurrency::create_task(action).wait();
+}
 
 ref class CaptureDevice sealed {
  public:
@@ -219,33 +235,30 @@ void CaptureDevice::StartCapture(
       ref new Windows::Foundation::EventHandler<MediaSampleEventArgs^>
         (this, &CaptureDevice::OnMediaSample);
 
-  Concurrency::create_task(
-    media_sink_->InitializeAsync(media_encoding_profile->Video)).
-      then([this,
-            media_encoding_profile,
-            video_encoding_properties](IMediaExtension^ media_extension) {
-    return Concurrency::create_task(
-      media_capture_->VideoDeviceController->SetMediaStreamPropertiesAsync(
-        MediaStreamType::VideoRecord,
-        video_encoding_properties)).
-          then([this,
-                media_encoding_profile,
-                media_extension](Concurrency::task<void> async_info) {
-      return Concurrency::create_task(media_capture_->
-        StartRecordToCustomSinkAsync(media_encoding_profile,
-                                     media_extension)).
-          then([this](Concurrency::task<void> async_info) {
-        try {
-          async_info.get();
-          capture_started_ = true;
-        } catch (Platform::Exception^ e) {
-          CleanupSink();
-          CleanupMediaCapture();
-          throw;
-        }
-      });
-    });
-  }).wait();
+  auto initOp = media_sink_->InitializeAsync(media_encoding_profile->Video);
+  Concurrency::create_task(initOp)
+    .then([this, media_encoding_profile,
+      video_encoding_properties](IMediaExtension^ media_extension) {
+      auto setPropOp =
+        media_capture_->VideoDeviceController->SetMediaStreamPropertiesAsync(
+        MediaStreamType::VideoRecord, video_encoding_properties);
+      return Concurrency::create_task(setPropOp)
+        .then([this, media_encoding_profile, media_extension]() {
+          auto startRecordOp = media_capture_->StartRecordToCustomSinkAsync(
+            media_encoding_profile, media_extension);
+          return Concurrency::create_task(startRecordOp)
+            .then([this](Concurrency::task<void> async_info) {
+              try {
+                async_info.get();
+                capture_started_ = true;
+              } catch (Platform::Exception^ e) {
+                CleanupSink();
+                CleanupMediaCapture();
+                throw;
+              }
+            });
+        });
+      }).wait();
 }
 
 void CaptureDevice::StopCapture() {
@@ -336,39 +349,22 @@ ref class DisplayOrientation sealed {
 };
 
 DisplayOrientation::~DisplayOrientation() {
-
-  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-  Windows::UI::Core::CoreDispatcherPriority priority =
-    Windows::UI::Core::CoreDispatcherPriority::Normal;
-  Windows::UI::Core::DispatchedHandler^ handler =
-    ref new Windows::UI::Core::DispatchedHandler(
-    [this]() {
-      display_info->OrientationChanged::remove(
-      orientation_changed_registration_token_);
+  RunOnCoreDispatcher([this]() {
+    display_info->OrientationChanged::remove(
+    orientation_changed_registration_token_);
   });
-  Windows::Foundation::IAsyncAction^ action =
-    dispatcher->RunAsync(priority, handler);
-  Concurrency::create_task(action).wait();
 }
 
 DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
   : listener_(listener) {
-  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-  Windows::UI::Core::CoreDispatcherPriority priority =
-    Windows::UI::Core::CoreDispatcherPriority::Normal;
-  Windows::UI::Core::DispatchedHandler^ handler =
-    ref new Windows::UI::Core::DispatchedHandler(
-      [this]() {
-        display_info = DisplayInformation::GetForCurrentView();
-        orientation = display_info->CurrentOrientation;
-        orientation_changed_registration_token_ =
-          display_info->OrientationChanged::add(
-          ref new Windows::Foundation::TypedEventHandler<DisplayInformation^,
-          Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
-    });
-  Windows::Foundation::IAsyncAction^ action =
-    dispatcher->RunAsync(priority, handler);
-  Concurrency::create_task(action).wait();
+  RunOnCoreDispatcher([this]() {
+    display_info = DisplayInformation::GetForCurrentView();
+    orientation = display_info->CurrentOrientation;
+    orientation_changed_registration_token_ =
+      display_info->OrientationChanged::add(
+      ref new TypedEventHandler<DisplayInformation^,
+      Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
+  });
 }
 
 void DisplayOrientation::OnOrientationChanged(DisplayInformation^ sender,
@@ -409,27 +405,19 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
 
   Concurrency::create_task(
     DeviceInformation::FindAllAsync(DeviceClass::VideoCapture)).
-      then([this,
-           device_unique_id,
-           device_unique_id_length](
+      then([this, device_unique_id, device_unique_id_length](
         Concurrency::task<DeviceInformationCollection^> find_task) {
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
-        LOG(LS_ERROR) << "There is no capture device installed on the system";
+        LOG_F(LS_ERROR) << "No video capture device found";
+        return;
       }
+      // Look for the device in the collection.
+      DeviceInformation^ chosen_dev_info = nullptr;
       for (unsigned int i = 0; i < dev_info_collection->Size; i++) {
         auto dev_info = dev_info_collection->GetAt(i);
-        Platform::String^ deviceUniqueId = dev_info->Id;
-        char current_device_unique_id_utf8[256];
-        current_device_unique_id_utf8[0] = 0;
-        WideCharToMultiByte(CP_UTF8, 0, deviceUniqueId->Begin(), -1,
-          current_device_unique_id_utf8,
-          sizeof(current_device_unique_id_utf8), NULL,
-          NULL);
-        if (strncmp(current_device_unique_id_utf8,
-          (const char*)device_unique_id,
-          device_unique_id_length) == 0) {
+        if (rtc::ToUtf8(dev_info->Id->Data()) == device_unique_id) {
           device_id_ = dev_info->Id;
           if (dev_info->EnclosureLocation != nullptr)
             camera_location_ = dev_info->EnclosureLocation->Panel;
@@ -439,17 +427,9 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
         }
       }
     } catch (Platform::Exception^ e) {
-      int message_size = WideCharToMultiByte(
-        CP_UTF8, 0, e->Message->Data(),
-        static_cast<int>(wcslen(e->Message->Data())),
-        NULL, 0, NULL, NULL);
-      std::string message(message_size, 0);
-      WideCharToMultiByte(
-        CP_UTF8, 0, e->Message->Data(),
-        static_cast<int>(wcslen(e->Message->Data())),
-        &message[0], message_size, NULL, NULL);
-      LOG(LS_ERROR) <<
-        "Failed to retrieve device info collection. " << message.c_str();
+      LOG(LS_ERROR)
+        << "Failed to retrieve device info collection. "
+        << rtc::ToUtf8(e->Message->Data());
     }
   }).wait();
 
@@ -554,16 +534,8 @@ int32_t VideoCaptureWinRT::StartCapture(
     ApplyDisplayOrientation(display_orientation_->orientation);
     device_->StartCapture(media_encoding_profile, video_encoding_properties);
   } catch (Platform::Exception^ e) {
-    int message_size = WideCharToMultiByte(
-      CP_UTF8, 0, e->Message->Data(),
-      static_cast<int>(wcslen(e->Message->Data())),
-      NULL, 0, NULL, NULL);
-    std::string message(message_size, 0);
-    WideCharToMultiByte(
-      CP_UTF8, 0, e->Message->Data(),
-      static_cast<int>(wcslen(e->Message->Data())),
-      &message[0], message_size, NULL, NULL);
-    LOG(LS_ERROR) << "Failed to start capture. " << message.c_str();
+    LOG(LS_ERROR) << "Failed to start capture. "
+      << rtc::ToUtf8(e->Message->Data());
     return -1;
   }
 
@@ -610,16 +582,8 @@ int32_t VideoCaptureWinRT::StopCapture() {
   try {
     device_->StopCapture();
   } catch (Platform::Exception^ e) {
-    int message_size = WideCharToMultiByte(
-      CP_UTF8, 0, e->Message->Data(),
-      static_cast<int>(wcslen(e->Message->Data())),
-      NULL, 0, NULL, NULL);
-    std::string message(message_size, 0);
-    WideCharToMultiByte(
-      CP_UTF8, 0, e->Message->Data(),
-      static_cast<int>(wcslen(e->Message->Data())),
-      &message[0], message_size, NULL, NULL);
-    LOG(LS_ERROR) << "Failed to stop capture. " << message.c_str();
+    LOG(LS_ERROR) << "Failed to stop capture. "
+      << rtc::ToUtf8(e->Message->Data());
     return -1;
   }
   return 0;
@@ -645,17 +609,8 @@ void VideoCaptureWinRT::OnIncomingFrame(
 
 void VideoCaptureWinRT::OnCaptureDeviceFailed(HRESULT code,
                                               Platform::String^ message) {
-  int message_string_size = WideCharToMultiByte(
-    CP_UTF8, 0, message->Data(),
-    static_cast<int>(wcslen(message->Data())),
-    NULL, 0, NULL, NULL);
-  std::string message_string(message_string_size, 0);
-  WideCharToMultiByte(
-    CP_UTF8, 0, message->Data(),
-    static_cast<int>(wcslen(message->Data())),
-    &message_string[0], message_string_size, NULL, NULL);
   LOG(LS_ERROR) << "Capture device failed. HRESULT: " <<
-    code << " Mesage: " << message_string.c_str();
+    code << " Message: " << rtc::ToUtf8(message->Data());
   CriticalSectionScoped cs(&_apiCs);
   if (device_ != nullptr && device_->CaptureStarted())
     device_->StopCapture();

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
 
+#include <functional>
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 
@@ -30,8 +31,9 @@ class CaptureDeviceListener {
 };
 
 class DisplayOrientationListener {
-  public:
-    virtual void DisplayOrientationChanged(Windows::Graphics::Display::DisplayOrientations orientation) = 0;
+ public:
+  virtual void DisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations orientation) = 0;
 };
 
 class VideoCaptureWinRT
@@ -70,6 +72,10 @@ class VideoCaptureWinRT
   Windows::Devices::Enumeration::Panel camera_location_;
   DisplayOrientation^ display_orientation_;
 };
+
+// Helper function to run code on the WinRT CoreDispatcher
+// and only return once the call completed.
+void RunOnCoreDispatcher(std::function<void()> fn);
 
 }  // namespace videocapturemodule
 }  // namespace webrtc

@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/base/Win32.h"
 
 using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
@@ -24,7 +25,12 @@ using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using Windows::Media::Capture::MediaStreamType;
 using Windows::Media::MediaProperties::IVideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
+using Windows::UI::Core::CoreDispatcher;
+using Windows::UI::Core::CoreDispatcherPriority;
+using Windows::UI::Core::DispatchedHandler;
 
+// Necessary to access CoreDispatcher for operations that can
+// only be done on the UI thread.
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace webrtc {
@@ -50,53 +56,36 @@ Platform::Agile<MediaCapture>
 MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
   CriticalSectionScoped cs(critical_section_);
 
-  std::map<Platform::String^, Platform::Agile<MediaCapture> >::iterator iter =
-    media_capture_map_.find(device_id);
+  // We cache MediaCapture objects
+  auto iter = media_capture_map_.find(device_id);
   if (iter != media_capture_map_.end()) {
     return iter->second;
   } else {
-    MediaCaptureInitializationSettings^ settings =
-      ref new MediaCaptureInitializationSettings();
-    MediaCapture^ media_capture = ref new MediaCapture();
-    Platform::Agile<MediaCapture> media_capture_agile(media_capture);
-    settings->VideoDeviceId = device_id;
+    Platform::Agile<MediaCapture> media_capture_agile(ref new MediaCapture());
 
-    Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-    Windows::UI::Core::CoreDispatcherPriority priority =
-      Windows::UI::Core::CoreDispatcherPriority::Normal;
     Concurrency::task<void> initialize_async_task;
-    Windows::UI::Core::DispatchedHandler^ handler =
-      ref new Windows::UI::Core::DispatchedHandler(
-        [this,
-        &initialize_async_task,
-        media_capture_agile,
-        settings]() {
-      initialize_async_task =
-        Concurrency::create_task(
-          media_capture_agile->InitializeAsync(settings)).
-            then([this, media_capture_agile](Concurrency::task<void> initTask) {
-        try {
-          initTask.get();
-        } catch (Platform::Exception^ e) {
-          int messageSize = WideCharToMultiByte(
-            CP_UTF8, 0,
-            e->Message->Data(),
-            static_cast<int>(wcslen(e->Message->Data())),
-            NULL, 0, NULL, NULL);
-          std::string message(messageSize, 0);
-          WideCharToMultiByte(CP_UTF8, 0, e->Message->Data(),
-                              static_cast<int>(wcslen(e->Message->Data())),
-                              &message[0], messageSize, NULL, NULL);
-          LOG(LS_ERROR) <<
-            "Failed to initialize media capture device. " << message.c_str();
-        }
-      });
+    auto handler = ref new DispatchedHandler(
+      [this, &initialize_async_task, media_capture_agile, device_id]() {
+      auto settings = ref new MediaCaptureInitializationSettings();
+      settings->VideoDeviceId = device_id;
+      auto initOp = media_capture_agile->InitializeAsync(settings);
+      initialize_async_task = Concurrency::create_task(initOp).
+        then([this, media_capture_agile](Concurrency::task<void> initTask) {
+          try {
+            initTask.get();
+          } catch (Platform::Exception^ e) {
+            LOG(LS_ERROR)
+              << "Failed to initialize media capture device. "
+              << rtc::ToUtf8(e->Message->Data());
+          }
+        });
     });
-    Windows::Foundation::IAsyncAction^ dispatcher_action =
-      dispatcher->RunAsync(priority, handler);
+
+    auto dispatcher_action = g_windowDispatcher->RunAsync(
+      CoreDispatcherPriority::Normal, handler);
     Concurrency::create_task(dispatcher_action).wait();
     initialize_async_task.wait();
-
+    // Cache the MediaCapture object so we don't recreate it later.
     media_capture_map_[device_id] = media_capture_agile;
     return media_capture_agile;
   }
@@ -105,19 +94,17 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
 void MediaCaptureDevicesWinRT::RemoveMediaCapture(Platform::String^ device_id) {
   CriticalSectionScoped cs(critical_section_);
 
-  std::map<Platform::String^, Platform::Agile<MediaCapture> >::iterator iter =
-    media_capture_map_.find(device_id);
+  auto iter = media_capture_map_.find(device_id);
   if (iter != media_capture_map_.end()) {
-    media_capture_map_.erase(device_id);
+    media_capture_map_.erase(iter);
   }
 }
 
 // static
-DeviceInfoWinRT* DeviceInfoWinRT::Create(const int32_t id) {
-  DeviceInfoWinRT* winrt_info = new DeviceInfoWinRT(id);
-  if (!winrt_info || winrt_info->Init() != 0) {
-    delete winrt_info;
-    winrt_info = NULL;
+rtc::scoped_ptr<DeviceInfoWinRT> DeviceInfoWinRT::Create(const int32_t id) {
+  rtc::scoped_ptr<DeviceInfoWinRT> winrt_info(new DeviceInfoWinRT(id));
+  if (winrt_info->Init() != 0) {
+    winrt_info.reset();
     LOG(LS_ERROR) << "Failed to initialize device info object.";
   }
   return winrt_info;
@@ -127,10 +114,6 @@ DeviceInfoWinRT::DeviceInfoWinRT(const int32_t id) : DeviceInfoImpl(id) {
 }
 
 DeviceInfoWinRT::~DeviceInfoWinRT() {
-}
-
-int32_t DeviceInfoWinRT::Init() {
-  return 0;
 }
 
 uint32_t DeviceInfoWinRT::NumberOfDevices() {
@@ -165,64 +148,51 @@ int32_t DeviceInfoWinRT::GetDeviceInfo(uint32_t device_number,
                                        uint32_t product_unique_id_utf8_length) {
   int device_count = -1;
   Concurrency::create_task(
-    DeviceInformation::FindAllAsync(
-      DeviceClass::VideoCapture)).then(
-        [this,
-        device_number,
-        device_name_utf8,
-        device_name_utf8_length,
-        device_unique_id_utf8,
-        device_unique_id_utf8_length,
-        product_unique_id_utf8,
-        product_unique_id_utf8_length,
-        &device_count]
-          (Concurrency::task<DeviceInformationCollection^> find_task) {
+    DeviceInformation::FindAllAsync(DeviceClass::VideoCapture)).then(
+      [this,
+      device_number,
+      device_name_utf8,
+      device_name_utf8_length,
+      device_unique_id_utf8,
+      device_unique_id_utf8_length,
+      product_unique_id_utf8,
+      product_unique_id_utf8_length,
+      &device_count]
+        (Concurrency::task<DeviceInformationCollection^> find_task) {
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
         LOG_F(LS_ERROR) << "No video capture device found";
+        return;
       }
       device_count = dev_info_collection->Size;
       for (unsigned int i = 0; i < dev_info_collection->Size; i++) {
-        if (i == static_cast<int>(device_number)) {
-          auto dev_info = dev_info_collection->GetAt(i);
-          Platform::String^ device_name = dev_info->Name;
-          Platform::String^ device_unique_id = dev_info->Id;
-          int convResult = 0;
-          convResult = WideCharToMultiByte(CP_UTF8, 0,
-            device_name->Data(), -1,
-            device_name_utf8,
-            device_name_utf8_length, NULL,
-            NULL);
-          if (convResult == 0) {
-            LOG(LS_ERROR) << "Failed to convert device name to UTF8. " <<
-              GetLastError();
-          }
-          convResult = WideCharToMultiByte(CP_UTF8, 0,
-            device_unique_id->Data(), -1,
-            device_unique_id_utf8,
-            device_unique_id_utf8_length, NULL,
-            NULL);
-          if (convResult == 0) {
-            LOG(LS_ERROR) << "Failed to convert device unique ID to UTF8. " <<
-              GetLastError();
-          }
-          if (product_unique_id_utf8 != NULL)
-            product_unique_id_utf8[0] = 0;
+        if (i != static_cast<int>(device_number))
+          continue;  // Continue until the device number is found.
+        auto dev_info = dev_info_collection->GetAt(i);
+        Platform::String^ device_name = dev_info->Name;
+        Platform::String^ device_unique_id = dev_info->Id;
+        int convResult = 0;
+        convResult = WideCharToMultiByte(CP_UTF8, 0,
+          device_name->Data(), -1,
+          device_name_utf8, device_name_utf8_length, NULL, NULL);
+        if (convResult == 0) {
+          LOG(LS_ERROR) << "Failed to convert device name to UTF8. " <<
+            GetLastError();
         }
+        convResult = WideCharToMultiByte(CP_UTF8, 0,
+          device_unique_id->Data(), -1,
+          device_unique_id_utf8, device_unique_id_utf8_length, NULL, NULL);
+        if (convResult == 0) {
+          LOG(LS_ERROR) << "Failed to convert device unique ID to UTF8. " <<
+            GetLastError();
+        }
+        if (product_unique_id_utf8 != NULL)
+          product_unique_id_utf8[0] = 0;
       }
     } catch (Platform::Exception^ e) {
-      int message_size = WideCharToMultiByte(
-        CP_UTF8, 0, e->Message->Data(),
-        static_cast<int>(wcslen(e->Message->Data())),
-        NULL, 0, NULL, NULL);
-      std::string message(message_size, 0);
-      WideCharToMultiByte(
-        CP_UTF8, 0, e->Message->Data(),
-        static_cast<int>(wcslen(e->Message->Data())),
-        &message[0], message_size, NULL, NULL);
       LOG(LS_ERROR) << "Failed to retrieve device info collection. " <<
-        message.c_str();
+        rtc::ToUtf8(e->Message->Data());
     }
   }).wait();
 
@@ -253,88 +223,73 @@ int32_t DeviceInfoWinRT::CreateCapabilityMap(
     device_unique_id_utf8;
 
   Concurrency::create_task(
-    DeviceInformation::FindAllAsync(
-      DeviceClass::VideoCapture)).then(
-        [this,
-        device_unique_id_utf8,
-        device_unique_id_utf8_length]
-          (Concurrency::task<DeviceInformationCollection^> find_task) {
+    DeviceInformation::FindAllAsync(DeviceClass::VideoCapture)).then(
+      [this, device_unique_id_utf8, device_unique_id_utf8_length]
+        (Concurrency::task<DeviceInformationCollection^> find_task) {
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
         LOG_F(LS_ERROR) << "No video capture device found";
+        return;
       }
+      // Look for the device in the collection.
       DeviceInformation^ chosen_dev_info = nullptr;
       for (unsigned int i = 0; i < dev_info_collection->Size; i++) {
         auto dev_info = dev_info_collection->GetAt(i);
-        Platform::String^ device_unique_id = dev_info->Id;
-        char current_device_unique_id_utf8[256];
-        current_device_unique_id_utf8[0] = 0;
-        WideCharToMultiByte(CP_UTF8, 0, device_unique_id->Data(), -1,
-          current_device_unique_id_utf8,
-          sizeof(current_device_unique_id_utf8), NULL,
-          NULL);
-        if (strncmp(current_device_unique_id_utf8,
-          (const char*)device_unique_id_utf8,
-          device_unique_id_utf8_length) == 0) {
+        if (rtc::ToUtf8(dev_info->Id->Data()) == device_unique_id_utf8) {
           chosen_dev_info = dev_info;
           break;
         }
       }
-      if (chosen_dev_info != nullptr) {
-        auto media_capture =
-          MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(
-            chosen_dev_info->Id);
-        auto stream_properties = media_capture->VideoDeviceController->
-          GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
-        for (unsigned int i = 0; i < stream_properties->Size; i++) {
-          IVideoEncodingProperties^ prop =
-            static_cast<IVideoEncodingProperties^>(stream_properties->GetAt(i));
-          VideoCaptureCapability capability;
-          capability.width = prop->Width;
-          capability.height = prop->Height;
-          capability.maxFPS =
-            static_cast<int>(
-              static_cast<float>(prop->FrameRate->Numerator) /
-              static_cast<float>(prop->FrameRate->Denominator));
-          if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Yv12->Data()) == 0)
-            capability.rawType = kVideoYV12;
-          else if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Yuy2->Data()) == 0)
-            capability.rawType = kVideoYUY2;
-          else if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Iyuv->Data()) == 0)
-            capability.rawType = kVideoIYUV;
-          else if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Rgb24->Data()) == 0)
-            capability.rawType = kVideoRGB24;
-          else if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Rgb32->Data()) == 0)
-            capability.rawType = kVideoARGB;
-          else if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Mjpg->Data()) == 0)
-            capability.rawType = kVideoMJPEG;
-          else if (_wcsicmp(prop->Subtype->Data(),
-            MediaEncodingSubtypes::Nv12->Data()) == 0)
-            capability.rawType = kVideoNV12;
-          else
-            capability.rawType = kVideoUnknown;
-          _captureCapabilities.push_back(capability);
-        }
+
+      // If we haven't found the device, return now.
+      if (chosen_dev_info == nullptr)
+        return;
+
+      // Create a MediaCapture.
+      auto media_capture =
+        MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(
+          chosen_dev_info->Id);
+      auto stream_properties = media_capture->VideoDeviceController->
+        GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
+      for (unsigned int i = 0; i < stream_properties->Size; i++) {
+        IVideoEncodingProperties^ prop =
+          static_cast<IVideoEncodingProperties^>(stream_properties->GetAt(i));
+        VideoCaptureCapability capability;
+        capability.width = prop->Width;
+        capability.height = prop->Height;
+        capability.maxFPS =
+          static_cast<int>(
+            static_cast<float>(prop->FrameRate->Numerator) /
+            static_cast<float>(prop->FrameRate->Denominator));
+        if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Yv12->Data()) == 0)
+          capability.rawType = kVideoYV12;
+        else if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Yuy2->Data()) == 0)
+          capability.rawType = kVideoYUY2;
+        else if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Iyuv->Data()) == 0)
+          capability.rawType = kVideoIYUV;
+        else if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Rgb24->Data()) == 0)
+          capability.rawType = kVideoRGB24;
+        else if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Rgb32->Data()) == 0)
+          capability.rawType = kVideoARGB;
+        else if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Mjpg->Data()) == 0)
+          capability.rawType = kVideoMJPEG;
+        else if (_wcsicmp(prop->Subtype->Data(),
+          MediaEncodingSubtypes::Nv12->Data()) == 0)
+          capability.rawType = kVideoNV12;
+        else
+          capability.rawType = kVideoUnknown;
+        _captureCapabilities.push_back(capability);
       }
     } catch (Platform::Exception^ e) {
-      int message_size = WideCharToMultiByte(
-        CP_UTF8, 0, e->Message->Data(),
-        static_cast<int>(wcslen(e->Message->Data())),
-        NULL, 0, NULL, NULL);
-      std::string message(message_size, 0);
-      WideCharToMultiByte(
-        CP_UTF8, 0, e->Message->Data(),
-        static_cast<int>(wcslen(e->Message->Data())),
-        &message[0], message_size, NULL, NULL);
       LOG(LS_ERROR) << "Failed to find media capture devices. " <<
-        message.c_str();
+        rtc::ToUtf8(e->Message->Data());
     }
   }).wait();
 

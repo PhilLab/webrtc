@@ -18,6 +18,7 @@
 #include <map>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -46,12 +47,11 @@ private ref class MediaCaptureDevicesWinRT sealed {
 class DeviceInfoWinRT : public DeviceInfoImpl {
  public:
   // Factory function.
-  static DeviceInfoWinRT* Create(const int32_t id);
+  static rtc::scoped_ptr<DeviceInfoWinRT> Create(const int32_t id);
 
   explicit DeviceInfoWinRT(const int32_t id);
   virtual ~DeviceInfoWinRT();
 
-  int32_t Init();
   virtual uint32_t NumberOfDevices();
 
   virtual int32_t GetDeviceName(uint32_t device_number,
@@ -70,6 +70,8 @@ class DeviceInfoWinRT : public DeviceInfoImpl {
     uint32_t position_y);
 
  protected:
+  // No-op Init
+  int32_t Init() { return 0; }
   int32_t GetDeviceInfo(uint32_t device_number,
                         char* device_name_utf8,
                         uint32_t device_name_utf8_length,

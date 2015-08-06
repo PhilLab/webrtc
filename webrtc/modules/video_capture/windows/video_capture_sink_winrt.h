@@ -46,7 +46,6 @@ interface class ISinkCallback {
 class VideoCaptureStreamSinkWinRT :
     public IMFStreamSink,
     public IMFMediaTypeHandler {
-
   // State enum: Defines the current state of the stream.
   enum State {
     State_TypeNotSet = 0,
@@ -116,9 +115,10 @@ class VideoCaptureStreamSinkWinRT :
   };
 
   // AsyncOperation:
-  // Used to queue asynchronous operations. When we call MFPutWorkItem, we use this
-  // object for the callback state (pState). Then, when the callback is invoked,
-  // we can use the object to determine which asynchronous operation to perform.
+  // Used to queue asynchronous operations. When we call MFPutWorkItem,
+  // we use this object for the callback state (pState). Then, when the
+  // callback is invoked, we can use the object to determine which
+  // asynchronous operation to perform.
   class AsyncOperation : public IUnknown {
    public:
     explicit AsyncOperation(StreamOperation op);
@@ -181,7 +181,8 @@ class VideoCaptureStreamSinkWinRT :
   explicit VideoCaptureStreamSinkWinRT(DWORD dwIdentifier);
   virtual ~VideoCaptureStreamSinkWinRT();
 
-  HRESULT Initialize(VideoCaptureMediaSinkWinRT *pParent, ISinkCallback ^callback);
+  HRESULT Initialize(VideoCaptureMediaSinkWinRT *pParent,
+    ISinkCallback ^callback);
 
   HRESULT Start(MFTIME start);
   HRESULT Restart();
@@ -243,7 +244,8 @@ class VideoCaptureMediaSinkWinRT
 
   HRESULT RuntimeClassInitialize(
       ISinkCallback ^callback,
-      Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties);
+      Windows::Media::MediaProperties::IMediaEncodingProperties^
+        encodingProperties);
 
   // IMediaExtension
   IFACEMETHOD(SetProperties) (
@@ -300,10 +302,12 @@ private ref class VideoCaptureMediaSinkProxyWinRT sealed {
 
   Windows::Media::IMediaExtension^ GetMFExtension();
 
-  Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^ 
-      InitializeAsync(Windows::Media::MediaProperties::IMediaEncodingProperties ^encodingProperties);
+  Windows::Foundation::IAsyncOperation<Windows::Media::IMediaExtension^>^
+      InitializeAsync(Windows::Media::MediaProperties::IMediaEncodingProperties^
+        encodingProperties);
 
-  event Windows::Foundation::EventHandler<MediaSampleEventArgs^>^ MediaSampleEvent;
+  event Windows::Foundation::EventHandler<MediaSampleEventArgs^>^
+    MediaSampleEvent;
 
  private:
   ref class VideoCaptureSinkCallback sealed : ISinkCallback {

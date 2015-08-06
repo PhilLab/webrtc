@@ -41,7 +41,8 @@ inline void Throw(HRESULT hr) {
   throw ref new Platform::Exception(hr);
 }
 
-static void AddAttribute(_In_ GUID guidKey, _In_ IPropertyValue ^value, _In_ IMFAttributes *pAttr) {
+static void AddAttribute(_In_ GUID guidKey, _In_ IPropertyValue ^value,
+  _In_ IMFAttributes *pAttr) {
   PropertyType type = value->Type;
   switch (type) {
   case PropertyType::UInt8Array:
@@ -99,11 +100,14 @@ void ConvertPropertiesToMediaType(
 
     while (it->HasCurrent) {
       auto currentValue = it->Current;
-      AddAttribute(currentValue->Key, safe_cast<IPropertyValue^>(currentValue->Value), spMT.Get());
+      AddAttribute(currentValue->Key,
+        safe_cast<IPropertyValue^>(currentValue->Value),
+        spMT.Get());
       it->MoveNext();
     }
 
-    GUID guiMajorType = safe_cast<IPropertyValue^>(mep->Properties->Lookup(MF_MT_MAJOR_TYPE))->GetGuid();
+    GUID guiMajorType = safe_cast<IPropertyValue^>(
+      mep->Properties->Lookup(MF_MT_MAJOR_TYPE))->GetGuid();
 
     if (guiMajorType != MFMediaType_Video) {
       Throw(E_UNEXPECTED);
@@ -115,7 +119,7 @@ void ConvertPropertiesToMediaType(
   DWORD GetStreamId() {
       return 0;
   }
-}
+}  // namespace
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -301,7 +305,8 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaSink(
   }
 
   if (SUCCEEDED(hr)) {
-    _spSink.Get()->QueryInterface(IID_IMFMediaSink, (void**)ppMediaSink);
+    _spSink.Get()->QueryInterface(IID_IMFMediaSink,
+      reinterpret_cast<void**>(ppMediaSink));
   } else {
     LOG_F(LS_ERROR) << "Capture stream sink error: " << hr;
   }
@@ -346,7 +351,8 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMediaTypeHandler(
 
   // This stream object acts as its own type handler, so we QI ourselves.
   if (SUCCEEDED(hr)) {
-    hr = QueryInterface(IID_IMFMediaTypeHandler, (void**)ppHandler);
+    hr = QueryInterface(IID_IMFMediaTypeHandler,
+      reinterpret_cast<void**>(ppHandler));
   }
 
   if (!SUCCEEDED(hr)) {
@@ -628,7 +634,7 @@ IFACEMETHODIMP VideoCaptureStreamSinkWinRT::GetMajorType(GUID *pguidMajorType) {
 
 // private methods
 HRESULT VideoCaptureStreamSinkWinRT::Initialize(
-    VideoCaptureMediaSinkWinRT *pParent, 
+    VideoCaptureMediaSinkWinRT *pParent,
     ISinkCallback ^callback) {
   assert(pParent != nullptr);
 
@@ -924,7 +930,7 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
       if (FAILED(hr)) {
         break;
       }
-      
+
       _callback->OnSample(ref new MediaSampleEventArgs(spSample));
       if (!fFlush) {
         fProcessingSample = true;
@@ -936,7 +942,8 @@ bool VideoCaptureStreamSinkWinRT::ProcessSamplesFromQueue(bool fFlush) {
 
       if (_state == State_Started && fProcessingSample && !_isShutdown) {
         // If we are still in started state request another sample
-        ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
+        ThrowIfError(QueueEvent(MEStreamSinkRequestSample,
+          GUID_NULL, S_OK, nullptr));
       }
 
       if (_sampleQueue.size() == 0) {
@@ -1035,7 +1042,8 @@ HRESULT VideoCaptureMediaSinkWinRT::RuntimeClassInitialize(
       ComPtr<IMFStreamSink> spStreamSink;
       ComPtr<IMFMediaType> spMediaType;
       ConvertPropertiesToMediaType(encodingProperties, &spMediaType);
-      ThrowIfError(AddStreamSink(streamId, spMediaType.Get(), spStreamSink.GetAddressOf()));
+      ThrowIfError(AddStreamSink(streamId, spMediaType.Get(),
+        spStreamSink.GetAddressOf()));
     }
   } catch (Platform::Exception ^exc) {
     _callback = nullptr;
@@ -1178,7 +1186,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkByIndex(
 
   CriticalSectionScoped cs(_critSec);
 
-  if (dwIndex >= 1){
+  if (dwIndex >= 1) {
     return MF_E_INVALIDINDEX;
   }
 
@@ -1211,7 +1219,7 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetStreamSinkById(
     hr = MF_E_SHUTDOWN;
   }
 
-  if (dwStreamSinkIdentifier != GetStreamId() || _spStreamSink == nullptr){
+  if (dwStreamSinkIdentifier != GetStreamId() || _spStreamSink == nullptr) {
     hr = MF_E_INVALIDSTREAMNUMBER;
   }
 
@@ -1290,7 +1298,6 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::GetPresentationClock(
 }
 
 IFACEMETHODIMP VideoCaptureMediaSinkWinRT::Shutdown() {
-
   ISinkCallback ^callback;
   {
     CriticalSectionScoped cs(_critSec);
@@ -1328,7 +1335,8 @@ IFACEMETHODIMP VideoCaptureMediaSinkWinRT::OnClockStart(
 
   if (SUCCEEDED(hr)) {
     _llStartTime = llClockStartOffset;
-    static_cast<VideoCaptureStreamSinkWinRT *>(_spStreamSink.Get())->Start(_llStartTime);
+    static_cast<VideoCaptureStreamSinkWinRT *>(_spStreamSink.Get())->Start(
+      _llStartTime);
   } else {
     LOG_F(LS_ERROR) << "Capture media sink error: " << hr;
   }
@@ -1375,9 +1383,7 @@ VideoCaptureMediaSinkProxyWinRT::VideoCaptureMediaSinkProxyWinRT()
 }
 
 VideoCaptureMediaSinkProxyWinRT::~VideoCaptureMediaSinkProxyWinRT() {
-
-  if (_mediaSink != nullptr)
-  {
+  if (_mediaSink != nullptr) {
     _mediaSink->Shutdown();
     _mediaSink = nullptr;
   }
@@ -1397,11 +1403,12 @@ IMediaExtension^ VideoCaptureMediaSinkProxyWinRT::GetMFExtension() {
   ComPtr<IInspectable> inspectable;
   ThrowIfError(_mediaSink.As(&inspectable));
 
-  return safe_cast<IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
+  return safe_cast<IMediaExtension^>(reinterpret_cast<Object^>(
+    inspectable.Get()));
 }
 
 
-Windows::Foundation::IAsyncOperation<IMediaExtension^>^ 
+Windows::Foundation::IAsyncOperation<IMediaExtension^>^
     VideoCaptureMediaSinkProxyWinRT::InitializeAsync(
         IMediaEncodingProperties ^encodingProperties) {
   return Concurrency::create_async([this, encodingProperties]() {
@@ -1421,18 +1428,12 @@ Windows::Foundation::IAsyncOperation<IMediaExtension^>^
     ComPtr<IInspectable> inspectable;
     ThrowIfError(_mediaSink.As(&inspectable));
 
-    return safe_cast<IMediaExtension^>(reinterpret_cast<Object^>(inspectable.Get()));
+    return safe_cast<IMediaExtension^>(reinterpret_cast<Object^>(
+      inspectable.Get()));
   });
 }
 
 void VideoCaptureMediaSinkProxyWinRT::OnSample(MediaSampleEventArgs^ args) {
-  Microsoft::WRL::ComPtr<IMFSample> spSample = args->GetMediaSample();
-  DWORD pcbTotalLength;
-  LONGLONG phnsSampleTime;
-  LONGLONG phnsSampleDuration;
-  spSample->GetTotalLength(&pcbTotalLength);
-  spSample->GetSampleTime(&phnsSampleTime);
-  spSample->GetSampleDuration(&phnsSampleDuration);
   MediaSampleEvent(this, args);
 }
 
