@@ -424,11 +424,10 @@ IAsyncOperation<bool>^ WinJSHooks::requestAccessForMediaCapture(){
     return  webrtc_winrt_api::WebRTC::RequestAccessForMediaCapture();
 }
 
-bool WinJSHooks::isInitialized() {
-  return globals::isInitialized;
-}
-
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
+  if (globals::isInitialized)
+    return;
+
   g_windowDispatcher = dispatcher;
 
   // Create a worker thread
