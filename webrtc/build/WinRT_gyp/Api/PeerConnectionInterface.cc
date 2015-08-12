@@ -42,9 +42,11 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc_winrt_api {
 namespace globals {
 
-  bool certificateVerifyCallBack(void* cert) {
-    return true;
-  }
+bool certificateVerifyCallBack(void* cert) {
+  return true;
+}
+  
+static bool isInitialized = false;
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   gPeerConnectionFactory;
@@ -422,6 +424,10 @@ IAsyncOperation<bool>^ WinJSHooks::requestAccessForMediaCapture(){
     return  webrtc_winrt_api::WebRTC::RequestAccessForMediaCapture();
 }
 
+bool WinJSHooks::isInitialized() {
+  return globals::isInitialized;
+}
+
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   g_windowDispatcher = dispatcher;
 
@@ -439,6 +445,7 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
   });
+  globals::isInitialized = true;
 }
 
 bool WebRTC::IsTracing() {

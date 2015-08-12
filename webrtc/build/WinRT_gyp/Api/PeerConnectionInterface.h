@@ -88,6 +88,7 @@ public:
 public ref class WinJSHooks sealed {
 public:
   static void initialize();
+  static bool isInitialized();
   static IAsyncOperation<bool>^ requestAccessForMediaCapture();
 };
 
