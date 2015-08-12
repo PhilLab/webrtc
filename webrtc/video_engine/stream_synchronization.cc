@@ -84,14 +84,11 @@ bool StreamSynchronization::ComputeRelativeDelay(
       audio_measurement.latest_receive_time_ms -
       (video_last_capture_time_ms - audio_last_capture_time_ms);
 
-#ifndef WINRT
-  //TODO(winrt): in WINRT dev test, we might have larger audio/video delta delay then normal. in that case, we still 
-  //want to log audio/video delay
   if (*relative_delay_ms > kMaxDeltaDelayMs ||
       *relative_delay_ms < -kMaxDeltaDelayMs) {
     return false;
   }
-#endif
+
   return true;
 }
 
