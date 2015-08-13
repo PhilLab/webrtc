@@ -281,6 +281,7 @@ private:
 
     int32_t _EnumerateEndpointDevicesAll();
     void _TraceCOMError(HRESULT hr) const;
+    void _Get44kHzDrift();
 
     int32_t _RefreshDeviceList(DeviceClass cls);
     int16_t _DeviceListCount(DeviceClass cls);
@@ -372,6 +373,10 @@ private:  // WASAPI
     uint32_t                          _devicePlayBlockSize;
     uint32_t                          _playChannels;
     uint32_t                          _sndCardPlayDelay;
+    
+    float                                   _sampleDriftAt48kHz;
+    float                                   _driftAccumulator;
+
     UINT64                                  _writtenSamples;
     LONGLONG                                _playAcc;
 

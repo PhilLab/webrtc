@@ -695,6 +695,8 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _playChannels(2),
     _sndCardPlayDelay(0),
     _sndCardRecDelay(0),
+    _sampleDriftAt48kHz(0),
+    _driftAccumulator(0),
     _writtenSamples(0),
     _readSamples(0),
     _playAcc(0),
@@ -2532,6 +2534,8 @@ int32_t AudioDeviceWindowsWasapi::InitPlayout()
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_playChannels      : %d", _playChannels);
     }
 
+    _Get44kHzDrift();
+
     // Create a rendering stream.
     //
     // ****************************************************************************
@@ -4202,9 +4206,15 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread()
                     if (_ptrAudioBuffer)
                     {
                         _ptrAudioBuffer->SetRecordedBuffer((const int8_t*)syncBuffer, _recBlockSize);
+
+                        _driftAccumulator += _sampleDriftAt48kHz;
+                        const int32_t clockDrift =
+                          static_cast<int32_t>(_driftAccumulator);
+                        _driftAccumulator -= clockDrift;
+
                         _ptrAudioBuffer->SetVQEData(sndCardPlayDelay,
                                                     sndCardRecDelay,
-                                                    0);
+                                                    clockDrift);
 
                         _ptrAudioBuffer->SetTypingStatus(KeyPressed());
 
@@ -4947,6 +4957,29 @@ void AudioDeviceWindowsWasapi::_SetThreadName(DWORD dwThreadID, LPCSTR szThreadN
     //__except (EXCEPTION_CONTINUE_EXECUTION)
     //{
     //}
+}
+
+// ----------------------------------------------------------------------------
+//  _Get44kHzDrift
+// ----------------------------------------------------------------------------
+
+void AudioDeviceWindowsWasapi::_Get44kHzDrift()
+{
+  // We aren't able to resample at 44.1 kHz. Instead we run at 44 kHz and push/pull
+  // from the engine faster to compensate. If only one direction is set to 44.1 kHz
+  // the result is indistinguishable from clock drift to the AEC. We can compensate
+  // internally if we inform the AEC about the drift.
+  _sampleDriftAt48kHz = 0;
+  _driftAccumulator = 0;
+
+  if (_playSampleRate == 44000 && _recSampleRate != 44000)
+  {
+    _sampleDriftAt48kHz = 480.0f / 440;
+  }
+  else if (_playSampleRate != 44000 && _recSampleRate == 44000)
+  {
+    _sampleDriftAt48kHz = -480.0f / 441;
+  }
 }
 
 // ----------------------------------------------------------------------------
