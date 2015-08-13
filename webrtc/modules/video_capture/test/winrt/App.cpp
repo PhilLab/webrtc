@@ -24,14 +24,11 @@ static char stdout_buffer[1024 * 1024] = { 0 };
 
 bool autoClose = false;
 
-namespace video_capture_test_winrt
-{
-  ref class VideoCaptureTestWinRT sealed : public Windows::UI::Xaml::Application
-  {
+namespace video_capture_test_winrt {
+  ref class VideoCaptureTestWinRT sealed :
+    public Windows::UI::Xaml::Application{
   public:
-    VideoCaptureTestWinRT()
-    {
-    }
+    VideoCaptureTestWinRT() { }
 
   private:
     ProgressRing^ progressRing_;
@@ -40,8 +37,7 @@ namespace video_capture_test_winrt
     Button^ thirdButton_;
 
   protected:
-    virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
-    {
+    void OnLaunched(LaunchActivatedEventArgs^ e) override {
       auto layoutRoot = ref new Grid();
       layoutRoot->VerticalAlignment = VerticalAlignment::Center;
       layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;
@@ -52,26 +48,29 @@ namespace video_capture_test_winrt
       auto buttonStack = ref new StackPanel();
       buttonStack->Orientation = Orientation::Horizontal;
       buttonStack->HorizontalAlignment = HorizontalAlignment::Center;
-      
+
       firstButton_ = ref new Button();
       firstButton_->Width = 200;
       firstButton_->Height = 60;
       firstButton_->Content = "1";
-      firstButton_->Click += ref new RoutedEventHandler(this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+      firstButton_->Click += ref new RoutedEventHandler(this,
+        &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
       buttonStack->Children->Append(firstButton_);
 
-      secondButton_= ref new Button();
+      secondButton_ = ref new Button();
       secondButton_->Width = 200;
       secondButton_->Height = 60;
       secondButton_->Content = "2";
-      secondButton_->Click += ref new RoutedEventHandler(this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+      secondButton_->Click += ref new RoutedEventHandler(this,
+        &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
       buttonStack->Children->Append(secondButton_);
 
       thirdButton_ = ref new Button();
       thirdButton_->Width = 200;
       thirdButton_->Height = 60;
       thirdButton_->Content = "3";
-      thirdButton_->Click += ref new RoutedEventHandler(this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+      thirdButton_->Click += ref new RoutedEventHandler(this,
+        &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
 
       buttonStack->Children->Append(thirdButton_);
 
@@ -86,23 +85,19 @@ namespace video_capture_test_winrt
 
       Window::Current->Content = layoutRoot;
       Window::Current->Activate();
-      //RunCaptureTest();
+      // RunCaptureTest();
     }
 
-    void button1_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-    {
+    void button1_Click(Platform::Object^ sender, RoutedEventArgs^ e) {
     }
 
-    void button2_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-    {
+    void button2_Click(Platform::Object^ sender, RoutedEventArgs^ e) {
     }
 
-    void button3_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-    {
+    void button3_Click(Platform::Object^ sender, RoutedEventArgs^ e) {
     }
 
-    void RunCaptureTest()
-    {
+    void RunCaptureTest() {
       // Update the UI to indicate test execution is in progress
       progressRing_->IsActive = true;
 
@@ -112,8 +107,7 @@ namespace video_capture_test_winrt
       // Run test cases in a separate thread not to block the UI thread
       // Pass the UI thread to continue using it after task execution
       auto ui = task_continuation_context::use_current();
-      create_task([this, ui]()
-      {
+      create_task([this, ui]() {
         int state = 0;
         if (state == 1) {
           webrtc::VideoCaptureModule* vcpm = NULL;
@@ -126,8 +120,9 @@ namespace video_capture_test_winrt
 
         int number_of_capture_devices = dev_info->NumberOfDevices();
 
-        //int capture_device_id[10] = { 0 };
-        webrtc::VideoCaptureModule** vcpms = new webrtc::VideoCaptureModule*[10];
+        // int capture_device_id[10] = { 0 };
+        webrtc::VideoCaptureModule** vcpms =
+          new webrtc::VideoCaptureModule*[10];
 
         // Check capabilities
         for (int device_index = 0; device_index < number_of_capture_devices;
@@ -144,7 +139,8 @@ namespace video_capture_test_winrt
           int number_of_capabilities =
             dev_info->NumberOfCapabilities(device_unique_name);
 
-          for (int cap_index = 0; cap_index < number_of_capabilities; ++cap_index) {
+          for (int cap_index = 0; cap_index < number_of_capabilities;
+            ++cap_index) {
             webrtc::VideoCaptureCapability capability;
             dev_info->GetCapability(device_unique_name, cap_index,
               capability);
@@ -161,7 +157,8 @@ namespace video_capture_test_winrt
             device_unique_name,
             sizeof(device_unique_name));
           webrtc::VideoCaptureModule* vcpm =
-            webrtc::VideoCaptureFactory::Create(device_index, device_unique_name);
+            webrtc::VideoCaptureFactory::Create(device_index,
+            device_unique_name);
           if (!vcpm)
             continue;
 
@@ -181,15 +178,14 @@ namespace video_capture_test_winrt
         for (int device_index = 0; device_index < number_of_capture_devices;
           ++device_index) {
           if (vcpms[device_index]) {
-            //webrtc::VideoCaptureModule* vcpm = vcpms[device_index];
-            //vcpm->StopCapture();
-            //vcpms[device_index]->Release();
+            // webrtc::VideoCaptureModule* vcpm = vcpms[device_index];
+            // vcpm->StopCapture();
+            // vcpms[device_index]->Release();
           }
         }
 
         state++;
-      }).then([this]()
-      {
+      }).then([this]() {
         // Update the UI
         progressRing_->IsActive = false;
 
@@ -199,15 +195,14 @@ namespace video_capture_test_winrt
     }
   };
 
-}
+}  // namespace video_capture_test_winrt
 
-int __cdecl main(::Platform::Array<::Platform::String^>^ args)
-{
-  (void)args; // Unused parameter
+int __cdecl main(::Platform::Array<::Platform::String^>^ args) {
+  (void)args;  // Unused parameter
   Windows::UI::Xaml::Application::Start(
     ref new Windows::UI::Xaml::ApplicationInitializationCallback(
     [](Windows::UI::Xaml::ApplicationInitializationCallbackParams^ p) {
-    (void)p; // Unused parameter
+    (void)p;  // Unused parameter
     auto app = ref new video_capture_test_winrt::VideoCaptureTestWinRT();
   }));
 

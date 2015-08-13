@@ -36,7 +36,8 @@ VideoCaptureModule* VideoCaptureImpl::Create(const int32_t id,
     return NULL;
 
 #ifdef WINRT
-  RefCountImpl<VideoCaptureWinRT>* capture = new RefCountImpl<VideoCaptureWinRT>(id);
+  RefCountImpl<VideoCaptureWinRT>* capture =
+    new RefCountImpl<VideoCaptureWinRT>(id);
   if (capture->Init(id, device_id) != 0) {
     delete capture;
     capture = NULL;

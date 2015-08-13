@@ -45,7 +45,7 @@ namespace globals {
 bool certificateVerifyCallBack(void* cert) {
   return true;
 }
-  
+
 static bool isInitialized = false;
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
@@ -79,7 +79,6 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
   globals::RunOnGlobalThread<void>([this, cc_configuration] {
-
     cricket::ChannelManager* chmng =
       globals::gPeerConnectionFactory->channel_manager();
     chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
@@ -415,12 +414,13 @@ IAsyncOperation<bool>^  WebRTC::RequestAccessForMediaCapture() {
 }
 
 void WinJSHooks::initialize() {
-  g_windowDispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+  g_windowDispatcher =
+    Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
 
   webrtc_winrt_api::WebRTC::Initialize(g_windowDispatcher);
 }
 
-IAsyncOperation<bool>^ WinJSHooks::requestAccessForMediaCapture(){
+IAsyncOperation<bool>^ WinJSHooks::requestAccessForMediaCapture() {
     return  webrtc_winrt_api::WebRTC::RequestAccessForMediaCapture();
 }
 
@@ -507,14 +507,14 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
   return ret;
 }
 
-void WebRTC::SetPreferredVideoCaptureFormat(int frame_width, int frame_height, int fps){
-
-  globals::gPreferredVideoCaptureFormat.interval = cricket::VideoFormat::FpsToInterval(fps);
+void WebRTC::SetPreferredVideoCaptureFormat(int frame_width,
+                                            int frame_height, int fps) {
+  globals::gPreferredVideoCaptureFormat.interval =
+    cricket::VideoFormat::FpsToInterval(fps);
 
   globals::gPreferredVideoCaptureFormat.width = frame_width;
 
   globals::gPreferredVideoCaptureFormat.height = frame_height;
-
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(
@@ -525,11 +525,11 @@ const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(
 void __cdecl WebRTC::AddTraceEvent(char phase,
   const unsigned char* category_group_enabled,
   const char* name,
-  unsigned long long id,
+  uint64 id,
   int num_args,
   const char** arg_names,
   const unsigned char* arg_types,
-  const unsigned long long* arg_values,
+  const uint64* arg_values,
   unsigned char flags) {
   globals::gTraceLog.Add(phase, category_group_enabled, name, id,
     num_args, arg_names, arg_types, arg_values, flags);

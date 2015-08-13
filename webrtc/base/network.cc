@@ -437,24 +437,27 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
   auto hostnames = NetworkInformation::GetHostNames();
   for (unsigned int i = 0; i < hostnames->Size; ++i) {
     auto hostname = hostnames->GetAt(i);
-    // TODO (WINRT): Group networks instead of one-to-one mapping.
+    // TODO(WINRT): Group networks instead of one-to-one mapping.
     if (hostname->Type == HostNameType::Ipv4) {
       struct in_addr addr;
-      rtc::inet_pton(AF_INET, rtc::ToUtf8(hostname->CanonicalName->Data()).c_str(), &addr);
+      rtc::inet_pton(AF_INET, rtc::ToUtf8(
+        hostname->CanonicalName->Data()).c_str(), &addr);
       IPAddress ip(addr);
       int prefixLength = hostname->IPInformation->PrefixLength->Value;
-      // TODO (WINRT): Meaningful network text.
-      auto network = new Network("NetworkNameV4", "NetworkDescriptionV4", ip, prefixLength);
+      // TODO(WINRT): Meaningful network text.
+      auto network = new Network("NetworkNameV4", "NetworkDescriptionV4", ip,
+        prefixLength);
       network->AddIP(InterfaceAddress(ip));
       networks->push_back(network);
-    }
-    else if (hostname->Type == HostNameType::Ipv6) {
+    } else if (hostname->Type == HostNameType::Ipv6) {
       struct in6_addr addr;
-      rtc::inet_pton(AF_INET6, rtc::ToUtf8(hostname->CanonicalName->Data()).c_str(), &addr);
+      rtc::inet_pton(AF_INET6, rtc::ToUtf8(
+        hostname->CanonicalName->Data()).c_str(), &addr);
       IPAddress ip(addr);
       int prefixLength = hostname->IPInformation->PrefixLength->Value;
-      // TODO (WINRT): Meaningful network text.
-      auto network = new Network("NetworkNameV6", "NetworkDescriptionV6", ip, prefixLength);
+      // TODO(WINRT): Meaningful network text.
+      auto network = new Network("NetworkNameV6", "NetworkDescriptionV6", ip,
+        prefixLength);
       network->AddIP(InterfaceAddress(ip));
       networks->push_back(network);
     }

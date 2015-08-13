@@ -199,12 +199,13 @@ void ChannelManager::GetSupportedDataCodecs(
   *codecs = data_media_engine_->data_codecs();
 }
 
-void ChannelManager::SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat){
-
+void ChannelManager::SetPreferredCaptureFormat(const cricket::VideoFormat&
+                                                                    aFormat) {
   preferred_format_ = aFormat;
 }
 
-cricket::VideoFormat ChannelManager::generateDesiredFormat(const cricket::VideoFormat& desiredFormat){
+cricket::VideoFormat ChannelManager::generateDesiredFormat(
+  const cricket::VideoFormat& desiredFormat) {
   cricket::VideoFormat targetFormat = desiredFormat;
 
   if (preferred_format_.width != 0) {
@@ -859,7 +860,8 @@ bool ChannelManager::StopVideoCapture(
     VideoCapturer* capturer, const VideoFormat& video_format) {
   return initialized_ && worker_thread_->Invoke<bool>(
       Bind(&CaptureManager::StopVideoCapture,
-           capture_manager_.get(), capturer, generateDesiredFormat(video_format)));
+           capture_manager_.get(), capturer,
+           generateDesiredFormat(video_format)));
 }
 
 bool ChannelManager::RestartVideoCapture(
@@ -869,7 +871,8 @@ bool ChannelManager::RestartVideoCapture(
     CaptureManager::RestartOptions options) {
   return initialized_ && worker_thread_->Invoke<bool>(
       Bind(&CaptureManager::RestartVideoCapture, capture_manager_.get(),
-      video_capturer, previous_format, generateDesiredFormat(desired_format), options));
+      video_capturer, previous_format,
+      generateDesiredFormat(desired_format), options));
 }
 
 bool ChannelManager::AddVideoRenderer(

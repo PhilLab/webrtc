@@ -1,4 +1,3 @@
-
 // Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
@@ -43,15 +42,21 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   auto videoProperties =
     VideoEncodingProperties::CreateUncompressed(
     MediaEncodingSubtypes::Nv12, 10, 10);
-  streamState->_videoDesc= ref new VideoStreamDescriptor(videoProperties);
-  streamState->_videoDesc->EncodingProperties->Width = 320; // initial value, this will be override by incoming frame from webrtc.
-  streamState->_videoDesc->EncodingProperties->Height = 240;// this is needed since the UI element might request sample before webrtc has
-                                                            //incoming frame ready(ex.: remote stream), in this case, this initial value will
-                                                            //make sure we will at least create a small dumy frame.
+  streamState->_videoDesc = ref new VideoStreamDescriptor(videoProperties);
 
-  webrtc_winrt_api::ResolutionHelper::FireEvent(id, streamState->_videoDesc->EncodingProperties->Width, streamState->_videoDesc->EncodingProperties->Height);
+  // initial value, this will be override by incoming frame from webrtc.
+  // this is needed since the UI element might request sample before webrtc has
+  // incoming frame ready(ex.: remote stream), in this case, this initial value
+  // will make sure we will at least create a small dummy frame.
+  streamState->_videoDesc->EncodingProperties->Width = 320;
+  streamState->_videoDesc->EncodingProperties->Height = 240;
 
-  streamState->_videoDesc->EncodingProperties->FrameRate->Numerator = frameRate;
+  webrtc_winrt_api::ResolutionHelper::FireEvent(id,
+    streamState->_videoDesc->EncodingProperties->Width,
+    streamState->_videoDesc->EncodingProperties->Height);
+
+  streamState->_videoDesc->EncodingProperties->FrameRate->Numerator =
+                                                                    frameRate;
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
   streamState->_mediaStreamSource = streamSource;
@@ -137,7 +142,6 @@ void RTMediaStreamSource::OnSampleRequested(
     ComPtr<IMFSample> spSample;
     hr = MFCreateSample(spSample.GetAddressOf());
     if (FAILED(hr)) {
-
       deferral->Complete();
       return;
     }
@@ -155,7 +159,8 @@ void RTMediaStreamSource::OnSampleRequested(
       _frameCounter++;
       // If we have about a second worth of frames
       if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
-        webrtc_winrt_api::FrameCounterHelper::FireEvent(_id, _frameCounter.ToString());
+        webrtc_winrt_api::FrameCounterHelper::FireEvent(_id,
+          _frameCounter.ToString());
         _frameCounter = 0;
         _lastTimeFPSCalculated = now;
       }
@@ -163,17 +168,18 @@ void RTMediaStreamSource::OnSampleRequested(
 
     ComPtr<IMFMediaBuffer> mediaBuffer;
 
-    if (_frame.get() != nullptr)
-    {
+    if (_frame.get() != nullptr) {
       if ((_videoDesc->EncodingProperties->Width != _frame->GetWidth()) ||
-        (_videoDesc->EncodingProperties->Height != _frame->GetHeight()))
-      {
+        (_videoDesc->EncodingProperties->Height != _frame->GetHeight())) {
         _videoDesc->EncodingProperties->Width = _frame->GetWidth();
         _videoDesc->EncodingProperties->Height = _frame->GetHeight();
-        webrtc_winrt_api::ResolutionHelper::FireEvent(_id, _videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height);
+        webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
+          _videoDesc->EncodingProperties->Width,
+          _videoDesc->EncodingProperties->Height);
       }
     }
-    hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width, _videoDesc->EncodingProperties->Height, libyuv::FOURCC_NV12, FALSE,
+    hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width,
+      _videoDesc->EncodingProperties->Height, libyuv::FOURCC_NV12, FALSE,
       mediaBuffer.GetAddressOf());
     if (FAILED(hr)) {
       deferral->Complete();
@@ -182,15 +188,13 @@ void RTMediaStreamSource::OnSampleRequested(
 
     spSample->AddBuffer(mediaBuffer.Get());
 
-    if (_frame.get() != nullptr)
-    {
+    if (_frame.get() != nullptr) {
       ConvertFrame(mediaBuffer.Get());
     }
 
     hr = spRequest->SetSample(spSample.Get());
     deferral->Complete();
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
       return;
     }
   }
@@ -218,8 +222,7 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
 
 
   if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
-    &destRawData, &pitch, &buffer, &destMediaBufferSize)))
-  {
+    &destRawData, &pitch, &buffer, &destMediaBufferSize))) {
     return false;
   }
   try {
@@ -229,7 +232,7 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
     libyuv::I420ToNV12(_frame->GetYPlane(), _frame->GetYPitch(),
       _frame->GetUPlane(), _frame->GetUPitch(),
       _frame->GetVPlane(), _frame->GetVPitch(),
-      (uint8*)destRawData, pitch,
+      reinterpret_cast<uint8*>(destRawData), pitch,
       uvDest, pitch,
       _frame->GetWidth(), _frame->GetHeight());
   }
@@ -240,8 +243,7 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
   return true;
 }
 
-void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer)
-{
+void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer) {
   ComPtr<IMF2DBuffer2> imageBuffer;
   if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf()))) {
     return;
@@ -251,10 +253,8 @@ void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer)
   LONG pitch;
   DWORD destMediaBufferSize;
 
-
   if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
-    &destRawData, &pitch, &buffer, &destMediaBufferSize)))
-  {
+    &destRawData, &pitch, &buffer, &destMediaBufferSize))) {
     return;
   }
   memset(destRawData, 0, destMediaBufferSize);
@@ -282,7 +282,8 @@ void RTMediaStreamSource::OnClosed(
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
-void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id, Platform::String^ str) {
+void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id,
+  Platform::String^ str) {
   g_windowDispatcher->RunAsync(
     Windows::UI::Core::CoreDispatcherPriority::Normal,
     ref new Windows::UI::Core::DispatchedHandler([id, str] {
@@ -290,11 +291,11 @@ void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id, Platform::Strin
   }));
 }
 
-void webrtc_winrt_api::ResolutionHelper::FireEvent(String^ id, unsigned int width, unsigned int heigth) {
+void webrtc_winrt_api::ResolutionHelper::FireEvent(String^ id,
+  unsigned int width, unsigned int heigth) {
   g_windowDispatcher->RunAsync(
     Windows::UI::Core::CoreDispatcherPriority::Normal,
     ref new Windows::UI::Core::DispatchedHandler([id, width, heigth] {
     ResolutionChanged(id, width, heigth);
   }));
 }
-

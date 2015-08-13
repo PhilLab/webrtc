@@ -40,7 +40,8 @@ const double kOverUsingTimeThreshold = 10;
 bool AdaptiveThresholdExperimentIsEnabled() {
 #if defined (WINRT)
   std::string experiment_string =
-    webrtc::field_trial::FindFullNameFieldTrialDefault(kAdaptiveThresholdExperiment);
+    webrtc::field_trial::FindFullNameFieldTrialDefault(
+      kAdaptiveThresholdExperiment);
 #else
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kAdaptiveThresholdExperiment);
@@ -55,7 +56,8 @@ bool AdaptiveThresholdExperimentIsEnabled() {
 bool ReadExperimentConstants(double* k_up, double* k_down) {
 #if defined (WINRT)
   std::string experiment_string =
-    webrtc::field_trial::FindFullNameFieldTrialDefault(kAdaptiveThresholdExperiment);
+    webrtc::field_trial::FindFullNameFieldTrialDefault(
+      kAdaptiveThresholdExperiment);
 #else
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kAdaptiveThresholdExperiment);

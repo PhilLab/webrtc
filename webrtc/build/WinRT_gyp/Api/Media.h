@@ -98,7 +98,7 @@ namespace webrtc_winrt_api {
       _name = name;
     }
     property String^ Id {
-      String^ get(){
+      String^ get() {
         return _id;
       }
       void set(String^ value) {
@@ -107,7 +107,7 @@ namespace webrtc_winrt_api {
     }
 
     property String^ Name {
-      String^ get(){
+      String^ get() {
         return _name;
       }
       void set(String^ value) {
@@ -128,7 +128,8 @@ namespace webrtc_winrt_api {
     Media();
 
     // TODO(WINRT): Arguments
-    IAsyncOperation<MediaStream^>^ GetUserMedia(RTCMediaStreamConstraints^ mediaStreamConstraints);
+    IAsyncOperation<MediaStream^>^ GetUserMedia(
+      RTCMediaStreamConstraints^ mediaStreamConstraints);
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate, String^ id);
 

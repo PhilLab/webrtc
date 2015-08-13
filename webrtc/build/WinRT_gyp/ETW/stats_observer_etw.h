@@ -30,7 +30,8 @@ class StatsObserverETW : public StatsObserver, public rtc::MessageHandler {
   virtual ~StatsObserverETW();
 
  private:
-  void GetStreamCollectionStats(rtc::scoped_refptr<StreamCollectionInterface> streams);
+  void GetStreamCollectionStats(
+    rtc::scoped_refptr<StreamCollectionInterface>streams);
 
  private:
   static const int kInterval;

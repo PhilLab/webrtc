@@ -35,8 +35,7 @@ namespace webrtc_winrt_api {
 ref class MediaStream;
 ref class MediaStreamTrack;
 
-public enum class LogLevel
-  { 
+public enum class LogLevel {
   LOGLVL_SENSITIVE = rtc::LS_SENSITIVE,
   LOGLVL_VERBOSE = rtc::LS_VERBOSE,
   LOGLVL_INFO = rtc::LS_INFO,
@@ -58,7 +57,7 @@ public:
     }
 
     property int Id {
-        int get(){
+        int get() {
             return _id;
         }
         void set(int value) {
@@ -67,7 +66,7 @@ public:
     }
 
     property int Clockrate {
-        int get(){
+        int get() {
             return _clockrate;
         }
         void set(int value) {
@@ -76,7 +75,7 @@ public:
     }
 
     property String^ Name {
-        String^ get(){
+        String^ get() {
             return _name;
         }
         void set(String^ value) {
@@ -108,21 +107,24 @@ public:
 
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
-  static void SetPreferredVideoCaptureFormat(int frame_width, int frame_height, int fps);
+  static void SetPreferredVideoCaptureFormat(int frame_width,
+                                             int frame_height,
+                                             int fps);
 
 private:
   // This type is not meant to be created.
   WebRTC();
 
-  static const unsigned char* GetCategoryGroupEnabled(const char* category_group);
+  static const unsigned char* GetCategoryGroupEnabled(const char*
+                                                        category_group);
   static void __cdecl AddTraceEvent(char phase,
     const unsigned char* category_group_enabled,
     const char* name,
-    unsigned long long id,
+    uint64 id,
     int num_args,
     const char** arg_names,
     const unsigned char* arg_types,
-    const unsigned long long* arg_values,
+    const uint64* arg_values,
     unsigned char flags);
 };
 

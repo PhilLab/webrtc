@@ -74,11 +74,12 @@ CreatePeerConnectionFactory() {
                                             pc_factory);
 }
 
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreatePeerConnectionFactory(cricket::WebRtcVideoEncoderFactory* encoder_factory,
-                            cricket::WebRtcVideoDecoderFactory* decoder_factory) {
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+  cricket::WebRtcVideoEncoderFactory* encoder_factory,
+  cricket::WebRtcVideoDecoderFactory* decoder_factory) {
     rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
-        new rtc::RefCountedObject<PeerConnectionFactory>(encoder_factory, decoder_factory));
+        new rtc::RefCountedObject<PeerConnectionFactory>(encoder_factory,
+                                                         decoder_factory));
 
 
     // Call Initialize synchronously but make sure its executed on

@@ -20,8 +20,10 @@ using webrtc_winrt_api::MediaVideoTrack;
 
 namespace webrtc_winrt_api {
 // Delegate used to notify an update of the frame per second on a video stream.
-public delegate void FramesPerSecondChangedEventHandler(String^ id, Platform::String^ fps);
-public delegate void ResolutionChangedEventHandler(String^ id, unsigned int width, unsigned int height);
+public delegate void FramesPerSecondChangedEventHandler(String^ id,
+  Platform::String^ fps);
+public delegate void ResolutionChangedEventHandler(String^ id,
+  unsigne int width, unsigned int height);
 
 public ref class FrameCounterHelper sealed {
   public:
@@ -69,7 +71,7 @@ ref class RTMediaStreamSource sealed {
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);
 
     MediaVideoTrack^ _videoTrack;
-    String^ _id; // Provided by the calling API.
+    String^ _id;  // Provided by the calling API.
     MediaStreamSource^ _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;

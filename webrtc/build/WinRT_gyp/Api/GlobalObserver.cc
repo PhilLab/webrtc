@@ -92,7 +92,8 @@ void GlobalObserver::OnIceConnectionChange(
   webrtc::PeerConnectionInterface::IceConnectionState new_state) {
   if (new_state == webrtc::PeerConnectionInterface::kIceConnectionConnected) {
     if (!_stats_observer_etw.get()) {
-      _stats_observer_etw = new rtc::RefCountedObject<webrtc::StatsObserverETW>();
+      _stats_observer_etw =
+        new rtc::RefCountedObject<webrtc::StatsObserverETW>();
     }
 
     _stats_observer_etw->PollStats(_pc->_impl);
@@ -113,12 +114,9 @@ void GlobalObserver::OnIceCandidate(
   LOG(LS_INFO) << "Ice candidate = " << c;
   auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceEvent();
   webrtc_winrt_api::RTCIceCandidate^ cxCandidate;
-  if (candidate == nullptr)
-  {
+  if (candidate == nullptr) {
     evt->Candidate = nullptr;
-  }
-  else
-  {
+  } else {
     ToCx(*candidate, &cxCandidate);
     evt->Candidate = cxCandidate;
   }
@@ -183,7 +181,8 @@ void DataChannelObserver::OnStateChange() {
 void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
   if (!buffer.binary) {
-    evt->Data = ToCx(std::string((char*)buffer.data.data(), buffer.size()));
+    evt->Data = ToCx(std::string(
+      reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
   } else {
     // TODO(WINRT)
     evt->Data = "<binary>";

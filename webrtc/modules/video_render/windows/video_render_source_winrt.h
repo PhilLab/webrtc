@@ -28,7 +28,7 @@ class CriticalSectionWrapper;
 class VideoRenderMediaSourceWinRT;
 
 enum SourceState {
-  // Invalid state, source cannot be used 
+  // Invalid state, source cannot be used
   SourceState_Invalid,
   // Streaming started
   SourceState_Starting,
@@ -60,8 +60,9 @@ class VideoRenderMediaStreamWinRT :
     public IMFMediaStream,
     public IMFQualityAdvise2,
     public IMFGetService {
-public:
-  static HRESULT CreateInstance(StreamDescription *pStreamDescription, VideoRenderMediaSourceWinRT *pSource,
+ public:
+  static HRESULT CreateInstance(StreamDescription *pStreamDescription,
+    VideoRenderMediaSourceWinRT *pSource,
     VideoRenderMediaStreamWinRT **ppStream);
 
   // IUnknown
@@ -70,10 +71,12 @@ public:
   IFACEMETHOD_(ULONG, Release) ();
 
   // IMFMediaEventGenerator
-  IFACEMETHOD(BeginGetEvent) (IMFAsyncCallback *pCallback, IUnknown *punkState);
+  IFACEMETHOD(BeginGetEvent) (IMFAsyncCallback *pCallback,
+    IUnknown *punkState);
   IFACEMETHOD(EndGetEvent) (IMFAsyncResult *pResult, IMFMediaEvent **ppEvent);
   IFACEMETHOD(GetEvent) (DWORD dwFlags, IMFMediaEvent **ppEvent);
-  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, const PROPVARIANT *pvValue);
+  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType,
+    HRESULT hrStatus, const PROPVARIANT *pvValue);
 
   // IMFMediaStream
   IFACEMETHOD(GetMediaSource) (IMFMediaSource **ppMediaSource);
@@ -88,7 +91,8 @@ public:
   IFACEMETHOD(DropTime) (_In_ LONGLONG hnsAmountToDrop);
 
   // IMFQualityAdvise2
-  IFACEMETHOD(NotifyQualityEvent) (_In_opt_ IMFMediaEvent *pEvent, _Out_ DWORD *pdwFlags);
+  IFACEMETHOD(NotifyQualityEvent) (_In_opt_ IMFMediaEvent *pEvent,
+    _Out_ DWORD *pdwFlags);
 
   // IMFGetService
   IFACEMETHOD(GetService) (_In_ REFGUID guidService,
@@ -103,24 +107,26 @@ public:
   HRESULT Shutdown();
   void ProcessSample(SampleHeader *pSampleHeader, IMFSample *pSample);
   void ProcessFormatChange(StreamDescription *pStreamDescription);
-  const StreamDescription& getCurrentStreamDescription() const { return _currentStreamDescription; }
+  const StreamDescription& getCurrentStreamDescription() const {
+    return _currentStreamDescription; }
   HRESULT SetActive(bool fActive);
   bool IsActive() const { return _fActive; }
   SourceState GetState() const { return _eSourceState; }
 
   DWORD GetId() const { return _dwId; }
 
-protected:
-  VideoRenderMediaStreamWinRT(VideoRenderMediaSourceWinRT *pSource);
+ protected:
+  explicit VideoRenderMediaStreamWinRT(VideoRenderMediaSourceWinRT *pSource);
   ~VideoRenderMediaStreamWinRT(void);
 
-private:
+ private:
   class SourceLock;
 
-private:
+ private:
   void Initialize(StreamDescription *pStreamDescription);
   void DeliverSamples();
-  void SetMediaTypeAttributes(StreamDescription *pStreamDescription, IMFMediaType *pMediaType);
+  void SetMediaTypeAttributes(StreamDescription *pStreamDescription,
+    IMFMediaType *pMediaType);
   void SetSampleAttributes(SampleHeader *pSampleHeader, IMFSample *pSample);
   void HandleError(HRESULT hErrorCode);
 
@@ -128,7 +134,7 @@ private:
   void CleanSampleQueue();
   void ResetDropTime();
 
-private:
+ private:
   ULONG _cRef;
   SourceState _eSourceState;
   Microsoft::WRL::ComPtr<VideoRenderMediaSourceWinRT>_spSource;
@@ -150,12 +156,11 @@ private:
   LONGLONG _hnsStartDroppingAt;
   LONGLONG _hnsAmountToDrop;
   StreamDescription _currentStreamDescription;
-
 };
 
 // Base class representing asyncronous source operation
 class VideoRenderSourceOperation : public IUnknown {
-public:
+ public:
   enum Type {
     // Start the source
     Operation_Start,
@@ -165,8 +170,8 @@ public:
     Operation_SetRate,
   };
 
-public:
-  VideoRenderSourceOperation(Type opType);
+ public:
+  explicit VideoRenderSourceOperation(Type opType);
   virtual ~VideoRenderSourceOperation();
   // IUnknown
   IFACEMETHOD(QueryInterface) (REFIID riid, void **ppv);
@@ -177,7 +182,7 @@ public:
   const PROPVARIANT &GetData() const { return _data; }
   HRESULT SetData(const PROPVARIANT &varData);
 
-private:
+ private:
   ULONG _cRef;
   Type _opType;
   PROPVARIANT _data;
@@ -185,33 +190,34 @@ private:
 
 // Start operation
 class VideoRenderSourceStartOperation : public VideoRenderSourceOperation {
-public:
-  VideoRenderSourceStartOperation(IMFPresentationDescriptor *pPD);
+ public:
+  explicit VideoRenderSourceStartOperation(IMFPresentationDescriptor *pPD);
   ~VideoRenderSourceStartOperation();
 
-  IMFPresentationDescriptor *GetPresentationDescriptor() { return _spPD.Get(); }
+  IMFPresentationDescriptor *GetPresentationDescriptor() {
+    return _spPD.Get(); }
 
-private:
+ private:
   Microsoft::WRL::ComPtr<IMFPresentationDescriptor> _spPD;
 };
 
 // SetRate operation
 class VideoRenderSourceSetRateOperation : public VideoRenderSourceOperation {
-public:
+ public:
   VideoRenderSourceSetRateOperation(BOOL fThin, float flRate);
   ~VideoRenderSourceSetRateOperation();
 
   BOOL IsThin() const { return _fThin; }
   float GetRate() const { return _flRate; }
 
-private:
+ private:
   BOOL _fThin;
   float _flRate;
 };
 
 template<class T>
 class AsyncCallback : public IMFAsyncCallback {
-public:
+ public:
   typedef HRESULT(T::*InvokeFn)(IMFAsyncResult *pAsyncResult);
 
   AsyncCallback(T *pParent, InvokeFn fn) : _pParent(pParent), _pInvokeFn(fn) {
@@ -259,11 +265,9 @@ public:
 template <class T, class TOperation>
 class OpQueue {
  public:
-
   HRESULT QueueOperation(TOperation *pOp);
 
  protected:
-
   HRESULT ProcessQueue();
   HRESULT ProcessQueueAsync(IMFAsyncResult *pResult);
 
@@ -275,7 +279,7 @@ class OpQueue {
       m_critSec(NULL) {
   }
 
-  OpQueue(CriticalSectionWrapper* critsec)
+  explicit OpQueue(CriticalSectionWrapper* critsec)
     : m_OnProcessQueue(static_cast<T *>(this), &OpQueue::ProcessQueueAsync),
       m_critSec(critsec) {
   }
@@ -298,17 +302,18 @@ class VideoRenderMediaSourceWinRT :
         IMFGetService,
         IMFRateControl > ,
     public OpQueue<VideoRenderMediaSourceWinRT, VideoRenderSourceOperation> {
-
- InspectableClass(L"webrtc::VideoRenderMediaSourceWinRT", BaseTrust)
+  InspectableClass(L"webrtc::VideoRenderMediaSourceWinRT", BaseTrust)
 
  public:
   static HRESULT CreateInstance(VideoRenderMediaSourceWinRT **ppMediaSource);
- 
+
   // IMFMediaEventGenerator
-  IFACEMETHOD(BeginGetEvent) (IMFAsyncCallback *pCallback, IUnknown *punkState);
+  IFACEMETHOD(BeginGetEvent) (IMFAsyncCallback *pCallback,
+    IUnknown *punkState);
   IFACEMETHOD(EndGetEvent) (IMFAsyncResult *pResult, IMFMediaEvent **ppEvent);
   IFACEMETHOD(GetEvent) (DWORD dwFlags, IMFMediaEvent **ppEvent);
-  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, const PROPVARIANT *pvValue);
+  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType,
+    HRESULT hrStatus, const PROPVARIANT *pvValue);
 
   // IMFMediaSource
   IFACEMETHOD(CreatePresentationDescriptor) (
@@ -338,7 +343,7 @@ class VideoRenderMediaSourceWinRT :
 
   void ProcessVideoFrame(const VideoFrame& videoFrame);
   void FrameSizeChange(int width, int height);
-  //start source triggerred by WinJs
+  // start source triggerred by WinJs
   HRESULT jSStart();
   HRESULT requestSample(IUnknown* ptoken);
   VideoRenderMediaStreamWinRT* getCurrentActiveStream();

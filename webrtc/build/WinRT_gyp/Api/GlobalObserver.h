@@ -18,7 +18,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "stats_observer_etw.h"
+#include "webrtc/build/WinRT_gyp/ETW/stats_observer_etw.h"
 
 namespace webrtc_winrt_api {
 ref class RTCPeerConnection;

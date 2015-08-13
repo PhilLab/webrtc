@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "h264_winrt_impl.h"
+#include "third_party/h264_winrt/h264_winrt_impl.h"
 
 #include <stdlib.h>
 
@@ -23,7 +23,6 @@ namespace webrtc {
     //////////////////////////////////////////
 
     H264WinRTEncoderImpl::H264WinRTEncoderImpl() {
-
     }
 
     H264WinRTEncoderImpl::~H264WinRTEncoderImpl() {
@@ -81,7 +80,8 @@ namespace webrtc {
         const VideoFrame& frame,
         const CodecSpecificInfo* codec_specific_info,
         const std::vector<VideoFrameType>* frame_types) {
-        TRACE_EVENT1("webrtc", "h264_winrt::Encode", "timestamp", frame.timestamp());
+        TRACE_EVENT1("webrtc", "h264_winrt::Encode", "timestamp",
+          frame.timestamp());
 
         if (!inited_) {
             return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -96,8 +96,8 @@ namespace webrtc {
         return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    int H264WinRTEncoderImpl::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {
-
+    int H264WinRTEncoderImpl::SetChannelParameters(uint32_t packetLoss,
+      int64_t rtt) {
         return WEBRTC_VIDEO_CODEC_OK;
     }
 
@@ -128,7 +128,6 @@ namespace webrtc {
 
     int H264WinRTDecoderImpl::InitDecode(const VideoCodec* inst,
         int number_of_cores) {
-
         return WEBRTC_VIDEO_CODEC_OK;
     }
 
@@ -137,7 +136,6 @@ namespace webrtc {
         const RTPFragmentationHeader* fragmentation,
         const CodecSpecificInfo* codec_specific_info,
         int64_t /*render_time_ms*/) {
-
         if (!inited_) {
             return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
         }
@@ -154,7 +152,7 @@ namespace webrtc {
         return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    int H264WinRTDecoderImpl::Release() {        
+    int H264WinRTDecoderImpl::Release() {
         inited_ = false;
 
         return WEBRTC_VIDEO_CODEC_OK;
@@ -175,8 +173,8 @@ namespace webrtc {
             // Not initialized.
             assert(false);
             return nullptr;
-        }    
-    
+        }
+
         return nullptr;
     }
-}
+}  // namespace webrtc

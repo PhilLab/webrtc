@@ -1,4 +1,5 @@
-﻿// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+﻿
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -7,6 +8,7 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 #include "webrtc/build/WinRT_gyp/Api/Media.h"
+#include <stdio.h>
 #include <ppltasks.h>
 #include <mfapi.h>
 #include <vector>
@@ -25,8 +27,7 @@ using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
 
-namespace
-{
+namespace {
   std::vector<cricket::Device> g_videoDevices;
   webrtc::CriticalSectionWrapper& gMediaStreamListLock(
     *webrtc::CriticalSectionWrapper::CreateCriticalSection());
@@ -116,7 +117,7 @@ IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks() {
   return ret;
 }
 
-String^ MediaStream::Id::get(){
+String^ MediaStream::Id::get() {
   return ToCx(_impl->label());
 }
 
@@ -182,9 +183,8 @@ void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
   }
 }
 
-void MediaStream::Stop()
-{
-  // TODO: Investigate if this is the proper way
+void MediaStream::Stop() {
+  // TODO(winrt): Investigate if this is the proper way
   // to stop the stream. If something else holds
   // a reference, the stream may not stop.
   _impl.release();
@@ -209,10 +209,13 @@ bool MediaStream::Active::get() {
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
-const char kStreamLabel[] = "stream_label_%x"; //we will append current time (uint32 in Hex, e.g.: 8chars to the end to generate a unique string)
+const char kStreamLabel[] = "stream_label_%x";
+// we will append current time (uint32 in Hex, e.g.:
+// 8chars to the end to generate a unique string)
 
 Media::Media() {
-  _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>(cricket::DeviceManagerFactory::Create());
+  _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>
+    (cricket::DeviceManagerFactory::Create());
 
   if (!_dev_manager->Init()) {
     LOG(LS_ERROR) << "Can't create device manager";
@@ -229,36 +232,36 @@ Media::Media() {
       _audioDevice->Init();
       return 0;
   });
-  
 }
 
-IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ mediaStreamConstraints) {
-
+IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
+  RTCMediaStreamConstraints^ mediaStreamConstraints) {
   /// add to separate sets of constraints
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this, mediaStreamConstraints]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
-    return globals::RunOnGlobalThread<MediaStream^>([this, mediaStreamConstraints]()->MediaStream^ {
-
+    return globals::RunOnGlobalThread<MediaStream^>([this,
+                                      mediaStreamConstraints]()->MediaStream^ {
       // This is the stream returned.
       char streamLabel[32];
-      sprintf(streamLabel, kStreamLabel, rtc::Time());
+      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel, rtc::Time());
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
       if (mediaStreamConstraints->audioEnabled) {
         if (_selectedAudioDevice == -1) {
           // select default device if wasn't set
-          _audioDevice->SetRecordingDevice(webrtc::AudioDeviceModule::kDefaultDevice);
-        }
-        else {
+          _audioDevice->SetRecordingDevice(
+            webrtc::AudioDeviceModule::kDefaultDevice);
+        } else {
           _audioDevice->SetRecordingDevice(_selectedAudioDevice);
         }
         // Add an audio track.
         LOG(LS_INFO) << "Creating audio track.";
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
-          kAudioLabel, globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
+            kAudioLabel,
+            globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
         LOG(LS_INFO) << "Adding audio track to stream.";
         stream->AddTrack(audio_track);
       }
@@ -273,9 +276,9 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ me
             if (videoCapturer != NULL)
               break;
           }
-        }
-        else {
-          videoCapturer = _dev_manager->CreateVideoCapturer(_selectedVideoDevice);
+        } else {
+          videoCapturer = _dev_manager->CreateVideoCapturer(
+                                                        _selectedVideoDevice);
         }
 
         // Add a video track
@@ -301,14 +304,14 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(RTCMediaStreamConstraints^ me
 
 IMediaSource^ Media::CreateMediaStreamSource(
     MediaVideoTrack^ track, uint32 framerate, String^ id) {
-    return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate, id]()->MediaStreamSource^{
-        return webrtc_winrt_api_internal::RTMediaStreamSource::CreateMediaSource(
-            track, framerate, id);
+    return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate,
+      id]()->MediaStreamSource^{
+        return webrtc_winrt_api_internal::RTMediaStreamSource::
+          CreateMediaSource(track, framerate, id);
     });
 }
 
-IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices()
-{
+IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
   IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
     [this]() -> bool {
     std::vector<cricket::Device> videoDevices;
@@ -320,7 +323,8 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices()
     g_videoDevices.clear();
     for (auto videoDev : videoDevices) {
       g_videoDevices.push_back(videoDev);
-      OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+      OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id),
+                                                    ToCx(videoDev.name)));
     }
 
     char name[webrtc::kAdmMaxDeviceNameSize];

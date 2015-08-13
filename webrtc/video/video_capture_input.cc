@@ -87,10 +87,10 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
     incoming_frame.set_render_time_ms(incoming_frame.ntp_time_ms() -
                                       delta_ntp_internal_ms_);
   } else {  // NTP time stamp not set.
- 
 #ifdef WINRT
-    //TODO(winrt): still need to figure out when incoming_frame.render_time_ms was not set properly.
-    //for now, just fall back to use the current time. this might distort the video delay logging 1 or 2ms at most.
+    // TODO(winrt): still need to figure out when incoming_frame.render_time_ms
+    // was not set properly. For now, just fall back to use the current time.
+    // This might distort the video delay logging 1 or 2ms at most.
     int64_t render_time = TickTime::MillisecondTimestamp();
 #else
     int64_t render_time = incoming_frame.render_time_ms() != 0

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WASAPI_WIN_H_
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WASAPI_WIN_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_WIN_AUDIO_DEVICE_WASAPI_WIN_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_WIN_AUDIO_DEVICE_WASAPI_WIN_H_
 
-#if (_MSC_VER >= 1400) && defined(WINRT) // only include for VS 2005 and higher
+#if (_MSC_VER >= 1400) && defined(WINRT)  // only include for VS 2005 and higher
 
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 
@@ -40,7 +40,7 @@ using namespace Microsoft::WRL;
 using namespace concurrency;
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
-#pragma comment( lib, "avrt.lib" )
+#pragma comment(lib, "avrt.lib")
 
 namespace webrtc {
 
@@ -89,12 +89,14 @@ class ScopedCOMInitializer {
 };
 
 
-class AudioInterfaceActivator : public RuntimeClass < RuntimeClassFlags< ClassicCom >, FtmBase, IActivateAudioInterfaceCompletionHandler >
-{
+class AudioInterfaceActivator :
+  public RuntimeClass < RuntimeClassFlags< ClassicCom >,
+  FtmBase, IActivateAudioInterfaceCompletionHandler > {
   task_completion_event<void> m_ActivateCompleted;
-  STDMETHODIMP ActivateCompleted(IActivateAudioInterfaceAsyncOperation  *pAsyncOp);
+  STDMETHODIMP ActivateCompleted(
+    IActivateAudioInterfaceAsyncOperation *pAsyncOp);
 
-public:
+ public:
   enum ActivatorDeviceType{
     eNone = 0,
     eInputDevice,
@@ -104,21 +106,23 @@ public:
   static ActivatorDeviceType m_DeviceType;
 
   static AudioDeviceWindowsWasapi* m_AudioDevice;
-public:
-  static task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId, ActivatorDeviceType deviceType);
+ public:
+  static task<ComPtr<IAudioClient2>>
+    AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId,
+      ActivatorDeviceType deviceType);
   static void SetAudioDevice(AudioDeviceWindowsWasapi* device);
 };
 
-class AudioDeviceWindowsWasapi : public AudioDeviceGeneric
-{
-public:
-    AudioDeviceWindowsWasapi(const int32_t id);
+class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
+ public:
+    explicit AudioDeviceWindowsWasapi(const int32_t id);
     ~AudioDeviceWindowsWasapi();
 
     friend class  AudioInterfaceActivator;
 
     // Retrieve the currently utilized audio layer
-    virtual int32_t ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const;
+    virtual int32_t ActiveAudioLayer(
+      AudioDeviceModule::AudioLayer& audioLayer) const;
 
     // Main initializaton and termination
     virtual int32_t Init();
@@ -139,9 +143,11 @@ public:
 
     // Device selection
     virtual int32_t SetPlayoutDevice(uint16_t index);
-    virtual int32_t SetPlayoutDevice(AudioDeviceModule::WindowsDeviceType device);
+    virtual int32_t SetPlayoutDevice(
+      AudioDeviceModule::WindowsDeviceType device);
     virtual int32_t SetRecordingDevice(uint16_t index);
-    virtual int32_t SetRecordingDevice(AudioDeviceModule::WindowsDeviceType device);
+    virtual int32_t SetRecordingDevice(
+      AudioDeviceModule::WindowsDeviceType device);
 
     // Audio transport initialization
     virtual int32_t PlayoutIsAvailable(bool& available);
@@ -165,7 +171,8 @@ public:
 
     // Volume control based on the Windows Wave API (Windows only)
     virtual int32_t SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight);
-    virtual int32_t WaveOutVolume(uint16_t& volumeLeft, uint16_t& volumeRight) const;
+    virtual int32_t WaveOutVolume(uint16_t& volumeLeft,
+                                  uint16_t& volumeRight) const;
 
     // Audio mixer initialization
     virtual int32_t InitSpeaker();
@@ -213,8 +220,10 @@ public:
     virtual int32_t StereoRecording(bool& enabled) const;
 
     // Delay information and control
-    virtual int32_t SetPlayoutBuffer(const AudioDeviceModule::BufferType type, uint16_t sizeMS);
-    virtual int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type, uint16_t& sizeMS) const;
+    virtual int32_t SetPlayoutBuffer(const AudioDeviceModule::BufferType type,
+      uint16_t sizeMS);
+    virtual int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type,
+      uint16_t& sizeMS) const;
     virtual int32_t PlayoutDelay(uint16_t& delayMS) const;
     virtual int32_t RecordingDelay(uint16_t& delayMS) const;
 
@@ -224,7 +233,7 @@ public:
     virtual int32_t EnableBuiltInAEC(bool enable);
     virtual bool BuiltInAECIsEnabled() const;
 
-public:
+ public:
     virtual bool PlayoutWarning() const;
     virtual bool PlayoutError() const;
     virtual bool RecordingWarning() const;
@@ -234,25 +243,27 @@ public:
     virtual void ClearRecordingWarning();
     virtual void ClearRecordingError();
 
-public:
+ public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
-public: //IUnknown interface methods
-  virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID   riid, LPVOID * ppvObj);
+ public:  // IUnknown interface methods
+  virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
+    LPVOID * ppvObj);
   virtual ULONG STDMETHODCALLTYPE AddRef();
   virtual ULONG STDMETHODCALLTYPE Release();
-    
 
-private:
+
+ private:
     bool KeyPressed() const;
-private:    // thread functions
+
+ private:  // thread functions
     DWORD InitCaptureThreadPriority();
     void RevertCaptureThreadPriority();
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
     DWORD DoCaptureThread();
 
-    //static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
-    //DWORD DoCaptureThreadPollDMO();
+    // static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
+    // DWORD DoCaptureThreadPollDMO();
 
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
@@ -264,13 +275,13 @@ private:    // thread functions
     DWORD DoSetCaptureVolumeThread();
 
     void _SetThreadName(DWORD dwThreadID, LPCSTR szThreadName);
-    void _Lock() { _critSect.Enter(); };
-    void _UnLock() { _critSect.Leave(); };
+    void _Lock() { _critSect.Enter(); }
+    void _UnLock() { _critSect.Leave(); }
 
-private:
+ private:
     int32_t Id() {return _id;}
 
-private:
+ private:
     int SetBoolProperty(IPropertyStore* ptrPS,
                         REFPROPERTYKEY key,
                         VARIANT_BOOL value);
@@ -308,20 +319,20 @@ private:
     char* WideToUTF8(const TCHAR* src) const;
 
 
-private:
+ private:
     ScopedCOMInitializer                    _comInit;
     AudioDeviceBuffer*                      _ptrAudioBuffer;
     CriticalSectionWrapper&                 _critSect;
     CriticalSectionWrapper&                 _volumeMutex;
     int32_t                           _id;
 
-private:  // MMDevice
+ private:  // MMDevice
     Platform::String^   _deviceIdStringIn;
     Platform::String^   _deviceIdStringOut;
     DeviceInformation^  _defaultCaptureDevice;
     DeviceInformation^  _defaultRenderDevice;
-    //bool                _captureDeviceActivated;
-    //bool                _renderDeviceActivated;
+    // bool                _captureDeviceActivated;
+    // bool                _renderDeviceActivated;
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;
@@ -336,18 +347,18 @@ private:  // MMDevice
 //    IMMDevice*                              _ptrDeviceOut;
 //    IMMDevice*                              _ptrDeviceIn;
 
-private:  // WASAPI
+ private:  // WASAPI
     IAudioClient*                           _ptrClientOut;
     IAudioClient*                           _ptrClientIn;
     IAudioRenderClient*                     _ptrRenderClient;
     IAudioCaptureClient*                    _ptrCaptureClient;
-    //IAudioEndpointVolume*                   _ptrCaptureVolume;
+    // IAudioEndpointVolume*                   _ptrCaptureVolume;
     ISimpleAudioVolume*                   _ptrCaptureVolume;
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
 
-    //// DirectX Media Object (DMO) for the built-in AEC.
-    //scoped_refptr<IMediaObject>             _dmo;
-    //scoped_refptr<IMediaBuffer>             _mediaBuffer;
+    // DirectX Media Object (DMO) for the built-in AEC.
+    // scoped_refptr<IMediaObject>             _dmo;
+    // scoped_refptr<IMediaBuffer>             _mediaBuffer;
     bool                                    _builtInAecEnabled;
 
     HANDLE                                  _hRenderSamplesReadyEvent;
@@ -394,7 +405,7 @@ private:  // WASAPI
     double                                  _perfCounterFactor;
     float                                   _avgCPULoad;
 
-private:
+ private:
     bool                                    _initialized;
     bool                                    _recording;
     bool                                    _playing;
@@ -430,4 +441,4 @@ private:
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WASAPI_WIN_H_
+#endif  // WEBRTC_MODULES_AUDIO_DEVICE_WIN_AUDIO_DEVICE_WASAPI_WIN_H_

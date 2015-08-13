@@ -939,7 +939,8 @@ ULONG AudioDeviceWindowsWasapi::Release()
 //  ActiveAudioLayer
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceWindowsWasapi::ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const
+int32_t AudioDeviceWindowsWasapi::ActiveAudioLayer(
+  AudioDeviceModule::AudioLayer& audioLayer) const
 {
     audioLayer = AudioDeviceModule::kWindowsCoreAudio;
     return 0;
