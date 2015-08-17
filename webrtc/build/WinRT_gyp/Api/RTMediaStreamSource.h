@@ -23,7 +23,7 @@ namespace webrtc_winrt_api {
 public delegate void FramesPerSecondChangedEventHandler(String^ id,
   Platform::String^ fps);
 public delegate void ResolutionChangedEventHandler(String^ id,
-  unsigne int width, unsigned int height);
+  unsigned int width, unsigned int height);
 
 public ref class FrameCounterHelper sealed {
   public:
