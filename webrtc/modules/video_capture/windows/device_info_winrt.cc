@@ -81,9 +81,14 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
         });
     });
 
-    auto dispatcher_action = g_windowDispatcher->RunAsync(
-      CoreDispatcherPriority::Normal, handler);
-    Concurrency::create_task(dispatcher_action).wait();
+    if (g_windowDispatcher != nullptr) {
+      auto dispatcher_action = g_windowDispatcher->RunAsync(
+        CoreDispatcherPriority::Normal, handler);
+      Concurrency::create_task(dispatcher_action).wait();
+    }
+    else {
+      handler->Invoke();
+    }
     initialize_async_task.wait();
     // Cache the MediaCapture object so we don't recreate it later.
     media_capture_map_[device_id] = media_capture_agile;

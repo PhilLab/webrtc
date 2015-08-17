@@ -284,18 +284,28 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id,
   Platform::String^ str) {
-  g_windowDispatcher->RunAsync(
-    Windows::UI::Core::CoreDispatcherPriority::Normal,
-    ref new Windows::UI::Core::DispatchedHandler([id, str] {
+  if (g_windowDispatcher != nullptr) {
+    g_windowDispatcher->RunAsync(
+      Windows::UI::Core::CoreDispatcherPriority::Normal,
+      ref new Windows::UI::Core::DispatchedHandler([id, str] {
       FramesPerSecondChanged(id, str);
-  }));
+    }));
+  }
+  else {
+    FramesPerSecondChanged(id, str);
+  }
 }
 
 void webrtc_winrt_api::ResolutionHelper::FireEvent(String^ id,
   unsigned int width, unsigned int heigth) {
-  g_windowDispatcher->RunAsync(
-    Windows::UI::Core::CoreDispatcherPriority::Normal,
-    ref new Windows::UI::Core::DispatchedHandler([id, width, heigth] {
+  if (g_windowDispatcher != nullptr) {
+    g_windowDispatcher->RunAsync(
+      Windows::UI::Core::CoreDispatcherPriority::Normal,
+      ref new Windows::UI::Core::DispatchedHandler([id, width, heigth] {
+      ResolutionChanged(id, width, heigth);
+    }));
+  }
+  else {
     ResolutionChanged(id, width, heigth);
-  }));
+  }
 }

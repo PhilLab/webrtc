@@ -20,23 +20,38 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc_winrt_api_internal {
 
 #define POST_PC_EVENT(fn, evt) \
-  g_windowDispatcher->RunAsync(\
-    Windows::UI::Core::CoreDispatcherPriority::Normal, \
-    ref new Windows::UI::Core::DispatchedHandler([this, evt] {\
+  if (g_windowDispatcher != nullptr) {\
+    g_windowDispatcher->RunAsync(\
+      Windows::UI::Core::CoreDispatcherPriority::Normal, \
+      ref new Windows::UI::Core::DispatchedHandler([this, evt] {\
+      webrtc::CriticalSectionScoped csLock(_lock.get()); \
+      if (_pc != nullptr) {\
+        _pc->##fn(evt);\
+      }\
+    }));\
+  } else {\
     webrtc::CriticalSectionScoped csLock(_lock.get()); \
     if (_pc != nullptr) {\
       _pc->##fn(evt);\
     }\
-  }));
+  }
+
 #define POST_PC_ACTION(fn) \
-  g_windowDispatcher->RunAsync(\
-    Windows::UI::Core::CoreDispatcherPriority::Normal, \
-    ref new Windows::UI::Core::DispatchedHandler([this] {\
+  if (g_windowDispatcher != nullptr) {\
+    g_windowDispatcher->RunAsync(\
+      Windows::UI::Core::CoreDispatcherPriority::Normal, \
+      ref new Windows::UI::Core::DispatchedHandler([this] {\
+      webrtc::CriticalSectionScoped csLock(_lock.get()); \
+      if (_pc != nullptr) {\
+        _pc->##fn();\
+      }\
+    }));\
+  } else {\
     webrtc::CriticalSectionScoped csLock(_lock.get()); \
     if (_pc != nullptr) {\
       _pc->##fn();\
     }\
-  }));
+  }
 
 GlobalObserver::GlobalObserver()
   : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
@@ -188,11 +203,16 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
     evt->Data = "<binary>";
   }
 
-  g_windowDispatcher->RunAsync(
-    Windows::UI::Core::CoreDispatcherPriority::Normal,
-    ref new Windows::UI::Core::DispatchedHandler([this, evt] {
+  if (g_windowDispatcher != nullptr) {
+    g_windowDispatcher->RunAsync(
+      Windows::UI::Core::CoreDispatcherPriority::Normal,
+      ref new Windows::UI::Core::DispatchedHandler([this, evt] {
+      _channel->OnMessage(evt);
+    }));
+  }
+  else {
     _channel->OnMessage(evt);
-  }));
+  }
 }
 
 }  // namespace webrtc_winrt_api_internal

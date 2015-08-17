@@ -47,12 +47,17 @@ namespace webrtc {
 namespace videocapturemodule {
 
 void RunOnCoreDispatcher(std::function<void()> fn) {
-  auto handler = ref new Windows::UI::Core::DispatchedHandler([fn]() {
+  if (g_windowDispatcher != nullptr) {
+    auto handler = ref new Windows::UI::Core::DispatchedHandler([fn]() {
+      fn();
+    });
+    auto action = g_windowDispatcher->RunAsync(
+      CoreDispatcherPriority::Normal, handler);
+    Concurrency::create_task(action).wait();
+  }
+  else {
     fn();
-  });
-  auto action = g_windowDispatcher->RunAsync(
-    CoreDispatcherPriority::Normal, handler);
-  Concurrency::create_task(action).wait();
+  }
 }
 
 ref class CaptureDevice sealed {
@@ -350,20 +355,31 @@ ref class DisplayOrientation sealed {
 
 DisplayOrientation::~DisplayOrientation() {
   RunOnCoreDispatcher([this]() {
-    display_info->OrientationChanged::remove(
-    orientation_changed_registration_token_);
+    if (display_info != nullptr) {
+      display_info->OrientationChanged::remove(
+        orientation_changed_registration_token_);
+    }
   });
 }
 
 DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
   : listener_(listener) {
   RunOnCoreDispatcher([this]() {
-    display_info = DisplayInformation::GetForCurrentView();
-    orientation = display_info->CurrentOrientation;
-    orientation_changed_registration_token_ =
-      display_info->OrientationChanged::add(
-      ref new TypedEventHandler<DisplayInformation^,
-      Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
+    // TODO(winrt): GetForCurrentView() only works on a thread associated with
+    // a CoreWindow.  Need to find a way to do this from a background task.
+    try {
+      display_info = DisplayInformation::GetForCurrentView();
+      orientation = display_info->CurrentOrientation;
+      orientation_changed_registration_token_ =
+        display_info->OrientationChanged::add(
+          ref new TypedEventHandler<DisplayInformation^,
+          Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
+    }
+    catch (...) {
+      display_info = nullptr;
+      orientation = Windows::Graphics::Display::DisplayOrientations::Portrait;
+      LOG(LS_ERROR) << "DisplayOrientation could not be initialized.";
+    }
   });
 }
 
