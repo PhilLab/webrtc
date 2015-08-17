@@ -1,7 +1,17 @@
-#include "common.h"
+
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file in the root of the source
+// tree. An additional intellectual property rights grant can be found
+// in the file PATENTS.  All contributing project authors may
+// be found in the AUTHORS file in the root of the source tree.
+
 #include <collection.h>
 #include <ppltasks.h>
 #include <string>
+
+#include "webrtc/build/WinRT_gyp/UnitTests/LibTest_runner/common.h"
 
 using namespace Platform;
 using namespace concurrency;
@@ -12,13 +22,10 @@ using namespace Windows::UI::Xaml::Media;
 
 bool autoClose = false;
 
-namespace LibTest_runner
-{
-  ref class LibTestApp sealed : public Windows::UI::Xaml::Application
-  {
+namespace LibTest_runner {
+  ref class LibTestApp sealed : public Windows::UI::Xaml::Application {
   public:
-    LibTestApp()
-    {
+    LibTestApp() {
     }
 
   private:
@@ -26,8 +33,9 @@ namespace LibTest_runner
     ProgressRing^ progressRing_;
 
   protected:
-    virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
-    {
+    void OnLaunched(
+      Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e)
+                                                                    override {
       auto layoutRoot = ref new Grid();
       layoutRoot->VerticalAlignment = VerticalAlignment::Center;
       layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;
@@ -49,9 +57,8 @@ namespace LibTest_runner
       RunAllTests();
     }
 
-    void RunAllTests()
-    {
-      SpWStringReporter_t spStringReporter(new CWStringReporter(/*CWStringReporter::kPrintOutput*/));
+    void RunAllTests() {
+      SpWStringReporter_t spStringReporter(new CWStringReporter());
 
       // Update the UI to indicate test execution is in progress
       progressRing_->IsActive = true;
@@ -59,18 +66,18 @@ namespace LibTest_runner
       // Run test cases in a separate thread not to block the UI thread
       // Pass the UI thread to continue using it after task execution
       auto ui = task_continuation_context::use_current();
-      create_task([this, ui, spStringReporter]()
-      {
+      create_task([this, ui, spStringReporter]() {
         LibTest_runner::TestSolution::Instance().AddReporter(spStringReporter);
-        LibTest_runner::TestSolution::Instance().AddReporter(SpXmlReporter_t(new CXmlReporter(ref new String(L"tests.xml"), CXmlReporter::kAllTests)));
+        LibTest_runner::TestSolution::Instance().AddReporter(SpXmlReporter_t(
+          new CXmlReporter(ref new String(L"tests.xml"),
+                           CXmlReporter::kAllTests)));
         LibTest_runner::TestSolution::Instance().Execute();
         LibTest_runner::TestSolution::Instance().GenerateReport();
-      }).then([this, spStringReporter]()
-      {
+      }).then([this, spStringReporter]() {
         // Update the UI
-        if (spStringReporter->GetReport() != NULL)
-        {
-          outputTextBox_->Text = ref new String((*spStringReporter->GetReport()).c_str());
+        if (spStringReporter->GetReport() != NULL) {
+          outputTextBox_->Text = ref new String(
+            (*spStringReporter->GetReport()).c_str());
           outputTextBox_->Text += L"Execution finished.\n";
         }
 
@@ -78,16 +85,14 @@ namespace LibTest_runner
       }, ui);
     }
   };
+}  // namespace LibTest_runner
 
-}
-
-int __cdecl main(::Platform::Array<::Platform::String^>^ args)
-{
-  (void)args; // Unused parameter
+int __cdecl main(::Platform::Array<::Platform::String^>^ args) {
+  (void)args;  // Unused parameter
   Windows::UI::Xaml::Application::Start(
     ref new Windows::UI::Xaml::ApplicationInitializationCallback(
-    [](Windows::UI::Xaml::ApplicationInitializationCallbackParams^ p) {
-    (void)p; // Unused parameter
+      [](Windows::UI::Xaml::ApplicationInitializationCallbackParams^ p) {
+    (void)p;  // Unused parameter
     auto app = ref new LibTest_runner::LibTestApp();
   }));
 
