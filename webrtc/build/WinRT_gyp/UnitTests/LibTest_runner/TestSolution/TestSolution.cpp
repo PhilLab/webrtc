@@ -21,12 +21,12 @@ namespace LibTest_runner
     m_Executed = true;
     try
     {
-      printf("\n--- Executing %s ------\n", pTest->Name().c_str());
+      wprintf(L"\n--- Executing %s ------\n", pTest->Name().c_str());
       pTest->Execute();
     }
     catch (int status)
     {
-      printf("--- %s test terminated with status %d ------\n", pTest->Name().c_str(), status);
+      wprintf(L"--- %s test terminated with status %d ------\n", pTest->Name().c_str(), status);
     }
   }
 

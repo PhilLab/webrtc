@@ -380,17 +380,10 @@ bool PeerConnection::Initialize(
       portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
     }
   }
-#if defined(WINRT)
-  else if (webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-IPv6Default") ==
-             "Disabled") {
-    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
-  }
-#else
   else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
 	  "Disabled") {
 	  portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
-#endif
 
   if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {
     portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_TCP;

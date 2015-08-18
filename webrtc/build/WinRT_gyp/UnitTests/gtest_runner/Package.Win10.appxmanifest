@@ -1,7 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-         xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
-         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10">
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10">
   <Identity Name="GtestRunner" Publisher="CN=WebRTC" Version="1.0.0.1" />
   <mp:PhoneIdentity PhoneProductId="7108daec-69af-45a1-871a-dc5f8abcb197" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
@@ -17,7 +15,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="gtest_runner.exe" EntryPoint="gtest_runner.App">
-      <uap:VisualElements DisplayName="gtest_runner" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="gtest_runner"  BackgroundColor="#464646">
+      <uap:VisualElements DisplayName="gtest_runner" Square150x150Logo="Logo.png" Square44x44Logo="SmallLogo.png" Description="gtest_runner" BackgroundColor="#464646">
         <uap:DefaultTile>
           <uap:ShowNameOnTiles>
             <uap:ShowOn Tile="square150x150Logo" />
@@ -30,5 +28,8 @@
   <Capabilities>
     <Capability Name="privateNetworkClientServer" />
     <Capability Name="internetClientServer" />
+    <Capability Name="internetClient" />
+    <DeviceCapability Name="webcam" />
+    <DeviceCapability Name="microphone" />
   </Capabilities>
 </Package>

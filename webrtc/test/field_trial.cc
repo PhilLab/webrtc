@@ -29,6 +29,7 @@ std::map<std::string, std::string> field_trials_;
 }  // namespace
 
 namespace field_trial {
+#ifndef WINRT
 std::string FindFullName(const std::string& trial_name) {
   assert(field_trials_initiated_);
   std::map<std::string, std::string>::const_iterator it =
@@ -37,6 +38,7 @@ std::string FindFullName(const std::string& trial_name) {
     return std::string();
   return it->second;
 }
+#endif
 }  // namespace field_trial
 
 namespace test {
