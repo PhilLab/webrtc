@@ -20,11 +20,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#ifdef WINRT
-#include "webrtc/system_wrappers/interface/field_trial_default.h"
-#else
 #include "webrtc/system_wrappers/interface/field_trial.h"
-#endif
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -38,14 +34,8 @@ const double kMaxAdaptOffsetMs = 15.0;
 const double kOverUsingTimeThreshold = 10;
 
 bool AdaptiveThresholdExperimentIsEnabled() {
-#if defined (WINRT)
-  std::string experiment_string =
-    webrtc::field_trial::FindFullNameFieldTrialDefault(
-      kAdaptiveThresholdExperiment);
-#else
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kAdaptiveThresholdExperiment);
-#endif
   if (experiment_string.length() < kMinExperimentLength)
     return false;
   return experiment_string.substr(0, kEnabledPrefixLength) == kEnabledPrefix;
@@ -54,14 +44,8 @@ bool AdaptiveThresholdExperimentIsEnabled() {
 // Gets thresholds from the experiment name following the format
 // "WebRTC-AdaptiveBweThreshold/Enabled-0.5,0.002/".
 bool ReadExperimentConstants(double* k_up, double* k_down) {
-#if defined (WINRT)
-  std::string experiment_string =
-    webrtc::field_trial::FindFullNameFieldTrialDefault(
-      kAdaptiveThresholdExperiment);
-#else
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kAdaptiveThresholdExperiment);
-#endif
   return sscanf(experiment_string.substr(kEnabledPrefixLength + 1).c_str(),
                 "%lf,%lf", k_up, k_down) == 2;
 }
