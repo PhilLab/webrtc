@@ -1,3 +1,12 @@
+
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file in the root of the source
+// tree. An additional intellectual property rights grant can be found
+// in the file PATENTS.  All contributing project authors may
+// be found in the AUTHORS file in the root of the source tree.
+
 #include <collection.h>
 #include <ppltasks.h>
 #include <string>
@@ -21,17 +30,16 @@ bool autoClose = false;
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 
-namespace gtest_runner
-{
-  ref class GTestApp sealed : public Windows::UI::Xaml::Application
-  {
+namespace gtest_runner {
+  ref class GTestApp sealed : public Windows::UI::Xaml::Application {
   public:
-    GTestApp()
-    {
+    GTestApp() {
       progressTimer  = ref new DispatcherTimer;
-      progressTimer->Tick += ref new Windows::Foundation::EventHandler<Object^>(this, &GTestApp::progressUpdate);
+      progressTimer->Tick +=
+        ref new Windows::Foundation::EventHandler<Object^>(this,
+        &GTestApp::progressUpdate);
       Windows::Foundation::TimeSpan t;
-      t.Duration = 10* 10*1000*1000; //10sec
+      t.Duration = 10* 10*1000*1000;  // 10sec
       progressTimer->Interval = t;
     }
 
@@ -41,8 +49,9 @@ namespace gtest_runner
     DispatcherTimer^ progressTimer;
 
   protected:
-    virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override
-    {
+    virtual void OnLaunched(
+      Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e)
+                                                                     override {
       g_windowDispatcher = Window::Current->Dispatcher;
 
       auto layoutRoot = ref new Grid();
@@ -68,9 +77,7 @@ namespace gtest_runner
       progressTimer->Start();
     }
 
-    void RunAllTests()
-    {
-
+    void RunAllTests() {
       testing::FLAGS_gtest_output = "xml";
 
       // Update the UI to indicate test execution is in progress
@@ -86,28 +93,25 @@ namespace gtest_runner
       // Run test cases in a separate thread not to block the UI thread
       // Pass the UI thread to continue using it after task execution
       auto ui = task_continuation_context::use_current();
-      create_task([this, ui]()
-      {
+      create_task([this, ui]() {
         char* argv[] = { "." };
         webrtc::test::TestSuite test_suite(1, argv);
         test_suite.Run();
-      }).then([this]()
-      {
+      }).then([this]() {
         // Cleanup SSL initialized
         rtc::CleanupSSL();
 
         // Update the UI
-        outputTextBox_->Text = ref new String(rtc::ToUtf16(stdout_buffer, strlen(stdout_buffer)).data());
+        outputTextBox_->Text = ref new String(rtc::ToUtf16(stdout_buffer,
+          strlen(stdout_buffer)).data());
         progressRing_->IsActive = false;
 
         // Exit the app
         GTestApp::Current->Exit();
       }, ui);
-
     }
 
     void progressUpdate(Platform::Object^ sender, Platform::Object^ e) {
-
       if (!::testing::UnitTest::GetInstance()->current_test_case())
         return;
 
@@ -116,35 +120,36 @@ namespace gtest_runner
       SYSTEMTIME st;
       GetLocalTime(&st);
 
-      std::string currentTestCase = ::testing::UnitTest::GetInstance()->current_test_case()->name();
-      //FixMe:
-      // Test count is not thread safe. fortunately. we will add check it when we fixed the threading issue.
-      //int total = ::testing::UnitTest::GetInstance()->test_to_run_count();
-      //int finished = ::testing::UnitTest::GetInstance()->successful_test_count() + ::testing::UnitTest::GetInstance()->failed_test_count();
+      std::string currentTestCase =
+        ::testing::UnitTest::GetInstance()->current_test_case()->name();
+      // FixMe:
+      // Test count is not thread safe. fortunately
+      // We will add check it when we fixed the threading issue.
+      // int total = ::testing::UnitTest::GetInstance()->test_to_run_count();
+      // int finished =
+      //  ::testing::UnitTest::GetInstance()->successful_test_count() +
+      //  ::testing::UnitTest::GetInstance()->failed_test_count();
 
       stringStream << "Executing test cases. Please wait...\n"
         << "Current Test case:" << currentTestCase << "\n"
-        //<< finished << "/" << total << "test suite finished" << "\n"
-        << "\n" << "Last Status updated at " << st.wHour << ":"<<st.wMinute<<":"<<st.wSecond;
+        // << finished << "/" << total << "test suite finished" << "\n"
+        << "\n" << "Last Status updated at "
+        << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
 
       std::string s_str = stringStream.str();
       std::wstring wid_str = std::wstring(s_str.begin(), s_str.end());
 
-
       outputTextBox_->Text = ref new Platform::String(wid_str.c_str());
-
     }
   };
+}  // namespace gtest_runner
 
-}
-
-int __cdecl main(::Platform::Array<::Platform::String^>^ args)
-{
-  (void)args; // Unused parameter
+int __cdecl main(::Platform::Array<::Platform::String^>^ args) {
+  (void)args;  // Unused parameter
   Windows::UI::Xaml::Application::Start(
     ref new Windows::UI::Xaml::ApplicationInitializationCallback(
     [](Windows::UI::Xaml::ApplicationInitializationCallbackParams^ p) {
-    (void)p; // Unused parameter
+    (void)p;  // Unused parameter
     auto app = ref new gtest_runner::GTestApp();
   }));
 

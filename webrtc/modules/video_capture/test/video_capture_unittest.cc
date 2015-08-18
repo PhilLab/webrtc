@@ -151,7 +151,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
 
   void SetExpectedCapability(VideoCaptureCapability capability) {
     CriticalSectionScoped cs(capture_cs_.get());
-    capability_= capability;
+    capability_ = capability;
     incoming_frames_ = 0;
     last_render_time_ms_ = 0;
     capture_delay_ = -1;
@@ -217,7 +217,6 @@ class TestVideoCaptureFeedBack : public VideoCaptureFeedBack {
   int frame_rate() {
     CriticalSectionScoped cs(capture_cs_.get());
     return frame_rate_;
-
   }
   VideoCaptureAlarm alarm() {
     CriticalSectionScoped cs(capture_cs_.get());
@@ -448,7 +447,7 @@ class VideoCaptureExternalTest : public testing::Test {
 
     test_frame_.CreateEmptyFrame(kTestWidth, kTestHeight, kTestWidth,
                                  ((kTestWidth + 1) / 2), (kTestWidth + 1) / 2);
-    SleepMs(1); // Wait 1ms so that two tests can't have the same timestamp.
+    SleepMs(1);  // Wait 1ms so that two tests can't have the same timestamp.
     memset(test_frame_.buffer(webrtc::kYPlane), 127, kTestWidth * kTestHeight);
     memset(test_frame_.buffer(webrtc::kUPlane), 127,
            ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));

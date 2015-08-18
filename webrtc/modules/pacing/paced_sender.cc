@@ -414,8 +414,8 @@ void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {
 
 bool PacedSender::ProbingExperimentIsEnabled() const {
 #ifdef WINRT
-  return webrtc::field_trial::FindFullNameFieldTrialDefault("WebRTC-BitrateProbing") ==
-         "Enabled";
+  return webrtc::field_trial::FindFullNameFieldTrialDefault(
+    "WebRTC-BitrateProbing") == "Enabled";
 #else
   return webrtc::field_trial::FindFullName("WebRTC-BitrateProbing") ==
          "Enabled";

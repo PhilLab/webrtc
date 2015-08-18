@@ -77,7 +77,7 @@ std::string ErrorName(int err, const ConstantLabel * err_table) {
   rtc_base_snprintf(buffer, sizeof(buffer), "0x%08x", err);
 #else
   snprintf(buffer, sizeof(buffer), "0x%08x", err);
-#endif  //WEBRTC_WIN
+#endif  // WEBRTC_WIN
   return buffer;
 }
 
@@ -137,7 +137,8 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
         WCHAR msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
 #if defined(WINRT)
-        // TODO: Review this use of LoadPackagedLibrary() to get an HMODULE.
+        // TODO(winrt): Review this use of LoadPackagedLibrary() to get an
+        // HMODULE.
         HMODULE hmod = NULL;
         if (module) {
           wchar_t modulew[255];
@@ -335,7 +336,8 @@ void LogMessage::UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
 void LogMessage::OutputToDebug(const std::string& str,
                                LoggingSeverity severity) {
   bool log_to_stderr = true;
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && (!defined(DEBUG) || defined(NDEBUG))
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && (!defined(DEBUG) || \
+  defined(NDEBUG))
   // On the Mac, all stderr output goes to the Console log and causes clutter.
   // So in opt builds, don't log to stderr unless the user specifically sets
   // a preference to do so.
@@ -358,8 +360,8 @@ void LogMessage::OutputToDebug(const std::string& str,
 #if defined(WINRT)
   // Always log to the debugger.
   OutputDebugString(rtc::ToUtf16(str).c_str());
-  // TODO: Pipe log to TCP port here?
-  // TODO: How to open STD_ERROR_HANDLE?
+  // TODO(winrt): Pipe log to TCP port here?
+  // TODO(winrt): How to open STD_ERROR_HANDLE?
 #elif defined(WEBRTC_WIN)
   // Always log to the debugger.
   // Perhaps stderr should be controlled by a preference, as on Mac?
