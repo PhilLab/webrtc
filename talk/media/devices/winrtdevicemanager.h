@@ -30,7 +30,7 @@
 
 #ifndef WINRT
 #error Invalid build configuration
-#endif // WINRT
+#endif  // WINRT
 
 #include <string>
 #include <vector>
@@ -40,63 +40,61 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/logging.h"
 
-namespace cricket
-{
+namespace cricket {
 
-  class WinRTDeviceManager : public DeviceManager
-  {
-  public:
-    WinRTDeviceManager();
-    virtual ~WinRTDeviceManager();
+class WinRTDeviceManager : public DeviceManager {
+ public:
+  WinRTDeviceManager();
+  virtual ~WinRTDeviceManager();
 
-    // Initialization
-    virtual bool Init();
-    virtual void Terminate();
+  // Initialization
+  virtual bool Init();
+  virtual void Terminate();
 
-    virtual bool GetAudioInputDevices(std::vector<Device>* devices);
-    virtual bool GetAudioOutputDevices(std::vector<Device>* devices);
+  virtual bool GetAudioInputDevices(std::vector<Device>* devices);
+  virtual bool GetAudioOutputDevices(std::vector<Device>* devices);
 
-    virtual bool GetVideoCaptureDevices(std::vector<Device>* devs);
+  virtual bool GetVideoCaptureDevices(std::vector<Device>* devs);
 
-  private:
-    virtual bool GetDefaultVideoCaptureDevice(Device* device);
+ private:
+  virtual bool GetDefaultVideoCaptureDevice(Device* device);
+  void OnDeviceChange();
+
+  static const char* kUsbDevicePathPrefix;
+
+  ref class WinRTWatcher sealed {
+   public:
+    WinRTWatcher();
+    void Start();
+    void Stop();
+
+   private:
+    friend WinRTDeviceManager;
+    WinRTDeviceManager* deviceManager_;
+    Windows::Devices::Enumeration::DeviceWatcher^ videoCaptureWatcher_;
+    Windows::Devices::Enumeration::DeviceWatcher^ videoAudioInWatcher_;
+    Windows::Devices::Enumeration::DeviceWatcher^ videoAudioOutWatcher_;
+
+    void OnVideoCaptureAdded(Windows::Devices::Enumeration::DeviceWatcher
+      ^sender, Windows::Devices::Enumeration::DeviceInformation ^args);
+    void OnVideoCaptureRemoved(Windows::Devices::Enumeration::DeviceWatcher
+      ^sender, Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
+
+    void OnAudioInAdded(Windows::Devices::Enumeration::DeviceWatcher
+      ^sender, Windows::Devices::Enumeration::DeviceInformation ^args);
+    void OnAudioInRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender,
+      Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
+
+    void OnAudioOutAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender,
+      Windows::Devices::Enumeration::DeviceInformation ^args);
+    void OnAudioOutRemoved(Windows::Devices::Enumeration::DeviceWatcher
+      ^sender, Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
+
     void OnDeviceChange();
-
-    static const char* kUsbDevicePathPrefix;
-
-    ref class WinRTWatcher sealed
-    {
-    public:
-      WinRTWatcher();
-      void Start();
-      void Stop();
-    private:
-      friend WinRTDeviceManager;
-      WinRTDeviceManager* deviceManager_;
-      Windows::Devices::Enumeration::DeviceWatcher^ videoCaptureWatcher_;
-      Windows::Devices::Enumeration::DeviceWatcher^ videoAudioInWatcher_;
-      Windows::Devices::Enumeration::DeviceWatcher^ videoAudioOutWatcher_;
-
-      void OnVideoCaptureAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender, 
-        Windows::Devices::Enumeration::DeviceInformation ^args);
-      void OnVideoCaptureRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender, 
-        Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
-
-      void OnAudioInAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender,
-        Windows::Devices::Enumeration::DeviceInformation ^args);
-      void OnAudioInRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender,
-        Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
-
-      void OnAudioOutAdded(Windows::Devices::Enumeration::DeviceWatcher ^sender,
-        Windows::Devices::Enumeration::DeviceInformation ^args);
-      void OnAudioOutRemoved(Windows::Devices::Enumeration::DeviceWatcher ^sender,
-        Windows::Devices::Enumeration::DeviceInformationUpdate ^args);
-
-      void OnDeviceChange();
-    };
-
-    WinRTWatcher^ watcher_;
   };
+
+  WinRTWatcher^ watcher_;
+};
 
 }  // namespace cricket
 

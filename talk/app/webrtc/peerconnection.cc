@@ -379,10 +379,9 @@ bool PeerConnection::Initialize(
     if (!value) {
       portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
     }
-  }
-  else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
-	  "Disabled") {
-	  portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+  } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
+      "Disabled") {
+    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
 
   if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {

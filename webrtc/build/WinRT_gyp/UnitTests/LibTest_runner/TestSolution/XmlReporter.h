@@ -1,42 +1,53 @@
-#pragma once
 
-namespace LibTest_runner
-{
-#pragma warning ( push )
-#pragma warning( disable : 4290 )
-  using namespace Windows::Data::Xml::Dom;
-  using namespace Platform;
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file in the root of the source
+// tree. An additional intellectual property rights grant can be found
+// in the file PATENTS.  All contributing project authors may
+// be found in the AUTHORS file in the root of the source tree.
 
-  //=============================================================================
-  //         class: CXmlReporter
-  //   Description: Test reporter generating xml file
-  //              
-  // History: 
-  // 2015/03/09 TP: created
-  //=============================================================================
-  class CXmlReporter : public CTestsReporterBase
-  {
-  public:
-    static unsigned int const kAllTests = 1; //Print all tests, only executed tests otherwise
-  private:
-    Platform::String^ OutputFile_;
-    XmlDocument^ report_;
-    XmlElement^  solutionEl_;
-    XmlElement^ GetLibraryElement(String^ projectName);
-    XmlElement^ GetProjectElement(XmlElement^ library, String^ projectName);
-    unsigned int m_nFlags;
-  public:
-    CXmlReporter(Platform::String^ outputFile, unsigned int flags = 0);
-    virtual ~CXmlReporter() {};
-    virtual void AddTestResult(const CTestBase& test) throw(ReportGenerationException);
-    virtual void Begin() throw(ReportGenerationException);
-    virtual void AddTestSolutionHeader(const CTestSolution& solution) throw(ReportGenerationException);
-    virtual void End() throw(ReportGenerationException);
-  };
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_TESTSOLUTION_XMLREPORTER_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_TESTSOLUTION_XMLREPORTER_H_
 
-  typedef std::shared_ptr<CXmlReporter> SpXmlReporter_t;
+namespace LibTest_runner {
+#pragma warning(push)
+#pragma warning(disable : 4290)
+using namespace Windows::Data::Xml::Dom;
+using namespace Platform;
 
-#pragma warning ( pop )
-}
+//=============================================================================
+//         class: CXmlReporter
+//   Description: Test reporter generating xml file
+//
+// History:
+// 2015/03/09 TP: created
+//=============================================================================
+class CXmlReporter : public CTestsReporterBase {
+ public:
+  // Print all tests, only executed tests otherwise
+  static unsigned int const kAllTests = 1;
+ private:
+  Platform::String^ OutputFile_;
+  XmlDocument^ report_;
+  XmlElement^  solutionEl_;
+  XmlElement^ GetLibraryElement(String^ projectName);
+  XmlElement^ GetProjectElement(XmlElement^ library, String^ projectName);
+  unsigned int m_nFlags;
+ public:
+  explicit CXmlReporter(Platform::String^ outputFile, unsigned int flags = 0);
+  virtual ~CXmlReporter() {}
+  virtual void AddTestResult(const CTestBase& test)
+    throw(ReportGenerationException);
+  virtual void Begin() throw(ReportGenerationException);
+  virtual void AddTestSolutionHeader(const CTestSolution& solution)
+    throw(ReportGenerationException);
+  virtual void End() throw(ReportGenerationException);
+};
 
+typedef std::shared_ptr<CXmlReporter> SpXmlReporter_t;
 
+#pragma warning(pop)
+}  // namespace LibTest_runner
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_TESTSOLUTION_XMLREPORTER_H_
