@@ -21,12 +21,18 @@
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
+#include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include <set>
+#include <string>
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
-namespace {
+using Windows::Media::Capture::MediaStreamType;
+
+namespace
+{
   std::vector<cricket::Device> g_videoDevices;
   webrtc::CriticalSectionWrapper& gMediaStreamListLock(
     *webrtc::CriticalSectionWrapper::CreateCriticalSection());
@@ -396,6 +402,92 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
       return;
     }
   }
+}
+
+IAsyncOperation<IVector<CaptureResolution^>^>^ MediaDevice::GetSupportedResolutions()
+{
+  auto op = concurrency::create_async([this]() -> IVector<CaptureResolution^>^
+  {
+    auto mediaCapture =
+      webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(_id);
+    if (mediaCapture == nullptr)
+    {
+      return nullptr;
+    }
+    auto streamProperties =
+      mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
+      MediaStreamType::VideoRecord);
+    if (streamProperties == nullptr)
+    {
+      return nullptr;
+    }
+    auto ret = ref new Vector<CaptureResolution^>();
+    std::set<std::wstring> descSet;
+    for (auto prop : streamProperties)
+    {
+      if (prop->Type != L"Video")
+      {
+        continue;
+      }
+      auto videoProp = static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(prop);
+      if ((videoProp->Width == 0) || (videoProp->Height == 0))
+      {
+        continue;
+      }
+      auto res = ref new CaptureResolution(videoProp->Width, videoProp->Height, videoProp->PixelAspectRatio);
+      if (descSet.find(res->Description->Data()) == descSet.end())
+      {
+        descSet.insert(res->Description->Data());
+        ret->Append(ref new CaptureResolution(videoProp->Width, videoProp->Height, videoProp->PixelAspectRatio));
+      }
+    }
+    return ret;
+  });
+  return op;
+}
+
+IAsyncOperation<IVector<CaptureFrameRate^>^>^ MediaDevice::GetSupportedFrameRates()
+{
+  auto op = concurrency::create_async([this]() -> IVector<CaptureFrameRate^>^
+  {
+    auto mediaCapture =
+      webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(_id);
+    if (mediaCapture == nullptr)
+    {
+      return nullptr;
+    }
+    auto streamProperties =
+      mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
+      MediaStreamType::VideoRecord);
+    if (streamProperties == nullptr)
+    {
+      return nullptr;
+    }
+    auto ret = ref new Vector<CaptureFrameRate^>();
+    std::set<std::wstring> fpsSet;
+    for (auto prop : streamProperties)
+    {
+      if (prop->Type != L"Video")
+      {
+        continue;
+      }
+      auto videoProp = static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(prop);
+      // NOTE: for now we'll filter out odd frame rates where denominator is not 1
+      if ((videoProp->FrameRate == nullptr) || (videoProp->FrameRate->Numerator == 0) ||
+        (videoProp->FrameRate->Denominator != 1))
+      {
+        continue;
+      }
+      auto fps = ref new CaptureFrameRate(videoProp->FrameRate->Numerator);
+      if (fpsSet.find(fps->Description->Data()) == fpsSet.end())
+      {
+        ret->Append(fps);
+        fpsSet.insert(fps->Description->Data());
+      }
+    }
+    return ret;
+  });
+  return op;
 }
 
 }  // namespace webrtc_winrt_api
