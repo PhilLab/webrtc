@@ -55,6 +55,10 @@ uint16 RTCDataChannel::Id::get() {
   return _impl->id();
 }
 
+void RTCDataChannel::Close() {
+  _impl->Close();
+}
+
 RTCDataChannelState RTCDataChannel::ReadyState::get() {
   RTCDataChannelState state;
   ToCx(_impl->state(), &state);
@@ -65,9 +69,24 @@ unsigned int RTCDataChannel::BufferedAmount::get() {
   return _impl->buffered_amount();
 }
 
-void RTCDataChannel::Send(String^ data) {
-  webrtc::DataBuffer buffer(rtc::ToUtf8(data->Data()));
-  _impl->Send(buffer);
+void RTCDataChannel::Send(IDataChannelMessage^ data) {
+  if (!data->binary) {
+    webrtc::DataBuffer buffer(rtc::ToUtf8(data->DataString->Data()));
+    _impl->Send(buffer);
+  }
+  else {
+    std::vector<byte> binaryDataVector;
+    binaryDataVector.reserve(data->DataBinary->Size);
+
+    // convert IVector from to std::vector
+    webrtc_winrt_api_internal::FromCx(data->DataBinary, &binaryDataVector);
+
+    byte* byteArr = (&binaryDataVector[0]);
+    const rtc::Buffer rtcBuffer(byteArr, binaryDataVector.size());
+    webrtc::DataBuffer buffer(*(&rtcBuffer), true);
+
+    _impl->Send(buffer);
+  }
 }
 
 }  // namespace webrtc_winrt_api

@@ -15,6 +15,8 @@
 #include "Media.h"
 #include "DataChannel.h"
 
+using Platform::Collections::Vector;
+
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 namespace webrtc_winrt_api_internal {
@@ -195,12 +197,20 @@ void DataChannelObserver::OnStateChange() {
 
 void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
+  evt->Data = ref new webrtc_winrt_api::IDataChannelMessage();
+  evt->Data->binary = buffer.binary;
+  evt->DataChannelLabel = _channel->Label;
+
   if (!buffer.binary) {
-    evt->Data = ToCx(std::string(
-      reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
-  } else {
-    // TODO(WINRT)
-    evt->Data = "<binary>";
+    evt->Data->DataString = ToCx(std::string(reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
+  }
+  else {
+    std::vector<byte> bytes = std::vector<byte>();
+    bytes.insert(bytes.end(), buffer.data.data(), buffer.data.data() + buffer.size());
+
+    // convert byte[] from buffer to IVector
+    evt->Data->DataBinary = ref new Vector<byte>();
+    ToCx(&bytes, evt->Data->DataBinary);
   }
 
   if (g_windowDispatcher != nullptr) {

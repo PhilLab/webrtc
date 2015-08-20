@@ -43,17 +43,39 @@ namespace webrtc_winrt_api_internal {
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceConnectionState,
                           webrtc::PeerConnectionInterface::IceConnectionState);
 
-  // Templated function to convert vectors.
   template <typename I, typename O>
   void FromCx(
     IVector<I>^ inArray,
     std::vector<O>* outArray) {
-    for (auto inObj : inArray) {
+    for (I inObj : inArray) {
       // TODO(WINRT): Optimize with reference to object in vector.
       O outObj;
       FromCx(inObj, &outObj);
       outArray->push_back(outObj);
     }
+  }
+
+  template <typename I, typename O>
+  void ToCx(
+    std::vector<I>* inArray,
+    IVector<O>^ outArray) {
+    for (std::vector<byte>::iterator it = (*inArray).begin(); it != (*inArray).end(); ++it) {
+      // TODO(WINRT): Optimize with reference to object in vector.
+      O outObj;
+      FromCx((*it), &outObj);
+      outArray->Append(outObj);
+    }
+  }
+
+  // placeholder functions if no conversion needed (used in vector conversion templates)
+  template <typename T>
+  void FromCx(T in, T* out) {
+    *out = in;
+  }
+
+  template <typename T>
+  void ToCx(T in, T* out) {
+    *out = in;
   }
 
   // ==========================
