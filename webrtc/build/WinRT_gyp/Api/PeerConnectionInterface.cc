@@ -424,6 +424,25 @@ IAsyncOperation<bool>^ WinJSHooks::requestAccessForMediaCapture() {
     return  webrtc_winrt_api::WebRTC::RequestAccessForMediaCapture();
 }
 
+bool WinJSHooks::IsTracing(){
+  return  webrtc_winrt_api::WebRTC::IsTracing();
+}
+
+void WinJSHooks::StartTracing(){
+  webrtc_winrt_api::WebRTC::StartTracing();
+}
+
+void WinJSHooks::StopTracing(){
+  webrtc_winrt_api::WebRTC::StopTracing();
+}
+
+bool WinJSHooks::SaveTrace(Platform::String^ filename){
+  return  webrtc_winrt_api::WebRTC::SaveTrace(filename);
+}
+bool WinJSHooks::SaveTrace(Platform::String^ host, int port){
+  return  webrtc_winrt_api::WebRTC::SaveTrace(host, port);
+}
+
 void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
   if (globals::isInitialized)
     return;

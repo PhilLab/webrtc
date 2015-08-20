@@ -26,7 +26,6 @@
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
-
 namespace {
   std::vector<cricket::Device> g_videoDevices;
   webrtc::CriticalSectionWrapper& gMediaStreamListLock(
@@ -311,6 +310,30 @@ IMediaSource^ Media::CreateMediaStreamSource(
     });
 }
 
+IVector<MediaDevice^>^ Media::GetVideoCaptureDevices(){
+  auto ret = ref new Vector<MediaDevice^>();
+  for (auto videoDev : g_videoDevices) {
+
+    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+  }
+  return ret;
+}
+
+IVector<MediaDevice^>^ Media::GetAudioCaptureDevices(){
+  auto ret = ref new Vector<MediaDevice^>();
+  char name[webrtc::kAdmMaxDeviceNameSize];
+  char guid[webrtc::kAdmMaxGuidSize];
+  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
+  for (int i = 0; i < recordingDeviceCount; i++) {
+    _audioDevice->RecordingDeviceName(i, name, guid);
+
+    ret->Append(ref new MediaDevice(ToCx(guid), ToCx(name)));
+
+  }
+
+  return ret;
+}
+
 IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
   IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
     [this]() -> bool {
@@ -333,7 +356,9 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
     int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
     for (int i = 0; i < recordingDeviceCount; i++) {
       _audioDevice->RecordingDeviceName(i, name, guid);
+
       OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
+
     }
     return true;
   });

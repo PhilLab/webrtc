@@ -88,6 +88,11 @@ public ref class WinJSHooks sealed {
 public:
   static void initialize();
   static IAsyncOperation<bool>^ requestAccessForMediaCapture();
+  static bool IsTracing();
+  static void StartTracing();
+  static void StopTracing();
+  static bool SaveTrace(Platform::String^ filename);
+  static bool SaveTrace(Platform::String^ host, int port);
 };
 
 [Windows::Foundation::Metadata::WebHostHidden]

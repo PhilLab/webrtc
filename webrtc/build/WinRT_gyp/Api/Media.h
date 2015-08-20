@@ -132,6 +132,9 @@ namespace webrtc_winrt_api {
       RTCMediaStreamConstraints^ mediaStreamConstraints);
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate, String^ id);
+    IVector<MediaDevice^>^ GetAudioCaptureDevices();
+
+    IVector<MediaDevice^>^ GetVideoCaptureDevices();
 
     IAsyncOperation<bool>^ EnumerateAudioVideoCaptureDevices();
     void SelectVideoDevice(MediaDevice^ device);
@@ -145,6 +148,7 @@ namespace webrtc_winrt_api {
     cricket::Device _selectedVideoDevice;
     webrtc::AudioDeviceModule *_audioDevice;
     uint16_t _selectedAudioDevice;
+
   };
 
 }  // namespace webrtc_winrt_api
