@@ -75,7 +75,8 @@ RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp) {
   Sdp = sdp;
 }
 
-RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration) {
+RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
+  : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
   globals::RunOnGlobalThread<void>([this, cc_configuration] {
@@ -156,6 +157,12 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer() {
         <webrtc::SessionDescriptionInterface*> tce) {
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      tce.set(nullptr);
+      return;
+    }
+
     rtc::scoped_refptr<CreateSdpObserver> observer(
       new rtc::RefCountedObject<CreateSdpObserver>(tce));
     // TODO(WINRT): Remove it once the callback has been received.
@@ -176,6 +183,12 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateAnswer() {
       <webrtc::SessionDescriptionInterface*> tce) {
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      tce.set(nullptr);
+      return;
+    }
+
     rtc::scoped_refptr<CreateSdpObserver> observer(
       new rtc::RefCountedObject<CreateSdpObserver>(tce));
     // TODO(WINRT): Remove it once the callback has been received.
@@ -195,6 +208,12 @@ IAsyncAction^ RTCPeerConnection::SetLocalDescription(
     [this, description](Concurrency::task_completion_event<void> tce) {
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      tce.set();
+      return;
+    }
+
     rtc::scoped_refptr<SetSdpObserver> observer(
       new rtc::RefCountedObject<SetSdpObserver>(tce));
     // TODO(WINRT): Remove it once the callback has been received.
@@ -212,6 +231,12 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(
   return CreateCallbackBridge(
     [this, description](Concurrency::task_completion_event<void> tce) {
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
+
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      tce.set();
+      return;
+    }
 
     rtc::scoped_refptr<SetSdpObserver> observer(
       new rtc::RefCountedObject<SetSdpObserver>(tce));
@@ -238,6 +263,11 @@ RTCConfiguration^ RTCPeerConnection::GetConfiguration() {
 IVector<MediaStream^>^ RTCPeerConnection::GetLocalStreams() {
   auto ret = ref new Vector<MediaStream^>();
   globals::RunOnGlobalThread<void>([this, ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     auto streams = _impl->local_streams();
     for (size_t i = 0; i < streams->count(); ++i) {
       ret->Append(ref new MediaStream(streams->at(i)));
@@ -249,6 +279,11 @@ IVector<MediaStream^>^ RTCPeerConnection::GetLocalStreams() {
 IVector<MediaStream^>^ RTCPeerConnection::GetRemoteStreams() {
   auto ret = ref new Vector<MediaStream^>();
   globals::RunOnGlobalThread<void>([this, ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     auto streams = _impl->remote_streams();
     for (size_t i = 0; i < streams->count(); ++i) {
       ret->Append(ref new MediaStream(streams->at(i)));
@@ -260,6 +295,11 @@ IVector<MediaStream^>^ RTCPeerConnection::GetRemoteStreams() {
 MediaStream^ RTCPeerConnection::GetStreamById(String^ streamId) {
   MediaStream^ ret = nullptr;
   globals::RunOnGlobalThread<void>([this, streamId, &ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     std::string streamIdStr = FromCx(streamId);
     // Look through the local streams.
     auto streams = _impl->local_streams();
@@ -287,18 +327,33 @@ MediaStream^ RTCPeerConnection::GetStreamById(String^ streamId) {
 
 void RTCPeerConnection::AddStream(MediaStream^ stream) {
   globals::RunOnGlobalThread<void>([this, stream] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     _impl->AddStream(stream->GetImpl());
   });
 }
 
 void RTCPeerConnection::RemoveStream(MediaStream^ stream) {
   globals::RunOnGlobalThread<void>([this, stream] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     _impl->RemoveStream(stream->GetImpl());
   });
 }
 
 RTCDataChannel^ RTCPeerConnection::CreateDataChannel(
   String^ label, RTCDataChannelInit^ init) {
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+  if (_impl == nullptr) {
+    return nullptr;
+  }
+
   webrtc::DataChannelInit nativeInit;
   if (init != nullptr) {
     FromCx(init, &nativeInit);
@@ -318,6 +373,11 @@ RTCDataChannel^ RTCPeerConnection::CreateDataChannel(
 IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
   return Concurrency::create_async([this, candidate] {
     globals::RunOnGlobalThread<void>([this, candidate] {
+      webrtc::CriticalSectionScoped csLock(_lock.get());
+      if (_impl == nullptr) {
+        return;
+      }
+
       rtc::scoped_ptr<webrtc::IceCandidateInterface> nativeCandidate;
       FromCx(candidate, &nativeCandidate);
       _impl->AddIceCandidate(nativeCandidate.get());
@@ -327,6 +387,8 @@ IAsyncAction^ RTCPeerConnection::AddIceCandidate(RTCIceCandidate^ candidate) {
 
 void RTCPeerConnection::Close() {
   globals::RunOnGlobalThread<void>([this] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+
     if (_impl.get()) {
       _impl->Close();
     }
@@ -341,6 +403,11 @@ void RTCPeerConnection::Close() {
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     if (_impl->local_description() != nullptr) {
       ToCx(_impl->local_description(), &ret);
     }
@@ -351,6 +418,11 @@ RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
 RTCSessionDescription^ RTCPeerConnection::RemoteDescription::get() {
   RTCSessionDescription^ ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     if (_impl->remote_description() != nullptr) {
       ToCx(_impl->remote_description(), &ret);
     }
@@ -361,6 +433,11 @@ RTCSessionDescription^ RTCPeerConnection::RemoteDescription::get() {
 RTCSignalingState RTCPeerConnection::SignalingState::get() {
   RTCSignalingState ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     ToCx(_impl->signaling_state(), &ret);
   });
   return ret;
@@ -369,6 +446,11 @@ RTCSignalingState RTCPeerConnection::SignalingState::get() {
 RTCIceGatheringState RTCPeerConnection::IceGatheringState::get() {
   RTCIceGatheringState ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     ToCx(_impl->ice_gathering_state(), &ret);
   });
   return ret;
@@ -377,6 +459,11 @@ RTCIceGatheringState RTCPeerConnection::IceGatheringState::get() {
 RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
   RTCIceConnectionState ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_impl == nullptr) {
+      return;
+    }
+
     ToCx(_impl->ice_connection_state(), &ret);
   });
   return ret;
