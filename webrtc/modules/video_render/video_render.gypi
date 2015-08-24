@@ -160,6 +160,15 @@
                 'windows/video_render_winrt.cc',
               ],
               'defines': [ 'WINRT_MF_RENDERING=1' ],
+			  'conditions': [
+                ['winrt_platform=="win10"', {
+                  'msvs_disabled_warnings': [
+                                         #Surpress warning: windows.ui.xaml.media.animation.h(31123):
+										 #warning C4002: too many actual parameters for macro 'GetCurrentTime'
+                                         4002,
+										 ],    
+                }],
+			  ],
             }],
           ] # conditions
         },
