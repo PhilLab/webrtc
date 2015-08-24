@@ -398,9 +398,9 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
   }
 }
 
-IAsyncOperation<IVector<CaptureResolution^>^>^ MediaDevice::GetSupportedResolutions()
+IAsyncOperation<IVector<CaptureCapability^>^>^ MediaDevice::GetVideoCaptureCapabilities()
 {
-  auto op = concurrency::create_async([this]() -> IVector<CaptureResolution^>^
+  auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^
   {
     auto mediaCapture =
       webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(_id);
@@ -415,7 +415,7 @@ IAsyncOperation<IVector<CaptureResolution^>^>^ MediaDevice::GetSupportedResoluti
     {
       return nullptr;
     }
-    auto ret = ref new Vector<CaptureResolution^>();
+    auto ret = ref new Vector<CaptureCapability^>();
     std::set<std::wstring> descSet;
     for (auto prop : streamProperties)
     {
@@ -424,59 +424,17 @@ IAsyncOperation<IVector<CaptureResolution^>^>^ MediaDevice::GetSupportedResoluti
         continue;
       }
       auto videoProp = static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(prop);
-      if ((videoProp->Width == 0) || (videoProp->Height == 0))
-      {
-        continue;
-      }
-      auto res = ref new CaptureResolution(videoProp->Width, videoProp->Height, videoProp->PixelAspectRatio);
-      if (descSet.find(res->Description->Data()) == descSet.end())
-      {
-        descSet.insert(res->Description->Data());
-        ret->Append(ref new CaptureResolution(videoProp->Width, videoProp->Height, videoProp->PixelAspectRatio));
-      }
-    }
-    return ret;
-  });
-  return op;
-}
-
-IAsyncOperation<IVector<CaptureFrameRate^>^>^ MediaDevice::GetSupportedFrameRates()
-{
-  auto op = concurrency::create_async([this]() -> IVector<CaptureFrameRate^>^
-  {
-    auto mediaCapture =
-      webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(_id);
-    if (mediaCapture == nullptr)
-    {
-      return nullptr;
-    }
-    auto streamProperties =
-      mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
-      MediaStreamType::VideoRecord);
-    if (streamProperties == nullptr)
-    {
-      return nullptr;
-    }
-    auto ret = ref new Vector<CaptureFrameRate^>();
-    std::set<std::wstring> fpsSet;
-    for (auto prop : streamProperties)
-    {
-      if (prop->Type != L"Video")
-      {
-        continue;
-      }
-      auto videoProp = static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(prop);
-      // NOTE: for now we'll filter out odd frame rates where denominator is not 1
       if ((videoProp->FrameRate == nullptr) || (videoProp->FrameRate->Numerator == 0) ||
-        (videoProp->FrameRate->Denominator != 1))
+        (videoProp->FrameRate->Denominator != 1) || (videoProp->Width == 0) || (videoProp->Height == 0))
       {
         continue;
       }
-      auto fps = ref new CaptureFrameRate(videoProp->FrameRate->Numerator);
-      if (fpsSet.find(fps->Description->Data()) == fpsSet.end())
+      auto cap = ref new CaptureCapability(videoProp->Width, videoProp->Height,
+        videoProp->FrameRate->Numerator, videoProp->PixelAspectRatio);
+      if (descSet.find(cap->FullDescription->Data()) == descSet.end())
       {
-        ret->Append(fps);
-        fpsSet.insert(fps->Description->Data());
+        ret->Append(cap);
+        descSet.insert(cap->FullDescription->Data());
       }
     }
     return ret;

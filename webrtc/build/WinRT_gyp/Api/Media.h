@@ -88,24 +88,26 @@ namespace webrtc_winrt_api {
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
   };
 
-  public ref class CaptureResolution sealed
+  public ref class CaptureCapability sealed
   {
   public:
-    CaptureResolution(unsigned int width, unsigned int height, Windows::Media::MediaProperties::MediaRatio^ pixelAspect)
+    CaptureCapability(unsigned int width, unsigned int height,
+      unsigned int fps, Windows::Media::MediaProperties::MediaRatio^ pixelAspect)
     {
-      wchar_t desc[64];
-      swprintf(desc, L"%u x %u", width, height);
-      _description = ref new String(desc);
       _width = width;
       _height = height;
+      _fps = fps;
       _pixelAspectRatio = pixelAspect;
-    }
-    property String^ Description
-    {
-      String^ get()
-      {
-        return _description;
-      }
+      wchar_t resolutionDesc[64];
+      swprintf_s(resolutionDesc, 64, L"%u x %u (pixel %u:%u)",
+        _width, _height, pixelAspect->Numerator, pixelAspect->Denominator);
+      _resolutionDescription = ref new String(resolutionDesc);
+      wchar_t fpsDesc[64];
+      swprintf_s(fpsDesc, 64, L"%u fps", _fps);
+      _fpsDescription = ref new String(fpsDesc);
+      wchar_t desc[128];
+      swprintf_s(desc, 128, L"%s %s", resolutionDesc, fpsDesc);
+      _description = ref new String(desc);
     }
     property unsigned int Width
     {
@@ -121,23 +123,6 @@ namespace webrtc_winrt_api {
         return _height;
       }
     }
-  private:
-    String^ _description;
-    unsigned int _width;
-    unsigned int _height;
-    Windows::Media::MediaProperties::MediaRatio^ _pixelAspectRatio;
-  };
-
-  public ref class CaptureFrameRate sealed
-  {
-  public:
-    CaptureFrameRate(unsigned int fps)
-    {
-      _fps = fps;
-      wchar_t desc[64];
-      swprintf(desc, L"%u FPS", fps);
-      _description = ref new String(desc);
-    }
     property unsigned int FrameRate
     {
       unsigned int get()
@@ -145,15 +130,41 @@ namespace webrtc_winrt_api {
         return _fps;
       }
     }
-    property String^ Description
+    property Windows::Media::MediaProperties::MediaRatio^ PixelAspectRatio
+    {
+      Windows::Media::MediaProperties::MediaRatio^ get()
+      {
+        return _pixelAspectRatio;
+      }
+    }
+    property String^ FullDescription
     {
       String^ get()
       {
         return _description;
       }
     }
+    property String^ ResolutionDescription
+    {
+      String^ get()
+      {
+        return _resolutionDescription;
+      }
+    }
+    property String^ FrameRateDescription
+    {
+      String^ get()
+      {
+        return _fpsDescription;
+      }
+    }
   private:
+    unsigned int _width;
+    unsigned int _height;
     unsigned int _fps;
+    Windows::Media::MediaProperties::MediaRatio^ _pixelAspectRatio;
+    String^ _resolutionDescription;
+    String^ _fpsDescription;
     String^ _description;
   };
 
@@ -184,9 +195,8 @@ namespace webrtc_winrt_api {
       }
     }
 
-    IAsyncOperation<IVector<CaptureResolution^>^>^ GetSupportedResolutions();
+    IAsyncOperation<IVector<CaptureCapability^>^>^ GetVideoCaptureCapabilities();
 
-    IAsyncOperation<IVector<CaptureFrameRate^>^>^ GetSupportedFrameRates();
   };
 
   public ref class RTCMediaStreamConstraints sealed {
