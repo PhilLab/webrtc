@@ -31,8 +31,8 @@ StatsObserverETW::~StatsObserverETW() {
 
 void StatsObserverETW::OnComplete(const StatsReports& reports) {
   for (auto report : reports) {
-    //  auto stat_group_name = report->id()->ToString().c_str();
-    auto stat_group_name = "TestGroup";
+    std::string sgn = report->id()->ToString();
+    auto stat_group_name = sgn.c_str();
     auto timestamp = report->timestamp();
 
     for (auto value : report->values()) {
@@ -68,6 +68,7 @@ void StatsObserverETW::OnComplete(const StatsReports& reports) {
       }
     }
   }
+
 }
 
 void StatsObserverETW::OnMessage(rtc::Message* msg) {
@@ -89,10 +90,7 @@ void StatsObserverETW::PollStats(
   pci_ = pci;
 
   auto lss = pci_->local_streams();
-  auto rss = pci_->remote_streams();
-
   GetStreamCollectionStats(lss);
-  GetStreamCollectionStats(rss);
 
   rtc::Thread::Current()->PostDelayed(kInterval, this, MSG_POLL_STATS);
 }
