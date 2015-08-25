@@ -271,6 +271,9 @@ public:
 private:
   ~RTCPeerConnection();
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _impl;
+  // This lock protects _impl.
+  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
+
   GlobalObserver _observer;
 
   typedef std::vector<rtc::scoped_refptr<CreateSdpObserver>> CreateSdpObservers;
