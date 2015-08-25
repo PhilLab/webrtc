@@ -35,6 +35,7 @@
 #include "webrtc/voice_engine/statistics.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/utility.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 #if defined(_WIN32)
 #include <Qos.h>
@@ -581,6 +582,12 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
           // |capture_start_ntp_time_ms_| + |elapsed_time_ms_| == |ntp_time_ms_|
           capture_start_ntp_time_ms_ =
               audioFrame.ntp_time_ms_ - audioFrame.elapsed_time_ms_;
+#ifdef WINRT
+          //Todo: this is only the point when we finish decoding, can we locate the point 
+          //the real delay might be close to this endToEndDelay+ synccurrentAudioDelay
+          uint32_t endToEndDelay = Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() - static_cast<uint32_t>(audioFrame.ntp_time_ms_);
+          TRACE_COUNTER1("webrtc", "EndToEndAudioDecodingFinished", endToEndDelay);
+#endif
         }
       }
     }

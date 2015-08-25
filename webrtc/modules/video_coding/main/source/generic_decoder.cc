@@ -13,6 +13,7 @@
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -70,6 +71,13 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
         _clock->TimeInMilliseconds(),
         frameInfo->renderTimeMs);
 
+#ifdef WINRT
+
+    uint32_t endToEndDelay = frameInfo->renderTimeMs + static_cast<uint32_t>(Clock::CurrentNtpDeltaMs) - static_cast<uint32_t>(decodedImage.ntp_time_ms());
+    //we only finished decoding, however, 'renderTimeMs' is the value we expect the video element to show the frame already considered the
+    //audo/video sync delay.
+    TRACE_COUNTER1("webrtc", "EndToEndVideoDelay", endToEndDelay);
+#endif
     if (callback != NULL)
     {
         decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
