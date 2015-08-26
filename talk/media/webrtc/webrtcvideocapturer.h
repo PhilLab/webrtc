@@ -101,6 +101,10 @@ class WebRtcVideoCapturer : public VideoCapturer,
   rtc::Thread* start_thread_;  // Set in Start(), unset in Stop();
 
   rtc::scoped_ptr<rtc::AsyncInvoker> async_invoker_;
+
+  // TODO(WINRT): Find a nicer way of not overwhelming the
+  // memory with pending async frames.
+  bool hasFramePending_;
 };
 
 struct WebRtcCapturedFrame : public CapturedFrame {
