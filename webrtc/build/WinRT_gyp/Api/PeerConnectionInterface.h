@@ -274,7 +274,7 @@ private:
   // This lock protects _impl.
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
 
-  GlobalObserver _observer;
+  rtc::scoped_ptr<GlobalObserver> _observer;
 
   typedef std::vector<rtc::scoped_refptr<CreateSdpObserver>> CreateSdpObservers;
   typedef std::vector<rtc::scoped_refptr<SetSdpObserver>> SetSdpObservers;

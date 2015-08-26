@@ -46,14 +46,19 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc {
 namespace videocapturemodule {
 
-void RunOnCoreDispatcher(std::function<void()> fn) {
+void RunOnCoreDispatcher(std::function<void()> fn, bool async) {
   if (g_windowDispatcher != nullptr) {
     auto handler = ref new Windows::UI::Core::DispatchedHandler([fn]() {
       fn();
     });
     auto action = g_windowDispatcher->RunAsync(
       CoreDispatcherPriority::Normal, handler);
-    Concurrency::create_task(action).wait();
+    if (async) {
+      Concurrency::create_task(action);
+    }
+    else {
+      Concurrency::create_task(action).wait();
+    }
   }
   else {
     fn();
@@ -354,12 +359,13 @@ ref class DisplayOrientation sealed {
 };
 
 DisplayOrientation::~DisplayOrientation() {
-  RunOnCoreDispatcher([this]() {
-    if (display_info != nullptr) {
-      display_info->OrientationChanged::remove(
-        orientation_changed_registration_token_);
-    }
-  });
+  auto tmpDisplayInfo = display_info;
+  auto tmpToken = orientation_changed_registration_token_;
+  if (tmpDisplayInfo != nullptr) {
+    RunOnCoreDispatcher([tmpDisplayInfo, tmpToken]() {
+      tmpDisplayInfo->OrientationChanged::remove(tmpToken);
+    }, true);  // Run async because it can deadlock with core thread.
+  }
 }
 
 DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)

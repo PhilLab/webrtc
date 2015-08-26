@@ -85,6 +85,7 @@ namespace webrtc_winrt_api {
     void Stop();
     property bool Active { bool get(); }
   private:
+    ~MediaStream();
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
   };
 

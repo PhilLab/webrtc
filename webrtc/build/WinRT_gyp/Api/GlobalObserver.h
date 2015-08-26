@@ -60,7 +60,6 @@ class GlobalObserver : public webrtc::PeerConnectionObserver {
  private:
   webrtc_winrt_api::RTCPeerConnection^ _pc;
   rtc::scoped_refptr<webrtc::StatsObserverETW> _stats_observer_etw;
-  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
 };
 
 // There is one of those per call to CreateOffer().

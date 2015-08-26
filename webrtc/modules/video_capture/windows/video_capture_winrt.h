@@ -75,7 +75,7 @@ class VideoCaptureWinRT
 
 // Helper function to run code on the WinRT CoreDispatcher
 // and only return once the call completed.
-void RunOnCoreDispatcher(std::function<void()> fn);
+void RunOnCoreDispatcher(std::function<void()> fn, bool async = false);
 
 }  // namespace videocapturemodule
 }  // namespace webrtc

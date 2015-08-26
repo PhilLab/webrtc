@@ -20,47 +20,46 @@ extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 namespace webrtc_winrt_api_internal {
 
 #define POST_PC_EVENT(fn, evt) \
+  auto pc = _pc;\
   if (g_windowDispatcher != nullptr) {\
     g_windowDispatcher->RunAsync(\
       Windows::UI::Core::CoreDispatcherPriority::Normal, \
-      ref new Windows::UI::Core::DispatchedHandler([this, evt] {\
-      webrtc::CriticalSectionScoped csLock(_lock.get()); \
-      if (_pc != nullptr) {\
-        _pc->##fn(evt);\
+      ref new Windows::UI::Core::DispatchedHandler([pc, evt] {\
+      if (pc != nullptr) {\
+        pc->##fn(evt);\
       }\
     }));\
   } else {\
-    webrtc::CriticalSectionScoped csLock(_lock.get()); \
-    if (_pc != nullptr) {\
-      _pc->##fn(evt);\
+    if (pc != nullptr) {\
+      pc->##fn(evt);\
     }\
   }
 
 #define POST_PC_ACTION(fn) \
+  auto pc = _pc;\
   if (g_windowDispatcher != nullptr) {\
     g_windowDispatcher->RunAsync(\
       Windows::UI::Core::CoreDispatcherPriority::Normal, \
-      ref new Windows::UI::Core::DispatchedHandler([this] {\
-      webrtc::CriticalSectionScoped csLock(_lock.get()); \
-      if (_pc != nullptr) {\
-        _pc->##fn();\
+      ref new Windows::UI::Core::DispatchedHandler([pc] {\
+      if (pc != nullptr) {\
+        pc->##fn();\
       }\
     }));\
   } else {\
-    webrtc::CriticalSectionScoped csLock(_lock.get()); \
-    if (_pc != nullptr) {\
-      _pc->##fn();\
+    if (pc != nullptr) {\
+      pc->##fn();\
     }\
   }
 
-GlobalObserver::GlobalObserver()
-  : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
+GlobalObserver::GlobalObserver() {
 }
 
 void GlobalObserver::SetPeerConnection(
   webrtc_winrt_api::RTCPeerConnection^ pc) {
-  webrtc::CriticalSectionScoped csLock(_lock.get()); \
   _pc = pc;
+  if (_pc == nullptr) {
+    _stats_observer_etw = nullptr;
+  }
 }
 
 // Triggered when the SignalingState changed.
