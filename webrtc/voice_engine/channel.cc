@@ -586,7 +586,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
           //Todo: this is only the point when we finish decoding, can we locate the point 
           //the real delay might be close to this endToEndDelay+ synccurrentAudioDelay
           uint32_t endToEndDelay = Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() - static_cast<uint32_t>(audioFrame.ntp_time_ms_);
-          TRACE_COUNTER1("webrtc", "EndToEndAudioDecodingFinished", endToEndDelay);
+          TRACE_COUNTER1("webrtc", "EndToEndAudioDecoded", endToEndDelay);
 #endif
         }
       }
