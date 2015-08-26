@@ -11,6 +11,7 @@
 #include <ppltasks.h>
 #include <mfidl.h>
 #include "talk/media/base/videoframe.h"
+#include "talk/app/webrtc/videosourceinterface.h"
 #include "libyuv/video_common.h"
 #include "libyuv/convert.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -22,13 +23,6 @@ using Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs;
 using Windows::Media::Core::MediaStreamSource;
 using Windows::Media::MediaProperties::VideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
-
-namespace {
-webrtc::CriticalSectionWrapper& gMediaStreamListLock(
-  *webrtc::CriticalSectionWrapper::CreateCriticalSection());
-Vector<webrtc_winrt_api_internal::RTMediaStreamSource^>^ gMediaStreamList =
-  ref new Vector<webrtc_winrt_api_internal::RTMediaStreamSource^>();
-}  // namespace
 
 namespace webrtc_winrt_api_internal {
 
@@ -60,22 +54,24 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
   streamState->_mediaStreamSource = streamSource;
-  streamState->_mediaStreamSource->SampleRequested +=
+  // Use a lambda to capture a strong reference to RTMediaStreamSource.
+  // This is the only way to tie the lifetime of the RTMediaStreamSource
+  // to that of the MediaStreamSource.
+  streamSource->SampleRequested +=
     ref new Windows::Foundation::TypedEventHandler<MediaStreamSource ^,
-      MediaStreamSourceSampleRequestedEventArgs ^>(
-        streamState, &RTMediaStreamSource::OnSampleRequested);
-  streamState->_mediaStreamSource->Closed +=
+    MediaStreamSourceSampleRequestedEventArgs ^>([streamState](MediaStreamSource^ sender,
+      MediaStreamSourceSampleRequestedEventArgs^ args)
+  {
+    streamState->OnSampleRequested(sender, args);
+  });
+  streamSource->Closed +=
     ref new Windows::Foundation::TypedEventHandler<
       Windows::Media::Core::MediaStreamSource ^,
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>(
         &webrtc_winrt_api_internal::RTMediaStreamSource::OnClosed);
   streamState->_frameRate = frameRate;
   track->SetRenderer(streamState->_rtcRenderer.get());
-  {
-    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
-    gMediaStreamList->Append(streamState);
-  }
-  return streamState->_mediaStreamSource;
+  return streamSource;
 }
 
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
@@ -87,7 +83,7 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack) :
 
 RTMediaStreamSource::~RTMediaStreamSource() {
   LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource";
-  if (_rtcRenderer != nullptr) {
+  if (_rtcRenderer != nullptr && _videoTrack != nullptr) {
     _videoTrack->UnsetRenderer(_rtcRenderer.get());
   }
 }
@@ -119,6 +115,12 @@ void RTMediaStreamSource::RTCRenderer::RenderFrame(
 void RTMediaStreamSource::OnSampleRequested(
   MediaStreamSource ^sender, MediaStreamSourceSampleRequestedEventArgs ^args) {
   try {
+    // Check to detect cases where samples are still being requested
+    // but the source has ended.
+    auto trackState = _videoTrack->GetImpl()->GetSource()->state();
+    if (trackState == webrtc::MediaSourceInterface::kEnded) {
+      return;
+    }
     if (_mediaStreamSource == nullptr)
       return;
     auto request = args->Request;
@@ -150,8 +152,6 @@ void RTMediaStreamSource::OnSampleRequested(
     spSample->SetSampleDuration(duration);
     spSample->SetSampleTime((LONGLONG)_timeStamp);
     _timeStamp += duration;
-
-    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
 
     // Do FPS calculation and notification.
     if (_isNewFrame) {
@@ -268,15 +268,6 @@ void RTMediaStreamSource::OnClosed(
   Windows::Media::Core::MediaStreamSource ^sender,
   Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args) {
   LOG(LS_INFO) << "RTMediaStreamSource::OnClosed";
-  webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
-  for (unsigned int i = 0; i < gMediaStreamList->Size; i++) {
-    auto obj = gMediaStreamList->GetAt(i);
-    if (obj->_mediaStreamSource == sender) {
-      gMediaStreamList->RemoveAt(i);
-      obj->_mediaStreamSource = nullptr;
-      break;
-    }
-  }
 }
 }  // namespace webrtc_winrt_api_internal
 

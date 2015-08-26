@@ -76,7 +76,8 @@ RTCSessionDescription::RTCSessionDescription(RTCSdpType type, String^ sdp) {
 }
 
 RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
-  : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
+  : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
+  , _observer(new GlobalObserver()) {
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
   globals::RunOnGlobalThread<void>([this, cc_configuration] {
@@ -85,10 +86,10 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
     chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
-    _observer.SetPeerConnection(this);
+    _observer->SetPeerConnection(this);
     LOG(LS_INFO) << "Creating PeerConnection native.";
     _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
-      cc_configuration, &constraints, nullptr, nullptr, &_observer);
+      cc_configuration, &constraints, nullptr, nullptr, _observer.get());
   });
 }
 
@@ -395,7 +396,7 @@ void RTCPeerConnection::Close() {
 
     // Needed to remove the circular references and allow
     // this object to be garbage collected.
-    _observer.SetPeerConnection(nullptr);
+    _observer->SetPeerConnection(nullptr);
     _impl = nullptr;
   });
 }

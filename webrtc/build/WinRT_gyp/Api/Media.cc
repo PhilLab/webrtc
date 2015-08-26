@@ -104,6 +104,10 @@ MediaStream::MediaStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> impl)
   : _impl(impl) {
 }
 
+MediaStream::~MediaStream() {
+  LOG(LS_INFO) << "MediaStream::~MediaStream";
+}
+
 rtc::scoped_refptr<webrtc::MediaStreamInterface> MediaStream::GetImpl() {
   return _impl;
 }

@@ -44,6 +44,10 @@ namespace webrtc_winrt_api_internal {
 ref class RTMediaStreamSource sealed {
   public:
     virtual ~RTMediaStreamSource();
+
+    void OnSampleRequested(Windows::Media::Core::MediaStreamSource ^sender,
+      Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
+
   internal:
     static MediaStreamSource^ CreateMediaSource(
       MediaVideoTrack^ track, uint32 frameRate, String^ id);
@@ -61,8 +65,6 @@ ref class RTMediaStreamSource sealed {
     };
 
     RTMediaStreamSource(MediaVideoTrack^ videoTrack);
-    void OnSampleRequested(Windows::Media::Core::MediaStreamSource ^sender,
-      Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
     void BlankFrame(IMFMediaBuffer* mediaBuffer);
@@ -72,7 +74,10 @@ ref class RTMediaStreamSource sealed {
 
     MediaVideoTrack^ _videoTrack;
     String^ _id;  // Provided by the calling API.
-    MediaStreamSource^ _mediaStreamSource;
+
+    // Keep a weak reference here.
+    // Its _mediaStreamSource that keeps a reference to this object.
+    WeakReference _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
     rtc::scoped_ptr<cricket::VideoFrame> _frame;
