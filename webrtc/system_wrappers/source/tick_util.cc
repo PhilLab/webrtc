@@ -13,9 +13,12 @@
 #include <assert.h>
 
 namespace webrtc {
-
 bool TickTime::use_fake_clock_ = false;
 int64_t TickTime::fake_ticks_ = 0;
+
+#ifdef WINRT
+static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+#endif
 
 void TickTime::UseFakeClock(int64_t start_millisecond) {
   use_fake_clock_ = true;
@@ -29,9 +32,24 @@ void TickTime::AdvanceFakeClock(int64_t milliseconds) {
 
 int64_t TickTime::QueryOsForTicks() {
   TickTime result;
-#if _WIN32
+#if _WIN32 
+#ifdef WINRT
+  static int64_t timeZoneBias = -1;
+  if (timeZoneBias == -1) {
+    TIME_ZONE_INFORMATION timeZone;
+    GetTimeZoneInformation(&timeZone);
+    timeZoneBias = timeZone.Bias * 60 * 1000;//millisecons
+
+  }
+  FILETIME ft;
+  GetSystemTimeAsFileTime(&ft); //this will give us system file in UTC format
+  LARGE_INTEGER li;
+  li.HighPart = ft.dwHighDateTime;
+  li.LowPart = ft.dwLowDateTime;
+  result.ticks_ = MillisecondsToTicks((li.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 - timeZoneBias);
+
   // TODO(wu): Remove QueryPerformanceCounter implementation.
-#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
+#elif defined(USE_QUERY_PERFORMANCE_COUNTER)
   // QueryPerformanceCounter returns the value from the TSC which is
   // incremented at the CPU frequency. The algorithm used requires
   // the CPU frequency to be constant. Technology like speed stepping
