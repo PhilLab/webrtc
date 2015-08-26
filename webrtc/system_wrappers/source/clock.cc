@@ -58,11 +58,6 @@ class RealTimeClock : public Clock {
   // Retrieve an NTP absolute timestamp in milliseconds.
   int64_t CurrentNtpInMilliseconds() const override {
     timeval tv = CurrentTimeVal();
-
-//ToDO(winrt): investigating, why do we still need to adjust? 
-// we already adjust the time in 'CurrentTimeVal'. However, right now, it does not impact 
-// we check audio/video end to end delay
-
     uint32_t seconds;
     double microseconds_in_seconds;
     Adjust(tv, &seconds, &microseconds_in_seconds);
@@ -218,7 +213,7 @@ protected:
 
         // We can't use query performance counter since they can change depending on
         // speed stepping.
-        GetSystemTimeAsFileTime(&StartTime);
+        GetTime(&StartTime);
 
         Time = (((uint64_t)StartTime.dwHighDateTime) << 32) +
             (uint64_t)StartTime.dwLowDateTime;
@@ -322,8 +317,6 @@ class UnixRealTimeClock : public RealTimeClock {
 
 #if defined(WINRT)
 typedef WinRTRealTimeClock WindowsRealTimeClock;
-
-const int64_t Clock::CurrentNtpDeltaMs = Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -TickTime::MillisecondTimestamp();
 #endif
 
 #if defined(_WIN32)
