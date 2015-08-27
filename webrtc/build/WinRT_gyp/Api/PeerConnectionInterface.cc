@@ -51,8 +51,6 @@ bool certificateVerifyCallBack(void* cert) {
 
 static const std::string logFileName = "_webrtc_logging.log";
 
-const char* suggestedLogName = "webrtc_logging_%d%d%d%d%d.log"; //"webrtc_logging_YYYYMMDDHHMM.log
-
 //helper function to get default output path for the app
 std::string OutputPath() {
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
@@ -75,6 +73,7 @@ class FileLogSink
   : public rtc::LogSink{
 public:
   explicit FileLogSink(rtc::FileStream* fStream)  { fileStream_.reset(fStream); }
+  rtc::FileStream* file(){ return fileStream_.get(); }
 private:
   void OnLogMessage(const std::string& message) override {
     fileStream_->WriteAll(
@@ -617,6 +616,13 @@ bool WebRTC::SaveTrace(Platform::String^ host, int port) {
 
 void WebRTC::EnableLogging(LogLevel level) {
 
+  if (globals::gLoggingFile.get() != nullptr || globals::gLoggingServer.get()!=nullptr)
+  {
+    //already logging
+    return;
+
+  }
+
   //setup logging to network
   rtc::SocketAddress sa(INADDR_ANY, 47003);
   globals::gLoggingServer = rtc::scoped_ptr<rtc::LoggingServer>(
@@ -636,46 +642,20 @@ void WebRTC::EnableLogging(LogLevel level) {
 void WebRTC::DisableLogging() {
   LOG(LS_INFO) << "WebRTC logging disabled";
   rtc::LogMessage::RemoveLogToStream(globals::gLoggingFile.get());
+  globals::gLoggingFile.get()->file()->Close();
   globals::gLoggingFile.reset();
   globals::gLoggingServer.reset();
-}
-
-void WebRTC::SaveLoggingTOUserFolder() {
-  
-  auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
-  Windows::Foundation::IAsyncOperation<Windows::Storage::StorageFile^>^ getlogFileOp 
-    = folder->GetFileAsync(globals::toPlatformString(globals::logFileName));
-
-  auto aTask = Concurrency::create_task(getlogFileOp);
-  
-  //retrieving log file
-  aTask.then([](Windows::Storage::StorageFile^ logFile){
-    auto savePicker = ref new Windows::Storage::Pickers::FileSavePicker();
-
-    savePicker->SuggestedStartLocation = Windows::Storage::Pickers::PickerLocationId::DocumentsLibrary;
-
-    //generate log file with timestamp
-    char suggestFileName[128];
-    SYSTEMTIME currentTime;
-    GetSystemTime(&currentTime);
-    _snprintf(suggestFileName, sizeof(suggestFileName), globals::suggestedLogName, currentTime.wYear, currentTime.wMonth, currentTime.wDay,
-      currentTime.wHour, currentTime.wMinute);
-    savePicker->SuggestedFileName = globals::toPlatformString(std::string(suggestFileName));
-
-    //set file extension
-    auto logExtensions = ref new Platform::Collections::Vector<String^>();
-    logExtensions->Append(".log");
-    savePicker->FileTypeChoices->Insert(L"webrtc log file", logExtensions);
-
-    //prompt user to select destination to save
-    Windows::Foundation::IAsyncOperation<Windows::Storage::StorageFile^>^ selectTargetFileOp = savePicker->PickSaveFileAsync();
-    auto saveTask = Concurrency::create_task(selectTargetFileOp);
-    saveTask.then([logFile](Windows::Storage::StorageFile^ targetFile){
-      logFile->CopyAndReplaceAsync(targetFile);
-    });
-  });
 
 }
+
+Windows::Storage::StorageFolder^  WebRTC::LogFolder(){
+  return  Windows::Storage::ApplicationData::Current->LocalFolder;;
+}
+
+String^  WebRTC::LogFileName(){
+  return globals::toPlatformString(globals::logFileName);
+}
+
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
