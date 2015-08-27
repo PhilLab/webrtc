@@ -412,7 +412,7 @@ VideoCaptureWinRT::~VideoCaptureWinRT() {
 int32_t VideoCaptureWinRT::Init(const int32_t id,
                                 const char* device_unique_id) {
   CriticalSectionScoped cs(&_apiCs);
-  const int32_t device_unique_id_length = strlen(device_unique_id);
+  const int32_t device_unique_id_length = (int32_t)strlen(device_unique_id);
   if (device_unique_id_length > kVideoCaptureUniqueNameLength) {
     LOG(LS_ERROR) << "Device name too long";
     return -1;

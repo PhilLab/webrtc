@@ -171,8 +171,8 @@ void RTMediaStreamSource::OnSampleRequested(
     if (_frame.get() != nullptr) {
       if ((_videoDesc->EncodingProperties->Width != _frame->GetWidth()) ||
         (_videoDesc->EncodingProperties->Height != _frame->GetHeight())) {
-        _videoDesc->EncodingProperties->Width = _frame->GetWidth();
-        _videoDesc->EncodingProperties->Height = _frame->GetHeight();
+        _videoDesc->EncodingProperties->Width = (unsigned int)_frame->GetWidth();
+        _videoDesc->EncodingProperties->Height = (unsigned int)_frame->GetHeight();
         webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
           _videoDesc->EncodingProperties->Width,
           _videoDesc->EncodingProperties->Height);
@@ -234,7 +234,7 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
       _frame->GetVPlane(), _frame->GetVPitch(),
       reinterpret_cast<uint8*>(destRawData), pitch,
       uvDest, pitch,
-      _frame->GetWidth(), _frame->GetHeight());
+      (int)_frame->GetWidth(), (int)_frame->GetHeight());
   }
   catch (...) {
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
