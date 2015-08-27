@@ -26,15 +26,18 @@
 #include "webrtc/base/event_tracer.h"
 #include "webrtc/base/loggingserver.h"
 #include "webrtc/base/tracelog.h"
+#include "webrtc/base/stream.h"
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/session/media/channelmanager.h"
+#include "webrtc/system_wrappers/interface/utf_util_win.h"
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
 using Platform::Collections::Vector;
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
+using rtc::FileStream;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -46,6 +49,41 @@ bool certificateVerifyCallBack(void* cert) {
   return true;
 }
 
+static const std::string logFileName = "_webrtc_logging.log";
+
+const char* suggestedLogName = "webrtc_logging_%d%d%d%d%d.log"; //"webrtc_logging_YYYYMMDDHHMM.log
+
+//helper function to get default output path for the app
+std::string OutputPath() {
+  auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
+  wchar_t buffer[255];
+  wcsncpy_s(buffer, 255, folder->Path->Data(), _TRUNCATE);
+  return webrtc::ToUtf8(buffer) + "\\";
+}
+
+//helper function to convert a std string to Platform string
+String^ toPlatformString(std::string aString) {
+  std::wstring wide_str = std::wstring(aString.begin(), aString.end());
+  Platform::String^ p_string = ref new Platform::String(wide_str.c_str());
+  return p_string;
+}
+
+/**
+ * a private class only used in this file, which implements LogSink for logging to file
+ */
+class FileLogSink
+  : public rtc::LogSink{
+public:
+  explicit FileLogSink(rtc::FileStream* fStream)  { fileStream_.reset(fStream); }
+private:
+  void OnLogMessage(const std::string& message) override {
+    fileStream_->WriteAll(
+      message.data(), message.size(), nullptr, nullptr);
+  }
+
+  rtc::scoped_ptr<rtc::FileStream> fileStream_;
+};
+
 static bool isInitialized = false;
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
@@ -54,6 +92,7 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   rtc::Thread gThread;
   rtc::TraceLog gTraceLog;
   rtc::scoped_ptr<rtc::LoggingServer> gLoggingServer;
+  rtc::scoped_ptr<FileLogSink> gLoggingFile;
   cricket::VideoFormat gPreferredVideoCaptureFormat;
 }  // namespace globals
 
@@ -577,16 +616,65 @@ bool WebRTC::SaveTrace(Platform::String^ host, int port) {
 }
 
 void WebRTC::EnableLogging(LogLevel level) {
+
+  //setup logging to network
   rtc::SocketAddress sa(INADDR_ANY, 47003);
   globals::gLoggingServer = rtc::scoped_ptr<rtc::LoggingServer>(
     new rtc::LoggingServer());
   globals::gLoggingServer->Listen(sa, static_cast<rtc::LoggingSeverity>(level));
+
+  //setup logging to a file
+  rtc::FileStream* fileStream = new rtc::FileStream();
+  fileStream->Open(globals::OutputPath() + globals::logFileName, "wb", NULL);
+  fileStream->DisableBuffering();
+  globals::gLoggingFile = rtc::scoped_ptr<globals::FileLogSink>(new globals::FileLogSink(fileStream));
+  rtc::LogMessage::AddLogToStream(globals::gLoggingFile.get(), static_cast<rtc::LoggingSeverity>(level));
+
   LOG(LS_INFO) << "WebRTC logging enabled";
 }
 
 void WebRTC::DisableLogging() {
   LOG(LS_INFO) << "WebRTC logging disabled";
+  rtc::LogMessage::RemoveLogToStream(globals::gLoggingFile.get());
+  globals::gLoggingFile.reset();
   globals::gLoggingServer.reset();
+}
+
+void WebRTC::SaveLoggingTOUserFolder() {
+  
+  auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
+  Windows::Foundation::IAsyncOperation<Windows::Storage::StorageFile^>^ getlogFileOp 
+    = folder->GetFileAsync(globals::toPlatformString(globals::logFileName));
+
+  auto aTask = Concurrency::create_task(getlogFileOp);
+  
+  //retrieving log file
+  aTask.then([](Windows::Storage::StorageFile^ logFile){
+    auto savePicker = ref new Windows::Storage::Pickers::FileSavePicker();
+
+    savePicker->SuggestedStartLocation = Windows::Storage::Pickers::PickerLocationId::DocumentsLibrary;
+
+    //generate log file with timestamp
+    char suggestFileName[128];
+    SYSTEMTIME currentTime;
+    GetSystemTime(&currentTime);
+    _snprintf(suggestFileName, sizeof(suggestFileName), globals::suggestedLogName, currentTime.wYear, currentTime.wMonth, currentTime.wDay,
+      currentTime.wHour, currentTime.wMinute);
+    savePicker->SuggestedFileName = globals::toPlatformString(std::string(suggestFileName));
+
+    //set file extension
+    auto logExtensions = ref new Platform::Collections::Vector<String^>();
+    logExtensions->Append(".log");
+    savePicker->FileTypeChoices->Insert(L"webrtc log file", logExtensions);
+
+    //prompt user to select destination to save
+    Windows::Foundation::IAsyncOperation<Windows::Storage::StorageFile^>^ selectTargetFileOp = savePicker->PickSaveFileAsync();
+    auto saveTask = Concurrency::create_task(selectTargetFileOp);
+    saveTask.then([logFile](Windows::Storage::StorageFile^ targetFile){
+      logFile->CopyAndReplaceAsync(targetFile);
+    });
+  });
+
 }
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {

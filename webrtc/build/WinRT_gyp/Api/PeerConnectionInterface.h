@@ -110,6 +110,8 @@ public:
   static void EnableLogging(LogLevel level);
   static void DisableLogging();
 
+  static void SaveLoggingTOUserFolder();
+
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
   static void SetPreferredVideoCaptureFormat(int frame_width,
