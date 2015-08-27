@@ -55,19 +55,53 @@ uint16 RTCDataChannel::Id::get() {
   return _impl->id();
 }
 
+void RTCDataChannel::Close() {
+  _impl->Close();
+}
+
 RTCDataChannelState RTCDataChannel::ReadyState::get() {
   RTCDataChannelState state;
   ToCx(_impl->state(), &state);
   return state;
 }
 
+StringDataChannelMessage::StringDataChannelMessage(String^ data) {
+  StringData = data;
+}
+
+BinaryDataChannelMessage::BinaryDataChannelMessage(IVector<byte>^ data) {
+  BinaryData = data;
+}
+
 unsigned int RTCDataChannel::BufferedAmount::get() {
   return _impl->buffered_amount();
 }
 
-void RTCDataChannel::Send(String^ data) {
-  webrtc::DataBuffer buffer(rtc::ToUtf8(data->Data()));
-  _impl->Send(buffer);
+void RTCDataChannel::Send(IDataChannelMessage^ message) {
+  if (message->DataType == RTCDataChannelMessageType::String) {
+    StringDataChannelMessage^ stringMessage = (StringDataChannelMessage^)message;
+
+    webrtc::DataBuffer buffer(rtc::ToUtf8(stringMessage->StringData->Data()));
+    _impl->Send(buffer);
+  }
+  else if (message->DataType == RTCDataChannelMessageType::Binary) {
+    BinaryDataChannelMessage^ binaryMessage = (BinaryDataChannelMessage^)message;
+
+    std::vector<byte> binaryDataVector;
+    binaryDataVector.reserve(binaryMessage->BinaryData->Size);
+
+    // convert IVector to std::vector
+    webrtc_winrt_api_internal::FromCx(binaryMessage->BinaryData, &binaryDataVector);
+
+    byte* byteArr = (&binaryDataVector[0]);
+    const rtc::Buffer rtcBuffer(byteArr, binaryDataVector.size());
+    webrtc::DataBuffer buffer(rtcBuffer, true);
+
+    _impl->Send(buffer);
+  }
+  else {
+    LOG(LS_ERROR) << "Tried to send data channel message of unknown data type";
+  }
 }
 
 }  // namespace webrtc_winrt_api
