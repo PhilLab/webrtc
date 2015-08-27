@@ -13,6 +13,7 @@
 #include <mfapi.h>
 #include <vector>
 #include <string>
+#include <set>
 #include "PeerConnectionInterface.h"
 #include "Marshalling.h"
 #include "RTMediaStreamSource.h"
@@ -23,8 +24,6 @@
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include <set>
-#include <string>
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
@@ -318,16 +317,15 @@ IMediaSource^ Media::CreateMediaStreamSource(
     });
 }
 
-IVector<MediaDevice^>^ Media::GetVideoCaptureDevices(){
+IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
   for (auto videoDev : g_videoDevices) {
-
     ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
   }
   return ret;
 }
 
-IVector<MediaDevice^>^ Media::GetAudioCaptureDevices(){
+IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
   char name[webrtc::kAdmMaxDeviceNameSize];
   char guid[webrtc::kAdmMaxGuidSize];
@@ -336,7 +334,6 @@ IVector<MediaDevice^>^ Media::GetAudioCaptureDevices(){
     _audioDevice->RecordingDeviceName(i, name, guid);
 
     ret->Append(ref new MediaDevice(ToCx(guid), ToCx(name)));
-
   }
 
   return ret;
@@ -366,7 +363,6 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
       _audioDevice->RecordingDeviceName(i, name, guid);
 
       OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
-
     }
     return true;
   });
@@ -402,41 +398,39 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
   }
 }
 
-IAsyncOperation<IVector<CaptureCapability^>^>^ MediaDevice::GetVideoCaptureCapabilities()
-{
-  auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^
-  {
+IAsyncOperation<IVector<CaptureCapability^>^>^
+  MediaDevice::GetVideoCaptureCapabilities() {
+  auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^ {
     auto mediaCapture =
-      webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(_id);
-    if (mediaCapture == nullptr)
-    {
+      webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
+      GetMediaCapture(_id);
+    if (mediaCapture == nullptr) {
       return nullptr;
     }
     auto streamProperties =
       mediaCapture->VideoDeviceController->GetAvailableMediaStreamProperties(
       MediaStreamType::VideoRecord);
-    if (streamProperties == nullptr)
-    {
+    if (streamProperties == nullptr) {
       return nullptr;
     }
     auto ret = ref new Vector<CaptureCapability^>();
     std::set<std::wstring> descSet;
-    for (auto prop : streamProperties)
-    {
-      if (prop->Type != L"Video")
-      {
+    for (auto prop : streamProperties) {
+      if (prop->Type != L"Video") {
         continue;
       }
-      auto videoProp = static_cast<Windows::Media::MediaProperties::IVideoEncodingProperties^>(prop);
-      if ((videoProp->FrameRate == nullptr) || (videoProp->FrameRate->Numerator == 0) ||
-        (videoProp->FrameRate->Denominator != 1) || (videoProp->Width == 0) || (videoProp->Height == 0))
-      {
+      auto videoProp =
+        static_cast<Windows::Media::MediaProperties::
+          IVideoEncodingProperties^>(prop);
+      if ((videoProp->FrameRate == nullptr) ||
+        (videoProp->FrameRate->Numerator == 0) ||
+        (videoProp->FrameRate->Denominator != 1) ||
+        (videoProp->Width == 0) || (videoProp->Height == 0)) {
         continue;
       }
       auto cap = ref new CaptureCapability(videoProp->Width, videoProp->Height,
         videoProp->FrameRate->Numerator, videoProp->PixelAspectRatio);
-      if (descSet.find(cap->FullDescription->Data()) == descSet.end())
-      {
+      if (descSet.find(cap->FullDescription->Data()) == descSet.end()) {
         ret->Append(cap);
         descSet.insert(cap->FullDescription->Data());
       }
