@@ -197,20 +197,21 @@ void DataChannelObserver::OnStateChange() {
 
 void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
   auto evt = ref new webrtc_winrt_api::RTCDataChannelMessageEvent();
-  evt->Data = ref new webrtc_winrt_api::IDataChannelMessage();
-  evt->Data->binary = buffer.binary;
-  evt->DataChannelLabel = _channel->Label;
 
   if (!buffer.binary) {
-    evt->Data->DataString = ToCx(std::string(reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
+    // convert buffer data from uint_8[] to char*
+    String^ receivedString = ToCx(std::string(reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
+
+    evt->Data = ref new webrtc_winrt_api::StringDataChannelMessage(receivedString);
   }
   else {
-    std::vector<byte> bytes = std::vector<byte>();
-    bytes.insert(bytes.end(), buffer.data.data(), buffer.data.data() + buffer.size());
+    // convert byte[] from buffer to Vector
+    std::vector<byte> bytesFromBuffer = std::vector<byte>();
+    bytesFromBuffer.insert(bytesFromBuffer.end(), buffer.data.data(), buffer.data.data() + buffer.size());
+    Vector<byte>^ convertedBytes = ref new Vector<byte>();
+    ToCx(&bytesFromBuffer, convertedBytes);
 
-    // convert byte[] from buffer to IVector
-    evt->Data->DataBinary = ref new Vector<byte>();
-    ToCx(&bytes, evt->Data->DataBinary);
+    evt->Data = ref new webrtc_winrt_api::BinaryDataChannelMessage(convertedBytes);
   }
 
   if (g_windowDispatcher != nullptr) {

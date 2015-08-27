@@ -42,17 +42,33 @@ public enum class RTCDataChannelMessageType {
   Binary
 };
 
-public ref class IDataChannelMessage sealed {
+public interface class IDataChannelMessage {
+  property RTCDataChannelMessageType DataType;
+};
+
+public ref class StringDataChannelMessage sealed : IDataChannelMessage {
 public:
-  property String^ DataString;
-  property IVector<byte>^ DataBinary;
-  property bool binary;
+  StringDataChannelMessage(String^ data);
+  property String^ StringData;
+  property RTCDataChannelMessageType DataType {
+    virtual RTCDataChannelMessageType get() { return RTCDataChannelMessageType::String; };
+    virtual void set(RTCDataChannelMessageType) { };
+  };
+};
+
+public ref class BinaryDataChannelMessage sealed : IDataChannelMessage {
+public:
+  BinaryDataChannelMessage(IVector<byte>^ data);
+  property IVector<byte>^ BinaryData;
+  property RTCDataChannelMessageType DataType {
+    virtual RTCDataChannelMessageType get() { return RTCDataChannelMessageType::Binary; };
+    virtual void set(RTCDataChannelMessageType) { };
+  };
 };
 
 public ref class RTCDataChannelMessageEvent sealed {
 public:
   property IDataChannelMessage^ Data;
-  property String^ DataChannelLabel;
 };
 
 public ref class RTCDataChannel sealed {

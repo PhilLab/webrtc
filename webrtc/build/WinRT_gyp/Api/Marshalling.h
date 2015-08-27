@@ -59,10 +59,10 @@ namespace webrtc_winrt_api_internal {
   void ToCx(
     std::vector<I>* inArray,
     IVector<O>^ outArray) {
-    for (std::vector<byte>::iterator it = (*inArray).begin(); it != (*inArray).end(); ++it) {
+    for (auto it = (*inArray).begin(); it != (*inArray).end(); ++it) {
       // TODO(WINRT): Optimize with reference to object in vector.
       O outObj;
-      FromCx((*it), &outObj);
+      ToCx((*it), &outObj);
       outArray->Append(outObj);
     }
   }
