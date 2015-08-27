@@ -35,6 +35,7 @@ using webrtc_winrt_api_internal::ToCx;
 using Platform::Collections::Vector;
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
+using namespace cricket;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
