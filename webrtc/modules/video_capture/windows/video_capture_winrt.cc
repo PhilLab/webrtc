@@ -246,7 +246,7 @@ void CaptureDevice::StartCapture(
         (this, &CaptureDevice::OnMediaSample);
 
   auto initOp = media_sink_->InitializeAsync(media_encoding_profile->Video);
-  Concurrency::create_task(initOp)
+  auto initTask = Concurrency::create_task(initOp)
     .then([this, media_encoding_profile,
       video_encoding_properties](IMediaExtension^ media_extension) {
       auto setPropOp =
@@ -256,19 +256,23 @@ void CaptureDevice::StartCapture(
         .then([this, media_encoding_profile, media_extension]() {
           auto startRecordOp = media_capture_->StartRecordToCustomSinkAsync(
             media_encoding_profile, media_extension);
-          return Concurrency::create_task(startRecordOp)
-            .then([this](Concurrency::task<void> async_info) {
-              try {
-                async_info.get();
-                capture_started_ = true;
-              } catch (Platform::Exception^ e) {
-                CleanupSink();
-                CleanupMediaCapture();
-                throw;
-              }
-            });
+          return Concurrency::create_task(startRecordOp);
         });
-      }).wait();
+      });
+
+  initTask.then([this](Concurrency::task<void> async_info) {
+    try {
+      async_info.get();
+      capture_started_ = true;
+    }
+    catch (Platform::Exception^ e) {
+      LOG(LS_ERROR) << "StartRecordToCustomSinkAsync exception: " << rtc::ToUtf8(e->Message->Data());
+      CleanupSink();
+      CleanupMediaCapture();
+    }
+  }).wait();
+
+  LOG(LS_INFO) << "CaptureDevice::StartCapture: returning";
 }
 
 void CaptureDevice::StopCapture() {

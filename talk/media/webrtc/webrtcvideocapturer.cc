@@ -133,7 +133,8 @@ WebRtcVideoCapturer::WebRtcVideoCapturer()
       module_(nullptr),
       captured_frames_(0),
       start_thread_(nullptr),
-      async_invoker_() {
+      async_invoker_(),
+      hasFramePending_(false) {
   set_frame_factory(new WebRtcVideoFrameFactory());
 }
 
@@ -142,7 +143,8 @@ WebRtcVideoCapturer::WebRtcVideoCapturer(WebRtcVcmFactoryInterface* factory)
       module_(nullptr),
       captured_frames_(0),
       start_thread_(nullptr),
-      async_invoker_() {
+      async_invoker_(),
+      hasFramePending_(false) {
   set_frame_factory(new WebRtcVideoFrameFactory());
 }
 
@@ -295,6 +297,7 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   DCHECK(!async_invoker_);
   async_invoker_.reset(new rtc::AsyncInvoker());
   captured_frames_ = 0;
+  hasFramePending_ = false;
 
   SetCaptureFormat(&capture_format);
 
@@ -369,16 +372,12 @@ bool WebRtcVideoCapturer::GetPreferredFourccs(
   return true;
 }
 
-// TODO(WINRT): Find a nicer way of not overwhelming the
-// memory with pending async frames.
-static bool hasFramePending = false;
-
 void WebRtcVideoCapturer::OnIncomingCapturedFrame(
     const int32_t id,
     const webrtc::VideoFrame& sample) {
-  if (hasFramePending)
+  if (hasFramePending_)
     return;
-  hasFramePending = true;
+  hasFramePending_ = true;
   // This can only happen between Start() and Stop().
   DCHECK(start_thread_);
   DCHECK(async_invoker_);
@@ -429,7 +428,7 @@ void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
   webrtc::ExtractBuffer(frame, length, &capture_buffer_[0]);
   WebRtcCapturedFrame webrtc_frame(frame, &capture_buffer_[0], length);
   SignalFrameCaptured(this, &webrtc_frame);
-  hasFramePending = false;
+  hasFramePending_ = false;
 }
 
 // WebRtcCapturedFrame

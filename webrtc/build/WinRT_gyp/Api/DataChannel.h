@@ -1,5 +1,4 @@
-﻿
-// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+﻿// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -18,6 +17,7 @@
 
 using Platform::String;
 using Platform::IBox;
+using Windows::Foundation::Collections::IVector;
 
 namespace webrtc_winrt_api {
 public enum class RTCDataChannelState {
@@ -37,9 +37,38 @@ public:
   property IBox<uint16>^ Id;
 };
 
+public enum class RTCDataChannelMessageType {
+  String,
+  Binary
+};
+
+public interface class IDataChannelMessage {
+  property RTCDataChannelMessageType DataType;
+};
+
+public ref class StringDataChannelMessage sealed : IDataChannelMessage {
+public:
+  StringDataChannelMessage(String^ data);
+  property String^ StringData;
+  property RTCDataChannelMessageType DataType {
+    virtual RTCDataChannelMessageType get() { return RTCDataChannelMessageType::String; };
+    virtual void set(RTCDataChannelMessageType) { };
+  };
+};
+
+public ref class BinaryDataChannelMessage sealed : IDataChannelMessage {
+public:
+  BinaryDataChannelMessage(IVector<byte>^ data);
+  property IVector<byte>^ BinaryData;
+  property RTCDataChannelMessageType DataType {
+    virtual RTCDataChannelMessageType get() { return RTCDataChannelMessageType::Binary; };
+    virtual void set(RTCDataChannelMessageType) { };
+  };
+};
+
 public ref class RTCDataChannelMessageEvent sealed {
 public:
-  property String^ Data;
+  property IDataChannelMessage^ Data;
 };
 
 public ref class RTCDataChannel sealed {
@@ -65,7 +94,8 @@ public:
   // TODO(WINRT): Figure out how OnError is received.
   event EventDelegate^ OnError;
 
-  void Send(String^ data);
+  void Close();
+  void Send(IDataChannelMessage^ data);
 
 private:
   rtc::scoped_refptr<webrtc::DataChannelInterface> _impl;
