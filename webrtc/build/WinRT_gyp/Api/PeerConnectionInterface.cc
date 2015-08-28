@@ -436,6 +436,7 @@ RTCSignalingState RTCPeerConnection::SignalingState::get() {
   globals::RunOnGlobalThread<void>([this, &ret] {
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (_impl == nullptr) {
+      ret = RTCSignalingState::Closed;
       return;
     }
 
@@ -449,6 +450,7 @@ RTCIceGatheringState RTCPeerConnection::IceGatheringState::get() {
   globals::RunOnGlobalThread<void>([this, &ret] {
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (_impl == nullptr) {
+      ret = RTCIceGatheringState::Complete;
       return;
     }
 
@@ -462,6 +464,7 @@ RTCIceConnectionState RTCPeerConnection::IceConnectionState::get() {
   globals::RunOnGlobalThread<void>([this, &ret] {
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (_impl == nullptr) {
+      ret = RTCIceConnectionState::Closed;
       return;
     }
 
