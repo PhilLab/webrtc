@@ -156,6 +156,8 @@ void RTMediaStreamSource::OnSampleRequested(
     // Do FPS calculation and notification.
     if (_isNewFrame) {
       _isNewFrame = false;
+      spSample->SetUINT32(MFSampleExtension_Discontinuity, TRUE);
+      spSample->SetUINT32(MFSampleExtension_CleanPoint, TRUE);
       _frameCounter++;
       // If we have about a second worth of frames
       if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
