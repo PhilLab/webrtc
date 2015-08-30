@@ -110,6 +110,11 @@ public:
   static void EnableLogging(LogLevel level);
   static void DisableLogging();
 
+  //retrieve current folder where the app save logging
+  static Windows::Storage::StorageFolder^ LogFolder();
+
+  static String^ LogFileName();
+
   static IVector<CodecInfo^>^ GetAudioCodecs();
   static IVector<CodecInfo^>^ GetVideoCodecs();
   static void SetPreferredVideoCaptureFormat(int frame_width,

@@ -26,15 +26,18 @@
 #include "webrtc/base/event_tracer.h"
 #include "webrtc/base/loggingserver.h"
 #include "webrtc/base/tracelog.h"
+#include "webrtc/base/stream.h"
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/session/media/channelmanager.h"
+#include "webrtc/system_wrappers/interface/utf_util_win.h"
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
 using Platform::Collections::Vector;
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
+using rtc::FileStream;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -46,6 +49,40 @@ bool certificateVerifyCallBack(void* cert) {
   return true;
 }
 
+static const std::string logFileName = "_webrtc_logging.log";
+
+//helper function to get default output path for the app
+std::string OutputPath() {
+  auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
+  wchar_t buffer[255];
+  wcsncpy_s(buffer, 255, folder->Path->Data(), _TRUNCATE);
+  return webrtc::ToUtf8(buffer) + "\\";
+}
+
+//helper function to convert a std string to Platform string
+String^ toPlatformString(std::string aString) {
+  std::wstring wide_str = std::wstring(aString.begin(), aString.end());
+  Platform::String^ p_string = ref new Platform::String(wide_str.c_str());
+  return p_string;
+}
+
+/**
+ * a private class only used in this file, which implements LogSink for logging to file
+ */
+class FileLogSink
+  : public rtc::LogSink{
+public:
+  explicit FileLogSink(rtc::FileStream* fStream)  { fileStream_.reset(fStream); }
+  rtc::FileStream* file(){ return fileStream_.get(); }
+private:
+  void OnLogMessage(const std::string& message) override {
+    fileStream_->WriteAll(
+      message.data(), message.size(), nullptr, nullptr);
+  }
+
+  rtc::scoped_ptr<rtc::FileStream> fileStream_;
+};
+
 static bool isInitialized = false;
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
@@ -54,6 +91,7 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   rtc::Thread gThread;
   rtc::TraceLog gTraceLog;
   rtc::scoped_ptr<rtc::LoggingServer> gLoggingServer;
+  rtc::scoped_ptr<FileLogSink> gLoggingFile;
   cricket::VideoFormat gPreferredVideoCaptureFormat;
 }  // namespace globals
 
@@ -580,17 +618,47 @@ bool WebRTC::SaveTrace(Platform::String^ host, int port) {
 }
 
 void WebRTC::EnableLogging(LogLevel level) {
+
+  if (globals::gLoggingFile.get() != nullptr || globals::gLoggingServer.get()!=nullptr)
+  {
+    //already logging
+    return;
+
+  }
+
+  //setup logging to network
   rtc::SocketAddress sa(INADDR_ANY, 47003);
   globals::gLoggingServer = rtc::scoped_ptr<rtc::LoggingServer>(
     new rtc::LoggingServer());
   globals::gLoggingServer->Listen(sa, static_cast<rtc::LoggingSeverity>(level));
+
+  //setup logging to a file
+  rtc::FileStream* fileStream = new rtc::FileStream();
+  fileStream->Open(globals::OutputPath() + globals::logFileName, "wb", NULL);
+  fileStream->DisableBuffering();
+  globals::gLoggingFile = rtc::scoped_ptr<globals::FileLogSink>(new globals::FileLogSink(fileStream));
+  rtc::LogMessage::AddLogToStream(globals::gLoggingFile.get(), static_cast<rtc::LoggingSeverity>(level));
+
   LOG(LS_INFO) << "WebRTC logging enabled";
 }
 
 void WebRTC::DisableLogging() {
   LOG(LS_INFO) << "WebRTC logging disabled";
+  rtc::LogMessage::RemoveLogToStream(globals::gLoggingFile.get());
+  globals::gLoggingFile.get()->file()->Close();
+  globals::gLoggingFile.reset();
   globals::gLoggingServer.reset();
+
 }
+
+Windows::Storage::StorageFolder^  WebRTC::LogFolder(){
+  return  Windows::Storage::ApplicationData::Current->LocalFolder;;
+}
+
+String^  WebRTC::LogFileName(){
+  return globals::toPlatformString(globals::logFileName);
+}
+
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
