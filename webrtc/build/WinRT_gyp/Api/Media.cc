@@ -29,6 +29,7 @@ using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
 using Windows::Media::Capture::MediaStreamType;
+
 namespace {
   std::vector<cricket::Device> g_videoDevices;
   webrtc::CriticalSectionWrapper& gMediaStreamListLock(
