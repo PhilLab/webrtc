@@ -16,7 +16,6 @@
 #include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
 
-
 namespace webrtc {
 
 VCMTiming::VCMTiming(Clock* clock,
