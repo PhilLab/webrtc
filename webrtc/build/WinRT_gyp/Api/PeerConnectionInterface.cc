@@ -38,6 +38,7 @@ using Platform::Collections::Vector;
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using rtc::FileStream;
+using namespace cricket;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
