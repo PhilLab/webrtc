@@ -98,8 +98,8 @@ namespace webrtc_winrt_api {
       _fps = fps;
       _pixelAspectRatio = pixelAspect;
       wchar_t resolutionDesc[64];
-      swprintf_s(resolutionDesc, 64, L"%u x %u (pixel %u:%u)",
-        _width, _height, pixelAspect->Numerator, pixelAspect->Denominator);
+      swprintf_s(resolutionDesc, 64, L"%u x %u",
+        _width, _height);
       _resolutionDescription = ref new String(resolutionDesc);
       wchar_t fpsDesc[64];
       swprintf_s(fpsDesc, 64, L"%u fps", _fps);
