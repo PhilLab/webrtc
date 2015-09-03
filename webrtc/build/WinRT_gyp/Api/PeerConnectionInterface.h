@@ -228,12 +228,28 @@ public:
   property MediaStream^ Stream;
 };
 
+/// <summary>
+/// An RTCPeerConnection allows two users to communicate directly. 
+/// Communications are coordinated via a signaling channel which is provided by unspecified means.
+/// </summary>
+/// <remarks>
+/// http://www.w3.org/TR/webrtc/#peer-to-peer-connections
+///	</remarks>
 public ref class RTCPeerConnection sealed {
 public:
   // Required so the observer can raise events in this class.
   // By default event raising is protected.
   friend class GlobalObserver;
 
+  /// <summary>
+  /// Creates an RTCPeerConnection object.
+  /// </summary>
+  /// <remarks>
+  /// Refer to http://www.w3.org/TR/webrtc for the RTCPeerConnection construction algorithm
+  /// </remarks>
+  /// <param name="configuration">
+  /// The configuration has the information to find and access the servers used by ICE.
+  /// </param>
   RTCPeerConnection(RTCConfiguration^ configuration);
 
   event RTCPeerConnectionIceEventDelegate^ OnIceCandidate;
@@ -245,6 +261,13 @@ public:
 
   IAsyncOperation<RTCSessionDescription^>^ CreateOffer();
   IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
+
+  /// <summary>
+  /// Instructs the RTCPeerConnection to apply the supplied RTCSessionDescription as the local description.
+  /// This API changes the local media state.
+  /// </summary>
+  /// <param name="description">RTCSessionDescription to apply as the local description</param>
+  /// <returns></returns>
   IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
   IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
   RTCConfiguration^ GetConfiguration();

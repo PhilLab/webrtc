@@ -243,7 +243,7 @@ Media::Media() {
 
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
   RTCMediaStreamConstraints^ mediaStreamConstraints) {
-  /// add to separate sets of constraints
+  // add to separate sets of constraints
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this, mediaStreamConstraints]() -> MediaStream^ {
     // TODO(WINRT): Check if a stream already exists.  Create only once.
