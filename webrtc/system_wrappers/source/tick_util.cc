@@ -34,19 +34,27 @@ int64_t TickTime::QueryOsForTicks() {
   TickTime result;
 #if _WIN32 
 #ifdef WINRT
-  static int64_t timeZoneBias = -1;
-  if (timeZoneBias == -1) {
-    TIME_ZONE_INFORMATION timeZone;
-    GetTimeZoneInformation(&timeZone);
-    timeZoneBias = timeZone.Bias * 60 * 1000;//millisecons
+  #if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+     //Todo (winrt): added by ling. when running on the phone, it appears that the video can not be rendered if the ticks_ is too
+     // big as we start from currentsystem time. need more investigation.
+    LARGE_INTEGER qpcnt;
+    QueryPerformanceCounter(&qpcnt);
+    result.ticks_ = qpcnt.QuadPart;
+  #else
+    static int64_t timeZoneBias = -1;
+    if (timeZoneBias == -1) {
+      TIME_ZONE_INFORMATION timeZone;
+      GetTimeZoneInformation(&timeZone);
+      timeZoneBias = timeZone.Bias * 60 * 1000;//millisecons
 
-  }
-  FILETIME ft;
-  GetSystemTimeAsFileTime(&ft); //this will give us system file in UTC format
-  LARGE_INTEGER li;
-  li.HighPart = ft.dwHighDateTime;
-  li.LowPart = ft.dwLowDateTime;
-  result.ticks_ = MillisecondsToTicks((li.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 - timeZoneBias);
+    }
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft); //this will give us system file in UTC format
+    LARGE_INTEGER li;
+    li.HighPart = ft.dwHighDateTime;
+    li.LowPart = ft.dwLowDateTime;
+    result.ticks_ = MillisecondsToTicks((li.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 - timeZoneBias);
+  #endif
 
   // TODO(wu): Remove QueryPerformanceCounter implementation.
 #elif defined(USE_QUERY_PERFORMANCE_COUNTER)
