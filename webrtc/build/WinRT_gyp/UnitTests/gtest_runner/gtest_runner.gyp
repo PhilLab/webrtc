@@ -24,6 +24,7 @@
         '../../../../../webrtc/common_video/common_video_unittests.gyp:common_video_unittests',
         # TODO(winrt) uncomment when the issue with microphone access is fixed
         #'../../../../../webrtc/modules/modules.gyp:audio_device_tests',
+        '../../../../../webrtc/modules/modules.gyp:modules_tests',
         '../../../../../webrtc/modules/modules.gyp:modules_unittests',
         '../../../../../webrtc/modules/modules.gyp:video_capture_tests',
         '../../../../../webrtc/system_wrappers/system_wrappers_tests.gyp:system_wrappers_unittests',
