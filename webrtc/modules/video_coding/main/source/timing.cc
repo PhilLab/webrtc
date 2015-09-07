@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
-
 #include "webrtc/modules/video_coding/main/source/timing.h"
 
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"

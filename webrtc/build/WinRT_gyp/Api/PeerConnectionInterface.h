@@ -110,7 +110,7 @@ public:
   static void EnableLogging(LogLevel level);
   static void DisableLogging();
 
-  // retrieve current folder where the app save logging
+  //retrieve current folder where the app save logging
   static Windows::Storage::StorageFolder^ LogFolder();
 
   static String^ LogFileName();
