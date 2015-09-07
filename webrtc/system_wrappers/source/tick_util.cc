@@ -13,11 +13,16 @@
 #include <assert.h>
 
 namespace webrtc {
+
 bool TickTime::use_fake_clock_ = false;
 int64_t TickTime::fake_ticks_ = 0;
 
+
 #ifdef WINRT
-static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+ static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+ LARGE_INTEGER TickTime::app_start_time_ = {}; //record app start time
+ int64_t TickTime::time_since_os_start_ = -1; //when app start, the os ticks in ms
+ int64_t TickTime::os_ticks_per_second_ = -1;
 #endif
 
 void TickTime::UseFakeClock(int64_t start_millisecond) {
@@ -30,32 +35,46 @@ void TickTime::AdvanceFakeClock(int64_t milliseconds) {
   fake_ticks_ += MillisecondsToTicks(milliseconds);
 }
 
+#ifdef WINRT
+
+inline void TickTime::InitializeAppStartTimestamp(){
+  if (time_since_os_start_ != -1) //already initialized
+    return;
+
+  TIME_ZONE_INFORMATION timeZone;
+  GetTimeZoneInformation(&timeZone);
+  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;//milliseconds*/
+
+  FILETIME ft;
+  GetSystemTimeAsFileTime(&ft); //this will give us system file in UTC format
+
+  app_start_time_.HighPart = ft.dwHighDateTime;
+  app_start_time_.LowPart = ft.dwLowDateTime;
+
+  app_start_time_.QuadPart = (app_start_time_.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 /* 100nanoSecond/10*1000 = ms*/
+                              - timeZoneBias;
+
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+
+  LARGE_INTEGER qpfreq;
+  QueryPerformanceFrequency(&qpfreq);
+
+  os_ticks_per_second_ = qpfreq.QuadPart;
+
+  time_since_os_start_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;
+
+}
+#endif
+
 int64_t TickTime::QueryOsForTicks() {
   TickTime result;
-#if _WIN32 
-#ifdef WINRT
-  #if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
-     //Todo (winrt): added by ling. when running on the phone, it appears that the video can not be rendered if the ticks_ is too
-     // big as we start from currentsystem time. need more investigation.
-    LARGE_INTEGER qpcnt;
-    QueryPerformanceCounter(&qpcnt);
-    result.ticks_ = qpcnt.QuadPart;
-  #else
-    static int64_t timeZoneBias = -1;
-    if (timeZoneBias == -1) {
-      TIME_ZONE_INFORMATION timeZone;
-      GetTimeZoneInformation(&timeZone);
-      timeZoneBias = timeZone.Bias * 60 * 1000;//millisecons
-
-    }
-    FILETIME ft;
-    GetSystemTimeAsFileTime(&ft); //this will give us system file in UTC format
-    LARGE_INTEGER li;
-    li.HighPart = ft.dwHighDateTime;
-    li.LowPart = ft.dwLowDateTime;
-    result.ticks_ = MillisecondsToTicks((li.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 - timeZoneBias);
-  #endif
-
+#if _WIN32
+#if defined (WINRT)
+  InitializeAppStartTimestamp();
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  result.ticks_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_; // ms
   // TODO(wu): Remove QueryPerformanceCounter implementation.
 #elif defined(USE_QUERY_PERFORMANCE_COUNTER)
   // QueryPerformanceCounter returns the value from the TSC which is
