@@ -14,7 +14,7 @@
 // Windows needs to be included before mmsystem.h
 #include "webrtc/base/win32.h"
 #include <MMSystem.h>
-#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
+#elif((defined WEBRTC_LINUX) ||(defined WEBRTC_MAC))
 #include <sys/time.h>
 #include <time.h>
 #endif
@@ -59,9 +59,9 @@ class RealTimeClock : public Clock {
   int64_t CurrentNtpInMilliseconds() const override {
     timeval tv = CurrentTimeVal();
 
-//ToDO(winrt): investigating, why do we still need to adjust? 
-// we already adjust the time in 'CurrentTimeVal'. However, right now, it does not impact 
-// we check audio/video end to end delay
+// ToDO(winrt): investigating, why do we still need to adjust?
+// we already adjust the time in 'CurrentTimeVal'. However, right now,
+// it does not impact we check audio/video end to end delay
 
     uint32_t seconds;
     double microseconds_in_seconds;
@@ -196,28 +196,28 @@ class WindowsRealTimeClock : public RealTimeClock {
 // against system time (update ref_point_, make it non-const) periodically to
 // prevent clock drift.
 class WinRTRealTimeClock : public RealTimeClock {
-public:
+ public:
     WinRTRealTimeClock()
         : last_time_ms_(),
         ref_point_(GetSystemReferencePoint()) {}
 
     virtual ~WinRTRealTimeClock() {}
 
-protected:
+ protected:
     struct ReferencePoint {
         FILETIME file_time;
         LARGE_INTEGER counter_ms;
     };
 
-    virtual timeval CurrentTimeVal() const override{
+    timeval CurrentTimeVal() const override {
         const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
 
         FILETIME StartTime;
         uint64_t Time;
         struct timeval tv;
 
-        // We can't use query performance counter since they can change depending on
-        // speed stepping.
+        // We can't use query performance counter since they can change
+        // depending on speed stepping.
         GetSystemTimeAsFileTime(&StartTime);
 
         Time = (((uint64_t)StartTime.dwHighDateTime) << 32) +
@@ -231,7 +231,8 @@ protected:
         return tv;
     }
 
-    static LARGE_INTEGER ConvertToMilliseconds(LARGE_INTEGER const& t, LARGE_INTEGER const& freq) {
+    static LARGE_INTEGER ConvertToMilliseconds(LARGE_INTEGER const& t,
+                                                LARGE_INTEGER const& freq) {
         auto ret = t;
         ret.QuadPart = ret.QuadPart /* ticks */
             * 1000 /* ms/s */
@@ -240,20 +241,20 @@ protected:
     }
 
     void GetTime(FILETIME* current_time) const {
-
         LARGE_INTEGER freq;
         QueryPerformanceFrequency(&freq);
 
         {
             rtc::CritScope lock(&crit_);
-            // time MUST be fetched inside the critical section to avoid non-monotonic
-            // last_time_ms_ values that'll register as incorrect wraparounds due to
-            // concurrent calls to GetTime.
+            // time MUST be fetched inside the critical section to avoid
+            // non-monotonic last_time_ms_ values that'll register as
+            // incorrect wraparounds due to concurrent calls to GetTime.
             QueryPerformanceCounter(&last_time_ms_);
             last_time_ms_ = ConvertToMilliseconds(last_time_ms_, freq);
         }
-        LARGE_INTEGER elapsed_ms; 
-        elapsed_ms.QuadPart = last_time_ms_.QuadPart - ref_point_.counter_ms.QuadPart;
+        LARGE_INTEGER elapsed_ms;
+        elapsed_ms.QuadPart = last_time_ms_.QuadPart -
+                                ref_point_.counter_ms.QuadPart;
 
         // Translate to 100-nanoseconds intervals (FILETIME resolution)
         // and add to reference FILETIME to get current FILETIME.
@@ -272,10 +273,10 @@ protected:
         ReferencePoint ref = { 0 };
         FILETIME ft0 = { 0 };
         FILETIME ft1 = { 0 };
-        // Spin waiting for a change in system time. As soon as this change happens,
-        // get the matching call for QueryPerformanceCounter() as soon as possible. This is
-        // assumed to be the most accurate offset that we can get between
-        // QueryPerformanceCounter() and system time.
+        // Spin waiting for a change in system time. As soon as this change
+        // happens, get the matching call for QueryPerformanceCounter() as
+        // soon as possible. This is assumed to be the most accurate offset
+        // that we can get between QueryPerformanceCounter() and system time.
 
         LARGE_INTEGER freq;
         QueryPerformanceFrequency(&freq);
@@ -301,7 +302,7 @@ protected:
     const ReferencePoint ref_point_;
 };
 
-#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
+#elif((defined WEBRTC_LINUX) ||(defined WEBRTC_MAC))
 class UnixRealTimeClock : public RealTimeClock {
  public:
   UnixRealTimeClock() {}
@@ -323,7 +324,9 @@ class UnixRealTimeClock : public RealTimeClock {
 #if defined(WINRT)
 typedef WinRTRealTimeClock WindowsRealTimeClock;
 
-const int64_t Clock::CurrentNtpDeltaMs = Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -TickTime::MillisecondTimestamp();
+const int64_t Clock::CurrentNtpDeltaMs =
+            Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
+            TickTime::MillisecondTimestamp();
 #endif
 
 #if defined(_WIN32)

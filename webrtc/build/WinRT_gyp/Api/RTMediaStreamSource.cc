@@ -59,9 +59,9 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   // to that of the MediaStreamSource.
   streamSource->SampleRequested +=
     ref new Windows::Foundation::TypedEventHandler<MediaStreamSource ^,
-    MediaStreamSourceSampleRequestedEventArgs ^>([streamState](MediaStreamSource^ sender,
-      MediaStreamSourceSampleRequestedEventArgs^ args)
-  {
+    MediaStreamSourceSampleRequestedEventArgs ^>([streamState](
+        MediaStreamSource^ sender,
+        MediaStreamSourceSampleRequestedEventArgs^ args) {
     streamState->OnSampleRequested(sender, args);
   });
   streamSource->Closed +=
@@ -173,8 +173,10 @@ void RTMediaStreamSource::OnSampleRequested(
     if (_frame.get() != nullptr) {
       if ((_videoDesc->EncodingProperties->Width != _frame->GetWidth()) ||
         (_videoDesc->EncodingProperties->Height != _frame->GetHeight())) {
-        _videoDesc->EncodingProperties->Width = (unsigned int)_frame->GetWidth();
-        _videoDesc->EncodingProperties->Height = (unsigned int)_frame->GetHeight();
+        _videoDesc->EncodingProperties->Width =
+                    (unsigned int)_frame->GetWidth();
+        _videoDesc->EncodingProperties->Height =
+                    (unsigned int)_frame->GetHeight();
         webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
           _videoDesc->EncodingProperties->Width,
           _videoDesc->EncodingProperties->Height);
@@ -283,8 +285,7 @@ void webrtc_winrt_api::FrameCounterHelper::FireEvent(String^ id,
       ref new Windows::UI::Core::DispatchedHandler([id, str] {
       FramesPerSecondChanged(id, str);
     }));
-  }
-  else {
+  } else {
     FramesPerSecondChanged(id, str);
   }
 }
@@ -297,8 +298,7 @@ void webrtc_winrt_api::ResolutionHelper::FireEvent(String^ id,
       ref new Windows::UI::Core::DispatchedHandler([id, width, heigth] {
       ResolutionChanged(id, width, heigth);
     }));
-  }
-  else {
+  } else {
     ResolutionChanged(id, width, heigth);
   }
 }
