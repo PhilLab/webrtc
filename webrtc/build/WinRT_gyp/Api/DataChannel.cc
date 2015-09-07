@@ -7,6 +7,8 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
+#include <vector>
+
 #include "webrtc/build/WinRT_gyp/Api/DataChannel.h"
 #include "Marshalling.h"
 
@@ -79,27 +81,28 @@ unsigned int RTCDataChannel::BufferedAmount::get() {
 
 void RTCDataChannel::Send(IDataChannelMessage^ message) {
   if (message->DataType == RTCDataChannelMessageType::String) {
-    StringDataChannelMessage^ stringMessage = (StringDataChannelMessage^)message;
+    StringDataChannelMessage^ stringMessage =
+        (StringDataChannelMessage^)message;
 
     webrtc::DataBuffer buffer(rtc::ToUtf8(stringMessage->StringData->Data()));
     _impl->Send(buffer);
-  }
-  else if (message->DataType == RTCDataChannelMessageType::Binary) {
-    BinaryDataChannelMessage^ binaryMessage = (BinaryDataChannelMessage^)message;
+  } else if (message->DataType == RTCDataChannelMessageType::Binary) {
+    BinaryDataChannelMessage^ binaryMessage =
+        (BinaryDataChannelMessage^)message;
 
     std::vector<byte> binaryDataVector;
     binaryDataVector.reserve(binaryMessage->BinaryData->Size);
 
     // convert IVector to std::vector
-    webrtc_winrt_api_internal::FromCx(binaryMessage->BinaryData, &binaryDataVector);
+    webrtc_winrt_api_internal::FromCx(binaryMessage->BinaryData,
+        &binaryDataVector);
 
     byte* byteArr = (&binaryDataVector[0]);
     const rtc::Buffer rtcBuffer(byteArr, binaryDataVector.size());
     webrtc::DataBuffer buffer(rtcBuffer, true);
 
     _impl->Send(buffer);
-  }
-  else {
+  } else {
     LOG(LS_ERROR) << "Tried to send data channel message of unknown data type";
   }
 }
