@@ -587,6 +587,10 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
   rc_metrics[update_index].max_time_hit_target = max_time_hit_target;
   rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
 }
+
+// These tests are not supported in winrt because gtest_runner hangs on them,
+// and debuggung breaks with unhandled exception
+// TODO(winrt): Fix these exceptions
 #ifndef WINRT
 
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
