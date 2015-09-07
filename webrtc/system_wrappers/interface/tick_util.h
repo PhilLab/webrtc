@@ -77,6 +77,12 @@ class TickTime {
   static int64_t fake_ticks_;
 
   int64_t ticks_;
+#ifdef WINRT
+  static void InitializeAppStartTimestamp();
+  static LARGE_INTEGER app_start_time_; //record app start time in ms since epoch
+  static int64_t time_since_os_start_; //record the time period between the machine starts and the app starts
+  static int64_t os_ticks_per_second_; 
+#endif
 };
 
 // Represents a time delta in ticks.
@@ -150,26 +156,43 @@ inline bool operator>=(const TickInterval& lhs, const TickInterval& rhs) {
 
 inline TickTime::TickTime()
     : ticks_(0) {
+#ifdef WINRT
+  InitializeAppStartTimestamp();
+#endif
 }
 
 inline TickTime::TickTime(int64_t ticks)
     : ticks_(ticks) {
+#ifdef WINRT
+  InitializeAppStartTimestamp();
+#endif
 }
 
 inline TickTime TickTime::Now() {
+#ifdef WINRT
+  InitializeAppStartTimestamp();
+#endif
   if (use_fake_clock_)
     return TickTime(fake_ticks_);
   else
+#ifdef WINRT
+    //current local time since epoch in ms
+    return TickTime(app_start_time_.QuadPart + QueryOsForTicks() -time_since_os_start_);
+#else
     return TickTime(QueryOsForTicks());
+
+#endif
 }
 
 inline int64_t TickTime::MillisecondTimestamp() {
   int64_t ticks = TickTime::Now().Ticks();
 #if _WIN32
-#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
+#ifdef WINRT
+  return ticks;
+#elif defined(USE_QUERY_PERFORMANCE_COUNTER)
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
-  return (ticks * 1000) / qpfreq.QuadPart;
+  return (ticks*1000) / qpfreq.QuadPart;
 #else
   return ticks;
 #endif
@@ -183,7 +206,9 @@ inline int64_t TickTime::MillisecondTimestamp() {
 inline int64_t TickTime::MicrosecondTimestamp() {
   int64_t ticks = TickTime::Now().Ticks();
 #if _WIN32
-#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
+#ifdef WINRT
+  return ticks * 1000LL;
+#elif defined( USE_QUERY_PERFORMANCE_COUNTER)
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
   return (ticks * 1000) / (qpfreq.QuadPart / 1000);
@@ -203,7 +228,9 @@ inline int64_t TickTime::Ticks() const {
 
 inline int64_t TickTime::MillisecondsToTicks(const int64_t ms) {
 #if _WIN32
-#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
+#ifdef WINRT
+  return ms;
+#elif defined(USE_QUERY_PERFORMANCE_COUNTER) 
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
   return (qpfreq.QuadPart * ms) / 1000;
@@ -219,7 +246,9 @@ inline int64_t TickTime::MillisecondsToTicks(const int64_t ms) {
 
 inline int64_t TickTime::TicksToMilliseconds(const int64_t ticks) {
 #if _WIN32
-#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
+#ifdef WINRT
+  return ticks;
+#elif defined(USE_QUERY_PERFORMANCE_COUNTER) 
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
   return (ticks * 1000) / qpfreq.QuadPart;
@@ -247,7 +276,9 @@ inline TickInterval::TickInterval(const int64_t interval)
 
 inline int64_t TickInterval::Milliseconds() const {
 #if _WIN32
-#if defined(USE_QUERY_PERFORMANCE_COUNTER) || defined(WINRT)
+#ifdef WINRT
+  return interval_;
+#elif defined(USE_QUERY_PERFORMANCE_COUNTER)
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
   return (interval_ * 1000) / qpfreq.QuadPart;
@@ -266,7 +297,9 @@ inline int64_t TickInterval::Milliseconds() const {
 
 inline int64_t TickInterval::Microseconds() const {
 #if _WIN32
-#ifdef USE_QUERY_PERFORMANCE_COUNTER
+#ifdef WINRT
+  return interval_ * 1000LL;
+#elif USE_QUERY_PERFORMANCE_COUNTER
   LARGE_INTEGER qpfreq;
   QueryPerformanceFrequency(&qpfreq);
   return (interval_ * 1000000) / qpfreq.QuadPart;
