@@ -38,7 +38,7 @@
 
 #if defined(WEBRTC_WIN) && !defined(WINRT)
 #include "webrtc/base/sec_buffer.h"
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 namespace rtc {
 
@@ -409,15 +409,15 @@ void AsyncHttpsProxySocket::ProcessLine(char * data, size_t len) {
       if (!unknown_mechanisms_.empty() && !report) {
         report = true;
         std::string msg(
-          "Unable to connect to the Google Talk service due to an incompatibility "
-          "with your proxy.\r\nPlease help us resolve this issue by submitting the "
-          "following information to us using our technical issue submission form "
-          "at:\r\n\r\n"
+          "Unable to connect to the Google Talk service due to an "
+          "incompatibility with your proxy.\r\nPlease help us resolve this "
+          "issue by submitting the following information to us using our "
+          "technical issue submission form at:\r\n\r\n"
           "http://www.google.com/support/talk/bin/request.py\r\n\r\n"
           "We apologize for the inconvenience.\r\n\r\n"
-          "Information to submit to Google: "
-          );
-        //std::string msg("Please report the following information to foo@bar.com:\r\nUnknown methods: ");
+          "Information to submit to Google: ");
+        // std::string msg("Please report the following information to
+        // foo@bar.com:\r\nUnknown methods: ");
         msg.append(unknown_mechanisms_);
 #if defined(WEBRTC_WIN) && !defined(WINRT)
         MessageBoxA(0, msg.c_str(), "Oops!", MB_OK);

@@ -18,7 +18,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <CoreServices/CoreServices.h>
@@ -41,7 +41,7 @@ void Break() {
 #else
     __debugbreak();
 #endif
-#else  // !WEBRTC_WIN 
+#else  // !WEBRTC_WIN
   // On POSIX systems, SIGTRAP signals debuggers to break without killing the
   // process. If a debugger isn't attached, the uncaught SIGTRAP will crash the
   // app.
@@ -75,4 +75,4 @@ bool IsEven(int n) {
   return !IsOdd(n);
 }
 
-} // namespace rtc
+}  // namespace rtc

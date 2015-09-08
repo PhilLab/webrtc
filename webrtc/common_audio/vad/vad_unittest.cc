@@ -142,10 +142,10 @@ TEST_F(VadTest, ValidRatesFrameLengths) {
     for (size_t j = 0; j < arraysize(kFrameLengthsTest); j++) {
       if (ValidRatesAndFrameLengths(kRatesTest[i], kFrameLengthsTest[j])) {
         EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(kRatesTest[i],
-			kFrameLengthsTest[j]));
+      kFrameLengthsTest[j]));
       } else {
         EXPECT_EQ(-1, WebRtcVad_ValidRateAndFrameLength(kRatesTest[i],
-			kFrameLengthsTest[j]));
+      kFrameLengthsTest[j]));
       }
     }
   }

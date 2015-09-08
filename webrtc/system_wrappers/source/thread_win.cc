@@ -67,7 +67,7 @@ bool ThreadWindows::Start() {
   DWORD thread_id;
   thread_ = ::CreateThread(NULL, 1024 * 1024, &StartThread, this,
       STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id);
-  if (!thread_ ) {
+  if (!thread_) {
     DCHECK(false) << "CreateThread failed";
     return false;
   }

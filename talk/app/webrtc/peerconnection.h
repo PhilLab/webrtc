@@ -29,6 +29,7 @@
 #define TALK_APP_WEBRTC_PEERCONNECTION_H_
 
 #include <string>
+#include <vector>
 
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"

@@ -18,8 +18,9 @@
 #include "webrtc/test/testsupport/fileutils.h"
 
 #ifdef WINRT
-//WinRT runtime doesn't support basic executables. Test are run using WinRT application as runner
-//and this project as a static library, so we need exclusive main function name.
+// WinRT runtime doesn't support basic executables. Test are run using WinRT
+// application as runner and this project as a static library, so we need
+// exclusive main function name.
 #define main video_coding_tester_main
 #endif
 

@@ -27,6 +27,8 @@
 
 #include <stdio.h>
 
+#include <string>
+
 #include "talk/media/base/mediachannel.h"  // For VideoOptions
 #include "talk/media/base/streamparams.h"
 #include "talk/media/webrtc/simulcast.h"

@@ -112,7 +112,8 @@ TEST_F(FileUtilsTest, CreateDir) {
 #if defined WINRT
   // For WinRT the output folder is the application local folder
   // Make sure the file is created in the proper output folder
-  std::string directory = webrtc::test::OutputPath() + "fileutils-unittest-empty-dir";
+  std::string directory = webrtc::test::OutputPath() +
+      "fileutils-unittest-empty-dir";
 #else
   std::string directory = "fileutils-unittest-empty-dir";
 #endif

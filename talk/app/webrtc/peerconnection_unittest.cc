@@ -1626,4 +1626,4 @@ TEST_F(JsepPeerConnectionP2PTestClient,
   LocalP2PTest();
 }
 
-#endif // if !defined(THREAD_SANITIZER)
+#endif  // if !defined(THREAD_SANITIZER)

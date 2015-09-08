@@ -1,28 +1,38 @@
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
+
 #pragma once
 
-namespace LibTest_runner
-{
+namespace LibTest_runner {
 
-  //=============================================================================
+  //===========================================================================
   //         class: CTestBase
   //   Description: Class provides basic test functionality
-  // History: 
+  // History:
   // 2015/02/27 TP: created
-  //=============================================================================
-  class CTestBase
-  {
-  private:
-    //hide copy ctor
+  //===========================================================================
+class CTestBase {
+ private:
+    // hide copy ctor
     CTestBase(const CTestBase&);
     void PrepareForExecution();
     void VerifyResult();
-    bool           m_bExecuted; //true if test was executed
-    bool           m_bSucceed; //true if test succeed
-    int            m_nExitStatus; //test exit code (from main method)
-    std::chrono::milliseconds  m_uExecutionTimeMs; //Test execution time in milliseconds seconds
-  protected:
-    std::wstring   m_wsOutput; // test output
-    std::wstring   m_wsResultMessage; // result message, e.g. explaining why test failed
+    bool           m_bExecuted;  // true if test was executed
+    bool           m_bSucceed;  // true if test succeed
+    int            m_nExitStatus;  // test exit code (from main method)
+    std::chrono::milliseconds  m_uExecutionTimeMs;  // Test execution time in
+                                                    // milliseconds seconds
+ protected:
+    std::wstring   m_wsOutput;  // test output
+    std::wstring   m_wsResultMessage;  // result message, e.g. explaining why
+                                       // test failed
     //=======================================================================
     //         Method: SetSucceed
     //    Description: Set succeed test status
@@ -43,7 +53,7 @@ namespace LibTest_runner
     //       History:
     // 2015/03/06 TP: created
     //======================================================================
-    virtual void InterchangeablePrepareForExecution() {};
+    virtual void InterchangeablePrepareForExecution() {}
     //=======================================================================
     //         Method: InterchangeableTestCleanup
     //    Description: Implement this method to do special test cleanup
@@ -52,7 +62,7 @@ namespace LibTest_runner
     //       History:
     // 2015/03/06 TP: created
     //======================================================================
-    virtual void InterchangeableTestCleanup() {};
+    virtual void InterchangeableTestCleanup() {}
 
     //=======================================================================
     //         Method: InterchangeableVerifyResult
@@ -63,21 +73,22 @@ namespace LibTest_runner
     //       History:
     // 2015/03/06 TP: created
     //======================================================================
-    virtual void InterchangeableVerifyResult() {};
+    virtual void InterchangeableVerifyResult() {}
 
     //=======================================================================
     //         Method: OutputBufferSize
     //    Description: Returns Output buffer size
-    //                 Overwrites this method if needed different value 
+    //                 Overwrites this method if needed different value
     //         return: size_t Output buffer size
     //
     //       History:
     // 2015/03/06 TP: created
     //======================================================================
-    virtual size_t OutputBufferSize() const { return 1024 * 1024; /*1MB*/ };
-  public:
+    virtual size_t OutputBufferSize() const { return 1024 * 1024; /*1MB*/ }
+
+ public:
     CTestBase();
-    virtual ~CTestBase() {};
+    virtual ~CTestBase() {}
     int Execute();
     //=======================================================================
     //         Method: Name
@@ -120,13 +131,14 @@ namespace LibTest_runner
 
     //=======================================================================
     //         Method: ResultMessage
-    //    Description: Returns result message, e.g. describing reason why test fails
+    //    Description: Returns result message, e.g. describing reason why test
+    //                 fails
     //         return: const std::wstring& result message
     //
     //       History:
     // 2015/03/10 TP: created
     //======================================================================
-    const std::wstring& ResultMessage() const{ return  m_wsResultMessage; }
+    const std::wstring& ResultMessage() const { return  m_wsResultMessage; }
     //=======================================================================
     //         Method: ExitStatus
     //    Description: Returns test exist status
@@ -139,7 +151,7 @@ namespace LibTest_runner
     //=======================================================================
     //         Method: Succeed
     //    Description: Returns success state
-    //         return: bool true if success 
+    //         return: bool true if success
     //
     //       History:
     // 2015/03/06 TP: created
@@ -175,8 +187,10 @@ namespace LibTest_runner
     //       History:
     // 2015/05/07 TP: created
     //======================================================================
-    std::chrono::milliseconds GetExecutionTimeMs() const { return m_uExecutionTimeMs; }
-  };
+    std::chrono::milliseconds GetExecutionTimeMs() const {
+        return m_uExecutionTimeMs;
+    }
+};
 
   typedef std::shared_ptr<CTestBase> SpTestBase_t;
 

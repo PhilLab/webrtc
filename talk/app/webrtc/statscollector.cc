@@ -934,7 +934,6 @@ void StatsCollector::UpdateTrackReports() {
     StatsReport* report = entry.second;
     report->set_timestamp(stats_gathering_started_);
   }
-
 }
 
 void StatsCollector::ClearUpdateStatsCacheForTest() {

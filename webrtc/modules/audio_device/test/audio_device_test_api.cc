@@ -26,11 +26,10 @@
 char filenameStr[2][256] =
 { {0},
   {0},
-}; // Allow two buffers for those API calls taking two filenames
+};  // Allow two buffers for those API calls taking two filenames
 int currentStr = 0;
 
-const char* GetFilename(const char* filename)
-{
+const char* GetFilename(const char* filename) {
   currentStr = !currentStr;
   sprintf(filenameStr[currentStr], "/sdcard/admtest/%s", filename);
   return filenameStr[currentStr];
@@ -69,6 +68,7 @@ class AudioEventObserverAPI: public AudioDeviceObserver {
  public:
   ErrorCode error_;
   WarningCode warning_;
+
  private:
   AudioDeviceModule* audio_device_;
 };
@@ -151,6 +151,7 @@ class AudioTransportAPI: public AudioTransport {
                       void* audio_data,
                       int64_t* elapsed_time_ms,
                       int64_t* ntp_time_ms) override {}
+
  private:
   uint32_t rec_count_;
   uint32_t play_count_;
@@ -646,8 +647,7 @@ TEST_F(AudioDeviceAPITest, StartAndStopPlayout) {
   EXPECT_TRUE(audio_device_->SetPlayoutDevice(
           AudioDeviceModule::kDefaultCommunicationDevice) == 0);
   EXPECT_EQ(0, audio_device_->PlayoutIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_FALSE(audio_device_->PlayoutIsInitialized());
     EXPECT_EQ(0, audio_device_->InitPlayout());
     EXPECT_EQ(0, audio_device_->StartPlayout());
@@ -703,8 +703,7 @@ TEST_F(AudioDeviceAPITest, StartAndStopRecording) {
   EXPECT_TRUE(audio_device_->SetRecordingDevice(
           AudioDeviceModule::kDefaultCommunicationDevice) == 0);
   EXPECT_EQ(0, audio_device_->RecordingIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_FALSE(audio_device_->RecordingIsInitialized());
     EXPECT_EQ(0, audio_device_->InitRecording());
     EXPECT_EQ(0, audio_device_->StartRecording());
@@ -761,11 +760,9 @@ TEST_F(AudioDeviceAPITest, SetAndGetWaveOutVolume) {
   int32_t works = audio_device_->SetWaveOutVolume(vol, vol);
   WARNING(works == 0);
 
-  if (works == 0)
-  {
+  if (works == 0) {
     // set volume without open playout device
-    for (vol = 0; vol <= maxVol; vol += (maxVol/5))
-    {
+    for (vol = 0; vol <= maxVol; vol += (maxVol/5)) {
       EXPECT_EQ(0, audio_device_->SetWaveOutVolume(vol, vol));
       EXPECT_EQ(0, audio_device_->WaveOutVolume(volL, volR));
       EXPECT_TRUE((volL == vol) && (volR == vol));
@@ -776,8 +773,7 @@ TEST_F(AudioDeviceAPITest, SetAndGetWaveOutVolume) {
         AudioDeviceModule::kDefaultDevice));
     EXPECT_EQ(0, audio_device_->InitPlayout());
     EXPECT_TRUE(audio_device_->PlayoutIsInitialized());
-    for (vol = 0; vol <= maxVol; vol += (maxVol/5))
-    {
+    for (vol = 0; vol <= maxVol; vol += (maxVol/5)) {
       EXPECT_EQ(0, audio_device_->SetWaveOutVolume(vol, vol));
       EXPECT_EQ(0, audio_device_->WaveOutVolume(volL, volR));
       EXPECT_TRUE((volL == vol) && (volR == vol));
@@ -786,8 +782,7 @@ TEST_F(AudioDeviceAPITest, SetAndGetWaveOutVolume) {
     // as above but while playout is active
     EXPECT_EQ(0, audio_device_->StartPlayout());
     EXPECT_TRUE(audio_device_->Playing());
-    for (vol = 0; vol <= maxVol; vol += (maxVol/5))
-    {
+    for (vol = 0; vol <= maxVol; vol += (maxVol/5)) {
       EXPECT_EQ(0, audio_device_->SetWaveOutVolume(vol, vol));
       EXPECT_EQ(0, audio_device_->WaveOutVolume(volL, volR));
       EXPECT_TRUE((volL == vol) && (volR == vol));
@@ -1067,8 +1062,7 @@ TEST_F(AudioDeviceAPITest, MicrophoneVolumeTests) {
   EXPECT_EQ(0, audio_device_->SetRecordingDevice(
       AudioDeviceModule::kDefaultDevice));
   EXPECT_EQ(0, audio_device_->MicrophoneVolumeIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_EQ(0, audio_device_->InitMicrophone());
     EXPECT_EQ(0, audio_device_->SetMicrophoneVolume(19001));
     EXPECT_EQ(0, audio_device_->MicrophoneVolume(&volume));
@@ -1081,14 +1075,12 @@ TEST_F(AudioDeviceAPITest, MicrophoneVolumeTests) {
   EXPECT_TRUE(audio_device_->SetRecordingDevice(
           AudioDeviceModule::kDefaultCommunicationDevice) == 0);
   EXPECT_EQ(0, audio_device_->MicrophoneVolumeIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_EQ(0, audio_device_->InitMicrophone());
     EXPECT_EQ(0, audio_device_->MaxMicrophoneVolume(&maxVolume));
     EXPECT_EQ(0, audio_device_->MinMicrophoneVolume(&minVolume));
     EXPECT_EQ(0, audio_device_->MicrophoneVolumeStepSize(&stepSize));
-    for (vol = minVolume; vol < (int)maxVolume; vol += 10*stepSize)
-    {
+    for (vol = minVolume; vol < (int)maxVolume; vol += 10*stepSize) {
       EXPECT_EQ(0, audio_device_->SetMicrophoneVolume(vol));
       EXPECT_EQ(0, audio_device_->MicrophoneVolume(&volume));
       CheckVolume(volume, vol);
@@ -1232,8 +1224,7 @@ TEST_F(AudioDeviceAPITest, SpeakerMuteTests) {
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(
       AudioDeviceModule::kDefaultCommunicationDevice));
   EXPECT_EQ(0, audio_device_->SpeakerMuteIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_EQ(0, audio_device_->InitSpeaker());
     EXPECT_EQ(0, audio_device_->SetSpeakerMute(true));
     EXPECT_EQ(0, audio_device_->SpeakerMute(&enabled));
@@ -1286,8 +1277,7 @@ TEST_F(AudioDeviceAPITest, MicrophoneMuteTests) {
   EXPECT_TRUE(audio_device_->SetRecordingDevice(
           AudioDeviceModule::kDefaultCommunicationDevice) == 0);
   EXPECT_EQ(0, audio_device_->MicrophoneMuteIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_EQ(0, audio_device_->InitMicrophone());
     EXPECT_EQ(0, audio_device_->SetMicrophoneMute(true));
     EXPECT_EQ(0, audio_device_->MicrophoneMute(&enabled));
@@ -1340,8 +1330,7 @@ TEST_F(AudioDeviceAPITest, MicrophoneBoostTests) {
   EXPECT_TRUE(audio_device_->SetRecordingDevice(
           AudioDeviceModule::kDefaultCommunicationDevice) == 0);
   EXPECT_EQ(0, audio_device_->MicrophoneBoostIsAvailable(&available));
-  if (available)
-  {
+  if (available) {
     EXPECT_EQ(0, audio_device_->InitMicrophone());
     EXPECT_EQ(0, audio_device_->SetMicrophoneBoost(true));
     EXPECT_EQ(0, audio_device_->MicrophoneBoost(&enabled));
@@ -1769,8 +1758,7 @@ TEST_F(AudioDeviceAPITest, ResetAudioDevice) {
   EXPECT_EQ(0, audio_device_->StartRecording());
   EXPECT_EQ(0, audio_device_->InitPlayout());
   EXPECT_EQ(0, audio_device_->StartPlayout());
-  for (int l=0; l<20; ++l)
-  {
+  for (int l = 0; l < 20; ++l) {
     TEST_LOG("Resetting sound device several time with pause %d ms\n", l);
     EXPECT_EQ(0, audio_device_->ResetAudioDevice());
     SleepMs(l);

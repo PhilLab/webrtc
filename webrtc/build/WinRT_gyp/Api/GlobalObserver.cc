@@ -8,8 +8,11 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 // Class1.cpp
-#include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
+
 #include <ppltasks.h>
+#include <vector>
+
+#include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
 #include "PeerConnectionInterface.h"
 #include "Marshalling.h"
 #include "Media.h"
@@ -199,18 +202,21 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
 
   if (!buffer.binary) {
     // convert buffer data from uint_8[] to char*
-    String^ receivedString = ToCx(std::string(reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
+    String^ receivedString = ToCx(std::string(reinterpret_cast<const char*>(
+                                    buffer.data.data()), buffer.size()));
 
-    evt->Data = ref new webrtc_winrt_api::StringDataChannelMessage(receivedString);
-  }
-  else {
+    evt->Data = ref new webrtc_winrt_api::StringDataChannelMessage(
+                                                receivedString);
+  }  else {
     // convert byte[] from buffer to Vector
     std::vector<byte> bytesFromBuffer = std::vector<byte>();
-    bytesFromBuffer.insert(bytesFromBuffer.end(), buffer.data.data(), buffer.data.data() + buffer.size());
+    bytesFromBuffer.insert(bytesFromBuffer.end(), buffer.data.data(),
+                                buffer.data.data() + buffer.size());
     Vector<byte>^ convertedBytes = ref new Vector<byte>();
     ToCx(&bytesFromBuffer, convertedBytes);
 
-    evt->Data = ref new webrtc_winrt_api::BinaryDataChannelMessage(convertedBytes);
+    evt->Data = ref new webrtc_winrt_api::BinaryDataChannelMessage(
+                                                convertedBytes);
   }
 
   if (g_windowDispatcher != nullptr) {
@@ -219,8 +225,7 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
       ref new Windows::UI::Core::DispatchedHandler([this, evt] {
       _channel->OnMessage(evt);
     }));
-  }
-  else {
+  } else {
     _channel->OnMessage(evt);
   }
 }

@@ -40,23 +40,18 @@ bool UdpSocketWrapper::_initiated = false;
 
 UdpSocketWrapper::UdpSocketWrapper()
     : _wantsIncoming(false),
-      _deleteEvent(NULL)
-{
+      _deleteEvent(NULL) {
 }
 
-UdpSocketWrapper::~UdpSocketWrapper()
-{
-    if(_deleteEvent)
-    {
+UdpSocketWrapper::~UdpSocketWrapper() {
+    if (_deleteEvent) {
       _deleteEvent->Set();
       _deleteEvent = NULL;
     }
 }
 
-void UdpSocketWrapper::SetEventToNull()
-{
-    if (_deleteEvent)
-    {
+void UdpSocketWrapper::SetEventToNull() {
+    if (_deleteEvent) {
         _deleteEvent = NULL;
     }
 }
@@ -66,22 +61,18 @@ UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const int32_t id,
                                                  CallbackObj obj,
                                                  IncomingSocketCallback cb,
                                                  bool ipV6Enable,
-                                                 bool disableGQOS)
-
-{
+                                                 bool disableGQOS) {
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
                  "UdpSocketWrapper::CreateSocket");
 
     UdpSocketWrapper* s = 0;
 
 #ifdef _WIN32
-    if (!_initiated)
-    {
+    if (!_initiated) {
         WSADATA wsaData;
-        WORD wVersionRequested = MAKEWORD( 2, 2 );
-        int32_t err = WSAStartup( wVersionRequested, &wsaData);
-        if (err != 0)
-        {
+        WORD wVersionRequested = MAKEWORD(2, 2);
+        int32_t err = WSAStartup(wVersionRequested, &wsaData);
+        if (err != 0) {
             WEBRTC_TRACE(
                 kTraceError,
                 kTraceTransport,
@@ -102,19 +93,15 @@ UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const int32_t id,
 #endif
 
 #else
-    if (!_initiated)
-    {
+    if (!_initiated) {
         _initiated = true;
     }
     s = new UdpSocketPosix(id, mgr, ipV6Enable);
-    if (s)
-    {
+    if (s) {
         UdpSocketPosix* sl = static_cast<UdpSocketPosix*>(s);
-        if (sl->GetFd() != INVALID_SOCKET && sl->GetFd() < FD_SETSIZE)
-        {
+        if (sl->GetFd() != INVALID_SOCKET && sl->GetFd() < FD_SETSIZE) {
             // ok
-        } else
-        {
+        } else {
             WEBRTC_TRACE(
                 kTraceError,
                 kTraceTransport,
@@ -125,11 +112,9 @@ UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const int32_t id,
         }
     }
 #endif
-    if (s)
-    {
+    if (s) {
         s->_deleteEvent = NULL;
-        if (!s->SetCallback(obj, cb))
-        {
+        if (!s->SetCallback(obj, cb)) {
             WEBRTC_TRACE(
                 kTraceError,
                 kTraceTransport,
@@ -141,8 +126,7 @@ UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const int32_t id,
     return s;
 }
 
-bool UdpSocketWrapper::StartReceiving()
-{
+bool UdpSocketWrapper::StartReceiving() {
     _wantsIncoming = true;
     return true;
 }
@@ -151,8 +135,7 @@ bool UdpSocketWrapper::StartReceiving(const uint32_t /*receiveBuffers*/) {
   return StartReceiving();
 }
 
-bool UdpSocketWrapper::StopReceiving()
-{
+bool UdpSocketWrapper::StopReceiving() {
     _wantsIncoming = false;
     return true;
 }
