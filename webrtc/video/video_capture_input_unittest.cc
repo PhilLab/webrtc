@@ -284,7 +284,7 @@ bool EqualFramesVector(const ScopedVector<VideoFrame>& frames1,
   if (frames1.size() != frames2.size())
     return false;
   for (size_t i = 0; i < frames1.size(); ++i) {
-    if (!EqualFramesVie(*frames1[i], *frames2[i]))
+    if (!EqualFrames(*frames1[i], *frames2[i]))
       return false;
   }
   return true;
