@@ -588,7 +588,7 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
   rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
 }
 
-// These tests are not supported in winrt because gtest_runner hangs on them,
+// These tests are not supported in WinRt because gtest_runner hangs on them,
 // and debuggung breaks with unhandled exception
 // TODO(winrt): Fix these exceptions
 #ifndef WINRT
