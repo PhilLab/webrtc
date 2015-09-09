@@ -588,6 +588,11 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
   rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
 }
 
+// These tests are not supported in WinRt because gtest_runner hangs on them,
+// and debuggung breaks with unhandled exception
+// TODO(winrt): Fix these exceptions
+#ifndef WINRT
+
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
@@ -636,7 +641,6 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
                          process_settings,
                          rc_metrics);
 }
-
 
 // VP9: Run with no packet loss, with varying bitrate (3 rate updates):
 // low to high to medium. Check that quality and encoder response to the new
@@ -933,4 +937,5 @@ TEST_F(VideoProcessorIntegrationTest,
                          process_settings,
                          rc_metrics);
 }
+#endif //WINRT
 }  // namespace webrtc
