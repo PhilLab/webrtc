@@ -28,13 +28,42 @@ using Windows::Foundation::Collections::IVector;
 using Windows::Media::Core::IMediaSource;
 
 namespace webrtc_winrt_api {
+
+  /// <summary>
+  /// An IMediaStreamTrack object represents media of a single type that originates 
+  /// from one media source, e.g. video produced by a web camera.
+  /// </summary>
+  /// <remarks>
+  /// http://www.w3.org/TR/mediacapture-streams
+  /// </remarks>
   public interface class IMediaStreamTrack {
+    
+    /// <summary>
+    /// Type of media, "audio" or "video"
+    /// </summary>
     property String^ Kind { String^ get(); }
+
+    /// <summary>
+    /// Identifier
+    /// </summary>
     property String^ Id { String^ get(); }
+
+    /// <summary>
+    /// Controls the enabled state for the track. 
+    /// </summary>
     property bool Enabled { bool get(); void set(bool value); }
+
+    /// <summary>
+    /// TODO(WINRT): check implementations, they may not be conforming to the spec: 
+    /// http://www.w3.org/TR/mediacapture-streams/#widl-MediaStreamTrack-stop-void
+    /// </summary>
     void Stop();
   };
 
+  /// <summary>
+  /// Represents video media that originates from one video source
+  /// </summary>
+  /// <seealso cref="IMediaStreamTrack"/>
   public ref class MediaVideoTrack sealed : public IMediaStreamTrack {
   internal:
     MediaVideoTrack(rtc::scoped_refptr<webrtc::VideoTrackInterface> impl);
@@ -54,6 +83,10 @@ namespace webrtc_winrt_api {
     rtc::scoped_refptr<webrtc::VideoTrackInterface> _impl;
   };
 
+  /// <summary>
+  /// Represents audio media that originates from one audio source
+  /// </summary>
+  /// <seealso cref="IMediaStreamTrack"/>
   public ref class MediaAudioTrack sealed : public IMediaStreamTrack {
   internal:
     MediaAudioTrack(rtc::scoped_refptr<webrtc::AudioTrackInterface> impl);
@@ -69,19 +102,81 @@ namespace webrtc_winrt_api {
     rtc::scoped_refptr<webrtc::AudioTrackInterface> _impl;
   };
 
+  /// <summary>
+  /// A MediaStream is used to group several <see cref="IMediaStreamTrack"/> objects 
+  /// into one unit that can be recorded or rendered in a media element.
+  /// Each MediaStream can contain zero or more <see cref="IMediaStreamTrack"/> objects.
+  /// </summary>
+  /// <remarks>
+  /// http://www.w3.org/TR/mediacapture-streams/
+  /// </remarks>
   public ref class MediaStream sealed {
   internal:
+
+    /// <summary>
+    /// Composes a new stream
+    /// </summary>
+    /// <param name="impl"></param>
     MediaStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> impl);
+
     rtc::scoped_refptr<webrtc::MediaStreamInterface> GetImpl();
   public:
+
+    /// <summary>
+    /// Returns a Vector that represents a snapshot of all the <see cref="IMediaStreamTrack"/> objects
+    /// in this stream's track set whose kind is equal to "audio".
+    /// </summary>
+    /// <returns>A Vector of <see cref="IMediaStreamTrack"/> objects representing the audio tracks in this stream</returns>
     IVector<MediaAudioTrack^>^ GetAudioTracks();
+
+    /// <summary>
+    /// Returns a Vector that represents a snapshot of all the <see cref="IMediaStreamTrack"/> objects
+    /// in this stream's track set whose kind is equal to "video".
+    /// </summary>
+    /// <returns>A Vector of <see cref="IMediaStreamTrack"/> objects representing the video tracks in this stream</returns>
     IVector<MediaVideoTrack^>^ GetVideoTracks();
+
+    /// <summary>
+    /// Returns a Vector that represents a snapshot of all the <see cref="IMediaStreamTrack"/> objects 
+    /// in this stream's track set, regardless of kind.
+    /// </summary>
+    /// <returns>A Vector of <see cref="IMediaStreamTrack"/> objects representing all the tracks in this stream.</returns>
+    /// <seealso cref="GetAudioTracks"/>
+    /// <seealso cref="GetVideoTracks"/>
     IVector<IMediaStreamTrack^>^ GetTracks();
+
+    /// <summary>
+    /// Return either a <see cref="IMediaStreamTrack"/> object from this stream's track set whose id is 
+    /// equal to trackId, or nullptr, if no such track exists.
+    /// </summary>
+    /// <param name="trackId">The identifier of the track to return</param>
+    /// <returns>A <see cref="IMediaStreamTrack"/> object from this stream's track set whose id is 
+    /// equal to trackId, or nullptr, if no such track exists.</returns>
     IMediaStreamTrack^ GetTrackById(String^ trackId);
+
+    /// <summary>
+    /// Adds the given <see cref="IMediaStreamTrack"/> to this <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="track"></param>
     void AddTrack(IMediaStreamTrack^ track);
+
+    /// <summary>
+    /// Removes the given <see cref="IMediaStreamTrack"/> from this <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="track"></param>
     void RemoveTrack(IMediaStreamTrack^ track);
+
+    /// <summary>
+    /// Identifier
+    /// </summary>
     property String^ Id { String^ get();}
+
     void Stop();
+
+    /// <summary>
+    /// This attribute is true if the <see cref="MediaStream"/> has at least one <see cref="IMediaStreamTrack"/> 
+    /// that has not ended, and false otherwise.
+    /// </summary>
     property bool Active { bool get(); }
   private:
     ~MediaStream();
