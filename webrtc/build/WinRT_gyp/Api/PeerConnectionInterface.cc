@@ -125,6 +125,7 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
     chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
+    constraints.AddOptional(webrtc::MediaConstraintsInterface::kCombinedAudioVideoBwe, "true");
     _observer->SetPeerConnection(this);
     LOG(LS_INFO) << "Creating PeerConnection native.";
     _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
