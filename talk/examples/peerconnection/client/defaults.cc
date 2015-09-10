@@ -46,13 +46,7 @@ const uint16 kDefaultServerPort = 8888;
 std::string GetEnvVarOrDefault(const char* env_var_name,
                                const char* default_value) {
   std::string value;
-#if defined (WINRT)
-  // Environment variables not available to windows store applications
-  // https://msdn.microsoft.com/library/windows/apps/jj606124.aspx
-  const char* env_var = default_value;
-#else
   const char* env_var = getenv(env_var_name);
-#endif
   if (env_var)
     value = env_var;
 
