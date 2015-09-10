@@ -118,8 +118,8 @@ VCMJitterEstimator::ResetNackCount() {
 // Updates the estimates with the new measurements
 void
 VCMJitterEstimator::UpdateEstimate(int64_t frameDelayMS,
-                                    uint32_t frameSizeBytes,
-                                    bool incompleteFrame /* = false */) {
+                                   uint32_t frameSizeBytes,
+                                   bool incompleteFrame /* = false */) {
     if (frameSizeBytes == 0) {
         return;
     }

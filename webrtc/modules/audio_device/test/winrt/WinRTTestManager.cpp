@@ -209,9 +209,9 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
 
     if (_microphoneMute && (_recCount % 500 == 0)) {
       bool muted(false);
-       EXPECT_EQ(0, _audioDevice->MicrophoneMute(&muted));
+      EXPECT_EQ(0, _audioDevice->MicrophoneMute(&muted));
       muted = !muted;
-       EXPECT_EQ(0, _audioDevice->SetMicrophoneMute(muted));
+      EXPECT_EQ(0, _audioDevice->SetMicrophoneMute(muted));
       if (muted) {
         TEST_LOG("[MUTE ON]");
         addMarker = false;
@@ -239,9 +239,8 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
       // mono
       TEST_LOG("-");
     } else if ((nChannels == 2) && (nBytesPerSample == 2) && addMarker) {
-      AudioDeviceModule::ChannelType
-        chType(AudioDeviceModule::kChannelLeft);
-       EXPECT_EQ(0, _audioDevice->RecordingChannel(&chType));
+      AudioDeviceModule::ChannelType chType(AudioDeviceModule::kChannelLeft);
+      EXPECT_EQ(0, _audioDevice->RecordingChannel(&chType));
 
       if (chType == AudioDeviceModule::kChannelLeft)
         TEST_LOG("-|");
@@ -288,8 +287,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
         const uint16_t nSamplesIn = packet->nSamples;
         const uint8_t nChannelsIn = packet->nChannels;
         const uint32_t samplesPerSecIn = packet->samplesPerSec;
-        const uint16_t nBytesPerSampleIn =
-          packet->nBytesPerSample;
+        const uint16_t nBytesPerSampleIn = packet->nBytesPerSample;
 
         int32_t fsInHz(samplesPerSecIn);
         int32_t fsOutHz(samplesPerSec);
@@ -380,8 +378,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
     int16_t fileBuf[480];
 
     // read mono-file
-    int32_t len = _playFile.Read((int8_t*)fileBuf, 2
-      * nSamples);
+    int32_t len = _playFile.Read((int8_t*)fileBuf, 2 * nSamples);
     if (len != 2 * (int32_t)nSamples) {
       _playFile.Rewind();
       _playFile.Read((int8_t*)fileBuf, 2 * nSamples);

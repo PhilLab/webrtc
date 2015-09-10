@@ -26,7 +26,6 @@
  */
 
 #include <stdio.h>
-
 #include <string>
 
 #include "talk/media/base/mediachannel.h"  // For VideoOptions

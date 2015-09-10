@@ -90,11 +90,11 @@ Vanderbilt University to appear in their names.
 #undef CreateEvent
 #define InitializeCriticalSection(a) InitializeCriticalSectionEx(a, 0, 0)
 #define CreateEvent(lpEventAttributes, bManualReset, bInitialState, lpName) \
-CreateEventEx(lpEventAttributes, lpName, \
-(bManualReset?CREATE_EVENT_MANUAL_RESET:0) | \
-(bInitialState?CREATE_EVENT_INITIAL_SET:0), EVENT_ALL_ACCESS)
+    CreateEventEx(lpEventAttributes, lpName, \
+    (bManualReset?CREATE_EVENT_MANUAL_RESET:0) | \
+    (bInitialState?CREATE_EVENT_INITIAL_SET:0), EVENT_ALL_ACCESS)
 #define WaitForMultipleObjects(a, b, c, d) \
-WaitForMultipleObjectsEx(a, b, c, d, FALSE)
+    WaitForMultipleObjectsEx(a, b, c, d, FALSE)
 #endif
 
 namespace webrtc {

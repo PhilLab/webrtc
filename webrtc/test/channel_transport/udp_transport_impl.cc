@@ -590,7 +590,7 @@ int32_t UdpTransportImpl::EnableQoS(int32_t serviceType,
         const int32_t peek_bandwith = 10000;
         if (!rtcpSock->SetQos(serviceType, token_rate, bucket_size,
                               peek_bandwith, min_policed_size, max_sdu_size,
-                            _remoteRTCPAddr, _overrideDSCP)) {
+                              _remoteRTCPAddr, _overrideDSCP)) {
             WEBRTC_TRACE(kTraceWarning, kTraceTransport, _id,
                          "QOS failed on the RTCP socket");
             _lastError = kQosError;
@@ -718,9 +718,9 @@ int32_t UdpTransportImpl::SetToS(int32_t DSCP, bool useSetSockOpt) {
         // Disable QoS before setting ToS on Windows XP. This is done by closing
         // and re-opening the sockets.
         // TODO(hellner): why not just fail here and force the user to
-        //                 re-initialize sockets? Doing this may trick the user
-        //                 into thinking that the sockets are in a state which
-        //                 they aren't.
+        //                re-initialize sockets? Doing this may trick the user
+        //                into thinking that the sockets are in a state which
+        //                they aren't.
         if (OsVersion.dwMajorVersion == 5 &&
             OsVersion.dwMinorVersion == 1) {
             if (!_useSetSockOpt) {

@@ -930,7 +930,7 @@ HttpAuthResult HttpAuthenticate(
           && Base64::Decode(challenge, Base64::DO_STRICT,
                             &decoded_challenge, NULL)) {
         SecBuffer in_sec;
-        in_sec.pvBuffer   = const_cast<char *>(decoded_challenge.data());
+        in_sec.pvBuffer = const_cast<char *>(decoded_challenge.data());
         in_sec.cbBuffer = static_cast<unsigned long>(decoded_challenge.size());
         in_sec.BufferType = SECBUFFER_TOKEN;
 
