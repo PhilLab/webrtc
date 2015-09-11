@@ -228,6 +228,11 @@ public:
   property RTCIceCandidate^ Candidate;
 };
 
+public ref class RTCPeerConnectionIceStateChangeEvent sealed {
+public:
+  property RTCIceConnectionState State;
+};
+
 // ------------------
 public ref class MediaStreamEvent sealed {
 public:
@@ -261,7 +266,8 @@ public:
   /// </param>
   RTCPeerConnection(RTCConfiguration^ configuration);
 
-  event RTCPeerConnectionIceEventDelegate^ OnIceCandidate;
+  event RTCPeerConnectionIceEventDelegate^     OnIceCandidate;
+  event RTCPeerConnectionIceStateChangeEventDelegate^  OnIceConnectionChange;
   event MediaStreamEventEventDelegate^ OnAddStream;
   event MediaStreamEventEventDelegate^ OnRemoveStream;
   event EventDelegate^ OnNegotiationNeeded;
