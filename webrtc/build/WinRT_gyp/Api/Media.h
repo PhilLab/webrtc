@@ -311,7 +311,8 @@ namespace webrtc_winrt_api {
   /// </remarks>
   public ref class Media sealed {
   public:
-    Media();
+    static Media^ CreateMedia();
+    static IAsyncOperation<Media^>^ CreateMediaAsync();
 
     /// <summary>
     /// In order for this method to complete successfully, the user must have allowed the application permissions
@@ -388,6 +389,7 @@ namespace webrtc_winrt_api {
     event OnMediaCaptureDeviceFoundDelegate^ OnAudioCaptureDeviceFound;
 
   private:
+    Media();
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
     cricket::Device _selectedVideoDevice;
     webrtc::AudioDeviceModule *_audioDevice;
