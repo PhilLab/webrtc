@@ -21,7 +21,6 @@ namespace rtc {
 
 class ByteBuffer {
  public:
-
   enum ByteOrder {
     ORDER_NETWORK = 0,  // Default, use network byte order (big endian).
     ORDER_HOST,         // Use the native order of the host.

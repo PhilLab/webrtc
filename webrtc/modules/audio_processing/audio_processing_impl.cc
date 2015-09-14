@@ -12,6 +12,8 @@
 
 #include <assert.h>
 
+#include <algorithm>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common_audio/include/audio_util.h"

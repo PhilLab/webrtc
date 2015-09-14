@@ -109,8 +109,7 @@ static __inline int16_t WebRtcSpl_NormW32(int32_t a) {
 
   if (a == 0) {
     return 0;
-  }
-  else if (a < 0) {
+  } else if (a < 0) {
     a = ~a;
   }
 
@@ -150,8 +149,7 @@ static __inline int16_t WebRtcSpl_NormW16(int16_t a) {
 
   if (a == 0) {
     return 0;
-  }
-  else if (a < 0) {
+  } else if (a < 0) {
     a = ~a;
   }
 

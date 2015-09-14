@@ -86,7 +86,7 @@ class NetEqNetworkStatsTest : public NetEqExternalDecoderTest {
 
 #ifdef WINRT
 #undef IGNORE
-#endif 
+#endif
 
 enum logic {
   IGNORE,

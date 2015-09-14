@@ -110,7 +110,7 @@ static BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
 static int socket_new(BIO* b) {
   b->shutdown = 0;
   b->init = 1;
-  b->num = 0; // 1 means socket closed
+  b->num = 0;  // 1 means socket closed
   b->ptr = 0;
   return 1;
 }
@@ -466,7 +466,7 @@ OpenSSLAdapter::Cleanup() {
 
 int
 OpenSSLAdapter::Send(const void* pv, size_t cb) {
-  //LOG(LS_INFO) << "OpenSSLAdapter::Send(" << cb << ")";
+  // LOG(LS_INFO) << "OpenSSLAdapter::Send(" << cb << ")";
 
   switch (state_) {
   case SSL_NONE:
@@ -494,24 +494,24 @@ OpenSSLAdapter::Send(const void* pv, size_t cb) {
   int code = SSL_write(ssl_, pv, checked_cast<int>(cb));
   switch (SSL_get_error(ssl_, code)) {
   case SSL_ERROR_NONE:
-    //LOG(LS_INFO) << " -- success";
+    // LOG(LS_INFO) << " -- success";
     return code;
   case SSL_ERROR_WANT_READ:
-    //LOG(LS_INFO) << " -- error want read";
+    // LOG(LS_INFO) << " -- error want read";
     ssl_write_needs_read_ = true;
     SetError(EWOULDBLOCK);
     break;
   case SSL_ERROR_WANT_WRITE:
-    //LOG(LS_INFO) << " -- error want write";
+    // LOG(LS_INFO) << " -- error want write";
     SetError(EWOULDBLOCK);
     break;
   case SSL_ERROR_ZERO_RETURN:
-    //LOG(LS_INFO) << " -- remote side closed";
+    // LOG(LS_INFO) << " -- remote side closed";
     SetError(EWOULDBLOCK);
     // do we need to signal closure?
     break;
   default:
-    //LOG(LS_INFO) << " -- error " << code;
+    // LOG(LS_INFO) << " -- error " << code;
     Error("SSL_write", (code ? code : -1), false);
     break;
   }
@@ -533,9 +533,8 @@ OpenSSLAdapter::SendTo(const void* pv, size_t cb, const SocketAddress& addr) {
 
 int
 OpenSSLAdapter::Recv(void* pv, size_t cb) {
-  //LOG(LS_INFO) << "OpenSSLAdapter::Recv(" << cb << ")";
+  // LOG(LS_INFO) << "OpenSSLAdapter::Recv(" << cb << ")";
   switch (state_) {
-
   case SSL_NONE:
     return AsyncSocketAdapter::Recv(pv, cb);
 
@@ -561,24 +560,24 @@ OpenSSLAdapter::Recv(void* pv, size_t cb) {
   int code = SSL_read(ssl_, pv, checked_cast<int>(cb));
   switch (SSL_get_error(ssl_, code)) {
   case SSL_ERROR_NONE:
-    //LOG(LS_INFO) << " -- success";
+    // LOG(LS_INFO) << " -- success";
     return code;
   case SSL_ERROR_WANT_READ:
-    //LOG(LS_INFO) << " -- error want read";
+    // LOG(LS_INFO) << " -- error want read";
     SetError(EWOULDBLOCK);
     break;
   case SSL_ERROR_WANT_WRITE:
-    //LOG(LS_INFO) << " -- error want write";
+    // LOG(LS_INFO) << " -- error want write";
     ssl_read_needs_write_ = true;
     SetError(EWOULDBLOCK);
     break;
   case SSL_ERROR_ZERO_RETURN:
-    //LOG(LS_INFO) << " -- remote side closed";
+    // LOG(LS_INFO) << " -- remote side closed";
     SetError(EWOULDBLOCK);
     // do we need to signal closure?
     break;
   default:
-    //LOG(LS_INFO) << " -- error " << code;
+    // LOG(LS_INFO) << " -- error " << code;
     Error("SSL_read", (code ? code : -1), false);
     break;
   }
@@ -610,7 +609,7 @@ OpenSSLAdapter::Close() {
 
 Socket::ConnState
 OpenSSLAdapter::GetState() const {
-  //if (signal_close_)
+  // if (signal_close_)
   //  return CS_CONNECTED;
   ConnState state = socket_->GetState();
   if ((state == CS_CONNECTED)
@@ -645,7 +644,7 @@ OpenSSLAdapter::OnConnectEvent(AsyncSocket* socket) {
 
 void
 OpenSSLAdapter::OnReadEvent(AsyncSocket* socket) {
-  //LOG(LS_INFO) << "OpenSSLAdapter::OnReadEvent";
+  // LOG(LS_INFO) << "OpenSSLAdapter::OnReadEvent";
 
   if (state_ == SSL_NONE) {
     AsyncSocketAdapter::OnReadEvent(socket);
@@ -663,19 +662,19 @@ OpenSSLAdapter::OnReadEvent(AsyncSocket* socket) {
     return;
 
   // Don't let ourselves go away during the callbacks
-  //PRefPtr<OpenSSLAdapter> lock(this); // TODO: fix this
+  // PRefPtr<OpenSSLAdapter> lock(this); // TODO: fix this
   if (ssl_write_needs_read_)  {
-    //LOG(LS_INFO) << " -- onStreamWriteable";
+    // LOG(LS_INFO) << " -- onStreamWriteable";
     AsyncSocketAdapter::OnWriteEvent(socket);
   }
 
-  //LOG(LS_INFO) << " -- onStreamReadable";
+  // LOG(LS_INFO) << " -- onStreamReadable";
   AsyncSocketAdapter::OnReadEvent(socket);
 }
 
 void
 OpenSSLAdapter::OnWriteEvent(AsyncSocket* socket) {
-  //LOG(LS_INFO) << "OpenSSLAdapter::OnWriteEvent";
+  // LOG(LS_INFO) << "OpenSSLAdapter::OnWriteEvent";
 
   if (state_ == SSL_NONE) {
     AsyncSocketAdapter::OnWriteEvent(socket);
@@ -693,14 +692,14 @@ OpenSSLAdapter::OnWriteEvent(AsyncSocket* socket) {
     return;
 
   // Don't let ourselves go away during the callbacks
-  //PRefPtr<OpenSSLAdapter> lock(this); // TODO: fix this
+  // PRefPtr<OpenSSLAdapter> lock(this); // TODO: fix this
 
   if (ssl_read_needs_write_)  {
-    //LOG(LS_INFO) << " -- onStreamReadable";
+    // LOG(LS_INFO) << " -- onStreamReadable";
     AsyncSocketAdapter::OnReadEvent(socket);
   }
 
-  //LOG(LS_INFO) << " -- onStreamWriteable";
+  // LOG(LS_INFO) << " -- onStreamWriteable";
   AsyncSocketAdapter::OnWriteEvent(socket);
 }
 
@@ -968,6 +967,6 @@ OpenSSLAdapter::SetupSSLContext() {
   return ctx;
 }
 
-} // namespace rtc
+}  // namespace rtc
 
 #endif  // HAVE_OPENSSL_SSL_H

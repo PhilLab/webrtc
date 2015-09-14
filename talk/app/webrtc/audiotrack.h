@@ -28,6 +28,8 @@
 #ifndef TALK_APP_WEBRTC_AUDIOTRACK_H_
 #define TALK_APP_WEBRTC_AUDIOTRACK_H_
 
+#include <string>
+
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/notifier.h"

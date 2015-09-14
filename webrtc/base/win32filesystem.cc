@@ -15,6 +15,8 @@
 #include <shlobj.h>
 #include <tchar.h>
 
+#include <string>
+
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -36,7 +38,8 @@
 #undef GetFileAttributes
 DWORD WINAPI GetFileAttributes(LPCTSTR lpFileName) {
   WIN32_FILE_ATTRIBUTE_DATA attributes;
-  BOOL ret = GetFileAttributesEx(lpFileName, GetFileExInfoStandard, &attributes);
+  BOOL ret = GetFileAttributesEx(lpFileName,
+            GetFileExInfoStandard, &attributes);
   if (!ret) {
     return INVALID_FILE_ATTRIBUTES;
   }
@@ -289,7 +292,8 @@ std::string Win32Filesystem::TempFilename(const Pathname &dir,
   // printf format for the filename, consists of prefix followed by guid.
   wchar_t* maskForFN = L"%s_%08x_%04x_%04x_%02x%02x_%02x%02x%02x%02x%02x%02x";
 
-  swprintf(filename, maskForFN, ToUtf16(prefix).c_str(), g.Data1, g.Data2, g.Data3,
+  swprintf(filename, maskForFN, ToUtf16(prefix).c_str(),
+    g.Data1, g.Data2, g.Data3,
     UINT(g.Data4[0]), UINT(g.Data4[1]), UINT(g.Data4[2]), UINT(g.Data4[3]),
     UINT(g.Data4[4]), UINT(g.Data4[5]), UINT(g.Data4[6]), UINT(g.Data4[7]));
 
@@ -518,7 +522,8 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
   }
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
   ULARGE_INTEGER freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes;
-  BOOL success = GetDiskFreeSpaceEx(folder->Path->Data(), &freeBytesAvailable, &totalNumberOfBytes, &totalNumberOfFreeBytes);
+  BOOL success = GetDiskFreeSpaceEx(folder->Path->Data(), &freeBytesAvailable,
+        &totalNumberOfBytes, &totalNumberOfFreeBytes);
   *free_bytes = freeBytesAvailable.QuadPart;
   return success == TRUE;
 }

@@ -55,12 +55,10 @@ void RunOnCoreDispatcher(std::function<void()> fn, bool async) {
       CoreDispatcherPriority::Normal, handler);
     if (async) {
       Concurrency::create_task(action);
-    }
-    else {
+    } else {
       Concurrency::create_task(action).wait();
     }
-  }
-  else {
+  } else {
     fn();
   }
 }
@@ -266,7 +264,8 @@ void CaptureDevice::StartCapture(
       capture_started_ = true;
     }
     catch (Platform::Exception^ e) {
-      LOG(LS_ERROR) << "StartRecordToCustomSinkAsync exception: " << rtc::ToUtf8(e->Message->Data());
+      LOG(LS_ERROR) << "StartRecordToCustomSinkAsync exception: "
+                    << rtc::ToUtf8(e->Message->Data());
       CleanupSink();
       CleanupMediaCapture();
     }

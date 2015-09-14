@@ -19,10 +19,11 @@ int64_t TickTime::fake_ticks_ = 0;
 
 
 #ifdef WINRT
- static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
- LARGE_INTEGER TickTime::app_start_time_ = {}; //record app start time
- int64_t TickTime::time_since_os_start_ = -1; //when app start, the os ticks in ms
- int64_t TickTime::os_ticks_per_second_ = -1;
+  static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+  LARGE_INTEGER TickTime::app_start_time_ = {};  // record app start time
+  int64_t TickTime::time_since_os_start_ = -1;  // when app start,
+                                                // the os ticks in ms
+  int64_t TickTime::os_ticks_per_second_ = -1;
 #endif
 
 void TickTime::UseFakeClock(int64_t start_millisecond) {
@@ -37,21 +38,22 @@ void TickTime::AdvanceFakeClock(int64_t milliseconds) {
 
 #ifdef WINRT
 
-inline void TickTime::InitializeAppStartTimestamp(){
-  if (time_since_os_start_ != -1) //already initialized
+inline void TickTime::InitializeAppStartTimestamp() {
+  if (time_since_os_start_ != -1)  // already initialized
     return;
 
   TIME_ZONE_INFORMATION timeZone;
   GetTimeZoneInformation(&timeZone);
-  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;//milliseconds*/
+  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;  // milliseconds
 
   FILETIME ft;
-  GetSystemTimeAsFileTime(&ft); //this will give us system file in UTC format
+  GetSystemTimeAsFileTime(&ft);  // this will give us system file in UTC format
 
   app_start_time_.HighPart = ft.dwHighDateTime;
   app_start_time_.LowPart = ft.dwLowDateTime;
 
-  app_start_time_.QuadPart = (app_start_time_.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 /* 100nanoSecond/10*1000 = ms*/
+  app_start_time_.QuadPart = (app_start_time_.QuadPart -
+      kFileTimeToUnixTimeEpochOffset) / 10000 /* 100nanoSecond/10*1000 = ms*/
                               - timeZoneBias;
 
   LARGE_INTEGER qpcnt;
@@ -63,7 +65,6 @@ inline void TickTime::InitializeAppStartTimestamp(){
   os_ticks_per_second_ = qpfreq.QuadPart;
 
   time_since_os_start_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;
-
 }
 #endif
 
@@ -74,7 +75,7 @@ int64_t TickTime::QueryOsForTicks() {
   InitializeAppStartTimestamp();
   LARGE_INTEGER qpcnt;
   QueryPerformanceCounter(&qpcnt);
-  result.ticks_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_; // ms
+  result.ticks_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;  // ms
   // TODO(wu): Remove QueryPerformanceCounter implementation.
 #elif defined(USE_QUERY_PERFORMANCE_COUNTER)
   // QueryPerformanceCounter returns the value from the TSC which is

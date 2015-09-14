@@ -30,7 +30,6 @@ std::string FindFullName(const std::string& name) {
   static const char kPersistentStringSeparator = '/';
   size_t next_item = 0;
   while (next_item < trials_string.length()) {
-
     // Find next name/value pair in field trial configuration string.
     size_t field_name_end = trials_string.find(
         kPersistentStringSeparator, next_item);

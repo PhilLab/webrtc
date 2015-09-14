@@ -67,7 +67,8 @@ namespace webrtc_winrt_api_internal {
     }
   }
 
-  // placeholder functions if no conversion needed (used in vector conversion templates)
+  // placeholder functions if no conversion needed
+  // (used in vector conversion templates)
   template <typename T>
   void FromCx(T in, T* out) {
     *out = in;

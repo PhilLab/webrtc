@@ -1,4 +1,5 @@
-﻿// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+﻿
+// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -51,8 +52,10 @@ public:
   StringDataChannelMessage(String^ data);
   property String^ StringData;
   property RTCDataChannelMessageType DataType {
-    virtual RTCDataChannelMessageType get() { return RTCDataChannelMessageType::String; };
-    virtual void set(RTCDataChannelMessageType) { };
+    virtual RTCDataChannelMessageType get() {
+        return RTCDataChannelMessageType::String;
+    }
+    virtual void set(RTCDataChannelMessageType) { }
   };
 };
 
@@ -61,8 +64,10 @@ public:
   BinaryDataChannelMessage(IVector<byte>^ data);
   property IVector<byte>^ BinaryData;
   property RTCDataChannelMessageType DataType {
-    virtual RTCDataChannelMessageType get() { return RTCDataChannelMessageType::Binary; };
-    virtual void set(RTCDataChannelMessageType) { };
+    virtual RTCDataChannelMessageType get() {
+        return RTCDataChannelMessageType::Binary;
+    }
+    virtual void set(RTCDataChannelMessageType) { }
   };
 };
 

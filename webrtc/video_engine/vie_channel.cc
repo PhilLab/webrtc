@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <map>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common.h"
@@ -872,7 +873,7 @@ void ViEChannel::GetSendStreamDataCounters(
 }
 
 // declaration of 'statistician' hides previous local declaration
-#pragma warning (disable : 4456)
+#pragma warning(disable : 4456)
 void ViEChannel::GetReceiveStreamDataCounters(
     StreamDataCounters* rtp_counters,
     StreamDataCounters* rtx_counters) const {

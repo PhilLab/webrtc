@@ -145,7 +145,7 @@ static SctpDataMediaChannel::PayloadProtocolIdentifier GetPpid(
     return SctpDataMediaChannel::PPID_BINARY_LAST;
   case cricket::DMT_TEXT:
     return SctpDataMediaChannel::PPID_TEXT_LAST;
-  };
+  }
 }
 
 static bool GetDataMediaType(

@@ -53,32 +53,30 @@ namespace webrtc {
 
 class Config;
 
-class InStream
-{
-public:
- // Reads |length| bytes from file to |buf|. Returns the number of bytes read
- // or -1 on error.
+class InStream {
+ public:
+    // Reads |length| bytes from file to |buf|. Returns the number of bytes
+    //  read or -1 on error.
     virtual int Read(void *buf, size_t len) = 0;
     virtual int Rewind();
     virtual ~InStream() {}
-protected:
+ protected:
     InStream() {}
 };
 
-class OutStream
-{
-public:
- // Writes |length| bytes from |buf| to file. The actual writing may happen
- // some time later. Call Flush() to force a write.
+class OutStream {
+ public:
+    // Writes |length| bytes from |buf| to file. The actual writing may happen
+    // some time later. Call Flush() to force a write.
     virtual bool Write(const void *buf, size_t len) = 0;
     virtual int Rewind();
     virtual ~OutStream() {}
-protected:
+
+ protected:
     OutStream() {}
 };
 
-enum TraceModule
-{
+enum TraceModule {
     kTraceUndefined              = 0,
     // not a module, triggered from the engine code
     kTraceVoice                  = 0x0001,
@@ -102,8 +100,7 @@ enum TraceModule
     kTraceRemoteBitrateEstimator = 0x0017,
 };
 
-enum TraceLevel
-{
+enum TraceLevel {
     kTraceNone               = 0x0000,    // no trace
     kTraceStateInfo          = 0x0001,
     kTraceWarning            = 0x0002,
@@ -137,8 +134,7 @@ class TraceCallback {
   TraceCallback() {}
 };
 
-enum FileFormats
-{
+enum FileFormats {
     kFileFormatWavFile        = 1,
     kFileFormatCompressedFile = 2,
     kFileFormatPreencodedFile = 4,
@@ -147,8 +143,7 @@ enum FileFormats
     kFileFormatPcm32kHzFile   = 9
 };
 
-enum ProcessingTypes
-{
+enum ProcessingTypes {
     kPlaybackPerChannel = 0,
     kPlaybackAllChannelsMixed,
     kRecordingPerChannel,
@@ -156,8 +151,7 @@ enum ProcessingTypes
     kRecordingPreprocessing
 };
 
-enum FrameType
-{
+enum FrameType {
     kFrameEmpty            = 0,
     kAudioFrameSpeech      = 1,
     kAudioFrameCN          = 2,
@@ -166,13 +160,12 @@ enum FrameType
 };
 
 // External transport callback interface
-class Transport
-{
-public:
+class Transport {
+ public:
     virtual int SendPacket(int channel, const void *data, size_t len) = 0;
     virtual int SendRTCPPacket(int channel, const void *data, size_t len) = 0;
 
-protected:
+ protected:
     virtual ~Transport() {}
     Transport() {}
 };
@@ -322,31 +315,27 @@ struct CodecInst {
 };
 
 // RTP
-enum {kRtpCsrcSize = 15}; // RFC 3550 page 13
+enum {kRtpCsrcSize = 15};  // RFC 3550 page 13
 
-enum RTPDirections
-{
+enum RTPDirections {
     kRtpIncoming = 0,
     kRtpOutgoing
 };
 
-enum PayloadFrequencies
-{
+enum PayloadFrequencies {
     kFreq8000Hz = 8000,
     kFreq16000Hz = 16000,
     kFreq32000Hz = 32000
 };
 
-enum VadModes                 // degree of bandwidth reduction
-{
+enum VadModes {                // degree of bandwidth reduction
     kVadConventional = 0,      // lowest reduction
     kVadAggressiveLow,
     kVadAggressiveMid,
     kVadAggressiveHigh         // highest reduction
 };
 
-struct NetworkStatistics           // NETEQ statistics
-{
+struct NetworkStatistics {           // NETEQ statistics
     // current jitter buffer size in ms
     uint16_t currentBufferSize;
     // preferred (optimal) buffer size in ms
@@ -403,23 +392,20 @@ struct AudioDecodingCallStats {
   int decoded_plc_cng;  // Number of calls resulted where PLC faded to CNG.
 };
 
-typedef struct
-{
+typedef struct {
     int min;              // minumum
     int max;              // maximum
     int average;          // average
 } StatVal;
 
-typedef struct           // All levels are reported in dBm0
-{
+typedef struct {         // All levels are reported in dBm0
     StatVal speech_rx;   // long-term speech levels on receiving side
     StatVal speech_tx;   // long-term speech levels on transmitting side
     StatVal noise_rx;    // long-term noise/silence levels on receiving side
     StatVal noise_tx;    // long-term noise/silence levels on transmitting side
 } LevelStatistics;
 
-typedef struct        // All levels are reported in dB
-{
+typedef struct {      // All levels are reported in dB
     StatVal erl;      // Echo Return Loss
     StatVal erle;     // Echo Return Loss Enhancement
     StatVal rerl;     // RERL = ERL + ERLE
@@ -427,8 +413,7 @@ typedef struct        // All levels are reported in dB
     StatVal a_nlp;
 } EchoStatistics;
 
-enum NsModes    // type of Noise Suppression
-{
+enum NsModes {          // type of Noise Suppression
     kNsUnchanged = 0,   // previously set mode
     kNsDefault,         // platform default
     kNsConference,      // conferencing default
@@ -438,8 +423,7 @@ enum NsModes    // type of Noise Suppression
     kNsVeryHighSuppression,     // highest suppression
 };
 
-enum AgcModes                  // type of Automatic Gain Control
-{
+enum AgcModes {                 // type of Automatic Gain Control
     kAgcUnchanged = 0,        // previously set mode
     kAgcDefault,              // platform default
     // adaptive mode for use when analog volume control exists (e.g. for
@@ -454,8 +438,7 @@ enum AgcModes                  // type of Automatic Gain Control
 };
 
 // EC modes
-enum EcModes                   // type of Echo Control
-{
+enum EcModes {                 // type of Echo Control
     kEcUnchanged = 0,          // previously set mode
     kEcDefault,                // platform default
     kEcConference,             // conferencing default (aggressive AEC)
@@ -464,8 +447,7 @@ enum EcModes                   // type of Echo Control
 };
 
 // AECM modes
-enum AecmModes                 // mode of AECM
-{
+enum AecmModes {               // mode of AECM
     kAecmQuietEarpieceOrHeadset = 0,
                                // Quiet earpiece or headset use
     kAecmEarpiece,             // most earpiece use
@@ -475,23 +457,20 @@ enum AecmModes                 // mode of AECM
 };
 
 // AGC configuration
-typedef struct
-{
+typedef struct {
     unsigned short targetLeveldBOv;
     unsigned short digitalCompressionGaindB;
     bool           limiterEnable;
 } AgcConfig;                  // AGC configuration parameters
 
-enum StereoChannel
-{
+enum StereoChannel {
     kStereoLeft = 0,
     kStereoRight,
     kStereoBoth
 };
 
 // Audio device layers
-enum AudioLayers
-{
+enum AudioLayers {
     kAudioPlatformDefault = 0,
     kAudioWindowsWave = 1,
     kAudioWindowsCore = 2,
@@ -501,8 +480,7 @@ enum AudioLayers
 };
 
 // TODO(henrika): to be removed.
-enum NetEqModes             // NetEQ playout configurations
-{
+enum NetEqModes {            // NetEQ playout configurations
     // Optimized trade-off between low delay and jitter robustness for two-way
     // communication.
     kNetEqDefault = 0,
@@ -518,16 +496,14 @@ enum NetEqModes             // NetEQ playout configurations
 };
 
 // TODO(henrika): to be removed.
-enum OnHoldModes            // On Hold direction
-{
+enum OnHoldModes {           // On Hold direction
     kHoldSendAndPlay = 0,    // Put both sending and playing in on-hold state.
     kHoldSendOnly,           // Put only sending in on-hold state.
     kHoldPlayOnly            // Put only playing in on-hold state.
 };
 
 // TODO(henrika): to be removed.
-enum AmrMode
-{
+enum AmrMode {
     kRfc3267BwEfficient = 0,
     kRfc3267OctetAligned = 1,
     kRfc3267FileStorage = 2,
@@ -538,8 +514,7 @@ enum AmrMode
 // ==================================================================
 
 // Raw video types
-enum RawVideoType
-{
+enum RawVideoType {
     kVideoI420     = 0,
     kVideoYV12     = 1,
     kVideoYUY2     = 2,
@@ -563,16 +538,14 @@ enum { kPayloadNameSize = 32};
 enum { kMaxSimulcastStreams = 4};
 enum { kMaxTemporalStreams = 4};
 
-enum VideoCodecComplexity
-{
+enum VideoCodecComplexity {
     kComplexityNormal = 0,
     kComplexityHigh    = 1,
     kComplexityHigher  = 2,
     kComplexityMax     = 3
 };
 
-enum VideoCodecProfile
-{
+enum VideoCodecProfile {
     kProfileBase = 0x00,
     kProfileMain = 0x01
 };
@@ -670,7 +643,7 @@ struct SimulcastStream {
   unsigned int        maxBitrate;  // kilobits/sec.
   unsigned int        targetBitrate;  // kilobits/sec.
   unsigned int        minBitrate;  // kilobits/sec.
-  unsigned int        qpMax; // minimum quality
+  unsigned int        qpMax;  // minimum quality
 
   bool operator==(const SimulcastStream& other) const {
     return width == other.width &&

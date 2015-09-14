@@ -85,8 +85,7 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
       auto dispatcher_action = g_windowDispatcher->RunAsync(
         CoreDispatcherPriority::Normal, handler);
       Concurrency::create_task(dispatcher_action).wait();
-    }
-    else {
+    } else {
       handler->Invoke();
     }
     initialize_async_task.wait();

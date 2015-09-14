@@ -33,6 +33,8 @@
 #ifndef TALK_APP_WEBRTC_PORTALLOCATORFACTORY_H_
 #define TALK_APP_WEBRTC_PORTALLOCATORFACTORY_H_
 
+#include <vector>
+
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ptr.h"
 
