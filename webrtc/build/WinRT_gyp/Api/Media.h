@@ -39,12 +39,12 @@ namespace webrtc_winrt_api {
   public interface class IMediaStreamTrack {
     
     /// <summary>
-    /// Type of media, "audio" or "video"
+    /// Type of media, "audio" or "video".
     /// </summary>
     property String^ Kind { String^ get(); }
 
     /// <summary>
-    /// Identifier
+    /// Identifier.
     /// </summary>
     property String^ Id { String^ get(); }
 
@@ -61,7 +61,7 @@ namespace webrtc_winrt_api {
   };
 
   /// <summary>
-  /// Represents video media that originates from one video source
+  /// Represents video media that originates from one video source.
   /// </summary>
   /// <seealso cref="IMediaStreamTrack"/>
   public ref class MediaVideoTrack sealed : public IMediaStreamTrack {
@@ -84,7 +84,7 @@ namespace webrtc_winrt_api {
   };
 
   /// <summary>
-  /// Represents audio media that originates from one audio source
+  /// Represents audio media that originates from one audio source.
   /// </summary>
   /// <seealso cref="IMediaStreamTrack"/>
   public ref class MediaAudioTrack sealed : public IMediaStreamTrack {
@@ -114,7 +114,7 @@ namespace webrtc_winrt_api {
   internal:
 
     /// <summary>
-    /// Composes a new stream
+    /// Composes a new stream.
     /// </summary>
     /// <param name="impl"></param>
     MediaStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> impl);
@@ -157,20 +157,23 @@ namespace webrtc_winrt_api {
     /// <summary>
     /// Adds the given <see cref="IMediaStreamTrack"/> to this <see cref="MediaStream"/>.
     /// </summary>
-    /// <param name="track"></param>
+    /// <param name="track">Track to be added to the <see cref="MediaStream"/></param>
     void AddTrack(IMediaStreamTrack^ track);
 
     /// <summary>
     /// Removes the given <see cref="IMediaStreamTrack"/> from this <see cref="MediaStream"/>.
     /// </summary>
-    /// <param name="track"></param>
+    /// <param name="track">Track to be removed from the <see cref="MediaStream"/></param>
     void RemoveTrack(IMediaStreamTrack^ track);
 
     /// <summary>
-    /// Identifier
+    /// Identifier.
     /// </summary>
     property String^ Id { String^ get();}
 
+    /// <summary>
+    /// TODO(winrt): fix comment after removing the TODO from the method definition.
+    /// </summary>
     void Stop();
 
     /// <summary>
@@ -183,6 +186,9 @@ namespace webrtc_winrt_api {
     rtc::scoped_refptr<webrtc::MediaStreamInterface> _impl;
   };
 
+  /// <summary>
+  /// Represents video camera capture capabilities.
+  /// </summary>
   public ref class CaptureCapability sealed {
   public:
     CaptureCapability(unsigned int width, unsigned int height,
@@ -248,6 +254,9 @@ namespace webrtc_winrt_api {
     String^ _description;
   };
 
+  /// <summary>
+  /// Represents a local media device, such as a microphone or a camera.
+  /// </summary>
   public ref class MediaDevice sealed {
   private:
     String^ _id;
@@ -275,35 +284,107 @@ namespace webrtc_winrt_api {
       }
     }
 
+    /// <summary>
+    /// Retrieves video capabilities for a given device.
+    /// TODO(winrt) move to the Media class, video specific method should not be in generic MediaDevice class.
+    /// </summary>
+    /// <returns>This is an asynchronous method. The result is a vector of the capabilities supported by the video device.</returns>
     IAsyncOperation<IVector<CaptureCapability^>^>^
       GetVideoCaptureCapabilities();
   };
 
+  /// <summary>
+  /// Allows defining constraints to exclude media types from a <see cref="MediaStream"/>.
+  /// </summary>
   public ref class RTCMediaStreamConstraints sealed {
   public:
     property bool audioEnabled;
     property bool videoEnabled;
   };
 
-
+  /// <summary>
+  /// Defines methods for accessing local media devices, like microphones and video cameras, and creating
+  /// multimedia streams.
+  /// </summary>
+  /// <remarks>
+  /// http://www.w3.org/TR/mediacapture-streams
+  /// </remarks>
   public ref class Media sealed {
   public:
     Media();
 
-    // TODO(WINRT): Arguments
+    /// <summary>
+    /// In order for this method to complete successfully, the user must have allowed the application permissions
+    /// to use the devices for the requested media types (microphone for audio, webcam for video).
+    /// Creates a <see cref="MediaStream"/> with both audio and video tracks, unless the <paramref name="mediaStreamConstraints"/>
+    /// is set to exclude either media type.
+    /// </summary>
+    /// <param name="mediaStreamConstraints">Controls whether video/audio tracks are included.</param>
+    /// <returns>
+    /// This is an asynchronous method. The result upon completion is a <see cref="MediaStream"/> including
+    /// audio and/or video tracks, as requested by the <paramref name="mediaStreamConstraints"/> parameter.
+    /// </returns>
     IAsyncOperation<MediaStream^>^ GetUserMedia(
       RTCMediaStreamConstraints^ mediaStreamConstraints);
+
+    /// <summary>
+    /// Creates an <see cref="IMediaSource"/> for a video track, with a given frame rate and identifier to be used
+    /// for notifications on media changes.
+    /// </summary>
+    /// <param name="track">Video track to create a <see cref="IMediaSource"/> from</param>
+    /// <param name="framerate">Target frame rate</param>
+    /// <param name="id">Identifier that can be used by applications for distinguishing between <see cref="MediaStream"/>s
+    /// when receiving media change event notifications.
+    /// </param>
+    /// <returns>A media source.</returns>
     IMediaSource^ CreateMediaStreamSource(
       MediaVideoTrack^ track, uint32 framerate, String^ id);
+
+    /// <summary>
+    /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.
+    /// Retrieves system devices that can be used for audio capturing (microphones).
+    /// </summary>
+    /// <returns>Vector of system devices that can be used for audio capturing (microphones).</returns>
     IVector<MediaDevice^>^ GetAudioCaptureDevices();
 
+    /// <summary>
+    /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.
+    /// Retrieves system devices that can be used for video capturing (webcams).
+    /// </summary>
+    /// <returns>Vector of system devices that can be used for video capturing (webcams).</returns>
     IVector<MediaDevice^>^ GetVideoCaptureDevices();
 
+    /// <summary>
+    /// Enumerates through all capture devices on the system.
+    /// Has to be called before <see cref="GetAudioCaptureDevices"/> and <see cref="GetVideoCaptureDevices"/>.
+    /// Sends events: <see cref="OnVideoCaptureDeviceFound"/>, <see cref="OnAudioCaptureDeviceFound"/>.
+    /// TODO(winrt): we should be able to refactor this so that it returns a list of devices and get rid of 
+    /// GetAudio/GetVideoCaptureDevices
+    /// </summary>
+    /// <returns>This is an asynchronous method. The result is true if the operation completed successfully, 
+    /// and false otherwise.</returns>
     IAsyncOperation<bool>^ EnumerateAudioVideoCaptureDevices();
+
+    /// <summary>
+    /// Allows switching between webcams.
+    /// </summary>
+    /// <param name="device">Webcam to be used for video capturing.</param>
     void SelectVideoDevice(MediaDevice^ device);
+
+    /// <summary>
+    /// Allows switching between microphones.
+    /// </summary>
+    /// <param name="device">Microphone to be used for audio capturing.</param>
     void SelectAudioDevice(MediaDevice^ device);
 
+    /// <summary>
+    /// Fired when a video capture device (webcam) is found on the system while enumerating devices.
+    /// </summary>
     event OnMediaCaptureDeviceFoundDelegate^ OnVideoCaptureDeviceFound;
+
+    /// <summary>
+    /// Fired when an audio capture device (microphone) is found on the system while enumerating devices.
+    /// </summary>
     event OnMediaCaptureDeviceFoundDelegate^ OnAudioCaptureDeviceFound;
 
   private:
