@@ -42,8 +42,7 @@ typedef ULONG (WINAPI *filterAddFn)(HANDLE, PTC_GEN_FILTER, PHANDLE);
 typedef ULONG (WINAPI *flowDeleteFn)(HANDLE);
 typedef ULONG (WINAPI *filterDeleteFn)(HANDLE);
 
-class TrafficControlWindows
-{
+class TrafficControlWindows {
  public:
     // Factory method. Constructor disabled.
     static TrafficControlWindows* GetInstance(const int32_t id);
@@ -71,7 +70,8 @@ class TrafficControlWindows
 
     ULONG TcDeleteFlow(HANDLE FlowHandle);
     ULONG TcDeleteFilter(HANDLE FilterHandle);
-private:
+
+ private:
     TrafficControlWindows(const int32_t id);
     TCI_CLIENT_FUNC_LIST QoSFunctions;
 

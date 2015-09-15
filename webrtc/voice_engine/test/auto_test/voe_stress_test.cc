@@ -226,7 +226,7 @@ int VoEStressTest::CreateDeleteChannelsTest() {
 
   // Set up, start with maxChannels/2 channels
   const int maxChannels = 100;
-  VALIDATE_STRESS(maxChannels < 1); // Should always have at least one channel
+  VALIDATE_STRESS(maxChannels < 1);  // Should always have at least one channel
   bool* channelState = new bool[maxChannels];
   memset(channelState, 0, maxChannels * sizeof(bool));
   int channel(0);
@@ -266,7 +266,7 @@ int VoEStressTest::CreateDeleteChannelsTest() {
           channel = static_cast<int> (rnd /
                                       (static_cast<double> (RAND_MAX) + 1.0f) *
                                       maxChannels);
-        } while (!channelState[channel]); // Must find a created channel
+        } while (!channelState[channel]);  // Must find a created channel
 
         res = base->DeleteChannel(channel);
         VALIDATE_STRESS(0 != res);
@@ -289,7 +289,7 @@ int VoEStressTest::CreateDeleteChannelsTest() {
 
 
   // Terminate
-  VALIDATE_STRESS(base->Terminate()); // Deletes all channels
+  VALIDATE_STRESS(base->Terminate());  // Deletes all channels
 
   printf("Test finished \n");
 
@@ -370,7 +370,7 @@ int VoEStressTest::MultipleThreadsTest() {
   ///////////// End test /////////////
 
   // Terminate
-  VALIDATE_STRESS(base->Terminate()); // Deletes all channels
+  VALIDATE_STRESS(base->Terminate());  // Deletes all channels
 
   printf("Test finished \n");
 

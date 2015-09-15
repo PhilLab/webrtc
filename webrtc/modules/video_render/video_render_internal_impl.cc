@@ -47,7 +47,7 @@
 #define STANDARD_RENDERING kRenderX11
 
 #else
-//Other platforms
+// Other platforms
 #endif
 
 // For external rendering
@@ -62,11 +62,10 @@ VideoRender*
 VideoRender::CreateVideoRender(const int32_t id,
                                void* window,
                                const bool fullscreen,
-                               const VideoRenderType videoRenderType/*=kRenderDefault*/)
-{
+                               const VideoRenderType videoRenderType
+                                /*=kRenderDefault*/) {
     VideoRenderType resultVideoRenderType = videoRenderType;
-    if (videoRenderType == kRenderDefault)
-    {
+    if (videoRenderType == kRenderDefault) {
         resultVideoRenderType = STANDARD_RENDERING;
     }
     return new ModuleVideoRenderImpl(id, resultVideoRenderType, window,
@@ -74,33 +73,28 @@ VideoRender::CreateVideoRender(const int32_t id,
 }
 
 void VideoRender::DestroyVideoRender(
-                                                         VideoRender* module)
-{
-    if (module)
-    {
+                                                         VideoRender* module) {
+    if (module) {
         delete module;
     }
 }
 
 ModuleVideoRenderImpl::ModuleVideoRenderImpl(
-                                             const int32_t id,
-                                             const VideoRenderType videoRenderType,
-                                             void* window,
-                                             const bool fullscreen) :
+                                         const int32_t id,
+                                         const VideoRenderType videoRenderType,
+                                         void* window,
+                                         const bool fullscreen) :
     _id(id), _moduleCrit(*CriticalSectionWrapper::CreateCriticalSection()),
-    _ptrWindow(window), _fullScreen(fullscreen), _ptrRenderer(NULL)
-{
-
+    _ptrWindow(window), _fullScreen(fullscreen), _ptrRenderer(NULL) {
     // Create platform specific renderer
-    switch (videoRenderType)
-    {
+    switch (videoRenderType) {
 #if defined(_WIN32)
         case kRenderWindows:
         {
             VideoRenderWindowsImpl* ptrRenderer;
-            ptrRenderer = new VideoRenderWindowsImpl(_id, videoRenderType, window, _fullScreen);
-            if (ptrRenderer)
-            {
+            ptrRenderer = new VideoRenderWindowsImpl(_id, videoRenderType,
+                                                      window, _fullScreen);
+            if (ptrRenderer) {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
             }
         }
@@ -109,9 +103,9 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
 #elif defined(WEBRTC_IOS)
         case kRenderiOS:
         {
-            VideoRenderIosImpl* ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
-            if(ptrRenderer)
-            {
+            VideoRenderIosImpl* ptrRenderer = new VideoRenderIosImpl(_id,
+                                    window, _fullScreen);
+            if (ptrRenderer) {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
             }
         }
@@ -122,9 +116,9 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
 #if defined(COCOA_RENDERING)
         case kRenderCocoa:
         {
-            VideoRenderMacCocoaImpl* ptrRenderer = new VideoRenderMacCocoaImpl(_id, videoRenderType, window, _fullScreen);
-            if(ptrRenderer)
-            {
+            VideoRenderMacCocoaImpl* ptrRenderer = new VideoRenderMacCocoaImpl(
+                                    _id, videoRenderType, window, _fullScreen);
+            if (ptrRenderer) {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
             }
         }
@@ -133,9 +127,10 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
 #elif defined(CARBON_RENDERING)
         case kRenderCarbon:
         {
-            VideoRenderMacCarbonImpl* ptrRenderer = new VideoRenderMacCarbonImpl(_id, videoRenderType, window, _fullScreen);
-            if(ptrRenderer)
-            {
+            VideoRenderMacCarbonImpl* ptrRenderer =
+              new VideoRenderMacCarbonImpl(_id, videoRenderType,
+                                          window, _fullScreen);
+            if (ptrRenderer) {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
             }
         }
@@ -145,34 +140,32 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
 #elif defined(WEBRTC_ANDROID)
         case kRenderAndroid:
         {
-            if(AndroidNativeOpenGl2Renderer::UseOpenGL2(window))
-            {
+            if (AndroidNativeOpenGl2Renderer::UseOpenGL2(window)) {
                 AndroidNativeOpenGl2Renderer* ptrRenderer = NULL;
-                ptrRenderer = new AndroidNativeOpenGl2Renderer(_id, videoRenderType, window, _fullScreen);
-                if (ptrRenderer)
-                {
-                    _ptrRenderer = reinterpret_cast<IVideoRender*> (ptrRenderer);
+                ptrRenderer = new AndroidNativeOpenGl2Renderer(_id,
+                                      videoRenderType, window, _fullScreen);
+                if (ptrRenderer) {
+                    _ptrRenderer = reinterpret_cast<IVideoRender*> (
+                                                            ptrRenderer);
                 }
-            }
-            else
-            {
+            } else {
                 AndroidSurfaceViewRenderer* ptrRenderer = NULL;
-                ptrRenderer = new AndroidSurfaceViewRenderer(_id, videoRenderType, window, _fullScreen);
-                if (ptrRenderer)
-                {
-                    _ptrRenderer = reinterpret_cast<IVideoRender*> (ptrRenderer);
+                ptrRenderer = new AndroidSurfaceViewRenderer(_id,
+                                        videoRenderType, window, _fullScreen);
+                if (ptrRenderer) {
+                    _ptrRenderer = reinterpret_cast<IVideoRender*> (
+                                                            ptrRenderer);
                 }
             }
-
         }
         break;
 #elif defined(WEBRTC_LINUX)
         case kRenderX11:
         {
             VideoRenderLinuxImpl* ptrRenderer = NULL;
-            ptrRenderer = new VideoRenderLinuxImpl(_id, videoRenderType, window, _fullScreen);
-            if ( ptrRenderer )
-            {
+            ptrRenderer = new VideoRenderLinuxImpl(_id, videoRenderType,
+                                                    window, _fullScreen);
+            if ( ptrRenderer ) {
                 _ptrRenderer = reinterpret_cast<IVideoRender*> (ptrRenderer);
             }
         }
@@ -186,8 +179,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
             VideoRenderExternalImpl* ptrRenderer(NULL);
             ptrRenderer = new VideoRenderExternalImpl(_id, videoRenderType,
                                                       window, _fullScreen);
-            if (ptrRenderer)
-            {
+            if (ptrRenderer) {
                 _ptrRenderer = reinterpret_cast<IVideoRender*> (ptrRenderer);
             }
         }
@@ -196,16 +188,13 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
             // Error...
             break;
     }
-    if (_ptrRenderer)
-    {
-        if (_ptrRenderer->Init() == -1)
-        {
+    if (_ptrRenderer) {
+        if (_ptrRenderer->Init() == -1) {
         }
     }
 }
 
-ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
-{
+ModuleVideoRenderImpl::~ModuleVideoRenderImpl() {
     delete &_moduleCrit;
 
     for (IncomingVideoStreamMap::iterator it = _streamRenderMap.begin();
@@ -215,17 +204,16 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
     }
 
     // Delete platform specific renderer
-    if (_ptrRenderer)
-    {
+    if (_ptrRenderer) {
         VideoRenderType videoRenderType = _ptrRenderer->RenderType();
 
-        switch (videoRenderType)
-        {
+        switch (videoRenderType) {
             case kRenderExternal:
             {
                 VideoRenderExternalImpl
                         * ptrRenderer =
-                                reinterpret_cast<VideoRenderExternalImpl*> (_ptrRenderer);
+                                reinterpret_cast<VideoRenderExternalImpl*> (
+                                                                _ptrRenderer);
                 _ptrRenderer = NULL;
                 delete ptrRenderer;
             }
@@ -233,7 +221,8 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #if defined(_WIN32)
             case kRenderWindows:
             {
-                VideoRenderWindowsImpl* ptrRenderer = reinterpret_cast<VideoRenderWindowsImpl*>(_ptrRenderer);
+                VideoRenderWindowsImpl* ptrRenderer =
+                      reinterpret_cast<VideoRenderWindowsImpl*>(_ptrRenderer);
                 _ptrRenderer = NULL;
                 delete ptrRenderer;
             }
@@ -241,7 +230,8 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #elif defined(WEBRTC_IOS)
             case kRenderiOS:
             {
-              VideoRenderIosImpl* ptrRenderer = reinterpret_cast<VideoRenderIosImpl*> (_ptrRenderer);
+              VideoRenderIosImpl* ptrRenderer =
+                    reinterpret_cast<VideoRenderIosImpl*> (_ptrRenderer);
               _ptrRenderer = NULL;
               delete ptrRenderer;
             }
@@ -251,7 +241,8 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #if defined(COCOA_RENDERING)
             case kRenderCocoa:
             {
-                VideoRenderMacCocoaImpl* ptrRenderer = reinterpret_cast<VideoRenderMacCocoaImpl*> (_ptrRenderer);
+                VideoRenderMacCocoaImpl* ptrRenderer =
+                    reinterpret_cast<VideoRenderMacCocoaImpl*> (_ptrRenderer);
                 _ptrRenderer = NULL;
                 delete ptrRenderer;
             }
@@ -259,7 +250,8 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #elif defined(CARBON_RENDERING)
             case kRenderCarbon:
             {
-                VideoRenderMacCarbonImpl* ptrRenderer = reinterpret_cast<VideoRenderMacCarbonImpl*> (_ptrRenderer);
+                VideoRenderMacCarbonImpl* ptrRenderer =
+                    reinterpret_cast<VideoRenderMacCarbonImpl*> (_ptrRenderer);
                 _ptrRenderer = NULL;
                 delete ptrRenderer;
             }
@@ -269,7 +261,8 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #elif defined(WEBRTC_ANDROID)
             case kRenderAndroid:
             {
-                VideoRenderAndroid* ptrRenderer = reinterpret_cast<VideoRenderAndroid*> (_ptrRenderer);
+                VideoRenderAndroid* ptrRenderer =
+                    reinterpret_cast<VideoRenderAndroid*> (_ptrRenderer);
                 _ptrRenderer = NULL;
                 delete ptrRenderer;
             }
@@ -278,13 +271,14 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
 #elif defined(WEBRTC_LINUX)
             case kRenderX11:
             {
-                VideoRenderLinuxImpl* ptrRenderer = reinterpret_cast<VideoRenderLinuxImpl*> (_ptrRenderer);
+                VideoRenderLinuxImpl* ptrRenderer =
+                    reinterpret_cast<VideoRenderLinuxImpl*> (_ptrRenderer);
                 _ptrRenderer = NULL;
                 delete ptrRenderer;
             }
             break;
 #else
-            //other platforms
+            // other platforms
 #endif
 
             default:
@@ -294,37 +288,31 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
     }
 }
 
-int64_t ModuleVideoRenderImpl::TimeUntilNextProcess()
-{
+int64_t ModuleVideoRenderImpl::TimeUntilNextProcess() {
     // Not used
     return 50;
 }
-int32_t ModuleVideoRenderImpl::Process()
-{
+int32_t ModuleVideoRenderImpl::Process() {
     // Not used
     return 0;
 }
 
 void*
-ModuleVideoRenderImpl::Window()
-{
+ModuleVideoRenderImpl::Window() {
     CriticalSectionScoped cs(&_moduleCrit);
     return _ptrWindow;
 }
 
-int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
-{
-
+int32_t ModuleVideoRenderImpl::ChangeWindow(void* window) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-#if defined(WEBRTC_IOS) // WEBRTC_IOS must go before WEBRTC_MAC
+#if defined(WEBRTC_IOS)  // WEBRTC_IOS must go before WEBRTC_MAC
     _ptrRenderer = NULL;
     delete _ptrRenderer;
 
     VideoRenderIosImpl* ptrRenderer;
     ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
-    if (!ptrRenderer)
-    {
+    if (!ptrRenderer) {
         return -1;
     }
     _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
@@ -336,21 +324,21 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
 
 #if defined(COCOA_RENDERING)
     VideoRenderMacCocoaImpl* ptrRenderer;
-    ptrRenderer = new VideoRenderMacCocoaImpl(_id, kRenderCocoa, window, _fullScreen);
+    ptrRenderer = new VideoRenderMacCocoaImpl(_id, kRenderCocoa,
+                                              window, _fullScreen);
 #elif defined(CARBON_RENDERING)
     VideoRenderMacCarbonImpl* ptrRenderer;
-    ptrRenderer = new VideoRenderMacCarbonImpl(_id, kRenderCarbon, window, _fullScreen);
+    ptrRenderer = new VideoRenderMacCarbonImpl(_id, kRenderCarbon,
+                                               window, _fullScreen);
 #endif
-    if (!ptrRenderer)
-    {
+    if (!ptrRenderer) {
         return -1;
     }
     _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
     return _ptrRenderer->ChangeWindow(window);
 
 #else
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -360,8 +348,7 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
 #endif
 }
 
-int32_t ModuleVideoRenderImpl::Id()
-{
+int32_t ModuleVideoRenderImpl::Id() {
     CriticalSectionScoped cs(&_moduleCrit);
     return _id;
 }
@@ -390,12 +377,10 @@ ModuleVideoRenderImpl::AddIncomingRenderStream(const uint32_t streamId,
                                                const float left,
                                                const float top,
                                                const float right,
-                                               const float bottom)
-{
+                                               const float bottom) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return NULL;
@@ -411,8 +396,7 @@ ModuleVideoRenderImpl::AddIncomingRenderStream(const uint32_t streamId,
     VideoRenderCallback* ptrRenderCallback =
             _ptrRenderer->AddIncomingRenderStream(streamId, zOrder, left, top,
                                                   right, bottom);
-    if (ptrRenderCallback == NULL)
-    {
+    if (ptrRenderCallback == NULL) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: Can't create incoming stream in renderer",
                      __FUNCTION__);
@@ -431,20 +415,17 @@ ModuleVideoRenderImpl::AddIncomingRenderStream(const uint32_t streamId,
 }
 
 int32_t ModuleVideoRenderImpl::DeleteIncomingRenderStream(
-                                                                const uint32_t streamId)
-{
+                                                    const uint32_t streamId) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
     }
 
     IncomingVideoStreamMap::iterator item = _streamRenderMap.find(streamId);
-    if (item == _streamRenderMap.end())
-    {
+    if (item == _streamRenderMap.end()) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: stream doesn't exist", __FUNCTION__);
         return -1;
@@ -466,8 +447,7 @@ int32_t ModuleVideoRenderImpl::AddExternalRenderCallback(
 
     IncomingVideoStreamMap::iterator item = _streamRenderMap.find(streamId);
 
-    if (item == _streamRenderMap.end())
-    {
+    if (item == _streamRenderMap.end()) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: stream doesn't exist", __FUNCTION__);
         return -1;
@@ -491,8 +471,7 @@ int32_t ModuleVideoRenderImpl::GetIncomingRenderStreamProperties(
     float& bottom) const {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -503,8 +482,7 @@ int32_t ModuleVideoRenderImpl::GetIncomingRenderStreamProperties(
                                                            bottom);
 }
 
-uint32_t ModuleVideoRenderImpl::GetNumIncomingRenderStreams() const
-{
+uint32_t ModuleVideoRenderImpl::GetNumIncomingRenderStreams() const {
     CriticalSectionScoped cs(&_moduleCrit);
 
     return static_cast<uint32_t>(_streamRenderMap.size());
@@ -523,12 +501,10 @@ int32_t ModuleVideoRenderImpl::RegisterRawFrameCallback(
   return -1;
 }
 
-int32_t ModuleVideoRenderImpl::StartRender(const uint32_t streamId)
-{
+int32_t ModuleVideoRenderImpl::StartRender(const uint32_t streamId) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -537,30 +513,25 @@ int32_t ModuleVideoRenderImpl::StartRender(const uint32_t streamId)
     // Start the stream
     IncomingVideoStreamMap::iterator item = _streamRenderMap.find(streamId);
 
-    if (item == _streamRenderMap.end())
-    {
+    if (item == _streamRenderMap.end()) {
         return -1;
     }
 
-    if (item->second->Start() == -1)
-    {
+    if (item->second->Start() == -1) {
         return -1;
     }
 
     // Start the HW renderer
-    if (_ptrRenderer->StartRender() == -1)
-    {
+    if (_ptrRenderer->StartRender() == -1) {
         return -1;
     }
     return 0;
 }
 
-int32_t ModuleVideoRenderImpl::StopRender(const uint32_t streamId)
-{
+int32_t ModuleVideoRenderImpl::StopRender(const uint32_t streamId) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s(%d): No renderer", __FUNCTION__, streamId);
         return -1;
@@ -569,21 +540,18 @@ int32_t ModuleVideoRenderImpl::StopRender(const uint32_t streamId)
     // Stop the incoming stream
     IncomingVideoStreamMap::iterator item = _streamRenderMap.find(streamId);
 
-    if (item == _streamRenderMap.end())
-    {
+    if (item == _streamRenderMap.end()) {
         return -1;
     }
 
-    if (item->second->Stop() == -1)
-    {
+    if (item->second->Stop() == -1) {
         return -1;
     }
 
     return 0;
 }
 
-int32_t ModuleVideoRenderImpl::ResetRender()
-{
+int32_t ModuleVideoRenderImpl::ResetRender() {
     CriticalSectionScoped cs(&_moduleCrit);
 
     int32_t ret = 0;
@@ -597,24 +565,20 @@ int32_t ModuleVideoRenderImpl::ResetRender()
     return ret;
 }
 
-RawVideoType ModuleVideoRenderImpl::PreferredVideoType() const
-{
+RawVideoType ModuleVideoRenderImpl::PreferredVideoType() const {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (_ptrRenderer == NULL)
-    {
+    if (_ptrRenderer == NULL) {
         return kVideoI420;
     }
 
     return _ptrRenderer->PerferedVideoType();
 }
 
-bool ModuleVideoRenderImpl::IsFullScreen()
-{
+bool ModuleVideoRenderImpl::IsFullScreen() {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return false;
@@ -623,13 +587,11 @@ bool ModuleVideoRenderImpl::IsFullScreen()
 }
 
 int32_t ModuleVideoRenderImpl::GetScreenResolution(
-                                                         uint32_t& screenWidth,
-                                                         uint32_t& screenHeight) const
-{
+                                               uint32_t& screenWidth,
+                                               uint32_t& screenHeight) const {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return false;
@@ -638,12 +600,10 @@ int32_t ModuleVideoRenderImpl::GetScreenResolution(
 }
 
 uint32_t ModuleVideoRenderImpl::RenderFrameRate(
-                                                      const uint32_t streamId)
-{
+                                                  const uint32_t streamId) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return false;
@@ -656,12 +616,10 @@ int32_t ModuleVideoRenderImpl::SetStreamCropping(
                                                        const float left,
                                                        const float top,
                                                        const float right,
-                                                       const float bottom)
-{
+                                                       const float bottom) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return false;
@@ -669,12 +627,10 @@ int32_t ModuleVideoRenderImpl::SetStreamCropping(
     return _ptrRenderer->SetStreamCropping(streamId, left, top, right, bottom);
 }
 
-int32_t ModuleVideoRenderImpl::SetTransparentBackground(const bool enable)
-{
+int32_t ModuleVideoRenderImpl::SetTransparentBackground(const bool enable) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return false;
@@ -682,8 +638,8 @@ int32_t ModuleVideoRenderImpl::SetTransparentBackground(const bool enable)
     return _ptrRenderer->SetTransparentBackground(enable);
 }
 
-int32_t ModuleVideoRenderImpl::FullScreenRender(void* window, const bool enable)
-{
+int32_t ModuleVideoRenderImpl::FullScreenRender(void* window,
+                                                const bool enable) {
     return -1;
 }
 
@@ -695,12 +651,10 @@ int32_t ModuleVideoRenderImpl::SetText(
                                              const uint32_t backgroundColorRef,
                                              const float left, const float top,
                                              const float right,
-                                             const float bottom)
-{
+                                             const float bottom) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -715,12 +669,10 @@ int32_t ModuleVideoRenderImpl::SetBitmap(const void* bitMap,
                                          const float left,
                                          const float top,
                                          const float right,
-                                         const float bottom)
-{
+                                         const float bottom) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -754,17 +706,15 @@ int32_t ModuleVideoRenderImpl::SetExpectedRenderDelay(
 }
 
 int32_t ModuleVideoRenderImpl::ConfigureRenderer(
-                                                       const uint32_t streamId,
-                                                       const unsigned int zOrder,
-                                                       const float left,
-                                                       const float top,
-                                                       const float right,
-                                                       const float bottom)
-{
+                                                   const uint32_t streamId,
+                                                   const unsigned int zOrder,
+                                                   const float left,
+                                                   const float top,
+                                                   const float right,
+                                                   const float bottom) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return false;
@@ -777,8 +727,7 @@ int32_t ModuleVideoRenderImpl::SetStartImage(const uint32_t streamId,
                                              const VideoFrame& videoFrame) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -786,16 +735,14 @@ int32_t ModuleVideoRenderImpl::SetStartImage(const uint32_t streamId,
 
     IncomingVideoStreamMap::const_iterator item =
         _streamRenderMap.find(streamId);
-    if (item == _streamRenderMap.end())
-    {
+    if (item == _streamRenderMap.end()) {
         // This stream doesn't exist
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: stream doesn't exist", __FUNCTION__);
         return -1;
     }
-    assert (item->second != NULL);
+    assert(item->second != NULL);
     return item->second->SetStartImage(videoFrame);
-
 }
 
 int32_t ModuleVideoRenderImpl::SetTimeoutImage(const uint32_t streamId,
@@ -803,8 +750,7 @@ int32_t ModuleVideoRenderImpl::SetTimeoutImage(const uint32_t streamId,
                                                const uint32_t timeout) {
     CriticalSectionScoped cs(&_moduleCrit);
 
-    if (!_ptrRenderer)
-    {
+    if (!_ptrRenderer) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: No renderer", __FUNCTION__);
         return -1;
@@ -812,8 +758,7 @@ int32_t ModuleVideoRenderImpl::SetTimeoutImage(const uint32_t streamId,
 
     IncomingVideoStreamMap::const_iterator item =
         _streamRenderMap.find(streamId);
-    if (item == _streamRenderMap.end())
-    {
+    if (item == _streamRenderMap.end()) {
         // This stream doesn't exist
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: stream doesn't exist", __FUNCTION__);

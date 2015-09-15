@@ -366,7 +366,7 @@ class Transport : public rtc::MessageHandler,
     }
     bool candidates_allocated() const { return candidates_allocated_; }
 
-  private:
+ private:
     TransportChannelImpl *impl_;
     bool candidates_allocated_;
     int ref_;

@@ -41,7 +41,7 @@ class TestTransport : public Transport {
                      size_t packetLength) override {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
                                          packetLength,
-                                         true); // Allow non-compound RTCP
+                                         true);  // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
     RTCPHelp::RTCPPacketInformation rtcpPacketInformation;
@@ -54,6 +54,7 @@ class TestTransport : public Transport {
               rtcpPacketInformation.receiverEstimatedMaxBitrate);
     return static_cast<int>(packetLength);
   }
+
  private:
   RTCPReceiver* rtcp_receiver_;
 };

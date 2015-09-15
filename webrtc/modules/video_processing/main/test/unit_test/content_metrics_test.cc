@@ -21,8 +21,8 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(ContentAnalysis)) {
   VPMContentAnalysis    ca__sse(true);
   VideoContentMetrics  *_cM_c, *_cM_SSE;
 
-  ca__c.Initialize(width_,height_);
-  ca__sse.Initialize(width_,height_);
+  ca__c.Initialize(width_, height_);
+  ca__sse.Initialize(width_, height_);
 
   rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   while (fread(video_buffer.get(), 1, frame_length_, source_file_)

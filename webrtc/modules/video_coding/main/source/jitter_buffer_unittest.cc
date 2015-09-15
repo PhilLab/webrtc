@@ -1452,7 +1452,6 @@ TEST_F(TestBasicJitterBuffer, DeltaFrameWithMoreThanMaxNumberOfPackets) {
   EXPECT_EQ(kSizeError, jitter_buffer_->InsertPacket(*packet_,
                                                      &retransmitted));
   EXPECT_TRUE(NULL == DecodeCompleteFrame());
-
 }
 
 TEST_F(TestBasicJitterBuffer, ExceedNumOfFrameWithSeqNumWrap) {
@@ -1616,7 +1615,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->markerBit = false;
   EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                             &retransmitted));
-  insertedLength += packet_->sizeBytes; // This packet should be decoded.
+  insertedLength += packet_->sizeBytes;  // This packet should be decoded.
   seq_num_--;
   packet_->seqNum = seq_num_;
   packet_->timestamp = timestamp_;

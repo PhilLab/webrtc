@@ -552,8 +552,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
     rtc::scoped_ptr<test::FrameGenerator> frame_generator(
         test::FrameGenerator::CreateFromYuvFile(
             slides, 1850, 1110,
-            10 * params.clip.fps)  // Cycle image every 10 seconds.
-        );
+            10 * params.clip.fps));  // Cycle image every 10 seconds.
     frame_generator_capturer_.reset(new test::FrameGeneratorCapturer(
         Clock::GetRealTimeClock(), &analyzer, frame_generator.release(),
         params.clip.fps));

@@ -147,7 +147,7 @@ class Candidate {
     related_address_ = related_address;
   }
   const std::string& tcptype() const { return tcptype_; }
-  void set_tcptype(const std::string& tcptype){
+  void set_tcptype(const std::string& tcptype) {
     tcptype_ = tcptype;
   }
 

@@ -40,4 +40,4 @@ class RtpDataCallback : public webrtc::NullRtpData {
 
 int RtpPlay(const CmdArgs& args);
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_

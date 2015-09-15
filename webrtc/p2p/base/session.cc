@@ -730,7 +730,7 @@ void BaseSession::OnTransportCandidatesAllocationDone(Transport* transport) {
   // when BUNDLEing.
   // TODO(juberti): Per b/7998978, devs and QA are hitting this assert in ways
   // that make it prohibitively difficult to run dbg builds. Disabled for now.
-  //ASSERT(!IsCandidateAllocationDone());
+  // ASSERT(!IsCandidateAllocationDone());
   for (TransportMap::iterator iter = transports_.begin();
        iter != transports_.end(); ++iter) {
     if (iter->second->impl() == transport) {

@@ -77,7 +77,7 @@ void VideoProcessingModuleTest::SetUp() {
   memset(video_frame_.buffer(kVPlane), 0, video_frame_.allocated_size(kVPlane));
   const std::string video_file =
       webrtc::test::ResourcePath("foreman_cif", "yuv");
-  source_file_  = fopen(video_file.c_str(),"rb");
+  source_file_  = fopen(video_file.c_str(), "rb");
   ASSERT_TRUE(source_file_ != NULL) <<
       "Cannot read source file: " + video_file + "\n";
 }

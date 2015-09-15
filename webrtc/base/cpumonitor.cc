@@ -42,7 +42,7 @@
 #include <stdio.h>
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
-#endif // defined(WEBRTC_LINUX)
+#endif  // defined(WEBRTC_LINUX)
 
 #if defined(WEBRTC_MAC)
 static uint64 TimeValueTToInt64(const time_value_t &time_value) {
@@ -139,7 +139,7 @@ bool CpuSampler::Init() {
     LOG_ERR(LS_ERROR) << "could not disable buffering for proc/stat";
     return false;
   }
-#endif // defined(WEBRTC_LINUX)
+#endif  // defined(WEBRTC_LINUX)
   GetProcessLoad();  // Initialize values.
   GetSystemLoad();
   // Help next user call return valid data by recomputing load.
@@ -235,7 +235,7 @@ float CpuSampler::GetSystemLoad() {
       return 0.f;
     }
   }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_MAC)
   mach_port_t mach_host = mach_host_self();
@@ -322,7 +322,7 @@ float CpuSampler::GetProcessLoad() {
       ToUInt64(current_file_time) - ToUInt64(create_time);
   const uint64 cpu_times =
       (ToUInt64(kernel_time) + ToUInt64(user_time));
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
   // Common to both OSX and Linux.

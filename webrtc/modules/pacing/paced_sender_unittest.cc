@@ -282,7 +282,7 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
                   TimeToSendPacket(ssrc, queued_sequence_number++, _, false))
           .Times(1)
           .WillRepeatedly(Return(true));
-   }
+    }
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
     EXPECT_EQ(0, send_bucket_->Process());
   }

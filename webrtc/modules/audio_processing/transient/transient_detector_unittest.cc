@@ -20,7 +20,7 @@
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
- #include "webrtc/typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

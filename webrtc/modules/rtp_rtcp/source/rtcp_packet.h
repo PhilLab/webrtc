@@ -652,7 +652,6 @@ class Nack : public RtcpPacket {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-
   RTCPUtility::RTCPPacketRTPFBNACK nack_;
   std::vector<RTCPUtility::RTCPPacketRTPFBNACKItem> nack_fields_;
 

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
+#include <list>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -20,12 +22,10 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-namespace RTCPHelp
-{
+namespace RTCPHelp {
 
-class RTCPReportBlockInformation
-{
-public:
+class RTCPReportBlockInformation {
+ public:
     RTCPReportBlockInformation();
     ~RTCPReportBlockInformation();
 
@@ -41,9 +41,8 @@ public:
     uint32_t numAverageCalcs;
 };
 
-class RTCPPacketInformation
-{
-public:
+class RTCPPacketInformation {
+ public:
     RTCPPacketInformation();
     ~RTCPPacketInformation();
 
@@ -57,7 +56,7 @@ public:
 
     void AddReportInfo(const RTCPReportBlockInformation& report_block_info);
 
-    uint32_t  rtcpPacketTypeFlags; // RTCPPacketTypeFlags bit field
+    uint32_t  rtcpPacketTypeFlags;  // RTCPPacketTypeFlags bit field
     uint32_t  remoteSSRC;
 
     std::list<uint16_t> nackSequenceNumbers;
@@ -84,13 +83,12 @@ public:
     bool xr_dlrr_item;
     RTCPVoIPMetric*  VoIPMetric;
 
-private:
+ private:
     DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);
 };
 
-class RTCPReceiveInformation
-{
-public:
+class RTCPReceiveInformation {
+ public:
     RTCPReceiveInformation();
     ~RTCPReceiveInformation();
 
@@ -120,11 +118,12 @@ public:
     TMMBRSet        TmmbrSet;
 
     bool            readyForDelete;
-private:
+
+ private:
     std::vector<int64_t> _tmmbrSetTimeouts;
 };
 
 }  // end namespace RTCPHelp
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_

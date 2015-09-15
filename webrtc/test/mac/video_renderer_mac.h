@@ -35,7 +35,7 @@ class MacRenderer : public GlRenderer {
 
   DISALLOW_COPY_AND_ASSIGN(MacRenderer);
 };
-}  // test
-}  // webrtc
+}  // namespace test
+}  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_MAC_VIDEO_RENDERER_MAC_H_

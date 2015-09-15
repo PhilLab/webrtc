@@ -9,6 +9,7 @@
  */
 
 #include <math.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 

@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>   // memset
+#include <algorithm>
 #include <limits>
 #include <set>
 

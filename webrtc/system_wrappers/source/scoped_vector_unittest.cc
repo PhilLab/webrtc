@@ -294,7 +294,7 @@ TEST(ScopedVectorTest, Passed) {
   EXPECT_EQ(0, deletes);
   result.clear();
   EXPECT_EQ(1, deletes);
-};
+}
 
 TEST(ScopedVectorTest, InsertRange) {
   LifeCycleWatcher watchers[5];

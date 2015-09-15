@@ -29,7 +29,7 @@ class RtpPacketHistoryTest : public ::testing::Test {
   ~RtpPacketHistoryTest() {
     delete hist_;
   }
-  
+
   SimulatedClock fake_clock_;
   RTPPacketHistory* hist_;
   enum {kPayload = 127};
@@ -54,7 +54,7 @@ class RtpPacketHistoryTest : public ::testing::Test {
     array[(*cur_pos)++] = ssrc >> 16;
     array[(*cur_pos)++] = ssrc >> 8;
     array[(*cur_pos)++] = ssrc;
-  } 
+  }
 };
 
 TEST_F(RtpPacketHistoryTest, SetStoreStatus) {

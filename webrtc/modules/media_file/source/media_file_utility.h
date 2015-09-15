@@ -21,10 +21,8 @@ namespace webrtc {
 class InStream;
 class OutStream;
 
-class ModuleFileUtility
-{
-public:
-
+class ModuleFileUtility {
+ public:
     ModuleFileUtility(const int32_t id);
     ~ModuleFileUtility();
 
@@ -155,7 +153,7 @@ public:
     // Write one audio frame, i.e. the bufferLength first bytes of audioBuffer,
     // to stream. The audio frame size is determined by the codecInst.pacsize
     // parameter of the last sucessfull InitPreEncodedWriting(..) call.
-   // The return value is the number of bytes written to stream.
+    // The return value is the number of bytes written to stream.
     // Note: bufferLength must be exactly one frame.
     int32_t WritePreEncodedData(OutStream& stream,
                                 const int8_t* inData,
@@ -174,7 +172,7 @@ public:
     // reading or writing.
     int32_t codec_info(CodecInst& codecInst);
 
-private:
+ private:
     // Biggest WAV frame supported is 10 ms at 48kHz of 2 channel, 16 bit audio.
     enum{WAV_MAX_BUFFER_SIZE = 480*2*2};
 
@@ -209,8 +207,7 @@ private:
     // according to codecInst.
     int32_t set_codec_info(const CodecInst& codecInst);
 
-    struct WAVE_FMTINFO_header
-    {
+    struct WAVE_FMTINFO_header {
         int16_t formatTag;
         int16_t nChannels;
         int32_t nSamplesPerSec;
@@ -219,8 +216,7 @@ private:
         int16_t nBitsPerSample;
     };
     // Identifiers for preencoded files.
-    enum MediaFileUtility_CodecType
-    {
+    enum MediaFileUtility_CodecType {
         kCodecNoCodec  = 0,
         kCodecIsac,
         kCodecIsacSwb,
@@ -281,4 +277,4 @@ private:
     uint8_t _tempData[WAV_MAX_BUFFER_SIZE];
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_MEDIA_FILE_SOURCE_MEDIA_FILE_UTILITY_H_
+#endif  // WEBRTC_MODULES_MEDIA_FILE_SOURCE_MEDIA_FILE_UTILITY_H_

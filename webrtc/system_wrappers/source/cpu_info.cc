@@ -15,7 +15,7 @@
 #elif defined(WEBRTC_MAC)
 #include <sys/sysctl.h>
 #include <sys/types.h>
-#else // defined(WEBRTC_LINUX) or defined(WEBRTC_ANDROID)
+#else  // defined(WEBRTC_LINUX) or defined(WEBRTC_ANDROID)
 #include <unistd.h>
 #endif
 

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "webrtc/test/frame_generator_capturer.h"
 
 #include "webrtc/base/criticalsection.h"
@@ -129,5 +131,5 @@ void FrameGeneratorCapturer::Stop() {
   rtc::CritScope cs(&lock_);
   sending_ = false;
 }
-}  // test
-}  // webrtc
+}  // namespace test
+}  // namespace webrtc

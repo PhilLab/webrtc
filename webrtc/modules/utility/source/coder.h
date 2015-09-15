@@ -19,9 +19,8 @@
 namespace webrtc {
 class AudioFrame;
 
-class AudioCoder : public AudioPacketizationCallback
-{
-public:
+class AudioCoder : public AudioPacketizationCallback {
+ public:
     AudioCoder(uint32_t instanceID);
     ~AudioCoder();
 
@@ -41,16 +40,16 @@ public:
     int32_t Encode(const AudioFrame& audio, int8_t* encodedData,
                    size_t& encodedLengthInBytes);
 
-protected:
- int32_t SendData(FrameType frameType,
+ protected:
+  int32_t SendData(FrameType frameType,
                   uint8_t payloadType,
                   uint32_t timeStamp,
                   const uint8_t* payloadData,
                   size_t payloadSize,
                   const RTPFragmentationHeader* fragmentation) override;
 
-private:
- rtc::scoped_ptr<AudioCodingModule> _acm;
+ private:
+  rtc::scoped_ptr<AudioCodingModule> _acm;
 
     CodecInst _receiveCodec;
 
@@ -62,4 +61,4 @@ private:
 };
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_
+#endif  // WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_

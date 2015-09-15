@@ -98,7 +98,7 @@ const int RTT_RATIO = 3;  // 3 : 1
 
 // The delay before we begin checking if this port is useless.
 const int kPortTimeoutDelay = 30 * 1000;  // 30 seconds
-}
+}  // namespace
 
 namespace cricket {
 
@@ -1068,7 +1068,6 @@ void Connection::OnReadPacket(
           port_->SendBindingErrorResponse(msg.get(), addr,
                                           STUN_ERROR_UNAUTHORIZED,
                                           STUN_ERROR_REASON_UNAUTHORIZED);
-
         }
         break;
 

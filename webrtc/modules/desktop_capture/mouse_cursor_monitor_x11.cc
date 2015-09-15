@@ -188,9 +188,9 @@ void MouseCursorMonitorX11::CaptureCursor() {
     img = XFixesGetCursorImage(display());
     if (!img || error_trap.GetLastErrorAndDisable() != 0)
        return;
-   }
+  }
 
-   rtc::scoped_ptr<DesktopFrame> image(
+  rtc::scoped_ptr<DesktopFrame> image(
        new BasicDesktopFrame(DesktopSize(img->width, img->height)));
 
   // Xlib stores 32-bit data in longs, even if longs are 64-bits long.

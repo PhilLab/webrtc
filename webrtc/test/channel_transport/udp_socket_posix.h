@@ -25,9 +25,8 @@ namespace test {
 
 #define SOCKET_ERROR -1
 
-class UdpSocketPosix : public UdpSocketWrapper
-{
-public:
+class UdpSocketPosix : public UdpSocketWrapper {
+ public:
     UdpSocketPosix(const int32_t id, UdpSocketManager* mgr,
                    bool ipV6Enable = false);
 
@@ -49,7 +48,7 @@ public:
                    const SocketAddress& to) override;
 
     // Deletes socket in addition to closing it.
-    // TODO (hellner): make destructor protected.
+    // TODO(hellner): make destructor protected.
     void CloseBlocking() override;
 
     SOCKET GetFd();
@@ -69,7 +68,8 @@ public:
     void HasIncoming();
     bool WantsIncoming();
     void ReadyForDeletion();
-private:
+
+ private:
     friend class UdpSocketManagerPosix;
 
     const int32_t _id;

@@ -10,7 +10,9 @@
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
 
 #include <algorithm>
+#include <limits>
 #include <utility>
+#include <vector>
 
 namespace webrtc {
 

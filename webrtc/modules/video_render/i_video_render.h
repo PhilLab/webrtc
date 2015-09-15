@@ -16,9 +16,8 @@
 namespace webrtc {
 
 // Class definitions
-class IVideoRender
-{
-public:
+class IVideoRender {
+ public:
     /*
      *   Constructor/destructor
      */
@@ -54,8 +53,8 @@ public:
                                               float& right,
                                               float& bottom) const = 0;
     // Implemented in common code?
-    //virtual uint32_t GetNumIncomingRenderStreams() const = 0;
-    //virtual bool HasIncomingRenderStream(const uint16_t stramId) const = 0;
+    // virtual uint32_t GetNumIncomingRenderStreams() const = 0;
+    // virtual bool HasIncomingRenderStream(const uint16_t stramId) const = 0;
 
 
     /**************************************************************************
@@ -122,7 +121,6 @@ public:
                               const float top,
                               const float right,
                               const float bottom) = 0;
-
 };
 }  // namespace webrtc
 

@@ -18,9 +18,8 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class MediaFile : public Module
-{
-public:
+class MediaFile : public Module {
+ public:
     // Factory method. Constructor disabled. id is the identifier for the
     // MediaFile instance.
     static MediaFile* CreateMediaFile(const int32_t id);
@@ -172,9 +171,9 @@ public:
     // reading or writing.
     virtual int32_t codec_info(CodecInst& codecInst) const = 0;
 
-protected:
+ protected:
     MediaFile() {}
     virtual ~MediaFile() {}
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_H_
+#endif  // WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_H_

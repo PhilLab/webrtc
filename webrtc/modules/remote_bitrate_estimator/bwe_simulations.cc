@@ -69,7 +69,6 @@ TEST_P(BweSimulation, Verizon4gDownlinkTest) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
-
   const int kFlowIds[] = {0, 1};
   const size_t kNumFlows = sizeof(kFlowIds) / sizeof(kFlowIds[0]);
 
@@ -99,7 +98,6 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
-
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
