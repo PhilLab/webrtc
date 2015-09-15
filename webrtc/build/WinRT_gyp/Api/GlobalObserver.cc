@@ -117,6 +117,11 @@ void GlobalObserver::OnIceConnectionChange(
 
     _stats_observer_etw->PollStats(_pc->_impl);
   }
+  auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceStateChangeEvent();
+  webrtc_winrt_api::RTCIceConnectionState cxNewState;
+  ToCx(new_state, &cxNewState);
+  evt->State = cxNewState;
+  POST_PC_EVENT(OnIceConnectionChange, evt);
 }
 
 // Called any time the IceGatheringState changes
