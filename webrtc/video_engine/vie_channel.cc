@@ -872,8 +872,10 @@ void ViEChannel::GetSendStreamDataCounters(
   }
 }
 
+#if defined WINRT
 // declaration of 'statistician' hides previous local declaration
 #pragma warning(disable : 4456)
+#endif
 void ViEChannel::GetReceiveStreamDataCounters(
     StreamDataCounters* rtp_counters,
     StreamDataCounters* rtx_counters) const {
