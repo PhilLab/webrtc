@@ -190,8 +190,6 @@
         'linuxfdwalk.c',
         'linuxfdwalk.h',
         'linked_ptr.h',
-        'loggingserver.cc',
-        'loggingserver.h',
         'macasyncsocket.cc',
         'macasyncsocket.h',
         'maccocoasocketserver.h',
@@ -309,8 +307,6 @@
         'thread.h',
         'timing.cc',
         'timing.h',
-        'tracelog.cc',
-        'tracelog.h',
         'transformadapter.cc',
         'transformadapter.h',
         'unixfilesystem.cc',
@@ -678,6 +674,12 @@
           ],
         }],
         ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources':[
+            'loggingserver.cc',
+            'loggingserver.h',
+            'tracelog.cc',
+            'tracelog.h',
+          ],
           'sources!': [
             'win32regkey.cc',
             'win32regkey.h',
