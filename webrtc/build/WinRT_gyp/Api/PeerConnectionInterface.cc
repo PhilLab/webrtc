@@ -32,6 +32,7 @@
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/system_wrappers/interface/utf_util_win.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
+#include "third_party/h264_winrt/h264_winrt_factory.h"
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
@@ -590,9 +591,12 @@ void WebRTC::Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher) {
     rtc::EnsureWinsockInit();
     rtc::InitializeSSL(globals::certificateVerifyCallBack);
 
+    auto encoderFactory = new webrtc::H264WinRTEncoderFactory();
+    auto decoderFactory = new webrtc::H264WinRTDecoderFactory();
+
     LOG(LS_INFO) << "Creating PeerConnectionFactory.";
     globals::gPeerConnectionFactory =
-        webrtc::CreatePeerConnectionFactory();
+        webrtc::CreatePeerConnectionFactory(encoderFactory, decoderFactory);
 
     webrtc::SetupEventTracer(&WebRTC::GetCategoryGroupEnabled,
       &WebRTC::AddTraceEvent);
