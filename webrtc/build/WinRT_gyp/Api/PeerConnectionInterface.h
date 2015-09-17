@@ -323,6 +323,13 @@ public:
   MediaStream^ GetStreamById(String^ streamId);
   void AddStream(MediaStream^ stream);
   void RemoveStream(MediaStream^ stream);
+
+  /// <summary>
+  /// Creates a new <see cref="RTCDataChannel"/> object with the given <paramref name="label"/>.
+  /// </summary>
+  /// <param name="label">Used as the descriptive name for the new data channel.</param>
+  /// <param name="init">Can be used to configure properties of the underlying channel such as data reliability.</param>
+  /// <returns>The newly created <see cref="RTCDataChannel"/>.</returns>
   RTCDataChannel^ CreateDataChannel(String^ label, RTCDataChannelInit^ init);
 
   /// <summary>
