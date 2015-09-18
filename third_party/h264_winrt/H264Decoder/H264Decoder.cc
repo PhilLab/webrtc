@@ -189,46 +189,45 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
 HRESULT FromSample(ComPtr<IMFSample> pSample, UINT32 width, UINT32 height, VideoFrame& decodedFrame) {
   HRESULT hr = S_OK;
 
-  // Get the sample's buffer bytes.
-  std::vector<BYTE> nv12BufferBytes;
-  {
-    ComPtr<IMFMediaBuffer> buffer;
-    hr = pSample->GetBufferByIndex(0, &buffer);
-    ComPtr<IMF2DBuffer2> buffer2d;
-    hr = buffer.As(&buffer2d);
-    DWORD size;
-    hr = buffer2d->GetContiguousLength(&size);
-    nv12BufferBytes.resize(size);
-    hr = buffer2d->ContiguousCopyTo(nv12BufferBytes.data(), size);
+  decodedFrame.CreateEmptyFrame(width, height, width,
+    (width + 1) / 2, (width + 1) / 2);
+
+  ComPtr<IMFMediaBuffer> buffer;
+  hr = pSample->GetBufferByIndex(0, &buffer);
+  if (SUCCEEDED(hr)) {
+    BYTE* bufferBytes;
+    DWORD maxLength, curLength;
+    hr = buffer->Lock(&bufferBytes, &maxLength, &curLength);
+    if (SUCCEEDED(hr)) {
+      libyuv::NV12ToI420(
+        bufferBytes, width,
+        bufferBytes + (width * height), width,
+        decodedFrame.buffer(kYPlane), width,
+        decodedFrame.buffer(kUPlane), (width + 1) / 2,
+        decodedFrame.buffer(kVPlane), (width + 1) / 2,
+        width, height);
+      hr = buffer->Unlock();
+    }
   }
 
-  decodedFrame.CreateEmptyFrame(width, height, width, (width + 1) >> 1, (width + 1) >> 1);
-
-  libyuv::NV12ToI420(
-    nv12BufferBytes.data(), width,
-    nv12BufferBytes.data() + (width * height), width,
-    decodedFrame.buffer(kYPlane), width,
-    decodedFrame.buffer(kUPlane), (width + 1) >> 1,
-    decodedFrame.buffer(kVPlane), (width + 1) >> 1,
-    width, height);
-
+  // Get all the timestamp attributes out of the sample.
   ComPtr<IMFAttributes> sampleAttributes;
   hr = pSample.As(&sampleAttributes);
   if (SUCCEEDED(hr)) {
     UINT32 timestamp;
     UINT64 ntpTime, captureRenderTime;
 
-    hr = sampleAttributes->GetUINT32(WEBRTC_DECODER_TIMESTAMP, &timestamp);
-    ThrowIfError(hr);
-    decodedFrame.set_timestamp(timestamp);
+    if (SUCCEEDED(sampleAttributes->GetUINT32(WEBRTC_DECODER_TIMESTAMP, &timestamp))) {
+      decodedFrame.set_timestamp(timestamp);
+    }
 
-    hr = sampleAttributes->GetUINT64(WEBRTC_DECODER_NTP_TIME, &ntpTime);
-    ThrowIfError(hr);
-    decodedFrame.set_ntp_time_ms((int64_t)ntpTime);
+    if (SUCCEEDED(sampleAttributes->GetUINT64(WEBRTC_DECODER_NTP_TIME, &ntpTime))) {
+      decodedFrame.set_ntp_time_ms((int64_t)ntpTime);
+    }
 
-    hr = sampleAttributes->GetUINT64(WEBRTC_DECODER_CAPTURE_RENDER_TIME, &captureRenderTime);
-    ThrowIfError(hr);
-    decodedFrame.set_render_time_ms((int64_t)captureRenderTime);
+    if (SUCCEEDED(sampleAttributes->GetUINT64(WEBRTC_DECODER_CAPTURE_RENDER_TIME, &captureRenderTime))) {
+      decodedFrame.set_render_time_ms((int64_t)captureRenderTime);
+    }
   }
 
   return hr;

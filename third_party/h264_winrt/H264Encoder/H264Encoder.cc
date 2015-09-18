@@ -27,6 +27,7 @@
 #include <wrl\implements.h>
 #include <sstream>
 #include <iomanip>
+#include <codecapi.h>
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
@@ -77,7 +78,6 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
   ThrowIfError(MFSetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, inst->width, inst->height));
   ThrowIfError(MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, inst->maxFramerate, 1));
-  ThrowIfError(MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
 
   // input media type (nv12)
   ThrowIfError(MFCreateMediaType(&mediaTypeIn_));
@@ -87,7 +87,6 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ThrowIfError(mediaTypeIn_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
   ThrowIfError(MFSetAttributeSize(mediaTypeIn_.Get(), MF_MT_FRAME_SIZE, inst->width, inst->height));
   ThrowIfError(MFSetAttributeRatio(mediaTypeIn_.Get(), MF_MT_FRAME_RATE, inst->maxFramerate, 1));
-  ThrowIfError(MFSetAttributeRatio(mediaTypeIn_.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
 
   // Create the media sink
   ThrowIfError(MakeAndInitialize<H264MediaSink>(&mediaSink_));
@@ -290,10 +289,8 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
   ThrowIfError(hr);
 
   ComPtr<IMFMediaBuffer> buffer;
-  hr = MFCreateMemoryBuffer(totalLength, buffer.GetAddressOf());
-  ThrowIfError(hr);
+  hr = sample->GetBufferByIndex(0, &buffer);
 
-  hr = sample->CopyToBuffer(buffer.Get());
   if (SUCCEEDED(hr)) {
     BYTE* byteBuffer;
     DWORD maxLength;
@@ -319,6 +316,7 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     hr = MFGetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, &outWidth, &outHeight);
     ThrowIfError(hr);
 
+    // sendBuffer is not copied here.
     EncodedImage encodedImage(sendBuffer.data(), curLength, curLength);
     encodedImage._encodedHeight = outHeight;
     encodedImage._encodedWidth = outWidth;
@@ -353,6 +351,7 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     RTPFragmentationHeader fragmentationHeader;
     // TODO(winrt): Optimization, calculate number of fragments ahead.
 
+    // Scan for and create mark all fragments.
     uint32_t fragIdx = 0;
     for (uint32_t i = 0; i < sendBuffer.size() - 5; ++i) {
       byte* ptr = sendBuffer.data() + i;
@@ -420,8 +419,8 @@ int H264WinRTEncoderImpl::SetRates(
   if (old_bitrate_kbit != new_bitrate_kbit) {
     LOG(LS_INFO) << "H264WinRTEncoderImpl::SetRates("
       << new_bitrate_kbit << "kbit " << new_framerate << "fps)";
-    hr = mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, new_bitrate_kbit * 1000);
-#if false // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
+    hr = mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, new_bitrate_kbit * 1024);
+#if 0 // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
     hr = MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, new_framerate, 1);
     hr = MFSetAttributeRatio(mediaTypeIn_.Get(), MF_MT_FRAME_RATE, new_framerate, 1);
 #endif
@@ -435,7 +434,7 @@ int H264WinRTEncoderImpl::SetRates(
       LOG(LS_ERROR) << "SetTargetMediaType failed: " << hr;
     }
 
-#if false // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
+#if 0 // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
     hr = sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get());
     ThrowIfError(hr);
 #endif
