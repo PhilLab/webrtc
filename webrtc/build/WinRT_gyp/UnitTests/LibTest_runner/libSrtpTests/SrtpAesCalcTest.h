@@ -8,7 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPAESCALCTEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPAESCALCTEST_H_
 
 namespace libSrtpTests {
 //=============================================================================
@@ -38,3 +39,4 @@ class CSrtpAesCalcTest :
   typedef std::shared_ptr<CSrtpAesCalcTest> SpSrtpAesCalcTest_t;
 }  // namespace libSrtpTests
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPAESCALCTEST_H_

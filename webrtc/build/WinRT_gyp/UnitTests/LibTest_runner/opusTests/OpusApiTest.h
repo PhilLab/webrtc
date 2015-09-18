@@ -8,10 +8,10 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSAPITEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSAPITEST_H_
 
 namespace OpusTests {
-  using namespace LibTest_runner;
   //===========================================================================
   //         class: COpusApiTest
   //   Description: class executes opus api test project,
@@ -22,7 +22,7 @@ namespace OpusTests {
 class COpusApiTest :
     public COpusTestBase {
  private:
-    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, COpusApiTest);
+    AUTO_ADD_TEST(LibTest_runner::SingleInstanceTestSolutionProvider, COpusApiTest);
  protected:
     int InterchangeableExecute();
  public:
@@ -35,3 +35,4 @@ class COpusApiTest :
   typedef std::shared_ptr<COpusApiTest> SpOpusApiTest_t;
 }  // namespace OpusTests
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSAPITEST_H_

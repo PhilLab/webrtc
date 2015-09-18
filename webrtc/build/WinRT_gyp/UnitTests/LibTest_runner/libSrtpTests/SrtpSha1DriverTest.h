@@ -8,7 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPSHA1DRIVERTEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPSHA1DRIVERTEST_H_
 
 namespace libSrtpTests {
 //=============================================================================
@@ -34,3 +35,4 @@ class CSrtpSha1DriverTest :
   typedef std::shared_ptr<CSrtpSha1DriverTest> SpSrtpSha1DriverTest_t;
 }  // namespace libSrtpTests
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPSHA1DRIVERTEST_H_

@@ -108,7 +108,7 @@ bool CpuSampler::Init() {
   }
 #if defined(WEBRTC_WIN)
 #if defined(WINRT)
-  // TODO: Find ways of making this possible.
+  // TODO(winrt): Find ways of making this possible.
   //       cpumonitor seems to be used in adaptive video engine.
   //       we might be able to do without for a while.
   get_system_times_ = NULL;
@@ -178,7 +178,7 @@ float CpuSampler::GetSystemLoad() {
     return system_.prev_load_;
   }
 #if defined(WINRT)
-  // TODO: Is cpu load available on WinRT platforms?
+  // TODO(winrt): Is cpu load available on WinRT platforms?
   const uint64 cpu_times = 0;
   const uint64 total_times = 0;
 
@@ -304,7 +304,8 @@ float CpuSampler::GetProcessLoad() {
     return process_.prev_load_;
   }
 #if defined(WINRT)
-  // TODO: Is an alternative to GetProcessTimes available on WinRT platforms?
+  // TODO(winrt): Is an alternative to GetProcessTimes available on
+  // WinRT platforms?
   const uint64 cpu_times = 0;
   const uint64 total_times = 0;
 #elif defined(WEBRTC_WIN)

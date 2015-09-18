@@ -20,8 +20,7 @@
 #if !defined(WINRT)
 #include "webrtc/base/win32window.h"
 #endif
-#include "webrtc/base/win32window.h"
-#include "webrtc/base/winping.h"
+
 
 namespace rtc {
 

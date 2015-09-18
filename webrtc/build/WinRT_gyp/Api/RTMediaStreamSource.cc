@@ -238,7 +238,7 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer) {
       _frame->GetVPlane(), _frame->GetVPitch(),
       reinterpret_cast<uint8*>(destRawData), pitch,
       uvDest, pitch,
-      (int)_frame->GetWidth(), (int)_frame->GetHeight());
+      static_cast<int>(_frame->GetWidth()), static_cast<int>(_frame->GetHeight()));
   }
   catch (...) {
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";

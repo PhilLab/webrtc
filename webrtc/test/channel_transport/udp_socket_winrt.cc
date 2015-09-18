@@ -115,7 +115,8 @@ bool UdpSocketWinRT::SetSockopt(int32_t level, int32_t optname,
 }
 
 int32_t UdpSocketWinRT::SetTOS(int32_t serviceType) {
-    if (SetSockopt(IPPROTO_IP, IP_TOS, (int8_t*)&serviceType, 4) != 0) {
+    if (SetSockopt(IPPROTO_IP, IP_TOS,
+          reinterpret_cast<int8_t*>(&serviceType), 4) != 0) {
         return -1;
     }
     return 0;
@@ -187,7 +188,7 @@ void UdpSocketWinRT::HasIncoming() {
         memcpy(&from, &sockaddrfrom, fromlen);
         from._sockaddr_storage.sin_family = sockaddrfrom.sa_family;
 #else
-    retval = recvfrom(_socket, (char*)buf, sizeof(buf), 0,
+    retval = recvfrom(_socket, reinterpret_cast<char*>(buf), sizeof(buf), 0,
                           reinterpret_cast<sockaddr*>(&from), &fromlen);
 #endif
 

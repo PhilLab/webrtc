@@ -8,7 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_STDOUTPUTREDIRECTOR_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_STDOUTPUTREDIRECTOR_H_
 
 #include <string>
 
@@ -85,3 +86,5 @@ class CStdOutputRedirector {
     }
 };
 }  // namespace LibTest_runner
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_STDOUTPUTREDIRECTOR_H_

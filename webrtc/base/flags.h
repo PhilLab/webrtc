@@ -267,4 +267,4 @@ class WindowsCommandLineArguments {
 
 }  // namespace rtc
 
-#endif  // SHARED_COMMANDLINEFLAGS_FLAGS_H__
+#endif  // WEBRTC_BASE_FLAGS_H__

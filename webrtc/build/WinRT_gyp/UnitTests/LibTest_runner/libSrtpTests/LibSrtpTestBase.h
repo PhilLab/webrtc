@@ -8,10 +8,11 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_LIBSRTPTESTBASE_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_LIBSRTPTESTBASE_H_
 
 namespace libSrtpTests {
-  using namespace LibTest_runner;
+using namespace LibTest_runner;
 
 //=============================================================================
 //         class: CLibSrtpTestBase
@@ -26,3 +27,4 @@ class CLibSrtpTestBase : public CTestBase {
 };
 }  // namespace libSrtpTests
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_LIBSRTPTESTBASE_H_

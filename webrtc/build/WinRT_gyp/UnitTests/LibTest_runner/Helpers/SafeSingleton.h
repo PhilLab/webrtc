@@ -16,7 +16,8 @@
 //! 2014/02/13: created
 //============================================================================
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_SAFESINGLETON_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_SAFESINGLETON_H_
 
 #include <assert.h>
 
@@ -125,7 +126,7 @@ struct CSingletonExplicitDestroy {
      public:
         // The constructor links the object into the global list
 
-        //! TODO: Mutex not implemented so not thread safe !!!!!!
+        // TODO(winrt): Mutex not implemented so not thread safe !!!!!!
         CDestroyItem(PFnAtExit fnDestroy) {
             // xpl::CMutexLock   lock(CXplLibrary::InitMutex());
 
@@ -257,7 +258,7 @@ class CSafeSingletonT {
     //! @return
     //=========================================================================
     static void DestroySingleton() {
-        // TODO: implement locking to be thread safe
+        // TODO(winrt): implement locking to be thread safe
         assert(!Destroyed());
         CreationPolicy::Destroy(InternalInstance());
         InternalInstance() = NULL;
@@ -265,3 +266,5 @@ class CSafeSingletonT {
     }
 };
 }  // namespace LibTest_runner
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_SAFESINGLETON_H_

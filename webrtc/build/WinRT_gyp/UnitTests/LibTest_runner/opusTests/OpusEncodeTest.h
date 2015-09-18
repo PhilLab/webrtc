@@ -8,10 +8,10 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSENCODETEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSENCODETEST_H_
 
 namespace OpusTests {
-  using namespace LibTest_runner;
   //===========================================================================
   //         class: COpusEncodeTest
   //   Description: class executes replay_driver test project,
@@ -22,7 +22,7 @@ namespace OpusTests {
 class COpusEncodeTest :
     public COpusTestBase {
  private:
-    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, COpusEncodeTest);
+   AUTO_ADD_TEST(LibTest_runner::SingleInstanceTestSolutionProvider, COpusEncodeTest);
  protected:
     int InterchangeableExecute();
  public:
@@ -34,3 +34,5 @@ class COpusEncodeTest :
 
   typedef std::shared_ptr<COpusEncodeTest> SpOpusEncodeTest_t;
 }  // namespace OpusTests
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSENCODETEST_H_

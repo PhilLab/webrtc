@@ -38,7 +38,6 @@ using Platform::Collections::Vector;
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureInitializationSettings;
 using rtc::FileStream;
-using namespace cricket;
 
 Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -127,7 +126,8 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
     chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kCombinedAudioVideoBwe, "true");
+    constraints.AddOptional(
+      webrtc::MediaConstraintsInterface::kCombinedAudioVideoBwe, "true");
     _observer->SetPeerConnection(this);
     LOG(LS_INFO) << "Creating PeerConnection native.";
     _impl = globals::gPeerConnectionFactory->CreatePeerConnection(
@@ -665,7 +665,7 @@ String^  WebRTC::LogFileName() {
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
-  std::vector<AudioCodec> codecs;
+  std::vector<cricket::AudioCodec> codecs;
   cricket::ChannelManager* chmng =
       globals::gPeerConnectionFactory->channel_manager();
   chmng->GetSupportedAudioCodecs(&codecs);
@@ -677,12 +677,12 @@ IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
 
 IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
-  std::vector<VideoCodec> codecs;
+  std::vector<cricket::VideoCodec> codecs;
   cricket::ChannelManager* chmng =
       globals::gPeerConnectionFactory->channel_manager();
   chmng->GetSupportedVideoCodecs(&codecs);
     for (auto it = codecs.begin(); it != codecs.end(); ++it) {
-    if (it->GetCodecType() == VideoCodec::CODEC_VIDEO)
+      if (it->GetCodecType() == cricket::VideoCodec::CODEC_VIDEO)
       ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
     }
   return ret;

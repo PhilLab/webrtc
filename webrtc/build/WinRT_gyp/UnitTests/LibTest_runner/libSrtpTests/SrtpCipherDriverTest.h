@@ -8,7 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPCIPHERDRIVERTEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPCIPHERDRIVERTEST_H_
 
 namespace libSrtpTests {
 //=============================================================================
@@ -84,3 +85,4 @@ class CSrtpCipherDriverArrayTimingTest :
 };
 }  // namespace libSrtpTests
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_SRTPCIPHERDRIVERTEST_H_

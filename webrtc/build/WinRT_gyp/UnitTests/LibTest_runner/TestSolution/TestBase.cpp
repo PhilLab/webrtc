@@ -9,9 +9,7 @@
 */
 
 #include "common.h"
-#include "TestBase.h"
-
-using namespace std::chrono;
+#include "TestSolution/TestBase.h"
 
 
 //=======================================================================
@@ -75,21 +73,22 @@ void LibTest_runner::CTestBase::VerifyResult() {
 int LibTest_runner::CTestBase::Execute() {
   PrepareForExecution();
   m_bExecuted = true;
-  high_resolution_clock::time_point startTime;
-  high_resolution_clock::time_point endTime;
+  std::chrono::high_resolution_clock::time_point startTime;
+  std::chrono::high_resolution_clock::time_point endTime;
   try {
     // grab test output
     LibTest_runner::CStdOutputRedirector<true> redirector(m_wsOutput);
     // store time
-    startTime = high_resolution_clock::now();
+    startTime = std::chrono::high_resolution_clock::now();
     m_nExitStatus = InterchangeableExecute();
-    endTime = high_resolution_clock::now();
+    endTime = std::chrono::high_resolution_clock::now();
   }
   catch (int Status) {
     m_nExitStatus = Status;
   }
 
-  m_uExecutionTimeMs = duration_cast<milliseconds>(endTime - startTime);
+  m_uExecutionTimeMs = std::chrono::duration_cast<
+                        std::chrono::milliseconds>(endTime - startTime);
 
   VerifyResult();
   InterchangeableTestCleanup();

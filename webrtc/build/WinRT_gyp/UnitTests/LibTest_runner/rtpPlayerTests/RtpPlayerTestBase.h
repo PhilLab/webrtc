@@ -8,18 +8,20 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTESTBASE_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTESTBASE_H_
 
 namespace RtpPlayerTests {
-using namespace LibTest_runner;
 
 //==========================================================================
 //         class: CRtpPlayerTestBase
 //   Description: Base class for rtp_Player tests
 //==========================================================================
-class CRtpPlayerTestBase : public CTestBase {
+class CRtpPlayerTestBase : public LibTest_runner::CTestBase {
  public:
     virtual ~CRtpPlayerTestBase() {}
     virtual void InterchangeableVerifyResult();
 };
 }  // namespace RtpPlayerTests
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTESTBASE_H_

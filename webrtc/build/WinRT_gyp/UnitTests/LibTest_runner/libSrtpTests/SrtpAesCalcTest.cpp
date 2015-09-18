@@ -23,7 +23,7 @@ AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpAesCalcTest);
 #define CIPHER_TEXT L"69c4e0d86a7b0430d8cdb78070b4c55a"
 
 int libSrtpTests::CSrtpAesCalcTest::InterchangeableExecute() {
-  // TODO: change proper parameters
+  // TODO(winrt): change proper parameters
   char* argv[] = { ".", "000102030405060708090a0b0c0d0e0f",
                 "00112233445566778899aabbccddeeff", "-v" };
 

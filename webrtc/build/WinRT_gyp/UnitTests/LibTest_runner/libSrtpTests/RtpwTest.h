@@ -8,7 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_RTPWTEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_RTPWTEST_H_
 
 namespace libSrtpTests {
 //=============================================================================
@@ -30,3 +31,5 @@ class CRtpwTest :
     TEST_LIBRARY_IMPL(libSrtp);
 };
 }  // namespace libSrtpTests
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_LIBSRTPTESTS_RTPWTEST_H_

@@ -3196,7 +3196,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {
 
 // Tests for the actual WebRtc VoE library.
 
-// TODO (winrt) Enable when the known issue with the mic access is fixed
+// TODO(winrt): Enable when the known issue with the mic access is fixed
 #ifndef WINRT
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
@@ -3294,7 +3294,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   engine.Terminate();
 }
 
-// TODO (winrt) Enable when the known issue with the mic access is fixed
+// TODO(winrt): Enable when the known issue with the mic access is fixed
 #ifndef WINRT
 // Tests that VoE supports at least 32 channels
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
@@ -3332,7 +3332,7 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
 }
 #endif
 
-// TODO (winrt) do we need this test?
+// TODO(winrt): do we need this test?
 #if defined(WIN32) && !defined(WINRT)
 // Test our workarounds to WebRtc VoE' munging of the coinit count
 TEST(WebRtcVoiceEngineTest, CoInitialize) {

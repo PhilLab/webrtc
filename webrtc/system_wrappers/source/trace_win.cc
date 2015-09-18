@@ -99,8 +99,8 @@ int32_t TraceWindows::AddDateTimeInfo(char* trace_message) const {
                 sz_date_str, 20, NULL);
 
   // Create time string (e.g. 15:32:08)
-  GetDateFormatEx(LOCALE_NAME_SYSTEM_DEFAULT, 0, &sys_time, TEXT("HH':'mm':'ss"),
-                sz_time_str, 20, NULL);
+  GetDateFormatEx(LOCALE_NAME_SYSTEM_DEFAULT, 0, &sys_time,
+                  TEXT("HH':'mm':'ss"), sz_time_str, 20, NULL);
 #else
   // Create date string (e.g. Apr 04 2002)
   GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, &sys_time, TEXT("MMM dd yyyy"),

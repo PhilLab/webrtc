@@ -229,7 +229,7 @@ bool UdpSocketManagerWinRTImpl::Process() {
 
     UpdateSocketMap();
 
-    int nFd = (int)_socketMap.size();
+    int nFd = static_cast<int>(_socketMap.size());
     for (std::map<SOCKET, UdpSocketWinRT*>::iterator it = _socketMap.begin();
          it != _socketMap.end();
          ++it) {

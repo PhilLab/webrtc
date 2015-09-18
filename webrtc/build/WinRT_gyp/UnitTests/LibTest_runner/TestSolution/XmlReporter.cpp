@@ -9,13 +9,6 @@
 #include "webrtc/build/WinRT_gyp/UnitTests/LibTest_runner/common.h"
 #include "webrtc/build/WinRT_gyp/UnitTests/LibTest_runner/TestSolution/XmlReporter.h"
 
-
-using namespace Windows::Data::Xml::Dom;
-using namespace Windows::Data::Xml::Xsl;
-using namespace Windows::Storage;
-using namespace Platform;
-using namespace concurrency;
-
 // XML Elements
 #define SOLUTION_ELEMENT_NAME L"TestSolution"
 #define PROJECT_ELEMENT_NAME  L"project"
@@ -46,16 +39,17 @@ namespace LibTest_runner {
   //       History:
   // 2015/03/16 TP: created
   //======================================================================
-  XmlElement^ CXmlReporter::GetLibraryElement(String^ libraryName) {
-    XmlElement^ ret;
+  Windows::Data::Xml::Dom::XmlElement^ CXmlReporter::GetLibraryElement(
+        Platform::String^ libraryName) {
+    Windows::Data::Xml::Dom::XmlElement^ ret;
 
     // gets library elements
-    XmlNodeList^ libraries = solutionEl_->GetElementsByTagName(
-      LIBRARY_ELEMENT_NAME);
+    Windows::Data::Xml::Dom::XmlNodeList^ libraries =
+        solutionEl_->GetElementsByTagName(LIBRARY_ELEMENT_NAME);
     if (libraries != nullptr) {
       // find library in library collections
-      for each (XmlElement^ item in libraries) {
-        String^ name = item->GetAttribute(ATTRIBUTE_NAME);
+      for each (Windows::Data::Xml::Dom::XmlElement^ item in libraries) {
+        Platform::String^ name = item->GetAttribute(ATTRIBUTE_NAME);
         if ((name != nullptr) && (name == libraryName)) {
           ret = item;
           break;
@@ -84,16 +78,17 @@ namespace LibTest_runner {
   //       History:
   // 2015/03/16 TP: created
   //======================================================================
-  XmlElement^ CXmlReporter::GetProjectElement(XmlElement^ library,
-    String^ projectName) {
-    XmlElement^ ret;
+  Windows::Data::Xml::Dom::XmlElement^ CXmlReporter::GetProjectElement(
+      Windows::Data::Xml::Dom::XmlElement^ library,
+      Platform::String^ projectName) {
+    Windows::Data::Xml::Dom::XmlElement^ ret;
 
-    XmlNodeList^ projects =
+    Windows::Data::Xml::Dom::XmlNodeList^ projects =
       library->GetElementsByTagName(PROJECT_ELEMENT_NAME);
     if (projects != nullptr) {
       // find project in project collections
-      for each (XmlElement^ item in projects) {
-        String^ name = item->GetAttribute(ATTRIBUTE_NAME);
+      for each (Windows::Data::Xml::Dom::XmlElement^ item in projects) {
+        Platform::String^ name = item->GetAttribute(ATTRIBUTE_NAME);
         if ((name != nullptr) && (name == projectName)) {
           ret = item;
           break;
@@ -124,7 +119,7 @@ namespace LibTest_runner {
   //       History:
   // 2015/03/16 TP: created
   //======================================================================
-  CXmlReporter::CXmlReporter(String^ outputFile, unsigned int flags)
+  CXmlReporter::CXmlReporter(Platform::String^ outputFile, unsigned int flags)
     : OutputFile_(outputFile)
     , m_nFlags(flags) {}
 
@@ -132,22 +127,24 @@ namespace LibTest_runner {
     throw(ReportGenerationException) {
     if (test.Executed() || (m_nFlags & kAllTests)) {
       // first find project element
-      XmlElement^ projectEl = GetProjectElement(GetLibraryElement(
-        ref new String(test.Library().c_str())),
-        ref new String(test.Project().c_str()));
+      Windows::Data::Xml::Dom::XmlElement^ projectEl =
+        GetProjectElement(GetLibraryElement(
+          ref new Platform::String(test.Library().c_str())),
+          ref new Platform::String(test.Project().c_str()));
 
       // create test element
-      XmlElement^ testEl = report_->CreateElement(TEST_ELEMENT_NAME);
+      Windows::Data::Xml::Dom::XmlElement^ testEl =
+          report_->CreateElement(TEST_ELEMENT_NAME);
       // set test attributes
       testEl->SetAttribute(ATTRIBUTE_NAME,
-        ref new String(test.Name().c_str()));
+        ref new Platform::String(test.Name().c_str()));
       testEl->SetAttribute(ATTRIBUTE_EXECUTED, test.Executed() ?
         ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
       testEl->SetAttribute(ATTRIBUTE_SUCCEEDED, test.Succeed() ?
         ATTRIBUTE_VALUE_TRUE : ATTRIBUTE_VALUE_FALSE);
       testEl->SetAttribute(ATTRIBUTE_EXIT_STATUS, "" + test.ExitStatus());
       testEl->SetAttribute(ATTRIBUTE_RESULT_MESSAGE,
-        ref new String(test.ResultMessage().c_str()));
+        ref new Platform::String(test.ResultMessage().c_str()));
       testEl->SetAttribute(ATTRIBUTE_EXECUTION_TIME_MS, "" +
         test.GetExecutionTimeMs().count());
       projectEl->AppendChild(testEl);
@@ -155,7 +152,7 @@ namespace LibTest_runner {
   }
 
   void CXmlReporter::Begin() throw(ReportGenerationException) {
-    report_ = ref new XmlDocument();
+    report_ = ref new Windows::Data::Xml::Dom::XmlDocument();
   }
 
   void CXmlReporter::AddTestSolutionHeader(const CTestSolution& solution)
@@ -167,12 +164,12 @@ namespace LibTest_runner {
   }
 
   void CXmlReporter::End() throw(ReportGenerationException) {
-    auto writeTask = create_task(
-      ApplicationData::Current->LocalFolder->CreateFileAsync(
-        OutputFile_, CreationCollisionOption::ReplaceExisting));
+    auto writeTask = concurrency::create_task(
+      Windows::Storage::ApplicationData::Current->LocalFolder->CreateFileAsync(
+      OutputFile_, Windows::Storage::CreationCollisionOption::ReplaceExisting));
 
     try {
-      writeTask.then([this](StorageFile^ reportFile) {
+      writeTask.then([this](Windows::Storage::StorageFile^ reportFile) {
         this->report_->SaveToFileAsync(reportFile);
       }).get();
     }

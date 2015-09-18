@@ -8,10 +8,10 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTEST_H_
 
 namespace rtpPlayerTests {
-using namespace LibTest_runner;
   // TODO(winrt) Add more test with different arguments when/if needed
 
   // class: CRtpPlayerTest
@@ -33,3 +33,5 @@ class CRtpPlayerTest :
 typedef std::shared_ptr<CRtpPlayerTest> SpRtpPlayerTest_t;
 
 }  // namespace rtpPlayerTests
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTEST_H_

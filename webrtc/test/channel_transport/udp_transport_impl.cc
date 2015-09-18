@@ -2062,7 +2062,8 @@ INT WSAAddressToStringA(
     (LPWSTR)buff.data(),
     lpdwAddressStringLength);
   std::string buff8 = ::rtc::ToUtf8(buff);
-  strcpy_s((char*)lpszAddressString, (rsize_t)(*lpdwAddressStringLength),
+  strcpy_s(reinterpret_cast<char*>(lpszAddressString),
+      (rsize_t)(*lpdwAddressStringLength),
            buff8.c_str());
   return ret;
 }

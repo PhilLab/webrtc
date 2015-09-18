@@ -51,7 +51,7 @@ static void GetProcessorInformation(int* physical_cpus, int* cache_size) {
   GetNativeSystemInfo(&system_info);
   // Not the number of "logical" processors.  Will not count hyper-threads.
   *physical_cpus = system_info.dwNumberOfProcessors;
-  // TODO: How to determine the cache size on WinRT platforms?
+  // TODO(winrt): How to determine the cache size on WinRT platforms?
   *cache_size = 0;
 }
 #elif defined(WEBRTC_WIN)
@@ -238,7 +238,7 @@ int SystemInfo::GetMaxPhysicalCpus() {
 int SystemInfo::GetCurCpus() {
   int cur_cpus;
 #if defined(WINRT)
-  // TODO: WinRT alternative to GetProcessAffinityMask.
+  // TODO(winrt): WinRT alternative to GetProcessAffinityMask.
   cur_cpus = 1;
 #elif defined(WEBRTC_WIN)
   DWORD_PTR process_mask, system_mask;
@@ -313,7 +313,7 @@ int SystemInfo::GetMaxCpuSpeed() {
     return cpu_speed_;
   }
 #if defined(WINRT)
-  // TODO: How to get CPU max speed on WinRT.
+  // TODO(winrt): How to get CPU max speed on WinRT.
   cpu_speed_ = 0;
 
 #elif defined(WEBRTC_WIN)
@@ -380,7 +380,7 @@ int64 SystemInfo::GetMemorySize() {
   }
 
 #if defined(WINRT)
-  // TODO: How to get system memory size on WinRT?
+  // TODO(winrt): How to get system memory size on WinRT?
   memory_ = -1;
 #elif defined(WEBRTC_WIN)
   MEMORYSTATUSEX status = {0};
@@ -494,7 +494,7 @@ SystemInfo::GpuInfo::~GpuInfo() = default;
 bool SystemInfo::GetGpuInfo(GpuInfo *info) {
   if (!info) return false;
 #if defined(WINRT)
-  // TODO: How to get GPU info on WinRT platforms?
+  // TODO(winrt): How to get GPU info on WinRT platforms?
   return false;
 #elif defined(WEBRTC_WIN) && !defined(EXCLUDE_D3D9)
   D3DADAPTER_IDENTIFIER9 identifier;

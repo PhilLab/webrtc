@@ -8,7 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_TESTINSERTER_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_TESTINSERTER_H_
 
 //=============================================================================
 //         class: TestInserter
@@ -44,8 +45,10 @@ struct TestInserter {
 // Implementation part of AUTO_ADD_TEST macro. See AUTO_ADD_TEST for details
 // Usage, Must be placed in cpp file:
 //   AUTO_ADD_TEST_IMPL(CSomeTest);
-// TODO: there should be a compilation error when AUTO_ADD_TEST_IMPL not defined
+// TODO(winrt): there should be a compilation error when AUTO_ADD_TEST_IMPL
+// not defined
 #define AUTO_ADD_TEST_IMPL(clazz) \
     TestInserter<clazz::__TestSolutionProvider, \
     clazz::__Test> clazz::__inserter; \
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_HELPERS_TESTINSERTER_H_

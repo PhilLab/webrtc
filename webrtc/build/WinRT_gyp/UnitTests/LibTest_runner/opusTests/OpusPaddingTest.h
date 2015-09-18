@@ -8,10 +8,10 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSPADDINGTEST_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSPADDINGTEST_H_
 
 namespace OpusTests {
-  using namespace LibTest_runner;
   //===========================================================================
   //         class: COpusDecodeTest
   //   Description: class executes opus padding test project,
@@ -22,7 +22,7 @@ namespace OpusTests {
 class COpusPaddingTest :
     public COpusTestBase {
  private:
-    AUTO_ADD_TEST(SingleInstanceTestSolutionProvider, COpusPaddingTest);
+   AUTO_ADD_TEST(LibTest_runner::SingleInstanceTestSolutionProvider, COpusPaddingTest);
  protected:
     int InterchangeableExecute();
  public:
@@ -34,3 +34,5 @@ class COpusPaddingTest :
 
   typedef std::shared_ptr<COpusPaddingTest> SpOpusPaddingTest_t;
 }  // namespace OpusTests
+
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSPADDINGTEST_H_

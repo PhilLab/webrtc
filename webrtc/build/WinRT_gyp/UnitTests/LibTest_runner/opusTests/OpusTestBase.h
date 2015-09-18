@@ -8,10 +8,10 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#pragma once
+#ifndef WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSTESTBASE_H_
+#define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSTESTBASE_H_
 
 namespace OpusTests {
-  using namespace LibTest_runner;
 
   //===========================================================================
   //         class: COpusTestBase
@@ -19,10 +19,11 @@ namespace OpusTests {
   // History:
   // 2015/03/10 TP: created
   //===========================================================================
-class COpusTestBase : public CTestBase {
+class COpusTestBase : public LibTest_runner::CTestBase {
  public:
     virtual ~COpusTestBase() {}
     virtual void InterchangeableVerifyResult();
 };
 }  // namespace OpusTests
 
+#endif  // WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_OPUSTESTS_OPUSTESTBASE_H_
