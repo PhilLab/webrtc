@@ -489,7 +489,7 @@ int32_t VideoCaptureWinRT::StartCapture(
     subtype = MediaEncodingSubtypes::Rgb24;
     break;
   case kVideoARGB:
-    subtype = MediaEncodingSubtypes::Rgb24;
+    subtype = MediaEncodingSubtypes::Argb32;
     break;
   case kVideoMJPEG:
     subtype = MediaEncodingSubtypes::Mjpg;
