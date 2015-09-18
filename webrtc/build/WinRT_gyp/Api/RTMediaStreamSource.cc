@@ -195,6 +195,11 @@ void RTMediaStreamSource::OnSampleRequested(
     if (_frame.get() != nullptr) {
       ConvertFrame(mediaBuffer.Get());
     }
+#ifndef _DEBUG
+    else {
+      BlankFrame(mediaBuffer.Get());
+    }
+#endif
 
     hr = spRequest->SetSample(spSample.Get());
     deferral->Complete();
@@ -261,7 +266,12 @@ void RTMediaStreamSource::BlankFrame(IMFMediaBuffer* mediaBuffer) {
     &destRawData, &pitch, &buffer, &destMediaBufferSize))) {
     return;
   }
-  memset(destRawData, 0, destMediaBufferSize);
+  unsigned int planeSize = _videoDesc->EncodingProperties->Width *
+    _videoDesc->EncodingProperties->Height;
+  memset(destRawData, 0, planeSize);
+  destRawData += planeSize;
+  planeSize = destMediaBufferSize - planeSize;
+  memset(destRawData, 128, planeSize);
   imageBuffer->Unlock2D();
 }
 
