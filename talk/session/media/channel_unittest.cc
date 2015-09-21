@@ -35,7 +35,6 @@
 #include "talk/media/base/testutils.h"
 #include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
-#include "talk/session/media/typingmonitor.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
@@ -78,7 +77,8 @@ template<class ChannelT,
          class MediaChannelT,
          class ContentT,
          class CodecT,
-         class MediaInfoT>
+         class MediaInfoT,
+         class OptionsT>
 class Traits {
  public:
   typedef ChannelT Channel;
@@ -86,6 +86,7 @@ class Traits {
   typedef ContentT Content;
   typedef CodecT Codec;
   typedef MediaInfoT MediaInfo;
+  typedef OptionsT Options;
 };
 
 // Controls how long we wait for a session to send messages that we
@@ -96,21 +97,24 @@ class VoiceTraits : public Traits<cricket::VoiceChannel,
                                   cricket::FakeVoiceMediaChannel,
                                   cricket::AudioContentDescription,
                                   cricket::AudioCodec,
-                                  cricket::VoiceMediaInfo> {
+                                  cricket::VoiceMediaInfo,
+                                  cricket::AudioOptions> {
 };
 
 class VideoTraits : public Traits<cricket::VideoChannel,
                                   cricket::FakeVideoMediaChannel,
                                   cricket::VideoContentDescription,
                                   cricket::VideoCodec,
-                                  cricket::VideoMediaInfo> {
+                                  cricket::VideoMediaInfo,
+                                  cricket::VideoOptions> {
 };
 
 class DataTraits : public Traits<cricket::DataChannel,
                                  cricket::FakeDataMediaChannel,
                                  cricket::DataContentDescription,
                                  cricket::DataCodec,
-                                 cricket::DataMediaInfo> {
+                                 cricket::DataMediaInfo,
+                                 cricket::DataOptions> {
 };
 
 
@@ -136,33 +140,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         rtcp_packet_(reinterpret_cast<const char*>(rtcp_data), rtcp_len),
         media_info_callbacks1_(),
         media_info_callbacks2_(),
-        mute_callback_recved_(false),
-        mute_callback_value_(false),
         ssrc_(0),
         error_(T::MediaChannel::ERROR_NONE) {
   }
 
   void CreateChannels(int flags1, int flags2) {
-    CreateChannels(new typename T::MediaChannel(NULL),
-                   new typename T::MediaChannel(NULL),
+    CreateChannels(new typename T::MediaChannel(NULL, typename T::Options()),
+                   new typename T::MediaChannel(NULL, typename T::Options()),
                    flags1, flags2, rtc::Thread::Current());
-  }
-  void CreateChannels(int flags) {
-     CreateChannels(new typename T::MediaChannel(NULL),
-                    new typename T::MediaChannel(NULL),
-                    flags, rtc::Thread::Current());
-  }
-  void CreateChannels(int flags1, int flags2,
-                      rtc::Thread* thread) {
-    CreateChannels(new typename T::MediaChannel(NULL),
-                   new typename T::MediaChannel(NULL),
-                   flags1, flags2, thread);
-  }
-  void CreateChannels(int flags,
-                      rtc::Thread* thread) {
-    CreateChannels(new typename T::MediaChannel(NULL),
-                   new typename T::MediaChannel(NULL),
-                   flags, thread);
   }
   void CreateChannels(
       typename T::MediaChannel* ch1, typename T::MediaChannel* ch2,
@@ -181,8 +166,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         this, &ChannelTest<T>::OnMediaChannelError);
     channel2_->SignalMediaError.connect(
         this, &ChannelTest<T>::OnMediaChannelError);
-    channel1_->SignalAutoMuted.connect(
-        this, &ChannelTest<T>::OnMediaMuted);
     if ((flags1 & DTLS) && (flags2 & DTLS)) {
       flags1 = (flags1 & ~SECURE);
       flags2 = (flags2 & ~SECURE);
@@ -195,12 +178,16 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CopyContent(local_media_content2_, &remote_media_content2_);
 
     if (flags1 & DTLS) {
-      identity1_.reset(rtc::SSLIdentity::Generate("session1"));
-      session1_.set_ssl_identity(identity1_.get());
+      // Confirmed to work with KT_RSA and KT_ECDSA.
+      session1_.set_ssl_rtccertificate(rtc::RTCCertificate::Create(
+          rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
+              "session1", rtc::KT_DEFAULT)).Pass()));
     }
     if (flags2 & DTLS) {
-      identity2_.reset(rtc::SSLIdentity::Generate("session2"));
-      session2_.set_ssl_identity(identity2_.get());
+      // Confirmed to work with KT_RSA and KT_ECDSA.
+      session2_.set_ssl_rtccertificate(rtc::RTCCertificate::Create(
+          rtc::scoped_ptr<rtc::SSLIdentity>(rtc::SSLIdentity::Generate(
+              "session2", rtc::KT_DEFAULT)).Pass()));
     }
 
     // Add stream information (SSRC) to the local content but not to the remote
@@ -217,42 +204,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       AddLegacyStreamInContent(kSsrc2, flags2, &remote_media_content2_);
     }
   }
-
-  void CreateChannels(
-      typename T::MediaChannel* ch1, typename T::MediaChannel* ch2,
-      int flags, rtc::Thread* thread) {
-    media_channel1_ = ch1;
-    media_channel2_ = ch2;
-
-    channel1_.reset(CreateChannel(thread, &media_engine_, ch1, &session1_,
-                                  (flags & RTCP) != 0));
-    channel2_.reset(CreateChannel(thread, &media_engine_, ch2, &session1_,
-                                  (flags & RTCP) != 0));
-    channel1_->SignalMediaMonitor.connect(
-        this, &ChannelTest<T>::OnMediaMonitor);
-    channel2_->SignalMediaMonitor.connect(
-        this, &ChannelTest<T>::OnMediaMonitor);
-    channel2_->SignalMediaError.connect(
-        this, &ChannelTest<T>::OnMediaChannelError);
-    CreateContent(flags, kPcmuCodec, kH264Codec,
-                  &local_media_content1_);
-    CreateContent(flags, kPcmuCodec, kH264Codec,
-                  &local_media_content2_);
-    CopyContent(local_media_content1_, &remote_media_content1_);
-    CopyContent(local_media_content2_, &remote_media_content2_);
-    // Add stream information (SSRC) to the local content but not to the remote
-    // content. This means that we per default know the SSRC of what we send but
-    // not what we receive.
-    AddLegacyStreamInContent(kSsrc1, flags, &local_media_content1_);
-    AddLegacyStreamInContent(kSsrc2, flags, &local_media_content2_);
-
-    // If SSRC_MUX is used we also need to know the SSRC of the incoming stream.
-    if (flags & SSRC_MUX) {
-      AddLegacyStreamInContent(kSsrc1, flags, &remote_media_content1_);
-      AddLegacyStreamInContent(kSsrc2, flags, &remote_media_content2_);
-    }
-  }
-
   typename T::Channel* CreateChannel(rtc::Thread* thread,
                                      cricket::MediaEngineInterface* engine,
                                      typename T::MediaChannel* ch,
@@ -521,11 +472,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                            typename T::MediaChannel::Error error) {
     ssrc_ = ssrc;
     error_ = error;
-  }
-
-  void OnMediaMuted(cricket::BaseChannel* channel, bool muted) {
-    mute_callback_recved_ = true;
-    mute_callback_value_ = muted;
   }
 
   void AddLegacyStreamInContent(uint32 ssrc, int flags,
@@ -900,28 +846,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(media_channel1_->sending());
   }
 
-  void TestMuteStream() {
-    CreateChannels(0, 0);
-    // Test that we can Mute the default channel even though the sending SSRC is
-    // unknown.
-    EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-    EXPECT_TRUE(channel1_->MuteStream(0, true));
-    EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
-    EXPECT_TRUE(channel1_->MuteStream(0, false));
-    EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-
-    // Test that we can not mute an unknown SSRC.
-    EXPECT_FALSE(channel1_->MuteStream(kSsrc1, true));
-
-    SendInitiate();
-    // After the local session description has been set, we can mute a stream
-    // with its SSRC.
-    EXPECT_TRUE(channel1_->MuteStream(kSsrc1, true));
-    EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
-    EXPECT_TRUE(channel1_->MuteStream(kSsrc1, false));
-    EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
-  }
-
   // Test that changing the MediaContentDirection in the local and remote
   // session description start playout and sending at the right time.
   void TestMediaContentDirection() {
@@ -995,7 +919,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestCallTeardownRtcpMux() {
     class LastWordMediaChannel : public T::MediaChannel {
      public:
-      LastWordMediaChannel() : T::MediaChannel(NULL) {}
+      LastWordMediaChannel() : T::MediaChannel(NULL, typename T::Options()) {}
       ~LastWordMediaChannel() {
         T::MediaChannel::SendRtp(kPcmuFrame, sizeof(kPcmuFrame));
         T::MediaChannel::SendRtcp(kRtcpReport, sizeof(kRtcpReport));
@@ -1789,15 +1713,11 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   typename T::Content local_media_content2_;
   typename T::Content remote_media_content1_;
   typename T::Content remote_media_content2_;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity1_;
-  rtc::scoped_ptr<rtc::SSLIdentity> identity2_;
   // The RTP and RTCP packets to send in the tests.
   std::string rtp_packet_;
   std::string rtcp_packet_;
   int media_info_callbacks1_;
   int media_info_callbacks2_;
-  bool mute_callback_recved_;
-  bool mute_callback_value_;
 
   uint32 ssrc_;
   typename T::MediaChannel::Error error_;
@@ -1842,35 +1762,9 @@ void ChannelTest<VoiceTraits>::AddLegacyStreamInContent(
 class VoiceChannelTest
     : public ChannelTest<VoiceTraits> {
  public:
-  typedef ChannelTest<VoiceTraits>
-  Base;
+  typedef ChannelTest<VoiceTraits> Base;
   VoiceChannelTest() : Base(kPcmuFrame, sizeof(kPcmuFrame),
-                            kRtcpReport, sizeof(kRtcpReport)) {
-  }
-
-  void TestSetChannelOptions() {
-    CreateChannels(0, 0);
-
-    cricket::AudioOptions options1;
-    options1.echo_cancellation.Set(false);
-    cricket::AudioOptions options2;
-    options2.echo_cancellation.Set(true);
-
-    channel1_->SetChannelOptions(options1);
-    channel2_->SetChannelOptions(options1);
-    cricket::AudioOptions actual_options;
-    ASSERT_TRUE(media_channel1_->GetOptions(&actual_options));
-    EXPECT_EQ(options1, actual_options);
-    ASSERT_TRUE(media_channel2_->GetOptions(&actual_options));
-    EXPECT_EQ(options1, actual_options);
-
-    channel1_->SetChannelOptions(options2);
-    channel2_->SetChannelOptions(options2);
-    ASSERT_TRUE(media_channel1_->GetOptions(&actual_options));
-    EXPECT_EQ(options2, actual_options);
-    ASSERT_TRUE(media_channel2_->GetOptions(&actual_options));
-    EXPECT_EQ(options2, actual_options);
-  }
+                            kRtcpReport, sizeof(kRtcpReport)) {}
 };
 
 // override to add NULL parameter
@@ -1880,7 +1774,7 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
     cricket::FakeVideoMediaChannel* ch, cricket::BaseSession* session,
     bool rtcp) {
   cricket::VideoChannel* channel = new cricket::VideoChannel(
-      thread, engine, ch, session, cricket::CN_VIDEO, rtcp);
+      thread, ch, session, cricket::CN_VIDEO, rtcp);
   if (!channel->Init()) {
     delete channel;
     channel = NULL;
@@ -1932,33 +1826,9 @@ void ChannelTest<VideoTraits>::AddLegacyStreamInContent(
 class VideoChannelTest
     : public ChannelTest<VideoTraits> {
  public:
-  typedef ChannelTest<VideoTraits>
-  Base;
+  typedef ChannelTest<VideoTraits> Base;
   VideoChannelTest() : Base(kH264Packet, sizeof(kH264Packet),
-                            kRtcpReport, sizeof(kRtcpReport)) {
-  }
-
-  void TestSetChannelOptions() {
-    CreateChannels(0, 0);
-
-    cricket::VideoOptions o1, o2;
-    o1.video_noise_reduction.Set(true);
-
-    channel1_->SetChannelOptions(o1);
-    channel2_->SetChannelOptions(o1);
-    EXPECT_TRUE(media_channel1_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
-    EXPECT_TRUE(media_channel2_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
-
-    o1.video_start_bitrate.Set(123);
-    channel1_->SetChannelOptions(o1);
-    channel2_->SetChannelOptions(o1);
-    EXPECT_TRUE(media_channel1_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
-    EXPECT_TRUE(media_channel2_->GetOptions(&o2));
-    EXPECT_EQ(o1, o2);
-  }
+                            kRtcpReport, sizeof(kRtcpReport)) {}
 };
 
 
@@ -2011,7 +1881,25 @@ TEST_F(VoiceChannelTest, TestPlayoutAndSendingStates) {
 }
 
 TEST_F(VoiceChannelTest, TestMuteStream) {
-  Base::TestMuteStream();
+  CreateChannels(0, 0);
+  // Test that we can Mute the default channel even though the sending SSRC
+  // is unknown.
+  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
+  EXPECT_TRUE(channel1_->SetAudioSend(0, true, nullptr, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
+  EXPECT_TRUE(channel1_->SetAudioSend(0, false, nullptr, nullptr));
+  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
+
+  // Test that we can not mute an unknown SSRC.
+  EXPECT_FALSE(channel1_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
+
+  SendInitiate();
+  // After the local session description has been set, we can mute a stream
+  // with its SSRC.
+  EXPECT_TRUE(channel1_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
+  EXPECT_TRUE(channel1_->SetAudioSend(kSsrc1, false, nullptr, nullptr));
+  EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
 }
 
 TEST_F(VoiceChannelTest, TestMediaContentDirection) {
@@ -2123,45 +2011,6 @@ TEST_F(VoiceChannelTest, SendWithWritabilityLoss) {
 
 TEST_F(VoiceChannelTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
-}
-
-// Test that MuteStream properly forwards to the media channel and does
-// not signal.
-TEST_F(VoiceChannelTest, TestVoiceSpecificMuteStream) {
-  CreateChannels(0, 0);
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_FALSE(mute_callback_recved_);
-  EXPECT_TRUE(channel1_->MuteStream(0, true));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
-  EXPECT_FALSE(mute_callback_recved_);
-  EXPECT_TRUE(channel1_->MuteStream(0, false));
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_FALSE(mute_callback_recved_);
-}
-
-// Test that keyboard automute works correctly and signals upwards.
-TEST_F(VoiceChannelTest, DISABLED_TestKeyboardMute) {
-  CreateChannels(0, 0);
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_EQ(cricket::VoiceMediaChannel::ERROR_NONE, error_);
-
-  cricket::VoiceMediaChannel::Error e =
-      cricket::VoiceMediaChannel::ERROR_REC_TYPING_NOISE_DETECTED;
-
-  // Typing doesn't mute automatically unless typing monitor has been installed
-  media_channel1_->TriggerError(0, e);
-  rtc::Thread::Current()->ProcessMessages(0);
-  EXPECT_EQ(e, error_);
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_FALSE(mute_callback_recved_);
-
-  cricket::TypingMonitorOptions o = {0};
-  o.mute_period = 1500;
-  channel1_->StartTypingMonitor(o);
-  media_channel1_->TriggerError(0, e);
-  rtc::Thread::Current()->ProcessMessages(0);
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(mute_callback_recved_);
 }
 
 // Test that PressDTMF properly forwards to the media channel.
@@ -2361,10 +2210,6 @@ TEST_F(VoiceChannelTest, SendBundleToBundleWithRtcpMuxSecure) {
       kAudioPts, ARRAY_SIZE(kAudioPts), true, true);
 }
 
-TEST_F(VoiceChannelTest, TestSetChannelOptions) {
-  TestSetChannelOptions();
-}
-
 // VideoChannelTest
 TEST_F(VideoChannelTest, TestInit) {
   Base::TestInit();
@@ -2441,7 +2286,23 @@ TEST_F(VideoChannelTest, TestPlayoutAndSendingStates) {
 }
 
 TEST_F(VideoChannelTest, TestMuteStream) {
-  Base::TestMuteStream();
+  CreateChannels(0, 0);
+  // Test that we can Mute the default channel even though the sending SSRC
+  // is unknown.
+  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
+  EXPECT_TRUE(channel1_->SetVideoSend(0, true, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
+  EXPECT_TRUE(channel1_->SetVideoSend(0, false, nullptr));
+  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
+  // Test that we can not mute an unknown SSRC.
+  EXPECT_FALSE(channel1_->SetVideoSend(kSsrc1, true, nullptr));
+  SendInitiate();
+  // After the local session description has been set, we can mute a stream
+  // with its SSRC.
+  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, true, nullptr));
+  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
+  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, false, nullptr));
+  EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
 }
 
 TEST_F(VideoChannelTest, TestMediaContentDirection) {
@@ -2669,10 +2530,6 @@ TEST_F(VideoChannelTest, TestApplyViewRequest) {
   EXPECT_TRUE(media_channel1_->GetSendStreamFormat(kSsrc1, &send_format));
   EXPECT_EQ(0, send_format.width);
   EXPECT_EQ(0, send_format.height);
-}
-
-TEST_F(VideoChannelTest, TestSetChannelOptions) {
-  TestSetChannelOptions();
 }
 
 

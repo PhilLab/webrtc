@@ -38,11 +38,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public VideoRenderCallback {
  public:
   VideoReceiveStream(int num_cpu_cores,
-                     int base_channel_id,
                      ChannelGroup* channel_group,
                      int channel_id,
                      const VideoReceiveStream::Config& config,
-                     newapi::Transport* transport,
                      webrtc::VoiceEngine* voice_engine);
   ~VideoReceiveStream() override;
 
@@ -51,7 +49,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void Stop() override;
   void SignalNetworkState(NetworkState state) override;
   bool DeliverRtcp(const uint8_t* packet, size_t length) override;
-  bool DeliverRtp(const uint8_t* packet, size_t length) override;
+  bool DeliverRtp(const uint8_t* packet,
+                  size_t length,
+                  const PacketTime& packet_time) override;
 
   // webrtc::VideoReceiveStream implementation.
   webrtc::VideoReceiveStream::Stats GetStats() const override;

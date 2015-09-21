@@ -35,39 +35,39 @@ class TransportChannelProxy : public TransportChannel,
  public:
   TransportChannelProxy(const std::string& content_name,
                         int component);
-  virtual ~TransportChannelProxy();
+  ~TransportChannelProxy() override;
 
   TransportChannelImpl* impl() { return impl_; }
 
-  virtual TransportChannelState GetState() const;
+  TransportChannelState GetState() const override;
 
   // Sets the implementation to which we will proxy.
   void SetImplementation(TransportChannelImpl* impl);
 
   // Implementation of the TransportChannel interface.  These simply forward to
   // the implementation.
-  virtual int SendPacket(const char* data, size_t len,
-                         const rtc::PacketOptions& options,
-                         int flags);
-  virtual int SetOption(rtc::Socket::Option opt, int value);
-  virtual bool GetOption(rtc::Socket::Option opt, int* value);
-  virtual int GetError();
+  int SendPacket(const char* data, size_t len,
+                 const rtc::PacketOptions& options,
+                 int flags) override;
+  int SetOption(rtc::Socket::Option opt, int value) override;
+  bool GetOption(rtc::Socket::Option opt, int* value) override;
+  int GetError() override;
   virtual IceRole GetIceRole() const;
-  virtual bool GetStats(ConnectionInfos* infos);
-  virtual bool IsDtlsActive() const;
-  virtual bool GetSslRole(rtc::SSLRole* role) const;
+  bool GetStats(ConnectionInfos* infos) override;
+  bool IsDtlsActive() const override;
+  bool GetSslRole(rtc::SSLRole* role) const override;
   virtual bool SetSslRole(rtc::SSLRole role);
-  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers);
-  virtual bool GetSrtpCipher(std::string* cipher);
-  virtual bool GetSslCipher(std::string* cipher);
-  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const;
-  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const;
-  virtual bool ExportKeyingMaterial(const std::string& label,
+  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override;
+  bool GetSrtpCipher(std::string* cipher) override;
+  bool GetSslCipher(std::string* cipher) override;
+  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
+  bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const override;
+  bool ExportKeyingMaterial(const std::string& label,
                             const uint8* context,
                             size_t context_len,
                             bool use_context,
                             uint8* result,
-                            size_t result_len);
+                            size_t result_len) override;
 
  private:
   // Catch signals from the implementation channel.  These just forward to the
@@ -79,7 +79,7 @@ class TransportChannelProxy : public TransportChannel,
   void OnReadyToSend(TransportChannel* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
 
-  void OnMessage(rtc::Message* message);
+  void OnMessage(rtc::Message* message) override;
 
   typedef std::pair<rtc::Socket::Option, int> OptionPair;
   typedef std::vector<OptionPair> OptionList;
@@ -88,7 +88,7 @@ class TransportChannelProxy : public TransportChannel,
   OptionList options_;
   std::vector<std::string> pending_srtp_ciphers_;
 
-  DISALLOW_COPY_AND_ASSIGN(TransportChannelProxy);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelProxy);
 };
 
 }  // namespace cricket

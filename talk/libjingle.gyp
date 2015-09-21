@@ -111,16 +111,20 @@
           'type': 'none',
           'actions': [
             {
+              # TODO(jiayl): extract peerconnection_java_files and android_java_files into a webrtc
+              # gyp var that can be included here, or better yet, build a proper .jar in webrtc
+              # and include it here.
               'variables': {
                 'java_src_dir': 'app/webrtc/java/src',
+                'webrtc_base_dir': '<(webrtc_root)/base',
                 'webrtc_modules_dir': '<(webrtc_root)/modules',
                 'build_jar_log': '<(INTERMEDIATE_DIR)/build_jar.log',
                 'peerconnection_java_files': [
                   'app/webrtc/java/src/org/webrtc/AudioSource.java',
                   'app/webrtc/java/src/org/webrtc/AudioTrack.java',
+                  'app/webrtc/java/src/org/webrtc/CallSessionFileRotatingLogSink.java',
                   'app/webrtc/java/src/org/webrtc/DataChannel.java',
                   'app/webrtc/java/src/org/webrtc/IceCandidate.java',
-                  'app/webrtc/java/src/org/webrtc/Logging.java',
                   'app/webrtc/java/src/org/webrtc/MediaConstraints.java',
                   'app/webrtc/java/src/org/webrtc/MediaSource.java',
                   'app/webrtc/java/src/org/webrtc/MediaStream.java',
@@ -135,19 +139,24 @@
                   'app/webrtc/java/src/org/webrtc/VideoRenderer.java',
                   'app/webrtc/java/src/org/webrtc/VideoSource.java',
                   'app/webrtc/java/src/org/webrtc/VideoTrack.java',
+                  '<(webrtc_base_dir)/java/src/org/webrtc/Logging.java',
                 ],
-                # TODO(fischman): extract this into a webrtc gyp var that can be
-                # included here, or better yet, build a proper .jar in webrtc
-                # and include it here.
                 'android_java_files': [
+                  'app/webrtc/java/android/org/webrtc/Camera2Enumerator.java',
+                  'app/webrtc/java/android/org/webrtc/CameraEnumerationAndroid.java',
+                  'app/webrtc/java/android/org/webrtc/CameraEnumerator.java',
                   'app/webrtc/java/android/org/webrtc/EglBase.java',
                   'app/webrtc/java/android/org/webrtc/GlRectDrawer.java',
                   'app/webrtc/java/android/org/webrtc/GlShader.java',
                   'app/webrtc/java/android/org/webrtc/GlUtil.java',
+                  'app/webrtc/java/android/org/webrtc/GlTextureFrameBuffer.java',
+                  'app/webrtc/java/android/org/webrtc/RendererCommon.java',
+                  'app/webrtc/java/android/org/webrtc/SurfaceTextureHelper.java',
+                  'app/webrtc/java/android/org/webrtc/SurfaceViewRenderer.java',
+                  'app/webrtc/java/android/org/webrtc/VideoCapturerAndroid.java',
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
-                  'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',
-                  'app/webrtc/java/src/org/webrtc/VideoCapturerAndroid.java',
+                  'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViEAndroidGLES20.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViERenderer.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViESurfaceRenderer.java',
@@ -212,11 +221,12 @@
           ],
           'variables': {
             'java_in_dir': 'app/webrtc/java',
+            'webrtc_base_dir': '<(webrtc_root)/base',
             'webrtc_modules_dir': '<(webrtc_root)/modules',
             'additional_src_dirs' : [
               'app/webrtc/java/android',
+              '<(webrtc_base_dir)/java/src',
               '<(webrtc_modules_dir)/audio_device/android/java/src',
-              '<(webrtc_modules_dir)/video_capture/android/java/src',
               '<(webrtc_modules_dir)/video_render/android/java/src',
             ],
           },
@@ -247,6 +257,7 @@
             'app/webrtc/objc/RTCICECandidate.mm',
             'app/webrtc/objc/RTCICEServer+Internal.h',
             'app/webrtc/objc/RTCICEServer.mm',
+            'app/webrtc/objc/RTCLogging.mm',
             'app/webrtc/objc/RTCMediaConstraints+Internal.h',
             'app/webrtc/objc/RTCMediaConstraints.mm',
             'app/webrtc/objc/RTCMediaConstraintsNative.cc',
@@ -285,6 +296,7 @@
             'app/webrtc/objc/public/RTCI420Frame.h',
             'app/webrtc/objc/public/RTCICECandidate.h',
             'app/webrtc/objc/public/RTCICEServer.h',
+            'app/webrtc/objc/public/RTCLogging.h',
             'app/webrtc/objc/public/RTCMediaConstraints.h',
             'app/webrtc/objc/public/RTCMediaSource.h',
             'app/webrtc/objc/public/RTCMediaStream.h',
@@ -466,7 +478,6 @@
         'media/base/videoframe.h',
         'media/base/videoframefactory.cc',
         'media/base/videoframefactory.h',
-        'media/base/videoprocessor.h',
         'media/base/videorenderer.h',
         'media/base/voiceprocessor.h',
         'media/base/yuvframegenerator.cc',
@@ -488,8 +499,6 @@
         'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcmediaengine.h',
         'media/webrtc/webrtcmediaengine.cc',
-        'media/webrtc/webrtcpassthroughrender.cc',
-        'media/webrtc/webrtcpassthroughrender.h',
         'media/webrtc/webrtcvideocapturer.cc',
         'media/webrtc/webrtcvideocapturer.h',
         'media/webrtc/webrtcvideocapturerfactory.h',
@@ -557,8 +566,6 @@
           ],
           'libraries': [
             '-lrt',
-            '-lXext',
-            '-lX11',
           ],
         }],
         ['OS=="win" and OS_RUNTIME=="winrt"', {
@@ -699,8 +706,6 @@
         'session/media/rtcpmuxfilter.h',
         'session/media/srtpfilter.cc',
         'session/media/srtpfilter.h',
-        'session/media/typingmonitor.cc',
-        'session/media/typingmonitor.h',
         'session/media/voicechannel.h',
       ],
     },  # target libjingle_p2p
@@ -720,8 +725,6 @@
         'app/webrtc/datachannel.cc',
         'app/webrtc/datachannel.h',
         'app/webrtc/datachannelinterface.h',
-        'app/webrtc/dtlsidentityservice.cc',
-        'app/webrtc/dtlsidentityservice.h',
         'app/webrtc/dtlsidentitystore.cc',
         'app/webrtc/dtlsidentitystore.h',
         'app/webrtc/dtmfsender.cc',
@@ -737,6 +740,8 @@
         'app/webrtc/localaudiosource.h',
         'app/webrtc/mediaconstraintsinterface.cc',
         'app/webrtc/mediaconstraintsinterface.h',
+        'app/webrtc/mediacontroller.cc',
+        'app/webrtc/mediacontroller.h',
         'app/webrtc/mediastream.cc',
         'app/webrtc/mediastream.h',
         'app/webrtc/mediastreamhandler.cc',

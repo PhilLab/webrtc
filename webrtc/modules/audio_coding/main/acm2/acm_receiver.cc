@@ -15,6 +15,7 @@
 #include <algorithm>  // sort
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
@@ -344,7 +345,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
 int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   enum NetEqOutputType type;
-  int samples_per_channel;
+  size_t samples_per_channel;
   int num_channels;
   bool return_silence = false;
 
@@ -394,7 +395,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   }
 
   // NetEq always returns 10 ms of audio.
-  current_sample_rate_hz_ = samples_per_channel * 100;
+  current_sample_rate_hz_ = static_cast<int>(samples_per_channel * 100);
 
   // Update if resampling is required.
   bool need_resampling = (desired_freq_hz != -1) &&
@@ -403,18 +404,19 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   if (need_resampling && !resampled_last_output_frame_) {
     // Prime the resampler with the last frame.
     int16_t temp_output[AudioFrame::kMaxDataSizeSamples];
-    samples_per_channel =
+    int samples_per_channel_int =
         resampler_.Resample10Msec(last_audio_buffer_.get(),
                                   current_sample_rate_hz_,
                                   desired_freq_hz,
                                   num_channels,
                                   AudioFrame::kMaxDataSizeSamples,
                                   temp_output);
-    if (samples_per_channel < 0) {
+    if (samples_per_channel_int < 0) {
       LOG(LERROR) << "AcmReceiver::GetAudio - "
                      "Resampling last_audio_buffer_ failed.";
       return -1;
     }
+    samples_per_channel = static_cast<size_t>(samples_per_channel_int);
   }
 
   // The audio in |audio_buffer_| is tansferred to |audio_frame_| below, either
@@ -422,17 +424,18 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   // TODO(henrik.lundin) Glitches in the output may appear if the output rate
   // from NetEq changes. See WebRTC issue 3923.
   if (need_resampling) {
-    samples_per_channel =
+    int samples_per_channel_int =
         resampler_.Resample10Msec(audio_buffer_.get(),
                                   current_sample_rate_hz_,
                                   desired_freq_hz,
                                   num_channels,
                                   AudioFrame::kMaxDataSizeSamples,
                                   audio_frame->data_);
-    if (samples_per_channel < 0) {
+    if (samples_per_channel_int < 0) {
       LOG(LERROR) << "AcmReceiver::GetAudio - Resampling audio_buffer_ failed.";
       return -1;
     }
+    samples_per_channel = static_cast<size_t>(samples_per_channel_int);
     resampled_last_output_frame_ = true;
   } else {
     resampled_last_output_frame_ = false;
@@ -448,7 +451,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
 
   audio_frame->num_channels_ = num_channels;
   audio_frame->samples_per_channel_ = samples_per_channel;
-  audio_frame->sample_rate_hz_ = samples_per_channel * 100;
+  audio_frame->sample_rate_hz_ = static_cast<int>(samples_per_channel * 100);
 
   // Should set |vad_activity| before calling SetAudioFrameActivityAndType().
   audio_frame->vad_activity_ = previous_audio_activity_;
@@ -476,8 +479,10 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               int channels,
                               int sample_rate_hz,
                               AudioDecoder* audio_decoder) {
-  assert(acm_codec_id >= 0);
-  NetEqDecoder neteq_decoder = ACMCodecDB::neteq_decoders_[acm_codec_id];
+  assert(acm_codec_id >= -1);  // -1 means external decoder
+  NetEqDecoder neteq_decoder = (acm_codec_id == -1)
+                                   ? kDecoderArbitrary
+                                   : ACMCodecDB::neteq_decoders_[acm_codec_id];
 
   // Make sure the right decoder is registered for Opus.
   if (neteq_decoder == kDecoderOpus && channels == 2) {
@@ -491,14 +496,15 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   auto it = decoders_.find(payload_type);
   if (it != decoders_.end()) {
     const Decoder& decoder = it->second;
-    if (decoder.acm_codec_id == acm_codec_id && decoder.channels == channels &&
+    if (acm_codec_id != -1 && decoder.acm_codec_id == acm_codec_id &&
+        decoder.channels == channels &&
         decoder.sample_rate_hz == sample_rate_hz) {
       // Re-registering the same codec. Do nothing and return.
       return 0;
     }
 
-    // Changing codec or number of channels. First unregister the old codec,
-    // then register the new one.
+    // Changing codec. First unregister the old codec, then register the new
+    // one.
     if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
       LOG(LERROR) << "Cannot remove payload " << static_cast<int>(payload_type);
       return -1;
@@ -647,31 +653,10 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   acm_stat->currentSecondaryDecodedRate = neteq_stat.secondary_decoded_rate;
   acm_stat->clockDriftPPM = neteq_stat.clockdrift_ppm;
   acm_stat->addedSamples = neteq_stat.added_zero_samples;
-
-  std::vector<int> waiting_times;
-  neteq_->WaitingTimes(&waiting_times);
-  size_t size = waiting_times.size();
-  if (size == 0) {
-    acm_stat->meanWaitingTimeMs = -1;
-    acm_stat->medianWaitingTimeMs = -1;
-    acm_stat->minWaitingTimeMs = -1;
-    acm_stat->maxWaitingTimeMs = -1;
-  } else {
-    std::sort(waiting_times.begin(), waiting_times.end());
-    if ((size & 0x1) == 0) {
-      acm_stat->medianWaitingTimeMs = (waiting_times[size / 2 - 1] +
-          waiting_times[size / 2]) / 2;
-    } else {
-      acm_stat->medianWaitingTimeMs = waiting_times[size / 2];
-    }
-    acm_stat->minWaitingTimeMs = waiting_times.front();
-    acm_stat->maxWaitingTimeMs = waiting_times.back();
-    double sum = 0;
-    for (size_t i = 0; i < size; ++i) {
-      sum += waiting_times[i];
-    }
-    acm_stat->meanWaitingTimeMs = static_cast<int>(sum / size);
-  }
+  acm_stat->meanWaitingTimeMs = neteq_stat.mean_waiting_time_ms;
+  acm_stat->medianWaitingTimeMs = neteq_stat.median_waiting_time_ms;
+  acm_stat->minWaitingTimeMs = neteq_stat.min_waiting_time_ms;
+  acm_stat->maxWaitingTimeMs = neteq_stat.max_waiting_time_ms;
 }
 
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
@@ -784,10 +769,11 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
     frame->sample_rate_hz_ = current_sample_rate_hz_;
   }
 
-  frame->samples_per_channel_ = frame->sample_rate_hz_ / 100;  // Always 10 ms.
+  frame->samples_per_channel_ =
+      static_cast<size_t>(frame->sample_rate_hz_ / 100);  // Always 10 ms.
   frame->speech_type_ = AudioFrame::kCNG;
   frame->vad_activity_ = AudioFrame::kVadPassive;
-  int samples = frame->samples_per_channel_ * frame->num_channels_;
+  size_t samples = frame->samples_per_channel_ * frame->num_channels_;
   memset(frame->data_, 0, samples * sizeof(int16_t));
   return true;
 }

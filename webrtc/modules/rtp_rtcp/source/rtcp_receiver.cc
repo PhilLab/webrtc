@@ -30,7 +30,6 @@ using namespace RTCPHelp;
 const int kRrTimeoutIntervals = 3;
 
 RTCPReceiver::RTCPReceiver(
-    int32_t id,
     Clock* clock,
     bool receiver_only,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,
@@ -295,7 +294,7 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
             HandleSenderReceiverReport(*rtcpParser, rtcpPacketInformation);
             break;
           case RTCPPacketTypes::kSdes:
-            HandleSDES(*rtcpParser);
+            HandleSDES(*rtcpParser, rtcpPacketInformation);
             break;
           case RTCPPacketTypes::kXrHeader:
             HandleXrHeader(*rtcpParser, rtcpPacketInformation);
@@ -754,12 +753,14 @@ int32_t RTCPReceiver::BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec) {
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void RTCPReceiver::HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser) {
+void RTCPReceiver::HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser,
+                              RTCPPacketInformation& rtcpPacketInformation) {
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kSdesChunk) {
     HandleSDESChunk(rtcpParser);
     pktType = rtcpParser.Iterate();
   }
+  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpSdes;
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -1337,7 +1338,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     // report can generate several RTCP packets, based on number relayed/mixed
     // a send report block should go out to all receivers.
     if (_cbRtcpIntraFrameObserver) {
-      DCHECK(!receiver_only_);
+      RTC_DCHECK(!receiver_only_);
       if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) ||
           (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpFir)) {
         if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) {
@@ -1359,7 +1360,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       }
     }
     if (_cbRtcpBandwidthObserver) {
-      DCHECK(!receiver_only_);
+      RTC_DCHECK(!receiver_only_);
       if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb) {
         LOG(LS_VERBOSE) << "Incoming REMB: "
                         << rtcpPacketInformation.receiverEstimatedMaxBitrate;

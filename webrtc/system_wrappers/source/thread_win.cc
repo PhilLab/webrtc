@@ -36,12 +36,12 @@ ThreadWindows::ThreadWindows(ThreadRunFunction func, void* obj,
       stop_(false),
       thread_(NULL),
       name_(thread_name ? thread_name : "webrtc") {
-  DCHECK(func);
+  RTC_DCHECK(func);
 }
 
 ThreadWindows::~ThreadWindows() {
-  DCHECK(main_thread_.CalledOnValidThread());
-  DCHECK(!thread_);
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(!thread_);
 }
 
 // static
@@ -56,8 +56,8 @@ DWORD WINAPI ThreadWindows::StartThread(void* param) {
 }
 
 bool ThreadWindows::Start() {
-  DCHECK(main_thread_.CalledOnValidThread());
-  DCHECK(!thread_);
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(!thread_);
 
   stop_ = false;
 
@@ -67,8 +67,8 @@ bool ThreadWindows::Start() {
   DWORD thread_id;
   thread_ = ::CreateThread(NULL, 1024 * 1024, &StartThread, this,
       STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id);
-  if (!thread_) {
-    DCHECK(false) << "CreateThread failed";
+  if (!thread_ ) {
+    RTC_DCHECK(false) << "CreateThread failed";
     return false;
   }
 
@@ -76,7 +76,7 @@ bool ThreadWindows::Start() {
 }
 
 bool ThreadWindows::Stop() {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   if (thread_) {
 #if defined(WINRT)
     // TODO (WINRT): QueueUserAPC alternative.
@@ -94,7 +94,7 @@ bool ThreadWindows::Stop() {
 }
 
 bool ThreadWindows::SetPriority(ThreadPriority priority) {
-  DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(main_thread_.CalledOnValidThread());
   return thread_ && SetThreadPriority(thread_, priority);
 }
 

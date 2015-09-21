@@ -35,7 +35,7 @@ namespace webrtc {
 //
 // An instance must be created and destroyed on one and the same thread.
 // All public methods must also be called on the same thread. A thread checker
-// will DCHECK if any method is called on an invalid thread.
+// will RTC_DCHECK if any method is called on an invalid thread.
 //
 // This class uses AttachCurrentThreadIfNeeded to attach to a Java VM if needed
 // and detach when the object goes out of scope. Additional thread checking
@@ -135,13 +135,13 @@ class AudioRecordJni {
   void* direct_buffer_address_;
 
   // Number of bytes in the direct audio buffer owned by |j_audio_record_|.
-  int direct_buffer_capacity_in_bytes_;
+  size_t direct_buffer_capacity_in_bytes_;
 
   // Number audio frames per audio buffer. Each audio frame corresponds to
   // one sample of PCM mono data at 16 bits per sample. Hence, each audio
   // frame contains 2 bytes (given that the Java layer only supports mono).
   // Example: 480 for 48000 Hz or 441 for 44100 Hz.
-  int frames_per_buffer_;
+  size_t frames_per_buffer_;
 
   bool initialized_;
 

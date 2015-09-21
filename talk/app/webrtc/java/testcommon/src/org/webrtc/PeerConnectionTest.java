@@ -38,6 +38,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
@@ -72,7 +73,7 @@ public class PeerConnectionTest {
         new LinkedList<String>();
     private LinkedList<String> expectedRemoveStreamLabels =
         new LinkedList<String>();
-    public LinkedList<IceCandidate> gotIceCandidates =
+    private final LinkedList<IceCandidate> gotIceCandidates =
         new LinkedList<IceCandidate>();
     private Map<MediaStream, WeakReference<VideoRenderer>> renderers =
         new IdentityHashMap<MediaStream, WeakReference<VideoRenderer>>();
@@ -109,7 +110,10 @@ public class PeerConnectionTest {
       // We don't assert expectedIceCandidates >= 0 because it's hard to know
       // how many to expect, in general.  We only use expectIceCandidates to
       // assert a minimal count.
-      gotIceCandidates.add(candidate);
+      synchronized (gotIceCandidates) {
+        gotIceCandidates.add(candidate);
+        gotIceCandidates.notifyAll();
+      }
     }
 
     private synchronized void setSize(int width, int height) {
@@ -134,14 +138,9 @@ public class PeerConnectionTest {
 
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
-      setSize(frame.width, frame.height);
+      setSize(frame.rotatedWidth(), frame.rotatedHeight());
       --expectedFramesDelivered;
-    }
-
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return false;
+      VideoRenderer.renderFrameDone(frame);
     }
 
     public synchronized void expectSignalingChange(SignalingState newState) {
@@ -381,6 +380,17 @@ public class PeerConnectionTest {
                            (new Throwable()).getStackTrace()[1]);
       }
     }
+
+    // This methods return a list of all currently gathered ice candidates or waits until
+    // 1 candidate have been gathered.
+    public List<IceCandidate> getAtLeastOneIceCandidate() throws InterruptedException {
+      synchronized (gotIceCandidates) {
+        while (gotIceCandidates.isEmpty()) {
+          gotIceCandidates.wait();
+        }
+        return new LinkedList<IceCandidate>(gotIceCandidates);
+      }
+    }
   }
 
   private static class SdpObserverLatch implements SdpObserver {
@@ -437,30 +447,6 @@ public class PeerConnectionTest {
   }
 
   static int videoWindowsMapped = -1;
-
-  private static class TestRenderer implements VideoRenderer.Callbacks {
-    public int width = -1;
-    public int height = -1;
-    public int numFramesDelivered = 0;
-
-    private void setSize(int width, int height) {
-      assertEquals(this.width, -1);
-      assertEquals(this.height, -1);
-      this.width = width;
-      this.height = height;
-    }
-
-    @Override
-    public void renderFrame(VideoRenderer.I420Frame frame) {
-      ++numFramesDelivered;
-    }
-
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return false;
-    }
-  }
 
   private static VideoRenderer createVideoRenderer(
       VideoRenderer.Callbacks videoCallbacks) {
@@ -663,14 +649,17 @@ public class PeerConnectionTest {
     answeringExpectations.expectDataChannel("offeringDC");
     answeringExpectations.expectStateChange(DataChannel.State.OPEN);
 
-    for (IceCandidate candidate : offeringExpectations.gotIceCandidates) {
+    // Wait for at least one ice candidate from the offering PC and forward them to the answering
+    // PC.
+    for (IceCandidate candidate : offeringExpectations.getAtLeastOneIceCandidate()) {
       answeringPC.addIceCandidate(candidate);
     }
-    offeringExpectations.gotIceCandidates.clear();
-    for (IceCandidate candidate : answeringExpectations.gotIceCandidates) {
+
+    // Wait for at least one ice candidate from the answering PC and forward them to the offering
+    // PC.
+    for (IceCandidate candidate : answeringExpectations.getAtLeastOneIceCandidate()) {
       offeringPC.addIceCandidate(candidate);
     }
-    answeringExpectations.gotIceCandidates.clear();
 
     offeringExpectations.waitForAllExpectationsToBeSatisfied();
     answeringExpectations.waitForAllExpectationsToBeSatisfied();

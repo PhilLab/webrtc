@@ -57,6 +57,11 @@ using cricket::MediaContentDescription;
 using cricket::SessionDescription;
 using cricket::TransportInfo;
 
+using cricket::LOCAL_PORT_TYPE;
+using cricket::STUN_PORT_TYPE;
+using cricket::RELAY_PORT_TYPE;
+using cricket::PRFLX_PORT_TYPE;
+
 namespace webrtc {
 
 // Error messages
@@ -82,6 +87,63 @@ const char kDtlsSetupFailureRtp[] =
 const char kDtlsSetupFailureRtcp[] =
     "Couldn't set up DTLS-SRTP on RTCP channel.";
 const int kMaxUnsignalledRecvStreams = 20;
+
+IceCandidatePairType GetIceCandidatePairCounter(
+    const cricket::Candidate& local,
+    const cricket::Candidate& remote) {
+  const auto& l = local.type();
+  const auto& r = remote.type();
+  const auto& host = LOCAL_PORT_TYPE;
+  const auto& srflx = STUN_PORT_TYPE;
+  const auto& relay = RELAY_PORT_TYPE;
+  const auto& prflx = PRFLX_PORT_TYPE;
+  if (l == host && r == host) {
+    bool local_private = IPIsPrivate(local.address().ipaddr());
+    bool remote_private = IPIsPrivate(remote.address().ipaddr());
+    if (local_private) {
+      if (remote_private) {
+        return kIceCandidatePairHostPrivateHostPrivate;
+      } else {
+        return kIceCandidatePairHostPrivateHostPublic;
+      }
+    } else {
+      if (remote_private) {
+        return kIceCandidatePairHostPublicHostPrivate;
+      } else {
+        return kIceCandidatePairHostPublicHostPublic;
+      }
+    }
+  }
+  if (l == host && r == srflx)
+    return kIceCandidatePairHostSrflx;
+  if (l == host && r == relay)
+    return kIceCandidatePairHostRelay;
+  if (l == host && r == prflx)
+    return kIceCandidatePairHostPrflx;
+  if (l == srflx && r == host)
+    return kIceCandidatePairSrflxHost;
+  if (l == srflx && r == srflx)
+    return kIceCandidatePairSrflxSrflx;
+  if (l == srflx && r == relay)
+    return kIceCandidatePairSrflxRelay;
+  if (l == srflx && r == prflx)
+    return kIceCandidatePairSrflxPrflx;
+  if (l == relay && r == host)
+    return kIceCandidatePairRelayHost;
+  if (l == relay && r == srflx)
+    return kIceCandidatePairRelaySrflx;
+  if (l == relay && r == relay)
+    return kIceCandidatePairRelayRelay;
+  if (l == relay && r == prflx)
+    return kIceCandidatePairRelayPrflx;
+  if (l == prflx && r == host)
+    return kIceCandidatePairPrflxHost;
+  if (l == prflx && r == srflx)
+    return kIceCandidatePairPrflxSrflx;
+  if (l == prflx && r == relay)
+    return kIceCandidatePairPrflxRelay;
+  return kIceCandidatePairMax;
+}
 
 // Compares |answer| against |offer|. Comparision is done
 // for number of m-lines in answer against offer. If matches true will be
@@ -432,11 +494,10 @@ class IceRestartAnswerLatch {
     }
   }
 
-  void CheckForRemoteIceRestart(
-      const SessionDescriptionInterface* old_desc,
-      const SessionDescriptionInterface* new_desc) {
+  bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
+                                const SessionDescriptionInterface* new_desc) {
     if (!old_desc || new_desc->type() != SessionDescriptionInterface::kOffer) {
-      return;
+      return false;
     }
     const SessionDescription* new_sd = new_desc->description();
     const SessionDescription* old_sd = old_desc->description();
@@ -462,9 +523,10 @@ class IceRestartAnswerLatch {
                                          new_transport_desc->ice_pwd)) {
         LOG(LS_INFO) << "Remote peer request ice restart.";
         ice_restart_ = true;
-        break;
+        return true;
       }
     }
+    return false;
   }
 
  private:
@@ -508,7 +570,7 @@ WebRtcSession::~WebRtcSession() {
   }
   if (voice_channel_) {
     SignalVoiceChannelDestroyed();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release(), nullptr);
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
   }
   if (data_channel_) {
     SignalDataChannelDestroyed();
@@ -517,17 +579,28 @@ WebRtcSession::~WebRtcSession() {
   for (size_t i = 0; i < saved_candidates_.size(); ++i) {
     delete saved_candidates_[i];
   }
-  delete identity();
 }
 
 bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface*  constraints,
-    DTLSIdentityServiceInterface* dtls_identity_service,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
   SetSslMaxProtocolVersion(options.ssl_max_version);
+
+  // Obtain a certificate from RTCConfiguration if any were provided (optional).
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate;
+  if (!rtc_configuration.certificates.empty()) {
+    // TODO(hbos,torbjorng): Decide on certificate-selection strategy instead of
+    // just picking the first one. The decision should be made based on the DTLS
+    // handshake. The DTLS negotiations need to know about all certificates.
+    certificate = rtc_configuration.certificates[0];
+  }
+
+  SetIceConnectionReceivingTimeout(
+      rtc_configuration.ice_connection_receiving_timeout);
 
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
@@ -537,13 +610,13 @@ bool WebRtcSession::Initialize(
   if (options.disable_encryption) {
     dtls_enabled_ = false;
   } else {
-    // Enable DTLS by default if |dtls_identity_service| is valid.
-    dtls_enabled_ = (dtls_identity_service != NULL);
+    // Enable DTLS by default if we have an identity store or a certificate.
+    dtls_enabled_ = (dtls_identity_store || certificate);
     // |constraints| can override the default |dtls_enabled_| value.
     if (FindConstraint(
           constraints,
           MediaConstraintsInterface::kEnableDtlsSrtp,
-          &value, NULL)) {
+          &value, nullptr)) {
       dtls_enabled_ = value;
     }
   }
@@ -660,24 +733,59 @@ bool WebRtcSession::Initialize(
   channel_manager_->SetDefaultVideoEncoderConfig(
       cricket::VideoEncoderConfig(default_codec));
 
-  webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-      signaling_thread(),
-      channel_manager_,
-      mediastream_signaling_,
-      dtls_identity_service,
-      this,
-      id(),
-      data_channel_type_,
-      dtls_enabled_));
+  if (!dtls_enabled_) {
+    // Construct with DTLS disabled.
+    webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+        signaling_thread(),
+        channel_manager_,
+        mediastream_signaling_,
+        this,
+        id(),
+        data_channel_type_));
+  } else {
+    // Construct with DTLS enabled.
+    if (!certificate) {
+      // Use the |dtls_identity_store| to generate a certificate.
+      RTC_DCHECK(dtls_identity_store);
+      webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+          signaling_thread(),
+          channel_manager_,
+          mediastream_signaling_,
+          dtls_identity_store.Pass(),
+          this,
+          id(),
+          data_channel_type_));
+    } else {
+      // Use the already generated certificate.
+      webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
+          signaling_thread(),
+          channel_manager_,
+          mediastream_signaling_,
+          certificate,
+          this,
+          id(),
+          data_channel_type_));
+    }
+  }
 
-  webrtc_session_desc_factory_->SignalIdentityReady.connect(
-      this, &WebRtcSession::OnIdentityReady);
+  webrtc_session_desc_factory_->SignalCertificateReady.connect(
+      this, &WebRtcSession::OnCertificateReady);
 
   if (options.disable_encryption) {
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
   port_allocator()->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(rtc_configuration.type));
+
+  if (rtc_configuration.enable_localhost_ice_candidate) {
+    port_allocator()->set_flags(
+        port_allocator()->flags() |
+        cricket::PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
+  }
+
+  media_controller_.reset(MediaControllerInterface::Create(
+      worker_thread(), channel_manager_->media_engine()->GetVoE()));
+
   return true;
 }
 
@@ -838,13 +946,19 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
 
   // Copy all saved candidates.
   CopySavedCandidates(desc);
-  // We retain all received candidates.
-  WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
-      remote_desc_.get(), desc);
+
   // Check if this new SessionDescription contains new ice ufrag and password
   // that indicates the remote peer requests ice restart.
-  ice_restart_latch_->CheckForRemoteIceRestart(remote_desc_.get(),
-                                               desc);
+  bool ice_restart =
+      ice_restart_latch_->CheckForRemoteIceRestart(remote_desc_.get(), desc);
+  // We retain all received candidates only if ICE is not restarted.
+  // When ICE is restarted, all previous candidates belong to an old generation
+  // and should not be kept.
+  if (!ice_restart) {
+    WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
+        remote_desc_.get(), desc);
+  }
+
   remote_desc_.reset(desc_temp.release());
 
   rtc::SSLRole role;
@@ -1071,20 +1185,9 @@ void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
     LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
     return;
   }
-  if (!voice_channel_->SetLocalRenderer(ssrc, renderer)) {
-    // SetRenderer() can fail if the ssrc does not match any send channel.
+  if (!voice_channel_->SetAudioSend(ssrc, !enable, &options, renderer)) {
     LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc;
-    return;
   }
-  if (!voice_channel_->MuteStream(ssrc, !enable)) {
-    // Allow that MuteStream fail if |enable| is false but assert otherwise.
-    // This in the normal case when the underlying media channel has already
-    // been deleted.
-    ASSERT(enable == false);
-    return;
-  }
-  if (enable)
-    voice_channel_->SetChannelOptions(options);
 }
 
 void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
@@ -1095,8 +1198,9 @@ void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
     return;
   }
 
-  if (!voice_channel_->SetOutputScaling(ssrc, volume, volume))
+  if (!voice_channel_->SetOutputScaling(ssrc, volume, volume)) {
     ASSERT(false);
+  }
 }
 
 bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
@@ -1142,15 +1246,12 @@ void WebRtcSession::SetVideoSend(uint32 ssrc, bool enable,
     LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
     return;
   }
-  if (!video_channel_->MuteStream(ssrc, !enable)) {
+  if (!video_channel_->SetVideoSend(ssrc, !enable, options)) {
     // Allow that MuteStream fail if |enable| is false but assert otherwise.
     // This in the normal case when the underlying media channel has already
     // been deleted.
     ASSERT(enable == false);
-    return;
   }
-  if (enable && options)
-    video_channel_->SetChannelOptions(*options);
 }
 
 bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
@@ -1298,12 +1399,13 @@ void WebRtcSession::ResetIceRestartLatch() {
   ice_restart_latch_->Reset();
 }
 
-void WebRtcSession::OnIdentityReady(rtc::SSLIdentity* identity) {
-  SetIdentity(identity);
+void WebRtcSession::OnCertificateReady(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+  SetCertificate(certificate);
 }
 
-bool WebRtcSession::waiting_for_identity() const {
-  return webrtc_session_desc_factory_->waiting_for_identity();
+bool WebRtcSession::waiting_for_certificate_for_testing() const {
+  return webrtc_session_desc_factory_->waiting_for_certificate_for_testing();
 }
 
 void WebRtcSession::SetIceConnectionState(
@@ -1522,7 +1624,6 @@ bool WebRtcSession::UseCandidatesInSessionDescription(
         }
         continue;
       }
-
       ret = UseCandidate(candidate);
       if (!ret)
         break;
@@ -1592,8 +1693,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     mediastream_signaling_->OnAudioChannelClose();
     SignalVoiceChannelDestroyed();
     const std::string content_name = voice_channel_->content_name();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release(),
-                                          video_channel_.get());
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
     DestroyTransportProxy(content_name);
   }
 
@@ -1608,7 +1708,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
   }
 }
 
-// TODO(mallinath) - Add a correct error code if the channels are not creatued
+// TODO(mallinath) - Add a correct error code if the channels are not created
 // due to BUNDLE is enabled but rtcp-mux is disabled.
 bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   // Creating the media channels and transport proxies.
@@ -1668,7 +1768,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
 bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      this, content->name, true, audio_options_));
+      media_controller_.get(), this, content->name, true, audio_options_));
   if (!voice_channel_) {
     return false;
   }
@@ -1680,7 +1780,7 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
 
 bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      this, content->name, true, video_options_, voice_channel_.get()));
+      media_controller_.get(), this, content->name, true, video_options_));
   if (!video_channel_) {
     return false;
   }
@@ -1906,7 +2006,7 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
 // for IPv4 and IPv6.
 void WebRtcSession::ReportBestConnectionState(
     const cricket::TransportStats& stats) {
-  DCHECK(metrics_observer_ != NULL);
+  RTC_DCHECK(metrics_observer_ != NULL);
   for (cricket::TransportChannelStatsList::const_iterator it =
          stats.channel_stats.begin();
        it != stats.channel_stats.end(); ++it) {
@@ -1916,14 +2016,39 @@ void WebRtcSession::ReportBestConnectionState(
       if (!it_info->best_connection) {
         continue;
       }
-      if (it_info->local_candidate.address().family() == AF_INET) {
-        metrics_observer_->IncrementCounter(kBestConnections_IPv4);
-      } else if (it_info->local_candidate.address().family() ==
-                 AF_INET6) {
-        metrics_observer_->IncrementCounter(kBestConnections_IPv6);
+
+      PeerConnectionEnumCounterType type = kPeerConnectionEnumCounterMax;
+      const cricket::Candidate& local = it_info->local_candidate;
+      const cricket::Candidate& remote = it_info->remote_candidate;
+
+      // Increment the counter for IceCandidatePairType.
+      if (local.protocol() == cricket::TCP_PROTOCOL_NAME ||
+          (local.type() == RELAY_PORT_TYPE &&
+           local.relay_protocol() == cricket::TCP_PROTOCOL_NAME)) {
+        type = kEnumCounterIceCandidatePairTypeTcp;
+      } else if (local.protocol() == cricket::UDP_PROTOCOL_NAME) {
+        type = kEnumCounterIceCandidatePairTypeUdp;
       } else {
-        RTC_NOTREACHED();
+        RTC_CHECK(0);
       }
+      metrics_observer_->IncrementEnumCounter(
+          type, GetIceCandidatePairCounter(local, remote),
+          kIceCandidatePairMax);
+
+      // Increment the counter for IP type.
+      if (local.address().family() == AF_INET) {
+        metrics_observer_->IncrementEnumCounter(
+            kEnumCounterAddressFamily, kBestConnections_IPv4,
+            kPeerConnectionAddressFamilyCounter_Max);
+
+      } else if (local.address().family() == AF_INET6) {
+        metrics_observer_->IncrementEnumCounter(
+            kEnumCounterAddressFamily, kBestConnections_IPv6,
+            kPeerConnectionAddressFamilyCounter_Max);
+      } else {
+        RTC_CHECK(0);
+      }
+
       return;
     }
   }
@@ -1931,7 +2056,7 @@ void WebRtcSession::ReportBestConnectionState(
 
 void WebRtcSession::ReportNegotiatedCiphers(
     const cricket::TransportStats& stats) {
-  DCHECK(metrics_observer_ != NULL);
+  RTC_DCHECK(metrics_observer_ != NULL);
   if (!dtls_enabled_ || stats.channel_stats.empty()) {
     return;
   }

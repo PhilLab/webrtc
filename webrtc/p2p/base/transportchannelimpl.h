@@ -21,6 +21,12 @@ namespace cricket {
 
 class Candidate;
 
+// TODO(pthatcher): Remove this once it's no longer used in
+// remoting/protocol/libjingle_transport_factory.cc
+enum IceProtocolType {
+  ICEPROTO_RFC5245  // Standard RFC 5245 version of ICE.
+};
+
 // Base class for real implementations of TransportChannel.  This includes some
 // methods called only by Transport, which do not need to be exposed to the
 // client.
@@ -36,9 +42,9 @@ class TransportChannelImpl : public TransportChannel {
   virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
   virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
-  // To toggle G-ICE/ICE.
-  virtual bool GetIceProtocolType(IceProtocolType* type) const = 0;
-  virtual void SetIceProtocolType(IceProtocolType type) = 0;
+  // TODO(pthatcher): Remove this once it's no longer called in
+  // remoting/protocol/libjingle_transport_factory.cc
+  virtual void SetIceProtocolType(IceProtocolType type) {}
   // SetIceCredentials only need to be implemented by the ICE
   // transport channels. Non-ICE transport channels can just ignore.
   // The ufrag and pwd should be set before the Connect() is called.
@@ -76,11 +82,8 @@ class TransportChannelImpl : public TransportChannel {
   virtual void OnCandidate(const Candidate& candidate) = 0;
 
   // DTLS methods
-  // Set DTLS local identity.  The identity object is not copied, but the caller
-  // retains ownership and must delete it after this TransportChannelImpl is
-  // destroyed.
-  // TODO(bemasc): Fix the ownership semantics of this method.
-  virtual bool SetLocalIdentity(rtc::SSLIdentity* identity) = 0;
+  virtual bool SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) = 0;
 
   // Set DTLS Remote fingerprint. Must be after local identity set.
   virtual bool SetRemoteFingerprint(const std::string& digest_alg,
@@ -101,7 +104,7 @@ class TransportChannelImpl : public TransportChannel {
   sigslot::signal1<TransportChannelImpl*> SignalConnectionRemoved;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);
 };
 
 }  // namespace cricket

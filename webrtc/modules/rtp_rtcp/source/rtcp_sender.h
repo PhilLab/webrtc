@@ -33,6 +33,9 @@ namespace webrtc {
 class ModuleRtpRtcpImpl;
 class RTCPReceiver;
 
+namespace rtcp {
+class TransportFeedback;
+}
 class NACKStringBuilder {
  public:
   NACKStringBuilder();
@@ -70,8 +73,7 @@ public:
    ModuleRtpRtcpImpl* module;
  };
 
- RTCPSender(int32_t id,
-            bool audio,
+ RTCPSender(bool audio,
             Clock* clock,
             ReceiveStatistics* receive_statistics,
             RtcpPacketTypeCounterObserver* packet_type_counter_observer);
@@ -134,11 +136,6 @@ public:
 
  int32_t SetTMMBN(const TMMBRSet* boundingSet, uint32_t maxBitrateKbit);
 
- // Extended jitter report
- bool IJ() const;
-
- void SetIJStatus(bool enable);
-
  int32_t SetApplicationSpecificData(uint8_t subType,
                                     uint32_t name,
                                     const uint8_t* data,
@@ -152,6 +149,7 @@ public:
  void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
  void SetTargetBitrate(unsigned int target_bitrate);
+ bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
 
 private:
  struct RtcpContext;
@@ -198,8 +196,6 @@ private:
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
  BuildResult BuildRR(RtcpContext* context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
- BuildResult BuildExtendedJitterReport(RtcpContext* context)
-     EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
  BuildResult BuildSDES(RtcpContext* context)
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
  BuildResult BuildPLI(RtcpContext* context)
@@ -230,7 +226,6 @@ private:
      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
 private:
- const int32_t id_;
  const bool audio_;
  Clock* const clock_;
  RTCPMethod method_ GUARDED_BY(critical_section_rtcp_sender_);
@@ -242,7 +237,6 @@ private:
  bool using_nack_ GUARDED_BY(critical_section_rtcp_sender_);
  bool sending_ GUARDED_BY(critical_section_rtcp_sender_);
  bool remb_enabled_ GUARDED_BY(critical_section_rtcp_sender_);
- bool extended_jitter_report_enabled_ GUARDED_BY(critical_section_rtcp_sender_);
 
  int64_t next_time_to_send_rtcp_ GUARDED_BY(critical_section_rtcp_sender_);
 

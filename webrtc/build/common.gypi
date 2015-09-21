@@ -382,15 +382,19 @@
           'WEBRTC_ANDROID',
          ],
          'conditions': [
-           ['clang!=1', {
-             # The Android NDK doesn't provide optimized versions of these
-             # functions. Ensure they are disabled for all compilers.
+           ['clang==0', {
              'cflags': [
+               # The Android NDK doesn't provide optimized versions of these
+               # functions. Ensure they are disabled for all compilers.
                '-fno-builtin-cos',
                '-fno-builtin-sin',
                '-fno-builtin-cosf',
                '-fno-builtin-sinf',
              ],
+             'cflags_c': [
+               # Use C99 mode instead of C89 (default).
+               '-std=c99',
+             ]
            }],
          ],
       }],

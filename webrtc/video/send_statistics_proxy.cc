@@ -27,6 +27,8 @@ SendStatisticsProxy::SendStatisticsProxy(Clock* clock,
                                          const VideoSendStream::Config& config)
     : clock_(clock),
       config_(config),
+      input_frame_rate_tracker_(100u, 10u),
+      sent_frame_rate_tracker_(100u, 10u),
       last_sent_frame_timestamp_(0),
       max_sent_width_per_timestamp_(0),
       max_sent_height_per_timestamp_(0) {
@@ -38,15 +40,15 @@ SendStatisticsProxy::~SendStatisticsProxy() {
 
 void SendStatisticsProxy::UpdateHistograms() {
   int input_fps =
-      static_cast<int>(input_frame_rate_tracker_total_.units_second());
+      static_cast<int>(input_frame_rate_tracker_.ComputeTotalRate());
   if (input_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.InputFramesPerSecond", input_fps);
   int sent_fps =
-      static_cast<int>(sent_frame_rate_tracker_total_.units_second());
+      static_cast<int>(sent_frame_rate_tracker_.ComputeTotalRate());
   if (sent_fps > 0)
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.SentFramesPerSecond", sent_fps);
 
-  const int kMinRequiredSamples = 100;
+  const int kMinRequiredSamples = 200;
   int in_width = input_width_counter_.Avg(kMinRequiredSamples);
   int in_height = input_height_counter_.Avg(kMinRequiredSamples);
   if (in_width != -1) {
@@ -59,6 +61,9 @@ void SendStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentWidthInPixels", sent_width);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SentHeightInPixels", sent_height);
   }
+  int encode_ms = encode_time_counter_.Avg(kMinRequiredSamples);
+  if (encode_ms != -1)
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.EncodeTimeInMs", encode_ms);
 }
 
 void SendStatisticsProxy::OutgoingRate(const int video_channel,
@@ -72,6 +77,7 @@ void SendStatisticsProxy::OutgoingRate(const int video_channel,
 void SendStatisticsProxy::CpuOveruseMetricsUpdated(
     const CpuOveruseMetrics& metrics) {
   rtc::CritScope lock(&crit_);
+  // TODO(asapersson): Change to use OnEncodedFrame() for avg_encode_time_ms.
   stats_.avg_encode_time_ms = metrics.avg_encode_time_ms;
   stats_.encode_usage_percent = metrics.encode_usage_percent;
 }
@@ -85,7 +91,7 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
   rtc::CritScope lock(&crit_);
   PurgeOldStats();
   stats_.input_frame_rate =
-      static_cast<int>(input_frame_rate_tracker_.units_second());
+      static_cast<int>(input_frame_rate_tracker_.ComputeRate());
   return stats_;
 }
 
@@ -163,7 +169,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   // are encoded before the next start.
   if (last_sent_frame_timestamp_ > 0 &&
       encoded_image._timeStamp != last_sent_frame_timestamp_) {
-    sent_frame_rate_tracker_total_.Update(1);
+    sent_frame_rate_tracker_.AddSamples(1);
     sent_width_counter_.Add(max_sent_width_per_timestamp_);
     sent_height_counter_.Add(max_sent_height_per_timestamp_);
     max_sent_width_per_timestamp_ = 0;
@@ -180,10 +186,14 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
 void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   rtc::CritScope lock(&crit_);
-  input_frame_rate_tracker_.Update(1);
-  input_frame_rate_tracker_total_.Update(1);
+  input_frame_rate_tracker_.AddSamples(1);
   input_width_counter_.Add(width);
   input_height_counter_.Add(height);
+}
+
+void SendStatisticsProxy::OnEncodedFrame(int encode_time_ms) {
+  rtc::CritScope lock(&crit_);
+  encode_time_counter_.Add(encode_time_ms);
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
@@ -215,8 +225,8 @@ void SendStatisticsProxy::DataCountersUpdated(
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  DCHECK(stats != nullptr) << "DataCountersUpdated reported for unknown ssrc: "
-                           << ssrc;
+  RTC_DCHECK(stats != nullptr)
+      << "DataCountersUpdated reported for unknown ssrc: " << ssrc;
 
   stats->rtp_stats = counters;
 }
