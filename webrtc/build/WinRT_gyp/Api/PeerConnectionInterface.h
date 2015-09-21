@@ -96,6 +96,10 @@ public:
 };
 
 [Windows::Foundation::Metadata::WebHostHidden]
+/// <summary>
+/// Defines static methods for handling generic WebRTC operations, for example
+/// controlling whether WebRTC tracing is enabled.
+/// </summary>
 public ref class WebRTC sealed {
 public:
   static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
@@ -264,12 +268,39 @@ public:
   /// </param>
   RTCPeerConnection(RTCConfiguration^ configuration);
 
+  /// <summary>
+  /// A new ICE candidate has been found.
+  /// </summary>
   event RTCPeerConnectionIceEventDelegate^     OnIceCandidate;
+
+  /// <summary>
+  /// A state transition has occurred for the <see cref="IceConnectionState"/>.
+  /// </summary>
   event RTCPeerConnectionIceStateChangeEventDelegate^  OnIceConnectionChange;
+
+  /// <summary>
+  /// The remote peer has added a new <see cref="MediaStream"/> to this connection.
+  /// </summary>
   event MediaStreamEventEventDelegate^ OnAddStream;
+
+  /// <summary>
+  /// The remote peer removed a <see cref="MediaStream"/>.
+  /// </summary>
   event MediaStreamEventEventDelegate^ OnRemoveStream;
+
+  /// <summary>
+  /// Session (re-)negotiation is needed.
+  /// </summary>
   event EventDelegate^ OnNegotiationNeeded;
+
+  /// <summary>
+  /// A state transition has occurred for the <see cref="SignalingState"/>.
+  /// </summary>
   event EventDelegate^ OnSignalingStateChange;
+
+  /// <summary>
+  /// A remote peer has opened a data channel.
+  /// </summary>
   event RTCDataChannelEventDelegate^ OnDataChannel;
 
 
@@ -311,11 +342,47 @@ public:
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
 
+  /// <summary>
+  /// TODO(WINRT) Implementation
+  /// </summary>
+  /// <returns>A handle to the current configuration for this object.</returns>
   RTCConfiguration^ GetConfiguration();
+
+  /// <summary>
+  /// Returns an <see cref="IVector"/> that represents a snapshot of all the <see cref="MediaStream"/> 
+  /// that this <see cref="RTCPeerConnection"/> is currently sending.
+  /// </summary>
+  /// <returns>A sequence of handles to the <see cref="MediaStream"/> objects representing the streams  
+  /// that are currently being sent with this RTCPeerConnection object.</returns>
   IVector<MediaStream^>^ GetLocalStreams();
+
+  /// <summary>
+  /// Returns an <see cref="IVector"/> that represents a snapshot of all the <see cref="MediaStream"/> 
+  /// that this <see cref="RTCPeerConnection"/> is currently receiving.
+  /// </summary>
+  /// <returns>A sequence of handles to the <see cref="MediaStream"/> objects representing the streams  
+  /// that are currently being received by this RTCPeerConnection object.</returns>
   IVector<MediaStream^>^ GetRemoteStreams();
+
+  /// <summary>
+  /// If this object is currently sending or receiving a <see cref="MediaStream"/> with the provided
+  /// <paramref name="streamId"/>, a handle to that stream is returned.
+  /// </summary>
+  /// <param name="streamId">Identifier of the stream being requested.</param>
+  /// <returns>A handle to the local or remote <see cref="MediaStream"/> with the given 
+  /// <paramref name="streamId"/> if one exists, nullptr if no stream is found.</returns>
   MediaStream^ GetStreamById(String^ streamId);
+
+  /// <summary>
+  /// Adds a new local <see cref="MediaStream"/> to be sent on this connection.
+  /// </summary>
+  /// <param name="stream"><see cref="MediaStream"/> to be added.</param>
   void AddStream(MediaStream^ stream);
+
+  /// <summary>
+  /// Removes a local <see cref="MediaStream"/> from this connection.
+  /// </summary>
+  /// <param name="stream"><see cref="MediaStream"/> to be removed.</param>
   void RemoveStream(MediaStream^ stream);
 
   /// <summary>
@@ -335,6 +402,10 @@ public:
   /// <param name="candidate">candidate to be added to the remote description</param>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ AddIceCandidate(RTCIceCandidate^ candidate);
+
+  /// <summary>
+  /// Ends any active ICE processing or streaming, releases resources.
+  /// </summary>
   void Close();
 
   /// <summary>
@@ -356,12 +427,20 @@ public:
   property RTCSessionDescription^ RemoteDescription {
     RTCSessionDescription^ get();
   }
+
+  /// <summary>
+  /// Keeps track of the current signaling state. State transitions may be triggered when a
+  /// local or remote offer is applied, when a local or remote answer or pranswer is applied, or when
+  /// the connection is closed.
+  /// </summary>
   property RTCSignalingState SignalingState {
     RTCSignalingState get();
   }
+
   property RTCIceGatheringState IceGatheringState {
     RTCIceGatheringState get();
   }
+
   property RTCIceConnectionState IceConnectionState {
     RTCIceConnectionState get();
   }
@@ -385,7 +464,10 @@ private:
 namespace globals {
 extern rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   gPeerConnectionFactory;
-// The worker thread for webrtc.
+
+/// <summary>
+/// The worker thread for webrtc.
+/// </summary>
 extern rtc::Thread gThread;
 
 template <typename T>
