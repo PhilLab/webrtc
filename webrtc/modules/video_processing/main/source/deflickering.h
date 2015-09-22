@@ -53,4 +53,4 @@ class VPMDeflickering {
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCEdeflickering__H
+#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCEdeflickering__H

@@ -212,4 +212,4 @@ int64 TimestampWrapAroundHandler::Unwrap(uint32 ts) {
   return unwrapped_ts;
 }
 
-} // namespace rtc
+}  //  namespace rtc

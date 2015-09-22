@@ -236,7 +236,7 @@ class TestTransport : public Transport,
                      size_t packet_len) override {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
                                          packet_len,
-                                         true); // Allow non-compound RTCP
+                                         true);  // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
     RTCPHelp::RTCPPacketInformation rtcpPacketInformation;
@@ -477,7 +477,7 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
   ASSERT_EQ(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state,kRtcpSr));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpSr));
   // We now expect the packet to show up in the rtcp_packet_info_ of
   // test_transport_.
   ASSERT_NE(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);

@@ -15,11 +15,10 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
-class MonitorObserver
-{
-public:
+class MonitorObserver {
+ public:
     virtual void OnPeriodicProcess() = 0;
-protected:
+ protected:
     virtual ~MonitorObserver() {}
 };
 
@@ -29,9 +28,8 @@ class CriticalSectionWrapper;
 
 namespace voe {
 
-class MonitorModule : public Module
-{
-public:
+class MonitorModule : public Module {
+ public:
     int32_t RegisterObserver(MonitorObserver& observer);
 
     int32_t DeRegisterObserver();
@@ -39,14 +37,15 @@ public:
     MonitorModule();
 
     virtual ~MonitorModule();
-public:	// module
- int64_t TimeUntilNextProcess() override;
 
- int32_t Process() override;
+ public:  // module
+    int64_t TimeUntilNextProcess() override;
 
-private:
+    int32_t Process() override;
+
+ private:
     MonitorObserver* _observerPtr;
-    CriticalSectionWrapper&	_callbackCritSect;
+    CriticalSectionWrapper& _callbackCritSect;
     int64_t _lastProcessTime;
 };
 
@@ -54,4 +53,4 @@ private:
 
 }  // namespace webrtc
 
-#endif // VOICE_ENGINE_MONITOR_MODULE
+#endif  // VOICE_ENGINE_MONITOR_MODULE

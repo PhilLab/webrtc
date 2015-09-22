@@ -32,9 +32,8 @@ class UdpSocketPosix;
 class UdpSocketManagerPosixImpl;
 #define MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX 8
 
-class UdpSocketManagerPosix : public UdpSocketManager
-{
-public:
+class UdpSocketManagerPosix : public UdpSocketManager {
+ public:
     UdpSocketManagerPosix();
     virtual ~UdpSocketManagerPosix();
 
@@ -46,7 +45,7 @@ public:
     bool AddSocket(UdpSocketWrapper* s) override;
     bool RemoveSocket(UdpSocketWrapper* s) override;
 
-private:
+ private:
     int32_t _id;
     CriticalSectionWrapper* _critSect;
     uint8_t _numberOfSocketMgr;
@@ -55,9 +54,8 @@ private:
     UdpSocketManagerPosixImpl* _socketMgr[MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX];
 };
 
-class UdpSocketManagerPosixImpl
-{
-public:
+class UdpSocketManagerPosixImpl {
+ public:
     UdpSocketManagerPosixImpl();
     virtual ~UdpSocketManagerPosixImpl();
 
@@ -67,12 +65,12 @@ public:
     virtual bool AddSocket(UdpSocketWrapper* s);
     virtual bool RemoveSocket(UdpSocketWrapper* s);
 
-protected:
+ protected:
     static bool Run(void* obj);
     bool Process();
     void UpdateSocketMap();
 
-private:
+ private:
     typedef std::list<UdpSocketWrapper*> SocketList;
     typedef std::list<SOCKET> FdList;
     rtc::scoped_ptr<ThreadWrapper> _thread;

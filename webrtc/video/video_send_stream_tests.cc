@@ -1344,7 +1344,6 @@ static const size_t kVideoCodecConfigObserverNumberOfTemporalLayers = 4;
 template <typename T>
 class VideoCodecConfigObserver : public test::SendTest,
                                  public test::FakeEncoder {
-
  public:
   VideoCodecConfigObserver(VideoCodecType video_codec_type,
                            const char* codec_name)
@@ -1703,7 +1702,8 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
       encoded.capture_time_ms_ = input_image.render_time_ms();
 
       for (size_t i = 0; i < kNumStreams; ++i) {
-        specifics.codecSpecific.genericCodec.simulcast_idx = static_cast<uint8_t>(i);
+        specifics.codecSpecific.genericCodec.simulcast_idx =
+                                                    static_cast<uint8_t>(i);
         encoded._frameType = (*frame_types)[i];
         encoded._encodedWidth = kEncodedResolution[i].width;
         encoded._encodedHeight = kEncodedResolution[i].height;

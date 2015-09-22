@@ -2639,7 +2639,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       }
       bool sender_done = false;
       bool receiver_done = false;
-      while(!sender_done || !receiver_done) {
+      while (!sender_done || !receiver_done) {
         packet_event_->Wait(kSilenceTimeoutMs);
         int64_t time_now_ms = clock_->TimeInMilliseconds();
         rtc::CritScope lock(&test_crit_);
@@ -2729,7 +2729,7 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
 
 TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
   class UnusedEncoder : public test::FakeEncoder {
-    public:
+   public:
      UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
      int32_t Encode(const VideoFrame& input_image,
                     const CodecSpecificInfo* codec_specific_info,

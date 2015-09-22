@@ -13,6 +13,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"

@@ -27,17 +27,15 @@ using namespace test;
 namespace voetest {
 
 #define CHECK(expr)                                             \
-    if (expr)                                                   \
-    {                                                           \
+    if (expr) {                                                  \
         printf("Error at line: %i, %s \n", __LINE__, #expr);    \
         printf("Error code: %i \n", base->LastError());  \
-        PAUSE												    \
+        PAUSE                            \
         return -1;                                              \
     }
 
 VoECpuTest::VoECpuTest(VoETestManager& mgr)
     : _mgr(mgr) {
-
 }
 
 int VoECpuTest::DoTest() {

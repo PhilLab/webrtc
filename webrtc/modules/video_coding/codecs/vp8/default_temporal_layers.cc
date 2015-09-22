@@ -41,7 +41,7 @@ int DefaultTemporalLayers::CurrentLayerId() const {
   int index = pattern_idx_ % temporal_ids_length_;
   assert(index >= 0);
   return temporal_ids_[index];
- }
+}
 
 bool DefaultTemporalLayers::ConfigureBitrates(int bitrateKbit,
                                               int max_bitrate_kbit,

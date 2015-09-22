@@ -22,23 +22,19 @@
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-namespace videocapturemodule
-{
+namespace videocapturemodule {
 VideoCaptureModule* VideoCaptureImpl::Create(
     const int32_t id,
-    VideoCaptureExternal*& externalCapture)
-{
+    VideoCaptureExternal*& externalCapture) {
     RefCountImpl<VideoCaptureImpl>* implementation =
         new RefCountImpl<VideoCaptureImpl>(id);
     externalCapture = implementation;
     return implementation;
 }
 
-const char* VideoCaptureImpl::CurrentDeviceName() const
-{
+const char* VideoCaptureImpl::CurrentDeviceName() const {
     return _deviceUniqueId;
 }
 
@@ -83,9 +79,9 @@ int32_t VideoCaptureImpl::RotationInDegrees(VideoRotation rotation,
   return -1;
 }
 
-// returns the number of milliseconds until the module want a worker thread to call Process
-int64_t VideoCaptureImpl::TimeUntilNextProcess()
-{
+// returns the number of milliseconds until the module
+// want a worker thread to call Process
+int64_t VideoCaptureImpl::TimeUntilNextProcess() {
     CriticalSectionScoped cs(&_callBackCs);
     const int64_t kProcessIntervalMs = 300;
     return kProcessIntervalMs -
@@ -93,8 +89,7 @@ int64_t VideoCaptureImpl::TimeUntilNextProcess()
 }
 
 // Process any pending tasks such as timeouts
-int32_t VideoCaptureImpl::Process()
-{
+int32_t VideoCaptureImpl::Process() {
     CriticalSectionScoped cs(&_callBackCs);
 
     const TickTime now = TickTime::Now();
@@ -103,36 +98,29 @@ int32_t VideoCaptureImpl::Process()
     // Handle No picture alarm
 
     if (_lastProcessFrameCount.Ticks() == _incomingFrameTimes[0].Ticks() &&
-        _captureAlarm != Raised)
-    {
-        if (_noPictureAlarmCallBack && _captureCallBack)
-        {
+        _captureAlarm != Raised) {
+        if (_noPictureAlarmCallBack && _captureCallBack) {
             _captureAlarm = Raised;
             _captureCallBack->OnNoPictureAlarm(_id, _captureAlarm);
         }
-    }
-    else if (_lastProcessFrameCount.Ticks() != _incomingFrameTimes[0].Ticks() &&
-             _captureAlarm != Cleared)
-    {
-        if (_noPictureAlarmCallBack && _captureCallBack)
-        {
+    } else if (_lastProcessFrameCount.Ticks() !=
+              _incomingFrameTimes[0].Ticks() &&
+             _captureAlarm != Cleared) {
+        if (_noPictureAlarmCallBack && _captureCallBack) {
             _captureAlarm = Cleared;
             _captureCallBack->OnNoPictureAlarm(_id, _captureAlarm);
-
         }
     }
 
     // Handle frame rate callback
     if ((now - _lastFrameRateCallbackTime).Milliseconds()
-        > kFrameRateCallbackInterval)
-    {
-        if (_frameRateCallBack && _captureCallBack)
-        {
+        > kFrameRateCallbackInterval) {
+        if (_frameRateCallBack && _captureCallBack) {
             const uint32_t frameRate = CalculateFrameRate(now);
             _captureCallBack->OnCaptureFrameRate(_id, frameRate);
         }
-        _lastFrameRateCallbackTime = now; // Can be set by EnableFrameRateCallback
-
+        // Can be set by EnableFrameRateCallback
+        _lastFrameRateCallbackTime = now;
     }
 
     _lastProcessFrameCount = _incomingFrameTimes[0];
@@ -166,8 +154,7 @@ VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
     memset(_incomingFrameTimes, 0, sizeof(_incomingFrameTimes));
 }
 
-VideoCaptureImpl::~VideoCaptureImpl()
-{
+VideoCaptureImpl::~VideoCaptureImpl() {
     DeRegisterCaptureDataCallback();
     DeRegisterCaptureCallback();
     delete &_callBackCs;
@@ -190,13 +177,11 @@ void VideoCaptureImpl::DeRegisterCaptureDataCallback() {
     _dataCallBack = NULL;
 }
 void VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack) {
-
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = &callBack;
 }
 void VideoCaptureImpl::DeRegisterCaptureCallback() {
-
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = NULL;
@@ -205,8 +190,7 @@ void VideoCaptureImpl::SetCaptureDelay(int32_t delayMS) {
     CriticalSectionScoped cs(&_apiCs);
     _captureDelay = delayMS;
 }
-int32_t VideoCaptureImpl::CaptureDelay()
-{
+int32_t VideoCaptureImpl::CaptureDelay() {
     CriticalSectionScoped cs(&_apiCs);
     return _setCaptureDelay;
 }
@@ -234,8 +218,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
     uint8_t* videoFrame,
     size_t videoFrameLength,
     const VideoCaptureCapability& frameInfo,
-    int64_t captureTime/*=0*/)
-{
+    int64_t captureTime/*=0*/) {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
 
@@ -244,16 +227,14 @@ int32_t VideoCaptureImpl::IncomingFrame(
 
     TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
 
-    if (frameInfo.codecType == kVideoCodecUnknown)
-    {
+    if (frameInfo.codecType == kVideoCodecUnknown) {
         // Not encoded, convert to I420.
         const VideoType commonVideoType =
                   RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
 
         if (frameInfo.rawType != kVideoMJPEG &&
             CalcBufferSize(commonVideoType, width,
-                           abs(height)) != videoFrameLength)
-        {
+                           abs(height)) != videoFrameLength) {
             LOG(LS_ERROR) << "Wrong incoming frame length.";
             return -1;
         }
@@ -276,7 +257,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
         }
 
         // TODO(mikhal): Update correct aligned stride values.
-        //Calc16ByteAlignedStride(target_width, &stride_y, &stride_uv);
+        // Calc16ByteAlignedStride(target_width, &stride_y, &stride_uv);
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
@@ -284,8 +265,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
                                                  abs(target_height),
                                                  stride_y,
                                                  stride_uv, stride_uv);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             LOG(LS_ERROR) << "Failed to create empty frame, this should only "
                              "happen due to bad parameters.";
             return -1;
@@ -294,8 +274,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
             commonVideoType, videoFrame, 0, 0,  // No cropping
             width, height, videoFrameLength,
             apply_rotation ? _rotateFrame : kVideoRotation_0, &_captureFrame);
-        if (conversionResult < 0)
-        {
+        if (conversionResult < 0) {
           LOG(LS_ERROR) << "Failed to convert capture frame from type "
                         << frameInfo.rawType << "to I420.";
             return -1;
@@ -310,9 +289,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
         _captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
 
         DeliverCapturedFrame(_captureFrame);
-    }
-    else // Encoded format
-    {
+    } else {  // Encoded format
         assert(false);
         return -1;
     }
@@ -331,8 +308,7 @@ void VideoCaptureImpl::EnableFrameRateCallback(const bool enable) {
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _frameRateCallBack = enable;
-    if (enable)
-    {
+    if (enable) {
         _lastFrameRateCallbackTime = TickTime::Now();
     }
 }
@@ -351,44 +327,33 @@ void VideoCaptureImpl::EnableNoPictureAlarm(const bool enable) {
     _noPictureAlarmCallBack = enable;
 }
 
-void VideoCaptureImpl::UpdateFrameCount()
-{
-    if (_incomingFrameTimes[0].MicrosecondTimestamp() == 0)
-    {
+void VideoCaptureImpl::UpdateFrameCount() {
+    if (_incomingFrameTimes[0].MicrosecondTimestamp() == 0) {
         // first no shift
-    }
-    else
-    {
+    } else {
         // shift
-        for (int i = (kFrameRateCountHistorySize - 2); i >= 0; i--)
-        {
+        for (int i = (kFrameRateCountHistorySize - 2); i >= 0; i--) {
             _incomingFrameTimes[i + 1] = _incomingFrameTimes[i];
         }
     }
     _incomingFrameTimes[0] = TickTime::Now();
 }
 
-uint32_t VideoCaptureImpl::CalculateFrameRate(const TickTime& now)
-{
+uint32_t VideoCaptureImpl::CalculateFrameRate(const TickTime& now) {
     int32_t num = 0;
     int32_t nrOfFrames = 0;
-    for (num = 1; num < (kFrameRateCountHistorySize - 1); num++)
-    {
+    for (num = 1; num < (kFrameRateCountHistorySize - 1); num++) {
         if (_incomingFrameTimes[num].Ticks() <= 0
-            || (now - _incomingFrameTimes[num]).Milliseconds() > kFrameRateHistoryWindowMs) // don't use data older than 2sec
-        {
+            || (now - _incomingFrameTimes[num]).Milliseconds() >
+              kFrameRateHistoryWindowMs) {  // don't use data older than 2sec
             break;
-        }
-        else
-        {
+        } else {
             nrOfFrames++;
         }
     }
-    if (num > 1)
-    {
+    if (num > 1) {
         int64_t diff = (now - _incomingFrameTimes[num - 1]).Milliseconds();
-        if (diff > 0)
-        {
+        if (diff > 0) {
             return uint32_t((nrOfFrames * 1000.0f / diff) + 0.5f);
         }
     }

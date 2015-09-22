@@ -19,9 +19,8 @@ namespace test {
 
 class UdpSocketWrapper;
 
-class UdpSocketManager
-{
-public:
+class UdpSocketManager {
+ public:
     static UdpSocketManager* Create(const int32_t id,
                                     uint8_t& numOfWorkThreads);
     static void Return();
@@ -43,7 +42,7 @@ public:
     // Unregister a socket from the manager.
     virtual bool RemoveSocket(UdpSocketWrapper* s) = 0;
 
-protected:
+ protected:
     UdpSocketManager();
     virtual ~UdpSocketManager() {}
 
@@ -52,7 +51,7 @@ protected:
     // Factory method.
     static UdpSocketManager* CreateInstance();
 
-private:
+ private:
     // Friend function to allow the UDP destructor to be accessed from the
     // instance template.
     friend UdpSocketManager* webrtc::GetStaticInstance<UdpSocketManager>(

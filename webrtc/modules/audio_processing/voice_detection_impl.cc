@@ -97,7 +97,7 @@ int VoiceDetectionImpl::set_stream_has_voice(bool has_voice) {
 
 bool VoiceDetectionImpl::stream_has_voice() const {
   // TODO(ajm): enable this assertion?
-  //assert(using_external_vad_ || is_component_enabled());
+  // assert(using_external_vad_ || is_component_enabled());
   return stream_has_voice_;
 }
 
@@ -117,7 +117,7 @@ VoiceDetection::Likelihood VoiceDetectionImpl::likelihood() const {
 
 int VoiceDetectionImpl::set_frame_size_ms(int size) {
   CriticalSectionScoped crit_scoped(crit_);
-  assert(size == 10); // TODO(ajm): remove when supported.
+  assert(size == 10);  // TODO(ajm): remove when supported.
   if (size != 10 &&
       size != 20 &&
       size != 30) {

@@ -55,11 +55,11 @@ struct CpuOveruseOptions {
   // Method based on inter-arrival jitter of captured frames.
   bool enable_capture_jitter_method;
   float low_capture_jitter_threshold_ms;  // Threshold for triggering underuse.
-  float high_capture_jitter_threshold_ms; // Threshold for triggering overuse.
+  float high_capture_jitter_threshold_ms;  // Threshold for triggering overuse.
   // Method based on encode time of frames.
   bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
-  int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
+  int high_encode_usage_threshold_percent;  // Threshold for triggering overuse.
   // TODO(asapersson): Remove options, not used.
   int low_encode_time_rsd_threshold;   // Additional threshold for triggering
                                        // underuse (used in addition to
@@ -77,9 +77,9 @@ struct CpuOveruseOptions {
   int min_frame_samples;  // The minimum number of frames required.
   int min_process_count;  // The number of initial process times required before
                           // triggering an overuse/underuse.
-  int high_threshold_consecutive_count; // The number of consecutive checks
-                                        // above the high threshold before
-                                        // triggering an overuse.
+  int high_threshold_consecutive_count;  // The number of consecutive checks
+                                         // above the high threshold before
+                                         // triggering an overuse.
 
   bool Equals(const CpuOveruseOptions& o) const {
     return enable_capture_jitter_method == o.enable_capture_jitter_method &&
@@ -111,7 +111,7 @@ struct CpuOveruseMetrics {
   int capture_jitter_ms;  // The current estimated jitter in ms based on
                           // incoming captured frames.
   int avg_encode_time_ms;   // The average encode time in ms.
-  int encode_usage_percent; // The average encode time divided by the average
+  int encode_usage_percent;  // The average encode time divided by the average
                             // time difference between incoming captured frames.
 };
 

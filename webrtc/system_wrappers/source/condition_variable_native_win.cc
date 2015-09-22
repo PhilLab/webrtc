@@ -43,7 +43,7 @@ ConditionVariableWrapper* ConditionVariableNativeWin::Create() {
   return ret_val;
 }
 
-#ifdef WINRT // WinRT doesn't support LoadLibrary
+#ifdef WINRT  // WinRT doesn't support LoadLibrary
 bool ConditionVariableNativeWin::Init() {
     PInitializeConditionVariable_ = InitializeConditionVariable;
     PSleepConditionVariableCS_ = SleepConditionVariableCS;

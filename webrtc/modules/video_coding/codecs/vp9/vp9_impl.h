@@ -12,6 +12,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_IMPL_H_
 
+#include <vector>
+
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 

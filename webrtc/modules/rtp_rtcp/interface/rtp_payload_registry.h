@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
 
+#include <map>
+
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -136,7 +138,7 @@ class RTPPayloadRegistry {
   int8_t last_received_media_payload_type() const {
     CriticalSectionScoped cs(crit_sect_.get());
     return last_received_media_payload_type_;
-  };
+  }
 
  private:
   // Prunes the payload type map of the specific payload type, if it exists.

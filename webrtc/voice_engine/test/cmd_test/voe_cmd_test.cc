@@ -69,7 +69,7 @@ void RunTest(std::string out_path);
 
 class MyObserver : public VoiceEngineObserver {
  public:
-   virtual void CallbackOnError(int channel, int err_code);
+    virtual void CallbackOnError(int channel, int err_code);
 };
 
 void MyObserver::CallbackOnError(int channel, int err_code) {
@@ -638,7 +638,7 @@ void RunTest(std::string out_path) {
         if (err_code != -1)
           printf("\n The last error code was %i.\n", err_code);
       } else if (option_selection == option_index++) {
-        typing_detection= !typing_detection;
+        typing_detection = !typing_detection;
         res = apm->SetTypingDetectionStatus(typing_detection);
         VALIDATE;
         if (typing_detection)

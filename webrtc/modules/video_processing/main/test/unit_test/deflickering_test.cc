@@ -20,8 +20,7 @@
 
 namespace webrtc {
 
-TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Deflickering))
-{
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Deflickering)) {
     enum { NumRuns = 30 };
     uint32_t frameNum = 0;
     const uint32_t frame_rate = 15;
@@ -45,8 +44,7 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Deflickering))
 
     printf("\nRun time [us / frame]:\n");
     rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
-    for (uint32_t run_idx = 0; run_idx < NumRuns; run_idx++)
-    {
+    for (uint32_t run_idx = 0; run_idx < NumRuns; run_idx++) {
         TickTime t0;
         TickTime t1;
         TickInterval acc_ticks;
@@ -54,8 +52,7 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Deflickering))
 
         frameNum = 0;
         while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
-               frame_length_)
-        {
+               frame_length_) {
             frameNum++;
             EXPECT_EQ(
                 0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
@@ -69,8 +66,7 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Deflickering))
             t1 = TickTime::Now();
             acc_ticks += (t1 - t0);
 
-            if (run_idx == 0)
-            {
+            if (run_idx == 0) {
               if (PrintVideoFrame(video_frame_, deflickerFile) < 0) {
                 return;
               }
@@ -80,8 +76,7 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_IOS(Deflickering))
         ASSERT_NE(0, feof(source_file_)) << "Error reading source file";
 
         printf("%u\n", static_cast<int>(acc_ticks.Microseconds() / frameNum));
-        if (acc_ticks.Microseconds() < min_runtime || run_idx == 0)
-        {
+        if (acc_ticks.Microseconds() < min_runtime || run_idx == 0) {
             min_runtime = acc_ticks.Microseconds();
         }
         avg_runtime += acc_ticks.Microseconds();

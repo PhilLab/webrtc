@@ -55,6 +55,7 @@ class BusyThread : public rtc::Thread {
       }
     }
   }
+
  private:
   double load_;
   double duration_;

@@ -125,8 +125,8 @@ class RtpRtcpObserver {
           on_rtp_(on_rtp),
           on_rtcp_(on_rtcp) {}
 
-  private:
-   bool SendRtp(const uint8_t* packet, size_t length) override {
+   private:
+    bool SendRtp(const uint8_t* packet, size_t length) override {
       EXPECT_FALSE(RtpHeaderParser::IsRtcp(packet, length));
       Action action;
       {

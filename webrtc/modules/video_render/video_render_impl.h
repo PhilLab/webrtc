@@ -22,9 +22,8 @@ class IncomingVideoStream;
 class IVideoRender;
 
 // Class definitions
-class ModuleVideoRenderImpl: public VideoRender
-{
-public:
+class ModuleVideoRenderImpl: public VideoRender {
+ public:
     /*
      *   VideoRenderer constructor/destructor
      */
@@ -86,7 +85,8 @@ public:
             GetIncomingRenderStreamProperties(const uint32_t streamId,
                                               uint32_t& zOrder,
                                               float& left, float& top,
-                                              float& right, float& bottom) const;
+                                              float& right,
+                                              float& bottom) const;
     /*
      *   Incoming frame rate for the specified stream.
      */
@@ -199,7 +199,7 @@ public:
                                     const VideoFrame& videoFrame,
                                     const uint32_t timeout);
 
-private:
+ private:
     int32_t _id;
     CriticalSectionWrapper& _moduleCrit;
     void* _ptrWindow;

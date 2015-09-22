@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "webrtc/p2p/base/transport.h"
 
 #include "webrtc/p2p/base/candidate.h"

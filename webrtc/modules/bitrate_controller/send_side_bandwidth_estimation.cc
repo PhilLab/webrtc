@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "webrtc/base/checks.h"
@@ -63,7 +64,7 @@ uint32_t CalcTfrcBps(int64_t rtt, uint8_t loss) {
   // Convert to bits/second.
   return (static_cast<uint32_t>(X * 8));
 }
-}
+}  // namespace
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
     : accumulate_lost_packets_Q8_(0),

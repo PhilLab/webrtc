@@ -53,7 +53,7 @@ void  VPMFramePreprocessor::SetInputFrameResampleMode(
 
 int32_t VPMFramePreprocessor::SetTargetResolution(
     uint32_t width, uint32_t height, uint32_t frame_rate) {
-  if ( (width == 0) || (height == 0) || (frame_rate == 0)) {
+  if ((width == 0) || (height == 0) || (frame_rate == 0)) {
     return VPM_PARAMETER_ERROR;
   }
   int32_t ret_val = 0;
@@ -133,4 +133,4 @@ VideoContentMetrics* VPMFramePreprocessor::ContentMetrics() const {
   return content_metrics_;
 }
 
-}  // namespace
+}  // namespace webrtc

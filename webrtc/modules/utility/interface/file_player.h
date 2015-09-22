@@ -20,9 +20,8 @@
 namespace webrtc {
 class FileCallback;
 
-class FilePlayer
-{
-public:
+class FilePlayer {
+ public:
     // The largest decoded frame size in samples (60ms with 32kHz sample rate).
     enum {MAX_AUDIO_BUFFER_IN_SAMPLES = 60*32};
     enum {MAX_AUDIO_BUFFER_IN_BYTES = MAX_AUDIO_BUFFER_IN_SAMPLES*2};
@@ -103,9 +102,8 @@ public:
       return -1;
     }
 
-protected:
+ protected:
     virtual ~FilePlayer() {}
-
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_PLAYER_H_
+#endif  // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_PLAYER_H_

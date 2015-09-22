@@ -45,7 +45,7 @@ class GlRenderer : public VideoRenderer {
 
   void ResizeVideo(size_t width, size_t height);
 };
-}  // test
-}  // webrtc
+}  // namespace test
+}  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_

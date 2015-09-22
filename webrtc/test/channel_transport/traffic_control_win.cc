@@ -20,15 +20,12 @@ namespace test {
 TrafficControlWindows* TrafficControlWindows::instance = NULL;
 uint32_t TrafficControlWindows::refCounter = 0;
 
-TrafficControlWindows::TrafficControlWindows(const int32_t id)
-{
+TrafficControlWindows::TrafficControlWindows(const int32_t id) {
 }
 
 TrafficControlWindows* TrafficControlWindows::GetInstance(
-    const int32_t id)
-{
-    if(instance != NULL)
-    {
+    const int32_t id) {
+    if (instance != NULL) {
         WEBRTC_TRACE(
             kTraceDebug,
             kTraceTransport,
@@ -41,8 +38,7 @@ TrafficControlWindows* TrafficControlWindows::GetInstance(
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
                  "TrafficControlWindows - Creating new object");
     instance = new TrafficControlWindows(id);
-    if(instance == NULL)
-    {
+    if (instance == NULL) {
         WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
                      "TrafficControlWindows - Error allocating memory");
         return NULL;
@@ -62,8 +58,7 @@ TrafficControlWindows* TrafficControlWindows::GetInstance(
     instance->tcDeleteFilter = NULL;
 
     HMODULE trafficLib = LoadLibrary(TEXT("traffic.dll"));
-    if(trafficLib == NULL)
-    {
+    if (trafficLib == NULL) {
         WEBRTC_TRACE(
             kTraceWarning,
             kTraceTransport,
@@ -99,7 +94,7 @@ TrafficControlWindows* TrafficControlWindows::GetInstance(
     instance->tcDeleteFilter = (filterDeleteFn)GetProcAddress(trafficLib,
                                                               "TcDeleteFilter");
 
-    if(instance->tcRegister       == NULL ||
+    if (instance->tcRegister       == NULL ||
        instance->tcDeregister     == NULL ||
        instance->tcEnumerate      == NULL ||
        instance->tcOpenInterface  == NULL ||
@@ -107,8 +102,7 @@ TrafficControlWindows* TrafficControlWindows::GetInstance(
        instance->tcAddFlow        == NULL ||
        instance->tcAddFilter      == NULL ||
        instance->tcDeleteFlow     == NULL ||
-       instance->tcDeleteFilter   == NULL)
-    {
+       instance->tcDeleteFilter   == NULL) {
         delete instance;
         instance = NULL;
         WEBRTC_TRACE(
@@ -132,23 +126,20 @@ TrafficControlWindows* TrafficControlWindows::GetInstance(
             instance->tcAddFlow,
             instance->tcAddFilter,
             instance->tcDeleteFlow,
-            instance->tcDeleteFilter );
+            instance->tcDeleteFilter);
         return NULL;
     }
     refCounter++;
     return instance;
 }
 
-void TrafficControlWindows::Release(TrafficControlWindows* gtc)
-{
-    if (0 == refCounter)
-    {
+void TrafficControlWindows::Release(TrafficControlWindows* gtc) {
+    if (0 == refCounter) {
         WEBRTC_TRACE(kTraceError, kTraceTransport, -1,
                      "TrafficControlWindows - Cannot release, refCounter is 0");
         return;
     }
-    if (NULL == gtc)
-    {
+    if (NULL == gtc) {
         WEBRTC_TRACE(kTraceDebug, kTraceTransport, -1,
                      "TrafficControlWindows - Not releasing, gtc is NULL");
         return;
@@ -157,8 +148,7 @@ void TrafficControlWindows::Release(TrafficControlWindows* gtc)
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, -1,
                  "TrafficControlWindows - Releasing object");
     refCounter--;
-    if ((0 == refCounter) && instance)
-    {
+    if ((0 == refCounter) && instance) {
         WEBRTC_TRACE(kTraceMemory, kTraceTransport, -1,
                      "TrafficControlWindows - Deleting object");
         delete instance;
@@ -170,15 +160,13 @@ ULONG TrafficControlWindows::TcRegisterClient(
     ULONG TciVersion,
     HANDLE ClRegCtx,
     PTCI_CLIENT_FUNC_LIST ClientHandlerList,
-    PHANDLE pClientHandle)
-{
+    PHANDLE pClientHandle) {
     assert(tcRegister != NULL);
 
     return tcRegister(TciVersion, ClRegCtx, ClientHandlerList, pClientHandle);
 }
 
-ULONG TrafficControlWindows::TcDeregisterClient(HANDLE clientHandle)
-{
+ULONG TrafficControlWindows::TcDeregisterClient(HANDLE clientHandle) {
     assert(tcDeregister != NULL);
 
     return tcDeregister(clientHandle);
@@ -188,8 +176,7 @@ ULONG TrafficControlWindows::TcDeregisterClient(HANDLE clientHandle)
 ULONG TrafficControlWindows::TcEnumerateInterfaces(
     HANDLE ClientHandle,
     PULONG pBufferSize,
-    PTC_IFC_DESCRIPTOR interfaceBuffer)
-{
+    PTC_IFC_DESCRIPTOR interfaceBuffer) {
     assert(tcEnumerate != NULL);
 
     return tcEnumerate(ClientHandle, pBufferSize, interfaceBuffer);
@@ -199,16 +186,13 @@ ULONG TrafficControlWindows::TcEnumerateInterfaces(
 ULONG TrafficControlWindows::TcOpenInterfaceW(LPWSTR pInterfaceName,
                                               HANDLE ClientHandle,
                                               HANDLE ClIfcCtx,
-                                              PHANDLE pIfcHandle)
-{
+                                              PHANDLE pIfcHandle) {
     assert(tcOpenInterface != NULL);
 
     return tcOpenInterface(pInterfaceName, ClientHandle, ClIfcCtx, pIfcHandle);
-
 }
 
-ULONG TrafficControlWindows::TcCloseInterface(HANDLE IfcHandle)
-{
+ULONG TrafficControlWindows::TcCloseInterface(HANDLE IfcHandle) {
     assert(tcCloseInterface != NULL);
 
     return tcCloseInterface(IfcHandle);
@@ -216,36 +200,30 @@ ULONG TrafficControlWindows::TcCloseInterface(HANDLE IfcHandle)
 
 ULONG TrafficControlWindows::TcAddFlow(HANDLE IfcHandle, HANDLE ClFlowCtx,
                                        ULONG  Flags, PTC_GEN_FLOW pGenericFlow,
-                                       PHANDLE pFlowHandle)
-{
+                                       PHANDLE pFlowHandle) {
     assert(tcAddFlow != NULL);
     return tcAddFlow(IfcHandle, ClFlowCtx, Flags, pGenericFlow, pFlowHandle);
 }
 
 ULONG TrafficControlWindows::TcAddFilter(HANDLE FlowHandle,
                                          PTC_GEN_FILTER pGenericFilter,
-                                         PHANDLE pFilterHandle)
-{
+                                         PHANDLE pFilterHandle) {
     assert(tcAddFilter != NULL);
     return tcAddFilter(FlowHandle, pGenericFilter, pFilterHandle);
 }
 
-ULONG TrafficControlWindows::TcDeleteFlow(HANDLE FlowHandle)
-{
+ULONG TrafficControlWindows::TcDeleteFlow(HANDLE FlowHandle) {
     assert(tcDeleteFlow != NULL);
     return tcDeleteFlow(FlowHandle);
-
 }
 
-ULONG TrafficControlWindows::TcDeleteFilter(HANDLE FilterHandle)
-{
+ULONG TrafficControlWindows::TcDeleteFilter(HANDLE FilterHandle) {
     assert(tcDeleteFilter != NULL);
     return tcDeleteFilter(FilterHandle);
 }
 
 void MyClNotifyHandler(HANDLE ClRegCtx, HANDLE ClIfcCtx, ULONG Event,
-                       HANDLE SubCode, ULONG BufSize, PVOID Buffer)
-{
+                       HANDLE SubCode, ULONG BufSize, PVOID Buffer) {
 }
 
 }  // namespace test

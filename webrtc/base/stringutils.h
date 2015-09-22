@@ -20,7 +20,7 @@
 #include <malloc.h>
 #include <wchar.h>
 #define alloca _alloca
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
 #ifdef BSD
@@ -101,7 +101,7 @@ inline int vsnprintf(wchar_t* buf, size_t n, const wchar_t* fmt, va_list args) {
   return _vsnwprintf(buf, n, fmt, args);
 #endif
 }
-#endif // !vsnprintf
+#endif  // !vsnprintf
 inline unsigned long strtoul(const wchar_t* snum, wchar_t** end, int base) {
   return wcstoul(snum, end, base);
 }
@@ -109,7 +109,7 @@ inline wchar_t tolowercase(wchar_t c) {
   return static_cast<wchar_t>(towlower(c));
 }
 
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
 
@@ -120,7 +120,7 @@ inline int _strnicmp(const char* s1, const char* s2, size_t n) {
   return strncasecmp(s1, s2, n);
 }
 
-#endif // WEBRTC_POSIX
+#endif  // WEBRTC_POSIX
 
 ///////////////////////////////////////////////////////////////////////////////
 // Traits simplifies porting string functions to be CTYPE-agnostic
@@ -133,9 +133,9 @@ const size_t SIZE_UNKNOWN = static_cast<size_t>(-1);
 template<class CTYPE>
 struct Traits {
   // STL string type
-  //typedef XXX string;
+  // typedef XXX string;
   // Null-terminated string
-  //inline static const CTYPE* empty_str();
+  // inline static const CTYPE* empty_str();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -161,7 +161,7 @@ const CTYPE* strchr(const CTYPE* str, const CTYPE* chs) {
 
 template<class CTYPE>
 const CTYPE* strchrn(const CTYPE* str, size_t slen, CTYPE ch) {
-  for (size_t i=0; i<slen && str[i]; ++i) {
+  for (size_t i = 0; i < slen && str[i]; ++i) {
     if (str[i] == ch) {
       return str + i;
     }
@@ -275,7 +275,7 @@ inline int ascnicmp(const wchar_t* s1, const char* s2, size_t n) {
 size_t asccpyn(wchar_t* buffer, size_t buflen,
                const char* source, size_t srclen = SIZE_UNKNOWN);
 
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 ///////////////////////////////////////////////////////////////////////////////
 // Traits<char> specializations
@@ -299,7 +299,7 @@ struct Traits<wchar_t> {
   inline static const wchar_t* empty_str() { return L""; }
 };
 
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 // Replaces all occurrences of "search" with "replace".
 void replace_substrs(const char *search,
@@ -319,4 +319,4 @@ std::string string_trim(const std::string& s);
 
 }  // namespace rtc
 
-#endif // WEBRTC_BASE_STRINGUTILS_H__
+#endif  // WEBRTC_BASE_STRINGUTILS_H__

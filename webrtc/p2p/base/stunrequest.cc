@@ -11,6 +11,7 @@
 #include "webrtc/p2p/base/stunrequest.h"
 
 #include <algorithm>
+#include <vector>
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

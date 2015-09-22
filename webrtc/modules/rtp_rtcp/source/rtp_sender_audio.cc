@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 
-#include <assert.h> //assert
-#include <string.h> //memcpy
+#include <assert.h>  // assert
+#include <string.h>  // memcpy
 
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
@@ -59,8 +59,7 @@ int RTPSenderAudio::AudioFrequency() const {
 // set audio packet size, used to determine when it's time to send a DTMF packet
 // in silence (CNG)
 int32_t
-RTPSenderAudio::SetAudioPacketSize(const uint16_t packetSizeSamples)
-{
+RTPSenderAudio::SetAudioPacketSize(const uint16_t packetSizeSamples) {
     CriticalSectionScoped cs(_sendAudioCritsect.get());
 
     _packetSizeSamples = packetSizeSamples;
@@ -113,8 +112,7 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
 
 bool
 RTPSenderAudio::MarkerBit(const FrameType frameType,
-                          const int8_t payload_type)
-{
+                          const int8_t payload_type) {
     CriticalSectionScoped cs(_sendAudioCritsect.get());
     // for audio true for first packet in a speech burst
     bool markerBit = false;
@@ -148,12 +146,10 @@ RTPSenderAudio::MarkerBit(const FrameType frameType,
     }
 
     // For G.723 G.729, AMR etc we can have inband VAD
-    if(frameType == kAudioFrameCN)
-    {
+    if (frameType == kAudioFrameCN) {
         _inbandVADactive = true;
 
-    } else if(_inbandVADactive)
-    {
+    } else if (_inbandVADactive) {
         _inbandVADactive = false;
         markerBit = true;
     }
@@ -376,10 +372,8 @@ int32_t RTPSenderAudio::SendAudio(
 
     // Audio level magnitude and voice activity flag are set for each RTP packet
 int32_t
-RTPSenderAudio::SetAudioLevel(const uint8_t level_dBov)
-{
-    if (level_dBov > 127)
-    {
+RTPSenderAudio::SetAudioLevel(const uint8_t level_dBov) {
+    if (level_dBov > 127) {
         return -1;
     }
     CriticalSectionScoped cs(_sendAudioCritsect.get());
@@ -389,10 +383,8 @@ RTPSenderAudio::SetAudioLevel(const uint8_t level_dBov)
 
     // Set payload type for Redundant Audio Data RFC 2198
 int32_t
-RTPSenderAudio::SetRED(const int8_t payloadType)
-{
-    if(payloadType < -1 )
-    {
+RTPSenderAudio::SetRED(const int8_t payloadType) {
+    if (payloadType < -1) {
         return -1;
     }
     CriticalSectionScoped cs(_sendAudioCritsect.get());
@@ -402,11 +394,9 @@ RTPSenderAudio::SetRED(const int8_t payloadType)
 
     // Get payload type for Redundant Audio Data RFC 2198
 int32_t
-RTPSenderAudio::RED(int8_t& payloadType) const
-{
+RTPSenderAudio::RED(int8_t& payloadType) const {
     CriticalSectionScoped cs(_sendAudioCritsect.get());
-    if(_REDPayloadType == -1)
-    {
+    if (_REDPayloadType == -1) {
         // not configured
         return -1;
     }
@@ -433,27 +423,24 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                                          int8_t dtmf_payload_type,
                                          uint32_t dtmfTimeStamp,
                                          uint16_t duration,
-                                         bool markerBit)
-{
+                                         bool markerBit) {
     uint8_t dtmfbuffer[IP_PACKET_SIZE];
     uint8_t sendCount = 1;
     int32_t retVal = 0;
 
-    if(ended)
-    {
+    if (ended) {
         // resend last packet in an event 3 times
         sendCount = 3;
     }
-    do
-    {
-        //Send DTMF data
+    do {
+        // Send DTMF data
         _rtpSender->BuildRTPheader(dtmfbuffer, dtmf_payload_type, markerBit,
                                    dtmfTimeStamp, _clock->TimeInMilliseconds());
 
         // reset CSRC and X bit
         dtmfbuffer[0] &= 0xe0;
 
-        //Create DTMF data
+        // Create DTMF data
         /*    From RFC 2833:
 
          0                   1                   2                   3
@@ -482,7 +469,6 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                                            kAllowRetransmission,
                                            PacedSender::kHighPriority);
         sendCount--;
-
     }while (sendCount > 0 && retVal == 0);
 
     return retVal;

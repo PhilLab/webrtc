@@ -15,19 +15,20 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 
-namespace webrtc
-{
+namespace webrtc {
 // Defines
 #ifndef NULL
     #define NULL    0
 #endif
 
-enum {kVideoCaptureUniqueNameLength =1024}; //Max unique capture device name lenght
-enum {kVideoCaptureDeviceNameLength =256}; //Max capture device name lenght
-enum {kVideoCaptureProductIdLength =128}; //Max product id length
+// Max unique capture device name lenght
+enum {kVideoCaptureUniqueNameLength = 1024};
+// Max capture device name lenght
+enum {kVideoCaptureDeviceNameLength = 256};
+// Max product id length
+enum {kVideoCaptureProductIdLength = 128};
 
-struct VideoCaptureCapability
-{
+struct VideoCaptureCapability {
     int32_t width;
     int32_t height;
     int32_t maxFPS;
@@ -36,8 +37,7 @@ struct VideoCaptureCapability
     VideoCodecType codecType;
     bool interlaced;
 
-    VideoCaptureCapability()
-    {
+    VideoCaptureCapability() {
         width = 0;
         height = 0;
         maxFPS = 0;
@@ -46,9 +46,8 @@ struct VideoCaptureCapability
         codecType = kVideoCodecUnknown;
         interlaced = false;
     }
-    ;
-    bool operator!=(const VideoCaptureCapability &other) const
-    {
+
+    bool operator!=(const VideoCaptureCapability &other) const {
         if (width != other.width)
             return true;
         if (height != other.height)
@@ -63,14 +62,12 @@ struct VideoCaptureCapability
             return true;
         return false;
     }
-    bool operator==(const VideoCaptureCapability &other) const
-    {
+    bool operator==(const VideoCaptureCapability &other) const {
         return !operator!=(other);
     }
 };
 
-enum VideoCaptureAlarm
-{
+enum VideoCaptureAlarm {
     Raised = 0,
     Cleared = 1
 };
@@ -78,38 +75,35 @@ enum VideoCaptureAlarm
 /* External Capture interface. Returned by Create
  and implemented by the capture module.
  */
-class VideoCaptureExternal
-{
-public:
+class VideoCaptureExternal {
+ public:
     // |capture_time| must be specified in the NTP time format in milliseconds.
     virtual int32_t IncomingFrame(uint8_t* videoFrame,
                                   size_t videoFrameLength,
                                   const VideoCaptureCapability& frameInfo,
                                   int64_t captureTime = 0) = 0;
-protected:
+ protected:
     ~VideoCaptureExternal() {}
 };
 
 // Callback class to be implemented by module user
-class VideoCaptureDataCallback
-{
-public:
- virtual void OnIncomingCapturedFrame(const int32_t id,
+class VideoCaptureDataCallback {
+ public:
+    virtual void OnIncomingCapturedFrame(const int32_t id,
                                       const VideoFrame& videoFrame) = 0;
     virtual void OnCaptureDelayChanged(const int32_t id,
                                        const int32_t delay) = 0;
-protected:
+ protected:
     virtual ~VideoCaptureDataCallback(){}
 };
 
-class VideoCaptureFeedBack
-{
-public:
+class VideoCaptureFeedBack {
+ public:
     virtual void OnCaptureFrameRate(const int32_t id,
                                     const uint32_t frameRate) = 0;
     virtual void OnNoPictureAlarm(const int32_t id,
                                   const VideoCaptureAlarm alarm) = 0;
-protected:
+ protected:
     virtual ~VideoCaptureFeedBack(){}
 };
 

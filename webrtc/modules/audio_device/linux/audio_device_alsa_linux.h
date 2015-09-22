@@ -24,13 +24,11 @@
 #include <sys/soundcard.h>
 
 
-namespace webrtc
-{
+namespace webrtc {
 class EventWrapper;
 
-class AudioDeviceLinuxALSA : public AudioDeviceGeneric
-{
-public:
+class AudioDeviceLinuxALSA : public AudioDeviceGeneric {
+ public:
     AudioDeviceLinuxALSA(const int32_t id);
     virtual ~AudioDeviceLinuxALSA();
 
@@ -143,20 +141,20 @@ public:
     // CPU load
     int32_t CPULoad(uint16_t& load) const override;
 
-public:
- bool PlayoutWarning() const override;
- bool PlayoutError() const override;
- bool RecordingWarning() const override;
- bool RecordingError() const override;
- void ClearPlayoutWarning() override;
- void ClearPlayoutError() override;
- void ClearRecordingWarning() override;
- void ClearRecordingError() override;
+ public:
+  bool PlayoutWarning() const override;
+  bool PlayoutError() const override;
+  bool RecordingWarning() const override;
+  bool RecordingError() const override;
+  void ClearPlayoutWarning() override;
+  void ClearPlayoutError() override;
+  void ClearRecordingWarning() override;
+  void ClearRecordingError() override;
 
-public:
- void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
+ public:
+  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
-private:
+ private:
     int32_t GetDevicesInfo(const int32_t function,
                            const bool playback,
                            const int32_t enumDeviceNo = 0,
@@ -164,23 +162,24 @@ private:
                            const int32_t ednLen = 0) const;
     int32_t ErrorRecovery(int32_t error, snd_pcm_t* deviceHandle);
 
-private:
+ private:
     bool KeyPressed() const;
 
-private:
+ private:
     void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) { _critSect.Enter(); };
     void UnLock() UNLOCK_FUNCTION(_critSect) { _critSect.Leave(); };
-private:
+
+ private:
     inline int32_t InputSanityCheckAfterUnlockedPeriod() const;
     inline int32_t OutputSanityCheckAfterUnlockedPeriod() const;
 
-private:
+ private:
     static bool RecThreadFunc(void*);
     static bool PlayThreadFunc(void*);
     bool RecThreadProcess();
     bool PlayThreadProcess();
 
-private:
+ private:
     AudioDeviceBuffer* _ptrAudioBuffer;
 
     CriticalSectionWrapper& _critSect;
@@ -215,14 +214,14 @@ private:
     uint8_t _recChannels;
     uint8_t _playChannels;
 
-    int8_t* _recordingBuffer; // in byte
-    int8_t* _playoutBuffer; // in byte
+    int8_t* _recordingBuffer;  // in byte
+    int8_t* _playoutBuffer;  // in byte
     uint32_t _recordingFramesLeft;
     uint32_t _playoutFramesLeft;
 
     AudioDeviceModule::BufferType _playBufType;
 
-private:
+ private:
     bool _initialized;
     bool _recording;
     bool _playing;
@@ -247,6 +246,6 @@ private:
 #endif
 };
 
-}
+}  // namespace webrtc
 
 #endif  // MODULES_AUDIO_DEVICE_MAIN_SOURCE_LINUX_AUDIO_DEVICE_ALSA_LINUX_H_

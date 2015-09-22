@@ -57,7 +57,7 @@ class VideoProcessingModule : public Module {
   uint32_t num_pixels;       // Number of pixels.
   uint8_t  subSamplWidth;   // Subsampling rate of width in powers of 2.
   uint8_t  subSamplHeight;  // Subsampling rate of height in powers of 2.
-};
+  };
 
   /**
      Specifies the warning types returned by BrightnessDetection().
@@ -229,7 +229,7 @@ class VideoProcessingModule : public Module {
   /**
   Get decimated(target) frame height
   */
-  virtual uint32_t DecimatedHeight() const = 0 ;
+  virtual uint32_t DecimatedHeight() const = 0;
 
   /**
   Set the spatial resampling settings of the VPM: The resampler may either be
@@ -257,7 +257,7 @@ class VideoProcessingModule : public Module {
   /**
   Return content metrics for the last processed frame
   */
-  virtual VideoContentMetrics* ContentMetrics() const = 0 ;
+  virtual VideoContentMetrics* ContentMetrics() const = 0;
 
   /**
   Enable content analysis

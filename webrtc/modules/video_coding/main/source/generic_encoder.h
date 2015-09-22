@@ -15,6 +15,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 
 #include <stdio.h>
+#include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -29,9 +30,8 @@ class MediaOptimization;
 /*************************************/
 /* VCMEncodeFrameCallback class     */
 /***********************************/
-class VCMEncodedFrameCallback : public EncodedImageCallback
-{
-public:
+class VCMEncodedFrameCallback : public EncodedImageCallback {
+ public:
     VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback);
     virtual ~VCMEncodedFrameCallback();
 
@@ -49,14 +49,16 @@ public:
     /**
     * Set media Optimization
     */
-    void SetMediaOpt (media_optimization::MediaOptimization* mediaOpt);
+    void SetMediaOpt(media_optimization::MediaOptimization* mediaOpt);
 
-    void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; };
-    void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
+    void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; }
+    void SetInternalSource(bool internalSource) {
+      _internalSource = internalSource;
+    }
 
     void SetRotation(VideoRotation rotation) { _rotation = rotation; }
 
-private:
+ private:
     VCMPacketizationCallback* _sendCallback;
     media_optimization::MediaOptimization* _mediaOpt;
     uint8_t _payloadType;
@@ -68,16 +70,15 @@ private:
 #ifdef DEBUG_ENCODER_BIT_STREAM
     FILE* _bitStreamAfterEncoder;
 #endif
-};// end of VCMEncodeFrameCallback class
+};  // end of VCMEncodeFrameCallback class
 
 
 /******************************/
 /* VCMGenericEncoder class    */
 /******************************/
-class VCMGenericEncoder
-{
+class VCMGenericEncoder {
     friend class VCMCodecDataBase;
-public:
+ public:
     VCMGenericEncoder(VideoEncoder* encoder,
                       VideoEncoderRateObserver* rate_observer,
                       bool internalSource);
@@ -142,7 +143,7 @@ public:
 
     int GetTargetFramerate();
 
-private:
+ private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;
     VCMEncodedFrameCallback*  vcm_encoded_frame_callback_;
@@ -152,8 +153,8 @@ private:
     mutable rtc::CriticalSection rates_lock_;
     VideoRotation rotation_;
     bool is_screenshare_;
-}; // end of VCMGenericEncoder class
+};  // end of VCMGenericEncoder class
 
 }  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_

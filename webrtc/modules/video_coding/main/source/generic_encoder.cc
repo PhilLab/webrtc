@@ -49,7 +49,7 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
 }
 }  // namespace
 
-//#define DEBUG_ENCODER_BIT_STREAM
+// #define DEBUG_ENCODER_BIT_STREAM
 
 VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
                                      VideoEncoderRateObserver* rate_observer,
@@ -64,12 +64,10 @@ VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
       is_screenshare_(false) {
 }
 
-VCMGenericEncoder::~VCMGenericEncoder()
-{
+VCMGenericEncoder::~VCMGenericEncoder() {
 }
 
-int32_t VCMGenericEncoder::Release()
-{
+int32_t VCMGenericEncoder::Release() {
     {
       rtc::CritScope lock(&rates_lock_);
       bit_rate_ = 0;
@@ -83,8 +81,7 @@ int32_t VCMGenericEncoder::Release()
 int32_t
 VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                               int32_t numberOfCores,
-                              size_t maxPayloadSize)
-{
+                              size_t maxPayloadSize) {
     {
       rtc::CritScope lock(&rates_lock_);
       bit_rate_ = settings->startBitrate * 1000;
@@ -128,18 +125,15 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
 }
 
 int32_t
-VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int64_t rtt)
-{
+VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int64_t rtt) {
     return encoder_->SetChannelParameters(packetLoss, rtt);
 }
 
 int32_t
-VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate)
-{
+VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate) {
     uint32_t target_bitrate_kbps = (newBitRate + 500) / 1000;
     int32_t ret = encoder_->SetRates(target_bitrate_kbps, frameRate);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return ret;
     }
 
@@ -155,31 +149,26 @@ VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate)
 }
 
 int32_t
-VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size)
-{
+VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size) {
     int32_t ret = encoder_->CodecConfigParameters(buffer, size);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return ret;
     }
     return ret;
 }
 
-uint32_t VCMGenericEncoder::BitRate() const
-{
+uint32_t VCMGenericEncoder::BitRate() const {
     rtc::CritScope lock(&rates_lock_);
     return bit_rate_;
 }
 
-uint32_t VCMGenericEncoder::FrameRate() const
-{
+uint32_t VCMGenericEncoder::FrameRate() const {
     rtc::CritScope lock(&rates_lock_);
     return frame_rate_;
 }
 
 int32_t
-VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
-{
+VCMGenericEncoder::SetPeriodicKeyFrames(bool enable) {
     return encoder_->SetPeriodicKeyFrames(enable);
 }
 
@@ -193,16 +182,15 @@ int32_t VCMGenericEncoder::RequestFrame(
 }
 
 int32_t
-VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
-{
+VCMGenericEncoder::RegisterEncodeCallback(
+                  VCMEncodedFrameCallback* VCMencodedFrameCallback) {
     VCMencodedFrameCallback->SetInternalSource(internal_source_);
     vcm_encoded_frame_callback_ = VCMencodedFrameCallback;
     return encoder_->RegisterEncodeCompleteCallback(VCMencodedFrameCallback);
 }
 
 bool
-VCMGenericEncoder::InternalSource() const
-{
+VCMGenericEncoder::InternalSource() const {
     return internal_source_;
 }
 
@@ -239,16 +227,15 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
 #endif
 }
 
-VCMEncodedFrameCallback::~VCMEncodedFrameCallback()
-{
+VCMEncodedFrameCallback::~VCMEncodedFrameCallback() {
 #ifdef DEBUG_ENCODER_BIT_STREAM
     fclose(_bitStreamAfterEncoder);
 #endif
 }
 
 int32_t
-VCMEncodedFrameCallback::SetTransportCallback(VCMPacketizationCallback* transport)
-{
+VCMEncodedFrameCallback::SetTransportCallback(
+              VCMPacketizationCallback* transport) {
     _sendCallback = transport;
     return VCM_OK;
 }
@@ -294,8 +281,7 @@ int32_t VCMEncodedFrameCallback::Encoded(
 
 void
 VCMEncodedFrameCallback::SetMediaOpt(
-    media_optimization::MediaOptimization *mediaOpt)
-{
+    media_optimization::MediaOptimization *mediaOpt) {
     _mediaOpt = mediaOpt;
 }
 

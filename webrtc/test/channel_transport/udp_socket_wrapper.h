@@ -40,9 +40,8 @@ typedef void* CallbackObj;
 typedef void(*IncomingSocketCallback)(CallbackObj obj, const int8_t* buf,
                                       size_t len, const SocketAddress* from);
 
-class UdpSocketWrapper
-{
-public:
+class UdpSocketWrapper {
+ public:
     static UdpSocketWrapper* CreateSocket(const int32_t id,
                                           UdpSocketManager* mgr,
                                           CallbackObj obj,
@@ -93,7 +92,7 @@ public:
 
     virtual uint32_t ReceiveBuffers();
 
-protected:
+ protected:
     // Creating the socket is done via CreateSocket().
     UdpSocketWrapper();
     // Destroying the socket is done via CloseBlocking().
@@ -102,11 +101,11 @@ protected:
     bool _wantsIncoming;
     EventWrapper*  _deleteEvent;
 
-private:
+ private:
     static bool _initiated;
 };
 
-}  // namespac test
+}  // namespace test
 }  // namespace webrtc
 
 #endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_

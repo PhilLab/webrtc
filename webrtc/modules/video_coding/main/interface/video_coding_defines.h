@@ -69,7 +69,8 @@ class VCMPacketizationCallback {
   }
 };
 
-// Callback class used for passing decoded frames which are ready to be rendered.
+// Callback class used for passing decoded frames which are ready
+// to be rendered.
 class VCMReceiveCallback {
  public:
   virtual int32_t FrameToRender(VideoFrame& videoFrame) = 0;
@@ -85,8 +86,8 @@ class VCMReceiveCallback {
   }
 };
 
-// Callback class used for informing the user of the bit rate and frame rate produced by the
-// encoder.
+// Callback class used for informing the user of the bit rate and frame rate
+// produced by the encoder.
 class VCMSendStatisticsCallback {
  public:
   virtual int32_t SendStatistics(const uint32_t bitRate,
@@ -97,7 +98,8 @@ class VCMSendStatisticsCallback {
   }
 };
 
-// Callback class used for informing the user of the incoming bit rate and frame rate.
+// Callback class used for informing the user of the incoming bit rate and
+// frame rate.
 class VCMReceiveStatisticsCallback {
  public:
   virtual void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) = 0;
@@ -145,7 +147,8 @@ class VideoEncoderRateObserver {
   virtual void OnSetRates(uint32_t bitrate_bps, int framerate) = 0;
 };
 
-// Callback class used for telling the user about what frame type needed to continue decoding.
+// Callback class used for telling the user about what frame type needed to
+// continue decoding.
 // Typically a key frame when the stream has been corrupted in some way.
 class VCMFrameTypeCallback {
  public:
@@ -160,8 +163,8 @@ class VCMFrameTypeCallback {
   }
 };
 
-// Callback class used for telling the user about which packet sequence numbers are currently
-// missing and need to be resent.
+// Callback class used for telling the user about which packet sequence
+// numbers are currently missing and need to be resent.
 class VCMPacketRequestCallback {
  public:
   virtual int32_t ResendPackets(const uint16_t* sequenceNumbers,
