@@ -15,6 +15,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
@@ -570,7 +571,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
           // endToEndDelay+ synccurrentAudioDelay
           uint32_t endToEndDelay =
               Clock::GetRealTimeClock()->CurrentNtpInMilliseconds()
-              - static_cast<uint32_t>(audioFrame.ntp_time_ms_);
+              - static_cast<uint32_t>(audioFrame->ntp_time_ms_);
           TRACE_COUNTER1("webrtc", "EndToEndAudioDecoded", endToEndDelay);
 #endif
         }

@@ -156,7 +156,7 @@
         'build_libjpeg%': 0,
         'enable_protobuf%': 0,
       }],
-      ['winrt_platform=="win10_arm"', {
+      ['winrt_platform=="win_phone" or  winrt_platform=="win10_arm"', {
         'enable_protobuf%': 0,
       }],
       ['target_arch=="arm" or target_arch=="arm64"', {
