@@ -31,6 +31,7 @@
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/system_wrappers/interface/utf_util_win.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
@@ -686,6 +687,11 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
       ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
     }
   return ret;
+}
+
+void WebRTC::SynNTPTime(int64 current_ntp_time) {
+
+  webrtc::TickTime::SyncWithNtp(current_ntp_time);
 }
 
 void WebRTC::SetPreferredVideoCaptureFormat(int frame_width,

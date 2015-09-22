@@ -70,6 +70,10 @@ class TickTime {
   // Advance the fake clock. Must be called after UseFakeClock.
   static void AdvanceFakeClock(int64_t milliseconds);
 
+#ifdef WINRT
+  static void SyncWithNtp(int64_t timeFromNtpServer/*in ms*/);
+#endif
+
  private:
   static int64_t QueryOsForTicks();
 

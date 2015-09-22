@@ -120,6 +120,7 @@ public:
   static void SetPreferredVideoCaptureFormat(int frame_width,
                                              int frame_height,
                                              int fps);
+  static void SynNTPTime(int64 current_ntp_time);
 
 private:
   // This type is not meant to be created.
