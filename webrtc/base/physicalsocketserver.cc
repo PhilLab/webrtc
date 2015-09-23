@@ -58,7 +58,7 @@
 
 #if defined(WEBRTC_POSIX)
 #include <netinet/tcp.h>  // for TCP_NODELAY
-#define IP_MTU 14  // Until this is integrated from linux/in.h to netinet/in.h
+#define IP_MTU 14 // Until this is integrated from linux/in.h to netinet/in.h
 typedef void* SockOptArg;
 #endif  // WEBRTC_POSIX
 
@@ -75,17 +75,17 @@ const uint16 PACKET_MAXIMUMS[] = {
   32000,    // Nothing
   17914,    // 16Mb IBM Token Ring
   8166,     // IEEE 802.4
-  // 4464,   // IEEE 802.5 (4Mb max)
+  //4464,   // IEEE 802.5 (4Mb max)
   4352,     // FDDI
-  // 2048,   // Wideband Network
+  //2048,   // Wideband Network
   2002,     // IEEE 802.5 (4Mb recommended)
-  // 1536,   // Expermental Ethernet Networks
-  // 1500,   // Ethernet, Point-to-Point (default)
+  //1536,   // Expermental Ethernet Networks
+  //1500,   // Ethernet, Point-to-Point (default)
   1492,     // IEEE 802.3
   1006,     // SLIP, ARPANET
-  // 576,    // X.25 Networks
-  // 544,    // DEC IP Portal
-  // 512,    // NETBIOS
+  //576,    // X.25 Networks
+  //544,    // DEC IP Portal
+  //512,    // NETBIOS
   508,      // IEEE 802/Source-Rt Bridge, ARCNET
   296,      // Point-to-Point (low delay)
   68,       // Official minimum
@@ -957,7 +957,7 @@ AsyncFile* PhysicalSocketServer::CreateFile(int fd) {
   return new FileDispatcher(fd, this);
 }
 
-#endif  // WEBRTC_POSIX
+#endif // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
 static uint32 FlagsToEvents(uint32 events) {
@@ -1016,7 +1016,7 @@ class EventDispatcher : public Dispatcher {
 
   virtual bool CheckSignalClose() { return false; }
 
- private:
+private:
   PhysicalSocketServer* ss_;
   WSAEVENT hev_;
 };
@@ -1146,7 +1146,7 @@ class SocketDispatcher : public Dispatcher, public PhysicalSocket {
 
 int SocketDispatcher::next_id_ = 0;
 
-#endif  // WEBRTC_WIN
+#endif  // WEBRTC_WIN 
 
 // Sets the value of a boolean value to false when signaled.
 class Signaler : public EventDispatcher {
@@ -1546,7 +1546,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
       CritScope cr(&crit_);
       int index = dw - WSA_WAIT_EVENT_0;
       if (index > 0) {
-        --index;  // The first event is the socket event
+        --index; // The first event is the socket event
         event_owners[index]->OnPreEvent(0);
         event_owners[index]->OnEvent(0, 0);
       } else if (process_io) {
@@ -1562,6 +1562,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
           WSANETWORKEVENTS wsaEvents;
           int err = WSAEnumNetworkEvents(s, events[0], &wsaEvents);
           if (err == 0) {
+
 #if LOGGING
             {
               if ((wsaEvents.lNetworkEvents & FD_READ) &&
@@ -1639,6 +1640,6 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
   // Done
   return true;
 }
-#endif  // WEBRTC_WIN
+#endif  // WEBRTC_WIN 
 
 }  // namespace rtc

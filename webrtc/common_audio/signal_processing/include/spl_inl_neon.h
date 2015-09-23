@@ -26,13 +26,9 @@
 #define WebRtcSpl_SubSatW32(a, b) ((int32_t)_arm_qsub((a), (b)))
 #define WebRtcSpl_SubSatW16(a, b) ((int16_t)_arm_qsub16((a), (b)))
 #define WebRtcSpl_GetSizeInBits(a) ((int16_t)(32 - _arm_clz((a))))
-#define WebRtcSpl_NormW32(a) ((int16_t)((a) == 0 ? 0 : \
-        ((a) < 0 ? _arm_clz((((a) ^ 0xFFFFFFFF))) - 1 : \
-        _arm_clz((uint32_t)(a)) - 1)))
+#define WebRtcSpl_NormW32(a) ((int16_t)((a) == 0 ? 0 : ((a) < 0 ? _arm_clz((((a) ^ 0xFFFFFFFF))) - 1 : _arm_clz((uint32_t)(a)) - 1)))
 #define WebRtcSpl_NormU32(a) ((int16_t)((a) == 0 ? 0 : _arm_clz((uint32_t)(a))))
-#define WebRtcSpl_NormW16(a) ((int16_t)((a) == 0 ? 0 : \
-    ((a) < 0 ? _arm_clz(((int32_t)(a)) ^ 0xFFFFFFFF) - 17 : \
-    _arm_clz((uint32_t)(a)) - 17)))
+#define WebRtcSpl_NormW16(a) ((int16_t)((a) == 0 ? 0 : ((a) < 0 ? _arm_clz(((int32_t)(a)) ^ 0xFFFFFFFF) - 17 : _arm_clz((uint32_t)(a)) - 17)))
 #define WebRtcSpl_SatW32ToW16(a) ((int16_t)_arm_ssat(16, (a), _ARM_LSL, 0))
 
 #endif  // WEBRTC_SPL_SPL_INL_NEON_H_

@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <vector>
-#include <map>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common.h"

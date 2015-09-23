@@ -1,28 +1,20 @@
-/*
-*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
-
 #pragma once
 
-namespace libSrtpTests {
+namespace libSrtpTests
+{
   using namespace LibTest_runner;
 
-//=============================================================================
-//         class: CLibSrtpTestBase
-//   Description: Base class for LibSrtp test
-// History:
-// 2015/03/10 TP: created
-//=============================================================================
-class CLibSrtpTestBase : public CTestBase {
- public:
-    virtual ~CLibSrtpTestBase() {}
+  //=============================================================================
+  //         class: CLibSrtpTestBase
+  //   Description: Base class for LibSrtp test
+  // History: 
+  // 2015/03/10 TP: created
+  //=============================================================================
+  class CLibSrtpTestBase : public CTestBase
+  {
+  public:
+    virtual ~CLibSrtpTestBase() {};
     virtual void InterchangeablePrepareForExecution();
-};
-}  // namespace libSrtpTests
+  };
+}
 

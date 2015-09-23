@@ -33,8 +33,6 @@
 #include "webrtc/base/network.h"
 #include "webrtc/base/thread.h"
 
-#include <vector>
-
 namespace webrtc {
 
 using rtc::scoped_ptr;

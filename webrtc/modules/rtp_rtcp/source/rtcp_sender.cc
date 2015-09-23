@@ -16,8 +16,6 @@
 
 #include <algorithm>  // min
 #include <limits>     // max
-#include <utility>
-#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
@@ -37,7 +35,8 @@ NACKStringBuilder::NACKStringBuilder()
 
 NACKStringBuilder::~NACKStringBuilder() {}
 
-void NACKStringBuilder::PushNACK(uint16_t nack) {
+void NACKStringBuilder::PushNACK(uint16_t nack)
+{
   if (count_ == 0) {
     stream_ << nack;
   } else if (nack == prevNack_ + 1) {
@@ -645,7 +644,7 @@ RTCPSender::BuildResult RTCPSender::BuildFIR(RtcpContext* ctx) {
   *ctx->AllocateData(1) = 0x80 + FMT;
   *ctx->AllocateData(1) = 206;
 
-  // Length of 4
+  //Length of 4
   *ctx->AllocateData(1) = 0;
   *ctx->AllocateData(1) = 4;
 

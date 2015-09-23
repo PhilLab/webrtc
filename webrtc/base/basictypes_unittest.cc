@@ -71,13 +71,11 @@ TEST(BasicTypesTest, SizeOfConstants) {
 #if !defined(CPU_ARM) && (defined(__arm__) || defined(_M_ARM))
 #error expected CPU_ARM to be defined.
 #endif
-#if !defined(_M_ARM) && !defined(CPU_X86) && (defined(WEBRTC_WIN) \
-    || defined(WEBRTC_MAC) && !defined(WEBRTC_IOS))
+#if !defined(_M_ARM) && !defined(CPU_X86) && (defined(WEBRTC_WIN) || defined(WEBRTC_MAC) && !defined(WEBRTC_IOS))
 #error expected CPU_X86 to be defined.
 #endif
 #if !defined(ARCH_CPU_LITTLE_ENDIAN) && \
-    (defined(WEBRTC_WIN) || defined(WEBRTC_MAC) && \
-    !defined(WEBRTC_IOS) || defined(CPU_X86))
+  (defined(WEBRTC_WIN) || defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) || defined(CPU_X86))
 #error expected ARCH_CPU_LITTLE_ENDIAN to be defined.
 #endif
 

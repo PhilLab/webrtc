@@ -11,12 +11,9 @@
 #ifndef WEBRTC_BASE_HTTPCOMMON_H__
 #define WEBRTC_BASE_HTTPCOMMON_H__
 
-#include <algorithm>
 #include <map>
 #include <string>
 #include <vector>
-#include <utility>
-
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -69,17 +66,17 @@ enum HttpVerb {
 
 enum HttpError {
   HE_NONE,
-  HE_PROTOCOL,             // Received non-valid HTTP data
-  HE_DISCONNECTED,         // Connection closed unexpectedly
-  HE_OVERFLOW,             // Received too much data for internal buffers
-  HE_CONNECT_FAILED,       // The socket failed to connect.
-  HE_SOCKET_ERROR,         // An error occurred on a connected socket
-  HE_SHUTDOWN,             // Http object is being destroyed
-  HE_OPERATION_CANCELLED,  // Connection aborted locally
-  HE_AUTH,                 // Proxy Authentication Required
-  HE_CERTIFICATE_EXPIRED,  // During SSL negotiation
-  HE_STREAM,               // Problem reading or writing to the document
-  HE_CACHE,                // Problem reading from cache
+  HE_PROTOCOL,            // Received non-valid HTTP data
+  HE_DISCONNECTED,        // Connection closed unexpectedly
+  HE_OVERFLOW,            // Received too much data for internal buffers
+  HE_CONNECT_FAILED,      // The socket failed to connect.
+  HE_SOCKET_ERROR,        // An error occurred on a connected socket
+  HE_SHUTDOWN,            // Http object is being destroyed
+  HE_OPERATION_CANCELLED, // Connection aborted locally
+  HE_AUTH,                // Proxy Authentication Required
+  HE_CERTIFICATE_EXPIRED, // During SSL negotiation
+  HE_STREAM,              // Problem reading or writing to the document
+  HE_CACHE,               // Problem reading from cache
   HE_DEFAULT
 };
 
@@ -189,7 +186,7 @@ std::string quote(const std::string& str);
 
 template<class CTYPE>
 class Url {
- public:
+public:
   typedef typename Traits<CTYPE>::string string;
 
   // TODO: Implement Encode/Decode
@@ -260,7 +257,7 @@ class Url {
 
   bool get_attribute(const string& name, string* value) const;
 
- private:
+private:
   void do_set_url(const CTYPE* val, size_t len);
   void do_set_address(const CTYPE* val, size_t len);
   void do_set_full_path(const CTYPE* val, size_t len);
@@ -370,12 +367,12 @@ struct HttpData {
   virtual size_t formatLeader(char* buffer, size_t size) const = 0;
   virtual HttpError parseLeader(const char* line, size_t len) = 0;
 
- protected:
-  virtual ~HttpData();
+protected:
+ virtual ~HttpData();
   void clear(bool release_document);
   void copy(const HttpData& src);
 
- private:
+private:
   HeaderMap headers_;
 };
 
@@ -444,6 +441,6 @@ HttpAuthResult HttpAuthenticate(
 
 //////////////////////////////////////////////////////////////////////
 
-}  // namespace rtc
+} // namespace rtc
 
-#endif  // WEBRTC_BASE_HTTPCOMMON_H__
+#endif // WEBRTC_BASE_HTTPCOMMON_H__

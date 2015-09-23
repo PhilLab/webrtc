@@ -31,12 +31,15 @@ SharedData::SharedData(const Config& config) :
     _audioDevicePtr(NULL),
     _moduleProcessThreadPtr(ProcessThread::Create()),
     _externalRecording(false),
-    _externalPlayout(false) {
+    _externalPlayout(false)
+{
     Trace::CreateTrace();
-    if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0) {
+    if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0)
+    {
         _outputMixerPtr->SetEngineInformation(_engineStatistics);
     }
-    if (TransmitMixer::Create(_transmitMixerPtr, _gInstanceCounter) == 0) {
+    if (TransmitMixer::Create(_transmitMixerPtr, _gInstanceCounter) == 0)
+    {
         _transmitMixerPtr->SetEngineInformation(*_moduleProcessThreadPtr,
                                                 _engineStatistics,
                                                 _channelManager);
@@ -44,7 +47,8 @@ SharedData::SharedData(const Config& config) :
     _audioDeviceLayer = AudioDeviceModule::kPlatformDefaultAudio;
 }
 
-SharedData::~SharedData() {
+SharedData::~SharedData()
+{
     OutputMixer::Destroy(_outputMixerPtr);
     TransmitMixer::Destroy(_transmitMixerPtr);
     if (_audioDevicePtr) {
@@ -55,7 +59,8 @@ SharedData::~SharedData() {
     Trace::ReturnTrace();
 }
 
-void SharedData::set_audio_device(AudioDeviceModule* audio_device) {
+void SharedData::set_audio_device(AudioDeviceModule* audio_device)
+{
     // AddRef first in case the pointers are equal.
     if (audio_device)
       audio_device->AddRef();

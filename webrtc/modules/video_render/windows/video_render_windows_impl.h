@@ -30,8 +30,9 @@ enum VideoRenderWinMethod {
 };
 
 // Class definitions
-class VideoRenderWindowsImpl: IVideoRender {
- public:
+class VideoRenderWindowsImpl: IVideoRender
+{
+public:
     /*
      *   Constructor/destructor
      */
@@ -63,9 +64,9 @@ class VideoRenderWindowsImpl: IVideoRender {
 
     virtual int32_t
             GetIncomingRenderStreamProperties(const uint32_t streamId,
-                                        uint32_t& zOrder,
-                                        float& left, float& top,
-                                        float& right, float& bottom) const;
+                                              uint32_t& zOrder,
+                                              float& left, float& top,
+                                              float& right, float& bottom) const;
 
     /**************************************************************************
      *
@@ -124,7 +125,7 @@ class VideoRenderWindowsImpl: IVideoRender {
                               const float left, const float top,
                               const float right, const float bottom);
 
- private:
+private:
     CriticalSectionWrapper& _renderWindowsCritsect;
 
     void* _prtWindow;

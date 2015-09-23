@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <iomanip>
 
-#include "base/logging.h"
 #include "base/atomicops.h"
 #include "base/strings/string_util.h"
 #include "base/threading/platform_thread.h"

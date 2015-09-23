@@ -27,8 +27,6 @@
 
 #include <stdio.h>
 
-#include <algorithm>
-
 #include "talk/app/webrtc/statscollector.h"
 
 #include "talk/app/webrtc/mediastream.h"
@@ -513,7 +511,7 @@ class StatsCollectorTest : public testing::Test {
   // Adds a outgoing video track with a given SSRC into the stats.
   void AddOutgoingVideoTrackStats() {
     stream_ = webrtc::MediaStream::Create("streamlabel");
-    track_ = webrtc::VideoTrack::Create(kLocalTrackId, NULL);
+    track_= webrtc::VideoTrack::Create(kLocalTrackId, NULL);
     stream_->AddTrack(track_);
     EXPECT_CALL(session_, GetLocalTrackIdBySsrc(kSsrcOfTrack, _))
         .WillRepeatedly(DoAll(SetArgPointee<1>(kLocalTrackId), Return(true)));
@@ -522,7 +520,7 @@ class StatsCollectorTest : public testing::Test {
   // Adds a incoming video track with a given SSRC into the stats.
   void AddIncomingVideoTrackStats() {
     stream_ = webrtc::MediaStream::Create("streamlabel");
-    track_ = webrtc::VideoTrack::Create(kRemoteTrackId, NULL);
+    track_= webrtc::VideoTrack::Create(kRemoteTrackId, NULL);
     stream_->AddTrack(track_);
     EXPECT_CALL(session_, GetRemoteTrackIdBySsrc(kSsrcOfTrack, _))
         .WillRepeatedly(DoAll(SetArgPointee<1>(kRemoteTrackId), Return(true)));

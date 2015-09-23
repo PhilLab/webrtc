@@ -11,8 +11,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
-
 #include "webrtc/base/checks.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"

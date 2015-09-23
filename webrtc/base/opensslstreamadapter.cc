@@ -659,7 +659,7 @@ StreamState OpenSSLStreamAdapter::GetState() const {
       return SS_OPEN;
     default:
       return SS_CLOSED;
-  }
+  };
   // not reached
 }
 

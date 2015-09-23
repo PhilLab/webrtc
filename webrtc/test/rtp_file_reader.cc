@@ -560,7 +560,7 @@ class PcapReader : public RtpFileReaderImpl {
     if (protocol == kProtocolTcp) {
       DEBUG_LOG("TCP packets are not handled");
       return kResultSkip;
-    } else if (protocol == kProtocolUdp) {
+    } else if (protocol == kProtocolUdp) {      
       TRY_PCAP(Read(&marker->source_port, true));
       TRY_PCAP(Read(&marker->dest_port, true));
       TRY_PCAP(Read(&length, true));

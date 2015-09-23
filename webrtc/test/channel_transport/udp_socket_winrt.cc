@@ -27,7 +27,8 @@
 namespace webrtc {
 namespace test {
 UdpSocketWinRT::UdpSocketWinRT(const int32_t id, UdpSocketManager* mgr,
-                               bool ipV6Enable) : _id(id) {
+                               bool ipV6Enable) : _id(id)
+{
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
                  "UdpSocketWinRT::UdpSocketWinRT()");
 
@@ -42,54 +43,64 @@ UdpSocketWinRT::UdpSocketWinRT(const int32_t id, UdpSocketManager* mgr,
     _cs = CriticalSectionWrapper::CreateCriticalSection();
     _readyForDeletion = false;
     _closeBlockingActive = false;
-    _closeBlockingCompleted = false;
-    if (ipV6Enable) {
+    _closeBlockingCompleted= false;
+    if(ipV6Enable)
+    {
         _socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-    } else {
+    }
+    else {
         _socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     }
 
     // Set socket to nonblocking mode.
     u_long enable_non_blocking = 1;
-    if (ioctlsocket(_socket, FIONBIO, &enable_non_blocking) == -1) {
+    if(ioctlsocket (_socket, FIONBIO, &enable_non_blocking) == -1)
+    {
         WEBRTC_TRACE(kTraceWarning, kTraceTransport, id,
                      "Failed to make socket nonblocking");
     }
     // Enable close on fork for file descriptor so that it will not block until
     // forked process terminates.
-    /*if (fcntl(_socket, F_SETFD, FD_CLOEXEC) == -1)
+    /*if(fcntl(_socket, F_SETFD, FD_CLOEXEC) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceTransport, id,
                      "Failed to set FD_CLOEXEC for socket");
     }*/
 }
 
-UdpSocketWinRT::~UdpSocketWinRT() {
-    if (_socket != INVALID_SOCKET) {
+UdpSocketWinRT::~UdpSocketWinRT()
+{
+    if(_socket != INVALID_SOCKET)
+    {
         closesocket(_socket);
         _socket = INVALID_SOCKET;
     }
-    if (_readyForDeletionCond) {
+    if(_readyForDeletionCond)
+    {
         delete _readyForDeletionCond;
     }
 
-    if (_closeBlockingCompletedCond) {
+    if(_closeBlockingCompletedCond)
+    {
         delete _closeBlockingCompletedCond;
     }
 
-    if (_cs) {
+    if(_cs)
+    {
         delete _cs;
     }
 }
 
-bool UdpSocketWinRT::SetCallback(CallbackObj obj, IncomingSocketCallback cb) {
+bool UdpSocketWinRT::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
+{
     _obj = obj;
     _incomingCb = cb;
 
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocketWinRT(%p)::SetCallback", this);
 
-    if (_mgr->AddSocket(this)) {
+    if (_mgr->AddSocket(this))
+      {
         WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                      "UdpSocketWinRT(%p)::SetCallback socket added to manager",
                      this);
@@ -103,27 +114,32 @@ bool UdpSocketWinRT::SetCallback(CallbackObj obj, IncomingSocketCallback cb) {
 }
 
 bool UdpSocketWinRT::SetSockopt(int32_t level, int32_t optname,
-                                const int8_t* optval, int32_t optlen) {
-    if (0 == setsockopt(_socket, level, optname,
-        (const char*)optval, optlen)) {
-        return true;
-    }
+                                const int8_t* optval, int32_t optlen)
+{
+   if(0 == setsockopt(_socket, level, optname, (const char*)optval, optlen ))
+   {
+       return true;
+   }
 
-    WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
+   WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                 "UdpSocketWinRT::SetSockopt(), error:%d", errno);
-    return false;
+   return false;
 }
 
-int32_t UdpSocketWinRT::SetTOS(int32_t serviceType) {
-    if (SetSockopt(IPPROTO_IP, IP_TOS, (int8_t*)&serviceType, 4) != 0) {
+int32_t UdpSocketWinRT::SetTOS(int32_t serviceType)
+{
+    if (SetSockopt(IPPROTO_IP, IP_TOS ,(int8_t*)&serviceType ,4) != 0)
+    {
         return -1;
     }
     return 0;
 }
 
-bool UdpSocketWinRT::Bind(const SocketAddress& name) {
+bool UdpSocketWinRT::Bind(const SocketAddress& name)
+{
     int size = sizeof(sockaddr);
-    if (0 == bind(_socket, reinterpret_cast<const sockaddr*>(&name), size)) {
+    if (0 == bind(_socket, reinterpret_cast<const sockaddr*>(&name),size))
+    {
         return true;
     }
     WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
@@ -132,15 +148,17 @@ bool UdpSocketWinRT::Bind(const SocketAddress& name) {
 }
 
 int32_t UdpSocketWinRT::SendTo(const int8_t* buf, size_t len,
-                               const SocketAddress& to) {
+                               const SocketAddress& to)
+{
     int size = sizeof(sockaddr);
 
     // since it's winsock2, which expects int, disable warning for this line
-#pragma warning(disable:4267)
+#pragma warning (disable:4267)
     int retVal = sendto(_socket, (const char*)buf, len, 0,
                         reinterpret_cast<const sockaddr*>(&to), size);
-#pragma warning(default:4267)
-    if (retVal == SOCKET_ERROR) {
+#pragma warning (default:4267)
+    if(retVal == SOCKET_ERROR)
+    {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocketWinRT::SendTo() error: %d", errno);
     }
@@ -150,7 +168,8 @@ int32_t UdpSocketWinRT::SendTo(const int8_t* buf, size_t len,
 
 SOCKET UdpSocketWinRT::GetFd() { return _socket; }
 
-bool UdpSocketWinRT::ValidHandle() {
+bool UdpSocketWinRT::ValidHandle()
+{
     return _socket != INVALID_SOCKET;
 }
 
@@ -165,7 +184,8 @@ bool UdpSocketWinRT::SetQos(int32_t /*serviceType*/,
   return false;
 }
 
-void UdpSocketWinRT::HasIncoming() {
+void UdpSocketWinRT::HasIncoming()
+{
     // replace 2048 with a mcro define and figure out
     // where 2048 comes from
     int8_t buf[2048];
@@ -182,7 +202,7 @@ void UdpSocketWinRT::HasIncoming() {
 #endif
 
 #if defined(WEBRTC_MAC)
-        retval = recvfrom(_socket, buf, sizeof(buf), 0,
+        retval = recvfrom(_socket,buf, sizeof(buf), 0,
                           reinterpret_cast<sockaddr*>(&sockaddrfrom), &fromlen);
         memcpy(&from, &sockaddrfrom, fromlen);
         from._sockaddr_storage.sin_family = sockaddrfrom.sa_family;
@@ -191,14 +211,16 @@ void UdpSocketWinRT::HasIncoming() {
                           reinterpret_cast<sockaddr*>(&from), &fromlen);
 #endif
 
-    switch (retval) {
+    switch(retval)
+    {
     case 0:
         // The peer has performed an orderly shutdown.
         break;
     case SOCKET_ERROR:
         break;
     default:
-        if (_wantsIncoming && _incomingCb) {
+        if (_wantsIncoming && _incomingCb)
+        {
           _incomingCb(_obj, buf, retval, &from);
         }
         break;
@@ -207,16 +229,19 @@ void UdpSocketWinRT::HasIncoming() {
 
 bool UdpSocketWinRT::WantsIncoming() { return _wantsIncoming; }
 
-void UdpSocketWinRT::CloseBlocking() {
+void UdpSocketWinRT::CloseBlocking()
+{
     _cs->Enter();
     _closeBlockingActive = true;
-    if (!CleanUp()) {
+    if(!CleanUp())
+    {
         _closeBlockingActive = false;
         _cs->Leave();
         return;
     }
 
-    while (!_readyForDeletion) {
+    while(!_readyForDeletion)
+    {
         _readyForDeletionCond->SleepCS(*_cs);
     }
     _closeBlockingCompleted = true;
@@ -224,9 +249,11 @@ void UdpSocketWinRT::CloseBlocking() {
     _cs->Leave();
 }
 
-void UdpSocketWinRT::ReadyForDeletion() {
+void UdpSocketWinRT::ReadyForDeletion()
+{
     _cs->Enter();
-    if (!_closeBlockingActive) {
+    if(!_closeBlockingActive)
+    {
         _cs->Leave();
         return;
     }
@@ -234,16 +261,19 @@ void UdpSocketWinRT::ReadyForDeletion() {
     _socket = INVALID_SOCKET;
     _readyForDeletion = true;
     _readyForDeletionCond->Wake();
-    while (!_closeBlockingCompleted) {
+    while(!_closeBlockingCompleted)
+    {
         _closeBlockingCompletedCond->SleepCS(*_cs);
     }
     _cs->Leave();
 }
 
-bool UdpSocketWinRT::CleanUp() {
+bool UdpSocketWinRT::CleanUp()
+{
     _wantsIncoming = false;
 
-    if (_socket == INVALID_SOCKET) {
+    if (_socket == INVALID_SOCKET)
+    {
         return false;
     }
 

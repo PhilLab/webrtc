@@ -17,11 +17,11 @@ static const int16_t vector16[kVector16Size] = {1, -15511, 4323, 1963,
 
 class SplTest : public testing::Test {
  protected:
-    SplTest() {
-        WebRtcSpl_Init();
-    }
-    virtual ~SplTest() {
-    }
+   SplTest() {
+     WebRtcSpl_Init();
+   }
+   virtual ~SplTest() {
+   }
 };
 
 TEST_F(SplTest, MacroTest) {
@@ -566,7 +566,7 @@ TEST_F(SplTest, FFTTest) {
 //    }
     WebRtcSpl_ComplexBitReverse(B, 3);
     for (int kk = 0; kk < 16; ++kk) {
-        // EXPECT_EQ(A[kk], B[kk]);
+        //EXPECT_EQ(A[kk], B[kk]);
     }
 }
 

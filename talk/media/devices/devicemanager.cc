@@ -25,8 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <utility>
-
 #include "talk/media/devices/devicemanager.h"
 
 #include "talk/media/base/mediacommon.h"

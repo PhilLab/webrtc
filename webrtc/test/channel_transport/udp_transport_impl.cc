@@ -1225,7 +1225,7 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTPSocket() {
         mreq.imr_multiaddr.s_addr = InetAddrIPV4(_localMulticastIP);
         mreq.imr_interface.s_addr = INADDR_ANY;
 
-        if (!_ptrRtpSocket->SetSockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP,
+        if (!_ptrRtpSocket->SetSockopt(IPPROTO_IP, ip_ADD_MEMBERSHIP,
                                        (int8_t*)&mreq, sizeof (mreq))) {
            WEBRTC_TRACE(
                 kTraceError,
@@ -1287,7 +1287,7 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTCPSocket() {
         mreq.imr_multiaddr.s_addr = InetAddrIPV4(_localMulticastIP);
         mreq.imr_interface.s_addr = INADDR_ANY;
 
-        if (!_ptrRtcpSocket->SetSockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP,
+        if (!_ptrRtcpSocket->SetSockopt(IPPROTO_IP, ip_ADD_MEMBERSHIP,
                                         (int8_t*)&mreq, sizeof (mreq))) {
             WEBRTC_TRACE(
                 kTraceError,
@@ -1800,7 +1800,7 @@ int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
 }
 
 int32_t UdpTransportImpl::SetSendIP(const char* ipaddr) {
-    if (!IsIpAddressValid(ipaddr, IpV6Enabled())) {
+    if (!IsIpAddressValid(ipaddr, ipV6Enabled())) {
         return kIpAddressInvalid;
     }
     CriticalSectionScoped cs(_crit);

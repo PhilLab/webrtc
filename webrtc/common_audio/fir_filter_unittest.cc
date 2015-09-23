@@ -163,7 +163,7 @@ TEST(FIRFilterTest, SimplestHighPassFilter) {
 
   float output[kConstantInputLength];
   rtc::scoped_ptr<FIRFilter> filter(FIRFilter::Create(
-    kCoefficientsTest, kCoefficientsLengthTest, kConstantInputLength));
+	  kCoefficientsTest, kCoefficientsLengthTest, kConstantInputLength));
   filter->Filter(kConstantInput, kConstantInputLength, output);
   EXPECT_FLOAT_EQ(1.f, output[0]);
   for (size_t i = kCoefficientsLengthTest - 1; i < kConstantInputLength; ++i) {
@@ -182,11 +182,10 @@ TEST(FIRFilterTest, SimplestLowPassFilter) {
 
   float output[kHighFrequencyInputLength];
   rtc::scoped_ptr<FIRFilter> filter(FIRFilter::Create(
-    kCoefficientsTest, kCoefficientsLengthTest, kHighFrequencyInputLength));
+	  kCoefficientsTest, kCoefficientsLengthTest, kHighFrequencyInputLength));
   filter->Filter(kHighFrequencyInput, kHighFrequencyInputLength, output);
   EXPECT_FLOAT_EQ(-1.f, output[0]);
-  for (size_t i = kCoefficientsLengthTest - 1;
-      i < kHighFrequencyInputLength; ++i) {
+  for (size_t i = kCoefficientsLengthTest - 1; i < kHighFrequencyInputLength; ++i) {
     EXPECT_FLOAT_EQ(0.f, output[i]);
   }
 }

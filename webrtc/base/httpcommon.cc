@@ -45,7 +45,7 @@ extern const ConstantLabel SECURITY_ERRORS[];
 
 bool find_string(size_t& index, const std::string& needle,
                  const char* const haystack[], size_t max_index) {
-  for (index=0; index < max_index; ++index) {
+  for (index=0; index<max_index; ++index) {
     if (_stricmp(needle.c_str(), haystack[index]) == 0) {
       return true;
     }
@@ -77,7 +77,7 @@ struct Enum {
   inline Enum& operator=(const std::string& rhs) { assign(rhs); return *this; }
 };
 
-#define ENUM(e, n) \
+#define ENUM(e,n) \
   template<> const char** Enum<e>::Names = n; \
   template<> size_t Enum<e>::Size = sizeof(n)/sizeof(n[0])
 
@@ -239,7 +239,7 @@ std::string EscapeAttribute(const std::string& attribute) {
 void HttpComposeAttributes(const HttpAttributeList& attributes, char separator,
                            std::string* composed) {
   std::stringstream ss;
-  for (size_t i = 0; i < attributes.size(); ++i) {
+  for (size_t i=0; i<attributes.size(); ++i) {
     if (i > 0) {
       ss << separator << " ";
     }
@@ -275,7 +275,7 @@ void HttpParseAttributes(const char * data, size_t len,
 
     // Attribute has value?
     if ((pos < len) && (data[pos] == '=')) {
-      ++pos;  // Skip '='
+      ++pos; // Skip '='
       // Check if quoted value
       if ((pos < len) && (data[pos] == '"')) {
         while (++pos < len) {
@@ -297,7 +297,7 @@ void HttpParseAttributes(const char * data, size_t len,
     }
 
     attributes.push_back(attribute);
-    if ((pos < len) && (data[pos] == ',')) ++pos;  // Skip ','
+    if ((pos < len) && (data[pos] == ',')) ++pos; // Skip ','
   }
 }
 
@@ -385,8 +385,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
     gmt = non_gmt + kTimeZoneOffsets[zindex] * 60 * 60;
   }
   // TODO: Android should support timezone, see b/2441195
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) ||\
-    defined(WEBRTC_ANDROID) || defined(BSD)
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID) || defined(BSD)
   tm *tm_for_timezone = localtime(&gmt);
   *seconds = gmt + tm_for_timezone->tm_gmtoff;
 #else
@@ -544,7 +543,7 @@ HttpRequestData::parseLeader(const char* line, size_t len) {
   }
   std::string sverb(line, vend);
   if (!FromString(verb, sverb.c_str())) {
-    return HE_PROTOCOL;  // !?! HC_METHOD_NOT_SUPPORTED?
+    return HE_PROTOCOL; // !?! HC_METHOD_NOT_SUPPORTED?
   }
   path.assign(line + dstart, line + dend);
   return HE_NONE;
@@ -568,7 +567,8 @@ bool HttpRequestData::getAbsoluteUri(std::string* uri) const {
 }
 
 bool HttpRequestData::getRelativeUri(std::string* host,
-                                     std::string* ppath) const {
+                                     std::string* ppath) const
+{
   if (HV_CONNECT == verb)
     return false;
   Url<char> url(this->path);
@@ -717,7 +717,7 @@ const char * const DIGEST_RESPONSE =
 std::string quote(const std::string& str) {
   std::string result;
   result.push_back('"');
-  for (size_t i = 0; i < str.size(); ++i) {
+  for (size_t i=0; i<str.size(); ++i) {
     if ((str[i] == '"') || (str[i] == '\\'))
       result.push_back('\\');
     result.push_back(str[i]);
@@ -726,8 +726,7 @@ std::string quote(const std::string& str) {
   return result;
 }
 
-// SSPI not available in WinRT it would seem.
-#if defined(WEBRTC_WIN) && !defined(WINRT)
+#if defined(WEBRTC_WIN) && !defined(WINRT) // SSPI not available in WinRT it would seem.
 struct NegotiateAuthContext : public HttpAuthContext {
   CredHandle cred;
   CtxtHandle ctx;
@@ -744,15 +743,15 @@ struct NegotiateAuthContext : public HttpAuthContext {
     FreeCredentialsHandle(&cred);
   }
 };
-#endif  // WEBRTC_WIN
+#endif // WEBRTC_WIN
 
 HttpAuthResult HttpAuthenticate(
   const char * challenge, size_t len,
   const SocketAddress& server,
   const std::string& method, const std::string& uri,
   const std::string& username, const CryptString& password,
-  HttpAuthContext *& context, std::string& response,
-  std::string& auth_method) {
+  HttpAuthContext *& context, std::string& response, std::string& auth_method)
+{
 #if TEST_DIGEST
   challenge = DIGEST_CHALLENGE;
   len = strlen(challenge);
@@ -768,14 +767,14 @@ HttpAuthResult HttpAuthenticate(
   // BASIC
   if (_stricmp(auth_method.c_str(), "basic") == 0) {
     if (context)
-      return HAR_CREDENTIALS;  // Bad credentials
+      return HAR_CREDENTIALS; // Bad credentials
     if (username.empty())
-      return HAR_CREDENTIALS;  // Missing credentials
+      return HAR_CREDENTIALS; // Missing credentials
 
     context = new HttpAuthContext(auth_method);
 
     // TODO: convert sensitive to a secure buffer that gets securely deleted
-    // std::string decoded = username + ":" + password;
+    //std::string decoded = username + ":" + password;
     size_t length = username.size() + password.GetLength() + 2;
     char * sensitive = new char[length];
     size_t pos = strcpyn(sensitive, length, username.data(), username.size());
@@ -794,9 +793,9 @@ HttpAuthResult HttpAuthenticate(
   // DIGEST
   if (_stricmp(auth_method.c_str(), "digest") == 0) {
     if (context)
-      return HAR_CREDENTIALS;  // Bad credentials
+      return HAR_CREDENTIALS; // Bad credentials
     if (username.empty())
-      return HAR_CREDENTIALS;  // Missing credentials
+      return HAR_CREDENTIALS; // Missing credentials
 
     context = new HttpAuthContext(auth_method);
 
@@ -819,7 +818,7 @@ HttpAuthResult HttpAuthenticate(
     bool has_opaque = HttpHasAttribute(args, "opaque", &opaque);
 
     // TODO: convert sensitive to be secure buffer
-    // std::string A1 = username + ":" + realm + ":" + password;
+    //std::string A1 = username + ":" + realm + ":" + password;
     size_t length = username.size() + realm.size() + password.GetLength() + 3;
     char * sensitive = new char[length];  // A1
     size_t pos = strcpyn(sensitive, length, username.data(), username.size());
@@ -874,7 +873,7 @@ HttpAuthResult HttpAuthenticate(
     const size_t MAX_MESSAGE = 12000, MAX_SPN = 256;
     char out_buf[MAX_MESSAGE], spn[MAX_SPN];
 
-#if 0  // Requires funky windows versions
+#if 0 // Requires funky windows versions
     DWORD len = MAX_SPN;
     if (DsMakeSpn("HTTP", server.HostAsURIString().c_str(), NULL,
                   server.port(),
@@ -897,14 +896,15 @@ HttpAuthResult HttpAuthenticate(
     out_buf_desc.pBuffers  = &out_sec;
 
     const ULONG NEG_FLAGS_DEFAULT =
-        // ISC_REQ_ALLOCATE_MEMORY
-        ISC_REQ_CONFIDENTIALITY
-        // | ISC_REQ_EXTENDED_ERROR
-        // | ISC_REQ_INTEGRITY
-        | ISC_REQ_REPLAY_DETECT
-        | ISC_REQ_SEQUENCE_DETECT;
-      // | ISC_REQ_STREAM
-      // | ISC_REQ_USE_SUPPLIED_CREDS
+      //ISC_REQ_ALLOCATE_MEMORY
+      ISC_REQ_CONFIDENTIALITY
+      //| ISC_REQ_EXTENDED_ERROR
+      //| ISC_REQ_INTEGRITY
+      | ISC_REQ_REPLAY_DETECT
+      | ISC_REQ_SEQUENCE_DETECT
+      //| ISC_REQ_STREAM
+      //| ISC_REQ_USE_SUPPLIED_CREDS
+      ;
 
     ::TimeStamp lifetime;
     SECURITY_STATUS ret = S_OK;
@@ -913,14 +913,13 @@ HttpAuthResult HttpAuthenticate(
     bool specify_credentials = !username.empty();
     size_t steps = 0;
 
-    // uint32 now = Time();
+    //uint32 now = Time();
 
     NegotiateAuthContext * neg = static_cast<NegotiateAuthContext *>(context);
     if (neg) {
       const size_t max_steps = 10;
       if (++neg->steps >= max_steps) {
-        LOG(WARNING) <<
-            "AsyncHttpsProxySocket::Authenticate(Negotiate) too many retries";
+        LOG(WARNING) << "AsyncHttpsProxySocket::Authenticate(Negotiate) too many retries";
         return HAR_ERROR;
       }
       steps = neg->steps;
@@ -931,7 +930,7 @@ HttpAuthResult HttpAuthenticate(
                             &decoded_challenge, NULL)) {
         SecBuffer in_sec;
         in_sec.pvBuffer   = const_cast<char *>(decoded_challenge.data());
-        in_sec.cbBuffer = static_cast<unsigned long>(decoded_challenge.size());
+        in_sec.cbBuffer   = static_cast<unsigned long>(decoded_challenge.size());
         in_sec.BufferType = SECBUFFER_TOKEN;
 
         SecBufferDesc in_buf_desc;
@@ -939,10 +938,8 @@ HttpAuthResult HttpAuthenticate(
         in_buf_desc.cBuffers  = 1;
         in_buf_desc.pBuffers  = &in_sec;
 
-        ret = InitializeSecurityContextA(&neg->cred, &neg->ctx, spn, flags, 0,
-            SECURITY_NATIVE_DREP, &in_buf_desc, 0, &neg->ctx, &out_buf_desc,
-            &ret_flags, &lifetime);
-        // LOG(INFO) << "$$$ InitializeSecurityContext @ " << TimeSince(now);
+        ret = InitializeSecurityContextA(&neg->cred, &neg->ctx, spn, flags, 0, SECURITY_NATIVE_DREP, &in_buf_desc, 0, &neg->ctx, &out_buf_desc, &ret_flags, &lifetime);
+        //LOG(INFO) << "$$$ InitializeSecurityContext @ " << TimeSince(now);
         if (FAILED(ret)) {
           LOG(LS_ERROR) << "InitializeSecurityContext returned: "
                       << ErrorName(ret, SECURITY_ERRORS);
@@ -1008,20 +1005,18 @@ HttpAuthResult HttpAuthenticate(
       ret = AcquireCredentialsHandleA(
           0, const_cast<char*>(want_negotiate ? NEGOSSP_NAME_A : NTLMSP_NAME_A),
           SECPKG_CRED_OUTBOUND, 0, pauth_id, 0, 0, &cred, &lifetime);
-      // LOG(INFO) << "$$$ AcquireCredentialsHandle @ " << TimeSince(now);
+      //LOG(INFO) << "$$$ AcquireCredentialsHandle @ " << TimeSince(now);
       if (ret != SEC_E_OK) {
         LOG(LS_ERROR) << "AcquireCredentialsHandle error: "
                     << ErrorName(ret, SECURITY_ERRORS);
         return HAR_IGNORE;
       }
 
-      // CSecBufferBundle<5, CSecBufferBase::FreeSSPI> sb_out;
+      //CSecBufferBundle<5, CSecBufferBase::FreeSSPI> sb_out;
 
       CtxtHandle ctx;
-      ret = InitializeSecurityContextA(&cred, 0, spn, flags, 0,
-          SECURITY_NATIVE_DREP, 0, 0, &ctx, &out_buf_desc,
-          &ret_flags, &lifetime);
-      // LOG(INFO) << "$$$ InitializeSecurityContext @ " << TimeSince(now);
+      ret = InitializeSecurityContextA(&cred, 0, spn, flags, 0, SECURITY_NATIVE_DREP, 0, 0, &ctx, &out_buf_desc, &ret_flags, &lifetime);
+      //LOG(INFO) << "$$$ InitializeSecurityContext @ " << TimeSince(now);
       if (FAILED(ret)) {
         LOG(LS_ERROR) << "InitializeSecurityContext returned: "
                     << ErrorName(ret, SECURITY_ERRORS);
@@ -1035,10 +1030,9 @@ HttpAuthResult HttpAuthenticate(
       neg->steps = steps;
     }
 
-    if ((ret == SEC_I_COMPLETE_NEEDED) ||
-        (ret == SEC_I_COMPLETE_AND_CONTINUE)) {
+    if ((ret == SEC_I_COMPLETE_NEEDED) || (ret == SEC_I_COMPLETE_AND_CONTINUE)) {
       ret = CompleteAuthToken(&neg->ctx, &out_buf_desc);
-      // LOG(INFO) << "$$$ CompleteAuthToken @ " << TimeSince(now);
+      //LOG(INFO) << "$$$ CompleteAuthToken @ " << TimeSince(now);
       LOG(LS_VERBOSE) << "CompleteAuthToken returned: "
                       << ErrorName(ret, SECURITY_ERRORS);
       if (FAILED(ret)) {
@@ -1046,7 +1040,7 @@ HttpAuthResult HttpAuthenticate(
       }
     }
 
-    // LOG(INFO) << "$$$ NEGOTIATE took " << TimeSince(now) << "ms";
+    //LOG(INFO) << "$$$ NEGOTIATE took " << TimeSince(now) << "ms";
 
     std::string decoded(out_buf, out_buf + out_sec.cbBuffer);
     response = auth_method;
@@ -1055,11 +1049,11 @@ HttpAuthResult HttpAuthenticate(
     return HAR_RESPONSE;
   }
 #endif
-#endif  // WEBRTC_WIN
+#endif // WEBRTC_WIN
 
   return HAR_IGNORE;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-}  // namespace rtc
+} // namespace rtc

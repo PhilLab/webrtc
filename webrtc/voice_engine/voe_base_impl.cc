@@ -225,8 +225,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
 #if defined (WINRT)
     // Use AudioDeviceModule::kWindowsWasapiAudio for WinRT
     shared_->set_audio_device(AudioDeviceModuleImpl::Create(
-        VoEId(shared_->instance_id(), -1),
-        AudioDeviceModule::kWindowsWasapiAudio));
+        VoEId(shared_->instance_id(), -1), AudioDeviceModule::kWindowsWasapiAudio));
 #else
     shared_->set_audio_device(AudioDeviceModuleImpl::Create(
         VoEId(shared_->instance_id(), -1), shared_->audio_device_layer()));

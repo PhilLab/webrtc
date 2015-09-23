@@ -1424,7 +1424,8 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
   Run(10000, 9328);
 #else
   Run(10000, 9072);
-#endif  // WEBRTC_ANDROID
+#endif // WEBRTC_ANDROID
+
 }
 
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
@@ -1433,7 +1434,7 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
   Run(50000, 47952);
 #else
   Run(50000, 49600);
-#endif  // WEBRTC_ANDROID
+#endif // WEBRTC_ANDROID
 }
 
 // The result on the Android platforms is inconsistent for this test case.
@@ -1510,7 +1511,7 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps) {
   Run(10000, 32200, 5496);
 #else
   Run(10000, 32200, 5432);
-#endif  // WEBRTC_ANDROID
+#endif // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
@@ -1519,7 +1520,7 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
   Run(50000, 32200, 24912);
 #else
   Run(50000, 32200, 24792);
-#endif  // WEBRTC_ANDROID
+#endif // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
@@ -1528,7 +1529,7 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
   Run(100000, 32200, 51480);
 #else
   Run(100000, 32200, 50584);
-#endif  // WEBRTC_ANDROID
+#endif // WEBRTC_ANDROID
 }
 
 // These next 2 tests ensure that the SetBitRate function has no effect on PCM

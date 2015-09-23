@@ -31,8 +31,9 @@ class UdpSocketWinRT;
 class UdpSocketManagerWinRTImpl;
 #define MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX 8
 
-class UdpSocketManagerWinRT : public UdpSocketManager {
- public:
+class UdpSocketManagerWinRT : public UdpSocketManager
+{
+public:
     UdpSocketManagerWinRT();
     virtual ~UdpSocketManagerWinRT();
 
@@ -44,7 +45,7 @@ class UdpSocketManagerWinRT : public UdpSocketManager {
     bool AddSocket(UdpSocketWrapper* s) override;
     bool RemoveSocket(UdpSocketWrapper* s) override;
 
- private:
+private:
     int32_t _id;
     CriticalSectionWrapper* _critSect;
     uint8_t _numberOfSocketMgr;
@@ -53,8 +54,9 @@ class UdpSocketManagerWinRT : public UdpSocketManager {
     UdpSocketManagerWinRTImpl* _socketMgr[MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX];
 };
 
-class UdpSocketManagerWinRTImpl {
- public:
+class UdpSocketManagerWinRTImpl
+{
+public:
     UdpSocketManagerWinRTImpl();
     virtual ~UdpSocketManagerWinRTImpl();
 
@@ -64,12 +66,12 @@ class UdpSocketManagerWinRTImpl {
     virtual bool AddSocket(UdpSocketWrapper* s);
     virtual bool RemoveSocket(UdpSocketWrapper* s);
 
- protected:
+protected:
     static bool Run(void* obj);
     bool Process();
     void UpdateSocketMap();
 
- private:
+private:
     typedef std::list<UdpSocketWrapper*> SocketList;
     typedef std::list<SOCKET> FdList;
     rtc::scoped_ptr<ThreadWrapper> _thread;

@@ -1,13 +1,3 @@
-/*
-*  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
-
 #include "webrtc/base/loggingserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
@@ -39,8 +29,7 @@ LoggingServer::~LoggingServer() {
 
 int LoggingServer::Listen(const SocketAddress& addr, LoggingSeverity level) {
   level_ = level;
-  tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages,
-                                            thread_, "LoggingServer");
+  tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_, "LoggingServer");
   tw_->Start();
 
   LOG(LS_INFO) << "New LoggingServer thread created.";
@@ -59,6 +48,7 @@ int LoggingServer::Listen(const SocketAddress& addr, LoggingSeverity level) {
   // Maximum 5 pending connections are allowed.
   if ((listener_->Bind(addr) != SOCKET_ERROR) &&
     (listener_->Listen(5) != SOCKET_ERROR)) {
+
     // Send wake up signal to update the event list to wait
     thread_->socketserver()->WakeUp();
 

@@ -10,12 +10,10 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 
-#include <math.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <sstream>
-#include <string>
+#include <math.h>
+#include <stdlib.h>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
