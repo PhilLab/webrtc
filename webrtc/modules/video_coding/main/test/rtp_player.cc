@@ -393,7 +393,8 @@ class RtpPlayerImpl : public RtpPlayerInterface {
       if (!packet_source_->NextPacket(&next_packet_)) {
         end_of_file_ = true;
         return 0;
-      } else if (next_packet_.length == 0) {
+      }
+      else if (next_packet_.length == 0) {
         return 0;
       }
     }

@@ -30,30 +30,37 @@ UdpSocket2ManagerWindows::UdpSocket2ManagerWindows()
       _pCrit(CriticalSectionWrapper::CreateCriticalSection()),
       _ioCompletionHandle(NULL),
       _numActiveSockets(0),
-      _event(EventWrapper::Create()) {
+      _event(EventWrapper::Create())
+{
     _managerNumber = _numOfActiveManagers++;
 
-    if (_numOfActiveManagers == 1) {
+    if(_numOfActiveManagers == 1)
+    {
         WORD wVersionRequested = MAKEWORD(2, 2);
         WSADATA wsaData;
         _wsaInit = WSAStartup(wVersionRequested, &wsaData) == 0;
-        // TODO(hellner): seems safer to use RAII for this. E.g. what happens
+        // TODO (hellner): seems safer to use RAII for this. E.g. what happens
         //                 if a UdpSocket2ManagerWindows() created and destroyed
         //                 without being initialized.
     }
 }
 
-UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows() {
+UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocket2ManagerWindows(%d)::~UdpSocket2ManagerWindows()",
                  _managerNumber);
 
-    if (_init) {
+    if(_init)
+    {
         _pCrit->Enter();
-        if (_numActiveSockets) {
+        if(_numActiveSockets)
+        {
             _pCrit->Leave();
             _event->Wait(INFINITE);
-        } else {
+        }
+        else
+        {
             _pCrit->Leave();
         }
         StopWorkerThreads();
@@ -66,19 +73,24 @@ UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows() {
         _ioContextPool.Free();
 
         _numOfActiveManagers--;
-        if (_ioCompletionHandle) {
+        if(_ioCompletionHandle)
+        {
             CloseHandle(_ioCompletionHandle);
         }
-        if (_numOfActiveManagers == 0) {
-            if (_wsaInit) {
+        if (_numOfActiveManagers == 0)
+        {
+            if(_wsaInit)
+            {
                 WSACleanup();
             }
         }
     }
-    if (_pCrit) {
+    if(_pCrit)
+    {
         delete _pCrit;
     }
-    if (_event) {
+    if(_event)
+    {
         delete _event;
     }
 }
@@ -96,14 +108,17 @@ bool UdpSocket2ManagerWindows::Init(int32_t id,
   return true;
 }
 
-bool UdpSocket2ManagerWindows::Start() {
+bool UdpSocket2ManagerWindows::Start()
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocket2ManagerWindows(%d)::Start()", _managerNumber);
-    if (!_init) {
+                 "UdpSocket2ManagerWindows(%d)::Start()",_managerNumber);
+    if(!_init)
+    {
         StartWorkerThreads();
     }
 
-    if (!_init) {
+    if(!_init)
+    {
         return false;
     }
     _pCrit->Enter();
@@ -112,10 +127,11 @@ bool UdpSocket2ManagerWindows::Start() {
     int32_t error = 0;
     for (WorkerList::iterator iter = _workerThreadsList.begin();
          iter != _workerThreadsList.end() && !error; ++iter) {
-      if (!(*iter)->Start())
+      if(!(*iter)->Start())
         error = 1;
     }
-    if (error) {
+    if(error)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -130,13 +146,16 @@ bool UdpSocket2ManagerWindows::Start() {
     return true;
 }
 
-bool UdpSocket2ManagerWindows::StartWorkerThreads() {
-    if (!_init) {
+bool UdpSocket2ManagerWindows::StartWorkerThreads()
+{
+    if(!_init)
+    {
         _pCrit->Enter();
 
         _ioCompletionHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
                                                      0, 0);
-        if (_ioCompletionHandle == NULL) {
+        if(_ioCompletionHandle == NULL)
+        {
             int32_t error = GetLastError();
             WEBRTC_TRACE(
                 kTraceError,
@@ -144,7 +163,7 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads() {
                 _id,
                 "UdpSocket2ManagerWindows(%d)::StartWorkerThreads()"
                 "_ioCompletioHandle == NULL: error:%d",
-                _managerNumber, error);
+                _managerNumber,error);
             _pCrit->Leave();
             return false;
         }
@@ -152,10 +171,12 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads() {
         // Create worker threads.
         uint32_t i = 0;
         bool error = false;
-        while (i < _numOfWorkThreads && !error) {
+        while(i < _numOfWorkThreads && !error)
+        {
             UdpSocket2WorkerWindows* pWorker =
                 new UdpSocket2WorkerWindows(_ioCompletionHandle);
-            if (pWorker->Init() != 0) {
+            if(pWorker->Init() != 0)
+            {
                 error = true;
                 delete pWorker;
                 break;
@@ -163,7 +184,8 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads() {
             _workerThreadsList.push_front(pWorker);
             i++;
         }
-        if (error) {
+        if(error)
+        {
             WEBRTC_TRACE(
                 kTraceError,
                 kTraceTransport,
@@ -180,7 +202,8 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads() {
             _pCrit->Leave();
             return false;
         }
-        if (_ioContextPool.Init()) {
+        if(_ioContextPool.Init())
+        {
             WEBRTC_TRACE(
                 kTraceError,
                 kTraceTransport,
@@ -204,16 +227,19 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads() {
     return true;
 }
 
-bool UdpSocket2ManagerWindows::Stop() {
+bool UdpSocket2ManagerWindows::Stop()
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocket2ManagerWindows(%d)::Stop()", _managerNumber);
+                 "UdpSocket2ManagerWindows(%d)::Stop()",_managerNumber);
 
-    if (!_init) {
+    if(!_init)
+    {
         return false;
     }
     _pCrit->Enter();
     _stopped = true;
-    if (_numActiveSockets) {
+    if(_numActiveSockets)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -230,7 +256,8 @@ bool UdpSocket2ManagerWindows::Stop() {
     return result;
 }
 
-bool UdpSocket2ManagerWindows::StopWorkerThreads() {
+bool UdpSocket2ManagerWindows::StopWorkerThreads()
+{
     int32_t error = 0;
     WEBRTC_TRACE(
         kTraceDebug,
@@ -242,22 +269,26 @@ bool UdpSocket2ManagerWindows::StopWorkerThreads() {
         _numActiveSockets);
 
     // Release all threads waiting for GetQueuedCompletionStatus(..).
-    if (_ioCompletionHandle) {
+    if(_ioCompletionHandle)
+    {
         uint32_t i = 0;
-        for (i = 0; i < _workerThreadsList.size(); i++) {
-            PostQueuedCompletionStatus(_ioCompletionHandle, 0 , 0 , NULL);
+        for(i = 0; i < _workerThreadsList.size(); i++)
+        {
+            PostQueuedCompletionStatus(_ioCompletionHandle, 0 ,0 , NULL);
         }
     }
     for (WorkerList::iterator iter = _workerThreadsList.begin();
          iter != _workerThreadsList.end(); ++iter) {
-        if ((*iter)->Stop() == false) {
+        if((*iter)->Stop() == false)
+        {
             error = -1;
             WEBRTC_TRACE(kTraceWarning,  kTraceTransport, -1,
                          "failed to stop worker thread");
         }
     }
 
-    if (error)  {
+    if(error)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -270,11 +301,12 @@ bool UdpSocket2ManagerWindows::StopWorkerThreads() {
     return true;
 }
 
-bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s) {
+bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s)
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocket2ManagerWindows(%d)::AddSocketPrv()",
-                 _managerNumber);
-    if (!_init) {
+                 "UdpSocket2ManagerWindows(%d)::AddSocketPrv()",_managerNumber);
+    if(!_init)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -285,7 +317,8 @@ bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s) {
         return false;
     }
     _pCrit->Enter();
-    if (s == NULL) {
+    if(s == NULL)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -295,7 +328,8 @@ bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s) {
         _pCrit->Leave();
         return false;
     }
-    if (s->GetFd() == NULL || s->GetFd() == INVALID_SOCKET) {
+    if(s->GetFd() == NULL || s->GetFd() == INVALID_SOCKET)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -306,11 +340,13 @@ bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s) {
             (int32_t)s->GetFd());
         _pCrit->Leave();
         return false;
+
     }
     _ioCompletionHandle = CreateIoCompletionPort((HANDLE)s->GetFd(),
                                                  _ioCompletionHandle,
                                                  (ULONG_PTR)(s), 0);
-    if (_ioCompletionHandle == NULL) {
+    if(_ioCompletionHandle == NULL)
+    {
         int32_t error = GetLastError();
         WEBRTC_TRACE(
             kTraceError,
@@ -327,28 +363,35 @@ bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s) {
     _pCrit->Leave();
     return true;
 }
-bool UdpSocket2ManagerWindows::RemoveSocketPrv(UdpSocket2Windows* s) {
-    if (!_init) {
+bool UdpSocket2ManagerWindows::RemoveSocketPrv(UdpSocket2Windows* s)
+{
+    if(!_init)
+    {
         return false;
     }
     _pCrit->Enter();
     _numActiveSockets--;
-    if (_numActiveSockets == 0) {
+    if(_numActiveSockets == 0)
+    {
         _event->Set();
     }
     _pCrit->Leave();
     return true;
 }
 
-PerIoContext* UdpSocket2ManagerWindows::PopIoContext() {
-    if (!_init) {
+PerIoContext* UdpSocket2ManagerWindows::PopIoContext()
+{
+    if(!_init)
+    {
         return NULL;
     }
 
     PerIoContext* pIoC = NULL;
-    if (!_stopped) {
+    if(!_stopped)
+    {
         pIoC = _ioContextPool.PopIoContext();
-    } else {
+    }else
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -359,7 +402,8 @@ PerIoContext* UdpSocket2ManagerWindows::PopIoContext() {
     return pIoC;
 }
 
-int32_t UdpSocket2ManagerWindows::PushIoContext(PerIoContext* pIoContext) {
+int32_t UdpSocket2ManagerWindows::PushIoContext(PerIoContext* pIoContext)
+{
     return _ioContextPool.PushIoContext(pIoContext);
 }
 
@@ -367,23 +411,28 @@ IoContextPool::IoContextPool()
     : _pListHead(NULL),
       _init(false),
       _size(0),
-      _inUse(0) {
+      _inUse(0)
+{
 }
 
-IoContextPool::~IoContextPool() {
+IoContextPool::~IoContextPool()
+{
     Free();
     assert(_size.Value() == 0);
     AlignedFree(_pListHead);
 }
 
-int32_t IoContextPool::Init(uint32_t /*increaseSize*/) {
-    if (_init) {
+int32_t IoContextPool::Init(uint32_t /*increaseSize*/)
+{
+    if(_init)
+    {
         return 0;
     }
 
     _pListHead = (PSLIST_HEADER)AlignedMalloc(sizeof(SLIST_HEADER),
                                               MEMORY_ALLOCATION_ALIGNMENT);
-    if (_pListHead == NULL) {
+    if(_pListHead == NULL)
+    {
         return -1;
     }
     InitializeSListHead(_pListHead);
@@ -391,21 +440,25 @@ int32_t IoContextPool::Init(uint32_t /*increaseSize*/) {
     return 0;
 }
 
-PerIoContext* IoContextPool::PopIoContext() {
-    if (!_init) {
+PerIoContext* IoContextPool::PopIoContext()
+{
+    if(!_init)
+    {
         return NULL;
     }
 
     PSLIST_ENTRY pListEntry = InterlockedPopEntrySList(_pListHead);
-    if (pListEntry == NULL) {
+    if(pListEntry == NULL)
+    {
         IoContextPoolItem* item = (IoContextPoolItem*)
             AlignedMalloc(
                 sizeof(IoContextPoolItem),
                 MEMORY_ALLOCATION_ALIGNMENT);
-        if (item == NULL) {
+        if(item == NULL)
+        {
             return NULL;
         }
-        memset(&item->payload.ioContext, 0, sizeof(PerIoContext));
+        memset(&item->payload.ioContext,0,sizeof(PerIoContext));
         item->payload.base = item;
         pListEntry = &(item->itemEntry);
         ++_size;
@@ -414,8 +467,9 @@ PerIoContext* IoContextPool::PopIoContext() {
     return &((IoContextPoolItem*)pListEntry)->payload.ioContext;
 }
 
-int32_t IoContextPool::PushIoContext(PerIoContext* pIoContext) {
-    // TODO(hellner): Overlapped IO should be completed at this point. Perhaps
+int32_t IoContextPool::PushIoContext(PerIoContext* pIoContext)
+{
+    // TODO (hellner): Overlapped IO should be completed at this point. Perhaps
     //                 add an assert?
     const bool overlappedIOCompleted = HasOverlappedIoCompleted(
         (LPOVERLAPPED)pIoContext);
@@ -425,13 +479,15 @@ int32_t IoContextPool::PushIoContext(PerIoContext* pIoContext) {
     const int32_t usedItems = --_inUse;
     const int32_t totalItems = _size.Value();
     const int32_t freeItems = totalItems - usedItems;
-    if (freeItems < 0) {
+    if(freeItems < 0)
+    {
         assert(false);
         AlignedFree(item);
         return -1;
     }
-    if ((freeItems >= totalItems>>1) &&
-        overlappedIOCompleted) {
+    if((freeItems >= totalItems>>1) &&
+        overlappedIOCompleted)
+    {
         AlignedFree(item);
         --_size;
         return 0;
@@ -440,14 +496,17 @@ int32_t IoContextPool::PushIoContext(PerIoContext* pIoContext) {
     return 0;
 }
 
-int32_t IoContextPool::Free() {
-    if (!_init) {
+int32_t IoContextPool::Free()
+{
+    if(!_init)
+    {
         return 0;
     }
 
     int32_t itemsFreed = 0;
     PSLIST_ENTRY pListEntry = InterlockedPopEntrySList(_pListHead);
-    while (pListEntry != NULL)  {
+    while(pListEntry != NULL)
+    {
         IoContextPoolItem* item = ((IoContextPoolItem*)pListEntry);
         AlignedFree(item);
         --_size;
@@ -461,18 +520,21 @@ int32_t UdpSocket2WorkerWindows::_numOfWorkers = 0;
 
 UdpSocket2WorkerWindows::UdpSocket2WorkerWindows(HANDLE ioCompletionHandle)
     : _ioCompletionHandle(ioCompletionHandle),
-      _init(false) {
+      _init(false)
+{
     _workerNumber = _numOfWorkers++;
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
                  "UdpSocket2WorkerWindows created");
 }
 
-UdpSocket2WorkerWindows::~UdpSocket2WorkerWindows() {
+UdpSocket2WorkerWindows::~UdpSocket2WorkerWindows()
+{
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
                  "UdpSocket2WorkerWindows deleted");
 }
 
-bool UdpSocket2WorkerWindows::Start() {
+bool UdpSocket2WorkerWindows::Start()
+{
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Start UdpSocket2WorkerWindows");
     if (!_pThread->Start())
@@ -482,14 +544,17 @@ bool UdpSocket2WorkerWindows::Start() {
     return true;
 }
 
-bool UdpSocket2WorkerWindows::Stop() {
+bool UdpSocket2WorkerWindows::Stop()
+{
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Stop UdpSocket2WorkerWindows");
     return _pThread->Stop();
 }
 
-int32_t UdpSocket2WorkerWindows::Init() {
-    if (!_init) {
+int32_t UdpSocket2WorkerWindows::Init()
+{
+    if(!_init)
+    {
         const char* threadName = "UdpSocket2ManagerWindows_thread";
         _pThread = ThreadWrapper::CreateThread(Run, this, threadName);
         _init = true;
@@ -497,7 +562,8 @@ int32_t UdpSocket2WorkerWindows::Init() {
     return 0;
 }
 
-bool UdpSocket2WorkerWindows::Run(void* obj) {
+bool UdpSocket2WorkerWindows::Run(void* obj)
+{
     UdpSocket2WorkerWindows* pWorker =
         static_cast<UdpSocket2WorkerWindows*>(obj);
     return pWorker->Process();
@@ -505,7 +571,8 @@ bool UdpSocket2WorkerWindows::Run(void* obj) {
 
 // Process should always return true. Stopping the worker threads is done in
 // the UdpSocket2ManagerWindows::StopWorkerThreads() function.
-bool UdpSocket2WorkerWindows::Process() {
+bool UdpSocket2WorkerWindows::Process()
+{
     int32_t success = 0;
     DWORD ioSize = 0;
     UdpSocket2Windows* pSocket = NULL;
@@ -516,16 +583,19 @@ bool UdpSocket2WorkerWindows::Process() {
                                        (ULONG_PTR*)&pSocket, &pOverlapped, 200);
 
     uint32_t error = 0;
-    if (!success) {
+    if(!success)
+    {
         error = GetLastError();
-        if (error == WAIT_TIMEOUT) {
+        if(error == WAIT_TIMEOUT)
+        {
             return true;
         }
         // This may happen if e.g. PostQueuedCompletionStatus() has been called.
         // The IO context still needs to be reclaimed or re-used which is done
         // in UdpSocket2Windows::IOCompleted(..).
     }
-    if (pSocket == NULL) {
+    if(pSocket == NULL)
+    {
         WEBRTC_TRACE(
             kTraceDebug,
             kTraceTransport,
@@ -535,7 +605,7 @@ bool UdpSocket2WorkerWindows::Process() {
         return true;
     }
     pIOContext = (PerIoContext*)pOverlapped;
-    pSocket->IOCompleted(pIOContext, ioSize, error);
+    pSocket->IOCompleted(pIOContext,ioSize,error);
     return true;
 }
 

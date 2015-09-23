@@ -21,7 +21,7 @@
 
 namespace webrtc {
 
-// #define ANDROID_LOG
+//#define ANDROID_LOG
 
 class CriticalSectionWrapper;
 class EventWrapper;
@@ -33,9 +33,9 @@ class AndroidStream : public VideoRenderCallback {
  public:
   // DeliverFrame is called from a thread connected to the Java VM.
   // Used for Delivering frame for rendering.
-  virtual void DeliverFrame(JNIEnv* jniEnv) = 0;
+  virtual void DeliverFrame(JNIEnv* jniEnv)=0;
 
-  virtual ~AndroidStream() {}
+  virtual ~AndroidStream() {};
 };
 
 class VideoRenderAndroid: IVideoRender {
@@ -47,7 +47,7 @@ class VideoRenderAndroid: IVideoRender {
 
   virtual ~VideoRenderAndroid();
 
-  virtual int32_t Init() = 0;
+  virtual int32_t Init()=0;
 
   virtual int32_t ChangeWindow(void* window);
 
@@ -143,7 +143,7 @@ class VideoRenderAndroid: IVideoRender {
   EventWrapper& _javaShutdownEvent;
   EventWrapper& _javaRenderEvent;
   int64_t _lastJavaRenderEvent;
-  JNIEnv* _javaRenderJniEnv;  // JNIEnv for the java render thread.
+  JNIEnv* _javaRenderJniEnv; // JNIEnv for the java render thread.
   rtc::scoped_ptr<ThreadWrapper> _javaRenderThread;
 };
 

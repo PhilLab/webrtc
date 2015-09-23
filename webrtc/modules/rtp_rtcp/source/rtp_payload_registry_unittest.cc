@@ -254,7 +254,7 @@ TEST_P(RtpPayloadRegistryGenericTest, RegisterGenericReceivePayloadType) {
 
   EXPECT_EQ(0, rtp_payload_registry_->RegisterReceivePayload("generic-codec",
     static_cast<int8_t>(payload_type),
-    19, 1, 17, &ignored));  // dummy values, except for payload_type
+    19, 1, 17, &ignored)); // dummy values, except for payload_type
 }
 
 INSTANTIATE_TEST_CASE_P(TestDynamicRange, RtpPayloadRegistryGenericTest,

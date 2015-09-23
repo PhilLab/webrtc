@@ -114,8 +114,8 @@ TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAudioLevel) {
   EXPECT_TRUE(verifying_transport_.Wait());
 }
 
-TEST_F(SendRtpRtcpHeaderExtensionsTest,
-    SentPacketsIncludeNoAbsoluteSenderTime) {
+TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeNoAbsoluteSenderTime)
+{
   verifying_transport_.SetAbsoluteSenderTimeId(0);
   ResumePlaying();
   EXPECT_FALSE(verifying_transport_.Wait());

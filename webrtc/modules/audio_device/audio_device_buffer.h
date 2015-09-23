@@ -19,12 +19,13 @@ namespace webrtc {
 class CriticalSectionWrapper;
 
 const uint32_t kPulsePeriodMs = 1000;
-const uint32_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
+const uint32_t kMaxBufferSizeBytes = 3840; // 10ms in stereo @ 96kHz
 
 class AudioDeviceObserver;
 
-class AudioDeviceBuffer {
- public:
+class AudioDeviceBuffer
+{
+public:
     AudioDeviceBuffer();
     virtual ~AudioDeviceBuffer();
 
@@ -69,7 +70,7 @@ class AudioDeviceBuffer {
 
     int32_t SetTypingStatus(bool typingStatus);
 
- private:
+private:
     int32_t                   _id;
     CriticalSectionWrapper&         _critSect;
     CriticalSectionWrapper&         _critSectCb;

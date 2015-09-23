@@ -30,29 +30,34 @@ const int kVideoPayloadTypeFrequency = 90000;
 // Minimum RTP header size in bytes.
 const uint8_t kRtpHeaderSize = 12;
 
-struct AudioPayload {
+struct AudioPayload
+{
     uint32_t    frequency;
     uint8_t     channels;
     uint32_t    rate;
 };
 
-struct VideoPayload {
+struct VideoPayload
+{
     RtpVideoCodecTypes   videoCodecType;
     uint32_t       maxRate;
 };
 
-union PayloadUnion {
+union PayloadUnion
+{
     AudioPayload Audio;
     VideoPayload Video;
 };
 
-enum RTCPMethod {
+enum RTCPMethod
+{
     kRtcpOff          = 0,
     kRtcpCompound     = 1,
     kRtcpNonCompound = 2
 };
 
-enum RTPAliveType {
+enum RTPAliveType
+{
     kRtpDead   = 0,
     kRtpNoRtp = 1,
     kRtpAlive  = 2
@@ -78,7 +83,8 @@ enum RTPExtensionType {
   kRtpExtensionTransportSequenceNumber,
 };
 
-enum RTCPAppSubTypes {
+enum RTCPAppSubTypes
+{
     kAppSubtypeBwe     = 0x00
 };
 
@@ -105,18 +111,21 @@ enum RTCPPacketType : uint32_t {
   kRtcpXrDlrrReportBlock = 0x80000
 };
 
-enum KeyFrameRequestMethod {
+enum KeyFrameRequestMethod
+{
     kKeyFrameReqFirRtp    = 1,
     kKeyFrameReqPliRtcp   = 2,
     kKeyFrameReqFirRtcp   = 3
 };
 
-enum RtpRtcpPacketType {
+enum RtpRtcpPacketType
+{
     kPacketRtp        = 0,
     kPacketKeepAlive = 1
 };
 
-enum NACKMethod {
+enum NACKMethod
+{
     kNackOff      = 0,
     kNackRtcp     = 2
 };
@@ -138,7 +147,8 @@ enum RtxMode {
 
 const size_t kRtxHeaderSize = 2;
 
-struct RTCPSenderInfo {
+struct RTCPSenderInfo
+{
     uint32_t NTPseconds;
     uint32_t NTPfraction;
     uint32_t RTPtimeStamp;
@@ -205,8 +215,9 @@ struct RtpState {
   bool media_has_been_sent;
 };
 
-class RtpData {
- public:
+class RtpData
+{
+public:
     virtual ~RtpData() {}
 
     virtual int32_t OnReceivedPayloadData(
@@ -218,8 +229,9 @@ class RtpData {
                                    size_t packet_length) = 0;
 };
 
-class RtpFeedback {
- public:
+class RtpFeedback
+{
+public:
     virtual ~RtpFeedback() {}
 
     // Receiving payload change or SSRC change. (return success!)
@@ -234,16 +246,17 @@ class RtpFeedback {
         const uint8_t channels,
         const uint32_t rate) = 0;
 
-    virtual void OnIncomingSSRCChanged(const int32_t id,
+    virtual void OnIncomingSSRCChanged( const int32_t id,
                                         const uint32_t ssrc) = 0;
 
-    virtual void OnIncomingCSRCChanged(const int32_t id,
+    virtual void OnIncomingCSRCChanged( const int32_t id,
                                         const uint32_t CSRC,
                                         const bool added) = 0;
 };
 
 class RtpAudioFeedback {
  public:
+
   virtual void OnPlayTelephoneEvent(const int32_t id,
                                     const uint8_t event,
                                     const uint16_t lengthMs,
@@ -286,7 +299,7 @@ class RtcpRttStats {
 
   virtual int64_t LastProcessedRtt() const = 0;
 
-  virtual ~RtcpRttStats() {}
+  virtual ~RtcpRttStats() {};
 };
 
 // Null object version of RtpFeedback.
@@ -351,4 +364,4 @@ struct RtpPacketLossStats {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_

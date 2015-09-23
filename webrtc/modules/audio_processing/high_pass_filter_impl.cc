@@ -153,7 +153,7 @@ int HighPassFilterImpl::InitializeHandle(void* handle) const {
 }
 
 int HighPassFilterImpl::ConfigureHandle(void* /*handle*/) const {
-  return apm_->kNoError;  // Not configurable.
+  return apm_->kNoError; // Not configurable.
 }
 
 int HighPassFilterImpl::num_handles_required() const {

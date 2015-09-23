@@ -70,7 +70,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   int64_t first_frame_capture_time_;
 };
-}  // namespace test
-}  // namespace webrtc
+}  // test
+}  // webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_FRAME_GENERATOR_CAPTURER_H_

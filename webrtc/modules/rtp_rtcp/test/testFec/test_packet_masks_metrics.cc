@@ -427,7 +427,7 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
 
       // Map configuration number to a loss state.
       for (int j = 0; j < tot_num_packets; j++) {
-        state[j] = 0;  // Received state.
+        state[j]=0;  // Received state.
         int bit_value = i >> (tot_num_packets - j - 1) & 1;
         if (bit_value == 1) {
           state[j] = 1;  // Lost state.

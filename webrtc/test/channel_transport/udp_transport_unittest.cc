@@ -102,8 +102,7 @@ class UDPTransportTest : public ::testing::Test {
   std::vector<MockUdpSocketWrapper*>* sockets_created() {
     return &sockets_created_;
   }
-
- private:
+private:
   std::vector<MockUdpSocketWrapper*> sockets_created_;
 };
 

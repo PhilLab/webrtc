@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 
 #include <set>
-#include <utility>
 #include <vector>
 
 #include "webrtc/modules/interface/module.h"
@@ -641,4 +640,4 @@ class RtpRtcp : public Module {
     virtual int32_t RequestKeyFrame() = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_

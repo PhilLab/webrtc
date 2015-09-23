@@ -17,10 +17,8 @@
 #include <algorithm>
 #include <list>
 #include <numeric>
-#include <set>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "webrtc/base/common.h"

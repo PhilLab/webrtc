@@ -516,7 +516,7 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoUdpSockets) {
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
-#endif  // if !defined(ADDRESS_SANITIZER)
+#endif // if !defined(ADDRESS_SANITIZER)
 
 // Test that we don't crash or malfunction if we can't create UDP sockets or
 // listen on TCP sockets. We still give out a local TCP address, since
@@ -651,8 +651,8 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithHostOnly) {
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  EXPECT_EQ(2U, candidates_.size());  // Host UDP/TCP candidates only.
-  EXPECT_EQ(2U, ports_.size());  // UDP/TCP ports only.
+  EXPECT_EQ(2U, candidates_.size()); // Host UDP/TCP candidates only.
+  EXPECT_EQ(2U, ports_.size()); // UDP/TCP ports only.
   for (size_t i = 0; i < candidates_.size(); ++i) {
     EXPECT_EQ(std::string(cricket::LOCAL_PORT_TYPE), candidates_[i].type());
   }
@@ -671,8 +671,8 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   // Host is behind NAT, no private address will be exposed. Hence only UDP
   // port with STUN candidate will be sent outside.
-  EXPECT_EQ(1U, candidates_.size());  // Only STUN candidate.
-  EXPECT_EQ(1U, ports_.size());   // Only UDP port will be in ready state.
+  EXPECT_EQ(1U, candidates_.size()); // Only STUN candidate.
+  EXPECT_EQ(1U, ports_.size());  // Only UDP port will be in ready state.
   for (size_t i = 0; i < candidates_.size(); ++i) {
     EXPECT_EQ(std::string(cricket::STUN_PORT_TYPE), candidates_[i].type());
     EXPECT_EQ(
@@ -691,7 +691,7 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   session_->StartGettingPorts();
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   // Host has a public address, both UDP and TCP candidates will be exposed.
-  EXPECT_EQ(2U, candidates_.size());  // Local UDP + TCP candidate.
+  EXPECT_EQ(2U, candidates_.size()); // Local UDP + TCP candidate.
   EXPECT_EQ(2U, ports_.size());  //  UDP and TCP ports will be in ready state.
   for (size_t i = 0; i < candidates_.size(); ++i) {
     EXPECT_EQ(std::string(cricket::LOCAL_PORT_TYPE), candidates_[i].type());

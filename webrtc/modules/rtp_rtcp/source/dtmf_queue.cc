@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/dtmf_queue.h"
 
-#include <string.h>  // memset
+#include <string.h>  //memset
 
 namespace webrtc {
 DTMFqueue::DTMFqueue()

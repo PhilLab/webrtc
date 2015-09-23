@@ -45,7 +45,7 @@ jlong PointerTojlong(void* ptr) {
   return ret;
 }
 
-jmethodID GetMethodID(
+jmethodID GetMethodID (
     JNIEnv* jni, jclass c, const char* name, const char* signature) {
   jmethodID m = jni->GetMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetMethodID: " << name << ", "
@@ -54,7 +54,7 @@ jmethodID GetMethodID(
   return m;
 }
 
-jmethodID GetStaticMethodID(
+jmethodID GetStaticMethodID (
     JNIEnv* jni, jclass c, const char* name, const char* signature) {
   jmethodID m = jni->GetStaticMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetStaticMethodID: " << name << ", "

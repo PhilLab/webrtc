@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
-
 #include "webrtc/test/fake_encoder.h"
 
 #include "testing/gtest/include/gtest/gtest.h"

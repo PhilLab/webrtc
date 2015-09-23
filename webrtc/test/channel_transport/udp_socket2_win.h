@@ -35,8 +35,9 @@ class UdpSocket2ManagerWindows;
 class TrafficControlWindows;
 struct PerIoContext;
 
-class UdpSocket2Windows : public UdpSocketWrapper {
- public:
+class UdpSocket2Windows : public UdpSocketWrapper
+{
+public:
     UdpSocket2Windows(const int32_t id, UdpSocketManager* mgr,
                       bool ipV6Enable = false, bool disableGQOS = false);
     virtual ~UdpSocket2Windows();
@@ -77,14 +78,14 @@ class UdpSocket2Windows : public UdpSocketWrapper {
 
     uint32_t ReceiveBuffers() override { return _receiveBuffers.Value(); }
 
- protected:
+protected:
     void IOCompleted(PerIoContext* pIOContext, uint32_t ioSize, uint32_t error);
 
     int32_t PostRecv();
     // Use pIoContext to post a new WSARecvFrom(..).
     int32_t PostRecv(PerIoContext* pIoContext);
 
- private:
+private:
     friend class UdpSocket2WorkerWindows;
 
     // Set traffic control (TC) flow adding it the interface that matches this

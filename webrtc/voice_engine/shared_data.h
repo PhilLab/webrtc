@@ -30,8 +30,9 @@ namespace voe {
 class TransmitMixer;
 class OutputMixer;
 
-class SharedData {
- public:
+class SharedData
+{
+public:
     // Public accessors.
     uint32_t instance_id() const { return _instanceId; }
     Statistics& statistics() { return _engineStatistics; }
@@ -64,7 +65,7 @@ class SharedData {
     void SetLastError(int32_t error, TraceLevel level,
                       const char* msg) const;
 
- protected:
+protected:
     const uint32_t _instanceId;
     CriticalSectionWrapper* _apiCritPtr;
     ChannelManager _channelManager;
@@ -87,4 +88,4 @@ class SharedData {
 }  // namespace voe
 
 }  // namespace webrtc
-#endif  // WEBRTC_VOICE_ENGINE_SHARED_DATA_H
+#endif // WEBRTC_VOICE_ENGINE_SHARED_DATA_H

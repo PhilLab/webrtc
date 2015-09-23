@@ -18,8 +18,9 @@
 namespace webrtc {
 
 // Class definitions
-class VideoRenderExternalImpl: IVideoRender, public VideoRenderCallback {
- public:
+class VideoRenderExternalImpl: IVideoRender, public VideoRenderCallback
+{
+public:
     /*
      *   Constructor/destructor
      */
@@ -53,8 +54,7 @@ class VideoRenderExternalImpl: IVideoRender, public VideoRenderCallback {
             GetIncomingRenderStreamProperties(const uint32_t streamId,
                                               uint32_t& zOrder,
                                               float& left, float& top,
-                                              float& right,
-                                              float& bottom) const;
+                                              float& right, float& bottom) const;
 
     /**************************************************************************
      *
@@ -117,7 +117,7 @@ class VideoRenderExternalImpl: IVideoRender, public VideoRenderCallback {
     virtual int32_t RenderFrame(const uint32_t streamId,
                                 const VideoFrame& videoFrame);
 
- private:
+private:
     CriticalSectionWrapper& _critSect;
     bool _fullscreen;
 };

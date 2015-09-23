@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
 #define WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
 
-#include <map>
 #include <string>
 
 #include "webrtc/base/criticalsection.h"

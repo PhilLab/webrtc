@@ -15,43 +15,49 @@
 #include "webrtc/common_video/interface/incoming_video_stream.h"
 #include "webrtc/modules/interface/module_common_types.h"
 
-namespace webrtc {
+namespace webrtc
+{
 // Defines
 #ifndef NULL
 #define NULL    0
 #endif
 
 // Enums
-enum VideoRenderType {
-    kRenderExternal = 0,  // External
-    kRenderWindows = 1,  // Windows
-    kRenderCocoa = 2,  // Mac
+enum VideoRenderType
+{
+    kRenderExternal = 0, // External
+    kRenderWindows = 1, // Windows
+    kRenderCocoa = 2, // Mac
     kRenderCarbon = 3,
-    kRenderiOS = 4,  // iPhone
-    kRenderAndroid = 5,  // Android
-    kRenderX11 = 6,  // Linux
+    kRenderiOS = 4, // iPhone
+    kRenderAndroid = 5, // Android
+    kRenderX11 = 6, // Linux
     kRenderDefault
 };
 
 // Runtime errors
-enum VideoRenderError {
+enum VideoRenderError
+{
     kRenderShutDown = 0,
     kRenderPerformanceAlarm = 1
 };
 
 // Feedback class to be implemented by module user
-class VideoRenderFeedback {
- public:
+class VideoRenderFeedback
+{
+public:
     virtual void OnRenderError(const int32_t streamId,
                                const VideoRenderError error) = 0;
 
- protected:
-    virtual ~VideoRenderFeedback() {
+protected:
+    virtual ~VideoRenderFeedback()
+    {
     }
 };
 
 // Mobile enums
-enum StretchMode {
+enum StretchMode
+{
     kStretchToInsideEdge = 1,
     kStretchToOutsideEdge = 2,
     kStretchMatchWidth = 3,

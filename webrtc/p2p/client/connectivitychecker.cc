@@ -9,8 +9,6 @@
  */
 
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "webrtc/p2p/client/connectivitychecker.h"
 
@@ -444,6 +442,7 @@ void ConnectivityChecker::AllocatePorts() {
     if (AddNic(networks[i]->GetBestIP(), proxy_info.address)) {
       Port* port = CreateStunPort(username, password, &config, networks[i]);
       if (port) {
+
         // Listen to network events.
         port->SignalPortComplete.connect(
             this, &ConnectivityChecker::OnStunPortComplete);
@@ -530,4 +529,4 @@ void ConnectivityChecker::RegisterHttpStart(int port) {
   }
 }
 
-}  // namespace cricket
+}  // namespace rtc

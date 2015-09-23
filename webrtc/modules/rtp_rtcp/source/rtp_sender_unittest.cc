@@ -12,8 +12,6 @@
  * This file includes unit tests for the RTPSender.
  */
 
-#include <vector>
-
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/buffer.h"
@@ -164,7 +162,7 @@ class RtpSenderTest : public ::testing::Test {
 
 class RtpSenderVideoTest : public RtpSenderTest {
  protected:
-  void SetUp() override {
+  virtual void SetUp() override {
     RtpSenderTest::SetUp();
     rtp_sender_video_.reset(
         new RTPSenderVideo(&fake_clock_, rtp_sender_.get()));
@@ -1103,6 +1101,7 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
       MatchPacketCounter(counters.retransmitted, counters_.retransmitted);
       EXPECT_EQ(counters.fec.packets, counters_.fec.packets);
     }
+
   } callback;
 
   const uint8_t kRedPayloadType = 96;
@@ -1227,9 +1226,9 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
   EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
 
   uint8_t extension[] = { 0xbe, 0xde, 0x00, 0x01,
-                          (kAudioLevelExtensionId << 4) + 0,  // ID + length.
-                          kAudioLevel,                        // Data.
-                          0x00, 0x00                          // Padding.
+                          (kAudioLevelExtensionId << 4) + 0, // ID + length.
+                          kAudioLevel,                       // Data.
+                          0x00, 0x00                         // Padding.
                         };
 
   EXPECT_EQ(0, memcmp(extension, payload_data - sizeof(extension),

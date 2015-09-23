@@ -42,7 +42,7 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
   VideoCaptureModule* vcm_;
   VideoCaptureCapability capability_;
 };
-}  // namespace test
-}  // namespace webrtc
+}  // test
+}  // webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VCM_CAPTURER_H_

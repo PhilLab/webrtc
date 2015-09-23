@@ -11,8 +11,6 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H_
 
-#include <vector>
-
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
@@ -148,22 +146,22 @@ class ChannelState {
         state_.receiving = enable;
     }
 
- private:
-  rtc::scoped_ptr<CriticalSectionWrapper> lock_;
+private:
+ rtc::scoped_ptr<CriticalSectionWrapper> lock_;
     State state_;
 };
 
 class Channel:
     public RtpData,
     public RtpFeedback,
-    public FileCallback,  // receiving notification from
-                          // file player & recorder
+    public FileCallback, // receiving notification from file player & recorder
     public Transport,
     public RtpAudioFeedback,
-    public AudioPacketizationCallback,  // receive encoded packets from the ACM
-    public ACMVADCallback,  // receive voice activity from the ACM
-    public MixerParticipant {  // supplies output mixer with audio frames
- public:
+    public AudioPacketizationCallback, // receive encoded packets from the ACM
+    public ACMVADCallback, // receive voice activity from the ACM
+    public MixerParticipant // supplies output mixer with audio frames
+{
+public:
     friend class VoERtcpObserver;
 
     enum {KNumSocketThreads = 1};
@@ -391,32 +389,41 @@ class Channel:
     void PlayFileEnded(int32_t id) override;
     void RecordFileEnded(int32_t id) override;
 
-    uint32_t InstanceId() const {
+    uint32_t InstanceId() const
+    {
         return _instanceId;
     }
-    int32_t ChannelId() const {
+    int32_t ChannelId() const
+    {
         return _channelId;
     }
-    bool Playing() const {
+    bool Playing() const
+    {
         return channel_state_.Get().playing;
     }
-    bool Sending() const {
+    bool Sending() const
+    {
         return channel_state_.Get().sending;
     }
-    bool Receiving() const {
+    bool Receiving() const
+    {
         return channel_state_.Get().receiving;
     }
-    bool ExternalTransport() const {
+    bool ExternalTransport() const
+    {
         CriticalSectionScoped cs(&_callbackCritSect);
         return _externalTransport;
     }
-    bool ExternalMixing() const {
+    bool ExternalMixing() const
+    {
         return _externalMixing;
     }
-    RtpRtcp* RtpRtcpModulePtr() const {
+    RtpRtcp* RtpRtcpModulePtr() const
+    {
         return _rtpRtcpModule.get();
     }
-    int8_t OutputEnergyLevel() const {
+    int8_t OutputEnergyLevel() const
+    {
         return _outputAudioLevel.Level();
     }
     uint32_t Demultiplex(const AudioFrame& audioFrame);
@@ -441,10 +448,10 @@ class Channel:
     // Disassociate a send channel if it was associated.
     void DisassociateSendChannel(int channel_id);
 
- protected:
+protected:
     void OnIncomingFractionLoss(int fraction_lost);
 
- private:
+private:
     bool ReceivePacket(const uint8_t* packet, size_t packet_length,
                        const RTPHeader& header, bool in_order);
     bool HandleRtxPacket(const uint8_t* packet,
@@ -531,14 +538,14 @@ class Channel:
     TransmitMixer* _transmitMixerPtr;
     ProcessThread* _moduleProcessThreadPtr;
     AudioDeviceModule* _audioDeviceModulePtr;
-    VoiceEngineObserver* _voiceEngineObserverPtr;  // owned by base
-    CriticalSectionWrapper* _callbackCritSectPtr;  // owned by base
-    Transport* _transportPtr;  // WebRtc socket or external transport
+    VoiceEngineObserver* _voiceEngineObserverPtr; // owned by base
+    CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
+    Transport* _transportPtr; // WebRtc socket or external transport
     RMSLevel rms_level_;
     rtc::scoped_ptr<AudioProcessing> rx_audioproc_;  // far end AudioProcessing
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
-    int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
+    int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
     // VoEBase
     bool _externalMixing;
     bool _mixFileWithMicrophone;

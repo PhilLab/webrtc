@@ -70,6 +70,6 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   VPMFramePreprocessor frame_pre_processor_;
 };
 
-}  // namespace webrtc
+}  // namespace
 
 #endif

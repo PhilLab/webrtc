@@ -34,7 +34,7 @@ int64_t GetNextCallbackTime(Module* module, int64_t time_now) {
   }
   return time_now + interval;
 }
-}  // namespace
+}
 
 ProcessThread::~ProcessThread() {}
 
@@ -83,7 +83,7 @@ void ProcessThreadImpl::Start() {
 
 void ProcessThreadImpl::Stop() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (!thread_.get())
+  if(!thread_.get())
     return;
 
   {

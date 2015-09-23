@@ -22,14 +22,16 @@
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/video_frame.h"
 
-namespace webrtc {
+namespace webrtc
+{
 class CriticalSectionWrapper;
 
 namespace videocapturemodule {
 // Class definitions
-class VideoCaptureImpl: public VideoCaptureModule,
-                        public VideoCaptureExternal {
- public:
+class VideoCaptureImpl: public VideoCaptureModule, public VideoCaptureExternal
+{
+public:
+
     /*
      *   Create a video capture module object
      *
@@ -55,7 +57,7 @@ class VideoCaptureImpl: public VideoCaptureModule,
     static int32_t RotationFromDegrees(int degrees, VideoRotation* rotation);
     static int32_t RotationInDegrees(VideoRotation rotation, int* degrees);
 
-    // Call backs
+    //Call backs
     virtual void RegisterCaptureDataCallback(
         VideoCaptureDataCallback& dataCallback);
     virtual void DeRegisterCaptureDataCallback();
@@ -87,7 +89,8 @@ class VideoCaptureImpl: public VideoCaptureModule,
                                   int64_t captureTime = 0);
 
     // Platform dependent
-    virtual int32_t StartCapture(const VideoCaptureCapability& capability) {
+    virtual int32_t StartCapture(const VideoCaptureCapability& capability)
+    {
         _requestedCapability = capability;
         return -1;
     }
@@ -95,39 +98,37 @@ class VideoCaptureImpl: public VideoCaptureModule,
     virtual bool CaptureStarted() {return false; }
     virtual int32_t CaptureSettings(VideoCaptureCapability& /*settings*/)
     { return -1; }
-    VideoCaptureEncodeInterface* GetEncodeInterface(
-                                      const VideoCodec& /*codec*/) {
-      return NULL;
-    }
+    VideoCaptureEncodeInterface* GetEncodeInterface(const VideoCodec& /*codec*/)
+    { return NULL; }
 
- protected:
+protected:
     VideoCaptureImpl(const int32_t id);
     virtual ~VideoCaptureImpl();
     int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
-    int32_t _id;  // Module ID
-    char* _deviceUniqueId;  // current Device unique name;
+    int32_t _id; // Module ID
+    char* _deviceUniqueId; // current Device unique name;
     CriticalSectionWrapper& _apiCs;
-    int32_t _captureDelay;  // Current capture delay. May be changed of platform dependent parts.
-    VideoCaptureCapability _requestedCapability;  // Should be set by platform dependent code in StartCapture.
- private:
+    int32_t _captureDelay; // Current capture delay. May be changed of platform dependent parts.
+    VideoCaptureCapability _requestedCapability; // Should be set by platform dependent code in StartCapture.
+private:
     void UpdateFrameCount();
     uint32_t CalculateFrameRate(const TickTime& now);
 
     CriticalSectionWrapper& _callBackCs;
 
-    TickTime _lastProcessTime;  // last time the module process function was called.
-    TickTime _lastFrameRateCallbackTime;  // last time the frame rate callback function was called.
-    bool _frameRateCallBack;  // true if EnableFrameRateCallback
-    bool _noPictureAlarmCallBack;  // true if EnableNoPictureAlarm
-    VideoCaptureAlarm _captureAlarm;  // current value of the noPictureAlarm
+    TickTime _lastProcessTime; // last time the module process function was called.
+    TickTime _lastFrameRateCallbackTime; // last time the frame rate callback function was called.
+    bool _frameRateCallBack; // true if EnableFrameRateCallback
+    bool _noPictureAlarmCallBack; //true if EnableNoPictureAlarm
+    VideoCaptureAlarm _captureAlarm; // current value of the noPictureAlarm
 
-    int32_t _setCaptureDelay;  // The currently used capture delay
+    int32_t _setCaptureDelay; // The currently used capture delay
     VideoCaptureDataCallback* _dataCallBack;
     VideoCaptureFeedBack* _captureCallBack;
 
     TickTime _lastProcessFrameCount;
-    TickTime _incomingFrameTimes[kFrameRateCountHistorySize];  // timestamp for local captured frames
+    TickTime _incomingFrameTimes[kFrameRateCountHistorySize];// timestamp for local captured frames
     VideoRotation _rotateFrame;  // Set if the frame should be rotated by the
                                  // capture module.
 

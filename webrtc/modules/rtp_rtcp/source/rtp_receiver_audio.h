@@ -98,6 +98,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const override;
 
  private:
+
   int32_t ParseAudioCodecSpecific(
       WebRtcRTPHeader* rtp_header,
       const uint8_t* payload_data,

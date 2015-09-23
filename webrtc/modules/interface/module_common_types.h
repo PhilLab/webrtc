@@ -127,7 +127,7 @@ class RTPFragmentationHeader {
         fragmentationOffset(NULL),
         fragmentationLength(NULL),
         fragmentationTimeDiff(NULL),
-        fragmentationPlType(NULL) {}
+        fragmentationPlType(NULL) {};
 
   ~RTPFragmentationHeader() {
     delete[] fragmentationOffset;
@@ -524,7 +524,7 @@ inline int16_t ClampToInt16(int32_t input) {
     return static_cast<int16_t>(input);
   }
 }
-}  // namespace
+}
 
 inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
   // Sanity check

@@ -9,7 +9,6 @@
  */
 
 #include <string>
-#include <vector>
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/relayport.h"
@@ -344,7 +343,7 @@ TEST_F(ConnectivityCheckerTest, TestStart) {
   ASSERT(i != nics.end());
   info = i->second;
   VerifyNic(info, kClientAddr2);
-}
+};
 
 // Tests that nothing bad happens if thera are no network interfaces
 // available to check.

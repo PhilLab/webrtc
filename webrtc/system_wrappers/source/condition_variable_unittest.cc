@@ -19,9 +19,8 @@ namespace webrtc {
 
 namespace {
 
-const int kLongWaitMs = 100 * 1000;  // A long time in testing terms
-const int kShortWaitMs = 2 * 1000;   // Long enough for process switches
-                                     // to happen
+const int kLongWaitMs = 100 * 1000; // A long time in testing terms
+const int kShortWaitMs = 2 * 1000; // Long enough for process switches to happen
 
 // A Baton is one possible control structure one can build using
 // conditional variables.

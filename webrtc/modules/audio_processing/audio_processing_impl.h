@@ -13,7 +13,6 @@
 
 #include <list>
 #include <string>
-#include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"

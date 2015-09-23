@@ -14,7 +14,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 
 #include <algorithm>
-#include <map>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"

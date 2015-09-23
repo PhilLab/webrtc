@@ -12,12 +12,10 @@
 
 #include <math.h>
 #include <string.h>
-#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <deque>
 #include <set>
-#include <limits>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/fft4g.h"

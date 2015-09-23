@@ -16,7 +16,7 @@
 namespace webrtc {
 
 // 96x96 screen gives a 4x4 grid of blocks.
-const int kScreenWidth = 96;
+const int kScreenWidth= 96;
 const int kScreenHeight = 96;
 
 // To test partial blocks, we need a width and height that are not multiples

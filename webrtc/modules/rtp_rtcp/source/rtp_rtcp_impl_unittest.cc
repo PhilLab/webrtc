@@ -8,9 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <map>
-#include <set>
-
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 

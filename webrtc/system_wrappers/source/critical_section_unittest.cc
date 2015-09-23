@@ -28,7 +28,7 @@ static void SwitchProcess() {
 }
 
 class ProtectedCount {
- public:
+public:
   explicit ProtectedCount(CriticalSectionWrapper* crit_sect)
     : crit_sect_(crit_sect),
       count_(0) {
@@ -44,13 +44,13 @@ class ProtectedCount {
     return count_;
   }
 
- private:
+private:
   CriticalSectionWrapper* crit_sect_;
   int count_;
 };
 
 class CritSectTest : public ::testing::Test {
- public:
+public:
   CritSectTest() {}
 
   // Waits a number of cycles for the count to reach a given value.

@@ -23,11 +23,12 @@ namespace test {
 
 class UdpSocketManager;
 
-class UdpTransportImpl : public UdpTransport {
- public:
+class UdpTransportImpl : public UdpTransport
+{
+public:
     // A factory that returns a wrapped UDP socket or equivalent.
     class SocketFactoryInterface {
-     public:
+    public:
         virtual ~SocketFactoryInterface() {}
         virtual UdpSocketWrapper* CreateSocket(const int32_t id,
                                                UdpSocketManager* mgr,
@@ -131,8 +132,7 @@ class UdpTransportImpl : public UdpTransport {
                             uint16_t& sourcePort) override;
 
     int32_t Id() const {return _id;}
-
- protected:
+protected:
     // IncomingSocketCallback signature functions for receiving callbacks from
     // UdpSocketWrapper.
     static void IncomingRTPCallback(CallbackObj obj,
@@ -177,7 +177,7 @@ class UdpTransportImpl : public UdpTransport {
 
     int32_t DisableQoS();
 
- private:
+private:
     void GetCachedAddress(char* ip, uint32_t& ipSize,
                           uint16_t& sourcePort);
 

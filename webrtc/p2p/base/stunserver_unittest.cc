@@ -61,7 +61,6 @@ class StunServerTest : public testing::Test {
     }
     return msg;
   }
-
  private:
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
@@ -101,7 +100,7 @@ TEST_F(StunServerTest, TestGood) {
   delete msg;
 }
 
-#endif  // if !defined(THREAD_SANITIZER)
+#endif // if !defined(THREAD_SANITIZER)
 
 TEST_F(StunServerTest, TestBad) {
   const char* bad = "this is a completely nonsensical message whose only "

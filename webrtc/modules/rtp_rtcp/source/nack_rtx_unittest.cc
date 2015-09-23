@@ -35,7 +35,8 @@ const int kNumFrames = 30;
 const int kPayloadType = 123;
 const int kRtxPayloadType = 98;
 
-class VerifyingRtxReceiver : public NullRtpData {
+class VerifyingRtxReceiver : public NullRtpData
+{
  public:
   VerifyingRtxReceiver() {}
 

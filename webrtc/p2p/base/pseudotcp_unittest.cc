@@ -9,7 +9,6 @@
  */
 
 #include <algorithm>
-#include <string>
 #include <vector>
 
 #include "webrtc/p2p/base/pseudotcp.h"
@@ -232,8 +231,8 @@ class PseudoTcpTest : public PseudoTcpTestBase {
     recv_stream_.GetSize(&received);
     // Ensure we closed down OK and we got the right data.
     // TODO: Ensure the errors are cleared properly.
-    // EXPECT_EQ(0, local_.GetError());
-    // EXPECT_EQ(0, remote_.GetError());
+    //EXPECT_EQ(0, local_.GetError());
+    //EXPECT_EQ(0, remote_.GetError());
     EXPECT_EQ(static_cast<size_t>(size), received);
     EXPECT_EQ(0, memcmp(send_stream_.GetBuffer(),
                         recv_stream_.GetBuffer(), size));
@@ -319,9 +318,9 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
  public:
   PseudoTcpTestPingPong()
       : iterations_remaining_(0),
-  sender_(NULL),
-  receiver_(NULL),
-  bytes_per_send_(0) {
+	sender_(NULL),
+	receiver_(NULL),
+	bytes_per_send_(0) {
   }
   void SetBytesPerSend(int bytes) {
     bytes_per_send_ = bytes;
@@ -774,7 +773,7 @@ TEST_F(PseudoTcpTestPingPong, TestPingPongShortSegments) {
   SetLocalMtu(1500);
   SetRemoteMtu(1500);
   SetOptAckDelay(5000);
-  SetBytesPerSend(50);  // i.e. two Send calls per payload
+  SetBytesPerSend(50); // i.e. two Send calls per payload
   TestPingPong(100, 5);
 }
 
@@ -784,7 +783,7 @@ TEST_F(PseudoTcpTestPingPong, TestPingPongShortSegmentsWithNaglingOff) {
   SetLocalMtu(1500);
   SetRemoteMtu(1500);
   SetOptNagling(false);
-  SetBytesPerSend(50);  // i.e. two Send calls per payload
+  SetBytesPerSend(50); // i.e. two Send calls per payload
   TestPingPong(100, 5);
 }
 
@@ -793,7 +792,7 @@ TEST_F(PseudoTcpTestPingPong, TestPingPongShortSegmentsWithNaglingOff) {
 TEST_F(PseudoTcpTestPingPong, TestPingPongShortSegmentsWithAckDelayOff) {
   SetLocalMtu(1500);
   SetRemoteMtu(1500);
-  SetBytesPerSend(50);  // i.e. two Send calls per payload
+  SetBytesPerSend(50); // i.e. two Send calls per payload
   SetOptAckDelay(0);
   TestPingPong(100, 5);
 }
