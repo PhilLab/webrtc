@@ -25,8 +25,6 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
-using Windows::Media::Core::IMediaSource;
-using Windows::UI::Xaml::Controls::MediaElement;
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
@@ -37,11 +35,9 @@ namespace webrtc {
  *    VideoChannelWinRT
  *
  */
-VideoChannelWinRT::VideoChannelWinRT(IWinRTMediaElement* media_element,
-                                     CriticalSectionWrapper* crit_sect,
+VideoChannelWinRT::VideoChannelWinRT(CriticalSectionWrapper* crit_sect,
                                      Trace* trace)
-  : media_element_(media_element),
-    width_(0),
+  : width_(0),
     height_(0),
     buffer_is_updated_(false),
     crit_sect_(crit_sect),
@@ -59,22 +55,6 @@ VideoChannelWinRT::VideoChannelWinRT(IWinRTMediaElement* media_element,
 
 VideoChannelWinRT::~VideoChannelWinRT() {
   render_media_source_->Stop();
-  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-  Windows::UI::Core::CoreDispatcherPriority priority =
-    Windows::UI::Core::CoreDispatcherPriority::Normal;
-  IMediaSource^ media_source =
-    safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(
-    render_media_source_.Get()));
-  Windows::UI::Core::DispatchedHandler^ handler =
-    ref new Windows::UI::Core::DispatchedHandler(
-    [this, media_source]() {
-    if (media_element_) {
-      media_element_->Stop();
-    }
-  });
-  Windows::Foundation::IAsyncAction^ action =
-    dispatcher->RunAsync(priority, handler);
-  Concurrency::create_task(action).wait();
 }
 
 void VideoChannelWinRT::SetStreamSettings(uint16_t stream_id,
@@ -144,22 +124,6 @@ int VideoChannelWinRT::FrameSizeChange(int width,
 
   render_media_source_->FrameSizeChange(width, height);
 
-  Windows::UI::Core::CoreDispatcher^ dispatcher = g_windowDispatcher;
-  Windows::UI::Core::CoreDispatcherPriority priority =
-    Windows::UI::Core::CoreDispatcherPriority::Normal;
-  IMediaSource^ media_source =
-    safe_cast<IMediaSource^>(reinterpret_cast<Platform::Object^>(
-      render_media_source_.Get()));
-  Windows::UI::Core::DispatchedHandler^ handler =
-    ref new Windows::UI::Core::DispatchedHandler(
-      [this, media_source]() {
-    media_element_->SetMediaStreamSource(media_source);
-    media_element_->Play();
-  });
-  Windows::Foundation::IAsyncAction^ action =
-    dispatcher->RunAsync(priority, handler);
-  Concurrency::create_task(action).wait();
-
   return 0;
 }
 
@@ -214,7 +178,6 @@ VideoRenderWinRT::VideoRenderWinRT(Trace* trace,
                                    bool full_screen)
   : ref_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
     trace_(trace),
-    h_wnd_(h_wnd),
     full_screen_(full_screen),
     channel_(NULL),
     win_width_(0),
@@ -318,11 +281,7 @@ VideoRenderCallback* VideoRenderWinRT::CreateChannel(const uint32_t stream_id,
                                                      const float bottom) {
   CriticalSectionScoped cs(&ref_critsect_);
 
-  IWinRTMediaElement* media_element =
-    reinterpret_cast<IWinRTMediaElement*>(h_wnd_);
-
-  VideoChannelWinRT* channel = new VideoChannelWinRT(media_element,
-                                                     &ref_critsect_,
+  VideoChannelWinRT* channel = new VideoChannelWinRT(&ref_critsect_,
                                                      trace_);
   channel->SetStreamSettings(0, z_order, left, top, right, bottom);
 
