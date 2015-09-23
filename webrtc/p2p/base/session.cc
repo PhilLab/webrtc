@@ -37,10 +37,6 @@ TransportProxy::~TransportProxy() {
   }
 }
 
-const std::string& TransportProxy::type() const {
-  return transport_->get()->type();
-}
-
 TransportChannel* TransportProxy::GetChannel(int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   return GetChannelProxy(component);
@@ -281,9 +277,9 @@ bool TransportProxy::OnRemoteCandidates(const Candidates& candidates,
   return true;
 }
 
-void TransportProxy::SetIdentity(
-    rtc::SSLIdentity* identity) {
-  transport_->get()->SetIdentity(identity);
+void TransportProxy::SetCertificate(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+  transport_->get()->SetCertificate(certificate);
 }
 
 std::string BaseSession::StateToString(State state) {
@@ -339,9 +335,7 @@ BaseSession::BaseSession(rtc::Thread* signaling_thread,
       port_allocator_(port_allocator),
       sid_(sid),
       content_type_(content_type),
-      transport_type_(NS_GINGLE_P2P),
       initiator_(initiator),
-      identity_(NULL),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10),
       ice_tiebreaker_(rtc::CreateRandomId64()),
       role_switch_(false),
@@ -395,13 +389,16 @@ const SessionDescription* BaseSession::initiator_description() const {
   return initiator_ ? local_description_.get() : remote_description_.get();
 }
 
-bool BaseSession::SetIdentity(rtc::SSLIdentity* identity) {
-  if (identity_)
+bool BaseSession::SetCertificate(
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
+  if (certificate_)
     return false;
-  identity_ = identity;
+  if (!certificate)
+    return false;
+  certificate_ = certificate;
   for (TransportMap::iterator iter = transports_.begin();
        iter != transports_.end(); ++iter) {
-    iter->second->SetIdentity(identity_);
+    iter->second->SetCertificate(certificate_);
   }
   return true;
 }
@@ -548,8 +545,8 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
                                   new TransportWrapper(transport));
   transproxy->SignalCandidatesReady.connect(
       this, &BaseSession::OnTransportProxyCandidatesReady);
-  if (identity_)
-    transproxy->SetIdentity(identity_);
+  if (certificate_)
+    transproxy->SetCertificate(certificate_);
   transports_[content_name] = transproxy;
 
   return transproxy;
@@ -578,10 +575,9 @@ void BaseSession::DestroyTransportProxy(
 }
 
 Transport* BaseSession::CreateTransport(const std::string& content_name) {
-  ASSERT(transport_type_ == NS_GINGLE_P2P);
   Transport* transport = new DtlsTransport<P2PTransport>(
       signaling_thread(), worker_thread(), content_name, port_allocator(),
-      identity_);
+      certificate_);
   transport->SetChannelReceivingTimeout(ice_receiving_timeout_);
   return transport;
 }
@@ -778,8 +774,7 @@ void BaseSession::LogState(State old_state, State new_state) {
   LOG(LS_INFO) << "Session:" << id()
                << " Old state:" << StateToString(old_state)
                << " New state:" << StateToString(new_state)
-               << " Type:" << content_type()
-               << " Transport:" << transport_type();
+               << " Type:" << content_type();
 }
 
 // static

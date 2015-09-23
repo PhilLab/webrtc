@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/arm.gni")
-import("//third_party/protobuf/proto_library.gni")
 import("../../build/webrtc.gni")
 
 config("audio_coding_config") {
@@ -59,6 +58,12 @@ source_set("audio_coding") {
     ]
   }
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     ":cng",
     ":g711",
@@ -69,6 +74,7 @@ source_set("audio_coding") {
     ":neteq",
     ":pcm16b",
     ":red",
+    "../..:rtc_event_log",
     "../..:webrtc_common",
     "../../common_audio",
     "../../system_wrappers",
@@ -77,35 +83,6 @@ source_set("audio_coding") {
   if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
-  }
-}
-
-proto_library("acm_dump_proto") {
-  sources = [
-    "main/acm2/dump.proto",
-  ]
-  proto_out_dir = "webrtc/audio_coding"
-}
-
-source_set("acm_dump") {
-  sources = [
-    "main/acm2/acm_dump.cc",
-    "main/acm2/acm_dump.h",
-  ]
-
-  defines = []
-
-  configs += [ "../..:common_config" ]
-
-  public_configs = [ "../..:common_inherited_config" ]
-
-  deps = [
-    ":acm_dump_proto",
-    "../..:webrtc_common",
-  ]
-
-  if (rtc_enable_protobuf) {
-    defines += [ "RTC_AUDIOCODING_DEBUG_DUMP" ]
   }
 }
 
@@ -224,11 +201,13 @@ config("g722_config") {
 
 source_set("g722") {
   sources = [
+    "codecs/g722/audio_decoder_g722.cc",
     "codecs/g722/audio_encoder_g722.cc",
     "codecs/g722/g722_decode.c",
     "codecs/g722/g722_enc_dec.h",
     "codecs/g722/g722_encode.c",
     "codecs/g722/g722_interface.c",
+    "codecs/g722/include/audio_decoder_g722.h",
     "codecs/g722/include/audio_encoder_g722.h",
     "codecs/g722/include/g722_interface.h",
   ]
@@ -258,6 +237,7 @@ source_set("ilbc") {
     "codecs/ilbc/abs_quant.h",
     "codecs/ilbc/abs_quant_loop.c",
     "codecs/ilbc/abs_quant_loop.h",
+    "codecs/ilbc/audio_decoder_ilbc.cc",
     "codecs/ilbc/audio_encoder_ilbc.cc",
     "codecs/ilbc/augmented_cb_corr.c",
     "codecs/ilbc/augmented_cb_corr.h",
@@ -323,6 +303,7 @@ source_set("ilbc") {
     "codecs/ilbc/hp_output.c",
     "codecs/ilbc/hp_output.h",
     "codecs/ilbc/ilbc.c",
+    "codecs/ilbc/include/audio_decoder_ilbc.h",
     "codecs/ilbc/include/audio_encoder_ilbc.h",
     "codecs/ilbc/index_conv_dec.c",
     "codecs/ilbc/index_conv_dec.h",
@@ -410,6 +391,16 @@ source_set("ilbc") {
   ]
 }
 
+source_set("isac_common") {
+  sources = [
+    "codecs/isac/audio_encoder_isac_t.h",
+    "codecs/isac/audio_encoder_isac_t_impl.h",
+    "codecs/isac/locked_bandwidth_info.cc",
+    "codecs/isac/locked_bandwidth_info.h",
+  ]
+  public_configs = [ "../..:common_inherited_config" ]
+}
+
 config("isac_config") {
   include_dirs = [
     "../../..",
@@ -419,8 +410,6 @@ config("isac_config") {
 
 source_set("isac") {
   sources = [
-    "codecs/isac/audio_encoder_isac_t.h",
-    "codecs/isac/audio_encoder_isac_t_impl.h",
     "codecs/isac/main/interface/audio_encoder_isac.h",
     "codecs/isac/main/interface/isac.h",
     "codecs/isac/main/source/arith_routines.c",
@@ -488,6 +477,7 @@ source_set("isac") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
+    ":isac_common",
     "../../common_audio",
   ]
 }
@@ -501,8 +491,6 @@ config("isac_fix_config") {
 
 source_set("isac_fix") {
   sources = [
-    "codecs/isac/audio_encoder_isac_t.h",
-    "codecs/isac/audio_encoder_isac_t_impl.h",
     "codecs/isac/fix/interface/audio_encoder_isacfix.h",
     "codecs/isac/fix/interface/isacfix.h",
     "codecs/isac/fix/source/arith_routines.c",
@@ -563,6 +551,7 @@ source_set("isac_fix") {
 
   deps = [
     ":audio_encoder_interface",
+    ":isac_common",
     "../../common_audio",
     "../../system_wrappers",
   ]
@@ -611,16 +600,11 @@ if (rtc_build_with_neon) {
   source_set("isac_neon") {
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
+      "codecs/isac/fix/source/filterbanks_neon.c",
       "codecs/isac/fix/source/filters_neon.c",
       "codecs/isac/fix/source/lattice_neon.c",
       "codecs/isac/fix/source/transform_neon.c",
     ]
-    if (current_cpu != "arm64" || !is_clang) {
-      # Disable AllpassFilter2FixDec16Neon function due to a clang bug.
-      # For more details refer to:
-      # https://code.google.com/p/webrtc/issues/detail?id=4567
-      sources += [ "codecs/isac/fix/source/filterbanks_neon.c" ]
-    }
 
     if (current_cpu != "arm64") {
       # Enable compilation for the NEON instruction set. This is needed
@@ -657,7 +641,9 @@ config("pcm16b_config") {
 
 source_set("pcm16b") {
   sources = [
+    "codecs/pcm16b/audio_decoder_pcm16b.cc",
     "codecs/pcm16b/audio_encoder_pcm16b.cc",
+    "codecs/pcm16b/include/audio_decoder_pcm16b.h",
     "codecs/pcm16b/include/audio_encoder_pcm16b.h",
     "codecs/pcm16b/include/pcm16b.h",
     "codecs/pcm16b/pcm16b.c",
@@ -682,7 +668,9 @@ config("opus_config") {
 
 source_set("webrtc_opus") {
   sources = [
+    "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_encoder_opus.cc",
+    "codecs/opus/interface/audio_decoder_opus.h",
     "codecs/opus/interface/audio_encoder_opus.h",
     "codecs/opus/interface/opus_interface.h",
     "codecs/opus/opus_inst.h",

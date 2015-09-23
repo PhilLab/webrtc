@@ -29,8 +29,7 @@ class ModuleRtpRtcpImpl;
 class RTCPReceiver : public TMMBRHelp
 {
 public:
- RTCPReceiver(int32_t id,
-              Clock* clock,
+ RTCPReceiver(Clock* clock,
               bool receiver_only,
               RtcpPacketTypeCounterObserver* packet_type_counter_observer,
               RtcpBandwidthObserver* rtcp_bandwidth_observer,
@@ -131,7 +130,8 @@ protected:
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
         uint32_t remoteSSRC);
 
-    void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser);
+    void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser,
+                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     void HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser);
 

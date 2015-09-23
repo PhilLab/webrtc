@@ -33,6 +33,7 @@
 
 #include <algorithm>
 
+#include "talk/app/webrtc/mediacontroller.h"
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/hybriddataengine.h"
 #include "talk/media/base/rtpdataengine.h"
@@ -329,7 +330,7 @@ void ChannelManager::Terminate_w() {
     DestroyVideoChannel_w(video_channels_.back());
   }
   while (!voice_channels_.empty()) {
-    DestroyVoiceChannel_w(voice_channels_.back(), nullptr);
+    DestroyVoiceChannel_w(voice_channels_.back());
   }
   if (!SetCaptureDevice_w(NULL)) {
     LOG(LS_WARNING) << "failed to delete video capturer";
@@ -338,23 +339,32 @@ void ChannelManager::Terminate_w() {
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(
+    webrtc::MediaControllerInterface* media_controller,
     BaseSession* session,
     const std::string& content_name,
     bool rtcp,
     const AudioOptions& options) {
   return worker_thread_->Invoke<VoiceChannel*>(
-      Bind(&ChannelManager::CreateVoiceChannel_w, this, session, content_name,
-           rtcp, options));
+      Bind(&ChannelManager::CreateVoiceChannel_w,
+          this,
+          media_controller,
+          session,
+          content_name,
+          rtcp,
+          options));
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
+    webrtc::MediaControllerInterface* media_controller,
     BaseSession* session,
     const std::string& content_name,
     bool rtcp,
     const AudioOptions& options) {
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  VoiceMediaChannel* media_channel = media_engine_->CreateChannel(options);
+  ASSERT(nullptr != media_controller);
+  VoiceMediaChannel* media_channel =
+      media_engine_->CreateChannel(media_controller->call_w(), options);
   if (!media_channel)
     return nullptr;
 
@@ -369,17 +379,14 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
   return voice_channel;
 }
 
-void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel,
-                                         VideoChannel* video_channel) {
+void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
   if (voice_channel) {
     worker_thread_->Invoke<void>(
-        Bind(&ChannelManager::DestroyVoiceChannel_w, this, voice_channel,
-             video_channel));
+        Bind(&ChannelManager::DestroyVoiceChannel_w, this, voice_channel));
   }
 }
 
-void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel,
-                                           VideoChannel* video_channel) {
+void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
   // Destroy voice channel.
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
@@ -388,62 +395,42 @@ void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel,
   ASSERT(it != voice_channels_.end());
   if (it == voice_channels_.end())
     return;
-
-  if (video_channel) {
-    video_channel->media_channel()->DetachVoiceChannel();
-  }
   voice_channels_.erase(it);
   delete voice_channel;
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel(
+    webrtc::MediaControllerInterface* media_controller,
     BaseSession* session,
     const std::string& content_name,
     bool rtcp,
-    VoiceChannel* voice_channel) {
+    const VideoOptions& options) {
   return worker_thread_->Invoke<VideoChannel*>(
       Bind(&ChannelManager::CreateVideoChannel_w,
            this,
+           media_controller,
            session,
            content_name,
            rtcp,
-           VideoOptions(),
-           voice_channel));
-}
-
-VideoChannel* ChannelManager::CreateVideoChannel(
-    BaseSession* session,
-    const std::string& content_name,
-    bool rtcp,
-    const VideoOptions& options,
-    VoiceChannel* voice_channel) {
-  return worker_thread_->Invoke<VideoChannel*>(
-      Bind(&ChannelManager::CreateVideoChannel_w,
-           this,
-           session,
-           content_name,
-           rtcp,
-           options,
-           voice_channel));
+           options));
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
+    webrtc::MediaControllerInterface* media_controller,
     BaseSession* session,
     const std::string& content_name,
     bool rtcp,
-    const VideoOptions& options,
-    VoiceChannel* voice_channel) {
+    const VideoOptions& options) {
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(nullptr != media_controller);
   VideoMediaChannel* media_channel =
-      // voice_channel can be NULL in case of NullVoiceEngine.
-      media_engine_->CreateVideoChannel(
-          options, voice_channel ? voice_channel->media_channel() : NULL);
+      media_engine_->CreateVideoChannel(media_controller->call_w(), options);
   if (media_channel == NULL)
     return NULL;
 
   VideoChannel* video_channel = new VideoChannel(
-      worker_thread_, media_engine_.get(), media_channel,
+      worker_thread_, media_channel,
       session, content_name, rtcp);
   if (!video_channel->Init()) {
     delete video_channel;
@@ -787,34 +774,6 @@ void ChannelManager::GetSupportedFormats_w(
   const std::vector<VideoFormat>* formats = capturer->GetSupportedFormats();
   if (formats != NULL)
     *out_formats = *formats;
-}
-
-// TODO(janahan): For now pass this request through the mediaengine to the
-// voice and video engines to do the real work. Once the capturer refactoring
-// is done, we will access the capturer using the ssrc (similar to how the
-// renderer is accessed today) and register with it directly.
-bool ChannelManager::RegisterVideoProcessor(VideoCapturer* capturer,
-                                            VideoProcessor* processor) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&ChannelManager::RegisterVideoProcessor_w, this,
-           capturer, processor));
-}
-
-bool ChannelManager::RegisterVideoProcessor_w(VideoCapturer* capturer,
-                                              VideoProcessor* processor) {
-  return capture_manager_->AddVideoProcessor(capturer, processor);
-}
-
-bool ChannelManager::UnregisterVideoProcessor(VideoCapturer* capturer,
-                                              VideoProcessor* processor) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&ChannelManager::UnregisterVideoProcessor_w, this,
-           capturer, processor));
-}
-
-bool ChannelManager::UnregisterVideoProcessor_w(VideoCapturer* capturer,
-                                                VideoProcessor* processor) {
-  return capture_manager_->RemoveVideoProcessor(capturer, processor);
 }
 
 bool ChannelManager::RegisterVoiceProcessor(

@@ -32,6 +32,7 @@
 
 #include "talk/app/webrtc/datachannel.h"
 #include "talk/app/webrtc/dtmfsender.h"
+#include "talk/app/webrtc/mediacontroller.h"
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
@@ -39,6 +40,7 @@
 #include "webrtc/p2p/base/session.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
 
 namespace cricket {
@@ -105,7 +107,7 @@ class IceObserver {
   ~IceObserver() {}
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(IceObserver);
+  RTC_DISALLOW_COPY_AND_ASSIGN(IceObserver);
 };
 
 class WebRtcSession : public cricket::BaseSession,
@@ -125,7 +127,7 @@ class WebRtcSession : public cricket::BaseSession,
   bool Initialize(
       const PeerConnectionFactoryInterface::Options& options,
       const MediaConstraintsInterface* constraints,
-      DTLSIdentityServiceInterface* dtls_identity_service,
+      rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_RECEIVEDTERMINATE.
@@ -194,7 +196,6 @@ class WebRtcSession : public cricket::BaseSession,
   virtual bool GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id);
   virtual bool GetRemoteTrackIdBySsrc(uint32 ssrc, std::string* track_id);
 
-
   // AudioMediaProviderInterface implementation.
   void SetAudioPlayout(uint32 ssrc,
                        bool enable,
@@ -245,13 +246,14 @@ class WebRtcSession : public cricket::BaseSession,
 
   void ResetIceRestartLatch();
 
-  // Called when an SSLIdentity is generated or retrieved by
+  // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.
-  void OnIdentityReady(rtc::SSLIdentity* identity);
+  void OnCertificateReady(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
 
   // For unit test.
-  bool waiting_for_identity() const;
+  bool waiting_for_certificate_for_testing() const;
 
   void set_metrics_observer(
       webrtc::MetricsObserverInterface* metrics_observer) {
@@ -368,6 +370,7 @@ class WebRtcSession : public cricket::BaseSession,
 
   void ReportNegotiatedCiphers(const cricket::TransportStats& stats);
 
+  rtc::scoped_ptr<MediaControllerInterface> media_controller_;
   rtc::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   rtc::scoped_ptr<cricket::VideoChannel> video_channel_;
   rtc::scoped_ptr<cricket::DataChannel> data_channel_;
@@ -411,7 +414,7 @@ class WebRtcSession : public cricket::BaseSession,
   // Declares the RTCP mux policy for the WebRTCSession.
   PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy_;
 
-  DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
+  RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };
 }  // namespace webrtc
 

@@ -156,7 +156,7 @@
         'build_libjpeg%': 0,
         'enable_protobuf%': 0,
       }],
-      ['winrt_platform=="win10_arm"', {
+      ['winrt_platform=="win_phone" or  winrt_platform=="win10_arm"', {
         'enable_protobuf%': 0,
       }],
       ['target_arch=="arm" or target_arch=="arm64"', {
@@ -382,15 +382,19 @@
           'WEBRTC_ANDROID',
          ],
          'conditions': [
-           ['clang!=1', {
-             # The Android NDK doesn't provide optimized versions of these
-             # functions. Ensure they are disabled for all compilers.
+           ['clang==0', {
              'cflags': [
+               # The Android NDK doesn't provide optimized versions of these
+               # functions. Ensure they are disabled for all compilers.
                '-fno-builtin-cos',
                '-fno-builtin-sin',
                '-fno-builtin-cosf',
                '-fno-builtin-sinf',
              ],
+             'cflags_c': [
+               # Use C99 mode instead of C89 (default).
+               '-std=c99',
+             ]
            }],
          ],
       }],

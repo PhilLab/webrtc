@@ -41,7 +41,7 @@
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/test/fakeaudiocapturemodule.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
-#include "talk/app/webrtc/test/fakedtlsidentityservice.h"
+#include "talk/app/webrtc/test/fakedtlsidentitystore.h"
 #include "talk/app/webrtc/test/fakeperiodicvideocapturer.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
@@ -518,8 +518,7 @@ class PeerConnectionTestClientBase
     if (!allocator_factory_) {
       return false;
     }
-    fake_audio_capture_module_ = FakeAudioCaptureModule::Create(
-        rtc::Thread::Current());
+    fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
 
     if (fake_audio_capture_module_ == NULL) {
       return false;
@@ -780,20 +779,21 @@ class JsepTestClient
         remove_sdes_(false) {
   }
 
-  virtual rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-      CreatePeerConnection(webrtc::PortAllocatorFactoryInterface* factory,
-                           const MediaConstraintsInterface* constraints) {
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+      CreatePeerConnection(
+          webrtc::PortAllocatorFactoryInterface* factory,
+          const MediaConstraintsInterface* constraints) override {
     // CreatePeerConnection with IceServers.
     webrtc::PeerConnectionInterface::IceServers ice_servers;
     webrtc::PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:stun.l.google.com:19302";
     ice_servers.push_back(ice_server);
 
-    FakeIdentityService* dtls_service =
-        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
-            new FakeIdentityService() : NULL;
+    rtc::scoped_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
+                                              : nullptr);
     return peer_connection_factory()->CreatePeerConnection(
-        ice_servers, constraints, factory, dtls_service, this);
+        ice_servers, constraints, factory, dtls_identity_store.Pass(), this);
   }
 
   void HandleIncomingOffer(const std::string& msg) {

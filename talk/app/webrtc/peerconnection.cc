@@ -351,7 +351,7 @@ bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const MediaConstraintsInterface* constraints,
     PortAllocatorFactoryInterface* allocator_factory,
-    DTLSIdentityServiceInterface* dtls_identity_service,
+    rtc::scoped_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
     PeerConnectionObserver* observer) {
   ASSERT(observer != NULL);
   if (!observer)
@@ -369,8 +369,7 @@ bool PeerConnection::Initialize(
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
   int portallocator_flags = port_allocator_->flags();
-  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                          cricket::PORTALLOCATOR_ENABLE_IPV6;
   bool value;
   // If IPv6 flag was specified, we'll not override it by experiment.
@@ -407,7 +406,7 @@ bool PeerConnection::Initialize(
 
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), constraints,
-                            dtls_identity_service, configuration))
+                            dtls_identity_store.Pass(), configuration))
     return false;
 
   // Register PeerConnection as receiver of local ice candidates.
@@ -617,14 +616,6 @@ void PeerConnection::SetLocalDescription(
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
-
-  // This is necessary because an audio/video channel may have been previously
-  // destroyed by removing it from the remote description, which would NOT
-  // destroy the local handler. So upon receiving a new local description,
-  // we may need to tell that local track handler to connect the capturer
-  // to the now re-created audio/video channel.
-  stream_handler_container_->RestartAllLocalTracks();
-
   SetSessionDescriptionMsg* msg =  new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
@@ -648,14 +639,6 @@ void PeerConnection::SetRemoteDescription(
     PostSetSessionDescriptionFailure(observer, error);
     return;
   }
-
-  // This is necessary because an audio/video channel may have been previously
-  // destroyed by removing it from the local description, which would NOT
-  // destroy the remote handler. So upon receiving a new remote description,
-  // we may need to tell that remote track handler to connect the renderer
-  // to the now re-created audio/video channel.
-  stream_handler_container_->RestartAllRemoteTracks();
-
   SetSessionDescriptionMsg* msg  = new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
@@ -666,10 +649,6 @@ void PeerConnection::PostSetSessionDescriptionFailure(
   SetSessionDescriptionMsg* msg  = new SetSessionDescriptionMsg(observer);
   msg->error = error;
   signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_FAILED, msg);
-}
-
-void PeerConnection::SetIceConnectionReceivingTimeout(int timeout_ms) {
-  session_->SetIceConnectionReceivingTimeout(timeout_ms);
 }
 
 bool PeerConnection::UpdateIce(const IceServers& configuration,
@@ -715,6 +694,8 @@ bool PeerConnection::UpdateIce(const RTCConfiguration& config) {
       }
     }
   }
+  session_->SetIceConnectionReceivingTimeout(
+      config.ice_connection_receiving_timeout);
   return session_->SetIceTransports(config.type);
 }
 
@@ -733,9 +714,13 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   // Send information about IPv4/IPv6 status.
   if (uma_observer_ && port_allocator_) {
     if (port_allocator_->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6) {
-      uma_observer_->IncrementCounter(kPeerConnection_IPv6);
+      uma_observer_->IncrementEnumCounter(
+          kEnumCounterAddressFamily, kPeerConnection_IPv6,
+          kPeerConnectionAddressFamilyCounter_Max);
     } else {
-      uma_observer_->IncrementCounter(kPeerConnection_IPv4);
+      uma_observer_->IncrementEnumCounter(
+          kEnumCounterAddressFamily, kPeerConnection_IPv4,
+          kPeerConnectionAddressFamilyCounter_Max);
     }
   }
 }

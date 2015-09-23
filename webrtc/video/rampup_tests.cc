@@ -92,7 +92,7 @@ void StreamObserver::set_start_bitrate_bps(unsigned int start_bitrate_bps) {
 void StreamObserver::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs, unsigned int bitrate) {
   rtc::CritScope lock(&crit_);
-  DCHECK_GT(expected_bitrate_bps_, 0u);
+  RTC_DCHECK_GT(expected_bitrate_bps_, 0u);
   if (start_bitrate_bps_ != 0) {
     // For tests with an explicitly set start bitrate, verify the first
     // bitrate estimate is close to the start bitrate and lower than the
@@ -119,7 +119,7 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
   payload_registry_->SetIncomingPayloadType(header);
-  DCHECK(remote_bitrate_estimator_ != nullptr);
+  RTC_DCHECK(remote_bitrate_estimator_ != nullptr);
   remote_bitrate_estimator_->IncomingPacket(
       clock_->TimeInMilliseconds(), length - header.headerLength, header, true);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
@@ -265,7 +265,10 @@ bool LowRateStreamObserver::SendRtp(const uint8_t* data, size_t length) {
 }
 
 PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
-    MediaType media_type, const uint8_t* packet, size_t length) {
+    MediaType media_type,
+    const uint8_t* packet,
+    size_t length,
+    const PacketTime& packet_time) {
   rtc::CritScope lock(&crit_);
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
@@ -300,7 +303,7 @@ std::string LowRateStreamObserver::GetModifierString() {
 void LowRateStreamObserver::EvolveTestState(unsigned int bitrate_bps) {
   int64_t now = clock_->TimeInMilliseconds();
   rtc::CritScope lock(&crit_);
-  DCHECK(send_stream_ != nullptr);
+  RTC_DCHECK(send_stream_ != nullptr);
   switch (test_state_) {
     case kFirstRampup: {
       EXPECT_FALSE(suspended_in_stats_);
@@ -381,12 +384,12 @@ void RampUpTest::RunRampUpTest(size_t num_streams,
       rtx_ssrc_map[rtx_ssrcs[i]] = ssrcs[i];
   }
 
-  CreateSendConfig(num_streams);
-  send_config_.rtp.extensions.clear();
-
   test::DirectTransport receiver_transport;
   StreamObserver stream_observer(rtx_ssrc_map, &receiver_transport,
                                  Clock::GetRealTimeClock());
+
+  CreateSendConfig(num_streams, &stream_observer);
+  send_config_.rtp.extensions.clear();
 
   if (extension_type == RtpExtension::kAbsSendTime) {
     stream_observer.SetRemoteBitrateEstimator(
@@ -404,12 +407,11 @@ void RampUpTest::RunRampUpTest(size_t num_streams,
         extension_type.c_str(), kTransmissionTimeOffsetExtensionId));
   }
 
-  Call::Config call_config(&stream_observer);
+  Call::Config call_config;
   if (start_bitrate_bps != 0) {
     call_config.bitrate_config.start_bitrate_bps = start_bitrate_bps;
     stream_observer.set_start_bitrate_bps(start_bitrate_bps);
   }
-
   CreateSenderCall(call_config);
 
   receiver_transport.SetReceiver(sender_call_->Receiver());
@@ -462,12 +464,12 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams,
   LowRateStreamObserver stream_observer(
       &receiver_transport, Clock::GetRealTimeClock(), number_of_streams, rtx);
 
-  Call::Config call_config(&stream_observer);
+  Call::Config call_config;
   call_config.bitrate_config.start_bitrate_bps = 60000;
   CreateSenderCall(call_config);
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(number_of_streams);
+  CreateSendConfig(number_of_streams, &stream_observer);
 
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   send_config_.rtp.extensions.push_back(RtpExtension(

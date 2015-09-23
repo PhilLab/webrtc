@@ -530,13 +530,7 @@ void MediaStreamSignaling::OnLocalDescriptionChanged(
       GetFirstAudioContent(desc->description());
   if (audio_content) {
     if (audio_content->rejected) {
-      SetRemoteTracksState(cricket::MEDIA_TYPE_AUDIO,
-                           MediaStreamTrackInterface::kEnded);
-    } else {
-      // This is needed in case the local description caused the track to be
-      // rejected, then later accepted, without being destroyed.
-      SetRemoteTracksState(cricket::MEDIA_TYPE_AUDIO,
-                           MediaStreamTrackInterface::kLive);
+      RejectRemoteTracks(cricket::MEDIA_TYPE_AUDIO);
     }
     const cricket::AudioContentDescription* audio_desc =
         static_cast<const cricket::AudioContentDescription*>(
@@ -548,13 +542,7 @@ void MediaStreamSignaling::OnLocalDescriptionChanged(
       GetFirstVideoContent(desc->description());
   if (video_content) {
     if (video_content->rejected) {
-      SetRemoteTracksState(cricket::MEDIA_TYPE_VIDEO,
-                           MediaStreamTrackInterface::kEnded);
-    } else {
-      // This is needed in case the local description caused the track to be
-      // rejected, then later accepted, without being destroyed.
-      SetRemoteTracksState(cricket::MEDIA_TYPE_VIDEO,
-                           MediaStreamTrackInterface::kLive);
+      RejectRemoteTracks(cricket::MEDIA_TYPE_VIDEO);
     }
     const cricket::VideoContentDescription* video_desc =
         static_cast<const cricket::VideoContentDescription*>(
@@ -576,13 +564,11 @@ void MediaStreamSignaling::OnLocalDescriptionChanged(
 }
 
 void MediaStreamSignaling::OnAudioChannelClose() {
-  SetRemoteTracksState(cricket::MEDIA_TYPE_AUDIO,
-                       MediaStreamTrackInterface::kEnded);
+  RejectRemoteTracks(cricket::MEDIA_TYPE_AUDIO);
 }
 
 void MediaStreamSignaling::OnVideoChannelClose() {
-  SetRemoteTracksState(cricket::MEDIA_TYPE_VIDEO,
-                       MediaStreamTrackInterface::kEnded);
+  RejectRemoteTracks(cricket::MEDIA_TYPE_VIDEO);
 }
 
 void MediaStreamSignaling::OnDataChannelClose() {
@@ -697,9 +683,7 @@ void MediaStreamSignaling::OnRemoteTrackRemoved(
   }
 }
 
-void MediaStreamSignaling::SetRemoteTracksState(
-    cricket::MediaType media_type,
-    MediaStreamTrackInterface::TrackState state) {
+void MediaStreamSignaling::RejectRemoteTracks(cricket::MediaType media_type) {
   TrackInfos* current_tracks = GetRemoteTracks(media_type);
   for (TrackInfos::iterator track_it = current_tracks->begin();
        track_it != current_tracks->end(); ++track_it) {
@@ -710,7 +694,7 @@ void MediaStreamSignaling::SetRemoteTracksState(
       // There's no guarantee the track is still available, e.g. the track may
       // have been removed from the stream by javascript.
       if (track) {
-        track->set_state(state);
+        track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
       }
     }
     if (media_type == cricket::MEDIA_TYPE_VIDEO) {
@@ -718,7 +702,7 @@ void MediaStreamSignaling::SetRemoteTracksState(
       // There's no guarantee the track is still available, e.g. the track may
       // have been removed from the stream by javascript.
       if (track) {
-        track->set_state(state);
+        track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
       }
     }
   }

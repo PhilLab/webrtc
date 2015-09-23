@@ -39,7 +39,6 @@ const CodecInst ACMCodecDB::database_[] = {
   {105, "ISAC", 48000, kIsacPacSize1440, 1, kIsacSwbDefaultRate},
 # endif
 #endif
-#ifdef WEBRTC_CODEC_PCM16
   // Mono
   {107, "L16", 8000, 80, 1, 128000},
   {108, "L16", 16000, 160, 1, 256000},
@@ -48,7 +47,6 @@ const CodecInst ACMCodecDB::database_[] = {
   {111, "L16", 8000, 80, 2, 128000},
   {112, "L16", 16000, 160, 2, 256000},
   {113, "L16", 32000, 320, 2, 512000},
-#endif
   // G.711, PCM mu-law and A-law.
   // Mono
   {0, "PCMU", 8000, 160, 1, 64000},
@@ -77,9 +75,7 @@ const CodecInst ACMCodecDB::database_[] = {
 #ifdef ENABLE_48000_HZ
   {100, "CN", 48000, 1440, 1, 0},
 #endif
-#ifdef WEBRTC_CODEC_AVT
   {106, "telephone-event", 8000, 240, 1, 0},
-#endif
 #ifdef WEBRTC_CODEC_RED
   {127, "red", 8000, 0, 1, 0},
 #endif
@@ -99,7 +95,6 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
     {1, {kIsacPacSize1440}, 0, 1, true},
 # endif
 #endif
-#ifdef WEBRTC_CODEC_PCM16
     // Mono
     {4, {80, 160, 240, 320}, 0, 2, false},
     {4, {160, 320, 480, 640}, 0, 2, false},
@@ -108,7 +103,6 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
     {4, {80, 160, 240, 320}, 0, 2, false},
     {4, {160, 320, 480, 640}, 0, 2, false},
     {2, {320, 640}, 0, 2},
-#endif
     // G.711, PCM mu-law and A-law.
     // Mono
     {6, {80, 160, 240, 320, 400, 480}, 0, 2, false},
@@ -138,9 +132,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef ENABLE_48000_HZ
     {1, {1440}, 1440, 1, false},
 #endif
-#ifdef WEBRTC_CODEC_AVT
     {1, {240}, 240, 1, false},
-#endif
 #ifdef WEBRTC_CODEC_RED
     {1, {0}, 0, 1, false},
 #endif
@@ -157,7 +149,6 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
     kDecoderISACfb,
 # endif
 #endif
-#ifdef WEBRTC_CODEC_PCM16
     // Mono
     kDecoderPCM16B,
     kDecoderPCM16Bwb,
@@ -166,7 +157,6 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
     kDecoderPCM16B_2ch,
     kDecoderPCM16Bwb_2ch,
     kDecoderPCM16Bswb32kHz_2ch,
-#endif
     // G.711, PCM mu-las and A-law.
     // Mono
     kDecoderPCMu,
@@ -194,9 +184,7 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
 #ifdef ENABLE_48000_HZ
     , kDecoderCNGswb48kHz
 #endif
-#ifdef WEBRTC_CODEC_AVT
     , kDecoderAVT
-#endif
 #ifdef WEBRTC_CODEC_RED
     , kDecoderRED
 #endif

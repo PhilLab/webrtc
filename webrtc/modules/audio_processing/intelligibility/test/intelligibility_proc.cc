@@ -31,19 +31,24 @@
 #include "webrtc/test/testsupport/fileutils.h"
 
 using std::complex;
+using webrtc::intelligibility::VarianceArray;
 
 namespace webrtc {
+namespace {
 
-using webrtc::RealFourier;
-using webrtc::IntelligibilityEnhancer;
+bool ValidateClearWindow(const char* flagname, int32_t value) {
+  return value > 0;
+}
 
 DEFINE_int32(clear_type,
-             webrtc::intelligibility::VarianceArray::kStepInfinite,
+             webrtc::intelligibility::VarianceArray::kStepDecaying,
              "Variance algorithm for clear data.");
 DEFINE_double(clear_alpha, 0.9, "Variance decay factor for clear data.");
 DEFINE_int32(clear_window,
              475,
              "Window size for windowed variance for clear data.");
+const bool clear_window_dummy =
+    google::RegisterFlagValidator(&FLAGS_clear_window, &ValidateClearWindow);
 DEFINE_int32(sample_rate,
              16000,
              "Audio sample rate used in the input and output files.");
@@ -63,8 +68,6 @@ DEFINE_string(out_file,
               "Enhanced output. Use '-' to "
               "play through aplay immediately.");
 
-// Constant IntelligibilityEnhancer constructor parameters.
-const int kErbResolution = 2;
 const int kNumChannels = 1;
 
 // void function for gtest
@@ -104,11 +107,14 @@ void void_main(int argc, char* argv[]) {
   noise_file.ReadSamples(samples, &noise_fpcm[0]);
 
   // Run intelligibility enhancement.
-
-  IntelligibilityEnhancer enh(
-      kErbResolution, FLAGS_sample_rate, kNumChannels, FLAGS_clear_type,
-      static_cast<float>(FLAGS_clear_alpha), FLAGS_clear_window, FLAGS_ana_rate,
-      FLAGS_var_rate, FLAGS_gain_limit);
+  IntelligibilityEnhancer::Config config;
+  config.sample_rate_hz = FLAGS_sample_rate;
+  config.var_type = static_cast<VarianceArray::StepType>(FLAGS_clear_type);
+  config.var_decay_rate = static_cast<float>(FLAGS_clear_alpha);
+  config.var_window_size = static_cast<size_t>(FLAGS_clear_window);
+  config.analysis_rate = FLAGS_ana_rate;
+  config.gain_change_limit = FLAGS_gain_limit;
+  IntelligibilityEnhancer enh(config);
 
   // Slice the input into smaller chunks, as the APM would do, and feed them
   // through the enhancer.
@@ -116,8 +122,8 @@ void void_main(int argc, char* argv[]) {
   float* noise_cursor = &noise_fpcm[0];
 
   for (size_t i = 0; i < samples; i += fragment_size) {
-    enh.ProcessCaptureAudio(&noise_cursor);
-    enh.ProcessRenderAudio(&clear_cursor);
+    enh.AnalyzeCaptureAudio(&noise_cursor, FLAGS_sample_rate, kNumChannels);
+    enh.ProcessRenderAudio(&clear_cursor, FLAGS_sample_rate, kNumChannels);
     clear_cursor += fragment_size;
     noise_cursor += fragment_size;
   }
@@ -137,6 +143,7 @@ void void_main(int argc, char* argv[]) {
   }
 }
 
+}  // namespace
 }  // namespace webrtc
 
 int main(int argc, char* argv[]) {

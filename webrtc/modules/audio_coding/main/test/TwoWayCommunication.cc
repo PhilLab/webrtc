@@ -96,11 +96,6 @@ void TwoWayCommunication::SetUp() {
   //--- Set A codecs
   EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
   EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorA = new(DTMFDetector);
-  EXPECT_GT(_acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA, ACMUSA),
-            -1);
-#endif
   //--- Set ref-A codecs
   EXPECT_EQ(0, _acmRefA->RegisterSendCodec(codecInst_A));
   EXPECT_EQ(0, _acmRefA->RegisterReceiveCodec(codecInst_B));
@@ -108,11 +103,6 @@ void TwoWayCommunication::SetUp() {
   //--- Set B codecs
   EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
   EXPECT_EQ(0, _acmB->RegisterReceiveCodec(codecInst_A));
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorB = new(DTMFDetector);
-  EXPECT_GT(_acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB, ACMUSA),
-            -1);
-#endif
 
   //--- Set ref-B codecs
   EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
@@ -188,10 +178,6 @@ void TwoWayCommunication::SetUpAutotest() {
   //--- Set A codecs
   EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
   EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorA = new(DTMFDetector);
-  EXPECT_EQ(0, _acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA, ACMUSA));
-#endif
 
   //--- Set ref-A codecs
   EXPECT_GT(_acmRefA->RegisterSendCodec(codecInst_A), -1);
@@ -200,10 +186,6 @@ void TwoWayCommunication::SetUpAutotest() {
   //--- Set B codecs
   EXPECT_GT(_acmB->RegisterSendCodec(codecInst_B), -1);
   EXPECT_GT(_acmB->RegisterReceiveCodec(codecInst_A), -1);
-#ifdef WEBRTC_DTMF_DETECTION
-  _dtmfDetectorB = new(DTMFDetector);
-  EXPECT_EQ(0, _acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB, ACMUSA));
-#endif
 
   //--- Set ref-B codecs
   EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
@@ -279,8 +261,8 @@ void TwoWayCommunication::Perform() {
 
   // In the following loop we tests that the code can handle misuse of the APIs.
   // In the middle of a session with data flowing between two sides, called A
-  // and B, APIs will be called, like ResetEncoder(), and the code should
-  // continue to run, and be able to recover.
+  // and B, APIs will be called, and the code should continue to run, and be
+  // able to recover.
   while (!_inFileA.EndOfFile() && !_inFileB.EndOfFile()) {
     msecPassed += 10;
     EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);
@@ -305,21 +287,14 @@ void TwoWayCommunication::Perform() {
       msecPassed = 0;
       secPassed++;
     }
-    // Call RestEncoder for ACM on side A, and InitializeSender for ACM on
-    // side B.
-    if (((secPassed % 5) == 4) && (msecPassed == 0)) {
-      EXPECT_EQ(0, _acmA->ResetEncoder());
-    }
     // Re-register send codec on side B.
     if (((secPassed % 5) == 4) && (msecPassed >= 990)) {
       EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
       EXPECT_EQ(0, _acmB->SendCodec(&dummy));
     }
-    // Reset decoder on side B, and initialize receiver on side A.
-    if (((secPassed % 7) == 6) && (msecPassed == 0)) {
-      EXPECT_EQ(0, _acmB->ResetDecoder());
+    // Initialize receiver on side A.
+    if (((secPassed % 7) == 6) && (msecPassed == 0))
       EXPECT_EQ(0, _acmA->InitializeReceiver());
-    }
     // Re-register codec on side A.
     if (((secPassed % 7) == 6) && (msecPassed >= 990)) {
       EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));

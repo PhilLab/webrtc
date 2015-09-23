@@ -61,15 +61,12 @@ using webrtc::kVideoCodecVP8;
 
 namespace webrtc_jni {
 
-jobject MediaCodecVideoDecoderFactory::render_egl_context_ = NULL;
-
 class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
                                public rtc::MessageHandler {
  public:
-  explicit MediaCodecVideoDecoder(JNIEnv* jni, VideoCodecType codecType);
+  explicit MediaCodecVideoDecoder(
+      JNIEnv* jni, VideoCodecType codecType, jobject render_egl_context);
   virtual ~MediaCodecVideoDecoder();
-
-  static int SetAndroidObjects(JNIEnv* jni, jobject render_egl_context);
 
   int32_t InitDecode(const VideoCodec* codecSettings, int32_t numberOfCores)
       override;
@@ -158,11 +155,16 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   std::vector<jobject> input_buffers_;
   jobject surface_texture_;
   jobject previous_surface_texture_;
+
+  // Render EGL context - owned by factory, should not be allocated/destroyed
+  // by VideoDecoder.
+  jobject render_egl_context_;
 };
 
 MediaCodecVideoDecoder::MediaCodecVideoDecoder(
-    JNIEnv* jni, VideoCodecType codecType) :
+    JNIEnv* jni, VideoCodecType codecType, jobject render_egl_context) :
     codecType_(codecType),
+    render_egl_context_(render_egl_context),
     key_frame_required_(true),
     inited_(false),
     sw_fallback_required_(false),
@@ -181,12 +183,12 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
                               "()V"))) {
   ScopedLocalRefFrame local_ref_frame(jni);
   codec_thread_->SetName("MediaCodecVideoDecoder", NULL);
-  CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoDecoder";
+  RTC_CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoDecoder";
 
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
       "(Lorg/webrtc/MediaCodecVideoDecoder$VideoCodecType;"
-      "IIZLandroid/opengl/EGLContext;)Z");
+      "IILandroid/opengl/EGLContext;)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_, "release", "()V");
   j_dequeue_input_buffer_method_ = GetMethodID(
@@ -197,7 +199,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, *j_media_codec_video_decoder_class_, "dequeueOutputBuffer",
       "(I)Lorg/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo;");
   j_release_output_buffer_method_ = GetMethodID(
-      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(IZ)Z");
+      jni, *j_media_codec_video_decoder_class_, "releaseOutputBuffer", "(I)Z");
 
   j_input_buffers_field_ = GetFieldID(
       jni, *j_media_codec_video_decoder_class_,
@@ -233,10 +235,8 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
       jni, j_decoder_output_buffer_info_class, "presentationTimestampUs", "J");
 
   CHECK_EXCEPTION(jni) << "MediaCodecVideoDecoder ctor failed";
-  use_surface_ = true;
-  if (MediaCodecVideoDecoderFactory::render_egl_context_ == NULL) {
-    use_surface_ = false;
-  }
+  use_surface_ = (render_egl_context_ != NULL);
+  ALOGD("MediaCodecVideoDecoder ctor. Use surface: %d", use_surface_);
   memset(&codec_, 0, sizeof(codec_));
   AllowBlockingCalls();
 }
@@ -262,8 +262,8 @@ int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Factory should guard against other codecs being used with us.
-  CHECK(inst->codecType == codecType_) << "Unsupported codec " <<
-      inst->codecType << " for " << codecType_;
+  RTC_CHECK(inst->codecType == codecType_)
+      << "Unsupported codec " << inst->codecType << " for " << codecType_;
 
   if (sw_fallback_required_) {
     ALOGE("InitDecode() - fallback to SW decoder");
@@ -309,8 +309,7 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
       j_video_codec_enum,
       codec_.width,
       codec_.height,
-      use_surface_,
-      MediaCodecVideoDecoderFactory::render_egl_context_);
+      use_surface_ ? render_egl_context_ : nullptr);
   if (CheckException(jni) || !success) {
     ALOGE("Codec initialization error - fallback to SW codec.");
     sw_fallback_required_ = true;
@@ -395,7 +394,7 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
 }
 
 void MediaCodecVideoDecoder::CheckOnCodecThread() {
-  CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
+  RTC_CHECK(codec_thread_ == ThreadManager::Instance()->CurrentThread())
       << "Running on wrong thread!";
 }
 
@@ -515,7 +514,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   jobject j_input_buffer = input_buffers_[j_input_buffer_index];
   uint8* buffer =
       reinterpret_cast<uint8*>(jni->GetDirectBufferAddress(j_input_buffer));
-  CHECK(buffer) << "Indirect buffer??";
+  RTC_CHECK(buffer) << "Indirect buffer??";
   int64 buffer_capacity = jni->GetDirectBufferCapacity(j_input_buffer);
   if (CheckException(jni) || buffer_capacity < inputImage._length) {
     ALOGE("Input frame size %d is bigger than buffer size %d.",
@@ -666,8 +665,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   bool success = jni->CallBooleanMethod(
       *j_media_codec_video_decoder_,
       j_release_output_buffer_method_,
-      output_buffer_index,
-      use_surface_);
+      output_buffer_index);
   if (CheckException(jni) || !success) {
     ALOGE("releaseOutputBuffer error");
     return false;
@@ -733,8 +731,8 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   }
   // We only ever send one message to |this| directly (not through a Bind()'d
   // functor), so expect no ID/data.
-  CHECK(!msg->message_id) << "Unexpected message!";
-  CHECK(!msg->pdata) << "Unexpected message!";
+  RTC_CHECK(!msg->message_id) << "Unexpected message!";
+  RTC_CHECK(!msg->pdata) << "Unexpected message!";
   CheckOnCodecThread();
 
   if (!DeliverPendingOutputs(jni, 0)) {
@@ -745,35 +743,9 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 }
 
-int MediaCodecVideoDecoderFactory::SetAndroidObjects(JNIEnv* jni,
-    jobject render_egl_context) {
-  ALOGD("SetAndroidObjects for surface decoding.");
-  if (render_egl_context_) {
-    jni->DeleteGlobalRef(render_egl_context_);
-  }
-  if (IsNull(jni, render_egl_context)) {
-    render_egl_context_ = NULL;
-  } else {
-    render_egl_context_ = jni->NewGlobalRef(render_egl_context);
-    if (CheckException(jni)) {
-      ALOGE("error calling NewGlobalRef for EGL Context.");
-      render_egl_context_ = NULL;
-    } else {
-      jclass j_egl_context_class = FindClass(jni, "android/opengl/EGLContext");
-      if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
-        ALOGE("Wrong EGL Context.");
-        jni->DeleteGlobalRef(render_egl_context_);
-        render_egl_context_ = NULL;
-      }
-    }
-  }
-  if (render_egl_context_ == NULL) {
-    ALOGD("NULL VideoDecoder EGL context - HW surface decoding is disabled.");
-  }
-  return 0;
-}
-
-MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
+MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() :
+    render_egl_context_(NULL) {
+  ALOGD("MediaCodecVideoDecoderFactory ctor");
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_decoder_class = FindClass(jni, "org/webrtc/MediaCodecVideoDecoder");
@@ -802,21 +774,55 @@ MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
   }
 }
 
-MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {}
+MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {
+  ALOGD("MediaCodecVideoDecoderFactory dtor");
+  if (render_egl_context_) {
+    JNIEnv* jni = AttachCurrentThreadIfNeeded();
+    jni->DeleteGlobalRef(render_egl_context_);
+    render_egl_context_ = NULL;
+  }
+}
+
+void MediaCodecVideoDecoderFactory::SetEGLContext(
+    JNIEnv* jni, jobject render_egl_context) {
+  ALOGD("MediaCodecVideoDecoderFactory::SetEGLContext");
+  if (render_egl_context_) {
+    jni->DeleteGlobalRef(render_egl_context_);
+    render_egl_context_ = NULL;
+  }
+  if (!IsNull(jni, render_egl_context)) {
+    render_egl_context_ = jni->NewGlobalRef(render_egl_context);
+    if (CheckException(jni)) {
+      ALOGE("error calling NewGlobalRef for EGL Context.");
+      render_egl_context_ = NULL;
+    } else {
+      jclass j_egl_context_class = FindClass(jni, "android/opengl/EGLContext");
+      if (!jni->IsInstanceOf(render_egl_context_, j_egl_context_class)) {
+        ALOGE("Wrong EGL Context.");
+        jni->DeleteGlobalRef(render_egl_context_);
+        render_egl_context_ = NULL;
+      }
+    }
+  }
+  if (render_egl_context_ == NULL) {
+    ALOGW("NULL VideoDecoder EGL context - HW surface decoding is disabled.");
+  }
+}
 
 webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
     VideoCodecType type) {
   if (supported_codec_types_.empty()) {
+    ALOGE("No HW video decoder for type %d.", (int)type);
     return NULL;
   }
-  for (std::vector<VideoCodecType>::const_iterator it =
-      supported_codec_types_.begin(); it != supported_codec_types_.end();
-      ++it) {
-    if (*it == type) {
+  for (VideoCodecType codec_type : supported_codec_types_) {
+    if (codec_type == type) {
       ALOGD("Create HW video decoder for type %d.", (int)type);
-      return new MediaCodecVideoDecoder(AttachCurrentThreadIfNeeded(), type);
+      return new MediaCodecVideoDecoder(
+          AttachCurrentThreadIfNeeded(), type, render_egl_context_);
     }
   }
+  ALOGE("Can not find HW video decoder for type %d.", (int)type);
   return NULL;
 }
 

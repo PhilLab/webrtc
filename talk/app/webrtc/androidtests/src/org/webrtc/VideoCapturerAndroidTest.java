@@ -29,12 +29,15 @@ package org.webrtc;
 import android.hardware.Camera;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.util.Size;
 
-import org.webrtc.VideoCapturerAndroid.CaptureFormat;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroidTest extends ActivityTestCase {
@@ -48,18 +51,41 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
         ++framesRendered;
         frameLock.notify();
       }
-    }
-
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return false;
+      VideoRenderer.renderFrameDone(frame);
     }
 
     public int WaitForNextFrameToRender() throws InterruptedException {
       synchronized (frameLock) {
         frameLock.wait();
         return framesRendered;
+      }
+    }
+  }
+
+  static class AsyncRenderer implements VideoRenderer.Callbacks {
+    private final List<I420Frame> pendingFrames = new ArrayList<I420Frame>();
+
+    @Override
+    public void renderFrame(I420Frame frame) {
+      synchronized (pendingFrames) {
+        pendingFrames.add(frame);
+        pendingFrames.notifyAll();
+      }
+    }
+
+    // Wait until at least one frame have been received, before returning them.
+    public List<I420Frame> WaitForFrames() {
+      synchronized (pendingFrames) {
+        while (pendingFrames.isEmpty()) {
+          try {
+            pendingFrames.wait();
+          } catch (InterruptedException e) {
+            // Ignore.
+          }
+        }
+        final List<I420Frame> frames = new ArrayList<I420Frame>(pendingFrames);
+        pendingFrames.clear();
+        return frames;
       }
     }
   }
@@ -130,7 +156,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     return (Camera.getNumberOfCameras() >= 2);
   }
 
-  void starCapturerAndRender(String deviceName) throws InterruptedException {
+  void startCapturerAndRender(String deviceName) throws InterruptedException {
     PeerConnectionFactory factory = new PeerConnectionFactory();
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
@@ -148,8 +174,38 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   @Override
   protected void setUp() {
     assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
-        getInstrumentation().getContext(), true,
-        true, true, null));
+        getInstrumentation().getContext(), true, true, true));
+  }
+
+  @SmallTest
+  // Test that enumerating formats using android.hardware.camera2 will give the same formats as
+  // android.hardware.camera in the range 320x240 to 1280x720. Often the camera2 API may contain
+  // some high resolutions that are not supported in camera1, but it may also be the other way
+  // around in some cases. Supported framerates may also differ, so don't compare those.
+  public void testCamera2Enumerator() {
+    if (!Camera2Enumerator.isSupported()) {
+      return;
+    }
+    final CameraEnumerationAndroid.Enumerator camera1Enumerator = new CameraEnumerator();
+    final CameraEnumerationAndroid.Enumerator camera2Enumerator =
+        new Camera2Enumerator(getInstrumentation().getContext());
+
+    for (int i = 0; i < CameraEnumerationAndroid.getDeviceCount(); ++i) {
+      final Set<Size> resolutions1 = new HashSet<Size>();
+      for (CaptureFormat format : camera1Enumerator.getSupportedFormats(i)) {
+        resolutions1.add(new Size(format.width, format.height));
+      }
+      final Set<Size> resolutions2 = new HashSet<Size>();
+      for (CaptureFormat format : camera2Enumerator.getSupportedFormats(i)) {
+        resolutions2.add(new Size(format.width, format.height));
+      }
+      for (Size size : resolutions1) {
+        if (size.getWidth() >= 320 && size.getHeight() >= 240
+            && size.getWidth() <= 1280 && size.getHeight() <= 720) {
+          assertTrue(resolutions2.contains(size));
+        }
+      }
+    }
   }
 
   @SmallTest
@@ -160,9 +216,9 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   }
 
   @SmallTest
-  public void testCreateNoneExistingCamera() throws Exception {
+  public void testCreateNonExistingCamera() throws Exception {
     VideoCapturerAndroid capturer = VideoCapturerAndroid.create(
-        "none existing camera", null);
+        "non-existing camera", null);
     assertNull(capturer);
   }
 
@@ -171,7 +227,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // to a Java video renderer using a "default" capturer.
   // It tests both the Java and the C++ layer.
   public void testStartVideoCapturer() throws Exception {
-    starCapturerAndRender("");
+    startCapturerAndRender("");
   }
 
   @SmallTest
@@ -179,7 +235,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   // to a Java video renderer using the front facing video capturer.
   // It tests both the Java and the C++ layer.
   public void testStartFrontFacingVideoCapturer() throws Exception {
-    starCapturerAndRender(VideoCapturerAndroid.getNameOfFrontFacingDevice());
+    startCapturerAndRender(CameraEnumerationAndroid.getNameOfFrontFacingDevice());
   }
 
   @SmallTest
@@ -190,7 +246,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     if (!HaveTwoCameras()) {
       return;
     }
-    starCapturerAndRender(VideoCapturerAndroid.getNameOfBackFacingDevice());
+    startCapturerAndRender(CameraEnumerationAndroid.getNameOfBackFacingDevice());
   }
 
   @SmallTest
@@ -252,14 +308,13 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   public void testStartStopWithDifferentResolutions() throws Exception {
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
-    String deviceName = VideoCapturerAndroid.getDeviceName(0);
-    ArrayList<CaptureFormat> formats =
-        VideoCapturerAndroid.getSupportedFormats(0);
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
+    List<CaptureFormat> formats = CameraEnumerationAndroid.getSupportedFormats(0);
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
 
     for(int i = 0; i < 3 ; ++i) {
-      VideoCapturerAndroid.CaptureFormat format = formats.get(i);
+      CameraEnumerationAndroid.CaptureFormat format = formats.get(i);
       capturer.startCapture(format.width, format.height, format.maxFramerate,
           getInstrumentation().getContext(), observer);
       assertTrue(observer.WaitForCapturerToStart());
@@ -277,13 +332,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
   public void testReturnBufferLate() throws Exception {
     FakeCapturerObserver observer = new FakeCapturerObserver();
 
-    String deviceName = VideoCapturerAndroid.getDeviceName(0);
-    ArrayList<CaptureFormat> formats =
-        VideoCapturerAndroid.getSupportedFormats(0);
+    String deviceName = CameraEnumerationAndroid.getDeviceName(0);
+    List<CaptureFormat> formats = CameraEnumerationAndroid.getSupportedFormats(0);
     VideoCapturerAndroid capturer =
         VideoCapturerAndroid.create(deviceName, null);
 
-    VideoCapturerAndroid.CaptureFormat format = formats.get(0);
+    CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     capturer.startCapture(format.width, format.height, format.maxFramerate,
         getInstrumentation().getContext(), observer);
     assertTrue(observer.WaitForCapturerToStart());
@@ -311,5 +365,55 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     for (Long timeStamp : listOftimestamps) {
       capturer.returnBuffer(timeStamp);
     }
+  }
+
+  @SmallTest
+  // This test that we can capture frames, stop capturing, keep the frames for rendering, and then
+  // return the frames. It tests both the Java and the C++ layer.
+  public void testCaptureAndAsyncRender() {
+    final VideoCapturerAndroid capturer = VideoCapturerAndroid.create("", null);
+    // Helper class that sets everything up, captures at least one frame, and then shuts
+    // everything down.
+    class CaptureFramesRunnable implements Runnable {
+      public List<I420Frame> frames;
+
+      @Override
+      public void run() {
+        PeerConnectionFactory factory = new PeerConnectionFactory();
+        VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
+        VideoTrack track = factory.createVideoTrack("dummy", source);
+        AsyncRenderer renderer = new AsyncRenderer();
+        track.addRenderer(new VideoRenderer(renderer));
+
+        // Wait until we get at least one frame.
+        frames = renderer.WaitForFrames();
+
+        // Stop everything.
+        track.dispose();
+        source.dispose();
+        factory.dispose();
+      }
+    }
+
+    // Capture frames on a separate thread.
+    CaptureFramesRunnable captureFramesRunnable = new CaptureFramesRunnable();
+    Thread captureThread = new Thread(captureFramesRunnable);
+    captureThread.start();
+
+    // Wait until frames are captured, and then kill the thread.
+    try {
+      captureThread.join();
+    } catch (InterruptedException e) {
+      fail("Capture thread was interrupted");
+    }
+    captureThread = null;
+
+    // Assert that we have frames that have not been returned.
+    assertTrue(!captureFramesRunnable.frames.isEmpty());
+    // Return the frame(s).
+    for (I420Frame frame : captureFramesRunnable.frames) {
+      VideoRenderer.renderFrameDone(frame);
+    }
+    assertEquals(capturer.pendingFramesTimeStamps(), "[]");
   }
 }

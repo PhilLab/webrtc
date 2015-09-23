@@ -46,12 +46,12 @@ struct Cluster {
         num_above_min_delta(0) {}
 
   int GetSendBitrateBps() const {
-    CHECK_GT(send_mean_ms, 0.0f);
+    RTC_CHECK_GT(send_mean_ms, 0.0f);
     return mean_size * 8 * 1000 / send_mean_ms;
   }
 
   int GetRecvBitrateBps() const {
-    CHECK_GT(recv_mean_ms, 0.0f);
+    RTC_CHECK_GT(recv_mean_ms, 0.0f);
     return mean_size * 8 * 1000 / recv_mean_ms;
   }
 
@@ -83,7 +83,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   // deleted.
   int32_t Process() override;
   int64_t TimeUntilNextProcess() override;
-  void OnRttUpdate(int64_t rtt) override;
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
   void RemoveStream(unsigned int ssrc) override;
   bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                       unsigned int* bitrate_bps) const override;
@@ -146,7 +146,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   size_t total_probes_received_;
   int64_t first_packet_time_ms_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorAbsSendTime);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorAbsSendTime);
 };
 
 }  // namespace webrtc

@@ -23,15 +23,13 @@ namespace voe {
 
 static int32_t _gInstanceCounter = 0;
 
-SharedData::SharedData(const Config& config) :
-    _instanceId(++_gInstanceCounter),
-    _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
-    _channelManager(_gInstanceCounter, config),
-    _engineStatistics(_gInstanceCounter),
-    _audioDevicePtr(NULL),
-    _moduleProcessThreadPtr(ProcessThread::Create()),
-    _externalRecording(false),
-    _externalPlayout(false)
+SharedData::SharedData(const Config& config)
+    : _instanceId(++_gInstanceCounter),
+      _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
+      _channelManager(_gInstanceCounter, config),
+      _engineStatistics(_gInstanceCounter),
+      _audioDevicePtr(NULL),
+      _moduleProcessThreadPtr(ProcessThread::Create("VoiceProcessThread"))
 {
     Trace::CreateTrace();
     if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0)
@@ -76,12 +74,11 @@ void SharedData::set_audio_processing(AudioProcessing* audioproc) {
 }
 
 int SharedData::NumOfSendingChannels() {
-  ChannelManager::Iterator it(&_channelManager);
   int sending_channels = 0;
 
-  for (ChannelManager::Iterator iter(&_channelManager); iter.IsValid();
-       iter.Increment()) {
-    if (iter.GetChannel()->Sending())
+  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
+       it.Increment()) {
+    if (it.GetChannel()->Sending())
       ++sending_channels;
   }
 
@@ -89,12 +86,11 @@ int SharedData::NumOfSendingChannels() {
 }
 
 int SharedData::NumOfPlayingChannels() {
-  ChannelManager::Iterator it(&_channelManager);
   int playout_channels = 0;
 
-  for (ChannelManager::Iterator iter(&_channelManager); iter.IsValid();
-       iter.Increment()) {
-    if (iter.GetChannel()->Playing())
+  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
+       it.Increment()) {
+    if (it.GetChannel()->Playing())
       ++playout_channels;
   }
 

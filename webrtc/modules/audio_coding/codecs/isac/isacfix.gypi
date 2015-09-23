@@ -14,6 +14,7 @@
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'isac_common',
       ],
       'include_dirs': [
         'fix/interface',
@@ -26,8 +27,6 @@
         ],
       },
       'sources': [
-        'audio_encoder_isac_t.h',
-        'audio_encoder_isac_t_impl.h',
         'fix/interface/audio_encoder_isacfix.h',
         'fix/interface/isacfix.h',
         'fix/source/arith_routines.c',
@@ -154,18 +153,12 @@
           ],
           'sources': [
             'fix/source/entropy_coding_neon.c',
+            'fix/source/filterbanks_neon.c',
             'fix/source/filters_neon.c',
             'fix/source/lattice_neon.c',
             'fix/source/transform_neon.c',
           ],
           'conditions': [
-            # Disable LTO in isac_neon target due to compiler bug
-            ['use_lto==1', {
-              'cflags!': [
-                '-flto',
-                '-ffat-lto-objects',
-              ],
-            }],
           ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
             'rules': [
             {
@@ -183,12 +176,6 @@
                'message': 'Compiling <(RULE_INPUT_PATH)',
              }],
             }],
-            # Disable AllpassFilter2FixDec16Neon function due to a clang
-            # bug. Refer more details at:
-            # https://code.google.com/p/webrtc/issues/detail?id=4567
-            ['target_arch!="arm64" or clang==0', {
-              'sources': ['fix/source/filterbanks_neon.c',],
-            }]
           ],
         },
       ],

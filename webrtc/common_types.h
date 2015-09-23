@@ -166,15 +166,14 @@ enum FrameType
 };
 
 // External transport callback interface
-class Transport
-{
-public:
-    virtual int SendPacket(int channel, const void *data, size_t len) = 0;
-    virtual int SendRTCPPacket(int channel, const void *data, size_t len) = 0;
+class Transport {
+ public:
+  virtual int SendPacket(const void* data, size_t len) = 0;
+  virtual int SendRTCPPacket(const void* data, size_t len) = 0;
 
-protected:
-    virtual ~Transport() {}
-    Transport() {}
+ protected:
+  virtual ~Transport() {}
+  Transport() {}
 };
 
 // Statistics for an RTCP channel
@@ -381,7 +380,7 @@ struct NetworkStatistics           // NETEQ statistics
     // max packet waiting time in the jitter buffer (ms)
     int maxWaitingTimeMs;
     // added samples in off mode due to packet loss
-    int addedSamples;
+    size_t addedSamples;
 };
 
 // Statistics for calls to AudioCodingModule::PlayoutData10Ms().
@@ -619,7 +618,7 @@ struct VideoCodecVP8 {
   }
 };
 
-// VP9 specific
+// VP9 specific.
 struct VideoCodecVP9 {
   VideoCodecComplexity complexity;
   int                  resilience;
@@ -628,6 +627,9 @@ struct VideoCodecVP9 {
   bool                 frameDroppingOn;
   int                  keyFrameInterval;
   bool                 adaptiveQpMode;
+  bool                 automaticResizeOn;
+  unsigned char        numberOfSpatialLayers;
+  bool                 flexibleMode;
 };
 
 // H264 specific.
@@ -803,6 +805,7 @@ struct RTPHeaderExtension {
   // Audio Level includes both level in dBov and voiced/unvoiced bit. See:
   // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
   bool hasAudioLevel;
+  bool voiceActivity;
   uint8_t audioLevel;
 
   // For Coordination of Video Orientation. See

@@ -197,8 +197,10 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
         : channel_(channel),
           voe_network_(voe_network),
           parser_(RtpHeaderParser::Create()) {}
-    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
-                                 size_t length) override {
+    DeliveryStatus DeliverPacket(MediaType media_type,
+                                 const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time) override {
       EXPECT_TRUE(media_type == MediaType::ANY ||
                   media_type == MediaType::AUDIO);
       int ret;
@@ -239,9 +241,9 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
                                     voe_sync,
                                     &audio_observer);
 
-  Call::Config receiver_config(observer.ReceiveTransport());
+  Call::Config receiver_config;
   receiver_config.voice_engine = voice_engine;
-  CreateCalls(Call::Config(observer.SendTransport()), receiver_config);
+  CreateCalls(Call::Config(), receiver_config);
 
   CodecInst isac = {103, "ISAC", 16000, 480, 1, 32000};
   EXPECT_EQ(0, voe_codec->SetSendCodec(channel, isac));
@@ -258,8 +260,8 @@ void CallPerfTest::TestAudioVideoSync(bool fec, bool create_audio_first) {
 
   test::FakeDecoder fake_decoder;
 
-  CreateSendConfig(1);
-  CreateMatchingReceiveConfigs();
+  CreateSendConfig(1, observer.SendTransport());
+  CreateMatchingReceiveConfigs(observer.ReceiveTransport());
 
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   if (fec) {
@@ -488,15 +490,10 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
         observation_complete_->Set();
     }
 
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config(SendTransport());
-      config.overuse_callback = this;
-      return config;
-    }
-
     void ModifyConfigs(VideoSendStream::Config* send_config,
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
+      send_config->overuse_callback = this;
       send_config->encoder_settings.encoder = &encoder_;
     }
 
@@ -528,6 +525,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   static const int kMinAcceptableTransmitBitrate = 130;
   static const int kMaxAcceptableTransmitBitrate = 170;
   static const int kNumBitrateObservationsInRange = 100;
+  static const int kAcceptableBitrateErrorMargin = 15;  // +- 7
   class BitrateObserver : public test::EndToEndTest, public PacketReceiver {
    public:
     explicit BitrateObserver(bool using_min_transmit_bitrate)
@@ -544,11 +542,13 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
       test::RtpRtcpObserver::SetReceivers(this, receive_transport_receiver);
     }
 
-    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
-                                 size_t length) override {
+    DeliveryStatus DeliverPacket(MediaType media_type,
+                                 const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time) override {
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (stats.substreams.size() > 0) {
-        DCHECK_EQ(1u, stats.substreams.size());
+        RTC_DCHECK_EQ(1u, stats.substreams.size());
         int bitrate_kbps =
             stats.substreams.begin()->second.total_bitrate_bps / 1000;
         if (bitrate_kbps > 0) {
@@ -567,8 +567,10 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
             }
           } else {
             // Expect bitrate stats to roughly match the max encode bitrate.
-            if (bitrate_kbps > kMaxEncodeBitrateKbps - 5 &&
-                bitrate_kbps < kMaxEncodeBitrateKbps + 5) {
+            if (bitrate_kbps > (kMaxEncodeBitrateKbps -
+                                kAcceptableBitrateErrorMargin / 2) &&
+                bitrate_kbps < (kMaxEncodeBitrateKbps +
+                                kAcceptableBitrateErrorMargin / 2)) {
               ++num_bitrate_observations_in_range_;
             }
           }
@@ -577,8 +579,8 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
             observation_complete_->Set();
         }
       }
-      return send_transport_receiver_->DeliverPacket(media_type, packet,
-                                                     length);
+      return send_transport_receiver_->DeliverPacket(media_type, packet, length,
+                                                     packet_time);
     }
 
     void OnStreamsCreated(
@@ -593,7 +595,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
       if (pad_to_min_bitrate_) {
         encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       } else {
-        DCHECK_EQ(0, encoder_config->min_transmit_bitrate_bps);
+        RTC_DCHECK_EQ(0, encoder_config->min_transmit_bitrate_bps);
       }
     }
 
@@ -629,7 +631,9 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           time_to_reconfigure_(webrtc::EventWrapper::Create()),
-          encoder_inits_(0) {}
+          encoder_inits_(0),
+          last_set_bitrate_(0),
+          send_stream_(nullptr) {}
 
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,

@@ -228,7 +228,7 @@ class StreamInterface : public MessageHandler {
   void OnMessage(Message* msg) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(StreamInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamInterface);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -305,7 +305,7 @@ class StreamAdapterInterface : public StreamInterface,
  private:
   StreamInterface* stream_;
   bool owned_;
-  DISALLOW_COPY_AND_ASSIGN(StreamAdapterInterface);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamAdapterInterface);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -337,7 +337,7 @@ class StreamTap : public StreamAdapterInterface {
   scoped_ptr<StreamInterface> tap_;
   StreamResult tap_result_;
   int tap_error_;
-  DISALLOW_COPY_AND_ASSIGN(StreamTap);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamTap);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -415,40 +415,7 @@ class FileStream : public StreamInterface {
   FILE* file_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FileStream);
-};
-
-// A stream that caps the output at a certain size, dropping content from the
-// middle of the logical stream and maintaining equal parts of the start/end of
-// the logical stream.
-class CircularFileStream : public FileStream {
- public:
-  explicit CircularFileStream(size_t max_size);
-
-  bool Open(const std::string& filename, const char* mode, int* error) override;
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override;
-
- private:
-  enum ReadSegment {
-    READ_MARKED,  // Read 0 .. marked_position_
-    READ_MIDDLE,  // Read position_ .. file_size
-    READ_LATEST,  // Read marked_position_ .. position_ if the buffer was
-                  // overwritten or 0 .. position_ otherwise.
-  };
-
-  size_t max_write_size_;
-  size_t position_;
-  size_t marked_position_;
-  size_t last_write_position_;
-  ReadSegment read_segment_;
-  size_t read_segment_available_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(FileStream);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -491,7 +458,7 @@ class MemoryStreamBase : public StreamInterface {
   size_t seek_position_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(MemoryStreamBase);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MemoryStreamBase);
 };
 
 // MemoryStream dynamically resizes to accomodate written data.
@@ -589,7 +556,7 @@ class FifoBuffer : public StreamInterface {
   size_t read_position_;  // offset to the readable data
   Thread* owner_;  // stream callbacks are dispatched on this thread
   mutable CriticalSection crit_;  // object lock
-  DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -620,7 +587,7 @@ class LoggingAdapter : public StreamAdapterInterface {
   bool hex_mode_;
   LogMultilineState lms_;
 
-  DISALLOW_COPY_AND_ASSIGN(LoggingAdapter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(LoggingAdapter);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -703,7 +670,7 @@ class StreamReference : public StreamAdapterInterface {
     StreamInterface* stream_;
     int ref_count_;
     CriticalSection cs_;
-    DISALLOW_COPY_AND_ASSIGN(StreamRefCount);
+    RTC_DISALLOW_COPY_AND_ASSIGN(StreamRefCount);
   };
 
   // Constructor for adding references
@@ -711,7 +678,7 @@ class StreamReference : public StreamAdapterInterface {
                            StreamInterface* stream);
 
   StreamRefCount* stream_ref_count_;
-  DISALLOW_COPY_AND_ASSIGN(StreamReference);
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamReference);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
