@@ -229,16 +229,28 @@ Media::Media() {
     return;
   }
 
-  globals::RunOnGlobalThread<int>([this]()->int {
-      _audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
-          webrtc::AudioDeviceModule::kWindowsWasapiAudio);
-      if (_audioDevice == NULL) {
-          LOG(LS_ERROR) << "Can't create audio device manager";
-          return 0;
-      }
-      _audioDevice->Init();
-      return 0;
+}
+
+Media^ Media::CreateMedia()
+{
+  auto ret = ref new Media();
+  ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
+    webrtc::AudioDeviceModule::kWindowsWasapiAudio);
+  if (ret->_audioDevice == NULL) {
+    LOG(LS_ERROR) << "Can't create audio device manager";
+    return nullptr;
+  }
+  ret->_audioDevice->Init();
+  return ret;
+}
+
+IAsyncOperation<Media^>^ Media::CreateMediaAsync()
+{
+  IAsyncOperation<Media^>^ asyncOp = Concurrency::create_async([]()->Media^
+  {
+    return CreateMedia();
   });
+  return asyncOp;
 }
 
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
