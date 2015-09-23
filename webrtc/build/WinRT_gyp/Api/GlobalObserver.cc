@@ -212,7 +212,7 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
 
     evt->Data = ref new webrtc_winrt_api::StringDataChannelMessage(
                                                 receivedString);
-  } else {
+  }  else {
     // convert byte[] from buffer to Vector
     std::vector<byte> bytesFromBuffer = std::vector<byte>();
     bytesFromBuffer.insert(bytesFromBuffer.end(), buffer.data.data(),

@@ -121,7 +121,7 @@ AudioDeviceModule* AudioDeviceModuleImpl::Create(const int32_t id,
 // ----------------------------------------------------------------------------
 
 AudioDeviceModuleImpl::AudioDeviceModuleImpl(const int32_t id,
-                                             const AudioLayer audioLayer) :
+                                    const AudioLayer audioLayer) :
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _critSectEventCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _critSectAudioCb(*CriticalSectionWrapper::CreateCriticalSection()),
@@ -151,11 +151,11 @@ int32_t AudioDeviceModuleImpl::CheckPlatform() {
 #if defined(_WIN32)
     platform = kPlatformWin32;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-        "current platform is WIN32");
+                "current platform is WIN32");
 #elif defined(WEBRTC_ANDROID)
     platform = kPlatformAndroid;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-        "current platform is ANDROID");
+                "current platform is ANDROID");
 #elif defined(WEBRTC_LINUX)
     platform = kPlatformLinux;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
@@ -973,7 +973,7 @@ int32_t AudioDeviceModuleImpl::StereoRecordingIsAvailable(
     *available = isAvailable;
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
-        "output: available=%d", *available);
+            "output: available=%d", *available);
     return (0);
 }
 
@@ -1596,11 +1596,12 @@ int32_t AudioDeviceModuleImpl::SetPlayoutBuffer(const BufferType type,
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::PlayoutBuffer(BufferType* type,
-                                             uint16_t* sizeMS) const {
+                                            uint16_t* sizeMS) const {
     CHECK_INITIALIZED();
 
     BufferType bufType;
     uint16_t size(0);
+
     if (_ptrAudioDevice->PlayoutBuffer(bufType, size) == -1) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
             "failed to retrieve the buffer type and size");

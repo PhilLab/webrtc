@@ -19,7 +19,3 @@ AsyncFile::~AsyncFile() {
 }
 
 }  // namespace rtc
-
-
-
-

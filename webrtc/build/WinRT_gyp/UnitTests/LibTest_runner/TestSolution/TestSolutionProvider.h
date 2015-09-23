@@ -26,4 +26,4 @@ struct SingleInstanceTestSolutionProvider {
       return TestSolution::Instance();
     }
 };
-}  // namespace LibTest_runner
+}

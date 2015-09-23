@@ -238,15 +238,13 @@ public ref class MediaStreamEvent sealed {
 public:
   property MediaStream^ Stream;
 };
-
 /// <summary>
-/// An RTCPeerConnection allows two users to communicate directly.
-/// Communications are coordinated via a signaling channel which is provided
-/// by unspecified means.
+/// An RTCPeerConnection allows two users to communicate directly. 
+/// Communications are coordinated via a signaling channel which is provided by unspecified means.
 /// </summary>
 /// <remarks>
 /// http://www.w3.org/TR/webrtc/#peer-to-peer-connections
-/// </remarks>
+///	</remarks>
 public ref class RTCPeerConnection sealed {
 public:
   // Required so the observer can raise events in this class.
@@ -257,8 +255,7 @@ public:
   /// Creates an RTCPeerConnection object.
   /// </summary>
   /// <remarks>
-  /// Refer to http://www.w3.org/TR/webrtc for the RTCPeerConnection
-  /// construction algorithm
+  /// Refer to http://www.w3.org/TR/webrtc for the RTCPeerConnection construction algorithm
   /// </remarks>
   /// <param name="configuration">
   /// The configuration has the information to find and access the
@@ -274,42 +271,38 @@ public:
   event EventDelegate^ OnSignalingStateChange;
   event RTCDataChannelEventDelegate^ OnDataChannel;
 
+
   /// <summary>
-  /// Generates a blob of SDP that contains an RFC 3264 offer with the
-  /// supported configurations for the session, including descriptions
-  /// of the local MediaStreams attached to this
-  /// <see cref="RTCPeerConnection"/>,
-  /// the codec/RTP/RTCP options supported by this implementation, and
-  /// any candidates that have been gathered by the ICE Agent.
+  /// Generates a blob of SDP that contains an RFC 3264 offer with the supported configurations 
+  /// for the session, including descriptions of the local MediaStreams attached to this 
+  /// <see cref="RTCPeerConnection"/>, 
+  /// the codec/RTP/RTCP options supported by this implementation, and any candidates that have been 
+  /// gathered by the ICE Agent. 
   /// </summary>
   /// <returns></returns>
   IAsyncOperation<RTCSessionDescription^>^ CreateOffer();
 
   /// <summary>
-  /// Generates an SDP answer with the supported configuration for the
-  /// session that is compatible with the parameters in the remote
-  /// configuration. Like createOffer, the returned blob contains descriptions
-  /// of the local MediaStreams attached to this
-  /// <see cref="RTCPeerConnection"/>, the codec/RTP/RTCP options negotiated
-  /// for this session, and any candidates that have been gathered by the ICE
-  /// Agent.
+  /// Generates an SDP answer with the supported configuration for the session that is compatible with 
+  /// the parameters in the remote configuration. Like createOffer, the returned blob contains descriptions 
+  /// of the local MediaStreams attached to this <see cref="RTCPeerConnection"/>, the codec/RTP/RTCP 
+  /// options negotiated for this session, and any candidates that have been gathered by the ICE Agent.
   /// </summary>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
 
   /// <summary>
-  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied
-  /// <see cref="RTCSessionDescription"/> as the local description.
+  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied <see cref="RTCSessionDescription"/> as the 
+  /// local description.
   /// This API changes the local media state.
   /// </summary>
-  /// <param name="description">RTCSessionDescription to apply as the
-  /// local description</param>
+  /// <param name="description">RTCSessionDescription to apply as the local description</param>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
 
   /// <summary>
-  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied
-  /// <see cref="RTCSessionDescription"/> as the remote offer or answer.
+  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied 
+  /// <see cref="RTCSessionDescription"/> as the remote offer or answer. 
   /// This API changes the local media state.
   /// </summary>
   /// <param name="description"><see cref="RTCSessionDescription"/> to
@@ -335,34 +328,29 @@ public:
   /// <summary>
   /// Provides a remote candidate to the ICE Agent.
   /// The candidate is added to the remote description.
-  /// This call will result in a change to the connection state of the ICE
-  /// Agent, and may lead to a change to media state if it results in
-  /// different connectivity being established.
+  /// This call will result in a change to the connection state of the ICE Agent, and may lead to a change 
+  /// to media state if it results in different connectivity being established.
   /// </summary>
-  /// <param name="candidate">candidate to be added to the remote description
-  /// </param>
+  /// <param name="candidate">candidate to be added to the remote description</param>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ AddIceCandidate(RTCIceCandidate^ candidate);
   void Close();
 
   /// <summary>
-  /// The last <see cref="RTCSessionDescription"/> that was successfully set
-  /// using <see cref="SetLocalDescription"/>, plus any local candidates that
-  /// have been generated by the ICE Agent since then.
-  /// A nullptr handle will be returned if the local description has not yet
-  /// been set.
+  /// The last <see cref="RTCSessionDescription"/> that was successfully set using 
+  /// <see cref="SetLocalDescription"/>, plus any local candidates that have been generated by the ICE Agent 
+  /// since then.
+  /// A nullptr handle will be returned if the local description has not yet been set.
   /// </summary>
   property RTCSessionDescription^ LocalDescription {
     RTCSessionDescription^ get();
   }
 
   /// <summary>
-  /// The last <see cref="RTCSessionDescription"/> that was successfully set
-  /// using <see cref="SetRemoteDescription"/>,
-  /// plus any remote candidates that have been supplied via
-  /// <see cref="AddIceCandidate"/> since then.
-  /// A nullptr handle will be returned if the local description has not
-  /// yet been set.
+  /// The last <see cref="RTCSessionDescription"/> that was successfully set using 
+  /// <see cref="SetRemoteDescription"/>, 
+  /// plus any remote candidates that have been supplied via <see cref="AddIceCandidate"/> since then.
+  /// A nullptr handle will be returned if the local description has not yet been set.
   /// </summary>
   property RTCSessionDescription^ RemoteDescription {
     RTCSessionDescription^ get();

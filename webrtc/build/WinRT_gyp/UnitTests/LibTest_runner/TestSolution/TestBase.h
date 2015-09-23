@@ -217,4 +217,5 @@ class CTestBase {
       static std::wstring library = L#LIBRARY; \
       return library; \
     }
-}  // namespace LibTest_runner
+}
+
