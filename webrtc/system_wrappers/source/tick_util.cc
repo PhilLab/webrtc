@@ -20,6 +20,7 @@ int64_t TickTime::fake_ticks_ = 0;
 
 #ifdef WINRT
   static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+  static const uint64 kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
   LARGE_INTEGER TickTime::app_start_time_ = {};  // record app start time
   int64_t TickTime::time_since_os_start_ = -1;  // when app start,
                                                 // the os ticks in ms
@@ -37,6 +38,31 @@ void TickTime::AdvanceFakeClock(int64_t milliseconds) {
 }
 
 #ifdef WINRT
+
+//Warning, right now, the app_start_time_ and time_since_os_start_ are not protected with mutex.
+//we only call this function to sync the clock of testing device with ntp when the app starts.
+//if we want to call this function periodically in the runtime,then, suggest to use mutex 
+void TickTime::SyncWithNtp(int64_t timeFromNtpServer /*in ms*/ ){
+
+  TIME_ZONE_INFORMATION timeZone;
+  GetTimeZoneInformation(&timeZone);
+  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;  // milliseconds
+
+  app_start_time_.QuadPart = timeFromNtpServer - kNTPTimeToUnixTimeEpochOffset - timeZoneBias;
+
+  //since we just update the app refernce time, need to update the reference point as well.
+
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+
+  LARGE_INTEGER qpfreq;
+  QueryPerformanceFrequency(&qpfreq);
+
+  os_ticks_per_second_ = qpfreq.QuadPart;
+
+  time_since_os_start_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;
+}
+
 
 inline void TickTime::InitializeAppStartTimestamp() {
   if (time_since_os_start_ != -1)  // already initialized
