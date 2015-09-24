@@ -13,8 +13,8 @@
 * the fix point signal processing library.
 */
 
-#ifndef WEBRTC_SPL_SPL_INL_NEON_H_
-#define WEBRTC_SPL_SPL_INL_NEON_H_
+#ifndef WEBRTC_COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_SPL_INL_NEON_H_
+#define WEBRTC_COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_SPL_INL_NEON_H_
 
 #include <armintr.h>
 
@@ -31,4 +31,4 @@
 #define WebRtcSpl_NormW16(a) ((int16_t)((a) == 0 ? 0 : ((a) < 0 ? _arm_clz(((int32_t)(a)) ^ 0xFFFFFFFF) - 17 : _arm_clz((uint32_t)(a)) - 17)))
 #define WebRtcSpl_SatW32ToW16(a) ((int16_t)_arm_ssat(16, (a), _ARM_LSL, 0))
 
-#endif  // WEBRTC_SPL_SPL_INL_NEON_H_
+#endif  // WEBRTC_COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_SPL_INL_NEON_H_

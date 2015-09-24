@@ -30,9 +30,6 @@
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "talk/media/base/mediacommon.h"
 
-using namespace concurrency;
-using namespace Windows::Devices::Enumeration;
-
 namespace cricket {
   const char* WinRTDeviceManager::kUsbDevicePathPrefix = "\\\\?\\usb";
 
@@ -67,13 +64,16 @@ namespace cricket {
 
   bool WinRTDeviceManager::GetAudioInputDevices(std::vector<Device>* devices) {
     devices->clear();
-    auto deviceOp = DeviceInformation::FindAllAsync(
-      DeviceClass::AudioCapture);
-    auto deviceEnumTask = create_task(deviceOp);
+    auto deviceOp = Windows::Devices::Enumeration::
+      DeviceInformation::FindAllAsync(
+      Windows::Devices::Enumeration::DeviceClass::AudioCapture);
+    auto deviceEnumTask = concurrency::create_task(deviceOp);
     deviceEnumTask.then([&devices](
-      DeviceInformationCollection^ deviceCollection) {
+      Windows::Devices::Enumeration::DeviceInformationCollection^
+          deviceCollection) {
       for (size_t i = 0; i < deviceCollection->Size; i++) {
-        DeviceInformation^ di = deviceCollection->GetAt(i);
+        Windows::Devices::Enumeration::DeviceInformation^ di =
+                                                deviceCollection->GetAt(i);
         std::string nameUTF8(rtc::ToUtf8(di->Name->Data(),
           di->Name->Length()));
         std::string idUTF8(rtc::ToUtf8(di->Id->Data(), di->Id->Length()));
@@ -86,13 +86,16 @@ namespace cricket {
   bool WinRTDeviceManager::GetAudioOutputDevices(
     std::vector<Device>* devices) {
     devices->clear();
-    auto deviceOp = DeviceInformation::FindAllAsync(
-      DeviceClass::AudioRender);
-    auto deviceEnumTask = create_task(deviceOp);
+    auto deviceOp =
+      Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
+      Windows::Devices::Enumeration::DeviceClass::AudioRender);
+    auto deviceEnumTask = concurrency::create_task(deviceOp);
     deviceEnumTask.then([&devices](
-      DeviceInformationCollection^ deviceCollection) {
+      Windows::Devices::Enumeration::DeviceInformationCollection^
+        deviceCollection) {
       for (size_t i = 0; i < deviceCollection->Size; i++) {
-        DeviceInformation^ di = deviceCollection->GetAt(i);
+        Windows::Devices::Enumeration::DeviceInformation^ di =
+            deviceCollection->GetAt(i);
         std::string nameUTF8(rtc::ToUtf8(di->Name->Data(),
           di->Name->Length()));
         std::string idUTF8(rtc::ToUtf8(di->Id->Data(), di->Id->Length()));
@@ -146,76 +149,82 @@ namespace cricket {
 
   WinRTDeviceManager::WinRTWatcher::WinRTWatcher() :
     deviceManager_(nullptr),
-    videoCaptureWatcher_(DeviceInformation::CreateWatcher(
-    DeviceClass::VideoCapture)),
-    videoAudioInWatcher_(DeviceInformation::CreateWatcher(
-    DeviceClass::AudioCapture)),
-    videoAudioOutWatcher_(DeviceInformation::CreateWatcher(
-    DeviceClass::AudioRender)) {
+    videoCaptureWatcher_(
+      Windows::Devices::Enumeration::DeviceInformation::CreateWatcher(
+    Windows::Devices::Enumeration::DeviceClass::VideoCapture)),
+    videoAudioInWatcher_(
+      Windows::Devices::Enumeration::DeviceInformation::CreateWatcher(
+    Windows::Devices::Enumeration::DeviceClass::AudioCapture)),
+    videoAudioOutWatcher_(
+      Windows::Devices::Enumeration::DeviceInformation::CreateWatcher(
+    Windows::Devices::Enumeration::DeviceClass::AudioRender)) {
     videoCaptureWatcher_->Added +=
       ref new Windows::Foundation::TypedEventHandler<
-      Windows::Devices::Enumeration::DeviceWatcher ^, DeviceInformation ^>(
+      Windows::Devices::Enumeration::DeviceWatcher ^,
+      Windows::Devices::Enumeration::DeviceInformation ^>(
       this, &WinRTDeviceManager::WinRTWatcher::OnVideoCaptureAdded);
     videoCaptureWatcher_->Removed +=
       ref new Windows::Foundation::TypedEventHandler<
       Windows::Devices::Enumeration::DeviceWatcher ^,
-      DeviceInformationUpdate ^>(this,
+      Windows::Devices::Enumeration::DeviceInformationUpdate ^>(this,
       &WinRTDeviceManager::WinRTWatcher::OnVideoCaptureRemoved);
 
     videoAudioInWatcher_->Added +=
       ref new Windows::Foundation::TypedEventHandler<
-      Windows::Devices::Enumeration::DeviceWatcher ^, DeviceInformation ^>(
+      Windows::Devices::Enumeration::DeviceWatcher ^,
+      Windows::Devices::Enumeration::DeviceInformation ^>(
       this, &WinRTDeviceManager::WinRTWatcher::OnAudioInAdded);
     videoAudioInWatcher_->Removed +=
       ref new Windows::Foundation::TypedEventHandler<
       Windows::Devices::Enumeration::DeviceWatcher ^,
-      DeviceInformationUpdate ^>(this,
+      Windows::Devices::Enumeration::DeviceInformationUpdate ^>(this,
       &WinRTDeviceManager::WinRTWatcher::OnAudioInRemoved);
 
     videoAudioOutWatcher_->Added +=
       ref new Windows::Foundation::TypedEventHandler<
-      Windows::Devices::Enumeration::DeviceWatcher ^, DeviceInformation ^>(
+      Windows::Devices::Enumeration::DeviceWatcher ^,
+      Windows::Devices::Enumeration::DeviceInformation ^>(
       this, &WinRTDeviceManager::WinRTWatcher::OnAudioOutAdded);
     videoAudioOutWatcher_->Removed +=
       ref new Windows::Foundation::TypedEventHandler<
       Windows::Devices::Enumeration::DeviceWatcher ^,
-      DeviceInformationUpdate ^>(this,
+      Windows::Devices::Enumeration::DeviceInformationUpdate ^>(this,
       &WinRTDeviceManager::WinRTWatcher::OnAudioOutRemoved);
   }
 
   void WinRTDeviceManager::WinRTWatcher::OnVideoCaptureAdded(
     Windows::Devices::Enumeration::DeviceWatcher ^sender,
-    DeviceInformation ^args) {
+    Windows::Devices::Enumeration::DeviceInformation ^args) {
     OnDeviceChange();
   }
 
   void WinRTDeviceManager::WinRTWatcher::OnVideoCaptureRemoved(
     Windows::Devices::Enumeration::DeviceWatcher ^sender,
-    DeviceInformationUpdate ^args) {
+    Windows::Devices::Enumeration::DeviceInformationUpdate ^args) {
     OnDeviceChange();
   }
 
   void WinRTDeviceManager::WinRTWatcher::OnAudioInAdded(
     Windows::Devices::Enumeration::DeviceWatcher ^sender,
-    DeviceInformation ^args) {
+    Windows::Devices::Enumeration::DeviceInformation ^args) {
     OnDeviceChange();
   }
 
   void WinRTDeviceManager::WinRTWatcher::OnAudioInRemoved(
     Windows::Devices::Enumeration::DeviceWatcher ^sender,
-    DeviceInformationUpdate ^args) {
+    Windows::Devices::Enumeration::DeviceInformationUpdate ^args) {
     OnDeviceChange();
   }
 
   void WinRTDeviceManager::WinRTWatcher::OnAudioOutAdded(
     Windows::Devices::Enumeration::DeviceWatcher ^sender,
-    DeviceInformation ^args) {
+    Windows::Devices::Enumeration::DeviceInformation ^args) {
     OnDeviceChange();
   }
 
   void WinRTDeviceManager::WinRTWatcher::OnAudioOutRemoved(
     Windows::Devices::Enumeration::DeviceWatcher ^sender,
-    DeviceInformationUpdate ^args) {
+    Windows::Devices::Enumeration::DeviceInformationUpdate ^args) {
     OnDeviceChange();
   }
 

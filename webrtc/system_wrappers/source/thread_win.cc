@@ -79,7 +79,7 @@ bool ThreadWindows::Stop() {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
   if (thread_) {
 #if defined(WINRT)
-    // TODO (WINRT): QueueUserAPC alternative.
+    // TODO(WINRT): QueueUserAPC alternative.
     stop_ = true;
 #else
     // Set stop_ to |true| on the worker thread.

@@ -13,12 +13,6 @@
 #include <string>
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 
-using namespace Platform;
-using namespace concurrency;
-using namespace Windows::ApplicationModel::Activation;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Controls;
-using namespace Windows::UI::Xaml::Media;
 
 static char stdout_buffer[1024 * 1024] = { 0 };
 
@@ -31,45 +25,52 @@ namespace video_capture_test_winrt {
     VideoCaptureTestWinRT() { }
 
   private:
-    ProgressRing^ progressRing_;
-    Button^ firstButton_;
-    Button^ secondButton_;
-    Button^ thirdButton_;
+    Windows::UI::Xaml::Controls::ProgressRing^ progressRing_;
+    Windows::UI::Xaml::Controls::Button^ firstButton_;
+    Windows::UI::Xaml::Controls::Button^ secondButton_;
+    Windows::UI::Xaml::Controls::Button^ thirdButton_;
 
   protected:
-    void OnLaunched(LaunchActivatedEventArgs^ e) override {
-      auto layoutRoot = ref new Grid();
-      layoutRoot->VerticalAlignment = VerticalAlignment::Center;
-      layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;
+    void OnLaunched(
+        Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^
+              e) override {
+      auto layoutRoot = ref new Windows::UI::Xaml::Controls::Grid();
+      layoutRoot->VerticalAlignment =
+        Windows::UI::Xaml::VerticalAlignment::Center;
+      layoutRoot->HorizontalAlignment =
+        Windows::UI::Xaml::HorizontalAlignment::Center;
 
-      auto containerStack = ref new StackPanel();
-      containerStack->Orientation = Orientation::Vertical;
+      auto containerStack = ref new Windows::UI::Xaml::Controls::StackPanel();
+      containerStack->Orientation =
+        Windows::UI::Xaml::Controls::Orientation::Vertical;
 
-      auto buttonStack = ref new StackPanel();
-      buttonStack->Orientation = Orientation::Horizontal;
-      buttonStack->HorizontalAlignment = HorizontalAlignment::Center;
+      auto buttonStack = ref new Windows::UI::Xaml::Controls::StackPanel();
+      buttonStack->Orientation =
+        Windows::UI::Xaml::Controls::Orientation::Horizontal;
+      buttonStack->HorizontalAlignment =
+        Windows::UI::Xaml::HorizontalAlignment::Center;
 
-      firstButton_ = ref new Button();
+      firstButton_ = ref new Windows::UI::Xaml::Controls::Button();
       firstButton_->Width = 200;
       firstButton_->Height = 60;
       firstButton_->Content = "1";
-      firstButton_->Click += ref new RoutedEventHandler(this,
+      firstButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this,
         &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
       buttonStack->Children->Append(firstButton_);
 
-      secondButton_ = ref new Button();
+      secondButton_ = ref new Windows::UI::Xaml::Controls::Button();
       secondButton_->Width = 200;
       secondButton_->Height = 60;
       secondButton_->Content = "2";
-      secondButton_->Click += ref new RoutedEventHandler(this,
-        &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
+      secondButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(
+        this, &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
       buttonStack->Children->Append(secondButton_);
 
-      thirdButton_ = ref new Button();
+      thirdButton_ = ref new Windows::UI::Xaml::Controls::Button();
       thirdButton_->Width = 200;
       thirdButton_->Height = 60;
       thirdButton_->Content = "3";
-      thirdButton_->Click += ref new RoutedEventHandler(this,
+      thirdButton_->Click += ref new Windows::UI::Xaml::RoutedEventHandler(this,
         &video_capture_test_winrt::VideoCaptureTestWinRT::button1_Click);
 
       buttonStack->Children->Append(thirdButton_);
@@ -78,23 +79,26 @@ namespace video_capture_test_winrt {
 
       layoutRoot->Children->Append(containerStack);
 
-      progressRing_ = ref new ProgressRing();
+      progressRing_ = ref new Windows::UI::Xaml::Controls::ProgressRing();
       progressRing_->Width = 50;
       progressRing_->Height = 50;
       layoutRoot->Children->Append(progressRing_);
 
-      Window::Current->Content = layoutRoot;
-      Window::Current->Activate();
+      Windows::UI::Xaml::Window::Current->Content = layoutRoot;
+      Windows::UI::Xaml::Window::Current->Activate();
       // RunCaptureTest();
     }
 
-    void button1_Click(Platform::Object^ sender, RoutedEventArgs^ e) {
+    void button1_Click(Platform::Object^ sender,
+                       Windows::UI::Xaml::RoutedEventArgs^ e) {
     }
 
-    void button2_Click(Platform::Object^ sender, RoutedEventArgs^ e) {
+    void button2_Click(Platform::Object^ sender,
+                       Windows::UI::Xaml::RoutedEventArgs^ e) {
     }
 
-    void button3_Click(Platform::Object^ sender, RoutedEventArgs^ e) {
+    void button3_Click(Platform::Object^ sender,
+                       Windows::UI::Xaml::RoutedEventArgs^ e) {
     }
 
     void RunCaptureTest() {
@@ -106,8 +110,8 @@ namespace video_capture_test_winrt {
 
       // Run test cases in a separate thread not to block the UI thread
       // Pass the UI thread to continue using it after task execution
-      auto ui = task_continuation_context::use_current();
-      create_task([this, ui]() {
+      auto ui = concurrency::task_continuation_context::use_current();
+      concurrency::create_task([this, ui]() {
         int state = 0;
         if (state == 1) {
           webrtc::VideoCaptureModule* vcpm = NULL;

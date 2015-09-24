@@ -20,7 +20,7 @@ namespace webrtc {
 // Namespace needed to resolve class name collision (OpusTest).
 // The other OpusTest class is in opus_test.cc of modules_test project
 #ifdef WINRT
-    namespace unittest{
+namespace unittest {
 #endif
 using test::AudioLoop;
 using ::testing::TestWithParam;
@@ -625,6 +625,6 @@ INSTANTIATE_TEST_CASE_P(VariousMode,
                         Combine(Values(1, 2), Values(0, 1)));
 
 #ifdef WINRT
-    }//namespace unittest
+    }  // namespace unittest
 #endif
 }  // namespace webrtc

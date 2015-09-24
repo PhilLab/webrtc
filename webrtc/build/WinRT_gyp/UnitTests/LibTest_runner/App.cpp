@@ -13,13 +13,6 @@
 
 #include "webrtc/build/WinRT_gyp/UnitTests/LibTest_runner/common.h"
 
-using namespace Platform;
-using namespace concurrency;
-using namespace Windows::ApplicationModel::Activation;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Controls;
-using namespace Windows::UI::Xaml::Media;
-
 bool autoClose = false;
 
 namespace LibTest_runner {
@@ -29,31 +22,33 @@ namespace LibTest_runner {
     }
 
   private:
-    TextBox^ outputTextBox_;
-    ProgressRing^ progressRing_;
+    Windows::UI::Xaml::Controls::TextBox^ outputTextBox_;
+    Windows::UI::Xaml::Controls::ProgressRing^ progressRing_;
 
   protected:
     void OnLaunched(
       Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e)
                                                                     override {
-      auto layoutRoot = ref new Grid();
-      layoutRoot->VerticalAlignment = VerticalAlignment::Center;
-      layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;
+      auto layoutRoot = ref new Windows::UI::Xaml::Controls::Grid();
+      layoutRoot->VerticalAlignment =
+        Windows::UI::Xaml::VerticalAlignment::Center;
+      layoutRoot->HorizontalAlignment =
+        Windows::UI::Xaml::HorizontalAlignment::Center;
 
-      outputTextBox_ = ref new TextBox();
+      outputTextBox_ = ref new Windows::UI::Xaml::Controls::TextBox();
       outputTextBox_->Width = 640;
       outputTextBox_->Height = 480;
       outputTextBox_->AcceptsReturn = true;
       outputTextBox_->PlaceholderText = "Test outputs appears here!";
       layoutRoot->Children->Append(outputTextBox_);
 
-      progressRing_ = ref new ProgressRing();
+      progressRing_ = ref new Windows::UI::Xaml::Controls::ProgressRing();
       progressRing_->Width = 50;
       progressRing_->Height = 50;
       layoutRoot->Children->Append(progressRing_);
 
-      Window::Current->Content = layoutRoot;
-      Window::Current->Activate();
+      Windows::UI::Xaml::Window::Current->Content = layoutRoot;
+      Windows::UI::Xaml::Window::Current->Activate();
       RunAllTests();
     }
 
@@ -65,18 +60,18 @@ namespace LibTest_runner {
 
       // Run test cases in a separate thread not to block the UI thread
       // Pass the UI thread to continue using it after task execution
-      auto ui = task_continuation_context::use_current();
-      create_task([this, ui, spStringReporter]() {
+      auto ui = concurrency::task_continuation_context::use_current();
+      concurrency::create_task([this, ui, spStringReporter]() {
         LibTest_runner::TestSolution::Instance().AddReporter(spStringReporter);
         LibTest_runner::TestSolution::Instance().AddReporter(SpXmlReporter_t(
-          new CXmlReporter(ref new String(L"tests.xml"),
+          new CXmlReporter(ref new Platform::String(L"tests.xml"),
                            CXmlReporter::kAllTests)));
         LibTest_runner::TestSolution::Instance().Execute();
         LibTest_runner::TestSolution::Instance().GenerateReport();
       }).then([this, spStringReporter]() {
         // Update the UI
         if (spStringReporter->GetReport() != NULL) {
-          outputTextBox_->Text = ref new String(
+          outputTextBox_->Text = ref new Platform::String(
             (*spStringReporter->GetReport()).c_str());
           outputTextBox_->Text += L"Execution finished.\n";
         }
