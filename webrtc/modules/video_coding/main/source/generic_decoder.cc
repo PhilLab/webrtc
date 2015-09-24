@@ -57,7 +57,7 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
 
     if (frameInfo == NULL) {
       LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
-                         "this one.";
+                         "this one." << decodedImage.timestamp();
       return WEBRTC_VIDEO_CODEC_OK;
     }
 

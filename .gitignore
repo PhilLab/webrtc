@@ -196,6 +196,7 @@
 !/webrtc/build/WinRT/**/*.pfx
 /webrtc/modules/video_capture/test/winrt/**/Generated Files
 AppPackages
+/packages/
 *.ipch
 build_win/
 build_win_phone/
