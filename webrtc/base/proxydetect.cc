@@ -48,9 +48,6 @@
 #endif  // WEBRTC_WIN
 
 #if defined(WINRT)
-//using namespace Windows::Networking::Connectivity;
-//using namespace Windows::Foundation;
-//using namespace Platform;
 #include <xlocbuf>
 #include <codecvt>
 #endif
@@ -601,12 +598,11 @@ bool GetFirefoxProxySettings(const char* url, ProxyInfo* proxy) {
 Platform::String^ MkString(const char* str) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::wstring wstr = converter.from_bytes(str);
-    //using namespace Platform;
     return ref new Platform::String(wstr.data());
 }
 
 bool GetWinRTProxySettings(const char* agent, const char* url, ProxyInfo* proxy) {
-    // TODO: Figure out how to do this
+    // TODO(winrt): Figure out how to do this
     //       auto action = NetworkInformation::GetProxyConfigurationAsync(ref new Uri(MkString(url)));
     //       Problem is this function is async which doesn't play well with the existing sync nature of our api.
 

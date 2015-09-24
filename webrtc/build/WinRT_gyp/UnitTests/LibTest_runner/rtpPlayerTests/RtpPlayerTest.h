@@ -19,7 +19,7 @@ namespace rtpPlayerTests {
 class CRtpPlayerTest :
   public LibTest_runner::CTestBase {
  private:
-    AUTO_ADD_TEST(libSrtpTests::SingleInstanceTestSolutionProvider,
+   AUTO_ADD_TEST(LibTest_runner::SingleInstanceTestSolutionProvider,
     CRtpPlayerTest);
  protected:
     int InterchangeableExecute();

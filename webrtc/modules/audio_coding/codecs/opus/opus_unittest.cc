@@ -625,6 +625,6 @@ INSTANTIATE_TEST_CASE_P(VariousMode,
                         Combine(Values(1, 2), Values(0, 1)));
 
 #ifdef WINRT
-    }//namespace unittest
+    }  // namespace unittest
 #endif
 }  // namespace webrtc

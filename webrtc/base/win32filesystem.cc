@@ -89,7 +89,6 @@ FileStream *Win32Filesystem::OpenFile(const Pathname &filename,
 }
 
 #if defined(WINRT)
-// TODO (winrt): How to create private files?
 bool Win32Filesystem::CreatePrivateFile(const Pathname &filename) {
   HANDLE handle = ::CreateFile2(
       ToUtf16(filename.pathname()).c_str(),
@@ -465,7 +464,7 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
 #endif
 
 #if defined(WINRT)
-// TODO (winrt): See if we can switch on the per_user flag.
+// TODO(winrt): See if we can switch on the per_user flag.
 bool Win32Filesystem::GetAppDataFolder(Pathname* path, bool per_user) {
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
   TCHAR buffer[MAX_PATH + 1];
