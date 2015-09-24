@@ -19,8 +19,10 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
-class MediaFileImpl : public MediaFile {
- public:
+class MediaFileImpl : public MediaFile
+{
+
+public:
     MediaFileImpl(const int32_t id);
     ~MediaFileImpl();
 
@@ -90,7 +92,7 @@ class MediaFileImpl : public MediaFile {
 
     int32_t codec_info(CodecInst& codecInst) const override;
 
- private:
+private:
     // Returns true if the combination of format and codecInst is valid.
     static bool ValidFileFormat(const FileFormats format,
                                 const CodecInst*  codecInst);
@@ -143,4 +145,4 @@ class MediaFileImpl : public MediaFile {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_MEDIA_FILE_SOURCE_MEDIA_FILE_IMPL_H_
+#endif // WEBRTC_MODULES_MEDIA_FILE_SOURCE_MEDIA_FILE_IMPL_H_

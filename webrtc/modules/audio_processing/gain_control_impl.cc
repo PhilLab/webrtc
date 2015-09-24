@@ -64,7 +64,7 @@ int GainControlImpl::ProcessRenderAudio(AudioBuffer* audio) {
     int err = WebRtcAgc_AddFarend(
         my_handle,
         audio->mixed_low_pass_data(),
-        static_cast<int16_t>(audio->num_frames_per_band()));
+        audio->num_frames_per_band());
 
     if (err != apm_->kNoError) {
       return GetHandleError(my_handle);
@@ -92,13 +92,14 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
           my_handle,
           audio->split_bands(i),
           audio->num_bands(),
-          static_cast<int16_t>(audio->num_frames_per_band()));
+          audio->num_frames_per_band());
 
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);
       }
     }
   } else if (mode_ == kAdaptiveDigital) {
+
     for (int i = 0; i < num_handles(); i++) {
       Handle* my_handle = static_cast<Handle*>(handle(i));
       int32_t capture_level_out = 0;
@@ -107,7 +108,7 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
           my_handle,
           audio->split_bands(i),
           audio->num_bands(),
-          static_cast<int16_t>(audio->num_frames_per_band()),
+          audio->num_frames_per_band(),
           analog_capture_level_,
           &capture_level_out);
 
@@ -116,6 +117,7 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);
       }
+
     }
   }
 
@@ -144,7 +146,7 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
         my_handle,
         audio->split_bands_const(i),
         audio->num_bands(),
-        static_cast<int16_t>(audio->num_frames_per_band()),
+        audio->num_frames_per_band(),
         audio->split_bands(i),
         capture_levels_[i],
         &capture_level_out,
@@ -189,7 +191,7 @@ int GainControlImpl::set_stream_analog_level(int level) {
 
 int GainControlImpl::stream_analog_level() {
   // TODO(ajm): enable this assertion?
-  // assert(mode_ == kAdaptiveAnalog);
+  //assert(mode_ == kAdaptiveAnalog);
 
   return analog_capture_level_;
 }
@@ -318,8 +320,8 @@ int GainControlImpl::ConfigureHandle(void* handle) const {
   WebRtcAgcConfig config;
   // TODO(ajm): Flip the sign here (since AGC expects a positive value) if we
   //            change the interface.
-  // assert(target_level_dbfs_ <= 0);
-  // config.targetLevelDbfs = static_cast<int16_t>(-target_level_dbfs_);
+  //assert(target_level_dbfs_ <= 0);
+  //config.targetLevelDbfs = static_cast<int16_t>(-target_level_dbfs_);
   config.targetLevelDbfs = static_cast<int16_t>(target_level_dbfs_);
   config.compressionGaindB =
       static_cast<int16_t>(compression_gain_db_);

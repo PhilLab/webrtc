@@ -27,7 +27,8 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/video_frame.h"
 
-namespace webrtc {
+namespace webrtc
+{
 
 class Clock;
 class EncodedImageCallback;
@@ -64,8 +65,9 @@ enum VCMDecodeErrorMode {
                             // complete.
 };
 
-class VideoCodingModule : public Module {
- public:
+class VideoCodingModule : public Module
+{
+public:
     enum SenderNackMode {
         kNackNone,
         kNackAll,
@@ -100,8 +102,7 @@ class VideoCodingModule : public Module {
     //      - codec          : Memory where the codec settings will be stored
     //
     // Return value     : VCM_OK,              on success
-    //                    VCM_PARAMETER_ERROR  if codec not supported or id too
-    //                                         high
+    //                    VCM_PARAMETER_ERROR  if codec not supported or id too high
     static int32_t Codec(const uint8_t listId, VideoCodec* codec);
 
     // Get supported codec settings using codec type
@@ -166,8 +167,7 @@ class VideoCodingModule : public Module {
     // API to get the current send codec type
     //
     // Return value      : Codec type, on success.
-    //                     kVideoCodecUnknown, on error or if no send codec is
-    //                     set
+    //                     kVideoCodecUnknown, on error or if no send codec is set
     // NOTE: Same notes apply as for SendCodec() above.
     virtual VideoCodecType SendCodec() const = 0;
 
@@ -175,10 +175,9 @@ class VideoCodingModule : public Module {
     // external decoder callbacks.
     //
     // Input:
-    //      - externalEncoder : Encoder object to be used for encoding frames
-    //                          inserted with the AddVideoFrame API.
-    //      - payloadType     : The payload type bound which this encoder is
-    //                          bound to.
+    //      - externalEncoder : Encoder object to be used for encoding frames inserted
+    //                          with the AddVideoFrame API.
+    //      - payloadType     : The payload type bound which this encoder is bound to.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -189,8 +188,7 @@ class VideoCodingModule : public Module {
     // API to get codec config parameters to be sent out-of-band to a receiver.
     //
     // Input:
-    //      - buffer          : Memory where the codec config parameters should
-    //                          be written.
+    //      - buffer          : Memory where the codec config parameters should be written.
     //      - size            : Size of the memory available.
     //
     // Return value      : Number of bytes written, on success.
@@ -209,16 +207,14 @@ class VideoCodingModule : public Module {
     //                     < 0, on error.
     virtual int FrameRate(unsigned int* framerate) const = 0;
 
-    // Sets the parameters describing the send channel. These parameters are
-    // inputs to the Media Optimization inside the VCM and also specifies the
-    // target bit rate for the encoder. Bit rate used by NACK should already
-    // be compensated for by the user.
+    // Sets the parameters describing the send channel. These parameters are inputs to the
+    // Media Optimization inside the VCM and also specifies the target bit rate for the
+    // encoder. Bit rate used by NACK should already be compensated for by the user.
     //
     // Input:
     //      - target_bitrate        : The target bitrate for VCM in bits/s.
-    //      - lossRate              : Fractions of lost packets the past
-    //                                second. (loss rate in
-    //                                percent = 100 * packetLoss / 255)
+    //      - lossRate              : Fractions of lost packets the past second.
+    //                                (loss rate in percent = 100 * packetLoss / 255)
     //      - rtt                   : Current round-trip time in ms.
     //
     // Return value      : VCM_OK, on success.
@@ -227,32 +223,31 @@ class VideoCodingModule : public Module {
                                          uint8_t lossRate,
                                          int64_t rtt) = 0;
 
-    // Sets the parameters describing the receive channel. These parameters
-    // are inputs to the Media Optimization inside the VCM.
+    // Sets the parameters describing the receive channel. These parameters are inputs to the
+    // Media Optimization inside the VCM.
     //
     // Input:
     //      - rtt                   : Current round-trip time in ms.
-    //                                with the most amount available bandwidth
-    //                                in a conference scenario
+    //                                with the most amount available bandwidth in a conference
+    //                                scenario
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t SetReceiveChannelParameters(int64_t rtt) = 0;
 
-    // Register a transport callback which will be called to deliver the
-    //  encoded data and side information.
+    // Register a transport callback which will be called to deliver the encoded data and
+    // side information.
     //
     // Input:
     //      - transport  : The callback object to register.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual int32_t RegisterTransportCallback(
-                    VCMPacketizationCallback* transport) = 0;
+    virtual int32_t RegisterTransportCallback(VCMPacketizationCallback* transport) = 0;
 
-    // Register video output information callback which will be called to
-    // deliver information about the video stream produced by the encoder,
-    // for instance the average frame rate and bit rate.
+    // Register video output information callback which will be called to deliver information
+    // about the video stream produced by the encoder, for instance the average frame rate and
+    // bit rate.
     //
     // Input:
     //      - outputInformation  : The callback object to register.
@@ -270,8 +265,7 @@ class VideoCodingModule : public Module {
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual int32_t RegisterProtectionCallback(
-            VCMProtectionCallback* protection) = 0;
+    virtual int32_t RegisterProtectionCallback(VCMProtectionCallback* protection) = 0;
 
     // Enable or disable a video protection method.
     //
@@ -285,15 +279,14 @@ class VideoCodingModule : public Module {
     virtual int32_t SetVideoProtection(VCMVideoProtection videoProtection,
                                        bool enable) = 0;
 
-    // Add one raw video frame to the encoder. This function does all the
-    // necessary processing, then decides what frame type to encode, or if the
-    // frame should be dropped. If the frame should be encoded it passes the
-    // frame to the encoder before it returns.
+    // Add one raw video frame to the encoder. This function does all the necessary
+    // processing, then decides what frame type to encode, or if the frame should be
+    // dropped. If the frame should be encoded it passes the frame to the encoder
+    // before it returns.
     //
     // Input:
     //      - videoFrame        : Video frame to encode.
-    //      - codecSpecificInfo : Extra codec information, e.g., pre-parsed
-    //                            in-band signaling.
+    //      - codecSpecificInfo : Extra codec information, e.g., pre-parsed in-band signaling.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -308,14 +301,13 @@ class VideoCodingModule : public Module {
     //                     < 0,         on error.
     virtual int32_t IntraFrameRequest(int stream_index) = 0;
 
-    // Frame Dropper enable. Can be used to disable the frame dropping when
-    // the encoder over-uses its bit rate. This API is designed to be used
-    // when the encoded frames are supposed to be stored to an AVI file, or
-    // when the I420 codec is used and the target bit rate shouldn't affect
-    // the frame rate.
+    // Frame Dropper enable. Can be used to disable the frame dropping when the encoder
+    // over-uses its bit rate. This API is designed to be used when the encoded frames
+    // are supposed to be stored to an AVI file, or when the I420 codec is used and the
+    // target bit rate shouldn't affect the frame rate.
     //
     // Input:
-    //      - enable     : True to enable the setting, false to disable it.
+    //      - enable            : True to enable the setting, false to disable it.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -328,18 +320,15 @@ class VideoCodingModule : public Module {
     *   Receiver
     */
 
-    // Register possible receive codecs, can be called multiple times for
-    // different codecs. The module will automatically switch between
-    // registered codecs depending on the payload type of incoming frames.
-    // The actual decoder will be created when needed.
+    // Register possible receive codecs, can be called multiple times for different codecs.
+    // The module will automatically switch between registered codecs depending on the
+    // payload type of incoming frames. The actual decoder will be created when needed.
     //
     // Input:
     //      - receiveCodec      : Settings for the codec to be registered.
-    //      - numberOfCores     : Number of CPU cores that the decoder is
-    //                            allowed to use.
-    //      - requireKeyFrame   : Set this to true if you don't want any
-    //                            delta frames to be decoded until the first
-    //                            key frame has been decoded.
+    //      - numberOfCores     : Number of CPU cores that the decoder is allowed to use.
+    //      - requireKeyFrame   : Set this to true if you don't want any delta frames
+    //                            to be decoded until the first key frame has been decoded.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -347,18 +336,16 @@ class VideoCodingModule : public Module {
                                          int32_t numberOfCores,
                                          bool requireKeyFrame = false) = 0;
 
-    // Register an externally defined decoder/renderer object. Can be a
-    // decoder only or a decoder coupled with a renderer.Note that
-    //  RegisterReceiveCodec must be called to be used for decoding incoming
-    // streams.
+    // Register an externally defined decoder/renderer object. Can be a decoder only or a
+    // decoder coupled with a renderer. Note that RegisterReceiveCodec must be called to
+    // be used for decoding incoming streams.
     //
     // Input:
     //      - externalDecoder        : The external decoder/renderer object.
-    //      - payloadType            : The payload type which this decoder
-    //                                 should be registered to.
-    //      - internalRenderTiming   : True if the internal renderer (if any)
-    //                                 of the decoder object can make sure to
-    //                                 render at a given time in ms.
+    //      - payloadType            : The payload type which this decoder should be
+    //                                 registered to.
+    //      - internalRenderTiming   : True if the internal renderer (if any) of the decoder
+    //                                 object can make sure to render at a given time in ms.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -366,23 +353,21 @@ class VideoCodingModule : public Module {
                                             uint8_t payloadType,
                                             bool internalRenderTiming) = 0;
 
-    // Register a receive callback. Will be called whenever there is a new
-    //  frame ready for rendering.
+    // Register a receive callback. Will be called whenever there is a new frame ready
+    // for rendering.
     //
     // Input:
-    //      - receiveCallback        : The callback object to be used by the
-    //                                 module when a frame is ready for
-    //                                 rendering. De-register with a NULL
-    //                                 pointer.
+    //      - receiveCallback        : The callback object to be used by the module when a
+    //                                 frame is ready for rendering.
+    //                                 De-register with a NULL pointer.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual int32_t RegisterReceiveCallback(
-          VCMReceiveCallback* receiveCallback) = 0;
+    virtual int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback) = 0;
 
-    // Register a receive statistics callback which will be called to deliver
-    // information about the video stream received by the receiving side of the
-    //  VCM, for instance the average frame rate and bit rate.
+    // Register a receive statistics callback which will be called to deliver information
+    // about the video stream received by the receiving side of the VCM, for instance the
+    // average frame rate and bit rate.
     //
     // Input:
     //      - receiveStats  : The callback object to register.
@@ -404,14 +389,12 @@ class VideoCodingModule : public Module {
     virtual int32_t RegisterDecoderTimingCallback(
         VCMDecoderTimingCallback* decoderTiming) = 0;
 
-    // Register a frame type request callback. This callback will be called
-    // when the module needs to request specific frame types from the send
-    // side.
+    // Register a frame type request callback. This callback will be called when the
+    // module needs to request specific frame types from the send side.
     //
     // Input:
-    //      - frameTypeCallback      : The callback object to be used by the
-    //                                 module when requesting a specific type
-    //                                 of frame from the send side.
+    //      - frameTypeCallback      : The callback object to be used by the module when
+    //                                 requesting a specific type of frame from the send side.
     //                                 De-register with a NULL pointer.
     //
     // Return value      : VCM_OK, on success.
@@ -419,9 +402,8 @@ class VideoCodingModule : public Module {
     virtual int32_t RegisterFrameTypeCallback(
                                   VCMFrameTypeCallback* frameTypeCallback) = 0;
 
-    // Registers a callback which is called whenever the receive side of the
-    // VCM encounters holes in the packet sequence and needs packets to be
-    // retransmitted.
+    // Registers a callback which is called whenever the receive side of the VCM
+    // encounters holes in the packet sequence and needs packets to be retransmitted.
     //
     // Input:
     //              - callback      : The callback to be registered in the VCM.
@@ -432,8 +414,7 @@ class VideoCodingModule : public Module {
                                         VCMPacketRequestCallback* callback) = 0;
 
     // Waits for the next frame in the jitter buffer to become complete
-    // (waits no longer than maxWaitTimeMs), then passes it to the decoder
-    // for decoding.
+    // (waits no longer than maxWaitTimeMs), then passes it to the decoder for decoding.
     // Should be called as often as possible to get the most out of the decoder.
     //
     // Return value      : VCM_OK, on success.
@@ -453,7 +434,7 @@ class VideoCodingModule : public Module {
     // API to get the codec which is currently used for decoding by the module.
     //
     // Input:
-    //      - currentReceiveCodec    : Settings for the codec to be registered.
+    //      - currentReceiveCodec      : Settings for the codec to be registered.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -462,13 +443,12 @@ class VideoCodingModule : public Module {
     // API to get the codec type currently used for decoding by the module.
     //
     // Return value      : codecy type,            on success.
-    //                     kVideoCodecUnknown, on error or if
-    //                     no receive codec is registered
+    //                     kVideoCodecUnknown, on error or if no receive codec is registered
     virtual VideoCodecType ReceiveCodec() const = 0;
 
-    // Insert a parsed packet into the receiver side of the module. Will be
-    // placed in the jitter buffer waiting for the frame to become complete.
-    //  Returns as soon as the packet has been placed in the jitter buffer.
+    // Insert a parsed packet into the receiver side of the module. Will be placed in the
+    // jitter buffer waiting for the frame to become complete. Returns as soon as the packet
+    // has been placed in the jitter buffer.
     //
     // Input:
     //      - incomingPayload      : Payload of the packet.
@@ -481,8 +461,8 @@ class VideoCodingModule : public Module {
                                    size_t payloadLength,
                                    const WebRtcRTPHeader& rtpInfo) = 0;
 
-    // Minimum playout delay (Used for lip-sync). This is the minimum delay
-    // required to sync with audio. Not included in  VideoCodingModule::Delay()
+    // Minimum playout delay (Used for lip-sync). This is the minimum delay required
+    // to sync with audio. Not included in  VideoCodingModule::Delay()
     // Defaults to 0 ms.
     //
     // Input:
@@ -495,8 +475,7 @@ class VideoCodingModule : public Module {
     // Set the time required by the renderer to render a frame.
     //
     // Input:
-    //      - timeMS     : The time in ms required by the renderer
-    //                      to render a frame.
+    //      - timeMS        : The time in ms required by the renderer to render a frame.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
@@ -574,4 +553,4 @@ class VideoCodingModule : public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
+#endif // WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_

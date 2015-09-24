@@ -33,9 +33,9 @@ class MacRenderer : public GlRenderer {
  private:
   CocoaWindow* window_;
 
-  DISALLOW_COPY_AND_ASSIGN(MacRenderer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(MacRenderer);
 };
-}  // namespace test
-}  // namespace webrtc
+}  // test
+}  // webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_MAC_VIDEO_RENDERER_MAC_H_

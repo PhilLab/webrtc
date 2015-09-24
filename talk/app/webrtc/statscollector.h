@@ -34,7 +34,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <utility>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"

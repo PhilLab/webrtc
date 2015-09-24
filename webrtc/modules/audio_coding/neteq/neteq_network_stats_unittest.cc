@@ -10,7 +10,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "webrtc/modules/audio_coding/codecs/opus/interface/audio_decoder_opus.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 
@@ -33,7 +33,7 @@ class MockAudioDecoderOpus : public AudioDecoderOpus {
   virtual ~MockAudioDecoderOpus() { Die(); }
   MOCK_METHOD0(Die, void());
 
-  MOCK_METHOD0(Init, int());
+  MOCK_METHOD0(Reset, void());
 
   int PacketDuration(const uint8_t* encoded,
                      size_t encoded_len) const override {
@@ -86,7 +86,7 @@ class NetEqNetworkStatsTest : public NetEqExternalDecoderTest {
 
 #ifdef WINRT
 #undef IGNORE
-#endif
+#endif 
 
 enum logic {
   IGNORE,
@@ -174,6 +174,9 @@ struct NetEqNetworkStatsCheck {
     CHECK_NETEQ_NETWORK_STATS(added_zero_samples);
 
 #undef CHECK_NETEQ_NETWORK_STATS
+
+    // Compare with CurrentDelay, which should be identical.
+    EXPECT_EQ(stats.current_buffer_size_ms, neteq()->CurrentDelayMs());
   }
 
   void RunTest(int num_loops, NetEqNetworkStatsCheck expects) {
@@ -275,7 +278,6 @@ struct NetEqNetworkStatsCheck {
 
 TEST(NetEqNetworkStatsTest, OpusDecodeFec) {
   MockAudioDecoderOpus decoder(1);
-  EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.DecodeFecTest();
   EXPECT_CALL(decoder, Die()).Times(1);
@@ -283,7 +285,6 @@ TEST(NetEqNetworkStatsTest, OpusDecodeFec) {
 
 TEST(NetEqNetworkStatsTest, StereoOpusDecodeFec) {
   MockAudioDecoderOpus decoder(2);
-  EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.DecodeFecTest();
   EXPECT_CALL(decoder, Die()).Times(1);
@@ -291,7 +292,6 @@ TEST(NetEqNetworkStatsTest, StereoOpusDecodeFec) {
 
 TEST(NetEqNetworkStatsTest, NoiseExpansionTest) {
   MockAudioDecoderOpus decoder(1);
-  EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.NoiseExpansionTest();
   EXPECT_CALL(decoder, Die()).Times(1);

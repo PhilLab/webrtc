@@ -82,8 +82,8 @@ class AimdRateControl {
   int64_t time_of_last_log_;
   bool in_experiment_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(AimdRateControl);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AimdRateControl);
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_AIMD_RATE_CONTROL_H_
+#endif // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_AIMD_RATE_CONTROL_H_

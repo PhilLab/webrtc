@@ -19,12 +19,13 @@ namespace webrtc {
 class CriticalSectionWrapper;
 
 const uint32_t kPulsePeriodMs = 1000;
-const uint32_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
+const size_t kMaxBufferSizeBytes = 3840; // 10ms in stereo @ 96kHz
 
 class AudioDeviceObserver;
 
-class AudioDeviceBuffer {
- public:
+class AudioDeviceBuffer
+{
+public:
     AudioDeviceBuffer();
     virtual ~AudioDeviceBuffer();
 
@@ -49,7 +50,7 @@ class AudioDeviceBuffer {
         AudioDeviceModule::ChannelType& channel) const;
 
     virtual int32_t SetRecordedBuffer(const void* audioBuffer,
-                                      uint32_t nSamples);
+                                      size_t nSamples);
     int32_t SetCurrentMicLevel(uint32_t level);
     virtual void SetVQEData(int playDelayMS,
                             int recDelayMS,
@@ -57,7 +58,7 @@ class AudioDeviceBuffer {
     virtual int32_t DeliverRecordedData();
     uint32_t NewMicLevel() const;
 
-    virtual int32_t RequestPlayoutData(uint32_t nSamples);
+    virtual int32_t RequestPlayoutData(size_t nSamples);
     virtual int32_t GetPlayoutData(void* audioBuffer);
 
     int32_t StartInputFileRecording(
@@ -69,7 +70,7 @@ class AudioDeviceBuffer {
 
     int32_t SetTypingStatus(bool typingStatus);
 
- private:
+private:
     int32_t                   _id;
     CriticalSectionWrapper&         _critSect;
     CriticalSectionWrapper&         _critSectCb;
@@ -86,22 +87,22 @@ class AudioDeviceBuffer {
     AudioDeviceModule::ChannelType _recChannel;
 
     // 2 or 4 depending on mono or stereo
-    uint8_t                   _recBytesPerSample;
-    uint8_t                   _playBytesPerSample;
+    size_t                   _recBytesPerSample;
+    size_t                   _playBytesPerSample;
 
     // 10ms in stereo @ 96kHz
     int8_t                          _recBuffer[kMaxBufferSizeBytes];
 
     // one sample <=> 2 or 4 bytes
-    uint32_t                  _recSamples;
-    uint32_t                  _recSize;           // in bytes
+    size_t                    _recSamples;
+    size_t                    _recSize;           // in bytes
 
     // 10ms in stereo @ 96kHz
     int8_t                          _playBuffer[kMaxBufferSizeBytes];
 
     // one sample <=> 2 or 4 bytes
-    uint32_t                  _playSamples;
-    uint32_t                  _playSize;          // in bytes
+    size_t                    _playSamples;
+    size_t                    _playSize;          // in bytes
 
     FileWrapper&                    _recFile;
     FileWrapper&                    _playFile;

@@ -26,10 +26,10 @@
 namespace webrtc {
 class ModuleRtpRtcpImpl;
 
-class RTCPReceiver : public TMMBRHelp {
- public:
-    RTCPReceiver(int32_t id,
-              Clock* clock,
+class RTCPReceiver : public TMMBRHelp
+{
+public:
+ RTCPReceiver(Clock* clock,
               bool receiver_only,
               RtcpPacketTypeCounterObserver* packet_type_counter_observer,
               RtcpBandwidthObserver* rtcp_bandwidth_observer,
@@ -68,7 +68,7 @@ class RTCPReceiver : public TMMBRHelp {
              uint32_t* RTCPArrivalTimeFrac,
              uint32_t* rtcp_timestamp) const;
 
-    bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
+   bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
 
     // get rtt
     int32_t RTT(uint32_t remoteSSRC,
@@ -109,16 +109,14 @@ class RTCPReceiver : public TMMBRHelp {
     void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
     RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
- protected:
-    RTCPUtility::RTCPCnameInformation* CreateCnameInformation(
-        uint32_t remoteSSRC);
-    RTCPUtility::RTCPCnameInformation* GetCnameInformation(
+protected:
+ RTCPUtility::RTCPCnameInformation* CreateCnameInformation(uint32_t remoteSSRC);
+ RTCPUtility::RTCPCnameInformation* GetCnameInformation(
      uint32_t remoteSSRC) const;
 
-    RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(
-        uint32_t remoteSSRC);
-    RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(
-        uint32_t remoteSSRC);
+ RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(
+     uint32_t remoteSSRC);
+ RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(uint32_t remoteSSRC);
 
     void UpdateReceiveInformation(
         RTCPHelp::RTCPReceiveInformation& receiveInformation);
@@ -132,7 +130,8 @@ class RTCPReceiver : public TMMBRHelp {
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
         uint32_t remoteSSRC);
 
-    void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser);
+    void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser,
+                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     void HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser);
 
@@ -285,4 +284,4 @@ class RTCPReceiver : public TMMBRHelp {
   RTCPUtility::NackStats nack_stats_;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

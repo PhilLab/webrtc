@@ -23,8 +23,8 @@ namespace webrtc {
 WPDNode::WPDNode(size_t length,
                  const float* coefficients,
                  size_t coefficients_length)
-    :  // The data buffer has parent data length to be able to contain and
-       // filter it.
+    : // The data buffer has parent data length to be able to contain and filter
+      // it.
       data_(new float[2 * length + 1]),
       length_(length),
       filter_(FIRFilter::Create(coefficients,

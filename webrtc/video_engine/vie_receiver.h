@@ -12,7 +12,6 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
 
 #include <list>
-#include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
@@ -37,7 +36,7 @@ struct ReceiveBandwidthEstimatorStats;
 
 class ViEReceiver : public RtpData {
  public:
-  ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm,
+  ViEReceiver(VideoCodingModule* module_vcm,
               RemoteBitrateEstimator* remote_bitrate_estimator,
               RtpFeedback* rtp_feedback);
   ~ViEReceiver();
@@ -64,6 +63,7 @@ class ViEReceiver : public RtpData {
   bool SetReceiveTimestampOffsetStatus(bool enable, int id);
   bool SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   bool SetReceiveVideoRotationStatus(bool enable, int id);
+  bool SetReceiveTransportSequenceNumber(bool enable, int id);
 
   void StartReceive();
   void StopReceive();
@@ -80,7 +80,6 @@ class ViEReceiver : public RtpData {
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   ReceiveStatistics* GetReceiveStatistics() const;
-
  private:
   int InsertRTPPacket(const uint8_t* rtp_packet, size_t rtp_packet_length,
                       const PacketTime& packet_time);
@@ -118,9 +117,10 @@ class ViEReceiver : public RtpData {
   bool restored_packet_in_use_;
   bool receiving_ast_enabled_;
   bool receiving_cvo_enabled_;
+  bool receiving_tsn_enabled_;
   int64_t last_packet_log_ms_;
 };
 
-}  // namespace webrtc
+}  // namespace webrt
 
 #endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_

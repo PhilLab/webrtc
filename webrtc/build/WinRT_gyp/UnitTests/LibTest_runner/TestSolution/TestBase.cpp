@@ -1,13 +1,3 @@
-/*
-*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
-
 #include "common.h"
 #include "TestSolution/TestBase.h"
 
@@ -15,7 +5,7 @@
 //=======================================================================
 //         Method: CTestBase
 //    Description: ctor
-//         return:
+//         return: 
 //
 //       History:
 // 2015/03/06 TP: created
@@ -24,7 +14,8 @@ LibTest_runner::CTestBase::CTestBase()
   : m_nExitStatus(0)
   , m_bSucceed(false)
   , m_bExecuted(false)
-  , m_uExecutionTimeMs(0) {
+  , m_uExecutionTimeMs(0)
+{
 }
 
 
@@ -36,7 +27,8 @@ LibTest_runner::CTestBase::CTestBase()
 //       History:
 // 2015/03/06 TP: created
 //======================================================================
-void LibTest_runner::CTestBase::PrepareForExecution() {
+void LibTest_runner::CTestBase::PrepareForExecution()
+{
   Reset();
   m_wsOutput.resize(OutputBufferSize());
   InterchangeablePrepareForExecution();
@@ -45,18 +37,20 @@ void LibTest_runner::CTestBase::PrepareForExecution() {
 
 //=======================================================================
 //         Method: VerifyResult
-//    Description: Verifies test results and sets success accordingly
+//    Description: Verifies test results and sets success accordingly 
 //         return: void
 //
 //       History:
 // 2015/03/06 TP: created
 //======================================================================
-void LibTest_runner::CTestBase::VerifyResult() {
+void LibTest_runner::CTestBase::VerifyResult()
+{
   m_bSucceed = false;
 
-  if (m_bExecuted) {
-    // this is pretty much we can do here, rest of the
-    // verification has to be test specific
+  if (m_bExecuted)
+  {
+    //this is pretty much we can do here, rest of the 
+    //verification has to be test specific
     m_bSucceed = m_nExitStatus == 0;
     InterchangeableVerifyResult();
   }
@@ -70,20 +64,22 @@ void LibTest_runner::CTestBase::VerifyResult() {
 //       History:
 // 2015/03/06 TP: created
 //======================================================================
-int LibTest_runner::CTestBase::Execute() {
+int LibTest_runner::CTestBase::Execute()
+{
   PrepareForExecution();
   m_bExecuted = true;
-  std::chrono::high_resolution_clock::time_point startTime;
-  std::chrono::high_resolution_clock::time_point endTime;
-  try {
-    // grab test output
-    LibTest_runner::CStdOutputRedirector<true> redirector(m_wsOutput);
-    // store time
-    startTime = std::chrono::high_resolution_clock::now();
+  high_resolution_clock::time_point startTime;
+  high_resolution_clock::time_point endTime;
+  try
+  {
+    LibTest_runner::CStdOutputRedirector<true> redirector(m_wsOutput); //grab test output
+    //store time
+    startTime = high_resolution_clock::now();
     m_nExitStatus = InterchangeableExecute();
     endTime = std::chrono::high_resolution_clock::now();
   }
-  catch (int Status) {
+  catch (int Status)
+  {
     m_nExitStatus = Status;
   }
 
@@ -104,7 +100,8 @@ int LibTest_runner::CTestBase::Execute() {
 //       History:
 // 2015/03/06 TP: created
 //======================================================================
-void LibTest_runner::CTestBase::Reset() {
+void LibTest_runner::CTestBase::Reset()
+{
   m_nExitStatus = 0;
   m_bSucceed = false;
   m_bExecuted = false;

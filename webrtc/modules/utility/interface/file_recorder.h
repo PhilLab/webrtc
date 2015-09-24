@@ -22,8 +22,10 @@
 
 namespace webrtc {
 
-class FileRecorder {
- public:
+class FileRecorder
+{
+public:
+
     // Note: will return NULL for unsupported formats.
     static FileRecorder* CreateFileRecorder(const uint32_t instanceID,
                                             const FileFormats fileFormat);
@@ -78,8 +80,9 @@ class FileRecorder {
     // Record the video frame in videoFrame to AVI file.
     virtual int32_t RecordVideoToFile(const VideoFrame& videoFrame) = 0;
 
- protected:
+protected:
     virtual ~FileRecorder() {}
+
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
+#endif // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_

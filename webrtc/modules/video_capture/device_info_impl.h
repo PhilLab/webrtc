@@ -17,10 +17,13 @@
 #include "webrtc/modules/video_capture/video_capture_delay.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 
-namespace webrtc {
-namespace videocapturemodule {
-class DeviceInfoImpl: public VideoCaptureModule::DeviceInfo {
- public:
+namespace webrtc
+{
+namespace videocapturemodule
+{
+class DeviceInfoImpl: public VideoCaptureModule::DeviceInfo
+{
+public:
     DeviceInfoImpl(const int32_t id);
     virtual ~DeviceInfoImpl(void);
     virtual int32_t NumberOfCapabilities(const char* deviceUniqueIdUTF8);
@@ -36,14 +39,14 @@ class DeviceInfoImpl: public VideoCaptureModule::DeviceInfo {
     virtual int32_t GetOrientation(const char* deviceUniqueIdUTF8,
                                    VideoRotation& orientation);
 
- protected:
+protected:
     /* Initialize this object*/
 
-    virtual int32_t Init() = 0;
+    virtual int32_t Init()=0;
     /*
      * Fills the member variable _captureCapabilities with capabilities for the given device name.
      */
-    virtual int32_t CreateCapabilityMap(const char* deviceUniqueIdUTF8) = 0;
+    virtual int32_t CreateCapabilityMap(const char* deviceUniqueIdUTF8)=0;
 
     /* Returns the expected Capture delay*/
     int32_t GetExpectedCaptureDelay(const DelayValues delayValues[],
@@ -51,8 +54,7 @@ class DeviceInfoImpl: public VideoCaptureModule::DeviceInfo {
                                     const char* productId,
                                     const uint32_t width,
                                     const uint32_t height);
-
- protected:
+protected:
     // Data members
     int32_t _id;
     typedef std::vector<VideoCaptureCapability> VideoCaptureCapabilities;
@@ -63,4 +65,4 @@ class DeviceInfoImpl: public VideoCaptureModule::DeviceInfo {
 };
 }  // namespace videocapturemodule
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_
+#endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_

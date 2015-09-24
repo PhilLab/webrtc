@@ -19,11 +19,15 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/g722/include/audio_decoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_decoder_ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/opus/interface/audio_decoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
@@ -137,11 +141,11 @@ class AudioDecoderTest : public ::testing::Test {
                           uint8_t* output) {
     encoded_info_.encoded_bytes = 0;
     const size_t samples_per_10ms = audio_encoder_->SampleRateHz() / 100;
-    CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
-             input_len_samples);
+    RTC_CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
+                 input_len_samples);
     rtc::scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
-    for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
+    for (size_t i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
       EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
       // Duplicate the mono input signal to however many channels the test
@@ -171,7 +175,6 @@ class AudioDecoderTest : public ::testing::Test {
     size_t processed_samples = 0u;
     encoded_bytes_ = 0u;
     InitEncoder();
-    EXPECT_EQ(0, decoder_->Init());
     std::vector<int16_t> input;
     std::vector<int16_t> decoded;
     while (processed_samples + frame_size_ <= data_length_) {
@@ -220,7 +223,7 @@ class AudioDecoderTest : public ::testing::Test {
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     size_t dec_len;
     AudioDecoder::SpeechType speech_type1, speech_type2;
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output1(new int16_t[frame_size_ * channels_]);
     dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                frame_size_ * channels_ * sizeof(int16_t),
@@ -228,7 +231,7 @@ class AudioDecoderTest : public ::testing::Test {
     ASSERT_LE(dec_len, frame_size_ * channels_);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     // Re-init decoder and decode again.
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output2(new int16_t[frame_size_ * channels_]);
     dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                frame_size_ * channels_ * sizeof(int16_t),
@@ -249,7 +252,7 @@ class AudioDecoderTest : public ::testing::Test {
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     AudioDecoder::SpeechType speech_type;
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
     size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                       frame_size_ * channels_ * sizeof(int16_t),
@@ -341,14 +344,14 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     AudioDecoder::SpeechType speech_type;
-    EXPECT_EQ(0, decoder_->Init());
+    decoder_->Reset();
     rtc::scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
     size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                       frame_size_ * channels_ * sizeof(int16_t),
                                       output.get(), &speech_type);
     EXPECT_EQ(frame_size_, dec_len);
     // Simply call DecodePlc and verify that we get 0 as return value.
-    EXPECT_EQ(0, decoder_->DecodePlc(1, output.get()));
+    EXPECT_EQ(0U, decoder_->DecodePlc(1, output.get()));
   }
 };
 
@@ -358,17 +361,14 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsac::Config config;
+    AudioEncoderIsac::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsac objects for encoding
-    // and decoding, because the test class destructor destroys them both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsac(config));
-    decoder_ = new AudioEncoderDecoderIsac(config);
+    audio_encoder_.reset(new AudioEncoderIsac(config));
+    decoder_ = new AudioDecoderIsac();
   }
 };
 
@@ -378,17 +378,14 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 32000;
     frame_size_ = 960;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsac::Config config;
+    AudioEncoderIsac::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsac objects for encoding
-    // and decoding, because the test class destructor destroys them both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsac(config));
-    decoder_ = new AudioEncoderDecoderIsac(config);
+    audio_encoder_.reset(new AudioEncoderIsac(config));
+    decoder_ = new AudioDecoderIsac();
   }
 };
 
@@ -398,18 +395,14 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsacFix::Config config;
+    AudioEncoderIsacFix::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
     config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsacFix objects for
-    // encoding and decoding, because the test class destructor destroys them
-    // both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsacFix(config));
-    decoder_ = new AudioEncoderDecoderIsacFix(config);
+    audio_encoder_.reset(new AudioEncoderIsacFix(config));
+    decoder_ = new AudioDecoderIsacFix();
   }
 };
 

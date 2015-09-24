@@ -33,6 +33,7 @@ class TestVCMReceiver : public ::testing::Test {
       : clock_(new SimulatedClock(0)),
         timing_(clock_.get()),
         receiver_(&timing_, clock_.get(), &event_factory_) {
+
     stream_generator_.reset(new
         StreamGenerator(0, clock_->TimeInMilliseconds()));
   }
@@ -339,7 +340,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
   // Return true if some frame arrives between now and now+|milliseconds|.
   bool AdvanceTimeMilliseconds(int64_t milliseconds, bool stop_on_frame) {
     return AdvanceTimeMicroseconds(milliseconds * 1000, stop_on_frame);
-  }
+  };
 
   bool AdvanceTimeMicroseconds(int64_t microseconds, bool stop_on_frame) {
     int64_t start_time = TimeInMicroseconds();
@@ -347,7 +348,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
     bool frame_injected = false;
     while (!timestamps_.empty() &&
            timestamps_.front().arrive_time <= end_time) {
-      DCHECK(timestamps_.front().arrive_time >= start_time);
+      RTC_DCHECK(timestamps_.front().arrive_time >= start_time);
 
       SimulatedClock::AdvanceTimeMicroseconds(timestamps_.front().arrive_time -
                                               TimeInMicroseconds());
@@ -363,7 +364,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
       SimulatedClock::AdvanceTimeMicroseconds(end_time - TimeInMicroseconds());
     }
     return frame_injected;
-  }
+  };
 
   // Input timestamps are in unit Milliseconds.
   // And |arrive_timestamps| must be positive and in increasing order.
@@ -375,7 +376,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
                  size_t size) {
     int64_t previous_arrive_timestamp = 0;
     for (size_t i = 0; i < size; i++) {
-      CHECK(arrive_timestamps[i] >= previous_arrive_timestamp);
+      RTC_CHECK(arrive_timestamps[i] >= previous_arrive_timestamp);
       timestamps_.push(TimestampPair(arrive_timestamps[i] * 1000,
                                      render_timestamps[i] * 1000));
       previous_arrive_timestamp = arrive_timestamps[i];
@@ -446,6 +447,7 @@ class FrameInjectEvent : public EventWrapper {
 
 class VCMReceiverTimingTest : public ::testing::Test {
  protected:
+
   VCMReceiverTimingTest()
 
       : clock_(&stream_generator_, &receiver_),

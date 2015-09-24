@@ -12,11 +12,10 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_IMPL_H_
 
-#include <vector>
-
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 
+#include "vpx/svc_context.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vpx_encoder.h"
 
@@ -57,7 +56,13 @@ class VP9EncoderImpl : public VP9Encoder {
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp);
 
-  int GetEncodedPartitions(const VideoFrame& input_image);
+  bool SetSvcRates();
+
+  virtual int GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt);
+
+  // Callback function for outputting packets per spatial layer.
+  static void EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
+                                               void* user_data);
 
   // Determine maximum target for Intra frames
   //
@@ -78,6 +83,14 @@ class VP9EncoderImpl : public VP9Encoder {
   vpx_codec_ctx_t* encoder_;
   vpx_codec_enc_cfg_t* config_;
   vpx_image_t* raw_;
+  SvcInternal_t svc_internal_;
+  const VideoFrame* input_image_;
+  GofInfoVP9 gof_;       // Contains each frame's temporal information for
+                         // non-flexible mode.
+  uint8_t tl0_pic_idx_;  // Only used in non-flexible mode.
+  size_t gof_idx_;       // Only used in non-flexible mode.
+  uint8_t num_temporal_layers_;
+  uint8_t num_spatial_layers_;
 };
 
 

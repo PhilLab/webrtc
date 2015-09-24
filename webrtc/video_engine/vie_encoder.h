@@ -20,7 +20,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
@@ -73,12 +72,9 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   ViEEncoder(int32_t channel_id,
              uint32_t number_of_cores,
-             const Config& config,
              ProcessThread& module_process_thread,
              PacedSender* pacer,
-             BitrateAllocator* bitrate_allocator,
-             BitrateController* bitrate_controller,
-             bool disable_default_encoder);
+             BitrateAllocator* bitrate_allocator);
   ~ViEEncoder();
 
   bool Init();
@@ -194,7 +190,6 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   const int channel_id_;
   const uint32_t number_of_cores_;
-  const bool disable_default_encoder_;
 
   const rtc::scoped_ptr<VideoProcessingModule> vpm_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
@@ -207,13 +202,12 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   PacedSender* const pacer_;
   BitrateAllocator* const bitrate_allocator_;
-  BitrateController* const bitrate_controller_;
 
   // The time we last received an input frame or encoded frame. This is used to
   // track when video is stopped long enough that we also want to stop sending
   // padding.
   int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
-  bool send_padding_ GUARDED_BY(data_cs_);
+  bool simulcast_enabled_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
   int target_delay_ms_ GUARDED_BY(data_cs_);

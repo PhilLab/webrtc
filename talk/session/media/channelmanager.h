@@ -40,11 +40,13 @@
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread.h"
 
+namespace webrtc {
+class MediaControllerInterface;
+}
 namespace cricket {
 
 const int kDefaultAudioDelayOffset = 0;
 
-class VideoProcessor;
 class VoiceChannel;
 class VoiceProcessor;
 
@@ -82,6 +84,8 @@ class ChannelManager : public rtc::MessageHandler,
     return true;
   }
 
+  MediaEngineInterface* media_engine() { return media_engine_.get(); }
+
   // Gets capabilities. Can be called prior to starting the media engine.
   int GetCapabilities();
 
@@ -105,25 +109,22 @@ class ChannelManager : public rtc::MessageHandler,
   // The operations below all occur on the worker thread.
 
   // Creates a voice channel, to be associated with the specified session.
-  VoiceChannel* CreateVoiceChannel(BaseSession* session,
-                                   const std::string& content_name,
-                                   bool rtcp,
-                                   const AudioOptions& options);
+  VoiceChannel* CreateVoiceChannel(
+      webrtc::MediaControllerInterface* media_controller,
+      BaseSession* session,
+      const std::string& content_name,
+      bool rtcp,
+      const AudioOptions& options);
   // Destroys a voice channel created with the Create API.
-  void DestroyVoiceChannel(VoiceChannel* voice_channel,
-                           VideoChannel* video_channel);
-  // TODO(pbos): Remove as soon as all call sites specify VideoOptions.
-  VideoChannel* CreateVideoChannel(BaseSession* session,
-                                   const std::string& content_name,
-                                   bool rtcp,
-                                   VoiceChannel* voice_channel);
+  void DestroyVoiceChannel(VoiceChannel* voice_channel);
   // Creates a video channel, synced with the specified voice channel, and
   // associated with the specified session.
-  VideoChannel* CreateVideoChannel(BaseSession* session,
-                                   const std::string& content_name,
-                                   bool rtcp,
-                                   const VideoOptions& options,
-                                   VoiceChannel* voice_channel);
+  VideoChannel* CreateVideoChannel(
+      webrtc::MediaControllerInterface* media_controller,
+      BaseSession* session,
+      const std::string& content_name,
+      bool rtcp,
+      const VideoOptions& options);
   // Destroys a video channel created with the Create API.
   void DestroyVideoChannel(VideoChannel* video_channel);
   DataChannel* CreateDataChannel(
@@ -177,14 +178,7 @@ class ChannelManager : public rtc::MessageHandler,
   // Gets capturer's supported formats in a thread safe manner
   std::vector<cricket::VideoFormat> GetSupportedFormats(
       VideoCapturer* capturer) const;
-  // The channel manager handles the Tx side for Video processing,
-  // as well as Tx and Rx side for Voice processing.
-  // (The Rx Video processing will go throug the simplerenderingmanager,
-  //  to be implemented).
-  bool RegisterVideoProcessor(VideoCapturer* capturer,
-                              VideoProcessor* processor);
-  bool UnregisterVideoProcessor(VideoCapturer* capturer,
-                                VideoProcessor* processor);
+  // The channel manager handles the Tx and Rx side for Voice processing.
   bool RegisterVoiceProcessor(uint32 ssrc,
                               VoiceProcessor* processor,
                               MediaProcessorDirection direction);
@@ -260,17 +254,19 @@ class ChannelManager : public rtc::MessageHandler,
   bool InitMediaEngine_w();
   void DestructorDeletes_w();
   void Terminate_w();
-  VoiceChannel* CreateVoiceChannel_w(BaseSession* session,
-                                     const std::string& content_name,
-                                     bool rtcp,
-                                     const AudioOptions& options);
-  void DestroyVoiceChannel_w(VoiceChannel* voice_channel,
-                             VideoChannel* video_channel);
-  VideoChannel* CreateVideoChannel_w(BaseSession* session,
-                                     const std::string& content_name,
-                                     bool rtcp,
-                                     const VideoOptions& options,
-                                     VoiceChannel* voice_channel);
+  VoiceChannel* CreateVoiceChannel_w(
+      webrtc::MediaControllerInterface* media_controller,
+      BaseSession* session,
+      const std::string& content_name,
+      bool rtcp,
+      const AudioOptions& options);
+  void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
+  VideoChannel* CreateVideoChannel_w(
+      webrtc::MediaControllerInterface* media_controller,
+      BaseSession* session,
+      const std::string& content_name,
+      bool rtcp,
+      const VideoOptions& options);
   void DestroyVideoChannel_w(VideoChannel* video_channel);
   DataChannel* CreateDataChannel_w(
       BaseSession* session, const std::string& content_name,
@@ -284,10 +280,6 @@ class ChannelManager : public rtc::MessageHandler,
   void GetSupportedFormats_w(
       VideoCapturer* capturer,
       std::vector<cricket::VideoFormat>* out_formats) const;
-  bool RegisterVideoProcessor_w(VideoCapturer* capturer,
-                                VideoProcessor* processor);
-  bool UnregisterVideoProcessor_w(VideoCapturer* capturer,
-                                  VideoProcessor* processor);
   bool IsScreencastRunning_w() const;
   virtual void OnMessage(rtc::Message *message);
 

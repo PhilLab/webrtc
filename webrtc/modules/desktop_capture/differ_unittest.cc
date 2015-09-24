@@ -16,7 +16,7 @@
 namespace webrtc {
 
 // 96x96 screen gives a 4x4 grid of blocks.
-const int kScreenWidth = 96;
+const int kScreenWidth= 96;
 const int kScreenHeight = 96;
 
 // To test partial blocks, we need a width and height that are not multiples
@@ -204,7 +204,7 @@ class DifferTest : public testing::Test {
   rtc::scoped_ptr<uint8_t[]> curr_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(DifferTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DifferTest);
 };
 
 TEST_F(DifferTest, Setup) {

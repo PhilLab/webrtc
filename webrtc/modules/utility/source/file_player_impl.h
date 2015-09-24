@@ -23,14 +23,15 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class FilePlayerImpl : public FilePlayer {
- public:
+class FilePlayerImpl : public FilePlayer
+{
+public:
     FilePlayerImpl(uint32_t instanceID, FileFormats fileFormat);
     ~FilePlayerImpl();
 
     virtual int Get10msAudioFromFile(
         int16_t* outBuffer,
-        int& lengthInSamples,
+        size_t& lengthInSamples,
         int frequencyInHz);
     virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
     virtual int32_t StartPlayingFile(
@@ -55,7 +56,7 @@ class FilePlayerImpl : public FilePlayer {
     virtual int32_t Frequency() const;
     virtual int32_t SetAudioScaling(float scaleFactor);
 
- protected:
+protected:
     int32_t SetUpAudioDecoder();
 
     uint32_t _instanceID;
@@ -64,7 +65,7 @@ class FilePlayerImpl : public FilePlayer {
 
     uint32_t _decodedLengthInMS;
 
- private:
+private:
     AudioCoder _audioDecoder;
 
     CodecInst _codec;
@@ -75,4 +76,4 @@ class FilePlayerImpl : public FilePlayer {
     float _scaling;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
+#endif // WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_

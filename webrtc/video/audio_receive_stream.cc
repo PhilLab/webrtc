@@ -48,19 +48,22 @@ AudioReceiveStream::AudioReceiveStream(
     : remote_bitrate_estimator_(remote_bitrate_estimator),
       config_(config),
       rtp_header_parser_(RtpHeaderParser::Create()) {
-  DCHECK(config.voe_channel_id != -1);
-  DCHECK(remote_bitrate_estimator_ != nullptr);
-  DCHECK(rtp_header_parser_ != nullptr);
+  RTC_DCHECK(config.voe_channel_id != -1);
+  RTC_DCHECK(remote_bitrate_estimator_ != nullptr);
+  RTC_DCHECK(rtp_header_parser_ != nullptr);
   for (const auto& ext : config.rtp.extensions) {
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    DCHECK_GE(ext.id, 1);
-    DCHECK_LE(ext.id, 14);
+    RTC_DCHECK_GE(ext.id, 1);
+    RTC_DCHECK_LE(ext.id, 14);
     if (ext.name == RtpExtension::kAudioLevel) {
-      CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
+      RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAudioLevel, ext.id));
     } else if (ext.name == RtpExtension::kAbsSendTime) {
-      CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
+      RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAbsoluteSendTime, ext.id));
+    } else if (ext.name == RtpExtension::kTransportSequenceNumber) {
+      RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionTransportSequenceNumber, ext.id));
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
@@ -84,16 +87,22 @@ bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return false;
 }
 
-bool AudioReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
+bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
+                                    size_t length,
+                                    const PacketTime& packet_time) {
   RTPHeader header;
+
   if (!rtp_header_parser_->Parse(packet, length, &header)) {
     return false;
   }
 
-  // Only forward if the parsed header has absolute sender time. RTP time stamps
+  // Only forward if the parsed header has absolute sender time. RTP timestamps
   // may have different rates for audio and video and shouldn't be mixed.
-  if (header.extension.hasAbsoluteSendTime) {
+  if (config_.combined_audio_video_bwe &&
+      header.extension.hasAbsoluteSendTime) {
     int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
+    if (packet_time.timestamp >= 0)
+      arrival_time_ms = packet_time.timestamp;
     size_t payload_size = length - header.headerLength;
     remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
                                               header, false);

@@ -31,17 +31,11 @@ class TestTransport : public Transport {
     rtcp_receiver_(rtcp_receiver) {
   }
 
-  int SendPacket(int /*channel*/,
-                 const void* /*data*/,
-                 size_t /*len*/) override {
-    return -1;
-  }
-  int SendRTCPPacket(int /*channel*/,
-                     const void* packet,
-                     size_t packetLength) override {
+  int SendPacket(const void* /*data*/, size_t /*len*/) override { return -1; }
+  int SendRTCPPacket(const void* packet, size_t packetLength) override {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
                                          packetLength,
-                                         true);  // Allow non-compound RTCP
+                                         true); // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
     RTCPHelp::RTCPPacketInformation rtcpPacketInformation;
@@ -54,7 +48,6 @@ class TestTransport : public Transport {
               rtcpPacketInformation.receiverEstimatedMaxBitrate);
     return static_cast<int>(packetLength);
   }
-
  private:
   RTCPReceiver* rtcp_receiver_;
 };
@@ -89,14 +82,13 @@ class RtcpFormatRembTest : public ::testing::Test {
 
 void RtcpFormatRembTest::SetUp() {
   RtpRtcp::Configuration configuration;
-  configuration.id = 0;
   configuration.audio = false;
   configuration.clock = system_clock_;
   configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
   dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-  rtcp_sender_ = new RTCPSender(0, false, system_clock_,
-                                receive_statistics_.get(), NULL);
-  rtcp_receiver_ = new RTCPReceiver(0, system_clock_, false, NULL, NULL, NULL,
+  rtcp_sender_ =
+      new RTCPSender(false, system_clock_, receive_statistics_.get(), NULL);
+  rtcp_receiver_ = new RTCPReceiver(system_clock_, false, NULL, NULL, NULL,
                                     dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
 

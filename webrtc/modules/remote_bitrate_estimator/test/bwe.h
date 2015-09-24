@@ -11,10 +11,7 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_H_
 
-#include <list>
-#include <map>
 #include <sstream>
-#include <string>
 
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
@@ -125,7 +122,7 @@ class BweSender : public Module {
   int bitrate_kbps_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(BweSender);
+  RTC_DISALLOW_COPY_AND_ASSIGN(BweSender);
 };
 
 class BweReceiver {

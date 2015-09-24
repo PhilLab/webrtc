@@ -93,7 +93,7 @@ enum UserAgent {
 };
 
 #if _TRY_WINHTTP
-// #include <winhttp.h>
+//#include <winhttp.h>
 // Note: From winhttp.h
 
 const char WINHTTP[] = "winhttp";
@@ -129,21 +129,25 @@ extern "C" {
           IN DWORD   dwAccessType,
           IN LPCWSTR pwszProxyName   OPTIONAL,
           IN LPCWSTR pwszProxyBypass OPTIONAL,
-          IN DWORD   dwFlags);
+          IN DWORD   dwFlags
+          );
   typedef BOOL (STDAPICALLTYPE * pfnWinHttpCloseHandle)
       (
-          IN HINTERNET hInternet);
+          IN HINTERNET hInternet
+          );
   typedef BOOL (STDAPICALLTYPE * pfnWinHttpGetProxyForUrl)
       (
           IN  HINTERNET                   hSession,
           IN  LPCWSTR                     lpcwszUrl,
           IN  WINHTTP_AUTOPROXY_OPTIONS * pAutoProxyOptions,
-          OUT WINHTTP_PROXY_INFO *        pProxyInfo);
+          OUT WINHTTP_PROXY_INFO *        pProxyInfo
+          );
   typedef BOOL (STDAPICALLTYPE * pfnWinHttpGetIEProxyConfig)
       (
-          IN OUT WINHTTP_CURRENT_USER_IE_PROXY_CONFIG * pProxyConfig);
+          IN OUT WINHTTP_CURRENT_USER_IE_PROXY_CONFIG * pProxyConfig
+          );
 
-}  // extern "C"
+} // extern "C"
 
 #define WINHTTP_AUTOPROXY_AUTO_DETECT           0x00000001
 #define WINHTTP_AUTOPROXY_CONFIG_URL            0x00000002
@@ -157,7 +161,7 @@ extern "C" {
 #define WINHTTP_NO_PROXY_NAME     NULL
 #define WINHTTP_NO_PROXY_BYPASS   NULL
 
-#endif  // _TRY_WINHTTP
+#endif // _TRY_WINHTTP
 
 #if _TRY_JSPROXY
 extern "C" {
@@ -168,20 +172,21 @@ extern "C" {
           LPSTR lpszUrlHostName,
           DWORD dwUrlHostNameLength,
           LPSTR * lplpszProxyHostName,
-          LPDWORD lpdwProxyHostNameLength);
-}  // extern "C"
-#endif  // _TRY_JSPROXY
+          LPDWORD lpdwProxyHostNameLength
+          );
+} // extern "C"
+#endif // _TRY_JSPROXY
 
 #if _TRY_WM_FINDPROXY
 #include <comutil.h>
 #include <wmnetsourcecreator.h>
 #include <wmsinternaladminnetsource.h>
-#endif  // _TRY_WM_FINDPROXY
+#endif // _TRY_WM_FINDPROXY
 
 #if _TRY_IE_LAN_SETTINGS
 #include <wininet.h>
 #include <string>
-#endif  // _TRY_IE_LAN_SETTINGS
+#endif // _TRY_IE_LAN_SETTINGS
 
 namespace rtc {
 
@@ -479,7 +484,7 @@ bool GetDefaultFirefoxProfile(Pathname* profile_path) {
   }
   profile_path->SetPathname(candidate.pathname());
 
-#else  // !USE_FIREFOX_PROFILES_INI
+#else // !USE_FIREFOX_PROFILES_INI
   path.AppendFolder("Profiles");
   DirectoryIterator* it = Filesystem::IterateDirectory();
   it->Iterate(path);
@@ -495,7 +500,7 @@ bool GetDefaultFirefoxProfile(Pathname* profile_path) {
   profile->AppendFolder(it->Name());
   delete it;
 
-#endif  // !USE_FIREFOX_PROFILES_INI
+#endif // !USE_FIREFOX_PROFILES_INI
 
   return true;
 }
@@ -600,18 +605,15 @@ Platform::String^ MkString(const char* str) {
     return ref new Platform::String(wstr.data());
 }
 
-bool GetWinRTProxySettings(const char* agent, const char* url,
-                           ProxyInfo* proxy) {
-    // TODO(winrt): Figure out how to do this
-    //       auto action = NetworkInformation::GetProxyConfigurationAsync(
-    //                                             ref new Uri(MkString(url)));
-    //       Problem is this function is async which doesn't play well with the
-    //       existing sync nature of our api.
+bool GetWinRTProxySettings(const char* agent, const char* url, ProxyInfo* proxy) {
+    // TODO: Figure out how to do this
+    //       auto action = NetworkInformation::GetProxyConfigurationAsync(ref new Uri(MkString(url)));
+    //       Problem is this function is async which doesn't play well with the existing sync nature of our api.
 
     return false;
 }
-#elif defined(WEBRTC_WIN)  // Windows specific implementation for reading
-                           // Internet Explorer proxy settings.
+#elif defined(WEBRTC_WIN)  // Windows specific implementation for reading Internet
+              // Explorer proxy settings.
 
 void LogGetProxyFault() {
   LOG_GLEM(LERROR, WINHTTP) << "WinHttpGetProxyForUrl faulted!!";
@@ -969,9 +971,8 @@ bool GetIeProxySettings(const char* agent, const char* url, ProxyInfo* proxy) {
 
 #endif  // WEBRTC_WIN
 
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-// WEBRTC_MAC && !defined(WEBRTC_IOS) specific implementation for reading
-//  system wide proxy settings.
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)  // WEBRTC_MAC && !defined(WEBRTC_IOS) specific implementation for reading system wide
+            // proxy settings.
 
 bool p_getProxyInfoForTypeFromDictWithKeys(ProxyInfo* proxy,
                                            ProxyType type,
@@ -1211,6 +1212,7 @@ bool GetMacProxySettings(ProxyInfo* proxy) {
 #ifdef WEBRTC_IOS
 // iOS has only http proxy
 bool GetiOSProxySettings(ProxyInfo* proxy) {
+
   bool result = false;
 
   CFDictionaryRef proxy_dict = CFNetworkCopySystemProxySettings();
@@ -1255,7 +1257,7 @@ bool GetiOSProxySettings(ProxyInfo* proxy) {
 
   return result;
 }
-#endif  // WEBRTC_IOS
+#endif // WEBRTC_IOS
 
 bool AutoDetectProxySettings(const char* agent, const char* url,
                              ProxyInfo* proxy) {

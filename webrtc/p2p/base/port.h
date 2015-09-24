@@ -127,16 +127,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   virtual const std::string& Type() const { return type_; }
   virtual rtc::Network* Network() const { return network_; }
 
-  // This method will set the flag which enables standard ICE/STUN procedures
-  // in STUN connectivity checks. Currently this method does
-  // 1. Add / Verify MI attribute in STUN binding requests.
-  // 2. Username attribute in STUN binding request will be RFRAF:LFRAG,
-  // as opposed to RFRAGLFRAG.
-  virtual void SetIceProtocolType(IceProtocolType protocol) {
-    ice_protocol_ = protocol;
-  }
-  virtual IceProtocolType IceProtocol() const { return ice_protocol_; }
-
   // Methods to set/get ICE role and tiebreaker values.
   IceRole GetIceRole() const { return ice_role_; }
   void SetIceRole(IceRole role) { ice_role_ = role; }
@@ -273,8 +263,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // stun username attribute if present.
   bool ParseStunUsername(const StunMessage* stun_msg,
                          std::string* local_username,
-                         std::string* remote_username,
-                         IceProtocolType* remote_protocol_type) const;
+                         std::string* remote_username) const;
   void CreateStunUsername(const std::string& remote_username,
                           std::string* stun_username_attr_str) const;
 
@@ -288,15 +277,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Called when the Connection discovers a local peer reflexive candidate.
   // Returns the index of the new local candidate.
   size_t AddPrflxCandidate(const Candidate& local);
-
-  // Returns if RFC 5245 ICE protocol is used.
-  bool IsStandardIce() const;
-
-  // Returns if Google ICE protocol is used.
-  bool IsGoogleIce() const;
-
-  // Returns if Hybrid ICE protocol is used.
-  bool IsHybridIce() const;
 
   void set_candidate_filter(uint32 candidate_filter) {
     candidate_filter_ = candidate_filter;
@@ -313,9 +293,13 @@ class Port : public PortInterface, public rtc::MessageHandler,
   void AddAddress(const rtc::SocketAddress& address,
                   const rtc::SocketAddress& base_address,
                   const rtc::SocketAddress& related_address,
-                  const std::string& protocol, const std::string& tcptype,
-                  const std::string& type, uint32 type_preference,
-                  uint32 relay_preference, bool final);
+                  const std::string& protocol,
+                  const std::string& relay_protocol,
+                  const std::string& tcptype,
+                  const std::string& type,
+                  uint32 type_preference,
+                  uint32 relay_preference,
+                  bool final);
 
   // Adds the given connection to the list.  (Deleting removes them.)
   void AddConnection(Connection* conn);
@@ -380,7 +364,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   AddressMap connections_;
   int timeout_delay_;
   bool enable_port_packets_;
-  IceProtocolType ice_protocol_;
   IceRole ice_role_;
   uint64 tiebreaker_;
   bool shared_socket_;
@@ -505,6 +488,9 @@ class Connection : public rtc::MessageHandler,
   bool use_candidate_attr() const { return use_candidate_attr_; }
   void set_use_candidate_attr(bool enable);
 
+  bool nominated() const { return nominated_; }
+  void set_nominated(bool nominated) { nominated_ = nominated; }
+
   void set_remote_ice_mode(IceMode mode) {
     remote_ice_mode_ = mode;
   }
@@ -536,10 +522,9 @@ class Connection : public rtc::MessageHandler,
   bool reported() const { return reported_; }
   void set_reported(bool reported) { reported_ = reported;}
 
-  // This flag will be set if this connection is the chosen one for media
-  // transmission. This connection will send STUN ping with USE-CANDIDATE
-  // attribute.
-  sigslot::signal1<Connection*> SignalUseCandidate;
+  // This signal will be fired if this connection is nominated by the
+  // controlling side.
+  sigslot::signal1<Connection*> SignalNominated;
 
   // Invoked when Connection receives STUN error response with 487 code.
   void HandleRoleConflictFromPeer();
@@ -598,10 +583,13 @@ class Connection : public rtc::MessageHandler,
   bool connected_;
   bool pruned_;
   // By default |use_candidate_attr_| flag will be true,
-  // as we will be using agrressive nomination.
+  // as we will be using aggressive nomination.
   // But when peer is ice-lite, this flag "must" be initialized to false and
   // turn on when connection becomes "best connection".
   bool use_candidate_attr_;
+  // Whether this connection has been nominated by the controlling side via
+  // the use_candidate attribute.
+  bool nominated_;
   IceMode remote_ice_mode_;
   StunRequestManager requests_;
   uint32 rtt_;

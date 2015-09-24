@@ -25,13 +25,14 @@ namespace rtc {
 typedef DWORD PlatformThreadId;
 typedef DWORD PlatformThreadRef;
 
-// See https://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
-#pragma pack(push, 8)
-typedef struct tagTHREADNAME_INFO {
-  DWORD dwType;  // Must be 0x1000.
-  LPCSTR szName;  // Pointer to name (in user addr space).
-  DWORD dwThreadID;  // Thread ID (-1=caller thread).
-  DWORD dwFlags;  // Reserved for future use, must be zero.
+// See https://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx 
+#pragma pack(push,8)
+typedef struct tagTHREADNAME_INFO
+{
+  DWORD dwType; // Must be 0x1000.
+  LPCSTR szName; // Pointer to name (in user addr space).
+  DWORD dwThreadID; // Thread ID (-1=caller thread).
+  DWORD dwFlags; // Reserved for future use, must be zero.
 } THREADNAME_INFO;
 #pragma pack(pop)
 #elif defined(WEBRTC_POSIX)

@@ -28,8 +28,7 @@ static char stdout_buffer[1024 * 1024] = { 0 };
 bool autoClose = false;
 
 namespace audio_device_test_winrt {
-  ref class AudioDeviceTestWinRT sealed :
-      public Windows::UI::Xaml::Application {
+  ref class AudioDeviceTestWinRT sealed : public Windows::UI::Xaml::Application {
   public:
     AudioDeviceTestWinRT() {
     }
@@ -49,9 +48,7 @@ namespace audio_device_test_winrt {
     Button^ testExtraButton_;
 
   protected:
-    void OnLaunched
-        (Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e)
-        override {
+    void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override {
       auto layoutRoot = ref new Grid();
       layoutRoot->VerticalAlignment = VerticalAlignment::Top;
       layoutRoot->HorizontalAlignment = HorizontalAlignment::Left;
@@ -66,128 +63,92 @@ namespace audio_device_test_winrt {
       buttonStack->HorizontalAlignment = HorizontalAlignment::Left;
 
       testDeviceEnumerationButton_ = ref new Button();
-      testDeviceEnumerationButton_->Margin = Windows::UI::Xaml::Thickness(
-                                    0.0, 20.0, 0.0, 0.0);
+      testDeviceEnumerationButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testDeviceEnumerationButton_->Width = 200.0;
       testDeviceEnumerationButton_->Content = "TestDeviceEnumeration";
-      testDeviceEnumerationButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testDeviceEnumerationButton_Click);
+      testDeviceEnumerationButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testDeviceEnumerationButton_Click);
       buttonStack->Children->Append(testDeviceEnumerationButton_);
 
       testDeviceSelectionButton_ = ref new Button();
-      testDeviceSelectionButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testDeviceSelectionButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testDeviceSelectionButton_->Width = 200.0;
       testDeviceSelectionButton_->Content = "TestDeviceSelection";
-      testDeviceSelectionButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testDeviceSelectionButton_Click);
+      testDeviceSelectionButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testDeviceSelectionButton_Click);
       buttonStack->Children->Append(testDeviceSelectionButton_);
 
       testAudioTransportButton_ = ref new Button();
-      testAudioTransportButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testAudioTransportButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testAudioTransportButton_->Width = 200.0;
       testAudioTransportButton_->Content = "TestAudioTransport";
-      testAudioTransportButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testAudioTransportButton_Click);
+      testAudioTransportButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testAudioTransportButton_Click);
       buttonStack->Children->Append(testAudioTransportButton_);
 
       testLoopbackButton_ = ref new Button();
-      testLoopbackButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testLoopbackButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testLoopbackButton_->Width = 200.0;
       testLoopbackButton_->Content = "TestLoopback";
-      testLoopbackButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testLoopbackButton_Click);
+      testLoopbackButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testLoopbackButton_Click);
       buttonStack->Children->Append(testLoopbackButton_);
 
       testSpeakerVolumeButton_ = ref new Button();
-      testSpeakerVolumeButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testSpeakerVolumeButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testSpeakerVolumeButton_->Width = 200.0;
       testSpeakerVolumeButton_->Content = "TestSpeakerVolume";
-      testSpeakerVolumeButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testSpeakerVolumeButton_Click);
+      testSpeakerVolumeButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testSpeakerVolumeButton_Click);
       buttonStack->Children->Append(testSpeakerVolumeButton_);
 
       testMicrophoneVolumeButton_ = ref new Button();
-      testMicrophoneVolumeButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testMicrophoneVolumeButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testMicrophoneVolumeButton_->Width = 200.0;
       testMicrophoneVolumeButton_->Content = "TestMicrophoneVolume";
-      testMicrophoneVolumeButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testMicrophoneVolumeButton_Click);
+      testMicrophoneVolumeButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testMicrophoneVolumeButton_Click);
       buttonStack->Children->Append(testMicrophoneVolumeButton_);
 
       testSpeakerMuteButton_ = ref new Button();
-      testSpeakerMuteButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testSpeakerMuteButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testSpeakerMuteButton_->Width = 200.0;
       testSpeakerMuteButton_->Content = "TestSpeakerMute";
-      testSpeakerMuteButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testSpeakerMuteButton_Click);
+      testSpeakerMuteButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testSpeakerMuteButton_Click);
       buttonStack->Children->Append(testSpeakerMuteButton_);
 
       testMicrophoneMuteButton_ = ref new Button();
-      testMicrophoneMuteButton_->HorizontalAlignment =
-          HorizontalAlignment::Left;
+      testMicrophoneMuteButton_->HorizontalAlignment = HorizontalAlignment::Left;
       testMicrophoneMuteButton_->VerticalAlignment = VerticalAlignment::Top;
-      testMicrophoneMuteButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testMicrophoneMuteButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testMicrophoneMuteButton_->Width = 200.0;
       testMicrophoneMuteButton_->Content = "TestMicrophoneMute";
-      testMicrophoneMuteButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testMicrophoneMuteButton_Click);
+      testMicrophoneMuteButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testMicrophoneMuteButton_Click);
       buttonStack->Children->Append(testMicrophoneMuteButton_);
 
       testMicrophoneAGCButton_ = ref new Button();
-      testMicrophoneAGCButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testMicrophoneAGCButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testMicrophoneAGCButton_->Width = 200.0;
       testMicrophoneAGCButton_->Content = "TestMicrophoneAGC";
-      testMicrophoneAGCButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testMicrophoneAGCButton_Click);
+      testMicrophoneAGCButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testMicrophoneAGCButton_Click);
       buttonStack->Children->Append(testMicrophoneAGCButton_);
 
       testDeviceRemovalButton_ = ref new Button();
-      testDeviceRemovalButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testDeviceRemovalButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testDeviceRemovalButton_->Width = 200.0;
       testDeviceRemovalButton_->Content = "TestDeviceRemoval";
-      testDeviceRemovalButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testDeviceRemovalButton_Click);
+      testDeviceRemovalButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testDeviceRemovalButton_Click);
       buttonStack->Children->Append(testDeviceRemovalButton_);
 
       testExtraButton_ = ref new Button();
-      testExtraButton_->Margin = Windows::UI::Xaml::Thickness(
-          0.0, 20.0, 0.0, 0.0);
+      testExtraButton_->Margin = Windows::UI::Xaml::Thickness(0.0, 20.0, 0.0, 0.0);
       testExtraButton_->Width = 200.0;
       testExtraButton_->Content = "TestExtra";
-      testExtraButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT
-          ::testExtraButton_Click);
+      testExtraButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::testExtraButton_Click);
       buttonStack->Children->Append(testExtraButton_);
 
       skipButton_ = ref new Button();
       skipButton_->VerticalAlignment = VerticalAlignment::Center;
       skipButton_->HorizontalAlignment = HorizontalAlignment::Center;
-      skipButton_->Margin = Windows::UI::Xaml::Thickness(
-          200.0, 100.0, 0.0, 0.0);
+      skipButton_->Margin = Windows::UI::Xaml::Thickness(200.0, 100.0, 0.0, 0.0);
       skipButton_->Width = 200;
       skipButton_->Height = 60;
       skipButton_->Content = "Skip";
-      skipButton_->Click += ref new RoutedEventHandler(this,
-          &audio_device_test_winrt::AudioDeviceTestWinRT::skipButton_Click);
+      skipButton_->Click += ref new RoutedEventHandler(this, &audio_device_test_winrt::AudioDeviceTestWinRT::skipButton_Click);
 
       containerStack->Children->Append(buttonStack);
       containerStack->Children->Append(skipButton_);
@@ -202,83 +163,84 @@ namespace audio_device_test_winrt {
       Window::Current->Activate();
     }
 
-    void skipButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void skipButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       WinRTTestManager::userSignalToContinue();
     }
 
-    void testDeviceEnumerationButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testDeviceEnumerationButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestDeviceEnumerationAsync();
     }
 
     Windows::Foundation::IAsyncAction^ TestDeviceEnumerationAsync() {
-      return create_async([this] {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestDeviceEnumeration();
       });
     }
 
-    void testDeviceSelectionButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testDeviceSelectionButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
        TestDeviceSelectionAsync();
     }
 
     Windows::Foundation::IAsyncAction^ TestDeviceSelectionAsync() {
-      return create_async([this] {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestDeviceSelection();
       });
     }
 
-    void testAudioTransportButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testAudioTransportButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestTransportAsync();
     }
 
     Windows::Foundation::IAsyncAction^ TestTransportAsync() {
-      return create_async([this] {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestAudioTransport();
       });
     }
 
-    void testLoopbackButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testLoopbackButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestLoopBackAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestLoopBackAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestLoopBackAsync(){
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestLoopback();
       });
     }
-
-    void testSpeakerVolumeButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    
+    void testSpeakerVolumeButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestSpeakerVolumeAsync();
     }
-
-    Windows::Foundation::IAsyncAction^ TestSpeakerVolumeAsync() {
-      return create_async([this] {
+    
+    Windows::Foundation::IAsyncAction^ TestSpeakerVolumeAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestSpeakerVolume();
       });
     }
 
-    void testMicrophoneVolumeButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testMicrophoneVolumeButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestMicrophoneVolumeAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestMicrophoneVolumeAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestMicrophoneVolumeAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestMicrophoneVolume();
@@ -286,13 +248,14 @@ namespace audio_device_test_winrt {
     }
 
 
-    void testSpeakerMuteButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testSpeakerMuteButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestSpeakerMuteAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestSpeakerMuteAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestSpeakerMuteAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestSpeakerMute();
@@ -300,13 +263,14 @@ namespace audio_device_test_winrt {
     }
 
 
-    void testMicrophoneMuteButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testMicrophoneMuteButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestMicrophoneMuteAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestMicrophoneMuteAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestMicrophoneMuteAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestMicrophoneMute();
@@ -314,39 +278,42 @@ namespace audio_device_test_winrt {
     }
 
 
-    void testMicrophoneAGCButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testMicrophoneAGCButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestMicrophoneAGCAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestMicrophoneAGCAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestMicrophoneAGCAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestMicrophoneAGC();
       });
     }
 
-    void testDeviceRemovalButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testDeviceRemovalButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestDeviceRemovalAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestDeviceRemovalAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestDeviceRemovalAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestDeviceRemoval();
       });
     }
 
-    void testExtraButton_Click(Platform::Object^ sender,
-        Windows::UI::Xaml::RoutedEventArgs^ e) {
+    void testExtraButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e) {
       TestExtraAsync();
     }
 
-    Windows::Foundation::IAsyncAction^ TestExtraAsync() {
-      return create_async([this] {
+    Windows::Foundation::IAsyncAction^ TestExtraAsync()
+    {
+      return create_async([this]
+      {
         WinRTTestManager *mManager = new WinRTTestManager();
         mManager->Init();
         mManager->TestExtra();

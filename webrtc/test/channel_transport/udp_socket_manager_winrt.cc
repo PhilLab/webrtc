@@ -29,7 +29,8 @@ UdpSocketManagerWinRT::UdpSocketManagerWinRT()
       _numberOfSocketMgr((uint8_t)-1),
       _incSocketMgrNextTime(0),
       _nextSocketMgrToAssign(0),
-      _socketMgr() {
+      _socketMgr()
+{
 }
 
 bool UdpSocketManagerWinRT::Init(int32_t id, uint8_t& numOfWorkThreads) {
@@ -44,39 +45,46 @@ bool UdpSocketManagerWinRT::Init(int32_t id, uint8_t& numOfWorkThreads) {
     _numberOfSocketMgr = numOfWorkThreads;
     _numOfWorkThreads = numOfWorkThreads;
 
-    if (MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX < _numberOfSocketMgr) {
+    if(MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX < _numberOfSocketMgr)
+    {
         _numberOfSocketMgr = MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX;
     }
-    for (int i = 0; i < _numberOfSocketMgr; i++) {
+    for(int i = 0;i < _numberOfSocketMgr; i++)
+    {
         _socketMgr[i] = new UdpSocketManagerWinRTImpl();
     }
     return true;
 }
 
 
-UdpSocketManagerWinRT::~UdpSocketManagerWinRT() {
+UdpSocketManagerWinRT::~UdpSocketManagerWinRT()
+{
     Stop();
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocketManagerWinRT(%d)::UdpSocketManagerWinRT()",
                  _numberOfSocketMgr);
 
-    for (int i = 0; i < _numberOfSocketMgr; i++) {
+    for(int i = 0;i < _numberOfSocketMgr; i++)
+    {
         delete _socketMgr[i];
     }
     delete _critSect;
 }
 
-bool UdpSocketManagerWinRT::Start() {
+bool UdpSocketManagerWinRT::Start()
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocketManagerWinRT(%d)::Start()",
                  _numberOfSocketMgr);
 
     _critSect->Enter();
     bool retVal = true;
-    for (int i = 0; i < _numberOfSocketMgr && retVal; i++) {
+    for(int i = 0;i < _numberOfSocketMgr && retVal; i++)
+    {
         retVal = _socketMgr[i]->Start();
     }
-    if (!retVal) {
+    if(!retVal)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -88,16 +96,19 @@ bool UdpSocketManagerWinRT::Start() {
     return retVal;
 }
 
-bool UdpSocketManagerWinRT::Stop() {
+bool UdpSocketManagerWinRT::Stop()
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerWinRT(%d)::Stop()", _numberOfSocketMgr);
+                 "UdpSocketManagerWinRT(%d)::Stop()",_numberOfSocketMgr);
 
     _critSect->Enter();
     bool retVal = true;
-    for (int i = 0; i < _numberOfSocketMgr && retVal; i++) {
+    for(int i = 0; i < _numberOfSocketMgr && retVal; i++)
+    {
         retVal = _socketMgr[i]->Stop();
     }
-    if (!retVal) {
+    if(!retVal)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -110,13 +121,15 @@ bool UdpSocketManagerWinRT::Stop() {
     return retVal;
 }
 
-bool UdpSocketManagerWinRT::AddSocket(UdpSocketWrapper* s) {
+bool UdpSocketManagerWinRT::AddSocket(UdpSocketWrapper* s)
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerWinRT(%d)::AddSocket()", _numberOfSocketMgr);
+                 "UdpSocketManagerWinRT(%d)::AddSocket()",_numberOfSocketMgr);
 
     _critSect->Enter();
     bool retVal = _socketMgr[_nextSocketMgrToAssign]->AddSocket(s);
-    if (!retVal) {
+    if(!retVal)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -128,12 +141,14 @@ bool UdpSocketManagerWinRT::AddSocket(UdpSocketWrapper* s) {
 
     // Distribute sockets on UdpSocketManagerWinRTImpls in a round-robin
     // fashion.
-    if (_incSocketMgrNextTime == 0) {
+    if(_incSocketMgrNextTime == 0)
+    {
         _incSocketMgrNextTime++;
     } else {
         _incSocketMgrNextTime = 0;
         _nextSocketMgrToAssign++;
-        if (_nextSocketMgrToAssign >= _numberOfSocketMgr) {
+        if(_nextSocketMgrToAssign >= _numberOfSocketMgr)
+        {
             _nextSocketMgrToAssign = 0;
         }
     }
@@ -141,17 +156,20 @@ bool UdpSocketManagerWinRT::AddSocket(UdpSocketWrapper* s) {
     return retVal;
 }
 
-bool UdpSocketManagerWinRT::RemoveSocket(UdpSocketWrapper* s) {
+bool UdpSocketManagerWinRT::RemoveSocket(UdpSocketWrapper* s)
+{
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocketManagerWinRT(%d)::RemoveSocket()",
                  _numberOfSocketMgr);
 
     _critSect->Enter();
     bool retVal = false;
-    for (int i = 0; i < _numberOfSocketMgr && (retVal == false); i++) {
+    for(int i = 0;i < _numberOfSocketMgr && (retVal == false); i++)
+    {
         retVal = _socketMgr[i]->RemoveSocket(s);
     }
-    if (!retVal) {
+    if(!retVal)
+    {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -165,7 +183,8 @@ bool UdpSocketManagerWinRT::RemoveSocket(UdpSocketWrapper* s) {
 }
 
 
-UdpSocketManagerWinRTImpl::UdpSocketManagerWinRTImpl() {
+UdpSocketManagerWinRTImpl::UdpSocketManagerWinRTImpl()
+{
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
     _thread = ThreadWrapper::CreateThread(UdpSocketManagerWinRTImpl::Run, this,
                                           "UdpSocketManagerWinRTImplThread");
@@ -174,8 +193,10 @@ UdpSocketManagerWinRTImpl::UdpSocketManagerWinRTImpl() {
                  "UdpSocketManagerWinRT created");
 }
 
-UdpSocketManagerWinRTImpl::~UdpSocketManagerWinRTImpl() {
-    if (_critSectList != NULL) {
+UdpSocketManagerWinRTImpl::~UdpSocketManagerWinRTImpl()
+{
+    if (_critSectList != NULL)
+    {
         UpdateSocketMap();
 
         _critSectList->Enter();
@@ -195,8 +216,10 @@ UdpSocketManagerWinRTImpl::~UdpSocketManagerWinRTImpl() {
                  "UdpSocketManagerWinRT deleted");
 }
 
-bool UdpSocketManagerWinRTImpl::Start() {
-    if (!_thread) {
+bool UdpSocketManagerWinRTImpl::Start()
+{
+    if (!_thread)
+    {
         return false;
     }
 
@@ -208,8 +231,10 @@ bool UdpSocketManagerWinRTImpl::Start() {
     return true;
 }
 
-bool UdpSocketManagerWinRTImpl::Stop() {
-    if (_thread == NULL) {
+bool UdpSocketManagerWinRTImpl::Stop()
+{
+    if (_thread == NULL)
+    {
         return true;
     }
 
@@ -218,7 +243,8 @@ bool UdpSocketManagerWinRTImpl::Stop() {
     return _thread->Stop();
 }
 
-bool UdpSocketManagerWinRTImpl::Process() {
+bool UdpSocketManagerWinRTImpl::Process()
+{
     bool doSelect = false;
     // Timeout = 1 second.
     struct timeval timeout;
@@ -240,15 +266,18 @@ bool UdpSocketManagerWinRTImpl::Process() {
 
 
     int num = 0;
-    if (doSelect) {
+    if (doSelect)
+    {
         num = select(nFd, &_readFds, NULL, NULL, &timeout);
 
-        if (num == SOCKET_ERROR) {
+        if (num == SOCKET_ERROR)
+        {
             // Timeout = 10 ms.
             SleepMs(10);
             return true;
         }
-    } else {
+    }else
+    {
         // Timeout = 10 ms.
         SleepMs(10);
         return true;
@@ -266,15 +295,19 @@ bool UdpSocketManagerWinRTImpl::Process() {
     return true;
 }
 
-bool UdpSocketManagerWinRTImpl::Run(void* obj) {
+bool UdpSocketManagerWinRTImpl::Run(void* obj)
+{
     UdpSocketManagerWinRTImpl* mgr =
         static_cast<UdpSocketManagerWinRTImpl*>(obj);
     return mgr->Process();
 }
 
-bool UdpSocketManagerWinRTImpl::AddSocket(UdpSocketWrapper* s) {
+bool UdpSocketManagerWinRTImpl::AddSocket(UdpSocketWrapper* s)
+{
+
     UdpSocketWinRT* sl = static_cast<UdpSocketWinRT*>(s);
-    if (sl->GetFd() == INVALID_SOCKET || _socketMap.size() >= FD_SETSIZE) {
+    if (sl->GetFd() == INVALID_SOCKET || _socketMap.size() >= FD_SETSIZE)
+    {
         return false;
     }
     _critSectList->Enter();
@@ -283,7 +316,8 @@ bool UdpSocketManagerWinRTImpl::AddSocket(UdpSocketWrapper* s) {
     return true;
 }
 
-bool UdpSocketManagerWinRTImpl::RemoveSocket(UdpSocketWrapper* s) {
+bool UdpSocketManagerWinRTImpl::RemoveSocket(UdpSocketWrapper* s)
+{
     // Put in remove list if this is the correct UdpSocketManagerWinRTImpl.
     _critSectList->Enter();
 
@@ -293,7 +327,8 @@ bool UdpSocketManagerWinRTImpl::RemoveSocket(UdpSocketWrapper* s) {
         UdpSocketWinRT* addSocket = static_cast<UdpSocketWinRT*>(*iter);
         unsigned int addFD = addSocket->GetFd();
         unsigned int removeFD = static_cast<UdpSocketWinRT*>(s)->GetFd();
-        if (removeFD == addFD) {
+        if(removeFD == addFD)
+        {
             _removeList.push_back(removeFD);
             _critSectList->Leave();
             return true;
@@ -313,8 +348,9 @@ bool UdpSocketManagerWinRTImpl::RemoveSocket(UdpSocketWrapper* s) {
 }
 
 // declaration of 'iter' hides previous local declaration
-#pragma warning(disable : 4456)
-void UdpSocketManagerWinRTImpl::UpdateSocketMap() {
+#pragma warning (disable : 4456)
+void UdpSocketManagerWinRTImpl::UpdateSocketMap()
+{
     // Remove items in remove list.
     _critSectList->Enter();
     for (FdList::iterator iter = _removeList.begin();
@@ -328,7 +364,8 @@ void UdpSocketManagerWinRTImpl::UpdateSocketMap() {
              iter != _addList.end(); ++iter) {
             UdpSocketWinRT* addSocket = static_cast<UdpSocketWinRT*>(*iter);
             SOCKET addFD = addSocket->GetFd();
-            if (removeFD == addFD) {
+            if(removeFD == addFD)
+            {
                 deleteSocket = addSocket;
                 _addList.erase(iter);
                 break;
@@ -338,11 +375,13 @@ void UdpSocketManagerWinRTImpl::UpdateSocketMap() {
         // Find and remove socket from _socketMap.
         std::map<SOCKET, UdpSocketWinRT*>::iterator it =
             _socketMap.find(removeFD);
-        if (it != _socketMap.end()) {
+        if(it != _socketMap.end())
+        {
           deleteSocket = it->second;
           _socketMap.erase(it);
         }
-        if (deleteSocket) {
+        if(deleteSocket)
+        {
             deleteSocket->ReadyForDeletion();
             delete deleteSocket;
         }
@@ -353,7 +392,7 @@ void UdpSocketManagerWinRTImpl::UpdateSocketMap() {
     for (SocketList::iterator iter = _addList.begin();
          iter != _addList.end(); ++iter) {
         UdpSocketWinRT* s = static_cast<UdpSocketWinRT*>(*iter);
-        if (s) {
+        if(s) {
           _socketMap[s->GetFd()] = s;
         }
     }

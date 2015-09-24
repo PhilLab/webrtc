@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
 #define WEBRTC_VIDEO_SEND_STATISTICS_PROXY_H_
 
-#include <map>
 #include <string>
 
 #include "webrtc/base/criticalsection.h"
@@ -49,6 +48,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                                   const RTPVideoHeader* rtp_video_header);
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
+
+  // Used to update encode time of frames.
+  void OnEncodedFrame(int encode_time_ms);
 
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
@@ -115,8 +117,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   mutable rtc::CriticalSection crit_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
   rtc::RateTracker input_frame_rate_tracker_ GUARDED_BY(crit_);
-  rtc::RateTracker input_frame_rate_tracker_total_ GUARDED_BY(crit_);
-  rtc::RateTracker sent_frame_rate_tracker_total_ GUARDED_BY(crit_);
+  rtc::RateTracker sent_frame_rate_tracker_ GUARDED_BY(crit_);
   uint32_t last_sent_frame_timestamp_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);
 
@@ -126,6 +127,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   SampleCounter input_height_counter_ GUARDED_BY(crit_);
   SampleCounter sent_width_counter_ GUARDED_BY(crit_);
   SampleCounter sent_height_counter_ GUARDED_BY(crit_);
+  SampleCounter encode_time_counter_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

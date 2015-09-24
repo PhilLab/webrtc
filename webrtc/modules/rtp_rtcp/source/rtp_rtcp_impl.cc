@@ -27,23 +27,23 @@
 namespace webrtc {
 
 RtpRtcp::Configuration::Configuration()
-    : id(-1),
-      audio(false),
+    : audio(false),
       receiver_only(false),
-      clock(NULL),
+      clock(nullptr),
       receive_statistics(NullObjectReceiveStatistics()),
-      outgoing_transport(NULL),
-      intra_frame_callback(NULL),
-      bandwidth_callback(NULL),
-      rtt_stats(NULL),
-      rtcp_packet_type_counter_observer(NULL),
+      outgoing_transport(nullptr),
+      intra_frame_callback(nullptr),
+      bandwidth_callback(nullptr),
+      transport_feedback_callback(nullptr),
+      rtt_stats(nullptr),
+      rtcp_packet_type_counter_observer(nullptr),
       audio_messages(NullObjectRtpAudioFeedback()),
-      remote_bitrate_estimator(NULL),
-      paced_sender(NULL),
-      send_bitrate_observer(NULL),
-      send_frame_count_observer(NULL),
-      send_side_delay_observer(NULL) {
-}
+      remote_bitrate_estimator(nullptr),
+      paced_sender(nullptr),
+      packet_router(nullptr),
+      send_bitrate_observer(nullptr),
+      send_frame_count_observer(nullptr),
+      send_side_delay_observer(nullptr) {}
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
@@ -59,29 +59,27 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
-    : rtp_sender_(configuration.id,
-                  configuration.audio,
+    : rtp_sender_(configuration.audio,
                   configuration.clock,
                   configuration.outgoing_transport,
                   configuration.audio_messages,
                   configuration.paced_sender,
+                  configuration.packet_router,
+                  configuration.transport_feedback_callback,
                   configuration.send_bitrate_observer,
                   configuration.send_frame_count_observer,
                   configuration.send_side_delay_observer),
-      rtcp_sender_(configuration.id,
-                   configuration.audio,
+      rtcp_sender_(configuration.audio,
                    configuration.clock,
                    configuration.receive_statistics,
                    configuration.rtcp_packet_type_counter_observer),
-      rtcp_receiver_(configuration.id,
-                     configuration.clock,
+      rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
                      configuration.bandwidth_callback,
                      configuration.intra_frame_callback,
                      this),
       clock_(configuration.clock),
-      id_(configuration.id),
       audio_(configuration.audio),
       collision_detected_(false),
       last_process_time_(configuration.clock->TimeInMilliseconds()),
@@ -472,7 +470,7 @@ int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
 }
 
 int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(const uint16_t mtu) {
-  DCHECK_LE(mtu, IP_PACKET_SIZE) << "Invalid mtu: " << mtu;
+  RTC_DCHECK_LE(mtu, IP_PACKET_SIZE) << "Invalid mtu: " << mtu;
   return rtp_sender_.SetMaxPayloadLength(mtu - packet_overhead_,
                                          packet_overhead_);
 }
@@ -650,15 +648,6 @@ void ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
   rtcp_sender_.SetREMBData(bitrate, ssrcs);
 }
 
-// (IJ) Extended jitter report.
-bool ModuleRtpRtcpImpl::IJ() const {
-  return rtcp_sender_.IJ();
-}
-
-void ModuleRtpRtcpImpl::SetIJStatus(const bool enable) {
-  rtcp_sender_.SetIJStatus(enable);
-}
-
 int32_t ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(
     const RTPExtensionType type,
     const uint8_t id) {
@@ -772,6 +761,11 @@ void ModuleRtpRtcpImpl::RegisterRtcpStatisticsCallback(
 
 RtcpStatisticsCallback* ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
   return rtcp_receiver_.GetRtcpStatisticsCallback();
+}
+
+bool ModuleRtpRtcpImpl::SendFeedbackPacket(
+    const rtcp::TransportFeedback& packet) {
+  return rtcp_sender_.SendFeedbackPacket(packet);
 }
 
 // Send a TelephoneEvent tone using RFC 2833 (4733).

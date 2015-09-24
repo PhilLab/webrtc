@@ -7,8 +7,6 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include <string>
-
 #include "webrtc/build/WinRT_gyp/ETW/stats_observer_etw.h"
 #include "webrtc/base/thread.h"
 
@@ -70,6 +68,7 @@ void StatsObserverETW::OnComplete(const StatsReports& reports) {
       }
     }
   }
+
 }
 
 void StatsObserverETW::OnMessage(rtc::Message* msg) {

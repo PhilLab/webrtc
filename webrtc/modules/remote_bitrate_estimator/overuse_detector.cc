@@ -10,12 +10,10 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 
-#include <math.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <sstream>
-#include <string>
+#include <math.h>
+#include <stdlib.h>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
@@ -145,7 +143,7 @@ void OveruseDetector::UpdateThreshold(double modified_offset, int64_t now_ms) {
 }
 
 void OveruseDetector::InitializeExperiment() {
-  DCHECK(in_experiment_);
+  RTC_DCHECK(in_experiment_);
   double k_up = 0.0;
   double k_down = 0.0;
   overusing_time_threshold_ = kOverUsingTimeThreshold;

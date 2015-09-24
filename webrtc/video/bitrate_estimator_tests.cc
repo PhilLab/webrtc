@@ -121,7 +121,7 @@ class BitrateEstimatorTest : public test::CallTest {
         receive_transport_(),
         sender_call_(),
         receiver_call_(),
-        receive_config_(),
+        receive_config_(nullptr),
         streams_() {
   }
 
@@ -130,16 +130,13 @@ class BitrateEstimatorTest : public test::CallTest {
   }
 
   virtual void SetUp() {
-    Call::Config receiver_call_config(&receive_transport_);
-    receiver_call_.reset(Call::Create(receiver_call_config));
-
-    Call::Config sender_call_config(&send_transport_);
-    sender_call_.reset(Call::Create(sender_call_config));
+    receiver_call_.reset(Call::Create(Call::Config()));
+    sender_call_.reset(Call::Create(Call::Config()));
 
     send_transport_.SetReceiver(receiver_call_->Receiver());
     receive_transport_.SetReceiver(sender_call_->Receiver());
 
-    send_config_ = VideoSendStream::Config();
+    send_config_ = VideoSendStream::Config(&send_transport_);
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
     // Encoders will be set separately per stream.
     send_config_.encoder_settings.encoder = nullptr;
@@ -147,7 +144,7 @@ class BitrateEstimatorTest : public test::CallTest {
     send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
     encoder_config_.streams = test::CreateVideoStreams(1);
 
-    receive_config_ = VideoReceiveStream::Config();
+    receive_config_ = VideoReceiveStream::Config(&receive_transport_);
     // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
@@ -191,7 +188,7 @@ class BitrateEstimatorTest : public test::CallTest {
       test_->send_config_.encoder_settings.encoder = &fake_encoder_;
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
           test_->send_config_, test_->encoder_config_);
-      DCHECK_EQ(1u, test_->encoder_config_.streams.size());
+      RTC_DCHECK_EQ(1u, test_->encoder_config_.streams.size());
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
           send_stream_->Input(),
           test_->encoder_config_.streams[0].width,
@@ -204,12 +201,13 @@ class BitrateEstimatorTest : public test::CallTest {
       if (receive_audio) {
         AudioReceiveStream::Config receive_config;
         receive_config.rtp.remote_ssrc = test_->send_config_.rtp.ssrcs[0];
-        // Bogus non-default id to prevent hitting a DCHECK when creating the
-        // AudioReceiveStream. Every receive stream has to correspond to an
-        // underlying channel id.
+        // Bogus non-default id to prevent hitting a RTC_DCHECK when creating
+        // the AudioReceiveStream. Every receive stream has to correspond to
+        // an underlying channel id.
         receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
+        receive_config.combined_audio_video_bwe = true;
         audio_receive_stream_ = test_->receiver_call_->CreateAudioReceiveStream(
             receive_config);
       } else {

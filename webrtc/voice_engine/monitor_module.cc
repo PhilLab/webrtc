@@ -19,17 +19,21 @@ namespace voe  {
 MonitorModule::MonitorModule() :
     _observerPtr(NULL),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _lastProcessTime(TickTime::MillisecondTimestamp()) {
+    _lastProcessTime(TickTime::MillisecondTimestamp())
+{
 }
 
-MonitorModule::~MonitorModule() {
+MonitorModule::~MonitorModule()
+{
     delete &_callbackCritSect;
 }
 
 int32_t
-MonitorModule::RegisterObserver(MonitorObserver& observer) {
+MonitorModule::RegisterObserver(MonitorObserver& observer)
+{
     CriticalSectionScoped lock(&_callbackCritSect);
-    if (_observerPtr) {
+    if (_observerPtr)
+    {
         return -1;
     }
     _observerPtr = &observer;
@@ -37,9 +41,11 @@ MonitorModule::RegisterObserver(MonitorObserver& observer) {
 }
 
 int32_t
-MonitorModule::DeRegisterObserver() {
+MonitorModule::DeRegisterObserver()
+{
     CriticalSectionScoped lock(&_callbackCritSect);
-    if (!_observerPtr) {
+    if (!_observerPtr)
+    {
         return 0;
     }
     _observerPtr = NULL;
@@ -47,16 +53,19 @@ MonitorModule::DeRegisterObserver() {
 }
 
 int64_t
-MonitorModule::TimeUntilNextProcess() {
+MonitorModule::TimeUntilNextProcess()
+{
     int64_t now = TickTime::MillisecondTimestamp();
     const int64_t kAverageProcessUpdateTimeMs = 1000;
     return kAverageProcessUpdateTimeMs - (now - _lastProcessTime);
 }
 
 int32_t
-MonitorModule::Process() {
+MonitorModule::Process()
+{
     _lastProcessTime = TickTime::MillisecondTimestamp();
-    if (_observerPtr) {
+    if (_observerPtr)
+    {
         CriticalSectionScoped lock(&_callbackCritSect);
         _observerPtr->OnPeriodicProcess();
     }

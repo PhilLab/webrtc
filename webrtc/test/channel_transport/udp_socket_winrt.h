@@ -21,8 +21,9 @@
 namespace webrtc {
 namespace test {
 
-class UdpSocketWinRT : public UdpSocketWrapper {
- public:
+class UdpSocketWinRT : public UdpSocketWrapper
+{
+public:
     UdpSocketWinRT(const int32_t id, UdpSocketManager* mgr,
                    bool ipV6Enable = false);
 
@@ -64,8 +65,7 @@ class UdpSocketWinRT : public UdpSocketWrapper {
     void HasIncoming();
     bool WantsIncoming();
     void ReadyForDeletion();
-
- private:
+private:
     friend class UdpSocketManagerPosix;
 
     const int32_t _id;
@@ -87,4 +87,4 @@ class UdpSocketWinRT : public UdpSocketWrapper {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WINRT_H_
+#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_POSIX_H_

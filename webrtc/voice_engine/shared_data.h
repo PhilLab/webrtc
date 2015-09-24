@@ -30,8 +30,9 @@ namespace voe {
 class TransmitMixer;
 class OutputMixer;
 
-class SharedData {
- public:
+class SharedData
+{
+public:
     // Public accessors.
     uint32_t instance_id() const { return _instanceId; }
     Statistics& statistics() { return _engineStatistics; }
@@ -43,10 +44,6 @@ class SharedData {
     TransmitMixer* transmit_mixer() { return _transmitMixerPtr; }
     OutputMixer* output_mixer() { return _outputMixerPtr; }
     CriticalSectionWrapper* crit_sec() { return _apiCritPtr; }
-    bool ext_recording() const { return _externalRecording; }
-    void set_ext_recording(bool value) { _externalRecording = value; }
-    bool ext_playout() const { return _externalPlayout; }
-    void set_ext_playout(bool value) { _externalPlayout = value; }
     ProcessThread* process_thread() { return _moduleProcessThreadPtr.get(); }
     AudioDeviceModule::AudioLayer audio_device_layer() const {
       return _audioDeviceLayer;
@@ -64,7 +61,7 @@ class SharedData {
     void SetLastError(int32_t error, TraceLevel level,
                       const char* msg) const;
 
- protected:
+protected:
     const uint32_t _instanceId;
     CriticalSectionWrapper* _apiCritPtr;
     ChannelManager _channelManager;
@@ -75,9 +72,6 @@ class SharedData {
     rtc::scoped_ptr<AudioProcessing> audioproc_;
     rtc::scoped_ptr<ProcessThread> _moduleProcessThreadPtr;
 
-    bool _externalRecording;
-    bool _externalPlayout;
-
     AudioDeviceModule::AudioLayer _audioDeviceLayer;
 
     SharedData(const Config& config);
@@ -87,4 +81,4 @@ class SharedData {
 }  // namespace voe
 
 }  // namespace webrtc
-#endif  // WEBRTC_VOICE_ENGINE_SHARED_DATA_H
+#endif // WEBRTC_VOICE_ENGINE_SHARED_DATA_H

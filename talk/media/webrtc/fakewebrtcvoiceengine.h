@@ -89,7 +89,7 @@ static const webrtc::NetworkStatistics kNetStats = {
   if (channels_.find(channel) == channels_.end()) return -1;
 
 #define WEBRTC_ASSERT_CHANNEL(channel) \
-  DCHECK(channels_.find(channel) != channels_.end());
+  RTC_DCHECK(channels_.find(channel) != channels_.end());
 
 // Verify the header extension ID, if enabled, is within the bounds specified in
 // [RFC5285]: 1-14 inclusive.
@@ -112,6 +112,8 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
       webrtc::AudioProcessing::ChannelLayout input_layout,
       webrtc::AudioProcessing::ChannelLayout output_layout,
       webrtc::AudioProcessing::ChannelLayout reverse_layout));
+  WEBRTC_STUB(Initialize, (
+      const webrtc::ProcessingConfig& processing_config));
 
   WEBRTC_VOID_FUNC(SetExtraOptions, (const webrtc::Config& config)) {
     experimental_ns_enabled_ = config.Get<webrtc::ExperimentalNs>().enabled;
@@ -130,18 +132,29 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB(ProcessStream, (webrtc::AudioFrame* frame));
   WEBRTC_STUB(ProcessStream, (
       const float* const* src,
-      int samples_per_channel,
+      size_t samples_per_channel,
       int input_sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout input_layout,
       int output_sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout output_layout,
       float* const* dest));
+  WEBRTC_STUB(ProcessStream,
+              (const float* const* src,
+               const webrtc::StreamConfig& input_config,
+               const webrtc::StreamConfig& output_config,
+               float* const* dest));
   WEBRTC_STUB(AnalyzeReverseStream, (webrtc::AudioFrame* frame));
+  WEBRTC_STUB(ProcessReverseStream, (webrtc::AudioFrame * frame));
   WEBRTC_STUB(AnalyzeReverseStream, (
       const float* const* data,
-      int samples_per_channel,
+      size_t samples_per_channel,
       int sample_rate_hz,
       webrtc::AudioProcessing::ChannelLayout layout));
+  WEBRTC_STUB(ProcessReverseStream,
+              (const float* const* src,
+               const webrtc::StreamConfig& reverse_input_config,
+               const webrtc::StreamConfig& reverse_output_config,
+               float* const* dest));
   WEBRTC_STUB(set_stream_delay_ms, (int delay));
   WEBRTC_STUB_CONST(stream_delay_ms, ());
   WEBRTC_BOOL_STUB_CONST(was_stream_delay_set, ());
@@ -370,7 +383,7 @@ class FakeWebRtcVoiceEngine
     return channels_[channel]->packets.empty();
   }
   void TriggerCallbackOnError(int channel_num, int err_code) {
-    DCHECK(observer_ != NULL);
+    RTC_DCHECK(observer_ != NULL);
     observer_->CallbackOnError(channel_num, err_code);
   }
   void set_playout_fail_channel(int channel) {
@@ -523,6 +536,7 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->associate_send_channel = accociate_send_channel;
     return 0;
   }
+  webrtc::RtcEventLog* GetEventLog() { return nullptr; }
 
   // webrtc::VoECodec
   WEBRTC_FUNC(NumOfCodecs, ()) {

@@ -23,7 +23,6 @@
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/experiments.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
@@ -726,8 +725,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   // |raw_images_[0]|, the resolution of these frames must match. Note that
   // |input_image| might be scaled from |frame|. In that case, the resolution of
   // |raw_images_[0]| should have been updated in UpdateCodecFrameSize.
-  DCHECK_EQ(input_image.width(), static_cast<int>(raw_images_[0].d_w));
-  DCHECK_EQ(input_image.height(), static_cast<int>(raw_images_[0].d_h));
+  RTC_DCHECK_EQ(input_image.width(), static_cast<int>(raw_images_[0].d_w));
+  RTC_DCHECK_EQ(input_image.height(), static_cast<int>(raw_images_[0].d_h));
 
   // Image in vpx_image_t format.
   // Input image is const. VP8's raw image is not defined as const.
@@ -892,6 +891,11 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
 int VP8EncoderImpl::UpdateCodecFrameSize(const VideoFrame& input_image) {
   codec_.width = input_image.width();
   codec_.height = input_image.height();
+  if (codec_.numberOfSimulcastStreams <= 1) {
+    // For now scaling is only used for single-layer streams.
+    codec_.simulcastStream[0].width = input_image.width();
+    codec_.simulcastStream[0].height = input_image.height();
+  }
   // Update the cpu_speed setting for resolution change.
   vpx_codec_control(&(encoders_[0]),
                     VP8E_SET_CPUUSED,

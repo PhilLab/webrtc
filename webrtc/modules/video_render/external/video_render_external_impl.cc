@@ -13,23 +13,27 @@
 namespace webrtc {
 
 VideoRenderExternalImpl::VideoRenderExternalImpl(
-                                        const int32_t id,
-                                        const VideoRenderType videoRenderType,
-                                        void* window,
-                                        const bool fullscreen) :
+                                                 const int32_t id,
+                                                 const VideoRenderType videoRenderType,
+                                                 void* window,
+                                                 const bool fullscreen) :
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _fullscreen(fullscreen) {
+    _fullscreen(fullscreen)
+{
 }
 
-VideoRenderExternalImpl::~VideoRenderExternalImpl() {
+VideoRenderExternalImpl::~VideoRenderExternalImpl()
+{
     delete &_critSect;
 }
 
-int32_t VideoRenderExternalImpl::Init() {
+int32_t VideoRenderExternalImpl::Init()
+{
     return 0;
 }
 
-int32_t VideoRenderExternalImpl::ChangeWindow(void* window) {
+int32_t VideoRenderExternalImpl::ChangeWindow(void* window)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
@@ -40,24 +44,27 @@ VideoRenderExternalImpl::AddIncomingRenderStream(const uint32_t streamId,
                                                  const float left,
                                                  const float top,
                                                  const float right,
-                                                 const float bottom) {
+                                                 const float bottom)
+{
     CriticalSectionScoped cs(&_critSect);
     return this;
 }
 
 int32_t VideoRenderExternalImpl::DeleteIncomingRenderStream(
-                                                 const uint32_t streamId) {
+                                                                  const uint32_t streamId)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 int32_t VideoRenderExternalImpl::GetIncomingRenderStreamProperties(
-                                                 const uint32_t streamId,
-                                                 uint32_t& zOrder,
-                                                 float& left,
-                                                 float& top,
-                                                 float& right,
-                                                 float& bottom) const {
+                                                                         const uint32_t streamId,
+                                                                         uint32_t& zOrder,
+                                                                         float& left,
+                                                                         float& top,
+                                                                         float& right,
+                                                                         float& bottom) const
+{
     CriticalSectionScoped cs(&_critSect);
 
     zOrder = 0;
@@ -69,40 +76,47 @@ int32_t VideoRenderExternalImpl::GetIncomingRenderStreamProperties(
     return 0;
 }
 
-int32_t VideoRenderExternalImpl::StartRender() {
+int32_t VideoRenderExternalImpl::StartRender()
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
-int32_t VideoRenderExternalImpl::StopRender() {
+int32_t VideoRenderExternalImpl::StopRender()
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
-VideoRenderType VideoRenderExternalImpl::RenderType() {
+VideoRenderType VideoRenderExternalImpl::RenderType()
+{
     return kRenderExternal;
 }
 
-RawVideoType VideoRenderExternalImpl::PerferedVideoType() {
+RawVideoType VideoRenderExternalImpl::PerferedVideoType()
+{
     return kVideoI420;
 }
 
-bool VideoRenderExternalImpl::FullScreen() {
+bool VideoRenderExternalImpl::FullScreen()
+{
     CriticalSectionScoped cs(&_critSect);
     return _fullscreen;
 }
 
 int32_t VideoRenderExternalImpl::GetGraphicsMemory(
-                                    uint64_t& totalGraphicsMemory,
-                                    uint64_t& availableGraphicsMemory) const {
+                                                         uint64_t& totalGraphicsMemory,
+                                                         uint64_t& availableGraphicsMemory) const
+{
     totalGraphicsMemory = 0;
     availableGraphicsMemory = 0;
     return -1;
 }
 
 int32_t VideoRenderExternalImpl::GetScreenResolution(
-                                     uint32_t& screenWidth,
-                                     uint32_t& screenHeight) const {
+                                                           uint32_t& screenWidth,
+                                                           uint32_t& screenHeight) const
+{
     CriticalSectionScoped cs(&_critSect);
     screenWidth = 0;
     screenHeight = 0;
@@ -110,48 +124,53 @@ int32_t VideoRenderExternalImpl::GetScreenResolution(
 }
 
 uint32_t VideoRenderExternalImpl::RenderFrameRate(
-                                                  const uint32_t streamId) {
+                                                        const uint32_t streamId)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 int32_t VideoRenderExternalImpl::SetStreamCropping(
-                                                   const uint32_t streamId,
-                                                   const float left,
-                                                   const float top,
-                                                   const float right,
-                                                   const float bottom) {
+                                                         const uint32_t streamId,
+                                                         const float left,
+                                                         const float top,
+                                                         const float right,
+                                                         const float bottom)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 int32_t VideoRenderExternalImpl::ConfigureRenderer(
-                                                   const uint32_t streamId,
-                                                   const unsigned int zOrder,
-                                                   const float left,
-                                                   const float top,
-                                                   const float right,
-                                                   const float bottom) {
+                                                         const uint32_t streamId,
+                                                         const unsigned int zOrder,
+                                                         const float left,
+                                                         const float top,
+                                                         const float right,
+                                                         const float bottom)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 int32_t VideoRenderExternalImpl::SetTransparentBackground(
-                                                    const bool enable) {
+                                                                const bool enable)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 int32_t VideoRenderExternalImpl::SetText(
-                                             const uint8_t textId,
-                                             const uint8_t* text,
-                                             const int32_t textLength,
-                                             const uint32_t textColorRef,
-                                             const uint32_t backgroundColorRef,
-                                             const float left,
-                                             const float top,
-                                             const float right,
-                                             const float bottom) {
+                                               const uint8_t textId,
+                                               const uint8_t* text,
+                                               const int32_t textLength,
+                                               const uint32_t textColorRef,
+                                               const uint32_t backgroundColorRef,
+                                               const float left,
+                                               const float top,
+                                               const float right,
+                                               const float bottom)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }
@@ -162,7 +181,8 @@ int32_t VideoRenderExternalImpl::SetBitmap(const void* bitMap,
                                            const float left,
                                            const float top,
                                            const float right,
-                                           const float bottom) {
+                                           const float bottom)
+{
     CriticalSectionScoped cs(&_critSect);
     return 0;
 }

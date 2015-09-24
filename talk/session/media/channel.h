@@ -53,8 +53,6 @@ namespace cricket {
 
 struct CryptoParams;
 class MediaContentDescription;
-struct TypingMonitorOptions;
-class TypingMonitor;
 struct ViewRequest;
 
 enum SinkType {
@@ -63,7 +61,7 @@ enum SinkType {
 };
 
 // BaseChannel contains logic common to voice and video, including
-// enable/mute, marshaling calls to a worker thread, and
+// enable, marshaling calls to a worker thread, and
 // connection and media monitors.
 //
 // WARNING! SUBCLASSES MUST CALL Deinit() IN THEIR DESTRUCTORS!
@@ -76,8 +74,7 @@ class BaseChannel
       public MediaChannel::NetworkInterface,
       public ConnectionStatsGetter {
  public:
-  BaseChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
-              MediaChannel* channel, BaseSession* session,
+  BaseChannel(rtc::Thread* thread, MediaChannel* channel, BaseSession* session,
               const std::string& content_name, bool rtcp);
   virtual ~BaseChannel();
   bool Init();
@@ -106,7 +103,6 @@ class BaseChannel
   bool secure_required() const { return secure_required_; }
 
   bool writable() const { return writable_; }
-  bool IsStreamMuted(uint32 ssrc);
 
   // Activate RTCP mux, regardless of the state so far.  Once
   // activated, it can not be deactivated, and if the remote
@@ -128,9 +124,6 @@ class BaseChannel
                         std::string* error_desc);
 
   bool Enable(bool enable);
-  // Mute sending media on the stream with SSRC |ssrc|
-  // If there is only one sending stream SSRC 0 can be used.
-  bool MuteStream(uint32 ssrc, bool mute);
 
   // Multiplexing
   bool AddRecvStream(const StreamParams& sp);
@@ -164,9 +157,6 @@ class BaseChannel
   // Used for latency measurements.
   sigslot::signal1<BaseChannel*> SignalFirstPacketReceived;
 
-  // Used to alert UI when the muted status changes, perhaps autonomously.
-  sigslot::repeater2<BaseChannel*, bool> SignalAutoMuted;
-
   // Made public for easier testing.
   void SetReadyToSend(TransportChannel* channel, bool ready);
 
@@ -174,7 +164,6 @@ class BaseChannel
   virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
 
  protected:
-  MediaEngineInterface* media_engine() const { return media_engine_; }
   virtual MediaChannel* media_channel() const { return media_channel_; }
   // Sets the transport_channel_ and rtcp_transport_channel_.  If
   // |rtcp| is false, set rtcp_transport_channel_ is set to NULL.  Get
@@ -190,6 +179,9 @@ class BaseChannel
   }
   void set_remote_content_direction(MediaContentDirection direction) {
     remote_content_direction_ = direction;
+  }
+  void set_secure_required(bool secure_required) {
+    secure_required_ = secure_required;
   }
   bool IsReadyToReceive() const;
   bool IsReadyToSend() const;
@@ -231,8 +223,6 @@ class BaseChannel
 
   void EnableMedia_w();
   void DisableMedia_w();
-  virtual bool MuteStream_w(uint32 ssrc, bool mute);
-  bool IsStreamMuted_w(uint32 ssrc);
   void ChannelWritable_w();
   void ChannelNotWritable_w();
   bool AddRecvStream_w(const StreamParams& sp);
@@ -257,30 +247,21 @@ class BaseChannel
   bool UpdateRemoteStreams_w(const std::vector<StreamParams>& streams,
                              ContentAction action,
                              std::string* error_desc);
-  bool SetBaseLocalContent_w(const MediaContentDescription* content,
-                             ContentAction action,
-                             std::string* error_desc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
                                  ContentAction action,
                                  std::string* error_desc) = 0;
-  bool SetBaseRemoteContent_w(const MediaContentDescription* content,
-                              ContentAction action,
-                              std::string* error_desc);
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc) = 0;
+  bool SetRtpTransportParameters_w(const MediaContentDescription* content,
+                                   ContentAction action,
+                                   ContentSource src,
+                                   std::string* error_desc);
 
   // Helper method to get RTP Absoulute SendTime extension header id if
   // present in remote supported extensions list.
   void MaybeCacheRtpAbsSendTimeHeaderExtension(
     const std::vector<RtpHeaderExtension>& extensions);
-
-  bool SetRecvRtpHeaderExtensions_w(const MediaContentDescription* content,
-                                    MediaChannel* media_channel,
-                                    std::string* error_desc);
-  bool SetSendRtpHeaderExtensions_w(const MediaContentDescription* content,
-                                    MediaChannel* media_channel,
-                                    std::string* error_desc);
 
   bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
                        bool* dtls,
@@ -312,7 +293,6 @@ class BaseChannel
 
  private:
   rtc::Thread* worker_thread_;
-  MediaEngineInterface* media_engine_;
   BaseSession* session_;
   MediaChannel* media_channel_;
   std::vector<StreamParams> local_streams_;
@@ -333,7 +313,6 @@ class BaseChannel
   bool was_ever_writable_;
   MediaContentDirection local_content_direction_;
   MediaContentDirection remote_content_direction_;
-  std::set<uint32> muted_streams_;
   bool has_received_packet_;
   bool dtls_keyed_;
   bool secure_required_;
@@ -350,7 +329,11 @@ class VoiceChannel : public BaseChannel {
   ~VoiceChannel();
   bool Init();
   bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer);
-  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
+
+  // Configure sending media on the stream with SSRC |ssrc|
+  // If there is only one sending stream SSRC 0 can be used.
+  bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+                    AudioRenderer* renderer);
 
   // downcasts a MediaChannel
   virtual VoiceMediaChannel* media_channel() const {
@@ -392,13 +375,6 @@ class VoiceChannel : public BaseChannel {
   bool IsAudioMonitorRunning() const;
   sigslot::signal2<VoiceChannel*, const AudioInfo&> SignalAudioMonitor;
 
-  void StartTypingMonitor(const TypingMonitorOptions& settings);
-  void StopTypingMonitor();
-  bool IsTypingMonitorRunning() const;
-
-  // Overrides BaseChannel::MuteStream_w.
-  virtual bool MuteStream_w(uint32 ssrc, bool mute);
-
   int GetInputLevel_w();
   int GetOutputLevel_w();
   void GetActiveStreams_w(AudioInfo::StreamList* actives);
@@ -407,9 +383,6 @@ class VoiceChannel : public BaseChannel {
   //     ssrc(uint32), and error(VoiceMediaChannel::Error).
   sigslot::signal3<VoiceChannel*, uint32, VoiceMediaChannel::Error>
       SignalMediaError;
-
-  // Configuration and setting.
-  bool SetChannelOptions(const AudioOptions& options);
 
  private:
   // overrides from BaseChannel
@@ -444,18 +417,25 @@ class VoiceChannel : public BaseChannel {
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
   static const int kEarlyMediaTimeout = 1000;
+  MediaEngineInterface* media_engine_;
   bool received_media_;
   rtc::scoped_ptr<VoiceMediaMonitor> media_monitor_;
   rtc::scoped_ptr<AudioMonitor> audio_monitor_;
-  rtc::scoped_ptr<TypingMonitor> typing_monitor_;
+
+  // Last AudioSendParameters sent down to the media_channel() via
+  // SetSendParameters.
+  AudioSendParameters last_send_params_;
+  // Last AudioRecvParameters sent down to the media_channel() via
+  // SetRecvParameters.
+  AudioRecvParameters last_recv_params_;
 };
 
 // VideoChannel is a specialization for video.
 class VideoChannel : public BaseChannel {
  public:
-  VideoChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
-               VideoMediaChannel* channel, BaseSession* session,
-               const std::string& content_name, bool rtcp);
+  VideoChannel(rtc::Thread* thread, VideoMediaChannel* channel,
+               BaseSession* session, const std::string& content_name,
+               bool rtcp);
   ~VideoChannel();
   bool Init();
 
@@ -494,8 +474,9 @@ class VideoChannel : public BaseChannel {
   sigslot::signal3<VideoChannel*, uint32, VideoMediaChannel::Error>
       SignalMediaError;
 
-  // Configuration and setting.
-  bool SetChannelOptions(const VideoOptions& options);
+  // Configure sending media on the stream with SSRC |ssrc|
+  // If there is only one sending stream SSRC 0 can be used.
+  bool SetVideoSend(uint32 ssrc, bool mute, const VideoOptions* options);
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;
@@ -538,6 +519,13 @@ class VideoChannel : public BaseChannel {
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
 
   rtc::WindowEvent previous_we_;
+
+  // Last VideoSendParameters sent down to the media_channel() via
+  // SetSendParameters.
+  VideoSendParameters last_send_params_;
+  // Last VideoRecvParameters sent down to the media_channel() via
+  // SetRecvParameters.
+  VideoRecvParameters last_recv_params_;
 };
 
 // DataChannel is a specialization for data.
@@ -656,6 +644,13 @@ class DataChannel : public BaseChannel {
   // RtpDataChannel instead of using this.
   DataChannelType data_channel_type_;
   bool ready_to_send_data_;
+
+  // Last DataSendParameters sent down to the media_channel() via
+  // SetSendParameters.
+  DataSendParameters last_send_params_;
+  // Last DataRecvParameters sent down to the media_channel() via
+  // SetRecvParameters.
+  DataRecvParameters last_recv_params_;
 };
 
 }  // namespace cricket

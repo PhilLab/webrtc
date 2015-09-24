@@ -37,7 +37,7 @@ PlatformThreadId CurrentThreadId() {
   ret = reinterpret_cast<pid_t>(pthread_self());
 #endif
 #endif  // defined(WEBRTC_POSIX)
-  DCHECK(ret);
+  RTC_DCHECK(ret);
   return ret;
 }
 
@@ -58,7 +58,7 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
 }
 
 void SetCurrentThreadName(const char* name) {
-  DCHECK(strlen(name) < 64);
+  RTC_DCHECK(strlen(name) < 64);
 #if defined(WEBRTC_WIN)
   THREADNAME_INFO threadname_info;
   threadname_info.dwType = 0x1000;
@@ -79,7 +79,7 @@ void SetCurrentThreadNameHelper(THREADNAME_INFO threadname_info) {
     ::RaiseException(0x406D1388, 0, sizeof(threadname_info) / sizeof(DWORD),
       reinterpret_cast<ULONG_PTR*>(&threadname_info));
   }
-  __except(EXCEPTION_EXECUTE_HANDLER) {
+  __except (EXCEPTION_EXECUTE_HANDLER) {
   }
 }
 #endif  // WEBRTC_WIN

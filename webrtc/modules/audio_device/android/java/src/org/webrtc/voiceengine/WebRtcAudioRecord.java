@@ -24,7 +24,8 @@ import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
-import android.util.Log;
+
+import org.webrtc.Logging;
 
 class  WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -145,6 +146,10 @@ class  WebRtcAudioRecord {
       Loge("RECORD_AUDIO permission is missing");
       return -1;
     }
+    if (audioRecord != null) {
+      Loge("InitRecording() called twice without StopRecording()");
+      return -1;
+    }
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
@@ -164,11 +169,6 @@ class  WebRtcAudioRecord {
           AudioFormat.ENCODING_PCM_16BIT);
     Logd("AudioRecord.getMinBufferSize: " + minBufferSize);
 
-    if (aec != null) {
-      aec.release();
-      aec = null;
-    }
-    assertTrue(audioRecord == null);
 
     int bufferSizeInBytes = Math.max(byteBuffer.capacity(), minBufferSize);
     Logd("bufferSizeInBytes: " + bufferSizeInBytes);
@@ -180,10 +180,14 @@ class  WebRtcAudioRecord {
                                     bufferSizeInBytes);
 
     } catch (IllegalArgumentException e) {
-      Logd(e.getMessage());
+      Loge(e.getMessage());
       return -1;
     }
-    assertTrue(audioRecord.getState() == AudioRecord.STATE_INITIALIZED);
+    if (audioRecord == null ||
+        audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+      Loge("Failed to create a new AudioRecord instance");
+      return -1;
+    }
 
     Logd("AudioRecord " +
           "session ID: " + audioRecord.getAudioSessionId() + ", " +
@@ -268,11 +272,11 @@ class  WebRtcAudioRecord {
   }
 
   private static void Logd(String msg) {
-    Log.d(TAG, msg);
+    Logging.d(TAG, msg);
   }
 
   private static void Loge(String msg) {
-    Log.e(TAG, msg);
+    Logging.e(TAG, msg);
   }
 
   private native void nativeCacheDirectBufferAddress(

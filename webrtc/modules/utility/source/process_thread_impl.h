@@ -25,7 +25,7 @@ namespace webrtc {
 
 class ProcessThreadImpl : public ProcessThread {
  public:
-  ProcessThreadImpl();
+  explicit ProcessThreadImpl(const char* thread_name);
   ~ProcessThreadImpl() override;
 
   void Start() override;
@@ -76,8 +76,9 @@ class ProcessThreadImpl : public ProcessThread {
   // TODO(tommi): Support delayed tasks.
   std::queue<ProcessTask*> queue_;
   bool stop_;
+  const char* thread_name_;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
+#endif // WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_

@@ -26,7 +26,6 @@
 using namespace webrtc;
 
 const int kVideoNackListSize = 30;
-const int kTestId = 123;
 const uint32_t kTestSsrc = 3456;
 const uint16_t kTestSequenceNumber = 2345;
 const uint32_t kTestNumberOfPackets = 1350;
@@ -35,7 +34,8 @@ const int kNumFrames = 30;
 const int kPayloadType = 123;
 const int kRtxPayloadType = 98;
 
-class VerifyingRtxReceiver : public NullRtpData {
+class VerifyingRtxReceiver : public NullRtpData
+{
  public:
   VerifyingRtxReceiver() {}
 
@@ -56,7 +56,7 @@ class TestRtpFeedback : public NullRtpFeedback {
   TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
   virtual ~TestRtpFeedback() {}
 
-  void OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) override {
+  void OnIncomingSSRCChanged(const uint32_t ssrc) override {
     rtp_rtcp_->SetRemoteSSRC(ssrc);
   }
 
@@ -95,22 +95,12 @@ class RtxLoopBackTransport : public webrtc::Transport {
     packet_loss_ = 0;
   }
 
-  int SendPacket(int channel, const void* data, size_t len) override {
+  int SendPacket(const void* data, size_t len) override {
     count_++;
     const unsigned char* ptr = static_cast<const unsigned  char*>(data);
     uint32_t ssrc = (ptr[8] << 24) + (ptr[9] << 16) + (ptr[10] << 8) + ptr[11];
     if (ssrc == rtx_ssrc_) count_rtx_ssrc_++;
     uint16_t sequence_number = (ptr[2] << 8) + ptr[3];
-    expected_sequence_numbers_.insert(expected_sequence_numbers_.end(),
-        sequence_number);
-    if (packet_loss_ > 0) {
-      if ((count_ % packet_loss_) == 0) {
-        return static_cast<int>(len);
-      }
-    } else if (count_ >= consecutive_drop_start_ &&
-        count_ < consecutive_drop_end_) {
-      return static_cast<int>(len);
-    }
     size_t packet_length = len;
     // TODO(pbos): Figure out why this needs to be initialized. Likely this
     // is hiding a bug either in test setup or other code.
@@ -121,6 +111,21 @@ class RtxLoopBackTransport : public webrtc::Transport {
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     if (!parser->Parse(ptr, len, &header)) {
       return -1;
+    }
+
+    if (!rtp_payload_registry_->IsRtx(header)) {
+      // Don't store retransmitted packets since we compare it to the list
+      // created by the receiver.
+      expected_sequence_numbers_.insert(expected_sequence_numbers_.end(),
+                                        sequence_number);
+    }
+    if (packet_loss_ > 0) {
+      if ((count_ % packet_loss_) == 0) {
+        return static_cast<int>(len);
+      }
+    } else if (count_ >= consecutive_drop_start_ &&
+               count_ < consecutive_drop_end_) {
+      return static_cast<int>(len);
     }
     if (rtp_payload_registry_->IsRtx(header)) {
       // Remove the RTX header and parse the original RTP header.
@@ -149,7 +154,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     return static_cast<int>(len);
   }
 
-  int SendRTCPPacket(int channel, const void* data, size_t len) override {
+  int SendRTCPPacket(const void* data, size_t len) override {
     if (module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0) {
       return static_cast<int>(len);
     }
@@ -180,7 +185,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
   void SetUp() override {
     RtpRtcp::Configuration configuration;
-    configuration.id = kTestId;
     configuration.audio = false;
     configuration.clock = &fake_clock;
     receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock));
@@ -191,7 +195,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     rtp_feedback_.reset(new TestRtpFeedback(rtp_rtcp_module_));
 
     rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        kTestId, &fake_clock, &receiver_, rtp_feedback_.get(),
+        &fake_clock, &receiver_, rtp_feedback_.get(),
         &rtp_payload_registry_));
 
     rtp_rtcp_module_->SetSSRC(kTestSsrc);
@@ -256,7 +260,9 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
               receiver_.sequence_numbers_.end(),
               std::back_inserter(received_sorted));
     received_sorted.sort();
-    return std::equal(received_sorted.begin(), received_sorted.end(),
+    return received_sorted.size() ==
+               transport_.expected_sequence_numbers_.size() &&
+           std::equal(received_sorted.begin(), received_sorted.end(),
                       transport_.expected_sequence_numbers_.begin());
   }
 

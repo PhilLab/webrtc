@@ -210,8 +210,7 @@ TEST_F(AudioCodingModuleTest, DISABLED_ON_ANDROID(InitializedToZero)) {
 
 // Apply an initial playout delay. Calls to AudioCodingModule::PlayoutData10ms()
 // should result in generating silence, check the associated field.
-TEST_F(AudioCodingModuleTest,
-    DISABLED_ON_ANDROID_AND_WINRT(SilenceGeneratorCalled)) {
+TEST_F(AudioCodingModuleTest, DISABLED_ON_ANDROID_AND_WINRT(SilenceGeneratorCalled)) {
   const int kInitialDelay = 100;
   config_.initial_playout_delay_ms = kInitialDelay;
   CreateAcm();
@@ -273,7 +272,8 @@ TEST_F(AudioCodingModuleTest, VerifyOutputFrame) {
   EXPECT_TRUE(acm_->Get10MsAudio(&audio_frame));
   EXPECT_EQ(0u, audio_frame.timestamp_);
   EXPECT_GT(audio_frame.num_channels_, 0);
-  EXPECT_EQ(kSampleRateHz / 100, audio_frame.samples_per_channel_);
+  EXPECT_EQ(static_cast<size_t>(kSampleRateHz / 100),
+            audio_frame.samples_per_channel_);
   EXPECT_EQ(kSampleRateHz, audio_frame.sample_rate_hz_);
 }
 

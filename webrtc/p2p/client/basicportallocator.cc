@@ -21,6 +21,7 @@
 #include "webrtc/p2p/base/tcpport.h"
 #include "webrtc/p2p/base/turnport.h"
 #include "webrtc/p2p/base/udpport.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -303,6 +304,13 @@ void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks;
 
+  // If the network permission state is BLOCKED, we just act as if the flag has
+  // been passed in.
+  if (allocator_->network_manager()->enumeration_permission() ==
+      rtc::NetworkManager::ENUMERATION_BLOCKED) {
+    set_flags(flags() | PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+  }
+
   // If the adapter enumeration is disabled, we'll just bind to any address
   // instead of specific NIC. This is to ensure the same routing for http
   // traffic by OS is also used here to avoid any local or public IP leakage
@@ -440,26 +448,32 @@ void BasicPortAllocatorSession::OnCandidateReady(
   if (data->complete())
     return;
 
-  // Send candidates whose protocol is enabled.
-  std::vector<Candidate> candidates;
   ProtocolType pvalue;
-  bool candidate_allowed_to_send = CheckCandidateFilter(c);
-  if (StringToProto(c.protocol().c_str(), &pvalue) &&
-      data->sequence()->ProtocolEnabled(pvalue) &&
-      candidate_allowed_to_send) {
-    candidates.push_back(c);
-  }
+  bool candidate_signalable = CheckCandidateFilter(c);
+  bool candidate_pairable =
+      candidate_signalable ||
+      (c.address().IsAnyIP() &&
+       (port->SharedSocket() || c.protocol() == TCP_PROTOCOL_NAME));
+  bool candidate_protocol_enabled =
+      StringToProto(c.protocol().c_str(), &pvalue) &&
+      data->sequence()->ProtocolEnabled(pvalue);
 
-  if (!candidates.empty()) {
+  if (candidate_signalable && candidate_protocol_enabled) {
+    std::vector<Candidate> candidates;
+    candidates.push_back(c);
     SignalCandidatesReady(this, candidates);
   }
 
-  // Moving to READY state as we have atleast one candidate from the port.
-  // Since this port has atleast one candidate we should forward this port
-  // to listners, to allow connections from this port.
-  // Also we should make sure that candidate gathered from this port is allowed
-  // to send outside.
-  if (!data->ready() && candidate_allowed_to_send) {
+  // Port has been made ready. Nothing to do here.
+  if (data->ready()) {
+    return;
+  }
+
+  // Move the port to the READY state, either because we have a usable candidate
+  // from the port, or simply because the port is bound to the any address and
+  // therefore has no host candidate. This will trigger the port to start
+  // creating candidate pairs (connections) and issue connectivity checks.
+  if (candidate_pairable) {
     data->set_ready();
     SignalPortReady(this, port);
   }
@@ -508,9 +522,10 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
       if (!CheckCandidateFilter(potentials[i]))
         continue;
       ProtocolType pvalue;
-      if (!StringToProto(potentials[i].protocol().c_str(), &pvalue))
-        continue;
-      if (pvalue == proto) {
+      bool candidate_protocol_enabled =
+          StringToProto(potentials[i].protocol().c_str(), &pvalue) &&
+          pvalue == proto;
+      if (candidate_protocol_enabled) {
         candidates.push_back(potentials[i]);
       }
     }
@@ -544,6 +559,14 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
       // candidate (i.e. when the host candidate is a public IP), filtering to
       // only server-reflexive candidates won't work right when the host
       // candidates have public IPs.
+      return true;
+    }
+
+    // If PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE is specified and it's
+    // loopback address, we should allow it as it's for demo page connectivity
+    // when no TURN/STUN specified.
+    if (c.address().IsLoopbackIP() &&
+        (flags() & PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE) != 0) {
       return true;
     }
 
@@ -669,14 +692,6 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
 }
 
 bool AllocationSequence::Init() {
-  if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
-      !IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_UFRAG)) {
-    LOG(LS_ERROR) << "Shared socket option can't be set without "
-                  << "shared ufrag.";
-    ASSERT(false);
-    return false;
-  }
-
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip_, 0), session_->allocator()->min_port(),
@@ -817,20 +832,19 @@ void AllocationSequence::CreateUDPPorts() {
   // TODO(mallinath) - Remove UDPPort creating socket after shared socket
   // is enabled completely.
   UDPPort* port = NULL;
+  bool emit_localhost_for_anyaddress =
+    IsFlagSet(PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE);
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
-    port = UDPPort::Create(session_->network_thread(),
-                           session_->socket_factory(), network_,
-                           udp_socket_.get(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+    port = UDPPort::Create(
+        session_->network_thread(), session_->socket_factory(), network_,
+        udp_socket_.get(), session_->username(), session_->password(),
+        session_->allocator()->origin(), emit_localhost_for_anyaddress);
   } else {
-    port = UDPPort::Create(session_->network_thread(),
-                           session_->socket_factory(),
-                           network_, ip_,
-                           session_->allocator()->min_port(),
-                           session_->allocator()->max_port(),
-                           session_->username(), session_->password(),
-                           session_->allocator()->origin());
+    port = UDPPort::Create(
+        session_->network_thread(), session_->socket_factory(), network_, ip_,
+        session_->allocator()->min_port(), session_->allocator()->max_port(),
+        session_->username(), session_->password(),
+        session_->allocator()->origin(), emit_localhost_for_anyaddress);
   }
 
   if (port) {
@@ -969,6 +983,13 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
   for (relay_port = config.ports.begin();
        relay_port != config.ports.end(); ++relay_port) {
     TurnPort* port = NULL;
+
+    // Skip UDP connections to relay servers if it's disallowed.
+    if (IsFlagSet(PORTALLOCATOR_DISABLE_UDP_RELAY) &&
+        relay_port->proto == PROTO_UDP) {
+      continue;
+    }
+
     // Shared socket mode must be enabled only for UDP based ports. Hence
     // don't pass shared socket for ports which will create TCP sockets.
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled

@@ -26,8 +26,9 @@
 namespace webrtc {
 
 // Class definitions
-class VideoRender: public Module {
- public:
+class VideoRender: public Module
+{
+public:
     /*
      *   Create a video render module object
      *
@@ -38,11 +39,11 @@ class VideoRender: public Module {
      */
     static VideoRender
             * CreateVideoRender(
-                                const int32_t id,
-                                void* window,
-                                const bool fullscreen,
-                                const VideoRenderType videoRenderType =
-                                                         kRenderDefault);
+                                          const int32_t id,
+                                          void* window,
+                                          const bool fullscreen,
+                                          const VideoRenderType videoRenderType =
+                                                  kRenderDefault);
 
     /*
      *   Destroy a video render module object
@@ -94,8 +95,7 @@ class VideoRender: public Module {
             * AddIncomingRenderStream(const uint32_t streamId,
                                       const uint32_t zOrder,
                                       const float left, const float top,
-                                      const float right,
-                                      const float bottom) = 0;
+                                      const float right, const float bottom) = 0;
     /*
      *   Delete incoming render stream
      *
@@ -130,8 +130,7 @@ class VideoRender: public Module {
             GetIncomingRenderStreamProperties(const uint32_t streamId,
                                               uint32_t& zOrder,
                                               float& left, float& top,
-                                              float& right,
-                                              float& bottom) const = 0;
+                                              float& right, float& bottom) const = 0;
     /*
      *   The incoming frame rate to the module, not the rate rendered in the window.
      */

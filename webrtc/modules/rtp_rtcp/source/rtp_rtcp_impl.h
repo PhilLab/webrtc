@@ -12,8 +12,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 
 #include <list>
-#include <set>
-#include <utility>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -193,11 +191,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void SetREMBData(uint32_t bitrate,
                    const std::vector<uint32_t>& ssrcs) override;
 
-  // (IJ) Extended jitter report.
-  bool IJ() const override;
-
-  void SetIJStatus(bool enable) override;
-
   // (TMMBR) Temporary Max Media Bit Rate.
   bool TMMBR() const override;
 
@@ -235,6 +228,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
       RtcpStatisticsCallback* callback) override;
   RtcpStatisticsCallback* GetRtcpStatisticsCallback() override;
 
+  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) override;
   // (APP) Application specific data.
   int32_t SetRTCPApplicationSpecificData(uint8_t sub_type,
                                          uint32_t name,
@@ -359,7 +353,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   bool TimeToSendFullNackList(int64_t now) const;
 
-  int32_t id_;
   const bool audio_;
   bool collision_detected_;
   int64_t last_process_time_;

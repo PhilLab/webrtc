@@ -42,7 +42,7 @@ class GlxRenderer : public GlRenderer {
   Window window_;
   GLXContext context_;
 };
-}  // namespace test
-}  // namespace webrtc
+}  // test
+}  // webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_

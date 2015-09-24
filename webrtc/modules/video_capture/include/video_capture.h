@@ -91,7 +91,7 @@ class VideoCaptureModule: public RefCountedModule {
 
     // Encode the next frame as key frame.
     virtual int32_t EncodeFrameType(const FrameType type) = 0;
-   protected:
+  protected:
     virtual ~VideoCaptureEncodeInterface() {
     }
   };
@@ -152,8 +152,8 @@ class VideoCaptureModule: public RefCountedModule {
   virtual void EnableFrameRateCallback(const bool enable) = 0;
   virtual void EnableNoPictureAlarm(const bool enable) = 0;
 
- protected:
-  virtual ~VideoCaptureModule() {}
+protected:
+  virtual ~VideoCaptureModule() {};
 };
 
 }  // namespace webrtc

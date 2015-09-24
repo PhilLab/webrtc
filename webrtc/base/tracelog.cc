@@ -1,13 +1,3 @@
-/*
-*  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
-
 #include <sstream>
 #include <fstream>
 
@@ -126,14 +116,15 @@ bool TraceLog::Save(const std::string& file_name) {
   bool result = true;
   std::ofstream file;
   file.open(file_name.c_str());
-  if (file.is_open()) {
+  if (file.is_open())
+  {
     file << oss_.str();
     file.close();
     if (file.bad())
       result = false;
-  } else {
-      result = false;
   }
+  else
+    result = false;
   return result;
 }
 
@@ -144,8 +135,7 @@ bool TraceLog::Save(const std::string& addr, int port) {
   }
 
   if (tw_ == NULL) {
-    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages,
-                                                thread_, "TraceLog");
+    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages, thread_, "TraceLog");
     tw_->Start();
 
     LOG(LS_INFO) << "New TraceLog thread created.";
@@ -188,8 +178,7 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
 
   int sent_size = 0;
   while (offset_ < tmp_size) {
-    sent_size = socket->Send((const void*) (data + offset_),
-                            tmp_size - offset_);
+    sent_size = socket->Send((const void*) (data + offset_), tmp_size - offset_);
     if (sent_size == -1) {
       if (!IsBlockingError(socket->GetError())) {
         offset_ = 0;

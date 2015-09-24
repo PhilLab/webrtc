@@ -44,7 +44,6 @@ VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
                                                   this,
                                                   "CaptureThread")),
       capture_event_(*EventWrapper::Create()),
-      deliver_event_(*EventWrapper::Create()),
       stop_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(
@@ -69,7 +68,6 @@ VideoCaptureInput::~VideoCaptureInput() {
   // Stop the camera input.
   capture_thread_->Stop();
   delete &capture_event_;
-  delete &deliver_event_;
 }
 
 void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
@@ -109,7 +107,10 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   CriticalSectionScoped cs(capture_cs_.get());
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     // We don't allow the same capture time for two frames, drop this one.
-    LOG(LS_WARNING) << "Same/old NTP timestamp for incoming frame. Dropping.";
+    LOG(LS_WARNING) << "Same/old NTP timestamp ("
+                    << incoming_frame.ntp_time_ms()
+                    << " <= " << last_captured_timestamp_
+                    << ") for incoming frame. Dropping.";
     return;
   }
 
@@ -153,8 +154,10 @@ bool VideoCaptureInput::CaptureProcess() {
     }
     // Update the overuse detector with the duration.
     if (encode_start_time != -1) {
-      overuse_detector_->FrameEncoded(
+      int encode_time_ms = static_cast<int>(
           Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time);
+      overuse_detector_->FrameEncoded(encode_time_ms);
+      stats_proxy_->OnEncodedFrame(encode_time_ms);
     }
   }
   // We're done!

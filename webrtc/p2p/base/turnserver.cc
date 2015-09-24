@@ -25,7 +25,7 @@
 namespace cricket {
 
 // TODO(juberti): Move this all to a future turnmessage.h
-// static const int IPPROTO_UDP = 17;
+//static const int IPPROTO_UDP = 17;
 static const int kNonceTimeout = 60 * 60 * 1000;              // 60 minutes
 static const int kDefaultAllocationTimeout = 10 * 60 * 1000;  // 10 minutes
 static const int kPermissionTimeout = 5 * 60 * 1000;          //  5 minutes
@@ -195,7 +195,7 @@ void TurnServer::OnInternalPacket(rtc::AsyncPacketSocket* socket,
                                   const rtc::PacketTime& packet_time) {
   // Fail if the packet is too small to even contain a channel header.
   if (size < TURN_CHANNEL_HEADER_SIZE) {
-      return;
+   return;
   }
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   ASSERT(iter != server_sockets_.end());

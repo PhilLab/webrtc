@@ -12,12 +12,10 @@
 
 #include <math.h>
 #include <string.h>
-#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <deque>
 #include <set>
-#include <limits>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/fft4g.h"
@@ -126,7 +124,7 @@ int TransientSuppressor::Initialize(int sample_rate_hz,
          analysis_length_ * num_channels_ * sizeof(out_buffer_[0]));
   // ip[0] must be zero to trigger initialization using rdft().
   size_t ip_length = 2 + sqrtf(analysis_length_);
-  ip_.reset(new int[ip_length]());
+  ip_.reset(new size_t[ip_length]());
   memset(ip_.get(), 0, ip_length * sizeof(ip_[0]));
   wfft_.reset(new float[complex_analysis_length_ - 1]);
   memset(wfft_.get(), 0, (complex_analysis_length_ - 1) * sizeof(wfft_[0]));

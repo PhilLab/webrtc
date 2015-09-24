@@ -51,7 +51,7 @@ class FakeSharedMemory : public SharedMemory {
   }
  private:
   char* buffer_;
-  DISALLOW_COPY_AND_ASSIGN(FakeSharedMemory);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FakeSharedMemory);
 };
 
 SharedMemory* ScreenCapturerTest::CreateSharedMemory(size_t size) {
@@ -61,7 +61,7 @@ SharedMemory* ScreenCapturerTest::CreateSharedMemory(size_t size) {
 TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
   webrtc::ScreenCapturer::ScreenList screens;
   EXPECT_TRUE(capturer_->GetScreenList(&screens));
-  for (webrtc::ScreenCapturer::ScreenList::iterator it = screens.begin();
+  for(webrtc::ScreenCapturer::ScreenList::iterator it = screens.begin();
       it != screens.end(); ++it) {
     EXPECT_TRUE(capturer_->SelectScreen(it->id));
   }

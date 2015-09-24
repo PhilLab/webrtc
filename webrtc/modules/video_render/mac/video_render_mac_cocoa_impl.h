@@ -22,8 +22,9 @@ class CriticalSectionWrapper;
 class VideoRenderNSOpenGL;
 
 // Class definitions
-class VideoRenderMacCocoaImpl : IVideoRender {
- public:
+class VideoRenderMacCocoaImpl : IVideoRender
+{
+public:
     /*
      *   Constructor/destructor
      */
@@ -44,8 +45,7 @@ class VideoRenderMacCocoaImpl : IVideoRender {
      *   Incoming Streams
      *
      ***************************************************************************/
-    virtual VideoRenderCallback* AddIncomingRenderStream(
-            const uint32_t streamId,
+    virtual VideoRenderCallback* AddIncomingRenderStream(const uint32_t streamId,
             const uint32_t zOrder,
             const float left,
             const float top,
@@ -126,15 +126,16 @@ class VideoRenderMacCocoaImpl : IVideoRender {
 
     virtual int32_t FullScreenRender(void* window, const bool enable);
 
- private:
+private:
     int32_t _id;
     CriticalSectionWrapper& _renderMacCocoaCritsect;
     bool _fullScreen;
     void* _ptrWindow;
     VideoRenderNSOpenGL* _ptrCocoaRender;
+
 };
 
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_MAC_COCOA_IMPL_H_
-#endif  // COCOA_RENDERING
+#endif	// COCOA_RENDERING

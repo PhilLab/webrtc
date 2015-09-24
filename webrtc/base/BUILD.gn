@@ -141,10 +141,13 @@ static_library("rtc_base_approved") {
     "platform_thread.h",
     "safe_conversions.h",
     "safe_conversions_impl.h",
+    "scoped_ptr.h",
     "stringencode.cc",
     "stringencode.h",
     "stringutils.cc",
     "stringutils.h",
+    "systeminfo.cc",
+    "systeminfo.h",
     "template_util.h",
     "thread_annotations.h",
     "thread_checker.h",
@@ -155,12 +158,7 @@ static_library("rtc_base_approved") {
     "trace_event.h",
   ]
 
-  if (build_with_chromium) {
-    sources += [
-      "../overrides/webrtc/base/basictypes.h",
-      "../overrides/webrtc/base/constructormagic.h",
-    ]
-  } else {
+  if (!build_with_chromium) {
     sources += [
       "basictypes.h",
       "constructormagic.h",
@@ -194,8 +192,6 @@ static_library("rtc_base") {
     "arraysize.h",
     "asyncfile.cc",
     "asyncfile.h",
-    "asynchttprequest.cc",
-    "asynchttprequest.h",
     "asyncinvoker-inl.h",
     "asyncinvoker.cc",
     "asyncinvoker.h",
@@ -216,14 +212,14 @@ static_library("rtc_base") {
     "basicdefs.h",
     "common.cc",
     "common.h",
-    "cpumonitor.cc",
-    "cpumonitor.h",
     "crc32.cc",
     "crc32.h",
     "cryptstring.cc",
     "cryptstring.h",
     "diskcache.cc",
     "diskcache.h",
+    "filerotatingstream.cc",
+    "filerotatingstream.h",
     "fileutils.cc",
     "fileutils.h",
     "firewallsocketserver.cc",
@@ -271,9 +267,10 @@ static_library("rtc_base") {
     "ratelimiter.h",
     "ratetracker.cc",
     "ratetracker.h",
+    "rtccertificate.cc",
+    "rtccertificate.h",
     "scoped_autorelease_pool.h",
     "scoped_autorelease_pool.mm",
-    "scoped_ptr.h",
     "sha1.cc",
     "sha1.h",
     "sha1digest.cc",
@@ -310,8 +307,6 @@ static_library("rtc_base") {
     "sslstreamadapterhelper.h",
     "stream.cc",
     "stream.h",
-    "systeminfo.cc",
-    "systeminfo.h",
     "task.cc",
     "task.h",
     "taskparent.cc",
@@ -368,6 +363,8 @@ static_library("rtc_base") {
       "httpserver.h",
       "json.cc",
       "json.h",
+      "logsinks.cc",
+      "logsinks.h",
       "mathutils.h",
       "multipart.cc",
       "multipart.h",
@@ -540,7 +537,7 @@ static_library("rtc_base") {
   }
 
   if (is_ios) {
-    all_dependent_configs += [ ":ios_config" ]
+    all_dependent_configs = [ ":ios_config" ]
 
     sources += [
       "macconversion.cc",
@@ -661,5 +658,10 @@ static_library("rtc_base") {
       "linux.cc",
       "linux.h",
     ]
+  }
+
+  if (is_nacl) {
+    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+    defines += [ "timezone=_timezone" ]
   }
 }

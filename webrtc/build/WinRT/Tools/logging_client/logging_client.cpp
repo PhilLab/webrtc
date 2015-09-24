@@ -1,11 +1,3 @@
-// Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the LICENSE file in the root of the source
-// tree. An additional intellectual property rights grant can be found
-// in the file PATENTS.  All contributing project authors may
-// be found in the AUTHORS file in the root of the source tree.
-
 /* logging_client.cpp : Defines the entry point for the console application.
 *
 * The app is used to connect to the webRTC logging server via TCP by specifying
@@ -31,8 +23,7 @@
 int main(int argc, char **argv) {
   // Make sure the app receives required command line arguments
   if (argc == 0) {
-    printf("Please, provide server IP and port number command line args to \
-connect:\n");
+    printf("Please, provide server IP and port number command line args to connect:\n");
     printf("    -s=<server IP>\n");
     printf("    -p=<port number>\n");
     return 1;
@@ -44,12 +35,12 @@ connect:\n");
   for (int i = 1; i < argc; ++i) {
     if ((argv[i][0] == '-') || (argv[i][0] == '/')) {
       switch (tolower(argv[i][1])) {
-      case 's':  // Server
+      case 's': // Server
         if (strlen(argv[i]) > 3) {
           strcpy_s(serverIP, &argv[i][3]);
         }
         break;
-      case 'p':  // Remote port
+      case 'p': // Remote port
         if (strlen(argv[i]) > 3) {
           port = atoi(&argv[i][3]);
         }
@@ -82,9 +73,7 @@ connect:\n");
   inet_pton(AF_INET, serverIP, &server.sin_addr.s_addr);
 
   printf("Connecting to %s:%d\n", serverIP, port);
-  if (connect(socketClient,
-              (struct sockaddr *)&server,
-              sizeof(server)) == SOCKET_ERROR) {
+  if (connect(socketClient, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
     printf("connect() failed: %d\n", WSAGetLastError());
     return 1;
   }
@@ -103,7 +92,8 @@ connect:\n");
     ret = recv(socketClient, msgBuffer, BUFFER_SIZE, 0);
     if (ret == 0) {
       break;
-    } else if (ret == SOCKET_ERROR) {
+    }
+    else if (ret == SOCKET_ERROR) {
       printf("recv() failed: %d\n", WSAGetLastError());
       break;
     }

@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
+#include <string.h>
 
 
 #if defined(WEBRTC_WIN)
@@ -163,7 +163,7 @@ void FlagList::SplitArgument(const char* arg,
     if (*arg == '=') {
       // make a copy so we can NUL-terminate flag name
       int n = static_cast<int>(arg - *name);
-      CHECK_LT(n, buffer_size);
+      RTC_CHECK_LT(n, buffer_size);
       memcpy(buffer, *name, n * sizeof(char));
       buffer[n] = '\0';
       *name = buffer;
@@ -257,23 +257,23 @@ int FlagList::SetFlagsFromCommandLine(int* argc, const char** argv,
 
 void FlagList::Register(Flag* flag) {
   assert(flag != NULL && strlen(flag->name()) > 0);
-  CHECK(!Lookup(flag->name())) << "flag " << flag->name() << " declared twice";
+  RTC_CHECK(!Lookup(flag->name())) << "flag " << flag->name()
+                                   << " declared twice";
   flag->next_ = list_;
   list_ = flag;
 }
 
-#if defined(WEBRTC_WIN) && !defined(WINRT)
-// Disable command line flag support on WinRT
+#if defined(WEBRTC_WIN) && !defined(WINRT) // Disable command line flag support on WinRT
 WindowsCommandLineArguments::WindowsCommandLineArguments() {
   // start by getting the command line.
   LPTSTR command_line = ::GetCommandLine();
-  // now, convert it to a list of wide char strings.
+   // now, convert it to a list of wide char strings.
   LPWSTR *wide_argv = ::CommandLineToArgvW(command_line, &argc_);
   // now allocate an array big enough to hold that many string pointers.
   argv_ = new char*[argc_];
 
   // iterate over the returned wide strings;
-  for (int i = 0; i < argc_; ++i) {
+  for(int i = 0; i < argc_; ++i) {
     std::string s = rtc::ToUtf8(wide_argv[i], wcslen(wide_argv[i]));
     char *buffer = new char[s.length() + 1];
     rtc::strcpyn(buffer, s.length() + 1, s.c_str());
@@ -286,7 +286,7 @@ WindowsCommandLineArguments::WindowsCommandLineArguments() {
 
 WindowsCommandLineArguments::~WindowsCommandLineArguments() {
   // need to free each string in the array, and then the array.
-  for (int i = 0; i < argc_; i++) {
+  for(int i = 0; i < argc_; i++) {
     delete[] argv_[i];
   }
 

@@ -13,7 +13,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 
@@ -40,18 +39,18 @@ struct IsacFix {
   }
   static inline int DecodeInternal(instance_type* inst,
                                    const uint8_t* encoded,
-                                   int16_t len,
+                                   size_t len,
                                    int16_t* decoded,
                                    int16_t* speech_type) {
     return WebRtcIsacfix_Decode(inst, encoded, len, decoded, speech_type);
   }
-  static inline int16_t DecodePlc(instance_type* inst,
-                                  int16_t* decoded,
-                                  int16_t num_lost_frames) {
+  static inline size_t DecodePlc(instance_type* inst,
+                                 int16_t* decoded,
+                                 size_t num_lost_frames) {
     return WebRtcIsacfix_DecodePlc(inst, decoded, num_lost_frames);
   }
-  static inline int16_t DecoderInit(instance_type* inst) {
-    return WebRtcIsacfix_DecoderInit(inst);
+  static inline void DecoderInit(instance_type* inst) {
+    WebRtcIsacfix_DecoderInit(inst);
   }
   static inline int Encode(instance_type* inst,
                            const int16_t* speech_in,
@@ -85,17 +84,17 @@ struct IsacFix {
   }
   static inline int16_t SetDecSampRate(instance_type* inst,
                                        uint16_t sample_rate_hz) {
-    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+    RTC_DCHECK_EQ(sample_rate_hz, kFixSampleRate);
     return 0;
   }
   static inline int16_t SetEncSampRate(instance_type* inst,
                                        uint16_t sample_rate_hz) {
-    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+    RTC_DCHECK_EQ(sample_rate_hz, kFixSampleRate);
     return 0;
   }
   static inline void SetEncSampRateInDecoder(instance_type* inst,
                                              uint16_t sample_rate_hz) {
-    DCHECK_EQ(sample_rate_hz, kFixSampleRate);
+    RTC_DCHECK_EQ(sample_rate_hz, kFixSampleRate);
   }
   static inline void SetInitialBweBottleneck(
       instance_type* inst,
@@ -104,7 +103,7 @@ struct IsacFix {
   }
   static inline int16_t UpdateBwEstimate(instance_type* inst,
                                          const uint8_t* encoded,
-                                         int32_t packet_size,
+                                         size_t packet_size,
                                          uint16_t rtp_seq_number,
                                          uint32_t send_ts,
                                          uint32_t arr_ts) {
@@ -120,47 +119,8 @@ struct IsacFix {
   }
 };
 
-typedef AudioEncoderDecoderIsacT<IsacFix> AudioEncoderDecoderIsacFix;
-
-struct CodecInst;
-
-class AudioEncoderDecoderMutableIsacFix
-    : public AudioEncoderMutableImpl<AudioEncoderDecoderIsacFix,
-                                     AudioEncoderDecoderMutableIsac> {
- public:
-  explicit AudioEncoderDecoderMutableIsacFix(const CodecInst& codec_inst);
-  void UpdateSettings(const CodecInst& codec_inst) override;
-  void SetMaxPayloadSize(int max_payload_size_bytes) override;
-  void SetMaxRate(int max_rate_bps) override;
-
-  // From AudioDecoder.
-  int Decode(const uint8_t* encoded,
-             size_t encoded_len,
-             int sample_rate_hz,
-             size_t max_decoded_bytes,
-             int16_t* decoded,
-             SpeechType* speech_type) override;
-  int DecodeRedundant(const uint8_t* encoded,
-                      size_t encoded_len,
-                      int sample_rate_hz,
-                      size_t max_decoded_bytes,
-                      int16_t* decoded,
-                      SpeechType* speech_type) override;
-  bool HasDecodePlc() const override;
-  int DecodePlc(int num_frames, int16_t* decoded) override;
-  int Init() override;
-  int IncomingPacket(const uint8_t* payload,
-                     size_t payload_len,
-                     uint16_t rtp_sequence_number,
-                     uint32_t rtp_timestamp,
-                     uint32_t arrival_timestamp) override;
-  int ErrorCode() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
-  int PacketDurationRedundant(const uint8_t* encoded,
-                              size_t encoded_len) const override;
-  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;
-  size_t Channels() const override;
-};
+using AudioEncoderIsacFix = AudioEncoderIsacT<IsacFix>;
+using AudioDecoderIsacFix = AudioDecoderIsacT<IsacFix>;
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_AUDIO_ENCODER_ISACFIX_H_

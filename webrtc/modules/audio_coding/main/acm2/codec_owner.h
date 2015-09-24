@@ -34,7 +34,7 @@ class CodecOwner {
                    ACMVADMode vad_mode,
                    int red_payload_type);
 
-  void SetEncoders(AudioEncoderMutable* external_speech_encoder,
+  void SetEncoders(AudioEncoder* external_speech_encoder,
                    int cng_payload_type,
                    ACMVADMode vad_mode,
                    int red_payload_type);
@@ -49,31 +49,28 @@ class CodecOwner {
 
   AudioEncoder* Encoder();
   const AudioEncoder* Encoder() const;
-  AudioEncoderMutable* SpeechEncoder();
-  const AudioEncoderMutable* SpeechEncoder() const;
 
  private:
-  // There are three main cases for the state of the encoder members below:
-  // 1. An external encoder is used. |external_speech_encoder_| points to it.
-  //    |speech_encoder_| is null, and |isac_is_encoder_| is false.
-  // 2. The internal iSAC codec is used as encoder. |isac_codec_| points to it
-  //    and |isac_is_encoder_| is true. |external_speech_encoder_| and
-  //    |speech_encoder_| are null.
-  // 3. Another internal encoder is used. |speech_encoder_| points to it.
-  //    |external_speech_encoder_| is null, and |isac_is_encoder_| is false.
-  // In addition to case 2, |isac_codec_| is valid when GetIsacDecoder has been
-  // called.
-  rtc::scoped_ptr<AudioEncoderMutable> speech_encoder_;
-  rtc::scoped_ptr<AudioEncoderDecoderMutableIsac> isac_codec_;
-  bool isac_is_encoder_;
-  AudioEncoderMutable* external_speech_encoder_;
+  AudioEncoder* SpeechEncoder();
+  const AudioEncoder* SpeechEncoder() const;
+
+  // At most one of these is non-null:
+  rtc::scoped_ptr<AudioEncoder> speech_encoder_;
+  AudioEncoder* external_speech_encoder_;
+
+  // If we've created an iSAC decoder because someone called GetIsacDecoder,
+  // store it here.
+  rtc::scoped_ptr<AudioDecoder> isac_decoder_;
+
+  // iSAC bandwidth estimation info, for use with iSAC encoders and decoders.
+  LockedIsacBandwidthInfo isac_bandwidth_info_;
 
   // |cng_encoder_| and |red_encoder_| are valid iff CNG or RED, respectively,
   // are active.
   rtc::scoped_ptr<AudioEncoder> cng_encoder_;
   rtc::scoped_ptr<AudioEncoder> red_encoder_;
 
-  DISALLOW_COPY_AND_ASSIGN(CodecOwner);
+  RTC_DISALLOW_COPY_AND_ASSIGN(CodecOwner);
 };
 
 }  // namespace acm2

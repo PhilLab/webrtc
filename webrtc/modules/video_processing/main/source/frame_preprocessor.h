@@ -71,8 +71,9 @@ class VPMFramePreprocessor {
   VPMVideoDecimator* vd_;
   bool enable_ca_;
   int frame_cnt_;
+
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_FRAME_PREPROCESSOR_H
+#endif // WEBRTC_MODULES_VIDEO_PROCESSING_MAIN_SOURCE_FRAME_PREPROCESSOR_H

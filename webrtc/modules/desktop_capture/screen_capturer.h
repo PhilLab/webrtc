@@ -76,7 +76,7 @@ class ScreenCapturer : public DesktopCapturer {
   // TODO(sergeyu): Remove this method once all dependencies are removed from
   // chromium.
   virtual void SetMouseShapeObserver(
-      MouseShapeObserver* mouse_shape_observer) {}
+      MouseShapeObserver* mouse_shape_observer) {};
 
   // Get the list of screens (not containing kFullDesktopScreenId). Returns
   // false in case of a failure.

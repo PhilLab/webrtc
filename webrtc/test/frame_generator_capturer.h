@@ -45,6 +45,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   void Start() override;
   void Stop() override;
+  void ForceFrame();
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
@@ -70,7 +71,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   int64_t first_frame_capture_time_;
 };
-}  // namespace test
-}  // namespace webrtc
+}  // test
+}  // webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_FRAME_GENERATOR_CAPTURER_H_

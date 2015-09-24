@@ -112,6 +112,6 @@ class RtpHeaderExtensionMap {
   int32_t Register(const RTPExtensionType type, const uint8_t id, bool active);
   std::map<uint8_t, HeaderExtension*> extensionMap_;
 };
-}  // namespace webrtc
+}
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_

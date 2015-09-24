@@ -25,6 +25,7 @@
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
+#include "webrtc/video/rtc_event_log.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -69,7 +70,7 @@ void RunTest(std::string out_path);
 
 class MyObserver : public VoiceEngineObserver {
  public:
-    virtual void CallbackOnError(int channel, int err_code);
+   virtual void CallbackOnError(int channel, int err_code);
 };
 
 void MyObserver::CallbackOnError(int channel, int err_code) {
@@ -451,7 +452,8 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle Opus DTX \n", option_index++);
       printf("%i. Set bit rate (only take effect on codecs that allow the "
              "change) \n", option_index++);
-      printf("%i. Toggle debug recording \n", option_index++);
+      printf("%i. Toggle AECdump recording \n", option_index++);
+      printf("%i. Record RtcEventLog file of 30 seconds \n", option_index++);
 
       printf("Select action or %i to stop the call: ", option_index);
       int option_selection;
@@ -638,7 +640,7 @@ void RunTest(std::string out_path) {
         if (err_code != -1)
           printf("\n The last error code was %i.\n", err_code);
       } else if (option_selection == option_index++) {
-        typing_detection = !typing_detection;
+        typing_detection= !typing_detection;
         res = apm->SetTypingDetectionStatus(typing_detection);
         VALIDATE;
         if (typing_detection)
@@ -798,6 +800,9 @@ void RunTest(std::string out_path) {
           printf("Debug recording named %s started\n", kDebugFileName);
         }
         debug_recording_started = !debug_recording_started;
+      } else if (option_selection == option_index++) {
+        const char* kDebugFileName = "eventlog.rel";
+        codec->GetEventLog()->StartLogging(kDebugFileName, 30000);
       } else {
         break;
       }

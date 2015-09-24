@@ -48,25 +48,28 @@ struct PerIoContext {
     // Should be set to true if the I/O context was passed to the system by
     // a thread not controlled by the socket implementation.
     bool ioInitiatedByThreadWrapper;
-    // TODO(hellner): Not used. Delete it.
+    // TODO (hellner): Not used. Delete it.
     PerIoContext* pNextFree;
 };
 
 struct IoContextPoolItem;
-struct IoContextPoolItemPayload {
+struct IoContextPoolItemPayload
+{
     PerIoContext    ioContext;
     IoContextPoolItem* base;
 };
 
-struct IoContextPoolItem {
+struct IoContextPoolItem
+{
     // Atomic single linked list entry header.
     SLIST_ENTRY itemEntry;
     // Atomic single linked list payload
     IoContextPoolItemPayload payload;
 };
 
-class IoContextPool {
- public:
+class IoContextPool
+{
+public:
     IoContextPool();
     virtual ~IoContextPool();
     virtual int32_t Init(uint32_t increaseSize = 128);
@@ -76,7 +79,7 @@ class IoContextPool {
     virtual inline int32_t GetSize(uint32_t* inUse = 0)
     {return _size.Value();}
     virtual int32_t Free();
- private:
+private:
     // Sample code for use of msfts single linked atomic list can be found here:
     // http://msdn.microsoft.com/en-us/library/ms686962(VS.85).aspx
 
@@ -88,18 +91,19 @@ class IoContextPool {
     Atomic32 _inUse;
 };
 
-class UdpSocket2WorkerWindows {
- public:
+class UdpSocket2WorkerWindows
+{
+public:
     UdpSocket2WorkerWindows(HANDLE ioCompletionHandle);
     virtual ~UdpSocket2WorkerWindows();
 
     virtual bool Start();
     virtual bool Stop();
     virtual int32_t Init();
- protected:
+protected:
     static bool Run(void* obj);
     bool Process();
- private:
+private:
     HANDLE _ioCompletionHandle;
     rtc::scoped_ptr<ThreadWrapper> _pThread;
     static int32_t _numOfWorkers;
@@ -108,8 +112,9 @@ class UdpSocket2WorkerWindows {
     bool _init;
 };
 
-class UdpSocket2ManagerWindows : public UdpSocketManager {
- public:
+class UdpSocket2ManagerWindows : public UdpSocketManager
+{
+public:
     UdpSocket2ManagerWindows();
     virtual ~UdpSocket2ManagerWindows();
 
@@ -118,21 +123,17 @@ class UdpSocket2ManagerWindows : public UdpSocketManager {
     virtual bool Start();
     virtual bool Stop();
 
-    virtual inline bool AddSocket(UdpSocketWrapper* s) {
-      if (s)
-        return AddSocketPrv(reinterpret_cast<UdpSocket2Windows*>(s));
-      return false;
-    }
-    virtual bool RemoveSocket(UdpSocketWrapper* s) {
-      if (s)
-        return RemoveSocketPrv(reinterpret_cast<UdpSocket2Windows*>(s));
-     return false;
-    }
+    virtual inline bool AddSocket(UdpSocketWrapper* s)
+    {if(s) return AddSocketPrv(reinterpret_cast<UdpSocket2Windows*>(s));
+     return false;}
+    virtual bool RemoveSocket(UdpSocketWrapper* s)
+    {if(s) return RemoveSocketPrv(reinterpret_cast<UdpSocket2Windows*>(s));
+     return false;}
 
     PerIoContext* PopIoContext(void);
     int32_t PushIoContext(PerIoContext* pIoContext);
 
- private:
+private:
     typedef std::list<UdpSocket2WorkerWindows*> WorkerList;
     bool StopWorkerThreads();
     bool StartWorkerThreads();

@@ -38,8 +38,9 @@ enum { kMaxAudioBufferQueueLength = 100 };
 
 class CriticalSectionWrapper;
 
-class FileRecorderImpl : public FileRecorder {
- public:
+class FileRecorderImpl : public FileRecorder
+{
+public:
     FileRecorderImpl(uint32_t instanceID, FileFormats fileFormat);
     virtual ~FileRecorderImpl();
 
@@ -67,14 +68,15 @@ class FileRecorderImpl : public FileRecorder {
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
         ACMAMRPackingFormat amrFormat = AMRFileStorage,
-        bool videoOnly = false) {
+        bool videoOnly = false)
+    {
         return -1;
     }
     virtual int32_t RecordVideoToFile(const VideoFrame& videoFrame) {
         return -1;
     }
 
- protected:
+protected:
     int32_t WriteEncodedAudioData(const int8_t* audioBuffer,
                                   size_t bufferLength);
 
@@ -84,7 +86,7 @@ class FileRecorderImpl : public FileRecorder {
     FileFormats _fileFormat;
     MediaFile* _moduleFile;
 
- private:
+private:
     CodecInst codec_info_;
     ACMAMRPackingFormat _amrFormat;
 
@@ -93,4 +95,4 @@ class FileRecorderImpl : public FileRecorder {
     Resampler _audioResampler;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_UTILITY_SOURCE_FILE_RECORDER_IMPL_H_
+#endif // WEBRTC_MODULES_UTILITY_SOURCE_FILE_RECORDER_IMPL_H_

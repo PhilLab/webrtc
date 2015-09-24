@@ -11,8 +11,6 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_WIN_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_WIN_H_
 
-#include <string>
-
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include <windows.h>
