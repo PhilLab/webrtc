@@ -121,7 +121,7 @@ ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
 
 
   ComPtr<IMFMediaBuffer> mediaBuffer;
-  hr = MFCreateMemoryBuffer(input_image._length, &mediaBuffer);
+  hr = MFCreateMemoryBuffer((DWORD)input_image._length, &mediaBuffer);
   ThrowIfError(hr);
 
   BYTE* destBuffer = NULL;
@@ -134,7 +134,7 @@ ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
 
   memcpy(destBuffer, input_image._buffer, input_image._length);
 
-  hr = mediaBuffer->SetCurrentLength(input_image._length);
+  hr = mediaBuffer->SetCurrentLength((DWORD)input_image._length);
   ThrowIfError(hr);
 
   hr = mediaBuffer->Unlock();
