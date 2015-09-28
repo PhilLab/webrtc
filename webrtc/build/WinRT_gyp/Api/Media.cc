@@ -438,12 +438,13 @@ IAsyncOperation<IVector<CaptureCapability^>^>^
           IVideoEncodingProperties^>(prop);
       if ((videoProp->FrameRate == nullptr) ||
         (videoProp->FrameRate->Numerator == 0) ||
-        (videoProp->FrameRate->Denominator != 1) ||
+        (videoProp->FrameRate->Denominator == 0) ||
         (videoProp->Width == 0) || (videoProp->Height == 0)) {
         continue;
       }
       auto cap = ref new CaptureCapability(videoProp->Width, videoProp->Height,
-        videoProp->FrameRate->Numerator, videoProp->PixelAspectRatio);
+        videoProp->FrameRate->Numerator / videoProp->FrameRate->Denominator,
+        videoProp->PixelAspectRatio);
       if (descSet.find(cap->FullDescription->Data()) == descSet.end()) {
         ret->Append(cap);
         descSet.insert(cap->FullDescription->Data());

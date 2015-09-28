@@ -36,9 +36,6 @@ using Windows::Devices::Enumeration::DeviceInformationCollection;
 using Windows::Media::Devices::AudioDeviceRole;
 using Windows::Media::Devices::MediaDevice;
 
-using namespace Microsoft::WRL;
-using namespace concurrency;
-
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment(lib, "avrt.lib")
 
@@ -90,9 +87,10 @@ class ScopedCOMInitializer {
 
 
 class AudioInterfaceActivator :
-  public RuntimeClass < RuntimeClassFlags< ClassicCom >,
-  FtmBase, IActivateAudioInterfaceCompletionHandler > {
-  task_completion_event<void> m_ActivateCompleted;
+  public Microsoft::WRL::RuntimeClass < Microsoft::WRL::RuntimeClassFlags<
+  Microsoft::WRL::ClassicCom >,
+  Microsoft::WRL::FtmBase, IActivateAudioInterfaceCompletionHandler > {
+  concurrency::task_completion_event<void> m_ActivateCompleted;
   STDMETHODIMP ActivateCompleted(
     IActivateAudioInterfaceAsyncOperation *pAsyncOp);
 
@@ -107,7 +105,7 @@ class AudioInterfaceActivator :
 
   static AudioDeviceWindowsWasapi* m_AudioDevice;
  public:
-  static task<ComPtr<IAudioClient2>>
+  static concurrency::task<Microsoft::WRL::ComPtr<IAudioClient2>>
     AudioInterfaceActivator::ActivateAudioClientAsync(LPCWCHAR deviceId,
       ActivatorDeviceType deviceType);
   static void SetAudioDevice(AudioDeviceWindowsWasapi* device);
@@ -384,7 +382,7 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     uint32_t                          _devicePlayBlockSize;
     uint32_t                          _playChannels;
     uint32_t                          _sndCardPlayDelay;
-    
+
     float                                   _sampleDriftAt48kHz;
     float                                   _driftAccumulator;
 

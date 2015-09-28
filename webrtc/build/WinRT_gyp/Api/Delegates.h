@@ -21,8 +21,7 @@ public delegate void RTCPeerConnectionIceEventDelegate(
 // ------------------
 ref class RTCPeerConnectionIceStateChangeEvent;
 public delegate void RTCPeerConnectionIceStateChangeEventDelegate(
-  RTCPeerConnectionIceStateChangeEvent^
-  );
+  RTCPeerConnectionIceStateChangeEvent^);
 
 // ------------------
 ref class MediaStreamEvent;

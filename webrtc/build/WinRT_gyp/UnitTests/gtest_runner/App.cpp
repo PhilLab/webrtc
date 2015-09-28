@@ -16,13 +16,6 @@
 #include "webrtc/base/gunit.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace Platform;
-using namespace concurrency;
-using namespace Windows::ApplicationModel::Activation;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Controls;
-using namespace Windows::UI::Xaml::Media;
-
 static char stdout_buffer[1024 * 1024] = { 0 };
 
 bool autoClose = false;
@@ -34,7 +27,7 @@ namespace gtest_runner {
   ref class GTestApp sealed : public Windows::UI::Xaml::Application {
   public:
     GTestApp() {
-      progressTimer  = ref new DispatcherTimer;
+      progressTimer = ref new Windows::UI::Xaml::DispatcherTimer;
       progressTimer->Tick +=
         ref new Windows::Foundation::EventHandler<Object^>(this,
         &GTestApp::progressUpdate);
@@ -44,34 +37,34 @@ namespace gtest_runner {
     }
 
   private:
-    TextBox^ outputTextBox_;
-    ProgressRing^ progressRing_;
-    DispatcherTimer^ progressTimer;
+    Windows::UI::Xaml::Controls::TextBox^ outputTextBox_;
+    Windows::UI::Xaml::Controls::ProgressRing^ progressRing_;
+    Windows::UI::Xaml::DispatcherTimer^ progressTimer;
 
   protected:
     virtual void OnLaunched(
       Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e)
                                                                      override {
-      g_windowDispatcher = Window::Current->Dispatcher;
+      g_windowDispatcher = Windows::UI::Xaml::Window::Current->Dispatcher;
 
-      auto layoutRoot = ref new Grid();
-      layoutRoot->VerticalAlignment = VerticalAlignment::Center;
-      layoutRoot->HorizontalAlignment = HorizontalAlignment::Center;
+      auto layoutRoot = ref new Windows::UI::Xaml::Controls::Grid();
+      layoutRoot->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+      layoutRoot->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
 
-      outputTextBox_ = ref new TextBox();
+      outputTextBox_ = ref new Windows::UI::Xaml::Controls::TextBox();
       outputTextBox_->Width = 640;
       outputTextBox_->Height = 480;
       outputTextBox_->AcceptsReturn = true;
       outputTextBox_->PlaceholderText = "Test outputs appears here!";
       layoutRoot->Children->Append(outputTextBox_);
 
-      progressRing_ = ref new ProgressRing();
+      progressRing_ = ref new Windows::UI::Xaml::Controls::ProgressRing();
       progressRing_->Width = 50;
       progressRing_->Height = 50;
       layoutRoot->Children->Append(progressRing_);
 
-      Window::Current->Content = layoutRoot;
-      Window::Current->Activate();
+      Windows::UI::Xaml::Window::Current->Content = layoutRoot;
+      Windows::UI::Xaml::Window::Current->Activate();
       RunAllTests();
 
       progressTimer->Start();
@@ -92,8 +85,8 @@ namespace gtest_runner {
 
       // Run test cases in a separate thread not to block the UI thread
       // Pass the UI thread to continue using it after task execution
-      auto ui = task_continuation_context::use_current();
-      create_task([this, ui]() {
+      auto ui = concurrency::task_continuation_context::use_current();
+      concurrency::create_task([this, ui]() {
         char* argv[] = { "." };
         webrtc::test::TestSuite test_suite(1, argv);
         test_suite.Run();
@@ -102,7 +95,7 @@ namespace gtest_runner {
         rtc::CleanupSSL();
 
         // Update the UI
-        outputTextBox_->Text = ref new String(rtc::ToUtf16(stdout_buffer,
+        outputTextBox_->Text = ref new Platform::String(rtc::ToUtf16(stdout_buffer,
           strlen(stdout_buffer)).data());
         progressRing_->IsActive = false;
 

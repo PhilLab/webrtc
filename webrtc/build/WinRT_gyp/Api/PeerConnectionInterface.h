@@ -19,6 +19,7 @@
 #include "webrtc/base/logging.h"
 #include "GlobalObserver.h"
 #include "DataChannel.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using Platform::String;
 using Platform::IBox;
@@ -96,6 +97,10 @@ public:
 };
 
 [Windows::Foundation::Metadata::WebHostHidden]
+/// <summary>
+/// Defines static methods for handling generic WebRTC operations, for example
+/// controlling whether WebRTC tracing is enabled.
+/// </summary>
 public ref class WebRTC sealed {
 public:
   static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
@@ -240,12 +245,13 @@ public:
   property MediaStream^ Stream;
 };
 /// <summary>
-/// An RTCPeerConnection allows two users to communicate directly. 
-/// Communications are coordinated via a signaling channel which is provided by unspecified means.
+/// An RTCPeerConnection allows two users to communicate directly.
+/// Communications are coordinated via a signaling channel which is
+/// provided by unspecified means.
 /// </summary>
 /// <remarks>
 /// http://www.w3.org/TR/webrtc/#peer-to-peer-connections
-///	</remarks>
+///  </remarks>
 public ref class RTCPeerConnection sealed {
 public:
   // Required so the observer can raise events in this class.
@@ -256,7 +262,8 @@ public:
   /// Creates an RTCPeerConnection object.
   /// </summary>
   /// <remarks>
-  /// Refer to http://www.w3.org/TR/webrtc for the RTCPeerConnection construction algorithm
+  /// Refer to http://www.w3.org/TR/webrtc for the RTCPeerConnection
+  /// construction algorithm
   /// </remarks>
   /// <param name="configuration">
   /// The configuration has the information to find and access the
@@ -264,46 +271,78 @@ public:
   /// </param>
   RTCPeerConnection(RTCConfiguration^ configuration);
 
+  /// <summary>
+  /// A new ICE candidate has been found.
+  /// </summary>
   event RTCPeerConnectionIceEventDelegate^     OnIceCandidate;
+
+  /// <summary>
+  /// A state transition has occurred for the <see cref="IceConnectionState"/>.
+  /// </summary>
   event RTCPeerConnectionIceStateChangeEventDelegate^  OnIceConnectionChange;
+
+  /// <summary>
+  /// The remote peer has added a new <see cref="MediaStream"/> to this
+  /// connection.
+  /// </summary>
   event MediaStreamEventEventDelegate^ OnAddStream;
+
+  /// <summary>
+  /// The remote peer removed a <see cref="MediaStream"/>.
+  /// </summary>
   event MediaStreamEventEventDelegate^ OnRemoveStream;
+
+  /// <summary>
+  /// Session (re-)negotiation is needed.
+  /// </summary>
   event EventDelegate^ OnNegotiationNeeded;
+
+  /// <summary>
+  /// A state transition has occurred for the <see cref="SignalingState"/>.
+  /// </summary>
   event EventDelegate^ OnSignalingStateChange;
+
+  /// <summary>
+  /// A remote peer has opened a data channel.
+  /// </summary>
   event RTCDataChannelEventDelegate^ OnDataChannel;
 
 
   /// <summary>
-  /// Generates a blob of SDP that contains an RFC 3264 offer with the supported configurations 
-  /// for the session, including descriptions of the local MediaStreams attached to this 
-  /// <see cref="RTCPeerConnection"/>, 
-  /// the codec/RTP/RTCP options supported by this implementation, and any candidates that have been 
-  /// gathered by the ICE Agent. 
+  /// Generates a blob of SDP that contains an RFC 3264 offer with the
+  ///  supported configurations for the session, including descriptions of
+  /// the local MediaStreams attached to this <see cref="RTCPeerConnection"/>,
+  /// the codec/RTP/RTCP options supported by this implementation, and any
+  /// candidates that have been gathered by the ICE Agent.
   /// </summary>
   /// <returns></returns>
   IAsyncOperation<RTCSessionDescription^>^ CreateOffer();
 
   /// <summary>
-  /// Generates an SDP answer with the supported configuration for the session that is compatible with 
-  /// the parameters in the remote configuration. Like createOffer, the returned blob contains descriptions 
-  /// of the local MediaStreams attached to this <see cref="RTCPeerConnection"/>, the codec/RTP/RTCP 
-  /// options negotiated for this session, and any candidates that have been gathered by the ICE Agent.
+  /// Generates an SDP answer with the supported configuration for the
+  /// session that is compatible with the parameters in the remote
+  /// configuration. Like createOffer, the returned blob contains descriptions
+  /// of the local MediaStreams attached to this
+  /// <see cref="RTCPeerConnection"/>, the codec/RTP/RTCP options negotiated
+  /// for this session, and any candidates that have been gathered by the ICE
+  /// Agent.
   /// </summary>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncOperation<RTCSessionDescription^>^ CreateAnswer();
 
   /// <summary>
-  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied <see cref="RTCSessionDescription"/> as the 
-  /// local description.
+  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied
+  /// <see cref="RTCSessionDescription"/> as the local description.
   /// This API changes the local media state.
   /// </summary>
-  /// <param name="description">RTCSessionDescription to apply as the local description</param>
+  /// <param name="description">RTCSessionDescription to apply as the local
+  /// description</param>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ SetLocalDescription(RTCSessionDescription^ description);
 
   /// <summary>
-  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied 
-  /// <see cref="RTCSessionDescription"/> as the remote offer or answer. 
+  /// Instructs the <see cref="RTCPeerConnection"/> to apply the supplied
+  /// <see cref="RTCSessionDescription"/> as the remote offer or answer.
   /// This API changes the local media state.
   /// </summary>
   /// <param name="description"><see cref="RTCSessionDescription"/> to
@@ -311,57 +350,119 @@ public:
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
 
+  /// <summary>
+  /// TODO(WINRT) Implementation
+  /// </summary>
+  /// <returns>A handle to the current configuration for this object.</returns>
   RTCConfiguration^ GetConfiguration();
+
+  /// <summary>
+  /// Returns an <see cref="IVector"/> that represents a snapshot of all the
+  /// <see cref="MediaStream"/>
+  /// that this <see cref="RTCPeerConnection"/> is currently sending.
+  /// </summary>
+  /// <returns>A sequence of handles to the <see cref="MediaStream"/>
+  /// objects representing the streams that are currently being sent
+  /// with this RTCPeerConnection object.</returns>
   IVector<MediaStream^>^ GetLocalStreams();
+
+  /// <summary>
+  /// Returns an <see cref="IVector"/> that represents a snapshot of all the
+  /// <see cref="MediaStream"/> that this <see cref="RTCPeerConnection"/> is
+  /// currently receiving.
+  /// </summary>
+  /// <returns>A sequence of handles to the <see cref="MediaStream"/> objects
+  /// representing the streams that are currently being received by this
+  /// RTCPeerConnection object.</returns>
   IVector<MediaStream^>^ GetRemoteStreams();
+
+  /// <summary>
+  /// If this object is currently sending or receiving a
+  /// <see cref="MediaStream"/> with the provided
+  /// <paramref name="streamId"/>, a handle to that stream is returned.
+  /// </summary>
+  /// <param name="streamId">Identifier of the stream being requested.</param>
+  /// <returns>A handle to the local or remote <see cref="MediaStream"/> with
+  /// the given <paramref name="streamId"/> if one exists, nullptr if no stream
+  /// is found.</returns>
   MediaStream^ GetStreamById(String^ streamId);
+
+  /// <summary>
+  /// Adds a new local <see cref="MediaStream"/> to be sent on this connection.
+  /// </summary>
+  /// <param name="stream"><see cref="MediaStream"/> to be added.</param>
   void AddStream(MediaStream^ stream);
+
+  /// <summary>
+  /// Removes a local <see cref="MediaStream"/> from this connection.
+  /// </summary>
+  /// <param name="stream"><see cref="MediaStream"/> to be removed.</param>
   void RemoveStream(MediaStream^ stream);
 
   /// <summary>
-  /// Creates a new <see cref="RTCDataChannel"/> object with the given <paramref name="label"/>.
+  /// Creates a new <see cref="RTCDataChannel"/> object with the given
+  /// <paramref name="label"/>.
   /// </summary>
-  /// <param name="label">Used as the descriptive name for the new data channel.</param>
-  /// <param name="init">Can be used to configure properties of the underlying channel such as data reliability.</param>
+  /// <param name="label">Used as the descriptive name for the new data
+  /// channel.</param>
+  /// <param name="init">Can be used to configure properties of the underlying
+  /// channel such as data reliability.</param>
   /// <returns>The newly created <see cref="RTCDataChannel"/>.</returns>
   RTCDataChannel^ CreateDataChannel(String^ label, RTCDataChannelInit^ init);
 
   /// <summary>
   /// Provides a remote candidate to the ICE Agent.
   /// The candidate is added to the remote description.
-  /// This call will result in a change to the connection state of the ICE Agent, and may lead to a change 
-  /// to media state if it results in different connectivity being established.
+  /// This call will result in a change to the connection state of the ICE
+  /// Agent, and may lead to a change to media state if it results in different
+  /// connectivity being established.
   /// </summary>
-  /// <param name="candidate">candidate to be added to the remote description</param>
+  /// <param name="candidate">candidate to be added to the remote description
+  /// </param>
   /// <returns>An action which completes asynchronously</returns>
   IAsyncAction^ AddIceCandidate(RTCIceCandidate^ candidate);
+
+  /// <summary>
+  /// Ends any active ICE processing or streaming, releases resources.
+  /// </summary>
   void Close();
 
   /// <summary>
-  /// The last <see cref="RTCSessionDescription"/> that was successfully set using 
-  /// <see cref="SetLocalDescription"/>, plus any local candidates that have been generated by the ICE Agent 
-  /// since then.
-  /// A nullptr handle will be returned if the local description has not yet been set.
+  /// The last <see cref="RTCSessionDescription"/> that was successfully set
+  /// using <see cref="SetLocalDescription"/>, plus any local candidates that
+  /// have been generated by the ICE Agent since then.
+  /// A nullptr handle will be returned if the local description has not yet
+  /// been set.
   /// </summary>
   property RTCSessionDescription^ LocalDescription {
     RTCSessionDescription^ get();
   }
 
   /// <summary>
-  /// The last <see cref="RTCSessionDescription"/> that was successfully set using 
-  /// <see cref="SetRemoteDescription"/>, 
-  /// plus any remote candidates that have been supplied via <see cref="AddIceCandidate"/> since then.
-  /// A nullptr handle will be returned if the local description has not yet been set.
+  /// The last <see cref="RTCSessionDescription"/> that was successfully set
+  /// using <see cref="SetRemoteDescription"/>,
+  /// plus any remote candidates that have been supplied via
+  /// <see cref="AddIceCandidate"/> since then.
+  /// A nullptr handle will be returned if the local description has not yet
+  /// been set.
   /// </summary>
   property RTCSessionDescription^ RemoteDescription {
     RTCSessionDescription^ get();
   }
+
+  /// <summary>
+  /// Keeps track of the current signaling state. State transitions may be
+  ///  triggered when alocal or remote offer is applied, when a local or remote
+  // answer or pranswer is applied, or when the connection is closed.
+  /// </summary>
   property RTCSignalingState SignalingState {
     RTCSignalingState get();
   }
+
   property RTCIceGatheringState IceGatheringState {
     RTCIceGatheringState get();
   }
+
   property RTCIceConnectionState IceConnectionState {
     RTCIceConnectionState get();
   }
@@ -385,7 +486,10 @@ private:
 namespace globals {
 extern rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   gPeerConnectionFactory;
-// The worker thread for webrtc.
+
+/// <summary>
+/// The worker thread for webrtc.
+/// </summary>
 extern rtc::Thread gThread;
 
 template <typename T>

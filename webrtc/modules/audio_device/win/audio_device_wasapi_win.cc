@@ -69,9 +69,6 @@
 #pragma comment(lib, "uuid.lib")
 #pragma comment(lib, "ole32.lib")
 
-using namespace concurrency;
-using namespace Windows::Foundation;
-
 
 #if defined(WINRT)
 #undef CreateEvent
@@ -636,12 +633,15 @@ void AudioInterfaceActivator::SetAudioDevice(
   m_AudioDevice = device;
 }
 
-task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(
-  LPCWCHAR deviceId, ActivatorDeviceType deviceType) {
-  ComPtr<AudioInterfaceActivator> pActivator = Make<AudioInterfaceActivator>();
+  concurrency::task<Microsoft::WRL::ComPtr<IAudioClient2>>
+          AudioInterfaceActivator::ActivateAudioClientAsync(
+            LPCWCHAR deviceId, ActivatorDeviceType deviceType) {
+    Microsoft::WRL::ComPtr<AudioInterfaceActivator> pActivator =
+                Microsoft::WRL::Make<AudioInterfaceActivator>();
 
-  ComPtr<IActivateAudioInterfaceAsyncOperation> pAsyncOp;
-  ComPtr<IActivateAudioInterfaceCompletionHandler> pHandler = pActivator;
+  Microsoft::WRL::ComPtr<IActivateAudioInterfaceAsyncOperation> pAsyncOp;
+  Microsoft::WRL::ComPtr<IActivateAudioInterfaceCompletionHandler> pHandler
+                                                              = pActivator;
 
   m_DeviceType = deviceType;
 
@@ -662,9 +662,9 @@ task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(
     // Once the wait is completed then pass the async operation (pAsyncOp) to
     // a lambda function which retrieves and returns the IAudioClient2
     // interface pointer
-    [pAsyncOp]() -> ComPtr<IAudioClient2> {
+    [pAsyncOp]() -> Microsoft::WRL::ComPtr<IAudioClient2> {
     HRESULT hr = S_OK, hr2 = S_OK;
-    ComPtr<IUnknown> pUnk;
+    Microsoft::WRL::ComPtr<IUnknown> pUnk;
     // Get the audio activation result as IUnknown pointer
     hr2 = pAsyncOp->GetActivateResult(&hr, &pUnk);
 
@@ -676,7 +676,7 @@ task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(
       throw ref new Platform::COMException(hr2);
 
     // Query for the activated IAudioClient2 interface
-    ComPtr<IAudioClient2> pAudioClient2;
+    Microsoft::WRL::ComPtr<IAudioClient2> pAudioClient2;
     hr = pUnk.As(&pAudioClient2);
 
     if (FAILED(hr))
@@ -684,7 +684,7 @@ task<ComPtr<IAudioClient2>> AudioInterfaceActivator::ActivateAudioClientAsync(
 
     // Return retrieved interface
     return pAudioClient2;
-  }, task_continuation_context::use_arbitrary());
+  }, concurrency::task_continuation_context::use_arbitrary());
 }
 
 // ============================================================================
@@ -983,13 +983,13 @@ int32_t AudioDeviceWindowsWasapi::Init() {
     .then([this](concurrency::task<void> ) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
       "Input audio device activated");
-  }, task_continuation_context::use_arbitrary()).wait();
+  }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   Concurrency::task<void> (_InitializeAudioDeviceOutAsync())
     .then([this](concurrency::task<void>) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
       "Output audio device activated");
-  }, task_continuation_context::use_arbitrary()).wait();
+  }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
 
   _initialized = true;
@@ -3606,11 +3606,13 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
         playout_delay = ROUND((static_cast<double>(_writtenSamples) /
           _devicePlaySampleRate - static_cast<double>(pos) / freq) * 1000.0);
 
-        if (playout_delay<0){
-          //something wrong, reset to 0
-          // TODO(winrt) : for the second PCC call, e.g.: hangup, and make another call.
-          // we always got negative playout_delay, need to investigate more to see why.
-          // this would cause the estimated audio delay becomes inacurate, seems not impacting lipsync too much though
+        if (playout_delay < 0) {
+          // something wrong, reset to 0
+          // TODO(winrt) : for the second PCC call, e.g.: hangup, and make
+          // another call.
+          // we always got negative playout_delay, need to investigate more
+          // to see why. this would cause the estimated audio delay becomes
+          // inacurate, seems not impacting lipsync too much though
           // a typical playout_delay is about 40-50ms
           playout_delay = 0;
         }
@@ -4248,7 +4250,7 @@ int32_t AudioDeviceWindowsWasapi::_RefreshDeviceList(DeviceClass cls) {
     Concurrency::task<DeviceInformationCollection^>(DeviceInformation::
       FindAllAsync(cls)).then([this](DeviceInformationCollection^ interfaces) {
       _ptrCollection = interfaces;
-    }, task_continuation_context::use_arbitrary()).wait();
+    }, concurrency::task_continuation_context::use_arbitrary()).wait();
   }
   catch (Platform::InvalidArgumentException^) {
     // The InvalidArgumentException gets thrown by FindAllAsync when the GUID
@@ -4512,7 +4514,7 @@ DeviceInformation^ AudioDeviceWindowsWasapi::_GetDefaultDevice(
         [this](Windows::Devices::Enumeration::DeviceInformation^
         deviceInformation) {
         _defaultRenderDevice = deviceInformation;
-      }, task_continuation_context::use_arbitrary()).wait();
+      }, concurrency::task_continuation_context::use_arbitrary()).wait();
     }
     return _defaultRenderDevice;
   } else if (cls == DeviceClass::AudioCapture) {
@@ -4523,7 +4525,7 @@ DeviceInformation^ AudioDeviceWindowsWasapi::_GetDefaultDevice(
         [this](Windows::Devices::Enumeration::DeviceInformation^
         deviceInformation) {
         _defaultCaptureDevice = deviceInformation;
-      }, task_continuation_context::use_arbitrary()).wait();
+      }, concurrency::task_continuation_context::use_arbitrary()).wait();
     }
     return _defaultCaptureDevice;
   }
@@ -4563,7 +4565,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll() {
       DeviceInformation::FindAllAsync(DeviceClass::AudioCapture)).then(
       [this](concurrency::task<DeviceInformationCollection^> getDevicesTask) {
       _ptrCaptureCollection = getDevicesTask.get();
-    }, task_continuation_context::use_arbitrary()).wait();
+    }, concurrency::task_continuation_context::use_arbitrary()).wait();
   }
   catch (Platform::InvalidArgumentException^) {
     // The InvalidArgumentException gets thrown by FindAllAsync when the GUID
@@ -4580,7 +4582,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll() {
       DeviceInformation::FindAllAsync(DeviceClass::AudioRender)).then(
       [this](concurrency::task<DeviceInformationCollection^> getDevicesTask) {
       _ptrRenderCollection = getDevicesTask.get();
-    }, task_continuation_context::use_arbitrary()).wait();
+    }, concurrency::task_continuation_context::use_arbitrary()).wait();
   }
   catch (Platform::InvalidArgumentException^) {
     // The InvalidArgumentException gets thrown by FindAllAsync when the GUID
@@ -4628,14 +4630,16 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn() {
   AudioInterfaceActivator::ActivateAudioClientAsync(
     defaultCaptureDeviceId->Data(),
     AudioInterfaceActivator::ActivatorDeviceType::eInputDevice).then(
-    [defaultCaptureDeviceId](ComPtr<IAudioClient2> captureClient) {
+    [defaultCaptureDeviceId](Microsoft::WRL::ComPtr<IAudioClient2>
+                                                      captureClient) {
     Platform::String^ rawProcessingSupportedKey =
       L"System.Devices.AudioDevice.RawProcessingSupported";
     Platform::Collections::Vector<Platform::String ^> ^properties =
       ref new Platform::Collections::Vector<Platform::String ^>();
     properties->Append(rawProcessingSupportedKey);
 
-    return create_task(Windows::Devices::Enumeration::DeviceInformation::
+    return concurrency::create_task(
+      Windows::Devices::Enumeration::DeviceInformation::
       CreateFromIdAsync(defaultCaptureDeviceId, properties)).then(
       [rawProcessingSupportedKey, captureClient](Windows::Devices::
       Enumeration::DeviceInformation ^device) {
@@ -4645,7 +4649,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn() {
           rawProcessingSupportedKey));
       }
     }).wait();
-  }, task_continuation_context::use_arbitrary()).wait();
+  }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   _deviceIdStringIn = defaultCaptureDeviceId;
   return hr;
@@ -4668,14 +4672,16 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut() {
   AudioInterfaceActivator::ActivateAudioClientAsync(
     defaultRenderDeviceId->Data(),
     AudioInterfaceActivator::ActivatorDeviceType::eOutputDevice).then(
-    [defaultRenderDeviceId](ComPtr<IAudioClient2> renderClient) {
+    [defaultRenderDeviceId](Microsoft::WRL::ComPtr<IAudioClient2 >
+                            renderClient) {
       Platform::String^ rawProcessingSupportedKey =
         L"System.Devices.AudioDevice.RawProcessingSupported";
       Platform::Collections::Vector<Platform::String ^> ^properties =
         ref new Platform::Collections::Vector<Platform::String ^>();
       properties->Append(rawProcessingSupportedKey);
 
-      return create_task(Windows::Devices::Enumeration::DeviceInformation::
+      return concurrency::create_task(
+        Windows::Devices::Enumeration::DeviceInformation::
         CreateFromIdAsync(defaultRenderDeviceId, properties)).then(
         [rawProcessingSupportedKey, renderClient](
         Windows::Devices::Enumeration::DeviceInformation ^device) {
@@ -4685,7 +4691,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut() {
               rawProcessingSupportedKey));
           }
         }).wait();
-  }, task_continuation_context::use_arbitrary()).wait();
+  }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   _deviceIdStringOut = defaultRenderDeviceId;
 

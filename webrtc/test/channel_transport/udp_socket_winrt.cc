@@ -207,7 +207,7 @@ void UdpSocketWinRT::HasIncoming()
         memcpy(&from, &sockaddrfrom, fromlen);
         from._sockaddr_storage.sin_family = sockaddrfrom.sa_family;
 #else
-    retval = recvfrom(_socket, (char*)buf, sizeof(buf), 0,
+    retval = recvfrom(_socket, reinterpret_cast<char*>(buf), sizeof(buf), 0,
                           reinterpret_cast<sockaddr*>(&from), &fromlen);
 #endif
 

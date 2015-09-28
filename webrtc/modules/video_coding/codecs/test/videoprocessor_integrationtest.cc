@@ -964,5 +964,5 @@ TEST_F(VideoProcessorIntegrationTest,
                          process_settings,
                          rc_metrics);
 }
-#endif //WINRT
+#endif  // WINRT
 }  // namespace webrtc

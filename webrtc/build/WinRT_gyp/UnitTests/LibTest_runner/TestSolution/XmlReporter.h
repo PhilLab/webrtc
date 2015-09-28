@@ -13,8 +13,6 @@
 namespace LibTest_runner {
 #pragma warning(push)
 #pragma warning(disable : 4290)
-using namespace Windows::Data::Xml::Dom;
-using namespace Platform;
 
 //=============================================================================
 //         class: CXmlReporter
@@ -29,10 +27,13 @@ class CXmlReporter : public CTestsReporterBase {
   static unsigned int const kAllTests = 1;
  private:
   Platform::String^ OutputFile_;
-  XmlDocument^ report_;
-  XmlElement^  solutionEl_;
-  XmlElement^ GetLibraryElement(String^ projectName);
-  XmlElement^ GetProjectElement(XmlElement^ library, String^ projectName);
+  Windows::Data::Xml::Dom::XmlDocument^ report_;
+  Windows::Data::Xml::Dom::XmlElement^  solutionEl_;
+  Windows::Data::Xml::Dom::XmlElement^ GetLibraryElement(
+                                              Platform::String^ projectName);
+  Windows::Data::Xml::Dom::XmlElement^ GetProjectElement(
+                                  Windows::Data::Xml::Dom::XmlElement^ library,
+                                  Platform::String^ projectName);
   unsigned int m_nFlags;
  public:
   explicit CXmlReporter(Platform::String^ outputFile, unsigned int flags = 0);

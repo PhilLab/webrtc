@@ -55,11 +55,6 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/thread.h"
 
-#if defined(WINRT)
-using namespace Windows::Networking;
-using namespace Windows::Networking::Connectivity;
-#endif
-
 namespace rtc {
 namespace {
 
@@ -446,11 +441,12 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 bool BasicNetworkManager::CreateNetworks(bool include_ignored,
     NetworkList* networks) const {
 
-  auto hostnames = NetworkInformation::GetHostNames();
+  auto hostnames =
+    Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
   for (unsigned int i = 0; i < hostnames->Size; ++i) {
-    auto hostname = hostnames->GetAt(i);
+    Windows::Networking::HostName^ hostname = hostnames->GetAt(i);
     // TODO(WINRT): Group networks instead of one-to-one mapping.
-    if (hostname->Type == HostNameType::Ipv4) {
+    if (hostname->Type == Windows::Networking::HostNameType::Ipv4) {
       struct in_addr addr;
       rtc::inet_pton(AF_INET, rtc::ToUtf8(
         hostname->CanonicalName->Data()).c_str(), &addr);
@@ -461,7 +457,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
         prefixLength);
       network->AddIP(InterfaceAddress(ip));
       networks->push_back(network);
-    } else if (hostname->Type == HostNameType::Ipv6) {
+    } else if (hostname->Type == Windows::Networking::HostNameType::Ipv6) {
       struct in6_addr addr;
       rtc::inet_pton(AF_INET6, rtc::ToUtf8(
         hostname->CanonicalName->Data()).c_str(), &addr);
