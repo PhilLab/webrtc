@@ -155,7 +155,7 @@ Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
 }
 
 Thread::Thread(SocketServer* ss)
-    : MessageQueue(ss),
+    : MessageQueue(true, ss),
       priority_(PRIORITY_NORMAL),
       running_(true, false),
 #if defined(WEBRTC_WIN)
@@ -165,6 +165,8 @@ Thread::Thread(SocketServer* ss)
       owned_(true),
       blocking_calls_allowed_(true) {
   SetName("Thread", this);  // default name
+  ss_->SetMessageQueue(this);
+  MessageQueueManager::Add(this);
 }
 
 Thread::~Thread() {
