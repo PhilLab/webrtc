@@ -61,6 +61,16 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
   if (iter != media_capture_map_.end()) {
     return iter->second;
   } else {
+#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+    // On some Windows Phone 8 devices, two calls of InitializeAsync on two
+    // different coexisting instances causes exception to be thrown from the
+    // second call.
+    // Since after calling the second InitializeAsync all further calls fail
+    // with exception, we maintain a maximum of one MediaCapture instance
+    // in cache.
+    // The behavior is present on Lumia620, OS version 8.10.14219.341.
+    media_capture_map_.clear();
+#endif
     Platform::Agile<MediaCapture> media_capture_agile(ref new MediaCapture());
 
     Concurrency::task<void> initialize_async_task;
