@@ -116,7 +116,7 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
 //------------------------------------------------------------------
 // MessageQueue
 
-MessageQueue::MessageQueue(SocketServer* ss)
+MessageQueue::MessageQueue(bool isThread, SocketServer* ss)
     : ss_(ss), fStop_(false), fPeekKeep_(false),
       dmsgq_next_num_(0) {
   if (!ss_) {
@@ -128,8 +128,10 @@ MessageQueue::MessageQueue(SocketServer* ss)
     default_ss_.reset(new DefaultSocketServer());
     ss_ = default_ss_.get();
   }
-  ss_->SetMessageQueue(this);
-  MessageQueueManager::Add(this);
+  if (!isThread){
+    ss_->SetMessageQueue(this);
+    MessageQueueManager::Add(this);
+  }
 }
 
 MessageQueue::~MessageQueue() {
