@@ -231,16 +231,18 @@ Media::Media() {
 
 }
 
+// TODO(winrt): Remove this function and always use the async one.
 Media^ Media::CreateMedia()
 {
   auto ret = ref new Media();
-  ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
-    webrtc::AudioDeviceModule::kWindowsWasapiAudio);
-  if (ret->_audioDevice == NULL) {
-    LOG(LS_ERROR) << "Can't create audio device manager";
-    return nullptr;
-  }
-  ret->_audioDevice->Init();
+  globals::RunOnGlobalThread<void>([ret]() {
+    ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
+      webrtc::AudioDeviceModule::kWindowsWasapiAudio);
+    if (ret->_audioDevice == NULL) {
+      LOG(LS_ERROR) << "Can't create audio device manager";
+    }
+    ret->_audioDevice->Init();
+  });
   return ret;
 }
 
