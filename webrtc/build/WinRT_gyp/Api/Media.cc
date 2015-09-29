@@ -232,8 +232,7 @@ Media::Media() {
 }
 
 // TODO(winrt): Remove this function and always use the async one.
-Media^ Media::CreateMedia()
-{
+Media^ Media::CreateMedia() {
   auto ret = ref new Media();
   globals::RunOnGlobalThread<void>([ret]() {
     ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
@@ -246,10 +245,8 @@ Media^ Media::CreateMedia()
   return ret;
 }
 
-IAsyncOperation<Media^>^ Media::CreateMediaAsync()
-{
-  IAsyncOperation<Media^>^ asyncOp = Concurrency::create_async([]()->Media^
-  {
+IAsyncOperation<Media^>^ Media::CreateMediaAsync() {
+  IAsyncOperation<Media^>^ asyncOp = Concurrency::create_async([]()->Media^ {
     return CreateMedia();
   });
   return asyncOp;

@@ -102,7 +102,8 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
       header.extension.hasAbsoluteSendTime) {
     int64_t arrival_time_ms = TickTime::MillisecondTimestamp();
     if (packet_time.timestamp >= 0)
-      arrival_time_ms = packet_time.timestamp;
+      // Packet time is in microseconds.
+      arrival_time_ms = packet_time.timestamp / 1000;
     size_t payload_size = length - header.headerLength;
     remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
                                               header, false);
