@@ -25,6 +25,10 @@
 #include <mmsystem.h>
 #endif
 
+#ifdef WINRT
+#include "webrtc/system_wrappers/interface/clock.h"
+#endif
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
 
@@ -55,13 +59,7 @@ uint64 TimeNanos() {
   ticks = kNumNanosecsPerSec * static_cast<int64>(ts.tv_sec) +
       static_cast<int64>(ts.tv_nsec);
 #elif defined(WINRT)
-  FILETIME ft;
-  // Time in 100ns intervals.
-  GetSystemTimeAsFileTime(&ft);
-  LARGE_INTEGER li;
-  li.HighPart = ft.dwHighDateTime;
-  li.LowPart = ft.dwLowDateTime;
-  ticks = li.QuadPart * 100;
+  ticks = webrtc::Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() * 1000 * 1000;
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64 num_wrap_timegettime = 0;
