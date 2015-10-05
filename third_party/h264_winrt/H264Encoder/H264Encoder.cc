@@ -73,9 +73,16 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ThrowIfError(MFCreateMediaType(&mediaTypeOut_));
   ThrowIfError(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
   ThrowIfError(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
-  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, inst->targetBitrate > 0 ? inst->targetBitrate : 800 * 1000));
+  // I find that 300kbit represents a good balance between video quality and
+  // the bandwidth that a 620 Windows phone can handle.
+  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, inst->targetBitrate > 0 ? inst->targetBitrate : 300 * 1024));
   ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
   ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
+  // These are for increasing the number of keyframes.  It improves time to first frame and
+  // recovery when the video freezes.
+  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, 30));
+  ThrowIfError(mediaTypeOut_->SetUINT32(CODECAPI_AVEncMPVGOPSize, 10));
+  ThrowIfError(mediaTypeOut_->SetUINT32(CODECAPI_AVEncVideoMaxKeyframeDistance, 10));
   ThrowIfError(MFSetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, inst->width, inst->height));
   ThrowIfError(MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, inst->maxFramerate, 1));
 
@@ -145,10 +152,6 @@ int H264WinRTEncoderImpl::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-const GUID WEBRTC_ENCODER_TIMESTAMP           = { 0x11111111, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-const GUID WEBRTC_ENCODER_NTP_TIME            = { 0x22222222, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-const GUID WEBRTC_ENCODER_CAPTURE_RENDER_TIME = { 0x33333333, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-
 ComPtr<IMFSample> FromVideoFrame(const VideoFrame& frame) {
   HRESULT hr;
   ComPtr<IMFSample> sample;
@@ -157,15 +160,6 @@ ComPtr<IMFSample> FromVideoFrame(const VideoFrame& frame) {
 
   ComPtr<IMFAttributes> sampleAttributes;
   hr = sample.As(&sampleAttributes);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT32(WEBRTC_ENCODER_TIMESTAMP, frame.timestamp());
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT64(WEBRTC_ENCODER_NTP_TIME, frame.ntp_time_ms());
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT64(WEBRTC_ENCODER_CAPTURE_RENDER_TIME, frame.render_time_ms());
   ThrowIfError(hr);
 
   auto totalSize = frame.allocated_size(PlaneType::kYPlane) +
@@ -238,6 +232,13 @@ int H264WinRTEncoderImpl::Encode(
     ThrowIfError(hr);
 
     lastTimestampHns_ = timestampHns;
+
+    // Cache the frame attributes to get them back after the encoding.
+    CachedFrameAttributes frameAttributes;
+    frameAttributes.timestamp = frame.timestamp();
+    frameAttributes.ntpTime = frame.ntp_time_ms();
+    frameAttributes.captureRenderTime = frame.render_time_ms();
+    _sampleAttributeQueue.push(timestampHns, frameAttributes);
 
     UINT32 oldWidth, oldHeight;
     hr = MFGetAttributeSize(mediaTypeIn_.Get(), MF_MT_FRAME_SIZE, &oldWidth, &oldHeight);
@@ -329,23 +330,7 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
       if (SUCCEEDED(hr) && cleanPoint) {
         encodedImage._completeFrame = true;
         encodedImage._frameType = kKeyFrame;
-        OutputDebugString(L"Sending complete frame\n");
       }
-
-      UINT32 timestamp;
-      UINT64 ntpTime, captureRenderTime;
-
-      hr = sampleAttributes->GetUINT32(WEBRTC_ENCODER_TIMESTAMP, &timestamp);
-      ThrowIfError(hr);
-      encodedImage._timeStamp = timestamp;
-
-      hr = sampleAttributes->GetUINT64(WEBRTC_ENCODER_NTP_TIME, &ntpTime);
-      ThrowIfError(hr);
-      encodedImage.ntp_time_ms_ = (int64_t)ntpTime;
-
-      hr = sampleAttributes->GetUINT64(WEBRTC_ENCODER_CAPTURE_RENDER_TIME, &captureRenderTime);
-      ThrowIfError(hr);
-      encodedImage.capture_time_ms_ = (int64_t)captureRenderTime;
     }
 
     RTPFragmentationHeader fragmentationHeader;
@@ -379,6 +364,17 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
 
     {
       webrtc::CriticalSectionScoped csLock(_lock.get());
+
+      LONGLONG sampleTimestamp;
+      sample->GetSampleTime(&sampleTimestamp);
+
+      CachedFrameAttributes frameAttributes;
+      if (_sampleAttributeQueue.pop(sampleTimestamp, frameAttributes)) {
+        encodedImage._timeStamp = frameAttributes.timestamp;
+        encodedImage.ntp_time_ms_ = frameAttributes.ntpTime;
+        encodedImage.capture_time_ms_ = frameAttributes.captureRenderTime;
+      }
+
       if (encodedCompleteCallback_ != nullptr) {
         encodedCompleteCallback_->Encoded(
           encodedImage, codecSpecificInfo_, &fragmentationHeader);

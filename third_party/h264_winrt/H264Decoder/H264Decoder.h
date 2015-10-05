@@ -19,6 +19,7 @@
 #include "H264MediaStream.h"
 #include "IH264DecodingCallback.h"
 #include "SourceReaderCB.h"
+#include "../Utils/SampleAttributeQueue.h"
 #include <webrtc/video_decoder.h>
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
@@ -74,6 +75,13 @@ private:
   DWORD streamIndex_;
 
   bool firstFrame_;
+
+  struct CachedFrameAttributes {
+    uint32_t timestamp;
+    uint64_t ntpTime;
+    uint64_t captureRenderTime;
+  };
+  SampleAttributeQueue<CachedFrameAttributes> _sampleAttributeQueue;
 };  // end of H264WinRTDecoderImpl class
 
 }  // namespace webrtc

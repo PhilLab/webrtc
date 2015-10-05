@@ -108,10 +108,6 @@ int H264WinRTDecoderImpl::InitDecode(const VideoCodec* inst,
   return 0;
 }
 
-const GUID WEBRTC_DECODER_TIMESTAMP           = { 0x11111111, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-const GUID WEBRTC_DECODER_NTP_TIME            = { 0x22222222, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-const GUID WEBRTC_DECODER_CAPTURE_RENDER_TIME = { 0x33333333, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-
 ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
   HRESULT hr;
 
@@ -150,19 +146,6 @@ ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
   hr = sample->SetSampleDuration(duration);
   ThrowIfError(hr);
 
-  ComPtr<IMFAttributes> sampleAttributes;
-  hr = sample.As(&sampleAttributes);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT32(WEBRTC_DECODER_TIMESTAMP, input_image._timeStamp);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT64(WEBRTC_DECODER_NTP_TIME, input_image.ntp_time_ms_);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT64(WEBRTC_DECODER_CAPTURE_RENDER_TIME, input_image.capture_time_ms_);
-  ThrowIfError(hr);
-
   return sample;
 }
 
@@ -178,6 +161,16 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
 
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
+
+    CachedFrameAttributes frameAttributes;
+    LONGLONG sampleTimestamp;
+    sample->GetSampleTime(&sampleTimestamp);
+
+    frameAttributes.timestamp = input_image._timeStamp;
+    frameAttributes.ntpTime = input_image.ntp_time_ms_;
+    frameAttributes.captureRenderTime = input_image.capture_time_ms_;
+    _sampleAttributeQueue.push(sampleTimestamp, frameAttributes);
+
     if (mediaStream_ != nullptr) {
       mediaStream_->ProcessSample(sample.Get());
     }
@@ -210,26 +203,6 @@ HRESULT FromSample(ComPtr<IMFSample> pSample, UINT32 width, UINT32 height, Video
     }
   }
 
-  // Get all the timestamp attributes out of the sample.
-  ComPtr<IMFAttributes> sampleAttributes;
-  hr = pSample.As(&sampleAttributes);
-  if (SUCCEEDED(hr)) {
-    UINT32 timestamp;
-    UINT64 ntpTime, captureRenderTime;
-
-    if (SUCCEEDED(sampleAttributes->GetUINT32(WEBRTC_DECODER_TIMESTAMP, &timestamp))) {
-      decodedFrame.set_timestamp(timestamp);
-    }
-
-    if (SUCCEEDED(sampleAttributes->GetUINT64(WEBRTC_DECODER_NTP_TIME, &ntpTime))) {
-      decodedFrame.set_ntp_time_ms((int64_t)ntpTime);
-    }
-
-    if (SUCCEEDED(sampleAttributes->GetUINT64(WEBRTC_DECODER_CAPTURE_RENDER_TIME, &captureRenderTime))) {
-      decodedFrame.set_render_time_ms((int64_t)captureRenderTime);
-    }
-  }
-
   return hr;
 }
 
@@ -259,6 +232,15 @@ void H264WinRTDecoderImpl::OnH264Decoded(ComPtr<IMFSample> pSample, DWORD dwStre
 
     if (SUCCEEDED(hr)) {
       webrtc::CriticalSectionScoped csLock(_cbLock.get());
+
+      LONGLONG sampleTimestamp;
+      pSample->GetSampleTime(&sampleTimestamp);
+      CachedFrameAttributes frameAttributes;
+      if (_sampleAttributeQueue.pop(sampleTimestamp, frameAttributes)) {
+        decodedFrame.set_timestamp(frameAttributes.timestamp);
+        decodedFrame.set_ntp_time_ms(frameAttributes.ntpTime);
+        decodedFrame.set_render_time_ms(frameAttributes.captureRenderTime);
+      }
 
       if (decodeCompleteCallback_ != nullptr) {
         decodeCompleteCallback_->Decoded(decodedFrame);
