@@ -29,6 +29,7 @@
         'Utils/ComPtrList.h',
         'Utils/CritSec.h',
         'Utils/OpQueue.h',
+        'Utils/SampleAttributeQueue.h',
 
         'H264Encoder/H264Encoder.h',
         'H264Encoder/H264Encoder.cc',

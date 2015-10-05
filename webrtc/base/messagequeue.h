@@ -170,7 +170,7 @@ class MessageQueue {
   // TODO(WINRT): isThread is a workaround for a crash that happens when
   // Thread, which derives from MessageQueue, is not finished constructing
   // but is invoked by MessageQueueManager
-  explicit MessageQueue(bool isThread, SocketServer* ss = NULL);
+  explicit MessageQueue(bool isThread = false, SocketServer* ss = NULL);
   virtual ~MessageQueue();
 
   SocketServer* socketserver() { return ss_; }

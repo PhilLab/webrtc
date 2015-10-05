@@ -17,6 +17,7 @@
 #include <mferror.h>
 #include "H264MediaSink.h"
 #include "IH264EncodingCallback.h"
+#include "../Utils/SampleAttributeQueue.h"
 #include <webrtc/video_encoder.h>
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
@@ -68,6 +69,13 @@ private:
   LONGLONG lastTimestampHns_;
   bool firstFrame_;
   int framePendingCount_;
+
+  struct CachedFrameAttributes {
+    uint32_t timestamp;
+    uint64_t ntpTime;
+    uint64_t captureRenderTime;
+  };
+  SampleAttributeQueue<CachedFrameAttributes> _sampleAttributeQueue;
 };  // end of H264WinRTEncoderImpl class
 
 }  // namespace webrtc
