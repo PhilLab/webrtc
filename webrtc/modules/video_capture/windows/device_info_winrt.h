@@ -32,6 +32,8 @@ private ref class MediaCaptureDevicesWinRT sealed {
 
   static MediaCaptureDevicesWinRT^ Instance();
 
+  void OnAppSuspending();
+
  internal:
   Platform::Agile<Windows::Media::Capture::MediaCapture>
     GetMediaCapture(Platform::String^ device_id);

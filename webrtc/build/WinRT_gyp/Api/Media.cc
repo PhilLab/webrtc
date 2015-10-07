@@ -411,10 +411,14 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
   }
 }
 
+void Media::OnAppSuspending() {
+  webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->OnAppSuspending();
+}
+
 IAsyncOperation<IVector<CaptureCapability^>^>^
   MediaDevice::GetVideoCaptureCapabilities() {
   auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^ {
-    auto mediaCapture =
+	auto mediaCapture =
       webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
       GetMediaCapture(_id);
     if (mediaCapture == nullptr) {
