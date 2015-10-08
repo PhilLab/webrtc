@@ -25,60 +25,60 @@ class SplTest : public testing::Test {
 };
 
 TEST_F(SplTest, MacroTest) {
-    // Macros with inputs.
-    int A = 10;
-    int B = 21;
-    int a = -3;
-    int b = WEBRTC_SPL_WORD32_MAX;
+  // Macros with inputs.
+  int A = 10;
+  int B = 21;
+  int a = -3;
+  int b = WEBRTC_SPL_WORD32_MAX;
 
-    EXPECT_EQ(10, WEBRTC_SPL_MIN(A, B));
-    EXPECT_EQ(21, WEBRTC_SPL_MAX(A, B));
+  EXPECT_EQ(10, WEBRTC_SPL_MIN(A, B));
+  EXPECT_EQ(21, WEBRTC_SPL_MAX(A, B));
 
-    EXPECT_EQ(3, WEBRTC_SPL_ABS_W16(a));
-    EXPECT_EQ(3, WEBRTC_SPL_ABS_W32(a));
+  EXPECT_EQ(3, WEBRTC_SPL_ABS_W16(a));
+  EXPECT_EQ(3, WEBRTC_SPL_ABS_W32(a));
 
-    EXPECT_EQ(-63, WEBRTC_SPL_MUL(a, B));
-    EXPECT_EQ(-2147483645, WEBRTC_SPL_MUL(a, b));
-    EXPECT_EQ(2147483651u, WEBRTC_SPL_UMUL(a, b));
-    b = WEBRTC_SPL_WORD16_MAX >> 1;
-    EXPECT_EQ(4294918147u, WEBRTC_SPL_UMUL_32_16(a, b));
-    EXPECT_EQ(-49149, WEBRTC_SPL_MUL_16_U16(a, b));
+  EXPECT_EQ(-63, WEBRTC_SPL_MUL(a, B));
+  EXPECT_EQ(-2147483645, WEBRTC_SPL_MUL(a, b));
+  EXPECT_EQ(2147483651u, WEBRTC_SPL_UMUL(a, b));
+  b = WEBRTC_SPL_WORD16_MAX >> 1;
+  EXPECT_EQ(4294918147u, WEBRTC_SPL_UMUL_32_16(a, b));
+  EXPECT_EQ(-49149, WEBRTC_SPL_MUL_16_U16(a, b));
 
-    a = b;
-    b = -3;
+  a = b;
+  b = -3;
 
-    EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT16(a, b));
-    EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT15(a, b));
-    EXPECT_EQ(-3, WEBRTC_SPL_MUL_16_32_RSFT14(a, b));
-    EXPECT_EQ(-24, WEBRTC_SPL_MUL_16_32_RSFT11(a, b));
+  EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT16(a, b));
+  EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT15(a, b));
+  EXPECT_EQ(-3, WEBRTC_SPL_MUL_16_32_RSFT14(a, b));
+  EXPECT_EQ(-24, WEBRTC_SPL_MUL_16_32_RSFT11(a, b));
 
-    EXPECT_EQ(-12288, WEBRTC_SPL_MUL_16_16_RSFT(a, b, 2));
-    EXPECT_EQ(-12287, WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(a, b, 2));
+  EXPECT_EQ(-12288, WEBRTC_SPL_MUL_16_16_RSFT(a, b, 2));
+  EXPECT_EQ(-12287, WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(a, b, 2));
 
-    EXPECT_EQ(21, WEBRTC_SPL_SAT(a, A, B));
-    EXPECT_EQ(21, WEBRTC_SPL_SAT(a, B, A));
+  EXPECT_EQ(21, WEBRTC_SPL_SAT(a, A, B));
+  EXPECT_EQ(21, WEBRTC_SPL_SAT(a, B, A));
 
-    // Shifting with negative numbers allowed
-    int shift_amount = 1;  // Workaround compiler warning using variable here.
-    // Positive means left shift
-    EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W32(a, shift_amount));
+  // Shifting with negative numbers allowed
+  int shift_amount = 1;  // Workaround compiler warning using variable here.
+  // Positive means left shift
+  EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W32(a, shift_amount));
 
-    // Shifting with negative numbers not allowed
-    // We cannot do casting here due to signed/unsigned problem
-    EXPECT_EQ(32766, WEBRTC_SPL_LSHIFT_W32(a, 1));
+  // Shifting with negative numbers not allowed
+  // We cannot do casting here due to signed/unsigned problem
+  EXPECT_EQ(32766, WEBRTC_SPL_LSHIFT_W32(a, 1));
 
-    EXPECT_EQ(8191u, WEBRTC_SPL_RSHIFT_U32(a, 1));
+  EXPECT_EQ(8191u, WEBRTC_SPL_RSHIFT_U32(a, 1));
 
-    EXPECT_EQ(1470, WEBRTC_SPL_RAND(A));
+  EXPECT_EQ(1470, WEBRTC_SPL_RAND(A));
 
-    EXPECT_EQ(-49149, WEBRTC_SPL_MUL_16_16(a, b));
-    EXPECT_EQ(1073676289, WEBRTC_SPL_MUL_16_16(WEBRTC_SPL_WORD16_MAX,
-                                               WEBRTC_SPL_WORD16_MAX));
-    EXPECT_EQ(1073709055, WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MAX,
-                                                      WEBRTC_SPL_WORD32_MAX));
-    EXPECT_EQ(1073741824, WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
-                                                      WEBRTC_SPL_WORD32_MIN));
-#if !(defined(WEBRTC_ARCH_ARM_V7)) && !(WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+  EXPECT_EQ(-49149, WEBRTC_SPL_MUL_16_16(a, b));
+  EXPECT_EQ(1073676289, WEBRTC_SPL_MUL_16_16(WEBRTC_SPL_WORD16_MAX,
+    WEBRTC_SPL_WORD16_MAX));
+  EXPECT_EQ(1073709055, WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MAX,
+    WEBRTC_SPL_WORD32_MAX));
+  EXPECT_EQ(1073741824, WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
+    WEBRTC_SPL_WORD32_MIN));
+#if (defined(WEBRTC_ARCH_ARM_V7)) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP))
 		EXPECT_EQ(-1073741824,
 			WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
 				WEBRTC_SPL_WORD32_MAX));
