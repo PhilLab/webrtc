@@ -70,13 +70,13 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
 #ifdef WINRT
     static const int32_t kMaxDeltaDelayMs = 10000;
     int32_t endToEndDecodingFinished =
-        Clock::GetRealTimeClock()->TimeInMilliseconds() +
-        static_cast<uint32_t>(Clock::CurrentNtpDeltaMs) -
-        static_cast<uint32_t>(decodedImage.ntp_time_ms());
+        Clock::GetRealTimeClock()->TimeInMilliseconds() 
+        + static_cast<uint32_t>(Clock::CurrentNtpDeltaMs)
+        - static_cast<uint32_t>(decodedImage.ntp_time_ms());
 
-    int32_t endToEndDelay = frameInfo->renderTimeMs +
-        static_cast<uint32_t>(Clock::CurrentNtpDeltaMs) -
-        static_cast<uint32_t>(decodedImage.ntp_time_ms());
+    int32_t endToEndDelay = frameInfo->renderTimeMs 
+        + static_cast<uint32_t>(Clock::CurrentNtpDeltaMs)
+        - static_cast<uint32_t>(decodedImage.ntp_time_ms());
     // we only finished decoding, however, 'renderTimeMs' is the value we
     // expect the video element to show the frame already considered the
     // audo/video sync delay.

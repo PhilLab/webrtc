@@ -59,10 +59,6 @@ class RealTimeClock : public Clock {
   int64_t CurrentNtpInMilliseconds() const override {
     timeval tv = CurrentTimeVal();
 
-// ToDO(winrt): investigating, why do we still need to adjust?
-// we already adjust the time in 'CurrentTimeVal'. However, right now,
-// it does not impact we check audio/video end to end delay
-
     uint32_t seconds;
     double microseconds_in_seconds;
     Adjust(tv, &seconds, &microseconds_in_seconds);
