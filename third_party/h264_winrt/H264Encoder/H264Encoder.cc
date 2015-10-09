@@ -221,6 +221,7 @@ int H264WinRTEncoderImpl::Encode(
 
     if (firstFrame_) {
       firstFrame_ = false;
+      startTime_ = frame.timestamp();
     }
 
     auto timestampHns = ((frame.timestamp() - startTime_) / 90) * 1000 * 10;
@@ -340,10 +341,18 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     uint32_t fragIdx = 0;
     for (uint32_t i = 0; i < sendBuffer.size() - 5; ++i) {
       byte* ptr = sendBuffer.data() + i;
+      int prefixLengthFound = 0;
       if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x00 && ptr[3] == 0x01
         && ((ptr[4] & 0x1f) != 0x09 /* ignore access unit delimiters */)) {
+        prefixLengthFound = 4;
+      }
+      else if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01
+        && ((ptr[3] & 0x1f) != 0x09 /* ignore access unit delimiters */)) {
+        prefixLengthFound = 3;
+      }
+      if (prefixLengthFound > 0) {
         fragmentationHeader.VerifyAndAllocateFragmentationHeader(fragIdx + 1);
-        fragmentationHeader.fragmentationOffset[fragIdx] = i + 4;
+        fragmentationHeader.fragmentationOffset[fragIdx] = i + prefixLengthFound;
         fragmentationHeader.fragmentationLength[fragIdx] = 0;  // We'll set that later
         // Set the length of the previous fragment.
         if (fragIdx > 0) {
