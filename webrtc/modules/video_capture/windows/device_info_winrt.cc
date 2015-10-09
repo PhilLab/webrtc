@@ -52,8 +52,16 @@ MediaCaptureDevicesWinRT^ MediaCaptureDevicesWinRT::Instance() {
   return instance;
 }
 
+void MediaCaptureDevicesWinRT::OnAppSuspending() {
+  // https://msdn.microsoft.com/library/windows/apps/br241124
+  // Note  For Windows Phone Store apps, music and media apps should clean up
+  // the MediaCapture object and associated resources in the Suspending event
+  // handler and recreate them in the Resuming event handler.
+  media_capture_map_.clear();
+}
+
 Platform::Agile<MediaCapture>
-MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
+  MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
   CriticalSectionScoped cs(critical_section_);
 
   // We cache MediaCapture objects
@@ -61,7 +69,7 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
   if (iter != media_capture_map_.end()) {
     return iter->second;
   } else {
-#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+  #if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
     // On some Windows Phone 8 devices, two calls of InitializeAsync on two
     // different coexisting instances causes exception to be thrown from the
     // second call.
