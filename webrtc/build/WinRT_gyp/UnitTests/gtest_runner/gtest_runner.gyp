@@ -65,7 +65,7 @@
             'SplashScreen480x800.png',
           ],
         }],
-          ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
+        ['OS_RUNTIME=="winrt" and winrt_platform=="win"', {
           'sources': [
             'Package.appxmanifest',
             'SplashScreen.png',
@@ -73,10 +73,20 @@
         }],
         ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
           'sources': [
-            'Generated Manifest Win10\AppxManifest.xml',
             'Package.Win10.appxmanifest',
             'SplashScreen.png',
           ],
+          'conditions': [
+            ['target_arch=="x64"', {
+              'sources': [
+                'Generated Manifest Win10\\x64\AppxManifest.xml',
+              ],
+            },{
+              'sources': [
+                'Generated Manifest Win10\\AppxManifest.xml',
+              ]
+            }],
+          ]
         }],
       ],
       'copies': [
@@ -99,9 +109,19 @@
             }],
             ['OS_RUNTIME=="winrt" and winrt_platform=="win10"', {
               'files': [
-                'Generated Manifest Win10\AppxManifest.xml',
                 'SplashScreen.png',
               ],
+              'conditions': [
+                ['target_arch=="x64"', {
+                  'files': [
+                    'Generated Manifest Win10\\x64\AppxManifest.xml',
+                  ],
+                },{
+                  'files': [
+                    'Generated Manifest Win10\\AppxManifest.xml',
+                  ],
+                }],
+              ]
             }],
           ],
           'files':[
@@ -176,9 +196,9 @@
               ],
             }],
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
-        'AdditionalDependencies': [
-         'ws2_32.lib',
-           'WindowsApp.lib',
+              'AdditionalDependencies': [
+                'ws2_32.lib',
+                'WindowsApp.lib'
               ],
             }],
           ],

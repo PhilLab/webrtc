@@ -155,9 +155,19 @@
         }],
         ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
           'sources': [
-            'Generated Manifest Win10\AppxManifest.xml',
             'Package.Win10.appxmanifest',
             'SplashScreen.png',
+          ],
+          'conditions': [
+            ['target_arch=="x64"', {
+              'sources': [
+                'Generated Manifest Win10\\x64\AppxManifest.xml',
+              ],
+            },{
+              'sources': [
+                'Generated Manifest Win10\\AppxManifest.xml',
+              ],
+            }],
           ],
         }],
       ],
@@ -181,8 +191,18 @@
             }],
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
               'files': [
-                'Generated Manifest Win10\AppxManifest.xml',
                 'SplashScreen.png',
+              ],
+              'conditions': [
+                ['target_arch=="x64"', {
+                  'files': [
+                    'Generated Manifest Win10\\x64\AppxManifest.xml',
+                  ],
+                },{
+                  'files': [
+                    'Generated Manifest Win10\\AppxManifest.xml',
+                  ],
+                }],
               ],
             }],
           ],
