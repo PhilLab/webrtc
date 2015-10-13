@@ -37,6 +37,9 @@ class ViERembTest : public ::testing::Test {
     process_thread_.reset(new NiceMock<MockProcessThread>);
     vie_remb_.reset(new VieRemb());
   }
+  virtual void TearDown() {
+    TickTime::DisableFakeClock();
+  }
   rtc::scoped_ptr<MockProcessThread> process_thread_;
   rtc::scoped_ptr<VieRemb> vie_remb_;
 };

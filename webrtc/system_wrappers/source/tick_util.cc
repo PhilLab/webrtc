@@ -32,6 +32,10 @@ void TickTime::UseFakeClock(int64_t start_millisecond) {
   fake_ticks_ = MillisecondsToTicks(start_millisecond);
 }
 
+void TickTime::DisableFakeClock() {
+  use_fake_clock_ = false;
+}
+
 void TickTime::AdvanceFakeClock(int64_t milliseconds) {
   assert(use_fake_clock_);
   fake_ticks_ += MillisecondsToTicks(milliseconds);
