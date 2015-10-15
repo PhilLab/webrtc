@@ -53,7 +53,8 @@ namespace webrtc_winrt_api_internal {
     }\
   }
 
-GlobalObserver::GlobalObserver() {
+GlobalObserver::GlobalObserver() :
+  _etwStatsEnabled(false) {
 }
 
 void GlobalObserver::SetPeerConnection(
@@ -62,6 +63,18 @@ void GlobalObserver::SetPeerConnection(
   if (_pc == nullptr) {
     _stats_observer_etw = nullptr;
   }
+}
+
+void GlobalObserver::ToggleETWStats(bool enable) {
+  if (_stats_observer_etw != nullptr) {
+    if (enable) {
+      _stats_observer_etw->Start(_pc->_impl);
+    }
+    else {
+      _stats_observer_etw->Stop();
+    }
+  }
+  _etwStatsEnabled = enable;
 }
 
 // Triggered when the SignalingState changed.
@@ -112,7 +125,8 @@ void GlobalObserver::OnIceConnectionChange(
         new rtc::RefCountedObject<webrtc::StatsObserverETW>();
     }
 
-    _stats_observer_etw->PollStats(_pc->_impl);
+    if (_etwStatsEnabled)
+      _stats_observer_etw->Start(_pc->_impl);
   }
   auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceStateChangeEvent();
   webrtc_winrt_api::RTCIceConnectionState cxNewState;
