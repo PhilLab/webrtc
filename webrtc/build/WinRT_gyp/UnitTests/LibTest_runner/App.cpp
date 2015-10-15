@@ -73,10 +73,12 @@ namespace LibTest_runner {
         if (spStringReporter->GetReport() != NULL) {
           outputTextBox_->Text = ref new Platform::String(
             (*spStringReporter->GetReport()).c_str());
-          outputTextBox_->Text += L"Execution finished.\n";
+          outputTextBox_->Text += L"Execution finished, will exit in 60s.\n";
         }
 
         progressRing_->IsActive = false;
+        Sleep(60 * 1000);
+        LibTestApp::Current->Exit();
       }, ui);
     }
   };
