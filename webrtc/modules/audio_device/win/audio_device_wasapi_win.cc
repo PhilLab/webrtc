@@ -43,6 +43,20 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
+#define KSAUDIO_SPEAKER_MONO            (SPEAKER_FRONT_CENTER)
+#define KSAUDIO_SPEAKER_STEREO          (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT)
+#define KSAUDIO_SPEAKER_QUAD            (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
+                                         SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT)
+#define KSAUDIO_SPEAKER_SURROUND        (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
+                                         SPEAKER_FRONT_CENTER | SPEAKER_BACK_CENTER)
+#define KSAUDIO_SPEAKER_5POINT1         (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
+                                         SPEAKER_FRONT_CENTER | SPEAKER_LOW_FREQUENCY | \
+                                         SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT)
+#define KSAUDIO_SPEAKER_7POINT1         (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
+                                         SPEAKER_FRONT_CENTER | SPEAKER_LOW_FREQUENCY | \
+                                         SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT | \
+                                         SPEAKER_FRONT_LEFT_OF_CENTER | SPEAKER_FRONT_RIGHT_OF_CENTER)
+
 
 // Macro that calls a COM method returning HRESULT value.
 #define EXIT_ON_ERROR(hres)    do { if (FAILED(hres)) goto Exit; } while (0)
@@ -513,8 +527,11 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
           "_playChannels      : %d", m_AudioDevice->_playChannels);
       } else {
-        Wfx = *mixFormat;
+        //IsFormatSupported failed, device is probably in surround mode.
+        //Firstly generate mix format to initialize media engine
+        Wfx = *m_AudioDevice->GenerateMixFormatForMediaEngine(mixFormat);
 
+        //Secondly initialize media engine with "expected" values
         m_AudioDevice->_playAudioFrameSize = Wfx.nBlockAlign;
         m_AudioDevice->_playBlockSize = Wfx.nSamplesPerSec / 100;
         m_AudioDevice->_playSampleRate = Wfx.nSamplesPerSec;
@@ -547,6 +564,13 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
           "_playBlockSize     : %d", m_AudioDevice->_playBlockSize);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
           "_playChannels      : %d", m_AudioDevice->_playChannels);
+
+        //Remember this settings
+        m_AudioDevice->_mixFormatOut = &Wfx;
+
+        //Now switch to the real supported mix format to initialize device
+        Wfx = *reinterpret_cast<WAVEFORMATEX*>
+          (m_AudioDevice->GeneratePCMMixFormat(mixFormat));
       }
 
       // ask for minimum buffer size (default)
@@ -4697,6 +4721,121 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut() {
 
   return hr;
 }
+
+// ----------------------------------------------------------------------------
+//  ShouldUpmix
+// ----------------------------------------------------------------------------
+bool AudioDeviceWindowsWasapi::ShouldUpmix()
+{
+  if (!_mixFormatOut || !_mixFormatSurroundOut)
+  {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "ShouldUpmix() failed: Bad mix format, no upmixing needed");
+    return false;
+  }
+
+  return _mixFormatSurroundOut->nChannels > _mixFormatOut->nChannels ?
+    true : false;
+
+}
+
+// ----------------------------------------------------------------------------
+//  GenerateMixFormatForMediaEngine
+// ----------------------------------------------------------------------------
+WAVEFORMATEX* AudioDeviceWindowsWasapi::GenerateMixFormatForMediaEngine(
+  WAVEFORMATEX* actualMixFormat)
+{
+
+  WAVEFORMATEX* Wfx = new WAVEFORMATEX();
+
+  bool isStereo = false;
+  StereoPlayoutIsAvailable(isStereo);
+
+  // Set wave format
+  Wfx->wFormatTag = WAVE_FORMAT_PCM;
+  Wfx->wBitsPerSample = 16;
+  Wfx->cbSize = 0;
+
+  Wfx->nChannels = isStereo ? 2 : 1;
+  Wfx->nSamplesPerSec = actualMixFormat->nSamplesPerSec;
+  Wfx->nBlockAlign = Wfx->nChannels * Wfx->wBitsPerSample / 8;
+  Wfx->nAvgBytesPerSec = Wfx->nSamplesPerSec * Wfx->nBlockAlign;
+
+  return Wfx;
+}
+
+// ----------------------------------------------------------------------------
+//  GeneratePCMMixFormat
+// ----------------------------------------------------------------------------
+WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
+  WAVEFORMATEX* actualMixFormat)
+{
+  WAVEFORMATPCMEX *waveFormatPCMEx = new WAVEFORMATPCMEX();
+
+  waveFormatPCMEx->Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+  waveFormatPCMEx->Format.nChannels = actualMixFormat->nChannels;
+  waveFormatPCMEx->Format.wBitsPerSample = 16;
+  waveFormatPCMEx->Format.nSamplesPerSec = actualMixFormat->nSamplesPerSec;
+
+  waveFormatPCMEx->Format.nBlockAlign = waveFormatPCMEx->Format.nChannels * 
+    waveFormatPCMEx->Format.wBitsPerSample / 8;  /* Same as the usual */
+
+  waveFormatPCMEx->Format.nAvgBytesPerSec = 
+    waveFormatPCMEx->Format.nSamplesPerSec*waveFormatPCMEx->Format.nBlockAlign;
+
+  waveFormatPCMEx->Format.cbSize = 22;  /* After this to GUID */
+  waveFormatPCMEx->Samples.wValidBitsPerSample = 16;  /* All bits have data */
+
+  switch (waveFormatPCMEx->Format.nChannels)
+  {
+  case 1:  
+    waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_MONO;
+    break;
+  case 2:  
+    waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_STEREO;
+    break;
+  case 4:  
+    waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_QUAD;
+    break;
+  case 6:
+    waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_5POINT1;
+    break;
+  case 8:
+    waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_7POINT1;
+    break;
+  default:
+    waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_STEREO;
+    break;
+  }
+
+  waveFormatPCMEx->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;  // Specify PCM
+
+  return waveFormatPCMEx;
+}
+
+// ----------------------------------------------------------------------------
+//  Upmix
+// ----------------------------------------------------------------------------
+template<typename T>void AudioDeviceWindowsWasapi::Upmix(T *inSamples,
+  int numberOfFrames, T *outSamples, int inChannels, int outChannels)
+{
+  for (uint32_t i = 0, o = 0; i < numberOfFrames * inChannels;
+    i += inChannels, o += outChannels)
+  {
+    for (uint32_t j = 0; j < inChannels; ++j)
+    {
+      outSamples[o + j] = inSamples[i + j];
+    }
+  }
+  for (uint32_t i = 0, o = 0; i < numberOfFrames; ++i, o += outChannels)
+  {
+    for (uint32_t j = inChannels; j < outChannels; ++j)
+    {
+      outSamples[o + j] = 0;
+    }
+  }
+}
+
 
 
 // ----------------------------------------------------------------------------

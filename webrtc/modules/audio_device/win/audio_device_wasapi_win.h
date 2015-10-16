@@ -25,7 +25,8 @@
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
 #include <mfapi.h>
-#include<ppltasks.h>
+#include <ppltasks.h>
+
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -312,6 +313,14 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     HRESULT _InitializeAudioDeviceIn();
     HRESULT _InitializeAudioDeviceOut();
 
+    //Surround system support
+    bool ShouldUpmix();
+    WAVEFORMATEX* GenerateMixFormatForMediaEngine(
+      WAVEFORMATEX* actualMixFormat);
+    WAVEFORMATPCMEX* GeneratePCMMixFormat(WAVEFORMATEX* actualMixFormat);
+    template<typename T>void Upmix(T *inSamples, int numberOfFrames,
+      T *outSamples, int inChannels, int outChannels);
+
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
     char* WideToUTF8(const TCHAR* src) const;
@@ -334,6 +343,7 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;
+    WAVEFORMATEX           *_mixFormatSurroundOut;
     DeviceInformationCollection^ _ptrCaptureCollection;
     DeviceInformationCollection^ _ptrRenderCollection;
     DeviceInformationCollection^ _ptrCollection;
