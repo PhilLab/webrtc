@@ -12,13 +12,21 @@
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
 
+
 namespace webrtc {
+class CriticalSectionWrapper;
 // A webrtc::StatsObserver implementation used to receive statistics about the
 // current PeerConnection. The statistics are logged to an ETW session.
 class StatsObserverETW : public StatsObserver, public rtc::MessageHandler {
  public:
+  enum Status {
+     kDisabled = 0,
+     kEnabled = 1,
+     kDisablePending = 2
+  };
   StatsObserverETW();
-  void PollStats(rtc::scoped_refptr<webrtc::PeerConnectionInterface> pci);
+  void Start(rtc::scoped_refptr<webrtc::PeerConnectionInterface> pci);
+  void Stop();
 
   // StatsObserver
   virtual void OnComplete(const StatsReports& reports);
@@ -32,10 +40,14 @@ class StatsObserverETW : public StatsObserver, public rtc::MessageHandler {
  private:
   void GetStreamCollectionStats(
     rtc::scoped_refptr<StreamCollectionInterface>streams);
+  void PollStats();
 
  private:
   static const int kInterval;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> pci_;
+
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  Status status_;
 };
 
 }  // namespace webrtc

@@ -445,6 +445,12 @@ void RTCPeerConnection::Close() {
   });
 }
 
+void RTCPeerConnection::ToggleETWStats(bool enable) {
+  globals::RunOnGlobalThread<void>([this, enable] {
+    _observer->ToggleETWStats(enable);
+  });
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
   globals::RunOnGlobalThread<void>([this, &ret] {

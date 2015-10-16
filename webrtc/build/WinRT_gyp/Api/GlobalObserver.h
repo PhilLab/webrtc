@@ -31,6 +31,8 @@ class GlobalObserver : public webrtc::PeerConnectionObserver {
 
   void SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc);
 
+  void ToggleETWStats(bool enable);
+
   // PeerConnectionObserver functions
   virtual void OnSignalingChange(
     webrtc::PeerConnectionInterface::SignalingState new_state);
@@ -58,6 +60,7 @@ class GlobalObserver : public webrtc::PeerConnectionObserver {
  private:
   webrtc_winrt_api::RTCPeerConnection^ _pc;
   rtc::scoped_refptr<webrtc::StatsObserverETW> _stats_observer_etw;
+  bool _etwStatsEnabled;
 };
 
 // There is one of those per call to CreateOffer().
