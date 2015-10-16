@@ -8,8 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef H264_H264MEDIASINK_H_
-#define H264_H264MEDIASINK_H_
+#ifndef THIRD_PARTY_H264_WINRT_H264ENCODER_H264MEDIASINK_H_
+#define THIRD_PARTY_H264_WINRT_H264ENCODER_H264MEDIASINK_H_
 
 #include <Mferror.h>
 #include <mfidl.h>
@@ -18,7 +18,7 @@
 #include <windows.media.mediaproperties.h>
 #include <wrl.h>
 
-#include "../Utils/CritSec.h"
+#include "Utils/CritSec.h"
 #include "IH264EncodingCallback.h"
 #include "H264StreamSink.h"
 
@@ -34,7 +34,7 @@ class H264MediaSink : public Microsoft::WRL::RuntimeClass<
   IMFClockStateSink> {
   InspectableClass(L"H264MediaSink", BaseTrust)
 
-public:
+ public:
   H264MediaSink();
   virtual ~H264MediaSink();
 
@@ -77,19 +77,18 @@ public:
 
   HRESULT RegisterEncodingCallback(IH264EncodingCallback *callback);
 
-private:
+ private:
   void HandleError(HRESULT hr);
 
   HRESULT CheckShutdown() const {
     if (isShutdown_) {
       return MF_E_SHUTDOWN;
-    }
-    else {
+    } else {
       return S_OK;
     }
   }
 
-private:
+ private:
   CritSec critSec_;
 
   bool isShutdown_;
@@ -100,4 +99,4 @@ private:
 
 }  // namespace webrtc
 
-#endif  // H264_H264MEDIASINK_H_
+#endif  // THIRD_PARTY_H264_WINRT_H264ENCODER_H264MEDIASINK_H_

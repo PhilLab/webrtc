@@ -8,13 +8,7 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "H264Encoder.h"
-#include "H264StreamSink.h"
-#include "H264MediaSink.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "../Utils/Utils.h"
-#include "libyuv/convert.h"
-#include "webrtc/base/logging.h"
+#include "third_party/h264_winrt/H264Encoder/H264Encoder.h"
 
 #include <Windows.h>
 #include <stdlib.h>
@@ -25,22 +19,22 @@
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <wrl\implements.h>
-#include <sstream>
-#include <iomanip>
 #include <codecapi.h>
+#include <sstream>
+#include <vector>
+#include <iomanip>
+
+#include "H264StreamSink.h"
+#include "H264MediaSink.h"
+#include "Utils/Utils.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "libyuv/convert.h"
+#include "webrtc/base/logging.h"
+
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
 #pragma comment(lib, "mfuuid.lib")
-
-using namespace concurrency;
-using namespace Platform;
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation;
-using namespace Windows::Media::Core;
-using namespace Windows::Media::MediaProperties;
-using namespace Windows::Media::Transcoding;
-using namespace Windows::Storage::Streams;
 
 namespace webrtc {
 
@@ -64,65 +58,85 @@ H264WinRTEncoderImpl::~H264WinRTEncoderImpl() {
 int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   int number_of_cores,
   size_t /*maxPayloadSize */) {
+  HRESULT hr = S_OK;
 
   webrtc::CriticalSectionScoped csLock(_lock.get());
 
-  ThrowIfError(MFStartup(MF_VERSION));
+  ON_SUCCEEDED(MFStartup(MF_VERSION));
 
   // output media type (h264)
-  ThrowIfError(MFCreateMediaType(&mediaTypeOut_));
-  ThrowIfError(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-  ThrowIfError(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
+  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut_));
+  ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+  ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
   // I find that 300kbit represents a good balance between video quality and
   // the bandwidth that a 620 Windows phone can handle.
-  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, inst->targetBitrate > 0 ? inst->targetBitrate : 300 * 1024));
-  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
-  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
-  // These are for increasing the number of keyframes.  It improves time to first frame and
-  // recovery when the video freezes.
-  ThrowIfError(mediaTypeOut_->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, 30));
-  ThrowIfError(mediaTypeOut_->SetUINT32(CODECAPI_AVEncMPVGOPSize, 10));
-  ThrowIfError(mediaTypeOut_->SetUINT32(CODECAPI_AVEncVideoMaxKeyframeDistance, 10));
-  ThrowIfError(MFSetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, inst->width, inst->height));
-  ThrowIfError(MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, inst->maxFramerate, 1));
+  // TODO(winrt): Make bitrate a function of resolution.
+  //              Change it when resolution changes.
+  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE,
+    inst->targetBitrate > 0 ? inst->targetBitrate : 300 * 1024));
+  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE,
+    MFVideoInterlace_Progressive));
+  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
+  // These are for increasing the number of keyframes.
+  // It improves time to first frame and recovery when the video freezes.
+  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, 30));
+  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(CODECAPI_AVEncMPVGOPSize, 10));
+  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(
+    CODECAPI_AVEncVideoMaxKeyframeDistance, 10));
+  ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut_.Get(),
+    MF_MT_FRAME_SIZE, inst->width, inst->height));
+  ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeOut_.Get(),
+    MF_MT_FRAME_RATE, inst->maxFramerate, 1));
 
   // input media type (nv12)
-  ThrowIfError(MFCreateMediaType(&mediaTypeIn_));
-  ThrowIfError(mediaTypeIn_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-  ThrowIfError(mediaTypeIn_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12));
-  ThrowIfError(mediaTypeIn_->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
-  ThrowIfError(mediaTypeIn_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
-  ThrowIfError(MFSetAttributeSize(mediaTypeIn_.Get(), MF_MT_FRAME_SIZE, inst->width, inst->height));
-  ThrowIfError(MFSetAttributeRatio(mediaTypeIn_.Get(), MF_MT_FRAME_RATE, inst->maxFramerate, 1));
+  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeIn_));
+  ON_SUCCEEDED(mediaTypeIn_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+  ON_SUCCEEDED(mediaTypeIn_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12));
+  ON_SUCCEEDED(mediaTypeIn_->SetUINT32(
+    MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
+  ON_SUCCEEDED(mediaTypeIn_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
+  ON_SUCCEEDED(MFSetAttributeSize(mediaTypeIn_.Get(),
+    MF_MT_FRAME_SIZE, inst->width, inst->height));
+  ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeIn_.Get(),
+    MF_MT_FRAME_RATE, inst->maxFramerate, 1));
 
   // Create the media sink
-  ThrowIfError(MakeAndInitialize<H264MediaSink>(&mediaSink_));
+  ON_SUCCEEDED(Microsoft::WRL::MakeAndInitialize<H264MediaSink>(&mediaSink_));
 
   // SinkWriter creation attributes
-  ThrowIfError(MFCreateAttributes(&sinkWriterCreationAttributes_, 1));
-  ThrowIfError(sinkWriterCreationAttributes_->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE));
-  ThrowIfError(sinkWriterCreationAttributes_->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, FALSE));
-  ThrowIfError(sinkWriterCreationAttributes_->SetUINT32(MF_LOW_LATENCY, TRUE));
+  ON_SUCCEEDED(MFCreateAttributes(&sinkWriterCreationAttributes_, 1));
+  ON_SUCCEEDED(sinkWriterCreationAttributes_->SetUINT32(
+    MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE));
+  ON_SUCCEEDED(sinkWriterCreationAttributes_->SetUINT32(
+    MF_SINK_WRITER_DISABLE_THROTTLING, FALSE));
+  ON_SUCCEEDED(sinkWriterCreationAttributes_->SetUINT32(
+    MF_LOW_LATENCY, TRUE));
 
   // Create the sink writer
-  ThrowIfError(MFCreateSinkWriterFromMediaSink(mediaSink_.Get(), sinkWriterCreationAttributes_.Get(), &sinkWriter_));
+  ON_SUCCEEDED(MFCreateSinkWriterFromMediaSink(mediaSink_.Get(),
+    sinkWriterCreationAttributes_.Get(), &sinkWriter_));
 
   // Add the h264 output stream to the writer
-  ThrowIfError(sinkWriter_->AddStream(mediaTypeOut_.Get(), &streamIndex_));
+  ON_SUCCEEDED(sinkWriter_->AddStream(mediaTypeOut_.Get(), &streamIndex_));
 
   // SinkWriter encoder properties
-  ThrowIfError(MFCreateAttributes(&sinkWriterEncoderAttributes_, 1));
-  ThrowIfError(sinkWriterEncoderAttributes_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
-  ThrowIfError(sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get()));
+  ON_SUCCEEDED(MFCreateAttributes(&sinkWriterEncoderAttributes_, 1));
+  ON_SUCCEEDED(sinkWriterEncoderAttributes_->SetUINT32(
+    MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
+  ON_SUCCEEDED(sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(),
+    sinkWriterEncoderAttributes_.Get()));
 
   // Register this as the callback for encoded samples.
-  mediaSink_->RegisterEncodingCallback(this);
+  ON_SUCCEEDED(mediaSink_->RegisterEncodingCallback(this));
 
-  ThrowIfError(sinkWriter_->BeginWriting());
+  ON_SUCCEEDED(sinkWriter_->BeginWriting());
 
-  inited_ = true;
-
-  return WEBRTC_VIDEO_CODEC_OK;
+  if (SUCCEEDED(hr)) {
+    inited_ = true;
+    return WEBRTC_VIDEO_CODEC_OK;
+  } else {
+    return hr;
+  }
 }
 
 int H264WinRTEncoderImpl::RegisterEncodeCompleteCallback(
@@ -153,48 +167,56 @@ int H264WinRTEncoderImpl::Release() {
 }
 
 ComPtr<IMFSample> FromVideoFrame(const VideoFrame& frame) {
-  HRESULT hr;
+  HRESULT hr = S_OK;
   ComPtr<IMFSample> sample;
-  hr = MFCreateSample(sample.GetAddressOf());
-  ThrowIfError(hr);
+  ON_SUCCEEDED(MFCreateSample(sample.GetAddressOf()));
 
   ComPtr<IMFAttributes> sampleAttributes;
-  hr = sample.As(&sampleAttributes);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(sample.As(&sampleAttributes));
 
-  auto totalSize = frame.allocated_size(PlaneType::kYPlane) +
-    frame.allocated_size(PlaneType::kUPlane) +
-    frame.allocated_size(PlaneType::kVPlane);
-
-  ComPtr<IMFMediaBuffer> mediaBuffer;
-  hr = MFCreateMemoryBuffer(totalSize, mediaBuffer.GetAddressOf());
-  ThrowIfError(hr);
-
-  BYTE* destBuffer = NULL;
   if (SUCCEEDED(hr)) {
-    DWORD cbMaxLength;
-    DWORD cbCurrentLength;
-    hr = mediaBuffer->Lock(&destBuffer, &cbMaxLength, &cbCurrentLength);
+    auto totalSize = frame.allocated_size(PlaneType::kYPlane) +
+      frame.allocated_size(PlaneType::kUPlane) +
+      frame.allocated_size(PlaneType::kVPlane);
+
+    ComPtr<IMFMediaBuffer> mediaBuffer;
+    ON_SUCCEEDED(MFCreateMemoryBuffer(totalSize, mediaBuffer.GetAddressOf()));
+
+    BYTE* destBuffer = nullptr;
+    if (SUCCEEDED(hr)) {
+      DWORD cbMaxLength;
+      DWORD cbCurrentLength;
+      ON_SUCCEEDED(mediaBuffer->Lock(
+        &destBuffer, &cbMaxLength, &cbCurrentLength));
+    }
+
+    if (SUCCEEDED(hr)) {
+      // TODO(winrt): Internally, H264 uses dimensions with multiples of 16.
+      //              Might be possible to anticipate this and provie a sample
+      //              with dimensions that fit that characteristic.
+      //              Unsure how the difference in stride vs width would be
+      //              specified on the sample.
+      BYTE* destUV = destBuffer +
+        (frame.stride(PlaneType::kYPlane) * frame.height());
+      libyuv::I420ToNV12(
+        frame.buffer(PlaneType::kYPlane), frame.stride(PlaneType::kYPlane),
+        frame.buffer(PlaneType::kUPlane), frame.stride(PlaneType::kUPlane),
+        frame.buffer(PlaneType::kVPlane), frame.stride(PlaneType::kVPlane),
+        destBuffer, frame.stride(PlaneType::kYPlane),
+        destUV, frame.stride(PlaneType::kYPlane),
+        frame.width(),
+        frame.height());
+    }
+
+    ON_SUCCEEDED(mediaBuffer->SetCurrentLength(
+      frame.width() * frame.height() * 3 / 2));
+
+    if (destBuffer != nullptr) {
+      mediaBuffer->Unlock();
+    }
+
+    ON_SUCCEEDED(sample->AddBuffer(mediaBuffer.Get()));
   }
-
-  BYTE* destUV = destBuffer + (frame.stride(PlaneType::kYPlane) * frame.height());
-  libyuv::I420ToNV12(
-    frame.buffer(PlaneType::kYPlane), frame.stride(PlaneType::kYPlane),
-    frame.buffer(PlaneType::kUPlane), frame.stride(PlaneType::kUPlane),
-    frame.buffer(PlaneType::kVPlane), frame.stride(PlaneType::kVPlane),
-    destBuffer, frame.stride(PlaneType::kYPlane),
-    destUV, frame.stride(PlaneType::kYPlane),
-    frame.width(),
-    frame.height());
-
-  hr = mediaBuffer->SetCurrentLength(frame.width() * frame.height() * 3 / 2);
-  ThrowIfError(hr);
-
-  hr = mediaBuffer->Unlock();
-  ThrowIfError(hr);
-
-  hr = sample->AddBuffer(mediaBuffer.Get());
-  ThrowIfError(hr);
 
   return sample;
 }
@@ -203,7 +225,6 @@ int H264WinRTEncoderImpl::Encode(
   const VideoFrame& frame,
   const CodecSpecificInfo* codec_specific_info,
   const std::vector<VideoFrameType>* frame_types) {
-
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (!inited_) {
@@ -225,52 +246,50 @@ int H264WinRTEncoderImpl::Encode(
     }
 
     auto timestampHns = ((frame.timestamp() - startTime_) / 90) * 1000 * 10;
-    hr = sample->SetSampleTime(timestampHns);
-    ThrowIfError(hr);
+    ON_SUCCEEDED(sample->SetSampleTime(timestampHns));
 
-    auto durationHns = timestampHns - lastTimestampHns_;
-    hr = sample->SetSampleDuration(durationHns);
-    ThrowIfError(hr);
-
-    lastTimestampHns_ = timestampHns;
-
-    // Cache the frame attributes to get them back after the encoding.
-    CachedFrameAttributes frameAttributes;
-    frameAttributes.timestamp = frame.timestamp();
-    frameAttributes.ntpTime = frame.ntp_time_ms();
-    frameAttributes.captureRenderTime = frame.render_time_ms();
-    _sampleAttributeQueue.push(timestampHns, frameAttributes);
-
-    UINT32 oldWidth, oldHeight;
-    hr = MFGetAttributeSize(mediaTypeIn_.Get(), MF_MT_FRAME_SIZE, &oldWidth, &oldHeight);
-    ThrowIfError(hr);
-
-    if ((int)oldWidth != frame.width() || (int)oldHeight != frame.height()) {
-      hr = MFSetAttributeSize(mediaTypeIn_.Get(), MF_MT_FRAME_SIZE, frame.width(), frame.height());
-      ThrowIfError(hr);
-      hr = MFSetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, frame.width(), frame.height());
-      ThrowIfError(hr);
-
-      ComPtr<IMFSinkWriterEncoderConfig> encoderConfig;
-      hr = sinkWriter_.As(&encoderConfig);
-      ThrowIfError(hr);
-
-      hr = encoderConfig->SetTargetMediaType(streamIndex_, mediaTypeOut_.Get(), sinkWriterEncoderAttributes_.Get());
-      ThrowIfError(hr);
-
-      hr = sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get());
-      ThrowIfError(hr);
+    if (SUCCEEDED(hr)) {
+      auto durationHns = timestampHns - lastTimestampHns_;
+      hr = sample->SetSampleDuration(durationHns);
     }
 
-    if (framePendingCount_ > 30) {
+    if (SUCCEEDED(hr)) {
+      lastTimestampHns_ = timestampHns;
+
+      // Cache the frame attributes to get them back after the encoding.
+      CachedFrameAttributes frameAttributes;
+      frameAttributes.timestamp = frame.timestamp();
+      frameAttributes.ntpTime = frame.ntp_time_ms();
+      frameAttributes.captureRenderTime = frame.render_time_ms();
+      _sampleAttributeQueue.push(timestampHns, frameAttributes);
+    }
+
+    UINT32 oldWidth = 0, oldHeight = 0;
+    ON_SUCCEEDED(MFGetAttributeSize(mediaTypeIn_.Get(),
+      MF_MT_FRAME_SIZE, &oldWidth, &oldHeight));
+
+    if (SUCCEEDED(hr) && (static_cast<int>(oldWidth) != frame.width() ||
+      static_cast<int>(oldHeight) != frame.height())) {
+      ON_SUCCEEDED(MFSetAttributeSize(mediaTypeIn_.Get(),
+        MF_MT_FRAME_SIZE, frame.width(), frame.height()));
+      ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut_.Get(),
+        MF_MT_FRAME_SIZE, frame.width(), frame.height()));
+
+      ComPtr<IMFSinkWriterEncoderConfig> encoderConfig;
+      ON_SUCCEEDED(sinkWriter_.As(&encoderConfig));
+      ON_SUCCEEDED(encoderConfig->SetTargetMediaType(streamIndex_,
+        mediaTypeOut_.Get(), sinkWriterEncoderAttributes_.Get()));
+      ON_SUCCEEDED(sinkWriter_->SetInputMediaType(streamIndex_,
+        mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get()));
+    }
+
+    if (SUCCEEDED(hr) && framePendingCount_ > 30) {
       OutputDebugString(L"!");
       hr = sinkWriter_->Flush((DWORD)MF_SINK_WRITER_ALL_STREAMS);
-      ThrowIfError(hr);
       framePendingCount_ = 0;
     }
 
-    hr = sinkWriter_->WriteSample(streamIndex_, sample.Get());
-    ThrowIfError(hr);
+    ON_SUCCEEDED(sinkWriter_->WriteSample(streamIndex_, sample.Get()));
 
     ++framePendingCount_;
   }
@@ -287,8 +306,8 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
   }
 
   DWORD totalLength;
-  HRESULT hr = sample->GetTotalLength(&totalLength);
-  ThrowIfError(hr);
+  HRESULT hr = S_OK;
+  ON_SUCCEEDED(sample->GetTotalLength(&totalLength));
 
   ComPtr<IMFMediaBuffer> buffer;
   hr = sample->GetBufferByIndex(0, &buffer);
@@ -314,9 +333,12 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
       return;
     }
 
-    UINT32 outWidth, outHeight;
-    hr = MFGetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, &outWidth, &outHeight);
-    ThrowIfError(hr);
+    UINT32 outWidth = 0, outHeight = 0;
+    ON_SUCCEEDED(MFGetAttributeSize(mediaTypeOut_.Get(),
+      MF_MT_FRAME_SIZE, &outWidth, &outHeight));
+    if (FAILED(hr)) {
+      return;
+    }
 
     // sendBuffer is not copied here.
     EncodedImage encodedImage(sendBuffer.data(), curLength, curLength);
@@ -327,7 +349,8 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     hr = sample.As(&sampleAttributes);
     if (SUCCEEDED(hr)) {
       UINT32 cleanPoint;
-      hr = sampleAttributes->GetUINT32(MFSampleExtension_CleanPoint, &cleanPoint);
+      hr = sampleAttributes->GetUINT32(
+        MFSampleExtension_CleanPoint, &cleanPoint);
       if (SUCCEEDED(hr) && cleanPoint) {
         encodedImage._completeFrame = true;
         encodedImage._frameType = kKeyFrame;
@@ -345,8 +368,7 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
       if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x00 && ptr[3] == 0x01
         && ((ptr[4] & 0x1f) != 0x09 /* ignore access unit delimiters */)) {
         prefixLengthFound = 4;
-      }
-      else if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01
+      } else if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01
         && ((ptr[3] & 0x1f) != 0x09 /* ignore access unit delimiters */)) {
         prefixLengthFound = 3;
       }
@@ -368,7 +390,8 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     // Set the length of the last fragment.
     if (fragIdx > 0) {
       fragmentationHeader.fragmentationLength[fragIdx - 1] =
-        sendBuffer.size() - fragmentationHeader.fragmentationOffset[fragIdx - 1];
+        sendBuffer.size() -
+        fragmentationHeader.fragmentationOffset[fragIdx - 1];
     }
 
     {
@@ -401,7 +424,6 @@ static uint32_t setRatesBuffer = 0;
 
 int H264WinRTEncoderImpl::SetRates(
   uint32_t new_bitrate_kbit, uint32_t new_framerate) {
-
   // TODO(winrt): Revisit this function once we know how to work around
   //              the crash in the H264 stack that sometimes happens.
   return WEBRTC_VIDEO_CODEC_OK;
@@ -423,29 +445,30 @@ int H264WinRTEncoderImpl::SetRates(
 
   hr = mediaTypeOut_->GetUINT32(MF_MT_AVG_BITRATE, &old_bitrate_kbit);
   old_bitrate_kbit /= 1000;
-  hr = MFGetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, &old_framerate, &one);
+  hr = MFGetAttributeRatio(mediaTypeOut_.Get(),
+    MF_MT_FRAME_RATE, &old_framerate, &one);
 
   if (old_bitrate_kbit != new_bitrate_kbit) {
     LOG(LS_INFO) << "H264WinRTEncoderImpl::SetRates("
       << new_bitrate_kbit << "kbit " << new_framerate << "fps)";
     hr = mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, new_bitrate_kbit * 1024);
-#if 0 // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
+#if 0  // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
     hr = MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, new_framerate, 1);
     hr = MFSetAttributeRatio(mediaTypeIn_.Get(), MF_MT_FRAME_RATE, new_framerate, 1);
 #endif
 
     ComPtr<IMFSinkWriterEncoderConfig> encoderConfig;
-    hr = sinkWriter_.As(&encoderConfig);
-    ThrowIfError(hr);
+    ON_SUCCEEDED(sinkWriter_.As(&encoderConfig));
 
-    hr = encoderConfig->SetTargetMediaType(streamIndex_, mediaTypeOut_.Get(), sinkWriterEncoderAttributes_.Get());
+    ON_SUCCEEDED(encoderConfig->SetTargetMediaType(
+      streamIndex_, mediaTypeOut_.Get(), sinkWriterEncoderAttributes_.Get()));
     if (FAILED(hr)) {
       LOG(LS_ERROR) << "SetTargetMediaType failed: " << hr;
     }
 
-#if 0 // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
-    hr = sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get());
-    ThrowIfError(hr);
+#if 0  // TODO(winrt): Changing FPS causes significant hiccup in encoding.  Ignore it for now.
+    ON_SUCCEEDED(sinkWriter_->SetInputMediaType(
+      streamIndex_, mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get()));
 #endif
   }
 

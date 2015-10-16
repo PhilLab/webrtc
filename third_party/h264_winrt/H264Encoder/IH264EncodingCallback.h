@@ -8,8 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef H264_IH264ENCODINGCALLBACK_H_
-#define H264_IH264ENCODINGCALLBACK_H_
+#ifndef THIRD_PARTY_H264_WINRT_H264ENCODER_IH264ENCODINGCALLBACK_H_
+#define THIRD_PARTY_H264_WINRT_H264ENCODER_IH264ENCODINGCALLBACK_H_
 
 #include <wrl\implements.h>
 
@@ -22,5 +22,5 @@ interface IH264EncodingCallback {
 
 }  // namespace webrtc
 
-#endif  // H264_IH264ENCODINGCALLBACK_H_
+#endif  // THIRD_PARTY_H264_WINRT_H264ENCODER_IH264ENCODINGCALLBACK_H_
 

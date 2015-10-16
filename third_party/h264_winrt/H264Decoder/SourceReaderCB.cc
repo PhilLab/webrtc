@@ -8,7 +8,7 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "SourceReaderCB.h"
+#include "third_party/h264_winrt/H264Decoder/SourceReaderCB.h"
 #include "IH264DecodingCallback.h"
 #include <Windows.h>
 
@@ -25,10 +25,12 @@ STDMETHODIMP SourceReaderCB::OnReadSample(
   HRESULT hrStatus, DWORD dwStreamIndex,
   DWORD dwStreamFlags, LONGLONG llTimestamp, IMFSample *pSample) {
   if (pSample == nullptr) {
-    OutputDebugString((L"SourceReaderCB::OnReadSample()  Got NULL sample HRESULT:" + hrStatus.ToString())->Data());
+    return S_OK;
   }
 
-  callback_->OnH264Decoded(pSample, dwStreamFlags);
+  if (callback_ != nullptr) {
+    callback_->OnH264Decoded(pSample, dwStreamFlags);
+  }
   return S_OK;
 }
 

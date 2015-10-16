@@ -8,14 +8,12 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "H264StreamSink.h"
+#include "third_party/h264_winrt/H264Encoder/H264StreamSink.h"
 
 #include <Windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
-#include "../Utils/Utils.h"
-
-using namespace Platform;
+#include "Utils/Utils.h"
 
 namespace webrtc {
 
@@ -33,26 +31,28 @@ H264StreamSink::~H264StreamSink() {
   OutputDebugString(L"H264StreamSink::~H264StreamSink()\n");
 }
 
-HRESULT H264StreamSink::RuntimeClassInitialize(DWORD dwIdentifier, H264MediaSink *pParent) {
-
+HRESULT H264StreamSink::RuntimeClassInitialize(
+  DWORD dwIdentifier, H264MediaSink *pParent) {
   HRESULT hr = S_OK;
 
   hr = MFCreateEventQueue(&spEventQueue_);
 
   // Allocate a new work queue for async operations.
   if (SUCCEEDED(hr)) {
-    hr = MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_STANDARD, &workQueueId_);
+    hr = MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_STANDARD,
+      &workQueueId_);
   }
 
   if (SUCCEEDED(hr)) {
-    spSink_ = (IMFMediaSink*)pParent;
+    spSink_ = reinterpret_cast<IMFMediaSink*>(pParent);
     dwIdentifier_ = dwIdentifier;
   }
 
   return hr;
 }
 
-IFACEMETHODIMP H264StreamSink::BeginGetEvent(IMFAsyncCallback *pCallback, IUnknown *punkState) {
+IFACEMETHODIMP H264StreamSink::BeginGetEvent(
+  IMFAsyncCallback *pCallback, IUnknown *punkState) {
   HRESULT hr = S_OK;
 
   AutoLock lock(critSec_);
@@ -66,7 +66,8 @@ IFACEMETHODIMP H264StreamSink::BeginGetEvent(IMFAsyncCallback *pCallback, IUnkno
   return hr;
 }
 
-IFACEMETHODIMP H264StreamSink::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEvent **ppEvent) {
+IFACEMETHODIMP H264StreamSink::EndGetEvent(
+  IMFAsyncResult *pResult, IMFMediaEvent **ppEvent) {
   HRESULT hr = S_OK;
 
   AutoLock lock(critSec_);
@@ -80,7 +81,8 @@ IFACEMETHODIMP H264StreamSink::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEven
   return hr;
 }
 
-IFACEMETHODIMP H264StreamSink::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent) {
+IFACEMETHODIMP H264StreamSink::GetEvent(
+  DWORD dwFlags, IMFMediaEvent **ppEvent) {
   // NOTE:
   // GetEvent can block indefinitely, so we don't hold the lock.
   // This requires some juggling with the event queue pointer.
@@ -115,7 +117,8 @@ IFACEMETHODIMP H264StreamSink::QueueEvent(
   hr = CheckShutdown();
 
   if (SUCCEEDED(hr)) {
-    hr = spEventQueue_->QueueEventParamVar(met, guidExtendedType, hrStatus, pvValue);
+    hr = spEventQueue_->QueueEventParamVar(met, guidExtendedType,
+      hrStatus, pvValue);
   }
 
   return hr;
@@ -132,7 +135,8 @@ IFACEMETHODIMP H264StreamSink::GetMediaSink(IMFMediaSink **ppMediaSink) {
   HRESULT hr = CheckShutdown();
 
   if (SUCCEEDED(hr)) {
-    spSink_.Get()->QueryInterface(IID_IMFMediaSink, (void**)ppMediaSink);
+    *ppMediaSink = spSink_.Get();
+    (*ppMediaSink)->AddRef();
   }
 
   return hr;
@@ -154,7 +158,8 @@ IFACEMETHODIMP H264StreamSink::GetIdentifier(DWORD *pdwIdentifier) {
   return hr;
 }
 
-IFACEMETHODIMP H264StreamSink::GetMediaTypeHandler(IMFMediaTypeHandler **ppHandler) {
+IFACEMETHODIMP H264StreamSink::GetMediaTypeHandler(
+  IMFMediaTypeHandler **ppHandler) {
   if (ppHandler == nullptr) {
     return E_INVALIDARG;
   }
@@ -163,9 +168,9 @@ IFACEMETHODIMP H264StreamSink::GetMediaTypeHandler(IMFMediaTypeHandler **ppHandl
 
   HRESULT hr = CheckShutdown();
 
-  // This stream object acts as its own type handler, so we QI ourselves.
   if (SUCCEEDED(hr)) {
-    hr = QueryInterface(IID_IMFMediaTypeHandler, (void**)ppHandler);
+    AddRef();
+    *ppHandler = this;
   }
 
   return hr;
@@ -178,19 +183,6 @@ IFACEMETHODIMP H264StreamSink::ProcessSample(IMFSample *pSample) {
 
   HRESULT hr = S_OK;
 
-  //GUID subtype;
-  //hr = spCurrentType_->GetGUID(MF_MT_SUBTYPE, &subtype);
-  //OutputDebugString(L"Sample received in format ");
-  //if (subtype == MFVideoFormat_H264) {
-  //    OutputDebugString(L"h264.\n");
-  //}
-  //if (subtype == MFVideoFormat_I420) {
-  //    OutputDebugString(L"i420.\n");
-  //}
-  //if (subtype == MFVideoFormat_NV12) {
-  //    OutputDebugString(L"nv12.\n");
-  //}
-
   AutoLock lock(critSec_);
 
   hr = CheckShutdown();
@@ -200,11 +192,9 @@ IFACEMETHODIMP H264StreamSink::ProcessSample(IMFSample *pSample) {
   }
 
   if (SUCCEEDED(hr)) {
-    hr = sampleQueue_.InsertBack(pSample);
+    sampleQueue_.push_back(pSample);
 
-    if (SUCCEEDED(hr)) {
-      hr = QueueAsyncOperation(OpProcessSample);
-    }
+    hr = QueueAsyncOperation(OpProcessSample);
   }
 
   return hr;
@@ -222,14 +212,10 @@ IFACEMETHODIMP H264StreamSink::PlaceMarker(
 
 IFACEMETHODIMP H264StreamSink::Flush() {
   AutoLock lock(critSec_);
-  HRESULT hr = S_OK;
-  try {
-    ThrowIfError(CheckShutdown());
+  HRESULT hr = CheckShutdown();
 
+  if (SUCCEEDED(hr)) {
     DropSamplesFromQueue();
-  }
-  catch (Exception ^exc) {
-    hr = exc->HResult;
   }
 
   return hr;
@@ -305,8 +291,7 @@ IFACEMETHODIMP H264StreamSink::GetMediaTypeByIndex(
 
   if (dwIndex > 0) {
     hr = MF_E_NO_MORE_TYPES;
-  }
-  else {
+  } else {
     *ppType = spCurrentType_.Get();
     if (*ppType != nullptr) {
       (*ppType)->AddRef();
@@ -316,50 +301,42 @@ IFACEMETHODIMP H264StreamSink::GetMediaTypeByIndex(
   return hr;
 }
 
-IFACEMETHODIMP H264StreamSink::SetCurrentMediaType(IMFMediaType *pMediaType) {
+IFACEMETHODIMP H264StreamSink::SetCurrentMediaType(
+  IMFMediaType *pMediaType) {
   HRESULT hr = S_OK;
-  try {
-    if (pMediaType == nullptr) {
-      Throw(E_INVALIDARG);
-    }
-    AutoLock lock(critSec_);
+  if (pMediaType == nullptr) {
+    hr = E_INVALIDARG;
+  }
 
-    ThrowIfError(CheckShutdown());
+  AutoLock lock(critSec_);
 
-    // We don't allow format changes after streaming starts.
-    ThrowIfError(ValidateOperation(OpSetMediaType));
+  ON_SUCCEEDED(CheckShutdown());
 
-    // We set media type already
-    if (state_ >= State_Ready) {
-      ThrowIfError(IsMediaTypeSupported(pMediaType, nullptr));
-    }
+  // We don't allow format changes after streaming starts.
+  ON_SUCCEEDED(ValidateOperation(OpSetMediaType));
 
-    GUID guiMajorType;
-    pMediaType->GetMajorType(&guiMajorType);
-    if (guiMajorType != MFMediaType_Video) {
-      Throw(E_INVALIDARG);
-    }
+  // We set media type already
+  if (state_ >= State_Ready) {
+    ON_SUCCEEDED(IsMediaTypeSupported(pMediaType, nullptr));
+  }
 
-    ThrowIfError(MFCreateMediaType(spCurrentType_.ReleaseAndGetAddressOf()));
-    ThrowIfError(pMediaType->CopyAllItems(spCurrentType_.Get()));
-    ThrowIfError(spCurrentType_->GetGUID(MF_MT_SUBTYPE, &guidCurrentSubtype_));
+  ON_SUCCEEDED(MFCreateMediaType(spCurrentType_.ReleaseAndGetAddressOf()));
+  ON_SUCCEEDED(pMediaType->CopyAllItems(spCurrentType_.Get()));
+  ON_SUCCEEDED(spCurrentType_->GetGUID(MF_MT_SUBTYPE, &guidCurrentSubtype_));
+  if (SUCCEEDED(hr)) {
     if (state_ < State_Ready) {
       state_ = State_Ready;
+    } else if (state_ > State_Ready) {
+      if (SUCCEEDED(hr)) {
+        ProcessFormatChange();
+      }
     }
-    else if (state_ > State_Ready) {
-      Microsoft::WRL::ComPtr<IMFMediaType> spType;
-      ThrowIfError(MFCreateMediaType(&spType));
-      ThrowIfError(pMediaType->CopyAllItems(spType.Get()));
-      ProcessFormatChange(spType.Get());
-    }
-  }
-  catch (Exception ^exc) {
-    hr = exc->HResult;
   }
   return hr;
 }
 
-IFACEMETHODIMP H264StreamSink::GetCurrentMediaType(IMFMediaType **ppMediaType) {
+IFACEMETHODIMP H264StreamSink::GetCurrentMediaType(
+  IMFMediaType **ppMediaType) {
   if (ppMediaType == nullptr) {
     return E_INVALIDARG;
   }
@@ -426,7 +403,8 @@ HRESULT H264StreamSink::Stop() {
   return hr;
 }
 
-BOOL H264StreamSink::ValidStateMatrix[State::State_Count][StreamOperation::Op_Count] = {
+BOOL H264StreamSink::ValidStateMatrix
+  [State::State_Count][StreamOperation::Op_Count] = {
     // States:    Operations:
     //            SetType Start Stop Sample
     /* NotSet */  TRUE, FALSE, FALSE, FALSE,
@@ -438,11 +416,9 @@ BOOL H264StreamSink::ValidStateMatrix[State::State_Count][StreamOperation::Op_Co
 HRESULT H264StreamSink::ValidateOperation(StreamOperation op) {
   if (ValidStateMatrix[state_][op]) {
     return S_OK;
-  }
-  else if (state_ == State_TypeNotSet) {
+  } else if (state_ == State_TypeNotSet) {
     return MF_E_NOT_INITIALIZED;
-  }
-  else {
+  } else {
     return MF_E_INVALIDREQUEST;
   }
 }
@@ -457,7 +433,7 @@ HRESULT H264StreamSink::Shutdown() {
 
     MFUnlockWorkQueue(workQueueId_);
 
-    sampleQueue_.Clear();
+    sampleQueue_.clear();
 
     spSink_.Reset();
     spEventQueue_.Reset();
@@ -471,11 +447,8 @@ HRESULT H264StreamSink::Shutdown() {
 
 HRESULT H264StreamSink::QueueAsyncOperation(StreamOperation op) {
   HRESULT hr = S_OK;
-  Microsoft::WRL::ComPtr<AsyncOperation> spOp;
-  spOp.Attach(new AsyncOperation(op)); // Created with ref count = 1
-  if (!spOp) {
-    hr = E_OUTOFMEMORY;
-  }
+  Microsoft::WRL::ComPtr<IUnknown> spOp;
+  hr = Microsoft::WRL::MakeAndInitialize<AsyncStreamSinkOperation>(&spOp, op);
 
   if (SUCCEEDED(hr)) {
     hr = MFPutWorkItem2(workQueueId_, 0, &workQueueCB_, spOp.Get());
@@ -485,81 +458,85 @@ HRESULT H264StreamSink::QueueAsyncOperation(StreamOperation op) {
 }
 
 HRESULT H264StreamSink::OnDispatchWorkItem(IMFAsyncResult *pAsyncResult) {
+  HRESULT hr = S_OK;
   auto sample = ComPtr<IMFSample>();
 
-  try {
+  // Scope the AutoLock
+  {
     AutoLock lock(critSec_);
     Microsoft::WRL::ComPtr<IUnknown> spState;
-    HRESULT hr = S_OK;
 
     hr = pAsyncResult->GetState(&spState);
-    ThrowIfError(hr);
 
-    AsyncOperation *pOp = static_cast<AsyncOperation *>(spState.Get());
-    StreamOperation op = pOp->m_op;
+    if (SUCCEEDED(hr)) {
+      ComPtr<IAsyncStreamSinkOperation> pOp;
+      spState.As(&pOp);
+      StreamOperation op;
+      pOp->GetOp(&op);
 
-    switch (op) {
-    case OpStart:
-      ThrowIfError(QueueEvent(MEStreamSinkStarted, GUID_NULL, S_OK, nullptr));
+      switch (op) {
+      case OpStart:
+        hr = QueueEvent(MEStreamSinkStarted, GUID_NULL, S_OK, nullptr);
 
-      sample = ProcessSamplesFromQueue();
-      if (sample == nullptr) {
+        if (SUCCEEDED(hr)) {
+          sample = ProcessSamplesFromQueue();
+          if (sample == nullptr) {
+            hr = QueueEvent(MEStreamSinkRequestSample,
+              GUID_NULL, S_OK, nullptr);
+          }
+        }
+        break;
+
+      case OpStop:
+        DropSamplesFromQueue();
+
+        hr = QueueEvent(MEStreamSinkStopped, GUID_NULL, S_OK, nullptr);
+        break;
+
+      case OpProcessSample:
         hr = QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr);
+        if (SUCCEEDED(hr)) {
+          sample = ProcessSamplesFromQueue();
+        }
+        break;
+
+      case OpSetMediaType:
+        break;
       }
-      break;
-
-    case OpStop:
-      DropSamplesFromQueue();
-
-      ThrowIfError(QueueEvent(MEStreamSinkStopped, GUID_NULL, S_OK, nullptr));
-      break;
-
-    case OpProcessSample:
-      ThrowIfError(QueueEvent(MEStreamSinkRequestSample, GUID_NULL, S_OK, nullptr));
-      sample = ProcessSamplesFromQueue();
-      break;
-
-    case OpSetMediaType:
-      break;
     }
   }
-  catch (Exception ^exc) {
-    HandleError(exc->HResult);
-  }
 
-  if (sample != nullptr) {
+  if (SUCCEEDED(hr) && sample != nullptr) {
     AutoLock lock(cbCritSec_);
     if (encodingCallback_ != nullptr) {
       encodingCallback_->OnH264Encoded(sample);
     }
   }
 
-  return S_OK;
+  return hr;
 }
 
 bool H264StreamSink::DropSamplesFromQueue() {
-  sampleQueue_.Clear();
+  sampleQueue_.clear();
 
   return true;
 }
 
 ComPtr<IMFSample> H264StreamSink::ProcessSamplesFromQueue() {
-
   Microsoft::WRL::ComPtr<IUnknown> spunkSample;
   auto sample = ComPtr<IMFSample>();
-  
-  if (SUCCEEDED(sampleQueue_.RemoveFront(&spunkSample))) {
-    HRESULT hr = spunkSample.As<IMFSample>(&sample);
-    ThrowIfError(hr);
+
+  if (!sampleQueue_.empty()) {
+    spunkSample = sampleQueue_.front();
+    sampleQueue_.pop_front();
+    spunkSample.As<IMFSample>(&sample);
   }
 
   return sample;
 }
 
-void H264StreamSink::ProcessFormatChange(IMFMediaType *pMediaType) {
+void H264StreamSink::ProcessFormatChange() {
   HRESULT hr = S_OK;
-
-  //hr = sampleQueue_.InsertBack(pMediaType);
 
   hr = QueueAsyncOperation(OpSetMediaType);
 }
@@ -571,43 +548,24 @@ void H264StreamSink::HandleError(HRESULT hr) {
 }
 
 
-H264StreamSink::AsyncOperation::AsyncOperation(StreamOperation op)
-  : cRef_(1)
-  , m_op(op) {
+HRESULT AsyncStreamSinkOperation::RuntimeClassInitialize(StreamOperation op) {
+  HRESULT hr = S_OK;
+  m_op = op;
+  return hr;
 }
 
-H264StreamSink::AsyncOperation::~AsyncOperation() {
+AsyncStreamSinkOperation::~AsyncStreamSinkOperation() {
 }
 
-ULONG H264StreamSink::AsyncOperation::AddRef() {
-  return InterlockedIncrement(&cRef_);
-}
-
-ULONG H264StreamSink::AsyncOperation::Release() {
-  ULONG cRef = InterlockedDecrement(&cRef_);
-  if (cRef == 0) {
-    delete this;
-  }
-
-  return cRef;
-}
-
-HRESULT H264StreamSink::AsyncOperation::QueryInterface(REFIID iid, void **ppv) {
-  if (!ppv) {
-    return E_POINTER;
-  }
-  if (iid == IID_IUnknown) {
-    *ppv = static_cast<IUnknown*>(this);
-  }
-  else {
-    *ppv = nullptr;
-    return E_NOINTERFACE;
-  }
-  AddRef();
+HRESULT AsyncStreamSinkOperation::GetOp(StreamOperation* op) {
+  if (op == nullptr)
+    return E_INVALIDARG;
+  *op = m_op;
   return S_OK;
 }
 
-HRESULT H264StreamSink::RegisterEncodingCallback(IH264EncodingCallback *callback) {
+HRESULT H264StreamSink::RegisterEncodingCallback(
+  IH264EncodingCallback *callback) {
   AutoLock lock(cbCritSec_);
   if (callback == nullptr) {
     return E_INVALIDARG;
