@@ -569,8 +569,10 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         m_AudioDevice->_mixFormatOut = &Wfx;
 
         //Now switch to the real supported mix format to initialize device
-        Wfx = *reinterpret_cast<WAVEFORMATEX*>
-          (m_AudioDevice->GeneratePCMMixFormat(mixFormat));
+        m_AudioDevice->_mixFormatSurroundOut = m_AudioDevice->GeneratePCMMixFormat(mixFormat);
+
+        //Set the flag to enable upmix
+        m_AudioDevice->_enableUpmix = true;
       }
 
       // ask for minimum buffer size (default)
@@ -585,15 +587,28 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         hnsBufferDuration = 30 * 10000;
       }
 
-      // Initialize the AudioClient in Shared Mode with the user specified
-      // buffer
-      hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-        AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-        hnsBufferDuration,
-        0,
-        &Wfx,
-        nullptr);
-
+      if (m_AudioDevice->ShouldUpmix())
+      {
+        // Initialize the AudioClient in Shared Mode with the user specified
+        // buffer
+        hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+          AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+          hnsBufferDuration,
+          0,
+          reinterpret_cast<WAVEFORMATEX*>(m_AudioDevice->_mixFormatSurroundOut),
+          nullptr);
+      }
+      else
+      {
+        // Initialize the AudioClient in Shared Mode with the user specified
+        // buffer
+        hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+          AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+          hnsBufferDuration,
+          0,
+          &Wfx,
+          nullptr);
+      }
 
       if (FAILED(hr)) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id,
@@ -745,6 +760,7 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _sndCardPlayDelay(0),
     _sndCardRecDelay(0),
     _sampleDriftAt48kHz(0),
+    _enableUpmix(false),
     _driftAccumulator(0),
     _writtenSamples(0),
     _readSamples(0),
@@ -3603,9 +3619,44 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
               "nSamples(%d) != _playBlockSize(%d)", nSamples, _playBlockSize);
           }
 
-          // Get the actual (stored) data
-          nSamples = _ptrAudioBuffer->GetPlayoutData(
-            reinterpret_cast<int8_t*>(pData));
+          if (ShouldUpmix())
+          {
+            int size = _playBlockSize * _mixFormatSurroundOut->Format.nChannels;
+            BYTE *mediaEngineRenderData = new BYTE[size];
+            memset(mediaEngineRenderData, 0, size);
+
+            // Get the actual (stored) data
+            nSamples = _ptrAudioBuffer->GetPlayoutData(
+              reinterpret_cast<int8_t*>(mediaEngineRenderData));
+
+            //Prepare for upmix of 16-bit PCM samples
+            int16_t* mediaEngineData = new int16_t[size];
+            int16_t* upmixedData = new int16_t[size];
+            mediaEngineData = reinterpret_cast<int16_t*>(mediaEngineRenderData);
+
+            //Do the upmixing
+            Upmix(mediaEngineData,
+              _playBlockSize,
+              upmixedData,
+              _playChannels,
+              _mixFormatSurroundOut->Format.nChannels);
+
+            uint32_t outChannels = _mixFormatSurroundOut->Format.nChannels;
+
+            //Copy memory over to the buffer pointed by IAudioRenderDevice
+            memcpy(pData, upmixedData, _playBlockSize * outChannels * 2);
+
+            //Free temprorary arrays. Freeing media engine data also frees 
+            //mediaEngineRenderData
+            delete[] mediaEngineData;
+            delete[] upmixedData;
+          }
+          else
+          {
+            // Get the actual (stored) data
+            nSamples = _ptrAudioBuffer->GetPlayoutData(
+              reinterpret_cast<int8_t*>(pData));
+          }
         }
 
         QueryPerformanceCounter(&t2);    // measure time: STOP
@@ -4727,16 +4778,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut() {
 // ----------------------------------------------------------------------------
 bool AudioDeviceWindowsWasapi::ShouldUpmix()
 {
-  if (!_mixFormatOut || !_mixFormatSurroundOut)
-  {
-    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-      "ShouldUpmix() failed: Bad mix format, no upmixing needed");
-    return false;
-  }
-
-  return _mixFormatSurroundOut->nChannels > _mixFormatOut->nChannels ?
-    true : false;
-
+  return _enableUpmix;
 }
 
 // ----------------------------------------------------------------------------
@@ -4745,6 +4787,9 @@ bool AudioDeviceWindowsWasapi::ShouldUpmix()
 WAVEFORMATEX* AudioDeviceWindowsWasapi::GenerateMixFormatForMediaEngine(
   WAVEFORMATEX* actualMixFormat)
 {
+
+  if (_mixFormatOut)
+    return _mixFormatOut;
 
   WAVEFORMATEX* Wfx = new WAVEFORMATEX();
 
@@ -4815,9 +4860,11 @@ WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
 
 // ----------------------------------------------------------------------------
 //  Upmix
+//  Reference upmixer application found on
+//  https://hg.mozilla.org/releases/mozilla-aurora/file/tip/media/libcubeb/src/cubeb_wasapi.cpp
 // ----------------------------------------------------------------------------
 template<typename T>void AudioDeviceWindowsWasapi::Upmix(T *inSamples,
-  int numberOfFrames, T *outSamples, int inChannels, int outChannels)
+  uint32_t numberOfFrames, T *outSamples, uint32_t inChannels, uint32_t outChannels)
 {
   for (uint32_t i = 0, o = 0; i < numberOfFrames * inChannels;
     i += inChannels, o += outChannels)

@@ -318,8 +318,8 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     WAVEFORMATEX* GenerateMixFormatForMediaEngine(
       WAVEFORMATEX* actualMixFormat);
     WAVEFORMATPCMEX* GeneratePCMMixFormat(WAVEFORMATEX* actualMixFormat);
-    template<typename T>void Upmix(T *inSamples, int numberOfFrames,
-      T *outSamples, int inChannels, int outChannels);
+    template<typename T>void Upmix(T *inSamples, uint32_t numberOfFrames,
+      T *outSamples, uint32_t inChannels, uint32_t outChannels);
 
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
@@ -343,7 +343,8 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;
-    WAVEFORMATEX           *_mixFormatSurroundOut;
+    WAVEFORMATPCMEX        *_mixFormatSurroundOut;
+    bool                   _enableUpmix;
     DeviceInformationCollection^ _ptrCaptureCollection;
     DeviceInformationCollection^ _ptrRenderCollection;
     DeviceInformationCollection^ _ptrCollection;
