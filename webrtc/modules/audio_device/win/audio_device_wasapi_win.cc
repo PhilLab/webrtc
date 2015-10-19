@@ -633,11 +633,11 @@ void AudioInterfaceActivator::SetAudioDevice(
   m_AudioDevice = device;
 }
 
-  concurrency::task<Microsoft::WRL::ComPtr<IAudioClient2>>
+concurrency::task<Microsoft::WRL::ComPtr<IAudioClient2>>
           AudioInterfaceActivator::ActivateAudioClientAsync(
             LPCWCHAR deviceId, ActivatorDeviceType deviceType) {
-    Microsoft::WRL::ComPtr<AudioInterfaceActivator> pActivator =
-                Microsoft::WRL::Make<AudioInterfaceActivator>();
+  Microsoft::WRL::ComPtr<AudioInterfaceActivator> pActivator =
+    Microsoft::WRL::Make<AudioInterfaceActivator>();
 
   Microsoft::WRL::ComPtr<IActivateAudioInterfaceAsyncOperation> pAsyncOp;
   Microsoft::WRL::ComPtr<IActivateAudioInterfaceCompletionHandler> pHandler
