@@ -36,6 +36,7 @@
         '../../../../../webrtc/voice_engine/voice_engine.gyp:voice_engine_unittests',
         '../../../../../webrtc/webrtc.gyp:rtc_unittests',
         '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
+        '../../../../test/webrtc_test_common.gyp:webrtc_test_common_unittests',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
