@@ -37,7 +37,6 @@ void StatsObserverETW::Start(
   bool performStart = false;
   {
     CriticalSectionScoped lock(crit_sect_.get());
-    status_ = kEnabled;
     if (status_ == kDisabled) {
       performStart = true;
       LOG(LS_INFO) << "StatsObserverETW starting";
@@ -45,6 +44,7 @@ void StatsObserverETW::Start(
     else {
       LOG(LS_INFO) << "StatsObserverETW resuming";
     }
+    status_ = kEnabled;
   }
 
   if (performStart) {
