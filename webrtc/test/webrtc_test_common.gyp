@@ -54,9 +54,21 @@
         }],
         ['OS_RUNTIME=="winrt"', {
           'sources!': [
-          'run_loop.h',
+            'run_loop.h',
             'run_loop.cc',
             'win/run_loop_win.cc',
+          ],
+        }],
+        # gtest_runner on winrt already depends on video_render_module_internal_impl
+        # Since video_render and video_render_module_internal_impl are incompatible
+        # use internal_impl for winrt
+        ['OS_RUNTIME=="winrt"', {
+          'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
+          ],
+        }, {
+          'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:video_render',
           ],
         }],
       ],
@@ -66,7 +78,6 @@
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:media_file',
-		'<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
         '<(webrtc_root)/test/test.gyp:frame_generator',
         '<(webrtc_root)/test/test.gyp:test_support',
         '<(webrtc_root)/test/test.gyp:rtp_test_utils',
@@ -159,7 +170,6 @@
             'webrtc_test_common',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/testing/gmock.gyp:gmock',
-			'<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
@@ -168,6 +178,20 @@
             'rtp_file_reader_unittest.cc',
             'rtp_file_writer_unittest.cc',
           ],
+          'conditions': [
+            # gtest_runner on winrt already depends on video_capture_module_internal_impl
+            # Since video_capture and video_capture_module_internal_impl are incompatible
+            # use internal_impl for winrt
+            ['OS_RUNTIME=="winrt"', {
+              'dependencies': [
+                '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
+              ],
+            },{
+              'dependencies': [
+                '<(webrtc_root)/modules/modules.gyp:video_capture',
+              ],
+            }],
+          ]
         },
       ],  #targets
     }],  # include_tests
