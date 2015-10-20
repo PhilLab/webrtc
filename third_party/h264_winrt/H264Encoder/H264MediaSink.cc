@@ -8,11 +8,9 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "H264MediaSink.h"
+#include "third_party/h264_winrt/H264Encoder/H264MediaSink.h"
 #include <wrl.h>
 #include <wrl/implements.h>
-
-using namespace Microsoft::WRL;
 
 namespace webrtc {
 
@@ -49,7 +47,6 @@ IFACEMETHODIMP H264MediaSink::AddStreamSink(
   DWORD dwStreamSinkIdentifier,
   IMFMediaType *pMediaType,
   IMFStreamSink **ppStreamSink) {
-
   AutoLock lock(critSec_);
   HRESULT hr = CheckShutdown();
 
@@ -58,7 +55,8 @@ IFACEMETHODIMP H264MediaSink::AddStreamSink(
   }
 
   if (SUCCEEDED(hr)) {
-    hr = MakeAndInitialize<H264StreamSink>(&outputStream_, dwStreamSinkIdentifier, this);
+    hr = Microsoft::WRL::MakeAndInitialize<H264StreamSink>(
+      &outputStream_, dwStreamSinkIdentifier, this);
   }
 
   if (SUCCEEDED(hr) && pMediaType != nullptr) {
@@ -206,8 +204,7 @@ IFACEMETHODIMP H264MediaSink::GetPresentationClock(
   if (SUCCEEDED(hr)) {
     if (spClock_ == NULL) {
       hr = MF_E_NO_CLOCK;
-    }
-    else {
+    } else {
       *ppPresentationClock = spClock_.Get();
       (*ppPresentationClock)->AddRef();
     }
