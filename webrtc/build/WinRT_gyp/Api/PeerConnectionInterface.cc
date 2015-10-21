@@ -666,7 +666,7 @@ void WebRTC::DisableLogging() {
 }
 
 Windows::Storage::StorageFolder^  WebRTC::LogFolder() {
-  return  Windows::Storage::ApplicationData::Current->LocalFolder;;
+  return  Windows::Storage::ApplicationData::Current->LocalFolder;
 }
 
 String^  WebRTC::LogFileName() {

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
@@ -49,9 +50,27 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
   void OnCloseEvent(AsyncSocket* socket, int err);
   void OnWriteEvent(AsyncSocket* socket);
 
+  void SaveTraceChunk();
+  void CleanTracesStorage();
+  bool LoadFirstTraceChunk();
+  bool LoadNextTraceChunk();
+
  private:
   bool is_tracing_;
   unsigned int offset_;
+
+  // Enable to store traces locally if exceeds configured memory limit
+  bool traces_storage_enabled_;
+  unsigned int traces_memory_limit_;
+  std::string traces_storage_file_;
+
+  unsigned int send_chunk_size_;
+  unsigned int send_chunk_offset_;
+  unsigned int send_max_chunk_size_;
+  unsigned int stored_traces_size_;
+  unsigned int sent_bytes_;
+  std::vector<char> send_chunk_buffer_;
+
   std::ostringstream oss_;
   CriticalSection critical_section_;
   Thread* thread_;
