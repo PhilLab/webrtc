@@ -313,7 +313,7 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     HRESULT _InitializeAudioDeviceIn();
     HRESULT _InitializeAudioDeviceOut();
 
-    //Surround system support
+    // Surround system support
     bool ShouldUpmix();
     WAVEFORMATEX* GenerateMixFormatForMediaEngine(
       WAVEFORMATEX* actualMixFormat);

@@ -43,19 +43,34 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#define KSAUDIO_SPEAKER_MONO            (SPEAKER_FRONT_CENTER)
-#define KSAUDIO_SPEAKER_STEREO          (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT)
-#define KSAUDIO_SPEAKER_QUAD            (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
-                                         SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT)
-#define KSAUDIO_SPEAKER_SURROUND        (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
-                                         SPEAKER_FRONT_CENTER | SPEAKER_BACK_CENTER)
-#define KSAUDIO_SPEAKER_5POINT1         (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
-                                         SPEAKER_FRONT_CENTER | SPEAKER_LOW_FREQUENCY | \
-                                         SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT)
-#define KSAUDIO_SPEAKER_7POINT1         (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | \
-                                         SPEAKER_FRONT_CENTER | SPEAKER_LOW_FREQUENCY | \
-                                         SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT | \
-                                         SPEAKER_FRONT_LEFT_OF_CENTER | SPEAKER_FRONT_RIGHT_OF_CENTER)
+#define KSAUDIO_SPEAKER_MONO        (SPEAKER_FRONT_CENTER)
+#define KSAUDIO_SPEAKER_STEREO      (SPEAKER_FRONT_LEFT | \
+                                     SPEAKER_FRONT_RIGHT)
+#define KSAUDIO_SPEAKER_QUAD        (SPEAKER_FRONT_LEFT  | \
+                                     SPEAKER_FRONT_RIGHT | \
+                                     SPEAKER_BACK_LEFT   | \
+                                     SPEAKER_BACK_RIGHT)
+
+#define KSAUDIO_SPEAKER_SURROUND    (SPEAKER_FRONT_LEFT   | \
+                                     SPEAKER_FRONT_RIGHT  | \
+                                     SPEAKER_FRONT_CENTER | \
+                                     SPEAKER_BACK_CENTER)
+
+#define KSAUDIO_SPEAKER_5POINT1     (SPEAKER_FRONT_LEFT    | \
+                                     SPEAKER_FRONT_RIGHT   | \
+                                     SPEAKER_FRONT_CENTER  | \
+                                     SPEAKER_LOW_FREQUENCY | \
+                                     SPEAKER_BACK_LEFT     | \
+                                     SPEAKER_BACK_RIGHT)
+
+#define KSAUDIO_SPEAKER_7POINT1     (SPEAKER_FRONT_LEFT           | \
+                                     SPEAKER_FRONT_RIGHT          | \
+                                     SPEAKER_FRONT_CENTER         | \
+                                     SPEAKER_LOW_FREQUENCY        | \
+                                     SPEAKER_BACK_LEFT            | \
+                                     SPEAKER_BACK_RIGHT           | \
+                                     SPEAKER_FRONT_LEFT_OF_CENTER | \
+                                     SPEAKER_FRONT_RIGHT_OF_CENTER)
 
 
 // Macro that calls a COM method returning HRESULT value.
@@ -527,11 +542,11 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
           "_playChannels      : %d", m_AudioDevice->_playChannels);
       } else {
-        //IsFormatSupported failed, device is probably in surround mode.
-        //Firstly generate mix format to initialize media engine
+        // IsFormatSupported failed, device is probably in surround mode.
+        // Firstly generate mix format to initialize media engine
         Wfx = *m_AudioDevice->GenerateMixFormatForMediaEngine(mixFormat);
 
-        //Secondly initialize media engine with "expected" values
+        // Secondly initialize media engine with "expected" values
         m_AudioDevice->_playAudioFrameSize = Wfx.nBlockAlign;
         m_AudioDevice->_playBlockSize = Wfx.nSamplesPerSec / 100;
         m_AudioDevice->_playSampleRate = Wfx.nSamplesPerSec;
@@ -565,13 +580,14 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
           "_playChannels      : %d", m_AudioDevice->_playChannels);
 
-        //Remember this settings
+        // Remember this settings
         m_AudioDevice->_mixFormatOut = &Wfx;
 
-        //Now switch to the real supported mix format to initialize device
-        m_AudioDevice->_mixFormatSurroundOut = m_AudioDevice->GeneratePCMMixFormat(mixFormat);
+        // Now switch to the real supported mix format to initialize device
+        m_AudioDevice->_mixFormatSurroundOut =
+          m_AudioDevice->GeneratePCMMixFormat(mixFormat);
 
-        //Set the flag to enable upmix
+        // Set the flag to enable upmix
         m_AudioDevice->_enableUpmix = true;
       }
 
@@ -587,8 +603,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         hnsBufferDuration = 30 * 10000;
       }
 
-      if (m_AudioDevice->ShouldUpmix())
-      {
+      if (m_AudioDevice->ShouldUpmix()) {
         // Initialize the AudioClient in Shared Mode with the user specified
         // buffer
         hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
@@ -597,9 +612,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
           0,
           reinterpret_cast<WAVEFORMATEX*>(m_AudioDevice->_mixFormatSurroundOut),
           nullptr);
-      }
-      else
-      {
+      } else {
         // Initialize the AudioClient in Shared Mode with the user specified
         // buffer
         hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
@@ -3619,8 +3632,7 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
               "nSamples(%d) != _playBlockSize(%d)", nSamples, _playBlockSize);
           }
 
-          if (ShouldUpmix())
-          {
+          if (ShouldUpmix()) {
             int size = _playBlockSize * _mixFormatSurroundOut->Format.nChannels;
             BYTE *mediaEngineRenderData = new BYTE[size];
             memset(mediaEngineRenderData, 0, size);
@@ -3629,12 +3641,12 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
             nSamples = _ptrAudioBuffer->GetPlayoutData(
               reinterpret_cast<int8_t*>(mediaEngineRenderData));
 
-            //Prepare for upmix of 16-bit PCM samples
+            // Prepare for upmix of 16-bit PCM samples
             int16_t* mediaEngineData = new int16_t[size];
             int16_t* upmixedData = new int16_t[size];
             mediaEngineData = reinterpret_cast<int16_t*>(mediaEngineRenderData);
 
-            //Do the upmixing
+            // Do the upmixing
             Upmix(mediaEngineData,
               _playBlockSize,
               upmixedData,
@@ -3643,16 +3655,14 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
 
             uint32_t outChannels = _mixFormatSurroundOut->Format.nChannels;
 
-            //Copy memory over to the buffer pointed by IAudioRenderDevice
+            // Copy memory over to the buffer pointed by IAudioRenderDevice
             memcpy(pData, upmixedData, _playBlockSize * outChannels * 2);
 
-            //Free temprorary arrays. Freeing media engine data also frees 
-            //mediaEngineRenderData
+            // Free temprorary arrays. Freeing media engine data also frees
+            // mediaEngineRenderData
             delete[] mediaEngineData;
             delete[] upmixedData;
-          }
-          else
-          {
+          } else {
             // Get the actual (stored) data
             nSamples = _ptrAudioBuffer->GetPlayoutData(
               reinterpret_cast<int8_t*>(pData));
@@ -4776,8 +4786,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut() {
 // ----------------------------------------------------------------------------
 //  ShouldUpmix
 // ----------------------------------------------------------------------------
-bool AudioDeviceWindowsWasapi::ShouldUpmix()
-{
+bool AudioDeviceWindowsWasapi::ShouldUpmix() {
   return _enableUpmix;
 }
 
@@ -4785,9 +4794,7 @@ bool AudioDeviceWindowsWasapi::ShouldUpmix()
 //  GenerateMixFormatForMediaEngine
 // ----------------------------------------------------------------------------
 WAVEFORMATEX* AudioDeviceWindowsWasapi::GenerateMixFormatForMediaEngine(
-  WAVEFORMATEX* actualMixFormat)
-{
-
+  WAVEFORMATEX* actualMixFormat) {
   if (_mixFormatOut)
     return _mixFormatOut;
 
@@ -4813,8 +4820,7 @@ WAVEFORMATEX* AudioDeviceWindowsWasapi::GenerateMixFormatForMediaEngine(
 //  GeneratePCMMixFormat
 // ----------------------------------------------------------------------------
 WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
-  WAVEFORMATEX* actualMixFormat)
-{
+  WAVEFORMATEX* actualMixFormat) {
   WAVEFORMATPCMEX *waveFormatPCMEx = new WAVEFORMATPCMEX();
 
   waveFormatPCMEx->Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
@@ -4822,24 +4828,23 @@ WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
   waveFormatPCMEx->Format.wBitsPerSample = 16;
   waveFormatPCMEx->Format.nSamplesPerSec = actualMixFormat->nSamplesPerSec;
 
-  waveFormatPCMEx->Format.nBlockAlign = waveFormatPCMEx->Format.nChannels * 
+  waveFormatPCMEx->Format.nBlockAlign = waveFormatPCMEx->Format.nChannels *
     waveFormatPCMEx->Format.wBitsPerSample / 8;  /* Same as the usual */
 
-  waveFormatPCMEx->Format.nAvgBytesPerSec = 
+  waveFormatPCMEx->Format.nAvgBytesPerSec =
     waveFormatPCMEx->Format.nSamplesPerSec*waveFormatPCMEx->Format.nBlockAlign;
 
   waveFormatPCMEx->Format.cbSize = 22;  /* After this to GUID */
   waveFormatPCMEx->Samples.wValidBitsPerSample = 16;  /* All bits have data */
 
-  switch (waveFormatPCMEx->Format.nChannels)
-  {
-  case 1:  
+  switch (waveFormatPCMEx->Format.nChannels) {
+  case 1:
     waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_MONO;
     break;
-  case 2:  
+  case 2:
     waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_STEREO;
     break;
-  case 4:  
+  case 4:
     waveFormatPCMEx->dwChannelMask = KSAUDIO_SPEAKER_QUAD;
     break;
   case 6:
@@ -4863,21 +4868,20 @@ WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
 //  Reference upmixer application found on
 //  https://hg.mozilla.org/releases/mozilla-aurora/file/tip/media/libcubeb/src/cubeb_wasapi.cpp
 // ----------------------------------------------------------------------------
-template<typename T>void AudioDeviceWindowsWasapi::Upmix(T *inSamples,
-  uint32_t numberOfFrames, T *outSamples, uint32_t inChannels, uint32_t outChannels)
-{
+template<typename T>void AudioDeviceWindowsWasapi::Upmix(
+                                                      T *inSamples,
+                                                      uint32_t numberOfFrames,
+                                                      T *outSamples,
+                                                      uint32_t inChannels,
+                                                      uint32_t outChannels) {
   for (uint32_t i = 0, o = 0; i < numberOfFrames * inChannels;
-    i += inChannels, o += outChannels)
-  {
-    for (uint32_t j = 0; j < inChannels; ++j)
-    {
+    i += inChannels, o += outChannels) {
+    for (uint32_t j = 0; j < inChannels; ++j) {
       outSamples[o + j] = inSamples[i + j];
     }
   }
-  for (uint32_t i = 0, o = 0; i < numberOfFrames; ++i, o += outChannels)
-  {
-    for (uint32_t j = inChannels; j < outChannels; ++j)
-    {
+  for (uint32_t i = 0, o = 0; i < numberOfFrames; ++i, o += outChannels) {
+    for (uint32_t j = inChannels; j < outChannels; ++j) {
       outSamples[o + j] = 0;
     }
   }
