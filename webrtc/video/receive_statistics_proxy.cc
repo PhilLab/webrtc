@@ -13,6 +13,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -146,6 +147,10 @@ void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
   render_width_counter_.Add(width);
   render_height_counter_.Add(height);
   render_fps_tracker_.AddSamples(1);
+#ifdef WINRT
+  int32 frameRate = stats_.render_frame_rate;
+  TRACE_COUNTER1("webrtc", "RcvStreamFramerate", frameRate);
+#endif
 }
 
 void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
