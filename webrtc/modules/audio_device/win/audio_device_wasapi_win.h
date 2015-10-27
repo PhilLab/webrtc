@@ -261,9 +261,6 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
     DWORD DoCaptureThread();
 
-    // static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
-    // DWORD DoCaptureThreadPollDMO();
-
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
 
@@ -331,43 +328,32 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     AudioDeviceBuffer*                      _ptrAudioBuffer;
     CriticalSectionWrapper&                 _critSect;
     CriticalSectionWrapper&                 _volumeMutex;
-    int32_t                           _id;
+    int32_t                                 _id;
 
  private:  // MMDevice
     Platform::String^   _deviceIdStringIn;
     Platform::String^   _deviceIdStringOut;
     DeviceInformation^  _defaultCaptureDevice;
     DeviceInformation^  _defaultRenderDevice;
-    // bool                _captureDeviceActivated;
-    // bool                _renderDeviceActivated;
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;
     WAVEFORMATPCMEX        *_mixFormatSurroundOut;
     bool                   _enableUpmix;
+
     DeviceInformationCollection^ _ptrCaptureCollection;
     DeviceInformationCollection^ _ptrRenderCollection;
     DeviceInformationCollection^ _ptrCollection;
     AudioInterfaceActivator*     _ptrActivator;
-
-//    IMMDeviceEnumerator*                    _ptrEnumerator;
-//    IMMDeviceCollection*                    _ptrRenderCollection;
-//    IMMDeviceCollection*                    _ptrCaptureCollection;
-//    IMMDevice*                              _ptrDeviceOut;
-//    IMMDevice*                              _ptrDeviceIn;
 
  private:  // WASAPI
     IAudioClient*                           _ptrClientOut;
     IAudioClient*                           _ptrClientIn;
     IAudioRenderClient*                     _ptrRenderClient;
     IAudioCaptureClient*                    _ptrCaptureClient;
-    // IAudioEndpointVolume*                   _ptrCaptureVolume;
-    ISimpleAudioVolume*                   _ptrCaptureVolume;
+    ISimpleAudioVolume*                     _ptrCaptureVolume;
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
 
-    // DirectX Media Object (DMO) for the built-in AEC.
-    // scoped_refptr<IMediaObject>             _dmo;
-    // scoped_refptr<IMediaBuffer>             _mediaBuffer;
     bool                                    _builtInAecEnabled;
 
     HANDLE                                  _hRenderSamplesReadyEvent;
