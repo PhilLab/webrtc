@@ -156,6 +156,7 @@ bool TraceLog::Save(const std::string& file_name) {
             std::ostream_iterator<unsigned char>(file));
           if (!LoadNextTraceChunk()) {
             CleanTracesStorage();
+            break;
           }
         }
       } else {
@@ -249,6 +250,7 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
       }
       if (!LoadNextTraceChunk()) {
         CleanTracesStorage();
+        break;
       }
     }
     offset_ = 0;
