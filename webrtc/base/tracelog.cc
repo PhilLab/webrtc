@@ -1,5 +1,8 @@
 #include <sstream>
 #include <fstream>
+#include <cstdio>
+#include <iterator>
+#include <algorithm>
 
 #include "webrtc/base/tracelog.h"
 #include "webrtc/base/asyncsocket.h"
@@ -12,9 +15,30 @@
 
 namespace rtc {
 
-TraceLog::TraceLog() : is_tracing_(false), offset_(0), tw_() {
+TraceLog::TraceLog() : is_tracing_(false), offset_(0),
+  traces_storage_enabled_(false), traces_memory_limit_(0), send_chunk_size_(0),
+  send_chunk_offset_(0), send_max_chunk_size_(0), stored_traces_size_(0),
+  sent_bytes_(0), tw_() {
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
+
+#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+  Platform::String^ path_w =
+    Windows::Storage::ApplicationData::Current->LocalFolder->Path;
+  int len8 = WideCharToMultiByte(CP_UTF8, 0, path_w->Data(), path_w->Length(),
+    NULL, 0, NULL, NULL);
+  std::string path(len8, ' ');
+  if (WideCharToMultiByte(CP_UTF8, 0, path_w->Data(), path_w->Length(),
+    (LPSTR)path.c_str(), len8, NULL, NULL) == 0) {
+    LOG(LS_WARNING) << "Failed to initialize traces storage errCode="
+      << GetLastError();
+  } else {
+    traces_storage_file_ = path + "\\" + "_webrtc_traces.log";
+    send_max_chunk_size_ = 1024 * 1024;  // 1mb
+    traces_memory_limit_ = 1024 * 1024;  // 1mb
+    traces_storage_enabled_ = true;
+  }
+#endif
 }
 
 TraceLog::~TraceLog() {
@@ -86,6 +110,9 @@ void TraceLog::Add(char phase,
 
   CritScope lock(&critical_section_);
   oss_ << t.str();
+  if (traces_storage_enabled_ && oss_.tellp() > traces_memory_limit_) {
+    SaveTraceChunk();
+  }
 }
 
 void TraceLog::StartTracing() {
@@ -95,6 +122,10 @@ void TraceLog::StartTracing() {
     oss_.str("");
     oss_ << "{ \"traceEvents\": [";
     is_tracing_ = true;
+
+    if (traces_storage_enabled_) {
+      CleanTracesStorage();
+    }
   }
 }
 
@@ -116,29 +147,54 @@ bool TraceLog::Save(const std::string& file_name) {
   bool result = true;
   std::ofstream file;
   file.open(file_name.c_str());
-  if (file.is_open())
-  {
+  if (file.is_open()) {
+    if (traces_storage_enabled_) {
+      // Save stored traces first
+      if (LoadFirstTraceChunk()) {
+        while (!send_chunk_buffer_.empty()) {
+          copy(send_chunk_buffer_.begin(), send_chunk_buffer_.end(),
+            std::ostream_iterator<unsigned char>(file));
+          if (!LoadNextTraceChunk()) {
+            CleanTracesStorage();
+            break;
+          }
+        }
+      } else {
+        LOG(LS_ERROR) << "Failed load first chunk from traces storage";
+        CleanTracesStorage();
+      }
+    }
+
     file << oss_.str();
     file.close();
     if (file.bad())
       result = false;
-  }
-  else
+  } else {
+    if (traces_storage_enabled_) {
+      CleanTracesStorage();
+    }
     result = false;
+  }
   return result;
 }
 
 bool TraceLog::Save(const std::string& addr, int port) {
-  if (offset_) {
+  if (sent_bytes_) {
     // Sending the data still is in progress.
     return false;
   }
 
   if (tw_ == NULL) {
-    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages, thread_, "TraceLog");
+    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages,
+                                              thread_, "TraceLog");
     tw_->Start();
 
     LOG(LS_INFO) << "New TraceLog thread created.";
+  }
+  if (traces_storage_enabled_) {
+    if (!LoadFirstTraceChunk()) {
+      LOG(LS_ERROR) << "Failed load first chunk from traces storage";
+    }
   }
 
   AsyncSocket* sock =
@@ -165,6 +221,8 @@ void TraceLog::OnCloseEvent(AsyncSocket* socket, int err) {
     << "Error: " << err;
 
   offset_ = 0;
+  send_chunk_offset_ = 0;
+
   thread_->Dispose(socket);
 }
 
@@ -172,13 +230,40 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   if (!socket)
     return;
 
+  if (traces_storage_enabled_) {
+    // Send stored traces first
+    while (!send_chunk_buffer_.empty()) {
+      while (offset_ < send_chunk_size_) {
+        int sent_size = socket->Send(
+          (const void*)(send_chunk_buffer_.data() + offset_),
+          send_chunk_size_ - offset_);
+        if (sent_size == -1) {
+          if (!IsBlockingError(socket->GetError())) {
+            offset_ = 0;
+            socket->Close();
+          }
+          return;
+        } else {
+          offset_ += (unsigned int)sent_size;
+          sent_bytes_ += sent_size;
+        }
+      }
+      if (!LoadNextTraceChunk()) {
+        CleanTracesStorage();
+        break;
+      }
+    }
+    offset_ = 0;
+  }
+
   const std::string& tmp = oss_.str();
   size_t tmp_size = tmp.size();
   const char* data = tmp.c_str();
 
   int sent_size = 0;
   while (offset_ < tmp_size) {
-    sent_size = socket->Send((const void*) (data + offset_), tmp_size - offset_);
+    sent_size = socket->Send((const void*) (data + offset_),
+                             tmp_size - offset_);
     if (sent_size == -1) {
       if (!IsBlockingError(socket->GetError())) {
         offset_ = 0;
@@ -187,13 +272,79 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
       break;
     } else {
       offset_ += sent_size;
+      sent_bytes_ += sent_size;
     }
   }
 
   if (tmp_size == offset_) {
     offset_ = 0;
+    sent_bytes_ = 0;
     socket->Close();
   }
+}
+
+void TraceLog::SaveTraceChunk() {
+  assert(traces_storage_enabled_);
+  std::ofstream file;
+  file.open(traces_storage_file_, std::ios_base::app);
+  if (file.is_open()) {
+    file << oss_.str();
+    file.flush();
+    file.close();
+    LOG(LS_INFO) << "Saved trace chunk having " << oss_.str().size()
+                 <<"b to storage";
+    oss_.str("");
+  }
+}
+
+void TraceLog::CleanTracesStorage() {
+  assert(traces_storage_enabled_);
+  std::remove(traces_storage_file_.c_str());
+}
+
+bool TraceLog::LoadFirstTraceChunk() {
+  assert(traces_storage_enabled_);
+  bool result = false;
+  send_chunk_offset_ = 0;
+  send_chunk_buffer_.reserve(send_max_chunk_size_);
+  std::ifstream in(traces_storage_file_,
+    std::ifstream::ate | std::ifstream::binary);
+  if (in.is_open()) {
+    stored_traces_size_ = in.tellg();
+    in.close();
+    result = LoadNextTraceChunk();
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+bool TraceLog::LoadNextTraceChunk() {
+  assert(traces_storage_enabled_);
+  bool result = false;
+  std::ifstream input;
+  input.open(traces_storage_file_);
+  if (input.is_open()) {
+    input.seekg(send_chunk_offset_);
+    if (send_chunk_offset_ < stored_traces_size_) {
+      int chunkSize = send_chunk_size_ = std::min(
+        send_max_chunk_size_,
+        stored_traces_size_ - send_chunk_offset_);
+      send_chunk_buffer_.resize(chunkSize);
+      input.read(send_chunk_buffer_.data(), chunkSize);
+      input.close();
+      offset_ = 0;
+      send_chunk_offset_ += chunkSize;
+      result = true;
+      LOG(LS_INFO) << "Loaded trace chunk having " << chunkSize
+        << "b from storage";
+    } else {
+      send_chunk_buffer_.clear();
+    }
+  } else {
+    send_chunk_buffer_.clear();
+  }
+  return result;
 }
 
 bool TraceLog::processMessages(void* args) {
