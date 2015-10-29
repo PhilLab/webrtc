@@ -43,6 +43,8 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
+#include "webrtc/base/scoped_ptr.h"
+
 #define KSAUDIO_SPEAKER_MONO        (SPEAKER_FRONT_CENTER)
 #define KSAUDIO_SPEAKER_STEREO      (SPEAKER_FRONT_LEFT | \
                                      SPEAKER_FRONT_RIGHT)
@@ -3286,34 +3288,23 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
 
           if (ShouldUpmix()) {
             int size = _playBlockSize * _mixFormatSurroundOut->Format.nChannels;
-            BYTE *mediaEngineRenderData = new BYTE[size];
-            memset(mediaEngineRenderData, 0, size);
+            // Create temporary array for upmixing procedure
+            rtc::scoped_ptr<BYTE> mediaEngineRenderData(new BYTE[size]);
 
             // Get the actual (stored) data
             nSamples = _ptrAudioBuffer->GetPlayoutData(
-              reinterpret_cast<int8_t*>(mediaEngineRenderData));
+              reinterpret_cast<int8_t*>(mediaEngineRenderData.get()));
 
-            // Prepare for upmix of 16-bit PCM samples
-            int16_t* mediaEngineData = new int16_t[size];
-            int16_t* upmixedData = new int16_t[size];
-            mediaEngineData = reinterpret_cast<int16_t*>(mediaEngineRenderData);
-
-            // Do the upmixing
-            Upmix(mediaEngineData,
+            // Do the upmixing. We are using 16-bit samples only at this point
+            Upmix(reinterpret_cast<int16_t*>(mediaEngineRenderData.get()),
               _playBlockSize,
-              upmixedData,
+              reinterpret_cast<int16_t*>(pData),
               _playChannels,
               _mixFormatSurroundOut->Format.nChannels);
 
-            uint32_t outChannels = _mixFormatSurroundOut->Format.nChannels;
 
-            // Copy memory over to the buffer pointed by IAudioRenderDevice
-            memcpy(pData, upmixedData, _playBlockSize * outChannels * 2);
-
-            // Free temprorary arrays. Freeing media engine data also frees
-            // mediaEngineRenderData
-            delete[] mediaEngineData;
-            delete[] upmixedData;
+            // Releasing the pointer to a helper array
+            mediaEngineRenderData.reset();
           } else {
             // Get the actual (stored) data
             nSamples = _ptrAudioBuffer->GetPlayoutData(
@@ -4191,6 +4182,8 @@ WAVEFORMATEX* AudioDeviceWindowsWasapi::GenerateMixFormatForMediaEngine(
 
 // ----------------------------------------------------------------------------
 //  GeneratePCMMixFormat
+//  Main principles used from 
+//  https://msdn.microsoft.com/en-us/library/windows/hardware/dn653308%28v=vs.85%29.aspx
 // ----------------------------------------------------------------------------
 WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
   WAVEFORMATEX* actualMixFormat) {
@@ -4244,20 +4237,33 @@ WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
 template<typename T>void AudioDeviceWindowsWasapi::Upmix(
                                                       T *inSamples,
                                                       uint32_t numberOfFrames,
-                                                      T *outSamples,
+                                                      T *outSamplesReal,
                                                       uint32_t inChannels,
                                                       uint32_t outChannels) {
+  // Create temporary array to do the upmix
+  rtc::scoped_ptr<T> outSamples(new T[numberOfFrames * outChannels]);
+
+  // Copy over input channels
   for (uint32_t i = 0, o = 0; i < numberOfFrames * inChannels;
     i += inChannels, o += outChannels) {
     for (uint32_t j = 0; j < inChannels; ++j) {
-      outSamples[o + j] = inSamples[i + j];
+      outSamples.get()[o + j] = inSamples[i + j];
     }
   }
+
+  // Add 0 to other channels
   for (uint32_t i = 0, o = 0; i < numberOfFrames; ++i, o += outChannels) {
     for (uint32_t j = inChannels; j < outChannels; ++j) {
-      outSamples[o + j] = 0;
+      outSamples.get()[o + j] = 0;
     }
   }
+
+  // Copy over memory to be delivered to the IAudioRenderClient
+  memcpy(outSamplesReal, outSamples.get(), 
+    _playBlockSize * outChannels * sizeof(T));
+
+  // Free temporary array
+  outSamples.reset();
 }
 
 
