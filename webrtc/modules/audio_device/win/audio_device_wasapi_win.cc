@@ -4182,7 +4182,7 @@ WAVEFORMATEX* AudioDeviceWindowsWasapi::GenerateMixFormatForMediaEngine(
 
 // ----------------------------------------------------------------------------
 //  GeneratePCMMixFormat
-//  Main principles used from 
+//  Main principles used from
 //  https://msdn.microsoft.com/en-us/library/windows/hardware/dn653308%28v=vs.85%29.aspx
 // ----------------------------------------------------------------------------
 WAVEFORMATPCMEX* AudioDeviceWindowsWasapi::GeneratePCMMixFormat(
@@ -4259,7 +4259,7 @@ template<typename T>void AudioDeviceWindowsWasapi::Upmix(
   }
 
   // Copy over memory to be delivered to the IAudioRenderClient
-  memcpy(outSamplesReal, outSamples.get(), 
+  memcpy(outSamplesReal, outSamples.get(),
     _playBlockSize * outChannels * sizeof(T));
 
   // Free temporary array
