@@ -3301,10 +3301,6 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
               reinterpret_cast<int16_t*>(pData),
               _playChannels,
               _mixFormatSurroundOut->Format.nChannels);
-
-
-            // Releasing the pointer to a helper array
-            mediaEngineRenderData.reset();
           } else {
             // Get the actual (stored) data
             nSamples = _ptrAudioBuffer->GetPlayoutData(
@@ -4261,9 +4257,6 @@ template<typename T>void AudioDeviceWindowsWasapi::Upmix(
   // Copy over memory to be delivered to the IAudioRenderClient
   memcpy(outSamplesReal, outSamples.get(),
     _playBlockSize * outChannels * sizeof(T));
-
-  // Free temporary array
-  outSamples.reset();
 }
 
 
