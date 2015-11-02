@@ -21,6 +21,11 @@ TraceLog::TraceLog() : is_tracing_(false), offset_(0),
   sent_bytes_(0), tw_() {
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
+}
+
+void TraceLog::EnableTraceInternalStorage() {
+  if (traces_storage_enabled_)
+    return;//already enabled.
 
 #if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
   Platform::String^ path_w =
@@ -39,6 +44,7 @@ TraceLog::TraceLog() : is_tracing_(false), offset_(0),
     traces_storage_enabled_ = true;
   }
 #endif
+
 }
 
 TraceLog::~TraceLog() {
