@@ -14,24 +14,48 @@
 #include <ppltasks.h>
 #include <Windows.ui.xaml.media.dxinterop.h>
 
-namespace webrtc_winrt_api {
-  public delegate void FormatChangeDelegate(
-    uintptr_t swapChain, uint32 frameRate, uint32 width, uint32 height);
+namespace webrtc_winrt_foreground_render {
+  /// <summary>
+  /// Delegate for triggering a COM error on the SwapChainPanel
+  /// control.
+  /// </summary>
   public delegate void ErrorDelegate(uint32 hr);
 
+  /// <summary>
+  /// SwapChainPanelSource object creates and maintains a
+  /// connection to the background renderer.
+  /// </summary>
   [Windows::Foundation::Metadata::WebHostHidden]
   public ref class SwapChainPanelSource sealed {
   public:
     SwapChainPanelSource();
     virtual ~SwapChainPanelSource();
+
+    /// <summary>
+    /// StartSource attaches a swap chain panel control to a background renderer and starts the video.
+    /// </summary>
+    /// <param name="swapChainPanel">SwapChainPanel control object that will receive video frames</param>
     void StartSource(Windows::UI::Xaml::Controls::SwapChainPanel^
       swapChainPanel);
+
+    /// <summary>
+    /// Stops the background renderer, detaches foreground 
+    /// control from background, and cleans up resources.
+    /// </summary>
     void StopSource();
-    event FormatChangeDelegate^ FormatChange {
-      Windows::Foundation::EventRegistrationToken add(
-        FormatChangeDelegate^ format);
-      void remove(Windows::Foundation::EventRegistrationToken token);
-    }
+
+    /// <summary>
+    /// Called when the dimensions of the source video changes.
+    /// </summary>
+    /// <param name="width">New width of video frames</param>
+    /// <param name="height">New height of video frames</param>
+    /// <param name="swapChainHandle">Foreground copy of background swap chain handle</param>
+    void UpdateFormat(uint32 width, uint32 height, uintptr_t swapChainHandle);
+
+    /// <summary>
+    /// Error event triggered when an error is detected on the foreground
+    /// SwapChainPanel control.
+    /// </summary>
     event ErrorDelegate^ Error;
   private:
     void OnRegistrationCompleted(
@@ -41,15 +65,11 @@ namespace webrtc_winrt_api {
       args);
     void OnUnloaded(Platform::Object ^sender,
       Windows::UI::Xaml::RoutedEventArgs ^e);
-    void OnFormatChange(uintptr_t swapChain, unsigned int frameRate,
-      unsigned int width, unsigned int height);
 
     Windows::UI::Xaml::Controls::SwapChainPanel^ _swapChain;
     Microsoft::WRL::ComPtr<ISwapChainPanelNative2> _nativeSwapChain;
     HANDLE _currentSwapChainHandle;
-    bool _formatChangeEventSubscribed;
-    event FormatChangeDelegate^ _formatChangeEvent;
   };
-}  // namespace webrtc_winrt_api
+}  // namespace webrtc_winrt_foreground_render
 
 #endif  // WEBRTC_BUILD_WINRT_GYP_API_SWAPCHAINPANELSOURCE_H_
