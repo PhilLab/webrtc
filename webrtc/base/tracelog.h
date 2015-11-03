@@ -39,6 +39,8 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
   void StartTracing();
   void StopTracing();
   bool IsTracing();
+  //enable internal storage for trace
+  void EnableTraceInternalStorage();
 
   bool Save(const std::string& file_name);
   bool Save(const std::string& addr, int port);

@@ -618,6 +618,7 @@ bool WebRTC::IsTracing() {
 }
 
 void WebRTC::StartTracing() {
+  globals::gTraceLog.EnableTraceInternalStorage();
   globals::gTraceLog.StartTracing();
 }
 
