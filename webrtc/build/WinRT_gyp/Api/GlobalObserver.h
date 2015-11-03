@@ -16,7 +16,7 @@
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/build/WinRT_gyp/ETW/stats_observer_etw.h"
+#include "webrtc/build/WinRT_gyp/stats/webrtc_stats_observer.h"
 
 namespace webrtc_winrt_api {
 ref class RTCPeerConnection;
@@ -25,13 +25,15 @@ ref class RTCDataChannel;
 
 namespace webrtc_winrt_api_internal {
 
-class GlobalObserver : public webrtc::PeerConnectionObserver {
+class GlobalObserver : public webrtc::PeerConnectionObserver, public webrtc::ConnectionHealthStatsObserver {
  public:
   GlobalObserver();
 
   void SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc);
 
   void ToggleETWStats(bool enable);
+
+  void ToggleConnectionHealthStats(bool enable);
 
   // PeerConnectionObserver functions
   virtual void OnSignalingChange(
@@ -57,10 +59,15 @@ class GlobalObserver : public webrtc::PeerConnectionObserver {
 
   virtual void OnIceComplete();
 
+  // ConnectionHealthStatsObserver functions
+  virtual void OnConnectionHealthStats(
+    const webrtc::ConnectionHealthStats& stats);
+
  private:
   webrtc_winrt_api::RTCPeerConnection^ _pc;
-  rtc::scoped_refptr<webrtc::StatsObserverETW> _stats_observer_etw;
+  rtc::scoped_refptr<webrtc::WebRTCStatsObserver> _stats_observer_etw;
   bool _etwStatsEnabled;
+  bool _connectionHealthStatsEnabled;
 };
 
 // There is one of those per call to CreateOffer().

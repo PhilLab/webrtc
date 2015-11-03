@@ -448,6 +448,12 @@ void RTCPeerConnection::ToggleETWStats(bool enable) {
   });
 }
 
+void RTCPeerConnection::ToggleConnectionHealthStats(bool enable) {
+  globals::RunOnGlobalThread<void>([this, enable] {
+    _observer->ToggleConnectionHealthStats(enable);
+  });
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
@@ -697,7 +703,6 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
 }
 
 void WebRTC::SynNTPTime(int64 current_ntp_time) {
-
   webrtc::TickTime::SyncWithNtp(current_ntp_time);
 }
 

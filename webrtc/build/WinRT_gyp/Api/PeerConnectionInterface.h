@@ -119,12 +119,12 @@ public:
   static bool SaveTrace(Platform::String^ filename);
 
   /// <summary>
-  /// Can be used for sending the trace information from a device to a TCP client application 
+  /// Can be used for sending the trace information from a device to a TCP client application
   /// running on a remote machine.
   /// </summary>
   /// <param name="host">The IP or name of the machine the trace information is collected on.</param>
   /// <param name="port">The port of the machine the trace information is collected on.</param>
-  /// <returns>True if the socket to send trace information is created successfully, 
+  /// <returns>True if the socket to send trace information is created successfully,
   /// false otherwise.</returns>
   static bool SaveTrace(Platform::String^ host, int port);
 
@@ -174,8 +174,8 @@ public:
                                              int fps);
 
   /// <summary>
-  /// Synchronization with NTP is needed for end to end delay measurements, 
-  /// which involve multiple devices. 
+  /// Synchronization with NTP is needed for end to end delay measurements,
+  /// which involve multiple devices.
   /// </summary>
   /// <param name="current_ntp_time">NTP time in miliseconds.</param>
   static void SynNTPTime(int64 current_ntp_time);
@@ -306,6 +306,17 @@ public:
   property RTCIceConnectionState State;
 };
 
+public ref class RTCPeerConnectionHealthStats sealed {
+public:
+  property int64 ReceivedBytes;
+  property int64 ReceivedKpbs;
+  property int64 SentBytes;
+  property int64 SentKbps;
+  property int64 RTT;
+  property String^ LocalCandidateType;
+  property String^ RemoteCandidateType;
+};
+
 // ------------------
 public ref class MediaStreamEvent sealed {
 public:
@@ -374,6 +385,10 @@ public:
   /// </summary>
   event RTCDataChannelEventDelegate^ OnDataChannel;
 
+  /// <summary>
+  /// New connection health stats are available.
+  /// </summary>
+  event RTCPeerConnectionHealthStatsDelegate^ OnConnectionHealthStats;
 
   /// <summary>
   /// Generates a blob of SDP that contains an RFC 3264 offer with the
@@ -498,6 +513,13 @@ public:
   /// Enable/Disable WebRTC statistics to ETW.
   /// </summary>
   void ToggleETWStats(bool enable);
+
+  /// <summary>
+  /// Enable/Disable connection health statistics.
+  /// When new connection health stats are available OnConnectionHealthStats
+  //  event is raised.
+  /// </summary>
+  void ToggleConnectionHealthStats(bool enable);
 
   /// <summary>
   /// The last <see cref="RTCSessionDescription"/> that was successfully set

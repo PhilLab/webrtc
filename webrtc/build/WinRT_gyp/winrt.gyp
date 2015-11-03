@@ -19,7 +19,7 @@
         'UnitTests/LibTest_runner/libTest_runner.gyp:*',
         'UnitTests/gtest_runner/gtest_runner.gyp:*',
         'api/api.gyp:*',
-        'etw/etw.gyp:*',
+        'stats/stats.gyp:*',
         '<(webrtc_root)/../third_party/h264_winrt/h264_winrt.gyp:*',
       ],
     },
