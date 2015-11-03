@@ -48,6 +48,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
   }
 
   virtual void TearDown() {
+    TickTime::DisableFakeClock();
   }
 
   void SendPackets(FakeNetworkPipe* pipe, int number_packets, int kPacketSize) {

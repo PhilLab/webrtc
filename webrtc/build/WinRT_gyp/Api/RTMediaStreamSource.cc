@@ -215,7 +215,10 @@ void RTMediaStreamSource::OnSampleRequested(
 void RTMediaStreamSource::ProcessReceivedFrame(
   const cricket::VideoFrame *frame) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-  _frame.reset(frame->Copy());
+  // Copy twice because GetCopyWithRotationApplied() maintains ownership.
+  // TODO(winrt): See if we can set rotation on the IMFSample to save
+  //              a copy and software rotation.
+  _frame.reset(frame->GetCopyWithRotationApplied()->Copy());
   _isNewFrame = true;
 }
 

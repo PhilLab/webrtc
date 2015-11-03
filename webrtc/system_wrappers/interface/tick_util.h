@@ -67,6 +67,10 @@ class TickTime {
   // a real clock often makes the test flaky.
   static void UseFakeClock(int64_t start_millisecond);
 
+  // Call to disable the fake clock. Test enabling false clock should disable 
+  // it on TearDown
+  static void DisableFakeClock();
+
   // Advance the fake clock. Must be called after UseFakeClock.
   static void AdvanceFakeClock(int64_t milliseconds);
 

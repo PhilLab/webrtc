@@ -18,11 +18,13 @@ LoggingServer::~LoggingServer() {
 
   for (auto it = connections_.begin();
                it != connections_.end(); ++it) {
+    LogMessage::RemoveLogToStream(it->second);
     it->second->Detach();
-    delete it->first;
-    delete it->second;
+    // Post messages to delete doomed objects
+    thread_->Dispose(it->first);
+    thread_->Dispose(it->second);
   }
-
+  connections_.clear();
   thread_->Stop();
   tw_->Stop();
 }

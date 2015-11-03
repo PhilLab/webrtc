@@ -302,7 +302,7 @@ bool ConfigureSimulcastCodec(
                          codec->qpMax,
                          codec->maxFramerate);
   // Add simulcast sub-streams from lower resolution to higher resolutions.
-  codec->numberOfSimulcastStreams = static_cast<unsigned int>(streams.size());
+  codec->numberOfSimulcastStreams = static_cast<unsigned char>(streams.size());
   codec->width = static_cast<unsigned short>(streams.back().width);
   codec->height = static_cast<unsigned short>(streams.back().height);
   // When using simulcast, |codec->maxBitrate| is set to the sum of the max
@@ -317,7 +317,7 @@ bool ConfigureSimulcastCodec(
     codec->simulcastStream[s].height =
         static_cast<unsigned short>(streams[s].height);
     codec->simulcastStream[s].numberOfTemporalLayers =
-        static_cast<unsigned int>(
+        static_cast<unsigned char>(
             streams[s].temporal_layer_thresholds_bps.size() + 1);
     codec->simulcastStream[s].minBitrate = streams[s].min_bitrate_bps / 1000;
     codec->simulcastStream[s].targetBitrate =

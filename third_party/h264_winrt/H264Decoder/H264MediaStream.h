@@ -8,12 +8,16 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
+#ifndef THIRD_PARTY_H264_WINRT_H264DECODER_H264MEDIASTREAM_H_
+#define THIRD_PARTY_H264_WINRT_H264DECODER_H264MEDIASTREAM_H_
+
 #include <wrl.h>
 #include <Mferror.h>
 #include <mfidl.h>
+#include <list>
 
-#include "../Utils/CritSec.h"
-#include "../Utils/OpQueue.h"
+#include "Utils/CritSec.h"
+#include "Utils/OpQueue.h"
 #include "webrtc/modules/video_render/windows/video_render_source_winrt.h"
 
 using Microsoft::WRL::ComPtr;
@@ -23,19 +27,21 @@ namespace webrtc {
 class H264MediaSource;
 
 class H264MediaStream : public Microsoft::WRL::RuntimeClass<
-  Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
+  Microsoft::WRL::RuntimeClassFlags<
+    Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
   IMFMediaStream,
-  IMFMediaEventGenerator>
-{
+  IMFMediaEventGenerator> {
   InspectableClass(L"H264MediaStream", BaseTrust)
-public:
-  HRESULT RuntimeClassInitialize(IMFMediaType *pMediaType, H264MediaSource *pSource);
+ public:
+  HRESULT RuntimeClassInitialize(IMFMediaType *pMediaType,
+    H264MediaSource *pSource);
 
   // IMFMediaEventGenerator
   IFACEMETHOD(BeginGetEvent) (IMFAsyncCallback *pCallback, IUnknown *punkState);
   IFACEMETHOD(EndGetEvent) (IMFAsyncResult *pResult, IMFMediaEvent **ppEvent);
   IFACEMETHOD(GetEvent) (DWORD dwFlags, IMFMediaEvent **ppEvent);
-  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, const PROPVARIANT *pvValue);
+  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType,
+    HRESULT hrStatus, const PROPVARIANT *pvValue);
 
   // IMFMediaStream
   IFACEMETHOD(GetMediaSource) (IMFMediaSource **ppMediaSource);
@@ -58,35 +64,34 @@ public:
   H264MediaStream();
   ~H264MediaStream(void);
 
-private:
+ private:
   class SourceLock;
 
-private:
-  void DeliverSamples();
+ private:
+  HRESULT DeliverSamples();
   void HandleError(HRESULT hErrorCode);
 
   HRESULT CheckShutdown() const {
     if (_eSourceState == SourceState_Shutdown) {
       return MF_E_SHUTDOWN;
-    }
-    else {
+    } else {
       return S_OK;
     }
   }
 
-  void CleanSampleQueue();
-
-private:
+ private:
   SourceState                 _eSourceState;
   ComPtr<H264MediaSource>     _spSource;
   ComPtr<IMFMediaEventQueue>  _spEventQueue;
   ComPtr<IMFStreamDescriptor> _spStreamDescriptor;
 
-  ComPtrList<IUnknown>        _samples;
-  ComPtrList<IUnknown, true>  _tokens;
+  std::list<ComPtr<IUnknown>> _samples;
+  std::list<ComPtr<IUnknown>> _tokens;
 
   DWORD                       _dwId;
   bool                        _fActive;
 };
 
 }  // namespace webrtc
+
+#endif  // THIRD_PARTY_H264_WINRT_H264DECODER_H264MEDIASTREAM_H_

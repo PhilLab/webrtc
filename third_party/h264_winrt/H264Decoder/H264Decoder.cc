@@ -8,7 +8,7 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "H264Decoder.h"
+#include "third_party/h264_winrt/H264Decoder/H264Decoder.h"
 
 #include <Windows.h>
 #include <stdlib.h>
@@ -19,22 +19,13 @@
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <wrl\implements.h>
-#include "../Utils/Utils.h"
+#include "Utils/Utils.h"
 #include "libyuv/convert.h"
 #include "webrtc/base/logging.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
 #pragma comment(lib, "mfuuid.lib")
-
-using namespace concurrency;
-using namespace Platform;
-using namespace Microsoft::WRL;
-using namespace Windows::Foundation;
-using namespace Windows::Media::Core;
-using namespace Windows::Media::MediaProperties;
-using namespace Windows::Media::Transcoding;
-using namespace Windows::Storage::Streams;
 
 namespace webrtc {
 
@@ -46,7 +37,7 @@ H264WinRTDecoderImpl::H264WinRTDecoderImpl()
   : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
   , _cbLock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
   , decodeCompleteCallback_(nullptr) {
-  MakeAndInitialize<SourceReaderCB>(&readerCB_);
+  Microsoft::WRL::MakeAndInitialize<SourceReaderCB>(&readerCB_);
   readerCB_->RegisterDecodingCallback(this);
 }
 
@@ -57,72 +48,50 @@ H264WinRTDecoderImpl::~H264WinRTDecoderImpl() {
 
 int H264WinRTDecoderImpl::InitDecode(const VideoCodec* inst,
   int number_of_cores) {
-
   webrtc::CriticalSectionScoped csLock(_lock.get());
   HRESULT hr = S_OK;
 
   // output media type (nv12)
-  hr = MFCreateMediaType(&mediaTypeOut_);
-  ThrowIfError(hr);
-
-  hr = mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-  ThrowIfError(hr);
-
-  hr = mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12);
-  ThrowIfError(hr);
-
+  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut_));
+  ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+  ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12));
   // input media type (h264)
-  hr = MFCreateMediaType(&mediaTypeIn_);
-  ThrowIfError(hr);
-
-  hr = mediaTypeIn_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-  ThrowIfError(hr);
-
-  hr = mediaTypeIn_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
-  ThrowIfError(hr);
-
+  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeIn_));
+  ON_SUCCEEDED(mediaTypeIn_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+  ON_SUCCEEDED(mediaTypeIn_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
   ComPtr<H264MediaSource> mediaSource;
-  ThrowIfError(MakeAndInitialize<H264MediaSource>(&mediaSource, mediaTypeIn_.Get(), &mediaStream_));
+  ON_SUCCEEDED(Microsoft::WRL::MakeAndInitialize<H264MediaSource>(
+    &mediaSource, mediaTypeIn_.Get(), &mediaStream_));
 
   ComPtr<IMFAttributes> readerAttributes;
-  hr = MFCreateAttributes(&readerAttributes, 1);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(MFCreateAttributes(&readerAttributes, 1));
 
   ComPtr<IUnknown> readerCBAsUnknown;
-  readerCB_.As(&readerCBAsUnknown);
-  hr = readerAttributes->SetUnknown(MF_SOURCE_READER_ASYNC_CALLBACK, readerCBAsUnknown.Get());
-  ThrowIfError(hr);
+  ON_SUCCEEDED(readerCB_.As(&readerCBAsUnknown));
+  ON_SUCCEEDED(readerAttributes->SetUnknown(
+    MF_SOURCE_READER_ASYNC_CALLBACK, readerCBAsUnknown.Get()));
+  ON_SUCCEEDED(readerAttributes->SetUINT32(MF_LOW_LATENCY, TRUE));
 
-  hr = readerAttributes->SetUINT32(MF_LOW_LATENCY, TRUE);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(MFCreateSourceReaderFromMediaSource(
+    mediaSource.Get(), readerAttributes.Get(), &sourceReader_));
 
-  hr = MFCreateSourceReaderFromMediaSource(mediaSource.Get(), readerAttributes.Get(), &sourceReader_);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(sourceReader_->SetCurrentMediaType(
+    0, nullptr, mediaTypeOut_.Get()));
 
-  hr = sourceReader_->SetCurrentMediaType(0, nullptr, mediaTypeOut_.Get());
-  ThrowIfError(hr);
-
-  hr = sourceReader_->ReadSample((DWORD)MF_SOURCE_READER_ANY_STREAM, 0, nullptr, nullptr, nullptr, nullptr);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(sourceReader_->ReadSample((DWORD)MF_SOURCE_READER_ANY_STREAM,
+    0, nullptr, nullptr, nullptr, nullptr));
 
   return 0;
 }
 
-const GUID WEBRTC_DECODER_TIMESTAMP           = { 0x11111111, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-const GUID WEBRTC_DECODER_NTP_TIME            = { 0x22222222, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-const GUID WEBRTC_DECODER_CAPTURE_RENDER_TIME = { 0x33333333, 0xd6b2, 0x4012,{ 0xb8, 0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8,  0xb8 } };
-
 ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
-  HRESULT hr;
+  HRESULT hr = S_OK;
 
   ComPtr<IMFSample> sample;
   hr = MFCreateSample(&sample);
-  ThrowIfError(hr);
-
 
   ComPtr<IMFMediaBuffer> mediaBuffer;
-  hr = MFCreateMemoryBuffer((DWORD)input_image._length, &mediaBuffer);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(MFCreateMemoryBuffer((DWORD)input_image._length, &mediaBuffer));
 
   BYTE* destBuffer = NULL;
   if (SUCCEEDED(hr)) {
@@ -130,38 +99,27 @@ ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
     DWORD cbCurrentLength;
     hr = mediaBuffer->Lock(&destBuffer, &cbMaxLength, &cbCurrentLength);
   }
-  ThrowIfError(hr);
 
-  memcpy(destBuffer, input_image._buffer, input_image._length);
+  if (SUCCEEDED(hr)) {
+    memcpy(destBuffer, input_image._buffer, input_image._length);
+  }
 
-  hr = mediaBuffer->SetCurrentLength((DWORD)input_image._length);
-  ThrowIfError(hr);
+  ON_SUCCEEDED(mediaBuffer->SetCurrentLength((DWORD)input_image._length));
+  ON_SUCCEEDED(mediaBuffer->Unlock());
 
-  hr = mediaBuffer->Unlock();
-  ThrowIfError(hr);
+  ON_SUCCEEDED(sample->AddBuffer(mediaBuffer.Get()));
 
-  hr = sample->AddBuffer(mediaBuffer.Get());
-  ThrowIfError(hr);
+  ON_SUCCEEDED(sample->SetSampleTime(
+    (input_image._timeStamp / 90) * 10 * 1000));
 
-  hr = sample->SetSampleTime((input_image._timeStamp / 90) * 10 * 1000);
-  ThrowIfError(hr);
-
-  auto duration = (LONGLONG)((1.0f / (float)30) * 1000 * 1000 * 10);
-  hr = sample->SetSampleDuration(duration);
-  ThrowIfError(hr);
-
-  ComPtr<IMFAttributes> sampleAttributes;
-  hr = sample.As(&sampleAttributes);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT32(WEBRTC_DECODER_TIMESTAMP, input_image._timeStamp);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT64(WEBRTC_DECODER_NTP_TIME, input_image.ntp_time_ms_);
-  ThrowIfError(hr);
-
-  hr = sampleAttributes->SetUINT64(WEBRTC_DECODER_CAPTURE_RENDER_TIME, input_image.capture_time_ms_);
-  ThrowIfError(hr);
+  if (SUCCEEDED(hr)) {
+    // We don't get duration information from webrtc.
+    // Hardcode duration based on 30fps.  The exact value doesn't
+    // seem to have any impact.
+    auto duration = static_cast<LONGLONG>(
+      (1.0f / static_cast<float>(30)) * 1000 * 1000 * 10);
+    hr = sample->SetSampleDuration(duration);
+  }
 
   return sample;
 }
@@ -171,13 +129,22 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
   const RTPFragmentationHeader* fragmentation,
   const CodecSpecificInfo* codec_specific_info,
   int64_t /*render_time_ms*/) {
-
   HRESULT hr = S_OK;
 
   auto sample = FromEncodedImage(input_image);
 
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
+
+    CachedFrameAttributes frameAttributes;
+    LONGLONG sampleTimestamp;
+    sample->GetSampleTime(&sampleTimestamp);
+
+    frameAttributes.timestamp = input_image._timeStamp;
+    frameAttributes.ntpTime = input_image.ntp_time_ms_;
+    frameAttributes.captureRenderTime = input_image.capture_time_ms_;
+    _sampleAttributeQueue.push(sampleTimestamp, frameAttributes);
+
     if (mediaStream_ != nullptr) {
       mediaStream_->ProcessSample(sample.Get());
     }
@@ -186,10 +153,16 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
   return hr;
 }
 
-HRESULT FromSample(ComPtr<IMFSample> pSample, UINT32 width, UINT32 height, VideoFrame& decodedFrame) {
+HRESULT FromSample(ComPtr<IMFSample> pSample,
+  UINT32 sampleWidth, UINT32 sampleHeight,
+  UINT32 width, UINT32 height, VideoFrame* decodedFrame) {
   HRESULT hr = S_OK;
 
-  decodedFrame.CreateEmptyFrame(width, height, width,
+  if (decodedFrame == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  decodedFrame->CreateEmptyFrame(width, height, width,
     (width + 1) / 2, (width + 1) / 2);
 
   ComPtr<IMFMediaBuffer> buffer;
@@ -200,65 +173,66 @@ HRESULT FromSample(ComPtr<IMFSample> pSample, UINT32 width, UINT32 height, Video
     hr = buffer->Lock(&bufferBytes, &maxLength, &curLength);
     if (SUCCEEDED(hr)) {
       libyuv::NV12ToI420(
-        bufferBytes, width,
-        bufferBytes + (width * height), width,
-        decodedFrame.buffer(kYPlane), width,
-        decodedFrame.buffer(kUPlane), (width + 1) / 2,
-        decodedFrame.buffer(kVPlane), (width + 1) / 2,
+        bufferBytes, sampleWidth,
+        bufferBytes + (sampleWidth * sampleHeight), sampleWidth,
+        decodedFrame->buffer(kYPlane), width,
+        decodedFrame->buffer(kUPlane), (width + 1) / 2,
+        decodedFrame->buffer(kVPlane), (width + 1) / 2,
         width, height);
       hr = buffer->Unlock();
-    }
-  }
-
-  // Get all the timestamp attributes out of the sample.
-  ComPtr<IMFAttributes> sampleAttributes;
-  hr = pSample.As(&sampleAttributes);
-  if (SUCCEEDED(hr)) {
-    UINT32 timestamp;
-    UINT64 ntpTime, captureRenderTime;
-
-    if (SUCCEEDED(sampleAttributes->GetUINT32(WEBRTC_DECODER_TIMESTAMP, &timestamp))) {
-      decodedFrame.set_timestamp(timestamp);
-    }
-
-    if (SUCCEEDED(sampleAttributes->GetUINT64(WEBRTC_DECODER_NTP_TIME, &ntpTime))) {
-      decodedFrame.set_ntp_time_ms((int64_t)ntpTime);
-    }
-
-    if (SUCCEEDED(sampleAttributes->GetUINT64(WEBRTC_DECODER_CAPTURE_RENDER_TIME, &captureRenderTime))) {
-      decodedFrame.set_render_time_ms((int64_t)captureRenderTime);
     }
   }
 
   return hr;
 }
 
-void H264WinRTDecoderImpl::OnH264Decoded(ComPtr<IMFSample> pSample, DWORD dwStreamFlags) {
-
+void H264WinRTDecoderImpl::OnH264Decoded(
+  ComPtr<IMFSample> pSample, DWORD dwStreamFlags) {
   HRESULT hr = S_OK;
 
-  UINT32 width = 0, height = 0;
+  UINT32 actualWidth = 0, actualHeight = 0;
+  UINT32 sampleWidth = 0, sampleHeight = 0;
 
   // Get the frame's width and height
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (sourceReader_.Get() != nullptr) {
       ComPtr<IMFMediaType> mediaType;
-      // TODO: Cache this and only update when MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED is set.
+      // TODO(winrt): Cache this and only update when
+      //              MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED is set.
       hr = sourceReader_->GetCurrentMediaType(0, &mediaType);
       ComPtr<IMFAttributes> attributes;
       hr = mediaType.As(&attributes);
-      hr = MFGetAttributeSize(attributes.Get(), MF_MT_FRAME_SIZE, &width, &height);
+      UINT32 blobSize = 0;
+      MFVideoArea videoArea;
+      // Aperture contains the area with valid image data.
+      hr = attributes->GetBlob(MF_MT_MINIMUM_DISPLAY_APERTURE,
+        reinterpret_cast<uint8*>(&videoArea), sizeof(MFVideoArea), &blobSize);
+      actualWidth = videoArea.Area.cx;
+      actualHeight = videoArea.Area.cy;
+      // These dimensions are those of the image buffer.
+      // The image dimensions may be smaller.
+      hr = MFGetAttributeSize(attributes.Get(),
+        MF_MT_FRAME_SIZE, &sampleWidth, &sampleHeight);
     }
   }
 
-  if (pSample != nullptr && width > 0 && height > 0) {
-
+  if (pSample != nullptr && actualWidth > 0 && actualHeight > 0) {
     VideoFrame decodedFrame;
-    hr = FromSample(pSample, width, height, decodedFrame);
+    hr = FromSample(pSample, sampleWidth, sampleHeight,
+      actualWidth, actualHeight, &decodedFrame);
 
     if (SUCCEEDED(hr)) {
       webrtc::CriticalSectionScoped csLock(_cbLock.get());
+
+      LONGLONG sampleTimestamp;
+      pSample->GetSampleTime(&sampleTimestamp);
+      CachedFrameAttributes frameAttributes;
+      if (_sampleAttributeQueue.pop(sampleTimestamp, frameAttributes)) {
+        decodedFrame.set_timestamp(frameAttributes.timestamp);
+        decodedFrame.set_ntp_time_ms(frameAttributes.ntpTime);
+        decodedFrame.set_render_time_ms(frameAttributes.captureRenderTime);
+      }
 
       if (decodeCompleteCallback_ != nullptr) {
         decodeCompleteCallback_->Decoded(decodedFrame);
@@ -269,7 +243,8 @@ void H264WinRTDecoderImpl::OnH264Decoded(ComPtr<IMFSample> pSample, DWORD dwStre
   webrtc::CriticalSectionScoped csLock(_lock.get());
   // Queue another async request to read the next sample.
   if (sourceReader_ != nullptr) {
-    sourceReader_->ReadSample((DWORD)MF_SOURCE_READER_ANY_STREAM, 0, nullptr, nullptr, nullptr, nullptr);
+    sourceReader_->ReadSample((DWORD)MF_SOURCE_READER_ANY_STREAM,
+      0, nullptr, nullptr, nullptr, nullptr);
   }
 }
 
@@ -291,13 +266,13 @@ int H264WinRTDecoderImpl::Release() {
 }
 
 int H264WinRTDecoderImpl::Reset() {
-  // TODO: Figure out when this happens.
+  // TODO(winrt): Figure out when this happens.
   return 0;
 }
 
 
 VideoDecoder* H264WinRTDecoderImpl::Copy() {
-  // TODO: Implement?
+  // TODO(winrt): Implement?
   return nullptr;
 }
 

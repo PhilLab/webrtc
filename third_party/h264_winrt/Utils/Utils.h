@@ -1,16 +1,16 @@
-#ifndef UTILS_H_
-#define UTILS_H_
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
 
-#include <Windows.h>
+#ifndef THIRD_PARTY_H264_WINRT_UTILS_UTILS_H_
+#define THIRD_PARTY_H264_WINRT_UTILS_UTILS_H_
 
-inline void ThrowIfError(HRESULT hr) {
-  if (FAILED(hr)) {
-    throw ref new Platform::Exception(hr);
-  }
-}
+#define ON_SUCCEEDED(act) SUCCEEDED(hr) && SUCCEEDED(hr = act)
 
-inline void Throw(HRESULT hr) {
-  throw ref new Platform::Exception(hr);
-}
-
-#endif  // UTILS_H_
+#endif  // THIRD_PARTY_H264_WINRT_UTILS_UTILS_H_

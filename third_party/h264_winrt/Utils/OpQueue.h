@@ -1,7 +1,12 @@
-#pragma once
-
-#pragma warning( push )
-#pragma warning( disable : 4355 )  // 'this' used in base member initializer list
+/*
+*  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+*
+*  Use of this source code is governed by a BSD-style license
+*  that can be found in the LICENSE file in the root of the source
+*  tree. An additional intellectual property rights grant can be found
+*  in the file PATENTS.  All contributing project authors may
+*  be found in the AUTHORS file in the root of the source tree.
+*/
 
 /*
 This header file defines an object to help queue and serialize
@@ -38,10 +43,10 @@ The granularity of a single "operation" depends on the requirements of
 that particular object. A single operation might involve several
 asynchronous calls before the object dispatches the next operation on
 the queue.
-
-
 */
 
+#ifndef THIRD_PARTY_H264_WINRT_UTILS_OPQUEUE_H_
+#define THIRD_PARTY_H264_WINRT_UTILS_OPQUEUE_H_
 
 
 //-------------------------------------------------------------------
@@ -78,40 +83,41 @@ the queue.
 //      return MF_E_NOTACCEPTING.
 //
 //-------------------------------------------------------------------
-#include "ComPtrList.h"
+
+#include <wrl.h>
+#include <list>
+
 #include "Async.h"
+#include "Utils/CritSec.h"
+
+using Microsoft::WRL::ComPtr;
 
 template <class T, class TOperation>
-class OpQueue //: public IUnknown
-{
-public:
+class OpQueue {
+ public:
+  typedef std::list<ComPtr<TOperation>> OpList;
 
-    typedef ComPtrList<TOperation>   OpList;
+  HRESULT QueueOperation(ComPtr<TOperation> pOp);
 
-    HRESULT QueueOperation(TOperation *pOp);
+ protected:
+  HRESULT ProcessQueue();
+  HRESULT ProcessQueueAsync(IMFAsyncResult *pResult);
 
-protected:
+  virtual HRESULT DispatchOperation(ComPtr<TOperation> pOp) = 0;
+  virtual HRESULT ValidateOperation(ComPtr<TOperation> pOp) = 0;
 
-    HRESULT ProcessQueue();
-    HRESULT ProcessQueueAsync(IMFAsyncResult *pResult);
+  OpQueue()
+    : m_OnProcessQueue(static_cast<T *>(this),
+      &OpQueue::ProcessQueueAsync) {
+  }
 
-    virtual HRESULT DispatchOperation(TOperation *pOp) = 0;
-    virtual HRESULT ValidateOperation(TOperation *pOp) = 0;
+  virtual ~OpQueue() {
+  }
 
-    OpQueue(CRITICAL_SECTION& critsec)
-        : m_OnProcessQueue(static_cast<T *>(this), &OpQueue::ProcessQueueAsync),
-        m_critsec(critsec)
-    {
-    }
-
-    virtual ~OpQueue()
-    {
-    }
-
-protected:
-    OpList                  m_OpQueue;         // Queue of operations.
-    CRITICAL_SECTION&       m_critsec;         // Protects the queue state.
-    AsyncCallback<T>  m_OnProcessQueue;  // ProcessQueueAsync callback.
+ protected:
+  OpList           m_OpQueue;         // Queue of operations.
+  CritSec          m_critsec;         // Protects the queue state.
+  AsyncCallback<T> m_OnProcessQueue;  // ProcessQueueAsync callback.
 };
 
 
@@ -122,20 +128,15 @@ protected:
 //-------------------------------------------------------------------
 
 template <class T, class TOperation>
-HRESULT OpQueue<T, TOperation>::QueueOperation(TOperation *pOp)
-{
-    HRESULT hr = S_OK;
+HRESULT OpQueue<T, TOperation>::QueueOperation(ComPtr<TOperation> pOp) {
+  HRESULT hr = S_OK;
 
-    EnterCriticalSection(&m_critsec);
+  AutoLock lock(m_critsec);
 
-    hr = m_OpQueue.InsertBack(pOp);
-    if (SUCCEEDED(hr))
-    {
-        hr = ProcessQueue();
-    }
+  m_OpQueue.push_back(pOp);
+  hr = ProcessQueue();
 
-    LeaveCriticalSection(&m_critsec);
-    return hr;
+  return hr;
 }
 
 
@@ -147,19 +148,16 @@ HRESULT OpQueue<T, TOperation>::QueueOperation(TOperation *pOp)
 //-------------------------------------------------------------------
 
 template <class T, class TOperation>
-HRESULT OpQueue<T, TOperation>::ProcessQueue()
-{
-    HRESULT hr = S_OK;
-    if (m_OpQueue.GetCount() > 0)
-    {
-        hr = MFPutWorkItem2(
-            MFASYNC_CALLBACK_QUEUE_STANDARD,    // Use the standard work queue.
-            0,                                  // Default priority
-            &m_OnProcessQueue,                  // Callback method.
-            nullptr                             // State object.
-            );
-    }
-    return hr;
+HRESULT OpQueue<T, TOperation>::ProcessQueue() {
+  HRESULT hr = S_OK;
+  if (m_OpQueue.GetCount() > 0) {
+    hr = MFPutWorkItem2(
+      MFASYNC_CALLBACK_QUEUE_STANDARD,    // Use the standard work queue.
+      0,                                  // Default priority
+      &m_OnProcessQueue,                  // Callback method.
+      nullptr);                           // State object.
+  }
+  return hr;
 }
 
 
@@ -171,38 +169,25 @@ HRESULT OpQueue<T, TOperation>::ProcessQueue()
 //-------------------------------------------------------------------
 
 template <class T, class TOperation>
-HRESULT OpQueue<T, TOperation>::ProcessQueueAsync(IMFAsyncResult *pResult)
-{
-    HRESULT hr = S_OK;
-    TOperation *pOp = nullptr;
+HRESULT OpQueue<T, TOperation>::ProcessQueueAsync(IMFAsyncResult *pResult) {
+  HRESULT hr = S_OK;
+  ComPtr<TOperation> pOp;
 
-    EnterCriticalSection(&m_critsec);
+  AutoLock lock(m_critsec);
 
-    if (m_OpQueue.GetCount() > 0)
-    {
-        hr = m_OpQueue.GetFront(&pOp);
+  if (m_OpQueue.GetCount() > 0) {
+    pOp = m_OpQueue.front();
 
-        if (SUCCEEDED(hr))
-        {
-            hr = ValidateOperation(pOp);
-        }
-        if (SUCCEEDED(hr))
-        {
-            hr = m_OpQueue.RemoveFront(nullptr);
-        }
-        if (SUCCEEDED(hr))
-        {
-            (void)DispatchOperation(pOp);
-        }
+    hr = ValidateOperation(pOp);
+    if (SUCCEEDED(hr)) {
+      hr = m_OpQueue.RemoveFront(nullptr);
     }
-
-    if (pOp != nullptr)
-    {
-        pOp->Release();
+    if (SUCCEEDED(hr)) {
+      (void)DispatchOperation(pOp);
     }
+  }
 
-    LeaveCriticalSection(&m_critsec);
-    return hr;
+  return hr;
 }
 
-#pragma warning( pop )
+#endif  // THIRD_PARTY_H264_WINRT_UTILS_OPQUEUE_H_

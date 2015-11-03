@@ -8,8 +8,10 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 // Class1.cpp
-#include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
+#include <vector>
 #include <ppltasks.h>
+
+#include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
 #include "PeerConnectionInterface.h"
 #include "Marshalling.h"
 #include "Media.h"
@@ -53,7 +55,8 @@ namespace webrtc_winrt_api_internal {
     }\
   }
 
-GlobalObserver::GlobalObserver() {
+GlobalObserver::GlobalObserver() :
+  _etwStatsEnabled(false), _connectionHealthStatsEnabled(false) {
 }
 
 void GlobalObserver::SetPeerConnection(
@@ -63,6 +66,21 @@ void GlobalObserver::SetPeerConnection(
     _stats_observer_etw = nullptr;
   }
 }
+
+void GlobalObserver::ToggleETWStats(bool enable) {
+  _etwStatsEnabled = enable;
+  if (_stats_observer_etw) {
+    _stats_observer_etw->ToggleETWStats(enable);
+  }
+}
+
+void GlobalObserver::ToggleConnectionHealthStats(bool enable) {
+  _connectionHealthStatsEnabled = enable;
+  if (_stats_observer_etw) {
+    _stats_observer_etw->ToggleConnectionHealthStats(enable ? this : NULL);
+  }
+}
+
 
 // Triggered when the SignalingState changed.
 void GlobalObserver::OnSignalingChange(
@@ -109,10 +127,11 @@ void GlobalObserver::OnIceConnectionChange(
   if (new_state == webrtc::PeerConnectionInterface::kIceConnectionConnected) {
     if (!_stats_observer_etw.get()) {
       _stats_observer_etw =
-        new rtc::RefCountedObject<webrtc::StatsObserverETW>();
+        new rtc::RefCountedObject<webrtc::WebRTCStatsObserver>(_pc->_impl);
     }
-
-    _stats_observer_etw->PollStats(_pc->_impl);
+    _stats_observer_etw->ToggleETWStats(_etwStatsEnabled);
+    _stats_observer_etw->ToggleConnectionHealthStats(
+      _connectionHealthStatsEnabled ? this : NULL);
   }
   auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceStateChangeEvent();
   webrtc_winrt_api::RTCIceConnectionState cxNewState;
@@ -151,6 +170,20 @@ void GlobalObserver::OnIceComplete() {
   evt->Candidate = nullptr;
   POST_PC_EVENT(OnIceCandidate, evt);
 }
+
+void GlobalObserver::OnConnectionHealthStats(
+  const webrtc::ConnectionHealthStats& stats) {
+  auto evt = ref new webrtc_winrt_api::RTCPeerConnectionHealthStats();
+  evt->ReceivedBytes = stats.received_bytes;
+  evt->ReceivedKpbs = stats.received_kbps;
+  evt->SentBytes = stats.sent_bytes;
+  evt->SentKbps = stats.sent_kbps;
+  evt->RTT = stats.rtt;
+  evt->LocalCandidateType = ToCx(stats.local_candidate_type);
+  evt->RemoteCandidateType = ToCx(stats.remote_candidate_type);
+  POST_PC_EVENT(OnConnectionHealthStats, evt);
+}
+
 
 //============================================================================
 
@@ -204,18 +237,22 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
 
   if (!buffer.binary) {
     // convert buffer data from uint_8[] to char*
-    String^ receivedString = ToCx(std::string(reinterpret_cast<const char*>(buffer.data.data()), buffer.size()));
+    String^ receivedString = ToCx(std::string(
+      reinterpret_cast<const char*>(buffer.data.data()),
+                                    buffer.size()));
 
-    evt->Data = ref new webrtc_winrt_api::StringDataChannelMessage(receivedString);
-  }
-  else {
+    evt->Data = ref new webrtc_winrt_api::StringDataChannelMessage(
+      receivedString);
+  } else {
     // convert byte[] from buffer to Vector
     std::vector<byte> bytesFromBuffer = std::vector<byte>();
-    bytesFromBuffer.insert(bytesFromBuffer.end(), buffer.data.data(), buffer.data.data() + buffer.size());
+    bytesFromBuffer.insert(bytesFromBuffer.end(), buffer.data.data(),
+                           buffer.data.data() + buffer.size());
     Vector<byte>^ convertedBytes = ref new Vector<byte>();
     ToCx(&bytesFromBuffer, convertedBytes);
 
-    evt->Data = ref new webrtc_winrt_api::BinaryDataChannelMessage(convertedBytes);
+    evt->Data = ref new webrtc_winrt_api::BinaryDataChannelMessage(
+      convertedBytes);
   }
 
   if (g_windowDispatcher != nullptr) {
@@ -224,8 +261,7 @@ void DataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) {
       ref new Windows::UI::Core::DispatchedHandler([this, evt] {
       _channel->OnMessage(evt);
     }));
-  }
-  else {
+  } else {
     _channel->OnMessage(evt);
   }
 }

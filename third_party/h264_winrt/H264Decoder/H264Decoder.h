@@ -8,8 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef WEBRTC_THIRD_PARTY_H264_DECODER_H_
-#define WEBRTC_THIRD_PARTY_H264_DECODER_H_
+#ifndef THIRD_PARTY_H264_WINRT_H264DECODER_H264DECODER_H_
+#define THIRD_PARTY_H264_WINRT_H264DECODER_H264DECODER_H_
 
 #include <mfapi.h>
 #include <mfidl.h>
@@ -19,7 +19,8 @@
 #include "H264MediaStream.h"
 #include "IH264DecodingCallback.h"
 #include "SourceReaderCB.h"
-#include <webrtc/video_decoder.h>
+#include "Utils/SampleAttributeQueue.h"
+#include "webrtc/video_decoder.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 #pragma comment(lib, "mfreadwrite")
@@ -31,7 +32,7 @@ using Microsoft::WRL::ComPtr;
 namespace webrtc {
 
 class H264WinRTDecoderImpl : public VideoDecoder, public IH264DecodingCallback {
-public:
+ public:
   H264WinRTDecoderImpl();
 
   virtual ~H264WinRTDecoderImpl();
@@ -54,12 +55,12 @@ public:
   // === IH264DecodingCallback overrides ===
   void OnH264Decoded(ComPtr<IMFSample> pSample, DWORD dwStreamFlags) override;
 
-private:
+ private:
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _cbLock;
   DecodedImageCallback* decodeCompleteCallback_;
 
-  ComPtr<IMFMediaType> mediaTypeOut_; // nv12
+  ComPtr<IMFMediaType> mediaTypeOut_;  // nv12
   ComPtr<IMFMediaType> mediaTypeIn_;  // h264
 
   // Media stream on which we push received h264 frames.
@@ -74,9 +75,15 @@ private:
   DWORD streamIndex_;
 
   bool firstFrame_;
+
+  struct CachedFrameAttributes {
+    uint32_t timestamp;
+    uint64_t ntpTime;
+    uint64_t captureRenderTime;
+  };
+  SampleAttributeQueue<CachedFrameAttributes> _sampleAttributeQueue;
 };  // end of H264WinRTDecoderImpl class
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_THIRD_PARTY_H264_DECODER_H_
-
+#endif  // THIRD_PARTY_H264_WINRT_H264DECODER_H264DECODER_H_

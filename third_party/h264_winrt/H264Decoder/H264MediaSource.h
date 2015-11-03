@@ -8,12 +8,14 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
+#ifndef THIRD_PARTY_H264_WINRT_H264DECODER_H264MEDIASOURCE_H_
+#define THIRD_PARTY_H264_WINRT_H264DECODER_H264MEDIASOURCE_H_
+
 #include <Mferror.h>
 #include <mfidl.h>
 #include <wrl.h>
-#include "../Utils/OpQueue.h"
-
-#include "../Utils/CritSec.h"
+#include "Utils/OpQueue.h"
+#include "Utils/CritSec.h"
 #include "webrtc/modules/video_render/windows/video_render_source_winrt.h"
 
 using Microsoft::WRL::ComPtr;
@@ -23,12 +25,12 @@ namespace webrtc {
 class H264MediaStream;
 
 class H264MediaSource : public Microsoft::WRL::RuntimeClass<
-  Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
+  Microsoft::WRL::RuntimeClassFlags<
+    Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
   IMFMediaSource,
-  IMFMediaEventGenerator>
-{
+  IMFMediaEventGenerator> {
   InspectableClass(L"H264MediaSource", BaseTrust)
-public:
+ public:
   HRESULT RuntimeClassInitialize(
     _In_  IMFMediaType *pTargetMediaType,
     _Out_ H264MediaStream** ppStream);
@@ -37,18 +39,19 @@ public:
   IFACEMETHOD(BeginGetEvent) (IMFAsyncCallback *pCallback, IUnknown *punkState);
   IFACEMETHOD(EndGetEvent) (IMFAsyncResult *pResult, IMFMediaEvent **ppEvent);
   IFACEMETHOD(GetEvent) (DWORD dwFlags, IMFMediaEvent **ppEvent);
-  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, const PROPVARIANT *pvValue);
+  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType,
+    HRESULT hrStatus, const PROPVARIANT *pvValue);
 
   // IMFMediaSource
-  IFACEMETHOD(CreatePresentationDescriptor) (IMFPresentationDescriptor **ppPresentationDescriptor);
+  IFACEMETHOD(CreatePresentationDescriptor) (
+    IMFPresentationDescriptor **ppPresentationDescriptor);
   IFACEMETHOD(GetCharacteristics) (DWORD *pdwCharacteristics);
   IFACEMETHOD(Pause) ();
   IFACEMETHOD(Shutdown) ();
   IFACEMETHOD(Start) (
     IMFPresentationDescriptor *pPresentationDescriptor,
     const GUID *pguidTimeFormat,
-    const PROPVARIANT *pvarStartPosition
-    );
+    const PROPVARIANT *pvarStartPosition);
   IFACEMETHOD(Stop)();
 
   _Acquires_lock_(_critSec)
@@ -59,22 +62,20 @@ public:
   H264MediaSource();
   virtual ~H264MediaSource();
 
-private:
-
+ private:
   void InitPresentationDescription();
   HRESULT ValidatePresentationDescriptor(IMFPresentationDescriptor *pPD);
-  void SelectStreams(IMFPresentationDescriptor *pPD);
+  HRESULT SelectStreams(IMFPresentationDescriptor *pPD);
 
   HRESULT CheckShutdown() const {
     if (_eSourceState == SourceState::SourceState_Shutdown) {
       return MF_E_SHUTDOWN;
-    }
-    else {
+    } else {
       return S_OK;
     }
   }
 
-private:
+ private:
   CritSec                     _critSec;
   SourceState                 _eSourceState;
   ComPtr<IMFMediaEventQueue>  _spEventQueue;
@@ -85,3 +86,5 @@ private:
 };
 
 }  // namespace webrtc
+
+#endif  // THIRD_PARTY_H264_WINRT_H264DECODER_H264MEDIASOURCE_H_

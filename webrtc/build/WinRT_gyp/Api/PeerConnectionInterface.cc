@@ -123,9 +123,6 @@ RTCPeerConnection::RTCPeerConnection(RTCConfiguration^ configuration)
   webrtc::PeerConnectionInterface::RTCConfiguration cc_configuration;
   FromCx(configuration, &cc_configuration);
   globals::RunOnGlobalThread<void>([this, cc_configuration] {
-    cricket::ChannelManager* chmng =
-      globals::gPeerConnectionFactory->channel_manager();
-    chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
     webrtc::FakeConstraints constraints;
     constraints.SetAllowDtlsSctpDataChannels();
     constraints.AddOptional(
@@ -445,6 +442,18 @@ void RTCPeerConnection::Close() {
   });
 }
 
+void RTCPeerConnection::ToggleETWStats(bool enable) {
+  globals::RunOnGlobalThread<void>([this, enable] {
+    _observer->ToggleETWStats(enable);
+  });
+}
+
+void RTCPeerConnection::ToggleConnectionHealthStats(bool enable) {
+  globals::RunOnGlobalThread<void>([this, enable] {
+    _observer->ToggleConnectionHealthStats(enable);
+  });
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
   globals::RunOnGlobalThread<void>([this, &ret] {
@@ -609,6 +618,7 @@ bool WebRTC::IsTracing() {
 }
 
 void WebRTC::StartTracing() {
+  globals::gTraceLog.EnableTraceInternalStorage();
   globals::gTraceLog.StartTracing();
 }
 
@@ -660,7 +670,7 @@ void WebRTC::DisableLogging() {
 }
 
 Windows::Storage::StorageFolder^  WebRTC::LogFolder() {
-  return  Windows::Storage::ApplicationData::Current->LocalFolder;;
+  return  Windows::Storage::ApplicationData::Current->LocalFolder;
 }
 
 String^  WebRTC::LogFileName() {
@@ -694,7 +704,6 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
 }
 
 void WebRTC::SynNTPTime(int64 current_ntp_time) {
-
   webrtc::TickTime::SyncWithNtp(current_ntp_time);
 }
 
@@ -706,6 +715,10 @@ void WebRTC::SetPreferredVideoCaptureFormat(int frame_width,
   globals::gPreferredVideoCaptureFormat.width = frame_width;
 
   globals::gPreferredVideoCaptureFormat.height = frame_height;
+
+  cricket::ChannelManager* chmng =
+    globals::gPeerConnectionFactory->channel_manager();
+  chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(

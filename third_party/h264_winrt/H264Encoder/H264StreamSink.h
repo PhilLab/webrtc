@@ -8,16 +8,16 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef _H264STREAMSINK_H_INCLUDED_
-#define _H264STREAMSINK_H_INCLUDED_
-
-#include "../Utils/Async.h"
-#include "../Utils/CritSec.h"
-#include "../Utils/ComPtrList.h"
-#include "IH264EncodingCallback.h"
+#ifndef THIRD_PARTY_H264_WINRT_H264ENCODER_H264STREAMSINK_H_
+#define THIRD_PARTY_H264_WINRT_H264ENCODER_H264STREAMSINK_H_
 
 #include <mfidl.h>
 #include <Mferror.h>
+#include <list>
+
+#include "Utils/Async.h"
+#include "Utils/CritSec.h"
+#include "IH264EncodingCallback.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -41,38 +41,46 @@ enum StreamOperation {
 
 class H264MediaSink;
 
+[uuid("4b35435f-44ae-44a0-9ba0-b84f9f4a9c19")]
+class IAsyncStreamSinkOperation : public IUnknown {
+ public:
+  STDMETHOD(GetOp)(StreamOperation* op) PURE;
+};
+
+class DECLSPEC_UUID("0c89c2e1-79bb-4ad7-a34f-cc006225f8e1")
+  AsyncStreamSinkOperation
+  : public Microsoft::WRL::RuntimeClass<
+  Microsoft::WRL::RuntimeClassFlags<
+  Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
+  IAsyncStreamSinkOperation> {
+  InspectableClass(L"AsyncStreamSinkOperation", BaseTrust)
+ public:
+  HRESULT RuntimeClassInitialize(StreamOperation op);
+  virtual ~AsyncStreamSinkOperation();
+
+  IFACEMETHOD(GetOp) (StreamOperation* op);
+
+ private:
+  StreamOperation m_op;
+};
+
 class H264StreamSink : public Microsoft::WRL::RuntimeClass<
-  Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
+  Microsoft::WRL::RuntimeClassFlags<
+    Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
   IMFStreamSink,
   IMFMediaEventGenerator,
-  IMFMediaTypeHandler>
-{
+  IMFMediaTypeHandler> {
   InspectableClass(L"H264StreamSink", BaseTrust)
-  class AsyncOperation : public IUnknown
-  {
-  public:
-    AsyncOperation(StreamOperation op);
 
-    StreamOperation m_op;
-
-    // IUnknown methods.
-    STDMETHODIMP QueryInterface(REFIID iid, void **ppv);
-    STDMETHODIMP_(ULONG) AddRef();
-    STDMETHODIMP_(ULONG) Release();
-
-  private:
-    long    cRef_;
-    virtual ~AsyncOperation();
-  };
-
-public:
+ public:
   HRESULT RuntimeClassInitialize(DWORD dwIdentifier, H264MediaSink *pParent);
 
   // IMFMediaEventGenerator
   IFACEMETHOD(BeginGetEvent)(IMFAsyncCallback *pCallback, IUnknown *punkState);
   IFACEMETHOD(EndGetEvent) (IMFAsyncResult *pResult, IMFMediaEvent **ppEvent);
   IFACEMETHOD(GetEvent) (DWORD dwFlags, IMFMediaEvent **ppEvent);
-  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, PROPVARIANT const *pvValue);
+  IFACEMETHOD(QueueEvent) (MediaEventType met, REFGUID guidExtendedType,
+    HRESULT hrStatus, PROPVARIANT const *pvValue);
 
   // IMFStreamSink
   IFACEMETHOD(GetMediaSink) (IMFMediaSink **ppMediaSink);
@@ -88,7 +96,8 @@ public:
   IFACEMETHOD(Flush)();
 
   // IMFMediaTypeHandler
-  IFACEMETHOD(IsMediaTypeSupported) (IMFMediaType *pMediaType, IMFMediaType **ppMediaType);
+  IFACEMETHOD(IsMediaTypeSupported) (IMFMediaType *pMediaType,
+    IMFMediaType **ppMediaType);
   IFACEMETHOD(GetMediaTypeCount) (DWORD *pdwTypeCount);
   IFACEMETHOD(GetMediaTypeByIndex) (DWORD dwIndex, IMFMediaType **ppType);
   IFACEMETHOD(SetCurrentMediaType) (IMFMediaType *pMediaType);
@@ -107,8 +116,7 @@ public:
   HRESULT CheckShutdown() const {
     if (isShutdown_) {
       return MF_E_SHUTDOWN;
-    }
-    else {
+    } else {
       return S_OK;
     }
   }
@@ -118,7 +126,7 @@ public:
   HRESULT     Stop();
   HRESULT     Shutdown();
 
-private:
+ private:
   HRESULT     ValidateOperation(StreamOperation op);
 
   HRESULT     QueueAsyncOperation(StreamOperation op);
@@ -127,11 +135,11 @@ private:
 
   bool        DropSamplesFromQueue();
   ComPtr<IMFSample> ProcessSamplesFromQueue();
-  void        ProcessFormatChange(IMFMediaType *pMediaType);
+  void        ProcessFormatChange();
 
   void        HandleError(HRESULT hr);
 
-private:
+ private:
   CritSec                     critSec_;
   CritSec                     cbCritSec_;
 
@@ -146,7 +154,7 @@ private:
   ComPtr<IMFMediaEventQueue>  spEventQueue_;
   ComPtr<IMFMediaType>        spCurrentType_;
 
-  ComPtrList<IUnknown>                        sampleQueue_;
+  std::list<ComPtr<IUnknown>> sampleQueue_;
 
   AsyncCallback<H264StreamSink>               workQueueCB_;
 
@@ -155,4 +163,4 @@ private:
 
 }  // namespace webrtc
 
-#endif  // _H264STREAMSINK_H_INCLUDED_
+#endif  // THIRD_PARTY_H264_WINRT_H264ENCODER_H264STREAMSINK_H_

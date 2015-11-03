@@ -231,23 +231,22 @@ Media::Media() {
 
 }
 
-Media^ Media::CreateMedia()
-{
+// TODO(winrt): Remove this function and always use the async one.
+Media^ Media::CreateMedia() {
   auto ret = ref new Media();
-  ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
-    webrtc::AudioDeviceModule::kWindowsWasapiAudio);
-  if (ret->_audioDevice == NULL) {
-    LOG(LS_ERROR) << "Can't create audio device manager";
-    return nullptr;
-  }
-  ret->_audioDevice->Init();
+  globals::RunOnGlobalThread<void>([ret]() {
+    ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
+      webrtc::AudioDeviceModule::kWindowsWasapiAudio);
+    if (ret->_audioDevice == NULL) {
+      LOG(LS_ERROR) << "Can't create audio device manager";
+    }
+    ret->_audioDevice->Init();
+  });
   return ret;
 }
 
-IAsyncOperation<Media^>^ Media::CreateMediaAsync()
-{
-  IAsyncOperation<Media^>^ asyncOp = Concurrency::create_async([]()->Media^
-  {
+IAsyncOperation<Media^>^ Media::CreateMediaAsync() {
+  IAsyncOperation<Media^>^ asyncOp = Concurrency::create_async([]()->Media^ {
     return CreateMedia();
   });
   return asyncOp;
@@ -412,10 +411,14 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
   }
 }
 
+void Media::OnAppSuspending() {
+  webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->OnAppSuspending();
+}
+
 IAsyncOperation<IVector<CaptureCapability^>^>^
   MediaDevice::GetVideoCaptureCapabilities() {
   auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^ {
-    auto mediaCapture =
+	auto mediaCapture =
       webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
       GetMediaCapture(_id);
     if (mediaCapture == nullptr) {

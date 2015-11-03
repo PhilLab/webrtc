@@ -167,7 +167,10 @@ class MessageQueue {
  public:
   static const int kForever = -1;
 
-  explicit MessageQueue(SocketServer* ss = NULL);
+  // TODO(WINRT): isThread is a workaround for a crash that happens when
+  // Thread, which derives from MessageQueue, is not finished constructing
+  // but is invoked by MessageQueueManager
+  explicit MessageQueue(bool isThread = false, SocketServer* ss = NULL);
   virtual ~MessageQueue();
 
   SocketServer* socketserver() { return ss_; }

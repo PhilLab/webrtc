@@ -8,15 +8,12 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "H264MediaSource.h"
+#include "third_party/h264_winrt/H264Decoder/H264MediaSource.h"
 
 #include <mfapi.h>
 
 #include "H264MediaStream.h"
-#include "../Utils/Utils.h"
-
-using namespace::Platform;
-using namespace Microsoft::WRL;
+#include "Utils/Utils.h"
 
 namespace webrtc {
 
@@ -31,19 +28,24 @@ H264MediaSource::~H264MediaSource(void) {
 HRESULT H264MediaSource::RuntimeClassInitialize(
   _In_  IMFMediaType *pTargetMediaType,
   _Out_ H264MediaStream** ppStream) {
-  ThrowIfError(MFCreateEventQueue(&_spEventQueue));
-  ThrowIfError(MakeAndInitialize<H264MediaStream>(&_stream, pTargetMediaType, this));
+  HRESULT hr = S_OK;
+  ON_SUCCEEDED(MFCreateEventQueue(&_spEventQueue));
+  ON_SUCCEEDED(Microsoft::WRL::MakeAndInitialize<H264MediaStream>(
+    &_stream, pTargetMediaType, this));
 
-  InitPresentationDescription();
+  if (SUCCEEDED(hr)) {
+    InitPresentationDescription();
 
-  _eSourceState = SourceState_Stopped;
+    _eSourceState = SourceState_Stopped;
 
-  *ppStream = _stream.Get();
-  (*ppStream)->AddRef();
-  return S_OK;
+    *ppStream = _stream.Get();
+    (*ppStream)->AddRef();
+  }
+  return hr;
 }
 
-IFACEMETHODIMP H264MediaSource::BeginGetEvent(IMFAsyncCallback *pCallback, IUnknown *punkState) {
+IFACEMETHODIMP H264MediaSource::BeginGetEvent(
+  IMFAsyncCallback *pCallback, IUnknown *punkState) {
   HRESULT hr = S_OK;
 
   AutoLock lock(_critSec);
@@ -57,7 +59,8 @@ IFACEMETHODIMP H264MediaSource::BeginGetEvent(IMFAsyncCallback *pCallback, IUnkn
   return hr;
 }
 
-IFACEMETHODIMP H264MediaSource::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEvent **ppEvent) {
+IFACEMETHODIMP H264MediaSource::EndGetEvent(
+  IMFAsyncResult *pResult, IMFMediaEvent **ppEvent) {
   HRESULT hr = S_OK;
 
   AutoLock lock(_critSec);
@@ -71,7 +74,8 @@ IFACEMETHODIMP H264MediaSource::EndGetEvent(IMFAsyncResult *pResult, IMFMediaEve
   return hr;
 }
 
-IFACEMETHODIMP H264MediaSource::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent) {
+IFACEMETHODIMP H264MediaSource::GetEvent(
+  DWORD dwFlags, IMFMediaEvent **ppEvent) {
   // NOTE:
   // GetEvent can block indefinitely, so we don't hold the lock.
   // This requires some juggling with the event queue pointer.
@@ -101,8 +105,9 @@ IFACEMETHODIMP H264MediaSource::GetEvent(DWORD dwFlags, IMFMediaEvent **ppEvent)
   return hr;
 }
 
-IFACEMETHODIMP H264MediaSource::QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, PROPVARIANT const *pvValue)
-{
+IFACEMETHODIMP H264MediaSource::QueueEvent(
+  MediaEventType met, REFGUID guidExtendedType,
+  HRESULT hrStatus, PROPVARIANT const *pvValue) {
     HRESULT hr = S_OK;
 
     AutoLock lock(_critSec);
@@ -110,7 +115,8 @@ IFACEMETHODIMP H264MediaSource::QueueEvent(MediaEventType met, REFGUID guidExten
     hr = CheckShutdown();
 
     if (SUCCEEDED(hr)) {
-        hr = _spEventQueue->QueueEventParamVar(met, guidExtendedType, hrStatus, pvValue);
+        hr = _spEventQueue->QueueEventParamVar(
+          met, guidExtendedType, hrStatus, pvValue);
     }
 
     return hr;
@@ -140,7 +146,8 @@ IFACEMETHODIMP H264MediaSource::CreatePresentationDescriptor(
   return hr;
 }
 
-IFACEMETHODIMP H264MediaSource::GetCharacteristics(DWORD *pdwCharacteristics) {
+IFACEMETHODIMP H264MediaSource::GetCharacteristics(
+  DWORD *pdwCharacteristics) {
   if (pdwCharacteristics == NULL) {
     return E_POINTER;
   }
@@ -187,8 +194,7 @@ IFACEMETHODIMP H264MediaSource::Start(
   IMFPresentationDescriptor *pPresentationDescriptor,
   const GUID *pguidTimeFormat,
   const PROPVARIANT *pvarStartPos
-  )
-{
+  ) {
   OutputDebugString(L"H264MediaSource::Start()\n");
   HRESULT hr = S_OK;
 
@@ -215,16 +221,16 @@ IFACEMETHODIMP H264MediaSource::Start(
     hr = ValidatePresentationDescriptor(pPresentationDescriptor);
   }
 
-  try {
-    SelectStreams(pPresentationDescriptor);
+  SelectStreams(pPresentationDescriptor);
 
-    _eSourceState = SourceState_Starting;
+  _eSourceState = SourceState_Starting;
 
-    _eSourceState = SourceState_Started;
-    ThrowIfError(_spEventQueue->QueueEventParamVar(MESourceStarted, GUID_NULL, S_OK, pvarStartPos));
-  }
-  catch (Exception ^exc) {
-    _spEventQueue->QueueEventParamVar(MESourceStarted, GUID_NULL, exc->HResult, nullptr);
+  _eSourceState = SourceState_Started;
+  ON_SUCCEEDED(_spEventQueue->QueueEventParamVar(
+    MESourceStarted, GUID_NULL, S_OK, pvarStartPos));
+
+  if (FAILED(hr)) {
+    _spEventQueue->QueueEventParamVar(MESourceStarted, GUID_NULL, hr, nullptr);
   }
 
   return hr;
@@ -234,14 +240,10 @@ IFACEMETHODIMP H264MediaSource::Stop() {
   OutputDebugString(L"H264MediaSource::Stop()\n");
 
   HRESULT hr = S_OK;
-  try {
-    ThrowIfError(_stream->Flush());
-    ThrowIfError(_stream->Stop());
-  }
-  catch (Exception ^exc) {
-    hr = exc->HResult;
-  }
-  (void)_spEventQueue->QueueEventParamVar(MESourceStopped, GUID_NULL, hr, nullptr);
+  ON_SUCCEEDED(_stream->Flush());
+  ON_SUCCEEDED(_stream->Stop());
+  hr = _spEventQueue->QueueEventParamVar(
+    MESourceStopped, GUID_NULL, hr, nullptr);
 
   return hr;
 }
@@ -259,20 +261,22 @@ HRESULT H264MediaSource::Unlock() {
 }
 
 void H264MediaSource::InitPresentationDescription() {
+  HRESULT hr = S_OK;
   ComPtr<IMFPresentationDescriptor> spPresentationDescriptor;
   ComPtr<IMFStreamDescriptor> streamDescriptor;
 
-  ThrowIfError(_stream->GetStreamDescriptor(&streamDescriptor));
+  ON_SUCCEEDED(_stream->GetStreamDescriptor(&streamDescriptor));
+  ON_SUCCEEDED(MFCreatePresentationDescriptor(1,
+    streamDescriptor.GetAddressOf(), &spPresentationDescriptor));
+  ON_SUCCEEDED(spPresentationDescriptor->SelectStream(0));
 
-  ThrowIfError(MFCreatePresentationDescriptor(1, streamDescriptor.GetAddressOf(), &spPresentationDescriptor));
-
-  ThrowIfError(spPresentationDescriptor->SelectStream(0));
-
-  _spPresentationDescriptor = spPresentationDescriptor;
+  if (SUCCEEDED(hr)) {
+    _spPresentationDescriptor = spPresentationDescriptor;
+  }
 }
 
-HRESULT H264MediaSource::ValidatePresentationDescriptor(IMFPresentationDescriptor *pPD)
-{
+HRESULT H264MediaSource::ValidatePresentationDescriptor(
+  IMFPresentationDescriptor *pPD) {
   HRESULT hr = S_OK;
   BOOL fSelected = FALSE;
   DWORD cStreams = 0;
@@ -302,32 +306,37 @@ HRESULT H264MediaSource::ValidatePresentationDescriptor(IMFPresentationDescripto
   return hr;
 }
 
-void H264MediaSource::SelectStreams(IMFPresentationDescriptor *pPD) {
+HRESULT H264MediaSource::SelectStreams(IMFPresentationDescriptor *pPD) {
+  HRESULT hr = S_OK;
   ComPtr<IMFStreamDescriptor> spSD;
-  DWORD nStreamId;
-  BOOL fSelected;
+  DWORD nStreamId = 0;
+  BOOL fSelected = FALSE;
 
-  ThrowIfError(pPD->GetStreamDescriptorByIndex(0, &fSelected, &spSD));
+  ON_SUCCEEDED(pPD->GetStreamDescriptorByIndex(0, &fSelected, &spSD));
 
-  ThrowIfError(spSD->GetStreamIdentifier(&nStreamId));
+  ON_SUCCEEDED(spSD->GetStreamIdentifier(&nStreamId));
 
-  if (_stream->GetId() != nStreamId) {
-    ThrowIfError(MF_E_NOT_FOUND);
+  if (SUCCEEDED(hr) && _stream->GetId() != nStreamId) {
+    return MF_E_NOT_FOUND;
   }
 
-  bool fWasSelected = _stream->IsActive();
-  ThrowIfError(_stream->SetActive(!!fSelected));
+  if (SUCCEEDED(hr)) {
+    bool fWasSelected = _stream->IsActive();
+    ON_SUCCEEDED(_stream->SetActive(!!fSelected));
 
-  if (fSelected) {
-    MediaEventType met = (fWasSelected) ? MEUpdatedStream : MENewStream;
-    ComPtr<IUnknown> spStreamUnk;
+    if (SUCCEEDED(hr) && fSelected) {
+      MediaEventType met = (fWasSelected) ? MEUpdatedStream : MENewStream;
+      ComPtr<IUnknown> spStreamUnk;
 
-    _stream.As(&spStreamUnk);
+      ON_SUCCEEDED(_stream.As(&spStreamUnk));
 
-    ThrowIfError(_spEventQueue->QueueEventParamUnk(met, GUID_NULL, S_OK, spStreamUnk.Get()));
+      ON_SUCCEEDED(_spEventQueue->QueueEventParamUnk(
+        met, GUID_NULL, S_OK, spStreamUnk.Get()));
 
-    ThrowIfError(_stream->Start());
+      ON_SUCCEEDED(_stream->Start());
+    }
   }
+  return hr;
 }
 
 }  // namespace webrtc

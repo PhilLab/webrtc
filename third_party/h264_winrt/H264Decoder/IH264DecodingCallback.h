@@ -8,18 +8,19 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef H264_IH264DECODINGCALLBACK_H_
-#define H264_IH264DECODINGCALLBACK_H_
+#ifndef THIRD_PARTY_H264_WINRT_H264DECODER_IH264DECODINGCALLBACK_H_
+#define THIRD_PARTY_H264_WINRT_H264DECODER_IH264DECODINGCALLBACK_H_
 
 #include <wrl\implements.h>
 
 namespace webrtc {
 
 interface IH264DecodingCallback {
-  virtual void OnH264Decoded(Microsoft::WRL::ComPtr<IMFSample> sample, DWORD dwStreamFlags) = 0;
+  virtual void OnH264Decoded(Microsoft::WRL::ComPtr<IMFSample> sample,
+    DWORD dwStreamFlags) = 0;
 };
 
 }  // namespace webrtc
 
-#endif  // H264_IH264DECODINGCALLBACK_H_
+#endif  // THIRD_PARTY_H264_WINRT_H264DECODER_IH264DECODINGCALLBACK_H_
 

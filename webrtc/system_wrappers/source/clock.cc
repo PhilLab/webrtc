@@ -59,10 +59,6 @@ class RealTimeClock : public Clock {
   int64_t CurrentNtpInMilliseconds() const override {
     timeval tv = CurrentTimeVal();
 
-// ToDO(winrt): investigating, why do we still need to adjust?
-// we already adjust the time in 'CurrentTimeVal'. However, right now,
-// it does not impact we check audio/video end to end delay
-
     uint32_t seconds;
     double microseconds_in_seconds;
     Adjust(tv, &seconds, &microseconds_in_seconds);
@@ -210,25 +206,22 @@ class WinRTRealTimeClock : public RealTimeClock {
     };
 
     timeval CurrentTimeVal() const override {
-        const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
 
-        FILETIME StartTime;
-        uint64_t Time;
-        struct timeval tv;
+      static int64_t timeZoneBias = -1;
+      if (timeZoneBias == -1) {
+        TIME_ZONE_INFORMATION timeZone;
+        GetTimeZoneInformation(&timeZone);
+        timeZoneBias = timeZone.Bias * 60 * 1000;  // milliseconds
+      }
+      //(todo) winrt: according to msdn GetSystemTimeAsFileTime() which was used to get refernce point
+      // the precision will be in the range <15ms. For now, let's use TickTime::MillisecondTimestamp(), which already
+      // use GetSystemTimeAsFileTime() to get reference time; in addition, the app might have synced it with ntp server
+      uint64_t timestamp = TickTime::MillisecondTimestamp() + timeZoneBias; //in milliseconds
+      struct timeval tv;
 
-        // We can't use query performance counter since they can change
-        // depending on speed stepping.
-        GetSystemTimeAsFileTime(&StartTime);
-
-        Time = (((uint64_t)StartTime.dwHighDateTime) << 32) +
-            (uint64_t)StartTime.dwLowDateTime;
-
-        // Convert the hecto-nano second time to tv format.
-        Time -= FILETIME_1970;
-
-        tv.tv_sec = (uint32_t)(Time / (uint64_t)10000000);
-        tv.tv_usec = (uint32_t)((Time % (uint64_t)10000000) / 10);
-        return tv;
+      tv.tv_sec = (uint32_t)(timestamp / (uint64_t)1000);
+      tv.tv_usec = (uint32_t)((timestamp % (uint64_t)1000) * 1000);
+      return tv;
     }
 
     static LARGE_INTEGER ConvertToMilliseconds(LARGE_INTEGER const& t,

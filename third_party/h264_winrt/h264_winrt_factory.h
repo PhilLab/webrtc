@@ -11,10 +11,10 @@
 #ifndef THIRD_PARTY_H264_WINRT_H264_WINRT_FACTORY_H_
 #define THIRD_PARTY_H264_WINRT_H264_WINRT_FACTORY_H_
 
-#include <talk/media/webrtc/webrtcvideoencoderfactory.h>
-#include <talk/media/webrtc/webrtcvideodecoderfactory.h>
-
 #include <vector>
+#include "talk/media/webrtc/webrtcvideoencoderfactory.h"
+#include "talk/media/webrtc/webrtcvideodecoderfactory.h"
+
 
 namespace webrtc {
 

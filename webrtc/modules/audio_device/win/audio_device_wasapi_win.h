@@ -25,7 +25,8 @@
 #include <endpointvolume.h>
 #include <mediaobj.h>        // IMediaObject
 #include <mfapi.h>
-#include<ppltasks.h>
+#include <ppltasks.h>
+
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -260,9 +261,6 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
     DWORD DoCaptureThread();
 
-    // static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
-    // DWORD DoCaptureThreadPollDMO();
-
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
 
@@ -312,6 +310,14 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     HRESULT _InitializeAudioDeviceIn();
     HRESULT _InitializeAudioDeviceOut();
 
+    // Surround system support
+    bool ShouldUpmix();
+    WAVEFORMATEX* GenerateMixFormatForMediaEngine(
+      WAVEFORMATEX* actualMixFormat);
+    WAVEFORMATPCMEX* GeneratePCMMixFormat(WAVEFORMATEX* actualMixFormat);
+    template<typename T>void Upmix(T *inSamples, uint32_t numberOfFrames,
+      T *outSamples, uint32_t inChannels, uint32_t outChannels);
+
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
     char* WideToUTF8(const TCHAR* src) const;
@@ -322,41 +328,32 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     AudioDeviceBuffer*                      _ptrAudioBuffer;
     CriticalSectionWrapper&                 _critSect;
     CriticalSectionWrapper&                 _volumeMutex;
-    int32_t                           _id;
+    int32_t                                 _id;
 
  private:  // MMDevice
     Platform::String^   _deviceIdStringIn;
     Platform::String^   _deviceIdStringOut;
     DeviceInformation^  _defaultCaptureDevice;
     DeviceInformation^  _defaultRenderDevice;
-    // bool                _captureDeviceActivated;
-    // bool                _renderDeviceActivated;
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;
+    WAVEFORMATPCMEX        *_mixFormatSurroundOut;
+    bool                   _enableUpmix;
+
     DeviceInformationCollection^ _ptrCaptureCollection;
     DeviceInformationCollection^ _ptrRenderCollection;
     DeviceInformationCollection^ _ptrCollection;
     AudioInterfaceActivator*     _ptrActivator;
-
-//    IMMDeviceEnumerator*                    _ptrEnumerator;
-//    IMMDeviceCollection*                    _ptrRenderCollection;
-//    IMMDeviceCollection*                    _ptrCaptureCollection;
-//    IMMDevice*                              _ptrDeviceOut;
-//    IMMDevice*                              _ptrDeviceIn;
 
  private:  // WASAPI
     IAudioClient*                           _ptrClientOut;
     IAudioClient*                           _ptrClientIn;
     IAudioRenderClient*                     _ptrRenderClient;
     IAudioCaptureClient*                    _ptrCaptureClient;
-    // IAudioEndpointVolume*                   _ptrCaptureVolume;
-    ISimpleAudioVolume*                   _ptrCaptureVolume;
+    ISimpleAudioVolume*                     _ptrCaptureVolume;
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
 
-    // DirectX Media Object (DMO) for the built-in AEC.
-    // scoped_refptr<IMediaObject>             _dmo;
-    // scoped_refptr<IMediaBuffer>             _mediaBuffer;
     bool                                    _builtInAecEnabled;
 
     HANDLE                                  _hRenderSamplesReadyEvent;

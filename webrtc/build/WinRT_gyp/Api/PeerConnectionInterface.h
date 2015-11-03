@@ -85,17 +85,6 @@ public:
     }
 };
 
-public ref class WinJSHooks sealed {
-public:
-  static void initialize();
-  static IAsyncOperation<bool>^ requestAccessForMediaCapture();
-  static bool IsTracing();
-  static void StartTracing();
-  static void StopTracing();
-  static bool SaveTrace(Platform::String^ filename);
-  static bool SaveTrace(Platform::String^ host, int port);
-};
-
 [Windows::Foundation::Metadata::WebHostHidden]
 /// <summary>
 /// Defines static methods for handling generic WebRTC operations, for example
@@ -106,25 +95,89 @@ public:
   static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
   static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
 
+  /// <summary>
+  /// Check if WebRTC tracing is currently enabled.
+  /// </summary>
+  /// <returns>True if WebRTC tracing is currently enabled, false otherwise.</returns>
   static bool IsTracing();
+
+  /// <summary>
+  /// Starts WebRTC tracing.
+  /// </summary>
   static void StartTracing();
+
+  /// <summary>
+  /// Stops WebRTC tracing.
+  /// </summary>
   static void StopTracing();
+
+  /// <summary>
+  /// Saves the collected WebRTC trace information to a file.
+  /// </summary>
+  /// <param name="filename">Path of the file to save trace information to.</param>
+  /// <returns>True if trace information was saved successfully, false otherwise.</returns>
   static bool SaveTrace(Platform::String^ filename);
+
+  /// <summary>
+  /// Can be used for sending the trace information from a device to a TCP client application
+  /// running on a remote machine.
+  /// </summary>
+  /// <param name="host">The IP or name of the machine the trace information is collected on.</param>
+  /// <param name="port">The port of the machine the trace information is collected on.</param>
+  /// <returns>True if the socket to send trace information is created successfully,
+  /// false otherwise.</returns>
   static bool SaveTrace(Platform::String^ host, int port);
 
+  /// <summary>
+  /// Starts WebRTC logging.
+  /// </summary>
+  /// <param name="level">Desired verbosity level for logging.</param>
   static void EnableLogging(LogLevel level);
+
+  /// <summary>
+  /// Stops WebRTC logging.
+  /// </summary>
   static void DisableLogging();
 
-  // retrieve current folder where the app save logging
+  /// <summary>
+  /// Retrieves the folder where the app is currently saving the logging information.
+  /// </summary>
+  /// <returns>Path to the folder where the log information is being saved.</returns>
   static Windows::Storage::StorageFolder^ LogFolder();
 
+  /// <summary>
+  /// Retrieves the name of the file where the app is currently saving the logging information.
+  /// </summary>
+  /// <returns>Name of the file where logs are saved.</returns>
   static String^ LogFileName();
 
+  /// <summary>
+  /// Retrieves the audio codecs supported by the device.
+  /// </summary>
+  /// <returns>A vector of supported audio codecs.</returns>
   static IVector<CodecInfo^>^ GetAudioCodecs();
+
+  /// <summary>
+  /// Retrieves the video codecs supported by the device.
+  /// </summary>
+  /// <returns>A vector of supported video codecs.</returns>
   static IVector<CodecInfo^>^ GetVideoCodecs();
+
+  /// <summary>
+  /// This method can be used to overwrite the preferred camera capabilities.
+  /// </summary>
+  /// <param name="frame_width">Image width.</param>
+  /// <param name="frame_height">Image height.</param>
+  /// <param name="fps">Frames per second.</param>
   static void SetPreferredVideoCaptureFormat(int frame_width,
                                              int frame_height,
                                              int fps);
+
+  /// <summary>
+  /// Synchronization with NTP is needed for end to end delay measurements,
+  /// which involve multiple devices.
+  /// </summary>
+  /// <param name="current_ntp_time">NTP time in miliseconds.</param>
   static void SynNTPTime(int64 current_ntp_time);
 
 private:
@@ -142,6 +195,20 @@ private:
     const unsigned char* arg_types,
     const uint64* arg_values,
     unsigned char flags);
+};
+
+/// <summary>
+/// Wrapper class that allows calling methods in <see cref="WebRTC"/> from WinJS.
+/// </summary>
+public ref class WinJSHooks sealed {
+public:
+  static void initialize();
+  static IAsyncOperation<bool>^ requestAccessForMediaCapture();
+  static bool IsTracing();
+  static void StartTracing();
+  static void StopTracing();
+  static bool SaveTrace(Platform::String^ filename);
+  static bool SaveTrace(Platform::String^ host, int port);
 };
 
 public enum class RTCBundlePolicy {
@@ -239,6 +306,17 @@ public:
   property RTCIceConnectionState State;
 };
 
+public ref class RTCPeerConnectionHealthStats sealed {
+public:
+  property int64 ReceivedBytes;
+  property int64 ReceivedKpbs;
+  property int64 SentBytes;
+  property int64 SentKbps;
+  property int64 RTT;
+  property String^ LocalCandidateType;
+  property String^ RemoteCandidateType;
+};
+
 // ------------------
 public ref class MediaStreamEvent sealed {
 public:
@@ -307,6 +385,10 @@ public:
   /// </summary>
   event RTCDataChannelEventDelegate^ OnDataChannel;
 
+  /// <summary>
+  /// New connection health stats are available.
+  /// </summary>
+  event RTCPeerConnectionHealthStatsDelegate^ OnConnectionHealthStats;
 
   /// <summary>
   /// Generates a blob of SDP that contains an RFC 3264 offer with the
@@ -426,6 +508,18 @@ public:
   /// Ends any active ICE processing or streaming, releases resources.
   /// </summary>
   void Close();
+
+  /// <summary>
+  /// Enable/Disable WebRTC statistics to ETW.
+  /// </summary>
+  void ToggleETWStats(bool enable);
+
+  /// <summary>
+  /// Enable/Disable connection health statistics.
+  /// When new connection health stats are available OnConnectionHealthStats
+  //  event is raised.
+  /// </summary>
+  void ToggleConnectionHealthStats(bool enable);
 
   /// <summary>
   /// The last <see cref="RTCSessionDescription"/> that was successfully set

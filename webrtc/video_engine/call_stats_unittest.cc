@@ -36,6 +36,9 @@ class CallStatsTest : public ::testing::Test {
     TickTime::UseFakeClock(12345);
     call_stats_.reset(new CallStats());
   }
+  virtual void TearDown() {
+    TickTime::DisableFakeClock();
+  }
   rtc::scoped_ptr<CallStats> call_stats_;
 };
 

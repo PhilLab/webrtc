@@ -8,8 +8,8 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef THIRD_PARTY_H264_WINRT_H264_SOURCEREADERCB_H_
-#define THIRD_PARTY_H264_WINRT_H264_SOURCEREADERCB_H_
+#ifndef THIRD_PARTY_H264_WINRT_H264DECODER_SOURCEREADERCB_H_
+#define THIRD_PARTY_H264_WINRT_H264DECODER_SOURCEREADERCB_H_
 
 #include <wrl.h>
 #include <mfapi.h>
@@ -24,10 +24,9 @@ namespace webrtc {
 class SourceReaderCB : public Microsoft::WRL::RuntimeClass<
   Microsoft::WRL::RuntimeClassFlags<
   Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
-  IMFSourceReaderCallback>
-{
+  IMFSourceReaderCallback> {
   InspectableClass(L"SourceReaderCB", BaseTrust)
-public:
+ public:
   SourceReaderCB();
   virtual ~SourceReaderCB();
 
@@ -39,11 +38,10 @@ public:
 
   void RegisterDecodingCallback(IH264DecodingCallback* callback);
 
-private:
+ private:
   IH264DecodingCallback* callback_;
-
 };
 
 }  // namespace webrtc
 
-#endif  // THIRD_PARTY_H264_WINRT_H264_SOURCEREADERCB_H_
+#endif  // THIRD_PARTY_H264_WINRT_H264DECODER_SOURCEREADERCB_H_

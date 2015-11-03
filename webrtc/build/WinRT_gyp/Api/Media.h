@@ -412,6 +412,11 @@ namespace webrtc_winrt_api {
     void SelectAudioDevice(MediaDevice^ device);
 
     /// <summary>
+    /// App suspending event handler.
+    /// </summary>
+    void OnAppSuspending();
+
+    /// <summary>
     /// Fired when a video capture device (webcam) is found on the system
     /// while enumerating devices.
     /// </summary>

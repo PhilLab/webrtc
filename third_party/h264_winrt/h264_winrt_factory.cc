@@ -8,13 +8,13 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
+#include <vector>
 #include "third_party/h264_winrt/h264_winrt_factory.h"
 #include "third_party/h264_winrt/H264Encoder/H264Encoder.h"
 #include "third_party/h264_winrt/H264Decoder/H264Decoder.h"
-#include <talk/media/webrtc/webrtcvideoencoderfactory.h>
-#include <talk/media/webrtc/webrtcvideodecoderfactory.h>
+#include "talk/media/webrtc/webrtcvideoencoderfactory.h"
+#include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 
-#include <vector>
 
 namespace webrtc {
 
@@ -24,7 +24,7 @@ namespace webrtc {
         cricket::WebRtcVideoEncoderFactory::VideoCodec(
         webrtc::VideoCodecType::kVideoCodecH264,
         "H264",
-        1920, 1080, 60) // Max width/height/fps
+        1920, 1080, 60)  // Max width/height/fps
     };
   }
 
@@ -32,8 +32,7 @@ namespace webrtc {
     webrtc::VideoCodecType type) {
     if (type == kVideoCodecH264) {
       return new H264WinRTEncoderImpl();
-    }
-    else {
+    } else {
       return nullptr;
     }
   }
@@ -53,8 +52,7 @@ namespace webrtc {
     webrtc::VideoCodecType type) {
     if (type == kVideoCodecH264) {
       return new H264WinRTDecoderImpl();
-    }
-    else {
+    } else {
       return nullptr;
     }
   }

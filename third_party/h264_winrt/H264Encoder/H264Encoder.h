@@ -8,31 +8,30 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#ifndef WEBRTC_THIRD_PARTY_H264_ENCODER_H_
-#define WEBRTC_THIRD_PARTY_H264_ENCODER_H_
+#ifndef THIRD_PARTY_H264_WINRT_H264ENCODER_H264ENCODER_H_
+#define THIRD_PARTY_H264_WINRT_H264ENCODER_H264ENCODER_H_
 
 #include <mfapi.h>
 #include <mfidl.h>
 #include <Mfreadwrite.h>
 #include <mferror.h>
+#include <vector>
 #include "H264MediaSink.h"
 #include "IH264EncodingCallback.h"
-#include <webrtc/video_encoder.h>
+#include "Utils/SampleAttributeQueue.h"
+#include "webrtc/video_encoder.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
 #pragma comment(lib, "mfuuid")
 
-using namespace Microsoft::WRL;
-
 namespace webrtc {
 
 class H264MediaSink;
 
 class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
-
-public:
+ public:
   H264WinRTEncoderImpl();
 
   ~H264WinRTEncoderImpl();
@@ -51,25 +50,31 @@ public:
   // === IH264EncodingCallback overrides ===
   void OnH264Encoded(ComPtr<IMFSample> sample) override;
 
-private:
+ private:
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
   bool inited_;
   const CodecSpecificInfo* codecSpecificInfo_;
   ComPtr<IMFSinkWriter> sinkWriter_;
   ComPtr<IMFAttributes> sinkWriterCreationAttributes_;
   ComPtr<IMFAttributes> sinkWriterEncoderAttributes_;
-  ComPtr<IMFMediaType> mediaTypeOut_; // h264
-  ComPtr<IMFMediaType> mediaTypeIn_; // nv12
+  ComPtr<IMFMediaType> mediaTypeOut_;  // h264
+  ComPtr<IMFMediaType> mediaTypeIn_;   // nv12
   ComPtr<H264MediaSink> mediaSink_;
   EncodedImageCallback* encodedCompleteCallback_;
   DWORD streamIndex_;
   LONGLONG startTime_;
-  //LONGLONG timeStamp_;
   LONGLONG lastTimestampHns_;
   bool firstFrame_;
   int framePendingCount_;
+
+  struct CachedFrameAttributes {
+    uint32_t timestamp;
+    uint64_t ntpTime;
+    uint64_t captureRenderTime;
+  };
+  SampleAttributeQueue<CachedFrameAttributes> _sampleAttributeQueue;
 };  // end of H264WinRTEncoderImpl class
 
 }  // namespace webrtc
-#endif  // WEBRTC_THIRD_PARTY_H264_ENCODER_H_
+#endif  // THIRD_PARTY_H264_WINRT_H264ENCODER_H264ENCODER_H_
 
