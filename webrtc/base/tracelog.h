@@ -51,6 +51,8 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
  private:
   void OnCloseEvent(AsyncSocket* socket, int err);
   void OnWriteEvent(AsyncSocket* socket);
+  //Returns true if error is critical
+  bool HandleWriteError(AsyncSocket* socket);
 
   // Save traces stored in-memory to traces storage file
   void SaveTraceChunk();
@@ -104,6 +106,9 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
   // Current chunk to be sent, loaded from persistent storage
   std::vector<char> send_chunk_buffer_;
 
+  //Maximum size of the block passed to socket at once, in bytes.
+  //0 means max block size is not limited.
+  unsigned int send_max_block_size_; 
   std::ostringstream oss_;
   CriticalSection critical_section_;
   Thread* thread_;

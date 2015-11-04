@@ -18,7 +18,7 @@ namespace rtc {
 TraceLog::TraceLog() : is_tracing_(false), offset_(0),
   traces_storage_enabled_(false), traces_memory_limit_(0), send_chunk_size_(0),
   send_chunk_offset_(0), send_max_chunk_size_(0), stored_traces_size_(0),
-  sent_bytes_(0), tw_() {
+  sent_bytes_(0), send_max_block_size_(0), tw_() {
   PhysicalSocketServer* pss = new PhysicalSocketServer();
   thread_ = new Thread(pss);
 }
@@ -245,7 +245,11 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
           send_chunk_size_ - offset_);
         if (sent_size == -1) {
           if (!IsBlockingError(socket->GetError())) {
+            if (!HandleWriteError(socket)) {
+              continue;
+            }
             offset_ = 0;
+            send_max_block_size_ = 0;
             socket->Close();
           }
           return;
@@ -269,10 +273,15 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   int sent_size = 0;
   while (offset_ < tmp_size) {
     sent_size = socket->Send((const void*) (data + offset_),
-                             tmp_size - offset_);
+      send_max_block_size_ ? std::min(send_max_block_size_, tmp_size - offset_)
+                          : tmp_size - offset_);
     if (sent_size == -1) {
       if (!IsBlockingError(socket->GetError())) {
+        if (!HandleWriteError(socket)) {
+          continue;
+        }
         offset_ = 0;
+        send_max_block_size_ = 0;
         socket->Close();
       }
       break;
@@ -285,8 +294,30 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   if (tmp_size == offset_) {
     offset_ = 0;
     sent_bytes_ = 0;
+    send_max_block_size_ = 0;
     socket->Close();
   }
+}
+
+bool TraceLog::HandleWriteError(AsyncSocket* socket) {
+#if defined(WINAPI_FAMILY)
+  if (socket->GetError() == ENOBUFS) {
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAENOBUFS
+    // No buffer space available.
+    // An operation on a socket could not be performed because the system
+    // lacked sufficient buffer space or because a queue was full.
+    // Try passing smaller blocks to socket next time.
+    if (send_max_block_size_ == 0) {
+      send_max_block_size_ = (unsigned int)oss_.tellp() - offset_;
+    }
+    send_max_block_size_ /= 2;
+    if (send_max_block_size_) {
+      LOG(LS_INFO) << "Reduced block size to " << send_max_block_size_;
+      return false;
+    }
+  }
+#endif
+  return true;
 }
 
 void TraceLog::SaveTraceChunk() {
