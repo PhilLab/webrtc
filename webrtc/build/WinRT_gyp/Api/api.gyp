@@ -8,6 +8,11 @@
 
 {
   'includes': ['../../common.gypi',],
+  'conditions': [
+   ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
+     'includes': ['webrtc_winrt_foreground_render.gypi',]
+   }],
+  ],
   'variables': {
 
   },
@@ -82,41 +87,6 @@
           ],
         },
       },
-    },
-    {
-      'conditions': [
-        ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
-          'target_name': 'webrtc_winrt_foreground_render',
-          'type': 'shared_library',
-          'include_dirs': [
-            '.',
-          ],
-          'msvs_disabled_warnings': [
-            '4458',  # local members hides previously defined memebers or function members or class members
-          ],
-          'defines': [
-             '_HAS_EXCEPTIONS=1',
-             '_WINRT_DLL',
-            'NTDDI_VERSION=NTDDI_WIN10',
-          ],
-          'sources': [
-            'SwapChainPanelSource.h',
-            'SwapChainPanelSource.cc',
-          ],
-          'msvs_settings': {
-            'VCLinkerTool': {
-              'UseLibraryDependencyInputs': "true",
-              'AdditionalOptions': [
-                '/WINMD',
-              ],
-              'WindowsMetadataFile':'$(OutDir)webrtc_winrt_foreground_render.winmd',
-              'AdditionalDependencies': [
-                'WindowsApp.lib',
-              ],
-            },
-          },
-        }],
-      ],
     },
   ],
 }
