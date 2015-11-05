@@ -76,13 +76,6 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
     inst->targetBitrate > 0 ? inst->targetBitrate : 300 * 1024));
   ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE,
     MFVideoInterlace_Progressive));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
-  // These are for increasing the number of keyframes.
-  // It improves time to first frame and recovery when the video freezes.
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, 30));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(CODECAPI_AVEncMPVGOPSize, 10));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(
-    CODECAPI_AVEncVideoMaxKeyframeDistance, 10));
   ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut_.Get(),
     MF_MT_FRAME_SIZE, inst->width, inst->height));
   ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeOut_.Get(),

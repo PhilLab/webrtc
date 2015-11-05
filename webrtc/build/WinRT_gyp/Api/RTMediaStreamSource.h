@@ -18,6 +18,8 @@
 using Windows::Media::Core::MediaStreamSource;
 using Platform::WeakReference;
 using webrtc_winrt_api::MediaVideoTrack;
+using Windows::System::Threading::ThreadPoolTimer;
+using Windows::Media::Core::MediaStreamSourceSampleRequest;
 
 namespace webrtc_winrt_api {
 // Delegate used to notify an update of the frame per second on a video stream.
@@ -59,16 +61,16 @@ ref class RTMediaStreamSource sealed {
       virtual ~RTCRenderer();
       virtual void SetSize(uint32 width, uint32 height, uint32 reserved);
       virtual void RenderFrame(const cricket::VideoFrame *frame);
-     private:
+      virtual bool CanApplyRotation() { return true; }
+    private:
       // This object is owned by RTMediaStreamSource
       // so _streamSource must be a weak reference
       WeakReference _streamSource;
     };
 
-    RTMediaStreamSource(MediaVideoTrack^ videoTrack);
+    RTMediaStreamSource(MediaVideoTrack^ videoTrack, bool isH264);
     void ProcessReceivedFrame(const cricket::VideoFrame *frame);
-    bool ConvertFrame(IMFMediaBuffer* mediaBuffer);
-    void BlankFrame(IMFMediaBuffer* mediaBuffer);
+    bool ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::VideoFrame* frame);
     void ResizeSource(uint32 width, uint32 height);
     static void OnClosed(Windows::Media::Core::MediaStreamSource ^sender,
       Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);
@@ -81,17 +83,38 @@ ref class RTMediaStreamSource sealed {
     WeakReference _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
-    rtc::scoped_ptr<cricket::VideoFrame> _frame;
-    bool _isNewFrame;  // If the frame in _frame hasn't been rendered yet.
+    //rtc::scoped_ptr<cricket::VideoFrame> _frame;
+    std::list<cricket::VideoFrame*> _frames;
     uint32 _stride;
-    uint64 _timeStamp;
 
-    uint32 _frameRate;
+    webrtc::TickTime _startTime;
+    // One peculiarity, the timestamp of a sample should be slightly
+    // in the future for Media Foundation to handle it properly.
+    int _futureOffsetMs;
+    LONGLONG _lastSampleTime;
+
+    // Called whenever we give the stream a new frame to render.
+    void UpdateFrameRate();
+
+    // Gets the next timestamp using the clock
+    LONGLONG GetNextSampleTimeHns();
+
+    ThreadPoolTimer^ _progressTimer;
+    void TimerElapsedExecute(ThreadPoolTimer^ source);
+
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 
     // State related to calculating FPS.
     int _frameCounter;
     webrtc::TickTime _lastTimeFPSCalculated;
+
+    void ReplyToRequestH264();
+    void ReplyToRequestI420();
+    bool DropFramesToIDR();
+    //Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> _request;
+    MediaStreamSourceSampleRequest^ _request;
+    Windows::Media::Core::MediaStreamSourceSampleRequestDeferral^ _deferral;
+    bool _isH264;
 };
 
 }  // namespace webrtc_winrt_api_internal

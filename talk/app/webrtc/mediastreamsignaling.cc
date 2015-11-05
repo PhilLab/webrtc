@@ -476,7 +476,7 @@ void MediaStreamSignaling::OnRemoteDescriptionChanged(
     const cricket::AudioContentDescription* desc =
         static_cast<const cricket::AudioContentDescription*>(
             audio_content->description);
-    UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams);
+    UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams, false);
     remote_info_.default_audio_track_needed =
         MediaContentDirectionHasSend(desc->direction()) &&
             desc->streams().empty();
@@ -489,7 +489,15 @@ void MediaStreamSignaling::OnRemoteDescriptionChanged(
     const cricket::VideoContentDescription* desc =
         static_cast<const cricket::VideoContentDescription*>(
             video_content->description);
-    UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams);
+
+    bool isH264 = false;
+    for (auto codec : desc->codecs()) {
+      if (codec.name == "H264") {
+        isH264 = true;
+        break;
+      }
+    }
+    UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams, isH264);
     remote_info_.default_video_track_needed =
         MediaContentDirectionHasSend(desc->direction()) &&
             desc->streams().empty();
@@ -592,7 +600,7 @@ void MediaStreamSignaling::OnDataChannelClose() {
 void MediaStreamSignaling::UpdateRemoteStreamsList(
     const cricket::StreamParamsVec& streams,
     cricket::MediaType media_type,
-    StreamCollection* new_streams) {
+    StreamCollection* new_streams, bool isH264) {
   TrackInfos* current_tracks = GetRemoteTracks(media_type);
 
   // Find removed tracks. Ie tracks where the track id or ssrc don't match the
@@ -632,7 +640,7 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
                                                 track_id);
     if (!track_info) {
       current_tracks->push_back(TrackInfo(stream_label, track_id, ssrc));
-      OnRemoteTrackSeen(stream_label, track_id, it->first_ssrc(), media_type);
+      OnRemoteTrackSeen(stream_label, track_id, it->first_ssrc(), media_type, isH264);
     }
   }
 }
@@ -640,7 +648,8 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
 void MediaStreamSignaling::OnRemoteTrackSeen(const std::string& stream_label,
                                              const std::string& track_id,
                                              uint32 ssrc,
-                                             cricket::MediaType media_type) {
+                                             cricket::MediaType media_type,
+                                             bool isH264) {
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
@@ -650,6 +659,7 @@ void MediaStreamSignaling::OnRemoteTrackSeen(const std::string& stream_label,
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     VideoTrackInterface* video_track =
         remote_stream_factory_->AddVideoTrack(stream, track_id);
+    video_track->GetSource()->SetIsH264Source(isH264);
     stream_observer_->OnAddRemoteVideoTrack(stream, video_track, ssrc);
   } else {
     ASSERT(false && "Invalid media type");

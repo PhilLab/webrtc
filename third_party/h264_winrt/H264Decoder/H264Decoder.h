@@ -15,10 +15,7 @@
 #include <mfidl.h>
 #include <Mfreadwrite.h>
 #include <mferror.h>
-#include "H264MediaSource.h"
-#include "H264MediaStream.h"
-#include "IH264DecodingCallback.h"
-#include "SourceReaderCB.h"
+#include <wrl.h>
 #include "Utils/SampleAttributeQueue.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -31,7 +28,7 @@ using Microsoft::WRL::ComPtr;
 
 namespace webrtc {
 
-class H264WinRTDecoderImpl : public VideoDecoder, public IH264DecodingCallback {
+class H264WinRTDecoderImpl : public VideoDecoder {
  public:
   H264WinRTDecoderImpl();
 
@@ -52,36 +49,9 @@ class H264WinRTDecoderImpl : public VideoDecoder, public IH264DecodingCallback {
 
   VideoDecoder* Copy();
 
-  // === IH264DecodingCallback overrides ===
-  void OnH264Decoded(ComPtr<IMFSample> pSample, DWORD dwStreamFlags) override;
-
  private:
-  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _cbLock;
   DecodedImageCallback* decodeCompleteCallback_;
-
-  ComPtr<IMFMediaType> mediaTypeOut_;  // nv12
-  ComPtr<IMFMediaType> mediaTypeIn_;  // h264
-
-  // Media stream on which we push received h264 frames.
-  ComPtr<H264MediaStream> mediaStream_;
-  // The reader from which to read decoded NV12 frames.
-  ComPtr<IMFSourceReader> sourceReader_;
-  // Receives the event from the source reader that
-  // a new decoded frame is available.
-  ComPtr<SourceReaderCB> readerCB_;
-
-  // mediaStream_'s index in the source reader.
-  DWORD streamIndex_;
-
-  bool firstFrame_;
-
-  struct CachedFrameAttributes {
-    uint32_t timestamp;
-    uint64_t ntpTime;
-    uint64_t captureRenderTime;
-  };
-  SampleAttributeQueue<CachedFrameAttributes> _sampleAttributeQueue;
 };  // end of H264WinRTDecoderImpl class
 
 }  // namespace webrtc

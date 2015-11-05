@@ -84,6 +84,9 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   virtual void AddSink(cricket::VideoRenderer* output);
   virtual void RemoveSink(cricket::VideoRenderer* output);
 
+  virtual void SetIsH264Source(bool isH264);
+  virtual bool IsH264Source();
+
  protected:
   VideoSource(cricket::ChannelManager* channel_manager,
               cricket::VideoCapturer* capturer);
@@ -104,6 +107,8 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;
   SourceState state_;
+
+  bool _isH264Source;
 };
 
 }  // namespace webrtc
