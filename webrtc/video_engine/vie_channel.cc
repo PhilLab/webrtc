@@ -1066,13 +1066,20 @@ void ViEChannel::OnDecoderTiming(int decode_ms,
                                  int target_delay_ms,
                                  int jitter_buffer_ms,
                                  int min_playout_delay_ms,
+#ifdef WINRT
+                                 int current_endtoend_delay_ms,
+#endif
                                  int render_delay_ms) {
   CriticalSectionScoped cs(crit_.get());
   if (!receive_stats_callback_)
     return;
   receive_stats_callback_->OnDecoderTiming(
       decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
-      jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
+      jitter_buffer_ms, min_playout_delay_ms,
+#ifdef WINRT
+      current_endtoend_delay_ms,
+#endif  
+      render_delay_ms);
 }
 
 int32_t ViEChannel::RequestKeyFrame() {

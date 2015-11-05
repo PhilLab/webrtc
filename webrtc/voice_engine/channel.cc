@@ -573,6 +573,8 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
               Clock::GetRealTimeClock()->CurrentNtpInMilliseconds()
               - static_cast<uint32_t>(audioFrame->ntp_time_ms_);
           TRACE_COUNTER1("webrtc", "EndToEndAudioDecoded", endToEndDelay);
+
+          current_endtoend_delay_ms_ = endToEndDelay;
 #endif
         }
       }
@@ -786,6 +788,9 @@ Channel::Channel(int32_t channelId,
     _rxAgcIsEnabled(false),
     _rxNsIsEnabled(false),
     restored_packet_in_use_(false),
+#ifdef WINRT
+    current_endtoend_delay_ms_(-1),
+#endif
     rtcp_observer_(new VoERtcpObserver(this)),
     network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
     assoc_send_channel_lock_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -3204,6 +3209,9 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     stats.packetsSent = packetsSent;
     stats.bytesReceived = bytesReceived;
     stats.packetsReceived = packetsReceived;
+#ifdef WINRT
+    stats.endtoend_delay_ms_ = current_endtoend_delay_ms_;
+#endif
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
@@ -3548,6 +3556,9 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 
 void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
   audio_coding_->GetDecodingCallStatistics(stats);
+#ifdef WINRT
+  stats->end_to_end_delayMs = current_endtoend_delay_ms_;
+#endif
 }
 
 bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
