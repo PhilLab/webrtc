@@ -11,7 +11,6 @@
 package org.appspot.apprtc;
 
 import android.content.Context;
-import android.opengl.EGLContext;
 import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
@@ -43,6 +42,8 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.microedition.khronos.egl.EGLContext;
+
 /**
  * Peer connection client implementation.
  *
@@ -55,6 +56,8 @@ public class PeerConnectionClient {
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   private static final String TAG = "PCRTCClient";
   private static final String FIELD_TRIAL_VP9 = "WebRTC-SupportVP9/Enabled/";
+  private static final String FIELD_TRIAL_AUTOMATIC_RESIZE =
+      "WebRTC-MediaCodecVideoEncoder-AutomaticResize/Enabled/";
   private static final String VIDEO_CODEC_VP8 = "VP8";
   private static final String VIDEO_CODEC_VP9 = "VP9";
   private static final String VIDEO_CODEC_H264 = "H264";
@@ -283,13 +286,16 @@ public class PeerConnectionClient {
     Log.d(TAG, "Create peer connection factory. Use video: " +
         peerConnectionParameters.videoCallEnabled);
     isError = false;
+
+    // Initialize field trials.
+    String field_trials = FIELD_TRIAL_AUTOMATIC_RESIZE;
     // Check if VP9 is used by default.
     if (videoCallEnabled && peerConnectionParameters.videoCodec != null
         && peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_VP9)) {
-      PeerConnectionFactory.initializeFieldTrials(FIELD_TRIAL_VP9);
-    } else {
-      PeerConnectionFactory.initializeFieldTrials(null);
+      field_trials += FIELD_TRIAL_VP9;
     }
+    PeerConnectionFactory.initializeFieldTrials(field_trials);
+
     // Check if H.264 is used by default.
     preferH264 = false;
     if (videoCallEnabled && peerConnectionParameters.videoCodec != null
@@ -842,6 +848,24 @@ public class PeerConnectionClient {
         switchCameraInternal();
       }
     });
+  }
+
+  public void changeCaptureFormat(final int width, final int height, final int framerate) {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        changeCaptureFormatInternal(width, height, framerate);
+      }
+    });
+  }
+
+  private void changeCaptureFormatInternal(int width, int height, int framerate) {
+    if (!videoCallEnabled || isError || videoCapturer == null) {
+      Log.e(TAG, "Failed to change capture format. Video: " + videoCallEnabled + ". Error : "
+          + isError);
+      return;
+    }
+    videoCapturer.onOutputFormatRequest(width, height, framerate);
   }
 
   // Implementation detail: observe ICE & stream changes and react accordingly.

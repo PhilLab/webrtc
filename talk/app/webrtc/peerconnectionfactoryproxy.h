@@ -63,6 +63,9 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
                 CreateAudioTrack, const std::string&,  AudioSourceInterface*)
   PROXY_METHOD1(bool, StartAecDump, rtc::PlatformFile)
   PROXY_METHOD0(cricket::ChannelManager*, channel_manager)
+  PROXY_METHOD0(void, StopAecDump)
+  PROXY_METHOD1(bool, StartRtcEventLog, rtc::PlatformFile)
+  PROXY_METHOD0(void, StopRtcEventLog)
 
  private:
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_ot(

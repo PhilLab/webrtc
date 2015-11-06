@@ -44,7 +44,7 @@ int32_t ActivityMonitor::InFrameType(FrameType frame_type) {
 
 void ActivityMonitor::PrintStatistics() {
   printf("\n");
-  printf("kFrameEmpty       %u\n", counter_[kFrameEmpty]);
+  printf("kEmptyFrame       %u\n", counter_[kEmptyFrame]);
   printf("kAudioFrameSpeech %u\n", counter_[kAudioFrameSpeech]);
   printf("kAudioFrameCN     %u\n", counter_[kAudioFrameCN]);
   printf("kVideoFrameKey    %u\n", counter_[kVideoFrameKey]);
@@ -209,9 +209,9 @@ void TestWebRtcVadDtx::SetVAD(bool enable_dtx, bool enable_vad,
   EXPECT_EQ(0, acm_send_->SetVAD(enable_dtx, enable_vad, vad_mode));
   EXPECT_EQ(0, acm_send_->VAD(&dtx_enabled_, &vad_enabled_, &mode));
 
-  CodecInst codec_param;
-  acm_send_->SendCodec(&codec_param);
-  if (STR_CASE_CMP(codec_param.plname, "opus") == 0) {
+  auto codec_param = acm_send_->SendCodec();
+  ASSERT_TRUE(codec_param);
+  if (STR_CASE_CMP(codec_param->plname, "opus") == 0) {
     // If send codec is Opus, WebRTC VAD/DTX cannot be used.
     enable_dtx = enable_vad = false;
   }
@@ -248,7 +248,7 @@ void TestOpusDtx::Perform() {
       32000, 1, out_filename, false, expects);
 
   EXPECT_EQ(0, acm_send_->EnableOpusDtx());
-  expects[kFrameEmpty] = 1;
+  expects[kEmptyFrame] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
       32000, 1, out_filename, true, expects);
 
@@ -256,13 +256,13 @@ void TestOpusDtx::Perform() {
   out_filename = webrtc::test::OutputPath() + "testOpusDtx_outFile_stereo.pcm";
   RegisterCodec(kOpusStereo);
   EXPECT_EQ(0, acm_send_->DisableOpusDtx());
-  expects[kFrameEmpty] = 0;
+  expects[kEmptyFrame] = 0;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"),
       32000, 2, out_filename, false, expects);
 
   EXPECT_EQ(0, acm_send_->EnableOpusDtx());
 
-  expects[kFrameEmpty] = 1;
+  expects[kEmptyFrame] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"),
       32000, 2, out_filename, true, expects);
 #endif

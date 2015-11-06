@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -83,7 +85,16 @@ class RTPPayloadRegistry {
 
   bool IsRtx(const RTPHeader& header) const;
 
+  // DEPRECATED. Use RestoreOriginalPacket below that takes a uint8_t*
+  // restored_packet, instead of a uint8_t**.
+  // TODO(noahric): Remove this when all callers have been updated.
   bool RestoreOriginalPacket(uint8_t** restored_packet,
+                             const uint8_t* packet,
+                             size_t* packet_length,
+                             uint32_t original_ssrc,
+                             const RTPHeader& header) const;
+
+  bool RestoreOriginalPacket(uint8_t* restored_packet,
                              const uint8_t* packet,
                              size_t* packet_length,
                              uint32_t original_ssrc,
@@ -138,6 +149,16 @@ class RTPPayloadRegistry {
     return last_received_media_payload_type_;
   };
 
+  bool use_rtx_payload_mapping_on_restore() const {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return use_rtx_payload_mapping_on_restore_;
+  }
+
+  void set_use_rtx_payload_mapping_on_restore(bool val) {
+    CriticalSectionScoped cs(crit_sect_.get());
+    use_rtx_payload_mapping_on_restore_ = val;
+  }
+
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
@@ -163,9 +184,12 @@ class RTPPayloadRegistry {
   int rtx_payload_type_;
   // Mapping rtx_payload_type_map_[rtx] = associated.
   std::map<int, int> rtx_payload_type_map_;
+  // When true, use rtx_payload_type_map_ when restoring RTX packets to get the
+  // correct payload type.
+  bool use_rtx_payload_mapping_on_restore_;
   uint32_t ssrc_rtx_;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_

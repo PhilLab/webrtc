@@ -106,7 +106,7 @@ class StunBindingRequest : public StunRequest {
   UDPPort* port_;
   bool keep_alive_;
   const rtc::SocketAddress server_addr_;
-  uint32 start_time_;
+  uint32_t start_time_;
 };
 
 UDPPort::AddressResolver::AddressResolver(
@@ -116,7 +116,10 @@ UDPPort::AddressResolver::AddressResolver(
 UDPPort::AddressResolver::~AddressResolver() {
   for (ResolverMap::iterator it = resolvers_.begin();
        it != resolvers_.end(); ++it) {
-    it->second->Destroy(true);
+    // TODO(guoweis): Change to asynchronous DNS resolution to prevent the hang
+    // when passing true to the Destroy() which is a safer way to avoid the code
+    // unloaded before the thread exits. Please see webrtc bug 5139.
+    it->second->Destroy(false);
   }
 }
 
@@ -182,14 +185,21 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
                  const rtc::IPAddress& ip,
-                 uint16 min_port,
-                 uint16 max_port,
+                 uint16_t min_port,
+                 uint16_t max_port,
                  const std::string& username,
                  const std::string& password,
                  const std::string& origin,
                  bool emit_localhost_for_anyaddress)
-    : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
-           username, password),
+    : Port(thread,
+           LOCAL_PORT_TYPE,
+           factory,
+           network,
+           ip,
+           min_port,
+           max_port,
+           username,
+           password),
       requests_(thread),
       socket_(NULL),
       error_(0),
@@ -210,6 +220,7 @@ bool UDPPort::Init() {
     }
     socket_->SignalReadPacket.connect(this, &UDPPort::OnReadPacket);
   }
+  socket_->SignalSentPacket.connect(this, &UDPPort::OnSentPacket);
   socket_->SignalReadyToSend.connect(this, &UDPPort::OnReadyToSend);
   socket_->SignalAddressReady.connect(this, &UDPPort::OnLocalAddressReady);
   requests_.SignalSendPacket.connect(this, &UDPPort::OnSendPacket);
@@ -299,12 +310,13 @@ void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
   MaybePrepareStunCandidate();
 }
 
-void UDPPort::OnReadPacket(
-  rtc::AsyncPacketSocket* socket, const char* data, size_t size,
-  const rtc::SocketAddress& remote_addr,
-  const rtc::PacketTime& packet_time) {
+void UDPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
+                           const char* data,
+                           size_t size,
+                           const rtc::SocketAddress& remote_addr,
+                           const rtc::PacketTime& packet_time) {
   ASSERT(socket == socket_);
-  ASSERT(!remote_addr.IsUnresolved());
+  ASSERT(!remote_addr.IsUnresolvedIP());
 
   // Look for a response from the STUN server.
   // Even if the response doesn't match one of our outstanding requests, we
@@ -320,6 +332,11 @@ void UDPPort::OnReadPacket(
   } else {
     Port::OnReadPacket(data, size, remote_addr, PROTO_UDP);
   }
+}
+
+void UDPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
+                           const rtc::SentPacket& sent_packet) {
+  Port::OnSentPacket(sent_packet);
 }
 
 void UDPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
@@ -367,9 +384,8 @@ void UDPPort::OnResolveResult(const rtc::SocketAddress& input,
   }
 }
 
-void UDPPort::SendStunBindingRequest(
-    const rtc::SocketAddress& stun_addr) {
-  if (stun_addr.IsUnresolved()) {
+void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
+  if (stun_addr.IsUnresolvedIP()) {
     ResolveStunAddress(stun_addr);
 
   } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {

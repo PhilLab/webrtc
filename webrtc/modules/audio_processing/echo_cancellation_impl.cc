@@ -18,7 +18,7 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/aec/include/echo_cancellation.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -278,6 +278,14 @@ int EchoCancellationImpl::enable_delay_logging(bool enable) {
 
 bool EchoCancellationImpl::is_delay_logging_enabled() const {
   return delay_logging_enabled_;
+}
+
+bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
+  return delay_agnostic_enabled_;
+}
+
+bool EchoCancellationImpl::is_extended_filter_enabled() const {
+  return extended_filter_enabled_;
 }
 
 // TODO(bjornv): How should we handle the multi-channel case?

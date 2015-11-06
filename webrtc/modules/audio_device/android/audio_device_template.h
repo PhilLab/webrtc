@@ -17,7 +17,7 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 #define TAG "AudioDeviceTemplate"
 #define ALOGW(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)
@@ -458,6 +458,28 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   int32_t EnableBuiltInAEC(bool enable) override {
     RTC_CHECK(BuiltInAECIsAvailable()) << "HW AEC is not available";
     return input_.EnableBuiltInAEC(enable);
+  }
+
+  // Returns true if the device both supports built in AGC and the device
+  // is not blacklisted.
+  bool BuiltInAGCIsAvailable() const override {
+    return audio_manager_->IsAutomaticGainControlSupported();
+  }
+
+  int32_t EnableBuiltInAGC(bool enable) override {
+    RTC_CHECK(BuiltInAGCIsAvailable()) << "HW AGC is not available";
+    return input_.EnableBuiltInAGC(enable);
+  }
+
+  // Returns true if the device both supports built in NS and the device
+  // is not blacklisted.
+  bool BuiltInNSIsAvailable() const override {
+    return audio_manager_->IsNoiseSuppressorSupported();
+  }
+
+  int32_t EnableBuiltInNS(bool enable) override {
+    RTC_CHECK(BuiltInNSIsAvailable()) << "HW NS is not available";
+    return input_.EnableBuiltInNS(enable);
   }
 
  private:

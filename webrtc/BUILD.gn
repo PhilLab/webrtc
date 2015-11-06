@@ -8,7 +8,6 @@
 
 # TODO(kjellander): Rebase this to webrtc/build/common.gypi changes after r6330.
 
-import("//build/config/crypto.gni")
 import("//build/config/linux/pkg_config.gni")
 import("build/webrtc.gni")
 import("//third_party/protobuf/proto_library.gni")
@@ -23,9 +22,9 @@ config("common_inherited_config") {
   if (build_with_chromium) {
     defines = [ "WEBRTC_CHROMIUM_BUILD" ]
     include_dirs = [
-      # overrides must be included first as that is the mechanism for
+      # The overrides must be included first as that is the mechanism for
       # selecting the override headers in Chromium.
-      "overrides",
+      "../webrtc_overrides",
 
       # Allow includes to be prefixed with webrtc/ in case it is not an
       # immediate subdirectory of the top-level.
@@ -154,17 +153,13 @@ config("common_config") {
   }
 
   if (is_android && !is_clang) {
+    # The Android NDK doesn"t provide optimized versions of these
+    # functions. Ensure they are disabled for all compilers.
     cflags += [
-      # The Android NDK doesn't provide optimized versions of these
-      # functions. Ensure they are disabled for all compilers.
       "-fno-builtin-cos",
       "-fno-builtin-sin",
       "-fno-builtin-cosf",
       "-fno-builtin-sinf",
-    ]
-    cflags_c = [
-      # Use C99 mode instead of C89 (default).
-      "-std=c99",
     ]
   }
 }
@@ -182,8 +177,10 @@ source_set("webrtc") {
   public_configs = [ ":common_inherited_config" ]
 
   deps = [
+    "audio",
     ":webrtc_common",
     "base:rtc_base",
+    "call",
     "common_audio",
     "common_video",
     "modules/audio_coding",
@@ -257,16 +254,16 @@ group("winrt_tests") {
 if (rtc_enable_protobuf) {
   proto_library("rtc_event_log_proto") {
     sources = [
-      "video/rtc_event_log.proto",
+      "call/rtc_event_log.proto",
     ]
-    proto_out_dir = "webrtc/video"
+    proto_out_dir = "webrtc/call"
   }
 }
 
 source_set("rtc_event_log") {
   sources = [
-    "video/rtc_event_log.cc",
-    "video/rtc_event_log.h",
+    "call/rtc_event_log.cc",
+    "call/rtc_event_log.h",
   ]
 
   defines = []

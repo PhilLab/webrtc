@@ -57,7 +57,7 @@ class AudioEncoderCng final : public AudioEncoder {
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
+                             rtc::ArrayView<const int16_t> audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
   void Reset() override;
@@ -86,7 +86,10 @@ class AudioEncoderCng final : public AudioEncoder {
   bool last_frame_active_;
   rtc::scoped_ptr<Vad> vad_;
   rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderCng);
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_INCLUDE_AUDIO_ENCODER_CNG_H_

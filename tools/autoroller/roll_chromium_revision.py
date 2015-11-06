@@ -20,10 +20,13 @@ import sys
 import urllib
 
 
-CHROMIUM_LKGR_URL = 'https://chromium-status.appspot.com/lkgr'
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
+CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
+
+# Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
+EXTRA_TRYBOTS = 'tryserver.webrtc:win_baremetal,mac_baremetal,linux_baremetal'
 
 COMMIT_POSITION_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
 CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION=(\d+)$')
@@ -35,7 +38,7 @@ CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, os.pardir,
 sys.path.append(CHECKOUT_ROOT_DIR)
 import setup_links
 
-sys.path.append(os.path.join(CHECKOUT_ROOT_DIR, 'tools'))
+sys.path.append(os.path.join(CHECKOUT_ROOT_DIR, 'build'))
 import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
 from gclient import GClientKeywords
@@ -45,7 +48,8 @@ CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join('tools', 'clang', 'scripts',
                                               'update.sh')
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
-ChangedDep = collections.namedtuple('ChangedDep', 'path current_rev new_rev')
+ChangedDep = collections.namedtuple('ChangedDep',
+                                    'path url current_rev new_rev')
 
 
 def ParseDepsDict(deps_content):
@@ -220,9 +224,9 @@ def CalculateChangedDeps(current_deps, new_deps):
           'Should never find more than one entry matching %s in %s, found %d' %
           (entry.path, new_entries, len(new_matching_entries)))
       if not new_matching_entries:
-        result.append(ChangedDep(entry.path, entry.revision, 'None'))
+        result.append(ChangedDep(entry.path, entry.url, entry.revision, 'None'))
       elif entry != new_matching_entries[0]:
-        result.append(ChangedDep(entry.path, entry.revision,
+        result.append(ChangedDep(entry.path, entry.url, entry.revision,
                                  new_matching_entries[0].revision))
   return result
 
@@ -244,40 +248,51 @@ def CalculateChangedClang(new_cr_rev):
   new_clang_update_sh = ReadRemoteCrFile(CLANG_UPDATE_SCRIPT_URL_PATH,
                                          new_cr_rev).splitlines()
   new_rev = GetClangRev(new_clang_update_sh)
-  return ChangedDep(CLANG_UPDATE_SCRIPT_LOCAL_PATH, current_rev, new_rev)
+  return ChangedDep(CLANG_UPDATE_SCRIPT_LOCAL_PATH, None, current_rev, new_rev)
 
 
-def GenerateCommitMessage(current_cr_rev, new_cr_rev, changed_deps_list,
-                          clang_change):
+def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
+                          new_commit_pos, changed_deps_list, clang_change):
   current_cr_rev = current_cr_rev[0:7]
   new_cr_rev = new_cr_rev[0:7]
   rev_interval = '%s..%s' % (current_cr_rev, new_cr_rev)
+  git_number_interval = '%s:%s' % (current_commit_pos, new_commit_pos)
 
-  current_git_number = ParseCommitPosition(ReadRemoteCrCommit(current_cr_rev))
-  new_git_number = ParseCommitPosition(ReadRemoteCrCommit(new_cr_rev))
-  git_number_interval = '%s:%s' % (current_git_number, new_git_number)
-
-  commit_msg = ['Roll chromium_revision %s (%s)' % (rev_interval,
+  commit_msg = ['Roll chromium_revision %s (%s)\n' % (rev_interval,
                                                     git_number_interval)]
-
+  commit_msg.append('Change log: %s' % (CHROMIUM_LOG_TEMPLATE % rev_interval))
+  commit_msg.append('Full diff: %s\n' % (CHROMIUM_COMMIT_TEMPLATE %
+                                         rev_interval))
+  # TBR field will be empty unless in some custom cases, where some engineers
+  # are added.
+  tbr_authors = ''
   if changed_deps_list:
-    commit_msg.append('\nRelevant changes:')
+    commit_msg.append('Changed dependencies:')
 
     for c in changed_deps_list:
-      commit_msg.append('* %s: %s..%s' % (c.path, c.current_rev[0:7],
-                                          c.new_rev[0:7]))
+      commit_msg.append('* %s: %s/+log/%s..%s' % (c.path, c.url,
+                                                  c.current_rev[0:7],
+                                                  c.new_rev[0:7]))
+      if 'libvpx' in c.path:
+        tbr_authors += 'marpan@webrtc.org, stefan@webrtc.org, '
 
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval, 'DEPS')
-    commit_msg.append('Details: %s' % change_url)
+    commit_msg.append('DEPS diff: %s\n' % change_url)
+  else:
+    commit_msg.append('No dependencies changed.')
 
   if clang_change.current_rev != clang_change.new_rev:
-    commit_msg.append('\nClang version changed %s:%s' %
+    commit_msg.append('Clang version changed %s:%s' %
                       (clang_change.current_rev, clang_change.new_rev))
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval,
                                            CLANG_UPDATE_SCRIPT_URL_PATH)
-    commit_msg.append('Details: %s' % change_url)
+    commit_msg.append('Details: %s\n' % change_url)
+    tbr_authors += 'pbos@webrtc.org'
   else:
-    commit_msg.append('\nClang version was not updated in this roll.')
+    commit_msg.append('No update to Clang.\n')
+
+  commit_msg.append('TBR=%s' % tbr_authors)
+  commit_msg.append('CQ_EXTRA_TRYBOTS=%s' % EXTRA_TRYBOTS)
   return '\n'.join(commit_msg)
 
 
@@ -297,7 +312,8 @@ def _IsTreeClean():
   logging.error('Dirty/unversioned files:\n%s', stdout)
   return False
 
-def _CreateRollBranch(dry_run):
+
+def _EnsureUpdatedMasterBranch(dry_run):
   current_branch = _RunCommand(
       ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])[0].splitlines()[0]
   if current_branch != 'master':
@@ -306,8 +322,10 @@ def _CreateRollBranch(dry_run):
       sys.exit(-1)
 
   logging.info('Updating master branch...')
-  if not dry_run:
-    _RunCommand(['git', 'pull'])
+  _RunCommand(['git', 'pull'])
+
+
+def _CreateRollBranch(dry_run):
   logging.info('Creating roll branch: %s', ROLL_BRANCH_NAME)
   if not dry_run:
     _RunCommand(['git', 'checkout', '-b', ROLL_BRANCH_NAME])
@@ -331,10 +349,13 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def _UploadCL(dry_run):
+def _UploadCL(dry_run, rietveld_email=None):
   logging.info('Uploading CL...')
   if not dry_run:
-    _RunCommand(['git', 'cl', 'upload'], extra_env={'EDITOR': 'true'})
+    cmd = ['git', 'cl', 'upload', '-f']
+    if rietveld_email:
+      cmd.append('--email=%s' % rietveld_email)
+    _RunCommand(cmd, extra_env={'EDITOR': 'true'})
 
 
 def _LaunchTrybots(dry_run, skip_try):
@@ -343,19 +364,35 @@ def _LaunchTrybots(dry_run, skip_try):
     _RunCommand(['git', 'cl', 'try'])
 
 
+def _SendToCQ(dry_run, skip_cq):
+  logging.info('Sending the CL to the CQ...')
+  if not dry_run and not skip_cq:
+    _RunCommand(['git', 'cl', 'set_commit'])
+    logging.info('Sent the CL to the CQ.')
+
+
 def main():
   p = argparse.ArgumentParser()
   p.add_argument('--clean', action='store_true', default=False,
                  help='Removes any previous local roll branch.')
   p.add_argument('-r', '--revision',
                  help=('Chromium Git revision to roll to. Defaults to the '
-                       'Chromium LKGR revision if omitted.'))
+                       'Chromium HEAD revision if omitted.'))
+  p.add_argument('-u', '--rietveld-email',
+                 help=('E-mail address to use for creating the CL at Rietveld'
+                       'If omitted a previously cached one will be used or an '
+                       'error will be thrown during upload.'))
   p.add_argument('--dry-run', action='store_true', default=False,
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
                        'tryjobs.'))
+  p.add_argument('--allow-reverse', action='store_true', default=False,
+                 help=('Allow rolling back in time (disabled by default but '
+                       'may be useful to be able do to manually).'))
   p.add_argument('-s', '--skip-try', action='store_true', default=False,
-                 help='Do everything except sending tryjobs.')
+                 help='Skip sending tryjobs (default: %(default)s)')
+  p.add_argument('--skip-cq', action='store_true', default=False,
+                 help='Skip sending the CL to the CQ (default: %(default)s)')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
                  help='Be extra verbose in printing of log messages.')
   opts = p.parse_args()
@@ -372,34 +409,46 @@ def main():
   if opts.clean:
     _RemovePreviousRollBranch(opts.dry_run)
 
-  if not opts.revision:
-    lkgr_contents = ReadUrlContent(CHROMIUM_LKGR_URL)
-    logging.info('No revision specified. Using LKGR: %s', lkgr_contents[0])
-    opts.revision = lkgr_contents[0]
+  _EnsureUpdatedMasterBranch(opts.dry_run)
+
+  new_cr_rev = opts.revision
+  if not new_cr_rev:
+    stdout, _ = _RunCommand(['git', 'ls-remote', CHROMIUM_SRC_URL, 'HEAD'])
+    head_rev = stdout.strip().split('\t')[0]
+    logging.info('No revision specified. Using HEAD: %s', head_rev)
+    new_cr_rev = head_rev
 
   deps_filename = os.path.join(CHECKOUT_ROOT_DIR, 'DEPS')
   local_deps = ParseLocalDepsFile(deps_filename)
   current_cr_rev = local_deps['vars']['chromium_revision']
 
-  current_cr_deps = ParseRemoteCrDepsFile(current_cr_rev)
-  new_cr_deps = ParseRemoteCrDepsFile(opts.revision)
+  current_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(current_cr_rev))
+  new_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(new_cr_rev))
 
-  changed_deps = sorted(CalculateChangedDeps(current_cr_deps, new_cr_deps))
-  clang_change = CalculateChangedClang(opts.revision)
-  if changed_deps or clang_change:
-    commit_msg = GenerateCommitMessage(current_cr_rev, opts.revision,
+  current_cr_deps = ParseRemoteCrDepsFile(current_cr_rev)
+  new_cr_deps = ParseRemoteCrDepsFile(new_cr_rev)
+
+  if new_commit_pos > current_commit_pos or opts.allow_reverse:
+    changed_deps = sorted(CalculateChangedDeps(current_cr_deps, new_cr_deps))
+    clang_change = CalculateChangedClang(new_cr_rev)
+    commit_msg = GenerateCommitMessage(current_cr_rev, new_cr_rev,
+                                       current_commit_pos, new_commit_pos,
                                        changed_deps, clang_change)
     logging.debug('Commit message:\n%s', commit_msg)
   else:
-    logging.info('No deps changes detected when rolling from %s to %s. '
-                 'Aborting without action.', current_cr_rev, opts.revision)
+    logging.info('Currently pinned chromium_revision: %s (#%s) is newer than '
+                 '%s (#%s). To roll to older revisions, you must pass the '
+                 '--allow-reverse flag.\n'
+                 'Aborting without action.', current_cr_rev, current_commit_pos,
+                 new_cr_rev, new_commit_pos)
     return 0
 
   _CreateRollBranch(opts.dry_run)
-  UpdateDeps(deps_filename, current_cr_rev, opts.revision)
+  UpdateDeps(deps_filename, current_cr_rev, new_cr_rev)
   _LocalCommit(commit_msg, opts.dry_run)
-  _UploadCL(opts.dry_run)
+  _UploadCL(opts.dry_run, opts.rietveld_email)
   _LaunchTrybots(opts.dry_run, opts.skip_try)
+  _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
 
 

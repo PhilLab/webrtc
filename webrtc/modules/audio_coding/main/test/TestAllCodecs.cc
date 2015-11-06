@@ -18,10 +18,10 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 
@@ -74,7 +74,7 @@ int32_t TestPack::SendData(FrameType frame_type, uint8_t payload_type,
   } else {
     rtp_info.type.Audio.isCNG = false;
   }
-  if (frame_type == kFrameEmpty) {
+  if (frame_type == kEmptyFrame) {
     // Skip this frame.
     return 0;
   }
@@ -477,8 +477,7 @@ void TestAllCodecs::OpenOutFile(int test_number) {
 
 void TestAllCodecs::DisplaySendReceiveCodec() {
   CodecInst my_codec_param;
-  acm_a_->SendCodec(&my_codec_param);
-  printf("%s -> ", my_codec_param.plname);
+  printf("%s -> ", acm_a_->SendCodec()->plname);
   acm_b_->ReceiveCodec(&my_codec_param);
   printf("%s\n", my_codec_param.plname);
 }

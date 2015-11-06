@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 
 #include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t_impl.h"
 
@@ -16,6 +16,5 @@ namespace webrtc {
 
 // Explicit instantiation:
 template class AudioEncoderIsacT<IsacFloat>;
-template class AudioDecoderIsacT<IsacFloat>;
 
 }  // namespace webrtc

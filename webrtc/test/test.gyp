@@ -126,6 +126,7 @@
       'dependencies': [
         'field_trial',
         'histogram',
+        'test_support',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],
@@ -162,6 +163,11 @@
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
           },
+        }],
+        ['use_x11==1', {
+          'dependencies': [
+            '<(DEPTH)/tools/xdisplaycheck/xdisplaycheck.gyp:xdisplaycheck',
+          ],
         }],
       ],
     },

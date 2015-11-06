@@ -35,7 +35,7 @@ class VP9EncoderImpl : public VP9Encoder {
 
   int Encode(const VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
-             const std::vector<VideoFrameType>* frame_types) override;
+             const std::vector<FrameType>* frame_types) override;
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
 
@@ -56,6 +56,7 @@ class VP9EncoderImpl : public VP9Encoder {
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp);
 
+  bool ExplicitlyConfiguredSpatialLayers() const;
   bool SetSvcRates();
 
   virtual int GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt);

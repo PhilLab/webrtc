@@ -24,9 +24,9 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
@@ -902,7 +902,6 @@ TEST_F(ApmTest, SampleRatesInt) {
   for (size_t i = 0; i < sizeof(fs) / sizeof(*fs); i++) {
     SetContainerFormat(fs[i], 2, frame_, &float_cb_);
     EXPECT_NOERR(ProcessStreamChooser(kIntFormat));
-    EXPECT_EQ(fs[i], apm_->input_sample_rate_hz());
   }
 }
 
@@ -2748,10 +2747,6 @@ INSTANTIATE_TEST_CASE_P(
                     std::tr1::make_tuple(16000, 16000, 32000, 16000, 40, 20),
                     std::tr1::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 #endif
-
-// TODO(henrike): re-implement functionality lost when removing the old main
-//                function. See
-//                https://code.google.com/p/webrtc/issues/detail?id=1981
 
 }  // namespace
 }  // namespace webrtc

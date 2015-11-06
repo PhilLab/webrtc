@@ -24,12 +24,6 @@
 
 namespace webrtc {
 
-namespace newapi {
-// RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
-// RTCP mode is described by RFC 5506.
-enum RtcpMode { kRtcpCompound, kRtcpReducedSize };
-}  // namespace newapi
-
 class VideoDecoder;
 
 class VideoReceiveStream : public ReceiveStream {
@@ -89,7 +83,7 @@ class VideoReceiveStream : public ReceiveStream {
 
   struct Config {
     Config() = delete;
-    explicit Config(newapi::Transport* rtcp_send_transport)
+    explicit Config(Transport* rtcp_send_transport)
         : rtcp_send_transport(rtcp_send_transport) {}
 
     std::string ToString() const;
@@ -107,7 +101,7 @@ class VideoReceiveStream : public ReceiveStream {
       uint32_t local_ssrc = 0;
 
       // See RtcpMode for description.
-      newapi::RtcpMode rtcp_mode = newapi::kRtcpCompound;
+      RtcpMode rtcp_mode = RtcpMode::kCompound;
 
       // Extended RTCP settings.
       struct RtcpXr {
@@ -139,12 +133,17 @@ class VideoReceiveStream : public ReceiveStream {
       typedef std::map<int, Rtx> RtxMap;
       RtxMap rtx;
 
+      // If set to true, the RTX payload type mapping supplied in |rtx| will be
+      // used when restoring RTX packets. Without it, RTX packets will always be
+      // restored to the last non-RTX packet payload type received.
+      bool use_rtx_payload_mapping_on_restore = false;
+
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;
 
     // Transport for outgoing packets (RTCP).
-    newapi::Transport* rtcp_send_transport = nullptr;
+    Transport* rtcp_send_transport = nullptr;
 
     // VideoRenderer will be called for each decoded frame. 'nullptr' disables
     // rendering of this stream.

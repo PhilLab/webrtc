@@ -161,11 +161,12 @@ static const int kFifoBufferSize = 4096;
 class SSLStreamAdapterTestBase : public testing::Test,
                                  public sigslot::has_slots<> {
  public:
-  SSLStreamAdapterTestBase(const std::string& client_cert_pem,
-                           const std::string& client_private_key_pem,
-                           bool dtls,
-                           rtc::KeyType client_key_type = rtc::KT_DEFAULT,
-                           rtc::KeyType server_key_type = rtc::KT_DEFAULT)
+  SSLStreamAdapterTestBase(
+      const std::string& client_cert_pem,
+      const std::string& client_private_key_pem,
+      bool dtls,
+      rtc::KeyParams client_key_type = rtc::KeyParams(rtc::KT_DEFAULT),
+      rtc::KeyParams server_key_type = rtc::KeyParams(rtc::KT_DEFAULT))
       : client_buffer_(kFifoBufferSize),
         server_buffer_(kFifoBufferSize),
         client_stream_(
@@ -224,17 +225,17 @@ class SSLStreamAdapterTestBase : public testing::Test,
     server_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
 
     rtc::SSLIdentityParams client_params;
+    client_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     client_params.common_name = "client";
     client_params.not_before = not_before;
     client_params.not_after = not_after;
-    client_params.key_type = rtc::KT_DEFAULT;
     client_identity_ = rtc::SSLIdentity::GenerateForTest(client_params);
 
     rtc::SSLIdentityParams server_params;
+    server_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     server_params.common_name = "server";
     server_params.not_before = not_before;
     server_params.not_after = not_after;
-    server_params.key_type = rtc::KT_DEFAULT;
     server_identity_ = rtc::SSLIdentity::GenerateForTest(server_params);
 
     client_ssl_->SetIdentity(client_identity_);
@@ -334,7 +335,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
                                       size_t data_len, size_t *written,
                                       int *error) {
     // Randomly drop loss_ percent of packets
-    if (rtc::CreateRandomId() % 100 < static_cast<uint32>(loss_)) {
+    if (rtc::CreateRandomId() % 100 < static_cast<uint32_t>(loss_)) {
       LOG(LS_INFO) << "Randomly dropping packet, size=" << data_len;
       *written = data_len;
       return rtc::SR_SUCCESS;
@@ -410,11 +411,11 @@ class SSLStreamAdapterTestBase : public testing::Test,
       return server_ssl_->GetPeerCertificate(cert);
   }
 
-  bool GetSslCipher(bool client, std::string *retval) {
+  bool GetSslCipherSuite(bool client, int* retval) {
     if (client)
-      return client_ssl_->GetSslCipher(retval);
+      return client_ssl_->GetSslCipherSuite(retval);
     else
-      return server_ssl_->GetSslCipher(retval);
+      return server_ssl_->GetSslCipherSuite(retval);
   }
 
   bool ExportKeyingMaterial(const char *label,
@@ -462,7 +463,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
 
 class SSLStreamAdapterTestTLS
     : public SSLStreamAdapterTestBase,
-      public WithParamInterface<tuple<rtc::KeyType, rtc::KeyType>> {
+      public WithParamInterface<tuple<rtc::KeyParams, rtc::KeyParams>> {
  public:
   SSLStreamAdapterTestTLS()
       : SSLStreamAdapterTestBase("",
@@ -570,7 +571,7 @@ class SSLStreamAdapterTestTLS
 
 class SSLStreamAdapterTestDTLS
     : public SSLStreamAdapterTestBase,
-      public WithParamInterface<tuple<rtc::KeyType, rtc::KeyType>> {
+      public WithParamInterface<tuple<rtc::KeyParams, rtc::KeyParams>> {
  public:
   SSLStreamAdapterTestDTLS()
       : SSLStreamAdapterTestBase("",
@@ -700,24 +701,6 @@ class SSLStreamAdapterTestDTLSFromPEMStrings : public SSLStreamAdapterTestDTLS {
 };
 
 // Basic tests: TLS
-
-// Test that we cannot read/write if we have not yet handshaked.
-// This test only applies to NSS because OpenSSL has passthrough
-// semantics for I/O before the handshake is started.
-#if SSL_USE_NSS
-TEST_P(SSLStreamAdapterTestTLS, TestNoReadWriteBeforeConnect) {
-  rtc::StreamResult rv;
-  char block[kBlockSize];
-  size_t dummy;
-
-  rv = client_ssl_->Write(block, sizeof(block), &dummy, NULL);
-  ASSERT_EQ(rtc::SR_BLOCK, rv);
-
-  rv = client_ssl_->Read(block, sizeof(block), &dummy, NULL);
-  ASSERT_EQ(rtc::SR_BLOCK, rv);
-}
-#endif
-
 
 // Test that we can make a handshake work
 TEST_P(SSLStreamAdapterTestTLS, TestTLSConnect) {
@@ -985,79 +968,96 @@ TEST_P(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 
 // Test getting the used DTLS ciphers.
 // DTLS 1.2 enabled for neither client nor server -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
-                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
-            server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
+      server_cipher);
 }
 
 // Test getting the used DTLS 1.2 ciphers.
 // DTLS 1.2 enabled for client and server -> DTLS 1.2 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Both) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
-                rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam())),
-            server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+          rtc::SSL_PROTOCOL_DTLS_12, ::testing::get<1>(GetParam()).type()),
+      server_cipher);
 }
 
 // DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Client) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
-                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
-            server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
+      server_cipher);
 }
 
 // DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Server) {
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
-  std::string client_cipher;
-  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
-  std::string server_cipher;
-  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(
-                rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam())),
-            server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipherForTest(
+          rtc::SSL_PROTOCOL_DTLS_10, ::testing::get<1>(GetParam()).type()),
+      server_cipher);
 }
 
-INSTANTIATE_TEST_CASE_P(SSLStreamAdapterTestsTLS,
-                        SSLStreamAdapterTestTLS,
-                        Combine(Values(rtc::KT_RSA, rtc::KT_ECDSA),
-                                Values(rtc::KT_RSA, rtc::KT_ECDSA)));
-INSTANTIATE_TEST_CASE_P(SSLStreamAdapterTestsDTLS,
-                        SSLStreamAdapterTestDTLS,
-                        Combine(Values(rtc::KT_RSA, rtc::KT_ECDSA),
-                                Values(rtc::KT_RSA, rtc::KT_ECDSA)));
+// The RSA keysizes here might look strange, why not include the RFC's size
+// 2048?. The reason is test case slowness; testing two sizes to exercise
+// parametrization is sufficient.
+INSTANTIATE_TEST_CASE_P(
+    SSLStreamAdapterTestsTLS,
+    SSLStreamAdapterTestTLS,
+    Combine(Values(rtc::KeyParams::RSA(1024, 65537),
+                   rtc::KeyParams::RSA(1152, 65537),
+                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256)),
+            Values(rtc::KeyParams::RSA(1024, 65537),
+                   rtc::KeyParams::RSA(1152, 65537),
+                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));
+INSTANTIATE_TEST_CASE_P(
+    SSLStreamAdapterTestsDTLS,
+    SSLStreamAdapterTestDTLS,
+    Combine(Values(rtc::KeyParams::RSA(1024, 65537),
+                   rtc::KeyParams::RSA(1152, 65537),
+                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256)),
+            Values(rtc::KeyParams::RSA(1024, 65537),
+                   rtc::KeyParams::RSA(1152, 65537),
+                   rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));

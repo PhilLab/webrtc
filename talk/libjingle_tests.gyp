@@ -64,7 +64,6 @@
       'sources': [
         'media/base/fakecapturemanager.h',
         'media/base/fakemediaengine.h',
-        'media/base/fakemediaprocessor.h',
         'media/base/fakenetworkinterface.h',
         'media/base/fakertp.h',
         'media/base/fakevideocapturer.h',
@@ -72,7 +71,6 @@
         'media/base/testutils.cc',
         'media/base/testutils.h',
         'media/devices/fakedevicemanager.h',
-        'media/webrtc/dummyinstantiation.cc',
         'media/webrtc/fakewebrtccall.cc',
         'media/webrtc/fakewebrtccall.h',
         'media/webrtc/fakewebrtccommon.h',
@@ -165,6 +163,7 @@
       'dependencies': [
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle',
+        'libjingle.gyp:libjingle_peerconnection',
         'libjingle.gyp:libjingle_p2p',
         'libjingle_unittest_main',
       ],
@@ -236,14 +235,13 @@
         'app/webrtc/jsepsessiondescription_unittest.cc',
         'app/webrtc/localaudiosource_unittest.cc',
         'app/webrtc/mediastream_unittest.cc',
-        'app/webrtc/mediastreamhandler_unittest.cc',
-        'app/webrtc/mediastreamsignaling_unittest.cc',
         'app/webrtc/peerconnection_unittest.cc',
         'app/webrtc/peerconnectionendtoend_unittest.cc',
         'app/webrtc/peerconnectionfactory_unittest.cc',
         'app/webrtc/peerconnectioninterface_unittest.cc',
         # 'app/webrtc/peerconnectionproxy_unittest.cc',
         'app/webrtc/remotevideocapturer_unittest.cc',
+        'app/webrtc/rtpsenderreceiver_unittest.cc',
         'app/webrtc/sctputils.cc',
         'app/webrtc/statscollector_unittest.cc',
         'app/webrtc/test/fakeaudiocapturemodule.cc',
@@ -387,6 +385,7 @@
           'includes': [ 'build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             'libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [
@@ -418,6 +417,7 @@
           'includes': [ 'build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
             '<(webrtc_root)/libjingle_examples.gyp:apprtc_signaling',
           ],

@@ -14,12 +14,12 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
 using std::string;
@@ -947,7 +947,7 @@ std::vector<int> BweTest::GetFileSizesBytes(int num_files) {
   const int kMinKbytes = 100;
   const int kMaxKbytes = 1000;
 
-  Random random(0x12345678);
+  test::Random random(0x12345678);
   std::vector<int> tcp_file_sizes_bytes;
 
   while (num_files-- > 0) {
@@ -960,7 +960,7 @@ std::vector<int> BweTest::GetFileSizesBytes(int num_files) {
 std::vector<int64_t> BweTest::GetStartingTimesMs(int num_files) {
   // OFF state behaves as an exp. distribution with mean = 10 seconds.
   const float kMeanMs = 10000.0f;
-  Random random(0x12345678);
+  test::Random random(0x12345678);
 
   std::vector<int64_t> tcp_starting_times_ms;
 

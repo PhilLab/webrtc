@@ -23,7 +23,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -66,8 +66,7 @@ struct Cluster {
 class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
  public:
   RemoteBitrateEstimatorAbsSendTime(RemoteBitrateObserver* observer,
-                                    Clock* clock,
-                                    uint32_t min_bitrate_bps);
+                                    Clock* clock);
   virtual ~RemoteBitrateEstimatorAbsSendTime() {}
 
   void IncomingPacketFeedbackVector(
@@ -88,6 +87,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                       unsigned int* bitrate_bps) const override;
   bool GetStats(ReceiveBandwidthEstimatorStats* output) const override;
+  void SetMinBitrate(int min_bitrate_bps) override;
 
  private:
   typedef std::map<unsigned int, int64_t> Ssrcs;

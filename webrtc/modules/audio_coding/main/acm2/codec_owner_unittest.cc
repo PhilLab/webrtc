@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstring>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/safe_conversions.h"
@@ -34,7 +36,8 @@ class CodecOwnerTest : public ::testing::Test {
   CodecOwnerTest() : timestamp_(0) {}
 
   void CreateCodec() {
-    codec_owner_.SetEncoders(kDefaultCodecInst, kCngPt, VADNormal, -1);
+    ASSERT_TRUE(
+        codec_owner_.SetEncoders(kDefaultCodecInst, kCngPt, VADNormal, -1));
   }
 
   void EncodeAndVerify(size_t expected_out_length,
@@ -43,8 +46,8 @@ class CodecOwnerTest : public ::testing::Test {
                        int expected_send_even_if_empty) {
     uint8_t out[kPacketSizeSamples];
     AudioEncoder::EncodedInfo encoded_info;
-    encoded_info = codec_owner_.Encoder()->Encode(
-        timestamp_, kZeroData, kDataLengthSamples, kPacketSizeSamples, out);
+    encoded_info = codec_owner_.Encoder()->Encode(timestamp_, kZeroData,
+                                                  kPacketSizeSamples, out);
     timestamp_ += kDataLengthSamples;
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);
@@ -143,40 +146,40 @@ TEST_F(CodecOwnerTest, ExternalEncoder) {
   AudioEncoder::EncodedInfo info;
   EXPECT_CALL(external_encoder, SampleRateHz())
       .WillRepeatedly(Return(kSampleRateHz));
+  EXPECT_CALL(external_encoder, NumChannels()).WillRepeatedly(Return(1));
 
   {
     InSequence s;
     info.encoded_timestamp = 0;
     EXPECT_CALL(external_encoder,
-                EncodeInternal(0, audio, arraysize(encoded), encoded))
+                EncodeInternal(0, rtc::ArrayView<const int16_t>(audio),
+                               arraysize(encoded), encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(external_encoder, Mark("A"));
     EXPECT_CALL(external_encoder, Mark("B"));
     info.encoded_timestamp = 2;
     EXPECT_CALL(external_encoder,
-                EncodeInternal(2, audio, arraysize(encoded), encoded))
+                EncodeInternal(2, rtc::ArrayView<const int16_t>(audio),
+                               arraysize(encoded), encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(external_encoder, Die());
   }
 
-  info = codec_owner_.Encoder()->Encode(0, audio, arraysize(audio),
-                                        arraysize(encoded), encoded);
+  info = codec_owner_.Encoder()->Encode(0, audio, arraysize(encoded), encoded);
   EXPECT_EQ(0u, info.encoded_timestamp);
   external_encoder.Mark("A");
 
   // Change to internal encoder.
   CodecInst codec_inst = kDefaultCodecInst;
   codec_inst.pacsize = kPacketSizeSamples;
-  codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1);
+  ASSERT_TRUE(codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1));
   // Don't expect any more calls to the external encoder.
-  info = codec_owner_.Encoder()->Encode(1, audio, arraysize(audio),
-                                        arraysize(encoded), encoded);
+  info = codec_owner_.Encoder()->Encode(1, audio, arraysize(encoded), encoded);
   external_encoder.Mark("B");
 
   // Change back to external encoder again.
   codec_owner_.SetEncoders(&external_encoder, -1, VADNormal, -1);
-  info = codec_owner_.Encoder()->Encode(2, audio, arraysize(audio),
-                                        arraysize(encoded), encoded);
+  info = codec_owner_.Encoder()->Encode(2, audio, arraysize(encoded), encoded);
   EXPECT_EQ(2u, info.encoded_timestamp);
 }
 
@@ -194,6 +197,13 @@ TEST_F(CodecOwnerTest, CngAndRedResetsSpeechEncoder) {
 
 TEST_F(CodecOwnerTest, NoCngAndRedNoSpeechEncoderReset) {
   TestCngAndRedResetSpeechEncoder(false, false);
+}
+
+TEST_F(CodecOwnerTest, SetEncodersError) {
+  CodecInst codec_inst = kDefaultCodecInst;
+  static const char bad_name[] = "Robert'); DROP TABLE Students;";
+  std::memcpy(codec_inst.plname, bad_name, sizeof bad_name);
+  EXPECT_FALSE(codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1));
 }
 
 }  // namespace acm2

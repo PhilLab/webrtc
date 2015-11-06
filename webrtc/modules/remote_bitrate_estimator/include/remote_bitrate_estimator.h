@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -90,6 +90,8 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
 
   // Returns true if the statistics are available.
   virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;
+
+  virtual void SetMinBitrate(int min_bitrate_bps) = 0;
 
  protected:
   static const int64_t kProcessIntervalMs = 500;

@@ -28,9 +28,9 @@
 #include "webrtc/modules/audio_device/android/ensure_initialized.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 using std::cout;
@@ -824,11 +824,22 @@ TEST_F(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
-TEST_F(AudioDeviceTest, StartStopPlayout) {
+// Flaky on our trybots makes this test unusable.
+// https://code.google.com/p/webrtc/issues/detail?id=5046
+TEST_F(AudioDeviceTest, DISABLED_StartStopPlayout) {
   StartPlayout();
   StopPlayout();
   StartPlayout();
   StopPlayout();
+}
+
+// Tests that recording can be initiated, started and stopped. No audio callback
+// is registered in this test.
+TEST_F(AudioDeviceTest, StartStopRecording) {
+  StartRecording();
+  StopRecording();
+  StartRecording();
+  StopRecording();
 }
 
 // Verify that calling StopPlayout() will leave us in an uninitialized state

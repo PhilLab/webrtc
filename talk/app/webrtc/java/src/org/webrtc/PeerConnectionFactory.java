@@ -39,7 +39,10 @@ public class PeerConnectionFactory {
     System.loadLibrary("jingle_peerconnection_so");
   }
 
+  private static final String TAG = "PeerConnectionFactory";
   private final long nativeFactory;
+  private static Thread workerThread;
+  private static Thread signalingThread;
 
   public static class Options {
     // Keep in sync with webrtc/base/network.h!
@@ -52,6 +55,7 @@ public class PeerConnectionFactory {
 
     public int networkIgnoreMask;
     public boolean disableEncryption;
+    public boolean disableNetworkMonitor;
   }
 
   // |context| is an android.content.Context object, but we keep it untyped here
@@ -136,7 +140,40 @@ public class PeerConnectionFactory {
   }
 
   public void dispose() {
-    freeFactory(nativeFactory);
+    nativeFreeFactory(nativeFactory);
+    signalingThread = null;
+    workerThread = null;
+  }
+
+  public void threadsCallbacks() {
+    nativeThreadsCallbacks(nativeFactory);
+  }
+
+  private static void printStackTrace(Thread thread, String threadName) {
+    if (thread != null) {
+      StackTraceElement[] stackTraces = thread.getStackTrace();
+      if (stackTraces.length > 0) {
+        Logging.d(TAG, threadName + " stacks trace:");
+        for (StackTraceElement stackTrace : stackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
+  }
+
+  public static void printStackTraces() {
+    printStackTrace(workerThread, "Worker thread");
+    printStackTrace(signalingThread, "Signaling thread");
+  }
+
+  private static void onWorkerThreadReady() {
+    workerThread = Thread.currentThread();
+    Logging.d(TAG, "onWorkerThreadReady");
+  }
+
+  private static void onSignalingThreadReady() {
+    signalingThread = Thread.currentThread();
+    Logging.d(TAG, "onSignalingThreadReady");
   }
 
   private static native long nativeCreatePeerConnectionFactory();
@@ -169,5 +206,7 @@ public class PeerConnectionFactory {
   private static native void nativeSetVideoHwAccelerationOptions(
       long nativeFactory, Object renderEGLContext);
 
-  private static native void freeFactory(long nativeFactory);
+  private static native void nativeThreadsCallbacks(long nativeFactory);
+
+  private static native void nativeFreeFactory(long nativeFactory);
 }

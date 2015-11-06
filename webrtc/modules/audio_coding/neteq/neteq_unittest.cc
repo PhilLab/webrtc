@@ -12,7 +12,7 @@
  * This file includes unit tests for NetEQ.
  */
 
-#include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -304,31 +304,32 @@ void NetEqDecodingTest::TearDown() {
 
 void NetEqDecodingTest::LoadDecoders() {
   // Load PCMu.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCMu, 0));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCMu, 0));
   // Load PCMa.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCMa, 8));
-#ifndef WEBRTC_ANDROID
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCMa, 8));
+#ifdef WEBRTC_CODEC_ILBC
   // Load iLBC.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderILBC, 102));
-#endif  // WEBRTC_ANDROID
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderILBC, 102));
+#endif
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
   // Load iSAC.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISAC, 103));
-#ifndef WEBRTC_ANDROID
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISAC, 103));
+#endif
+#ifdef WEBRTC_CODEC_ISAC
   // Load iSAC SWB.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISACswb, 104));
-  // Load iSAC FB.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISACfb, 105));
-#endif  // WEBRTC_ANDROID
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISACswb, 104));
+#endif
   // Load PCM16B nb.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16B, 93));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16B, 93));
   // Load PCM16B wb.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16Bwb, 94));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16Bwb, 94));
   // Load PCM16B swb32.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16Bswb32kHz, 95));
+  ASSERT_EQ(
+      0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16Bswb32kHz, 95));
   // Load CNG 8 kHz.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGnb, 13));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGnb, 13));
   // Load CNG 16 kHz.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGwb, 98));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGwb, 98));
 }
 
 void NetEqDecodingTest::OpenInputFile(const std::string &rtp_file) {
@@ -441,8 +442,15 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISAC)) && \
+    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
+#define IF_ALL_CODECS(x) x
+#else
+#define IF_ALL_CODECS(x) DISABLED_##x
+#endif
+
 TEST_F(NetEqDecodingTest,
-       DISABLED_ON_IOS(DISABLED_ON_ANDROID(TestBitExactness))) {
+       DISABLED_ON_IOS(DISABLED_ON_ANDROID(IF_ALL_CODECS(TestBitExactness)))) {
   const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
   // Note that neteq4_universal_ref.pcm and neteq4_universal_ref_win_32.pcm
@@ -820,7 +828,13 @@ TEST_F(NetEqDecodingTest, UnknownPayloadType) {
   EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(DecoderError)) {
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+#define IF_ISAC(x) x
+#else
+#define IF_ISAC(x) DISABLED_##x
+#endif
+
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(IF_ISAC(DecoderError))) {
   const size_t kPayloadBytes = 100;
   uint8_t payload[kPayloadBytes] = {0};
   WebRtcRTPHeader rtp_info;
@@ -925,8 +939,10 @@ class NetEqBgnTest : public NetEqDecodingTest {
 
     uint32_t receive_timestamp = 0;
     for (int n = 0; n < 10; ++n) {  // Insert few packets and get audio.
-      size_t enc_len_bytes = WebRtcPcm16b_Encode(
-          input.GetNextBlock(), expected_samples_per_channel, payload);
+      auto block = input.GetNextBlock();
+      ASSERT_EQ(expected_samples_per_channel, block.size());
+      size_t enc_len_bytes =
+          WebRtcPcm16b_Encode(block.data(), block.size(), payload);
       ASSERT_EQ(enc_len_bytes, expected_samples_per_channel * 2);
 
       number_channels = 0;
@@ -1051,7 +1067,7 @@ TEST_F(NetEqBgnTestFade, RunTest) {
   CheckBgn(32000);
 }
 
-TEST_F(NetEqDecodingTest, SyncPacketInsert) {
+TEST_F(NetEqDecodingTest, IF_ISAC(SyncPacketInsert)) {
   WebRtcRTPHeader rtp_info;
   uint32_t receive_timestamp = 0;
   // For the readability use the following payloads instead of the defaults of
@@ -1066,17 +1082,22 @@ TEST_F(NetEqDecodingTest, SyncPacketInsert) {
   uint8_t kIsacPayloadType = 9;  // Payload type 8 is already registered.
 
   // Register decoders.
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16Bwb,
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderPCM16Bwb,
                                            kPcm16WbPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGnb, kCngNbPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGwb, kCngWbPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGswb32kHz,
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGnb,
+                                           kCngNbPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGwb,
+                                           kCngWbPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGswb32kHz,
                                            kCngSwb32PayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderCNGswb48kHz,
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderCNGswb48kHz,
                                            kCngSwb48PayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderAVT, kAvtPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderRED, kRedPayloadType));
-  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISAC, kIsacPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderAVT,
+                                           kAvtPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderRED,
+                                           kRedPayloadType));
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(NetEqDecoder::kDecoderISAC,
+                                           kIsacPayloadType));
 
   PopulateRtpInfo(0, 0, &rtp_info);
   rtp_info.header.payloadType = kPcm16WbPayloadType;

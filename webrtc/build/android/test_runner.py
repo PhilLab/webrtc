@@ -33,7 +33,7 @@ def main():
   # pylint: disable=protected-access
   gtest_test_instance._DEFAULT_ISOLATE_FILE_PATHS.update({
     'audio_decoder_unittests':
-        'webrtc/modules/audio_coding/neteq/audio_decoder_unittests.isolate',
+        'webrtc/modules/audio_decoder_unittests.isolate',
     'common_audio_unittests':
         'webrtc/common_audio/common_audio_unittests.isolate',
     'common_video_unittests':
@@ -52,6 +52,7 @@ def main():
         'webrtc/video_engine/video_engine_core_unittests.isolate',
     'voice_engine_unittests':
         'webrtc/voice_engine/voice_engine_unittests.isolate',
+    'webrtc_nonparallel_tests': 'webrtc/webrtc_nonparallel_tests.isolate',
     'webrtc_perf_tests': 'webrtc/webrtc_perf_tests.isolate',
   })
   # Override environment variable to make it possible for the scripts to find

@@ -8,14 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include <stddef.h>
 #include <list>
 
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
 
 #define RTCP_CNAME_SIZE 256    // RFC 3550 page 44, including null termination
@@ -52,13 +54,6 @@ union PayloadUnion
     VideoPayload Video;
 };
 
-enum RTCPMethod
-{
-    kRtcpOff          = 0,
-    kRtcpCompound     = 1,
-    kRtcpNonCompound = 2
-};
-
 enum RTPAliveType
 {
     kRtpDead   = 0,
@@ -72,7 +67,6 @@ enum ProtectionType {
 };
 
 enum StorageType {
-  kDontStore,
   kDontRetransmit,
   kAllowRetransmission
 };
@@ -111,15 +105,11 @@ enum RTCPPacketType : uint32_t {
   kRtcpRemb = 0x10000,
   kRtcpTransmissionTimeOffset = 0x20000,
   kRtcpXrReceiverReferenceTime = 0x40000,
-  kRtcpXrDlrrReportBlock = 0x80000
+  kRtcpXrDlrrReportBlock = 0x80000,
+  kRtcpTransportFeedback = 0x100000,
 };
 
-enum KeyFrameRequestMethod
-{
-    kKeyFrameReqFirRtp    = 1,
-    kKeyFrameReqPliRtcp   = 2,
-    kKeyFrameReqFirRtcp   = 3
-};
+enum KeyFrameRequestMethod { kKeyFrameReqPliRtcp, kKeyFrameReqFirRtcp };
 
 enum RtpRtcpPacketType
 {
@@ -293,16 +283,36 @@ class RtcpBandwidthObserver {
 };
 
 struct PacketInfo {
+  PacketInfo(int64_t arrival_time_ms, uint16_t sequence_number)
+      : PacketInfo(-1, arrival_time_ms, -1, sequence_number, 0, false) {}
+
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
              size_t payload_size,
              bool was_paced)
-      : arrival_time_ms(arrival_time_ms),
+      : PacketInfo(-1,
+                   arrival_time_ms,
+                   send_time_ms,
+                   sequence_number,
+                   payload_size,
+                   was_paced) {}
+
+  PacketInfo(int64_t creation_time_ms,
+             int64_t arrival_time_ms,
+             int64_t send_time_ms,
+             uint16_t sequence_number,
+             size_t payload_size,
+             bool was_paced)
+      : creation_time_ms(creation_time_ms),
+        arrival_time_ms(arrival_time_ms),
         send_time_ms(send_time_ms),
         sequence_number(sequence_number),
         payload_size(payload_size),
         was_paced(was_paced) {}
+
+  // Time corresponding to when this object was created.
+  int64_t creation_time_ms;
   // Time corresponding to when the packet was received. Timestamped with the
   // receiver's clock.
   int64_t arrival_time_ms;
@@ -325,7 +335,9 @@ class TransportFeedbackObserver {
 
   // Note: Transport-wide sequence number as sequence number. Arrival time
   // must be set to 0.
-  virtual void OnPacketSent(const PacketInfo& info) = 0;
+  virtual void AddPacket(uint16_t sequence_number,
+                         size_t length,
+                         bool was_paced) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 };
@@ -395,5 +407,36 @@ struct RtpPacketLossStats {
   uint64_t multiple_packet_loss_packet_count;
 };
 
+class RtpPacketSender {
+ public:
+  RtpPacketSender() {}
+  virtual ~RtpPacketSender() {}
+
+  enum Priority {
+    kHighPriority = 0,    // Pass through; will be sent immediately.
+    kNormalPriority = 2,  // Put in back of the line.
+    kLowPriority = 3,     // Put in back of the low priority line.
+  };
+  // Low priority packets are mixed with the normal priority packets
+  // while we are paused.
+
+  // Returns true if we send the packet now, else it will add the packet
+  // information to the queue and call TimeToSendPacket when it's time to send.
+  virtual void InsertPacket(Priority priority,
+                            uint32_t ssrc,
+                            uint16_t sequence_number,
+                            int64_t capture_time_ms,
+                            size_t bytes,
+                            bool retransmission) = 0;
+};
+
+class TransportSequenceNumberAllocator {
+ public:
+  TransportSequenceNumberAllocator() {}
+  virtual ~TransportSequenceNumberAllocator() {}
+
+  virtual uint16_t AllocateSequenceNumber() = 0;
+};
+
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_

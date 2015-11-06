@@ -11,17 +11,17 @@
 #include "webrtc/video/video_capture_input.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_engine/overuse_frame_detector.h"
 #include "webrtc/video_engine/vie_encoder.h"
@@ -29,21 +29,23 @@
 namespace webrtc {
 
 namespace internal {
-VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
-                                     VideoCaptureCallback* frame_callback,
-                                     VideoRenderer* local_renderer,
-                                     SendStatisticsProxy* stats_proxy,
-                                     CpuOveruseObserver* overuse_observer)
+VideoCaptureInput::VideoCaptureInput(
+    ProcessThread* module_process_thread,
+    VideoCaptureCallback* frame_callback,
+    VideoRenderer* local_renderer,
+    SendStatisticsProxy* stats_proxy,
+    CpuOveruseObserver* overuse_observer,
+    EncodingTimeObserver* encoding_time_observer)
     : capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       module_process_thread_(module_process_thread),
       frame_callback_(frame_callback),
       local_renderer_(local_renderer),
       stats_proxy_(stats_proxy),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      capture_thread_(ThreadWrapper::CreateThread(CaptureThreadFunction,
+      encoder_thread_(ThreadWrapper::CreateThread(EncoderThreadFunction,
                                                   this,
-                                                  "CaptureThread")),
-      capture_event_(*EventWrapper::Create()),
+                                                  "EncoderThread")),
+      capture_event_(EventWrapper::Create()),
       stop_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(
@@ -52,9 +54,10 @@ VideoCaptureInput::VideoCaptureInput(ProcessThread* module_process_thread,
       overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock(),
                                                  CpuOveruseOptions(),
                                                  overuse_observer,
-                                                 stats_proxy)) {
-  capture_thread_->Start();
-  capture_thread_->SetPriority(kHighPriority);
+                                                 stats_proxy)),
+      encoding_time_observer_(encoding_time_observer) {
+  encoder_thread_->Start();
+  encoder_thread_->SetPriority(kHighPriority);
   module_process_thread_->RegisterModule(overuse_detector_.get());
 }
 
@@ -63,11 +66,8 @@ VideoCaptureInput::~VideoCaptureInput() {
 
   // Stop the thread.
   rtc::AtomicOps::ReleaseStore(&stop_, 1);
-  capture_event_.Set();
-
-  // Stop the camera input.
-  capture_thread_->Stop();
-  delete &capture_event_;
+  capture_event_->Set();
+  encoder_thread_->Stop();
 }
 
 void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
@@ -124,17 +124,17 @@ void VideoCaptureInput::IncomingCapturedFrame(const VideoFrame& video_frame) {
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  capture_event_.Set();
+  capture_event_->Set();
 }
 
-bool VideoCaptureInput::CaptureThreadFunction(void* obj) {
-  return static_cast<VideoCaptureInput*>(obj)->CaptureProcess();
+bool VideoCaptureInput::EncoderThreadFunction(void* obj) {
+  return static_cast<VideoCaptureInput*>(obj)->EncoderProcess();
 }
 
-bool VideoCaptureInput::CaptureProcess() {
+bool VideoCaptureInput::EncoderProcess() {
   static const int kThreadWaitTimeMs = 100;
   int64_t capture_time = -1;
-  if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
+  if (capture_event_->Wait(kThreadWaitTimeMs) == kEventSignaled) {
     if (rtc::AtomicOps::AcquireLoad(&stop_))
       return false;
 
@@ -158,6 +158,10 @@ bool VideoCaptureInput::CaptureProcess() {
           Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time);
       overuse_detector_->FrameEncoded(encode_time_ms);
       stats_proxy_->OnEncodedFrame(encode_time_ms);
+      if (encoding_time_observer_) {
+        encoding_time_observer_->OnReportEncodedTime(
+            deliver_frame.ntp_time_ms(), encode_time_ms);
+      }
     }
   }
   // We're done!

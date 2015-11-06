@@ -19,10 +19,10 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -98,15 +98,17 @@ class ConferenceTransport: public webrtc::Transport {
   bool GetReceiverStatistics(unsigned int id, webrtc::CallStatistics* stats);
 
   // Inherit from class webrtc::Transport.
-  int SendPacket(const void *data, size_t len) override;
-  int SendRTCPPacket(const void *data, size_t len) override;
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const webrtc::PacketOptions& options) override;
+  bool SendRtcp(const uint8_t *data, size_t len) override;
 
  private:
   struct Packet {
     enum Type { Rtp, Rtcp, } type_;
 
     Packet() : len_(0) {}
-    Packet(Type type, const void* data, size_t len, uint32 time_ms)
+    Packet(Type type, const void* data, size_t len, uint32_t time_ms)
         : type_(type), len_(len), send_time_ms_(time_ms) {
       EXPECT_LE(len_, kMaxPacketSizeByte);
       memcpy(data_, data, len_);
@@ -114,7 +116,7 @@ class ConferenceTransport: public webrtc::Transport {
 
     uint8_t data_[kMaxPacketSizeByte];
     size_t len_;
-    uint32 send_time_ms_;
+    uint32_t send_time_ms_;
   };
 
   static bool Run(void* transport) {

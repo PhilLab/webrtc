@@ -16,13 +16,14 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_checksum.h"
@@ -32,12 +33,12 @@
 #include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
@@ -91,7 +92,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
  public:
   PacketizationCallbackStubOldApi()
       : num_calls_(0),
-        last_frame_type_(kFrameEmpty),
+        last_frame_type_(kEmptyFrame),
         last_payload_type_(-1),
         last_timestamp_(0),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
@@ -248,30 +249,6 @@ TEST_F(AudioCodingModuleTestOldApi, DISABLED_ON_ANDROID(InitializedToZero)) {
   EXPECT_EQ(0, stats.decoded_plc_cng);
 }
 
-// Apply an initial playout delay. Calls to AudioCodingModule::PlayoutData10ms()
-// should result in generating silence, check the associated field.
-TEST_F(AudioCodingModuleTestOldApi,
-       DISABLED_ON_ANDROID_AND_WINRT(SilenceGeneratorCalled)) {
-  RegisterCodec();
-  AudioDecodingCallStats stats;
-  const int kInitialDelay = 100;
-
-  acm_->SetInitialPlayoutDelay(kInitialDelay);
-
-  int num_calls = 0;
-  for (int time_ms = 0; time_ms < kInitialDelay;
-       time_ms += kFrameSizeMs, ++num_calls) {
-    InsertPacketAndPullAudio();
-  }
-  acm_->GetDecodingCallStatistics(&stats);
-  EXPECT_EQ(0, stats.calls_to_neteq);
-  EXPECT_EQ(num_calls, stats.calls_to_silence_generator);
-  EXPECT_EQ(0, stats.decoded_normal);
-  EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(0, stats.decoded_plc);
-  EXPECT_EQ(0, stats.decoded_plc_cng);
-}
-
 // Insert some packets and pull audio. Check statistics are valid. Then,
 // simulate packet loss and check if PLC and PLC-to-CNG statistics are
 // correctly updated.
@@ -341,9 +318,16 @@ TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
   EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
 }
 
+#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
+#define IF_ISAC(x) x
+#else
+#define IF_ISAC(x) DISABLED_##x
+#endif
+
 // Verifies that the RTP timestamp series is not reset when the codec is
 // changed.
-TEST_F(AudioCodingModuleTestOldApi, TimestampSeriesContinuesWhenCodecChanges) {
+TEST_F(AudioCodingModuleTestOldApi,
+       IF_ISAC(TimestampSeriesContinuesWhenCodecChanges)) {
   RegisterCodec();  // This registers the default codec.
   uint32_t expected_ts = input_frame_.timestamp_;
   int blocks_per_packet = codec_.pacsize / (kSampleRateHz / 100);
@@ -408,18 +392,18 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
       int ix;
       FrameType type;
     } expectation[] = {{2, kAudioFrameCN},
-                       {5, kFrameEmpty},
-                       {8, kFrameEmpty},
+                       {5, kEmptyFrame},
+                       {8, kEmptyFrame},
                        {11, kAudioFrameCN},
-                       {14, kFrameEmpty},
-                       {17, kFrameEmpty},
+                       {14, kEmptyFrame},
+                       {17, kEmptyFrame},
                        {20, kAudioFrameCN},
-                       {23, kFrameEmpty},
-                       {26, kFrameEmpty},
-                       {29, kFrameEmpty},
+                       {23, kEmptyFrame},
+                       {26, kEmptyFrame},
+                       {29, kEmptyFrame},
                        {32, kAudioFrameCN},
-                       {35, kFrameEmpty},
-                       {38, kFrameEmpty}};
+                       {35, kEmptyFrame},
+                       {38, kEmptyFrame}};
     for (int i = 0; i < kLoops; ++i) {
       int num_calls_before = packet_cb_.num_calls();
       EXPECT_EQ(i / blocks_per_packet, num_calls_before);
@@ -439,7 +423,7 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
 
 // Checks that the transport callback is invoked once per frame period of the
 // underlying speech encoder, even when comfort noise is produced.
-// Also checks that the frame type is kAudioFrameCN or kFrameEmpty.
+// Also checks that the frame type is kAudioFrameCN or kEmptyFrame.
 // This test and the next check the same thing, but differ in the order of
 // speech codec and CNG registration.
 TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
@@ -672,7 +656,11 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   }
 
   void InsertAudio() {
-    memcpy(input_frame_.data_, audio_loop_.GetNextBlock(), kNumSamples10ms);
+    // TODO(kwiberg): Use std::copy here. Might be complications because AFAICS
+    // this call confuses the number of samples with the number of bytes, and
+    // ends up copying only half of what it should.
+    memcpy(input_frame_.data_, audio_loop_.GetNextBlock().data(),
+           kNumSamples10ms);
     AudioCodingModuleTestOldApi::InsertAudio();
   }
 
@@ -699,7 +687,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   test::AudioLoop audio_loop_;
 };
 
-TEST_F(AcmIsacMtTestOldApi, DISABLED_ON_IOS(DoTest)) {
+TEST_F(AcmIsacMtTestOldApi, DISABLED_ON_IOS(IF_ISAC(DoTest))) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
@@ -790,9 +778,9 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       // Encode new frame.
       uint32_t input_timestamp = rtp_header_.header.timestamp;
       while (info.encoded_bytes == 0) {
-        info = isac_encoder_->Encode(
-            input_timestamp, audio_loop_.GetNextBlock(), kNumSamples10ms,
-            max_encoded_bytes, encoded.get());
+        info =
+            isac_encoder_->Encode(input_timestamp, audio_loop_.GetNextBlock(),
+                                  max_encoded_bytes, encoded.get());
         input_timestamp += 160;  // 10 ms at 16 kHz.
       }
       EXPECT_EQ(rtp_header_.header.timestamp + kPacketSizeSamples,
@@ -853,7 +841,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   test::AudioLoop audio_loop_;
 };
 
-TEST_F(AcmReRegisterIsacMtTestOldApi, DISABLED_ON_IOS(DoTest)) {
+TEST_F(AcmReRegisterIsacMtTestOldApi, DISABLED_ON_IOS(IF_ISAC(DoTest))) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
@@ -925,13 +913,20 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
   }
 };
 
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISAC)) && \
+    defined(WEBRTC_CODEC_ILBC) && defined(WEBRTC_CODEC_G722)
+#define IF_ALL_CODECS(x) x
+#else
+#define IF_ALL_CODECS(x) DISABLED_##x
+#endif
+
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
 #if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_8kHzOutput DISABLED_8kHzOutput
 #else
 #define MAYBE_8kHzOutput 8kHzOutput
 #endif
-TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
+TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(MAYBE_8kHzOutput)) {
   Run(8000, PlatformChecksum("dcee98c623b147ebe1b40dd30efa896e",
                              "adc92e173f908f93b96ba5844209815a",
                              "908002dc01fc4eb1d2be24eb1d3f354b"),
@@ -944,7 +939,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
 #else
 #define MAYBE_16kHzOutput 16kHzOutput
 #endif
-TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
+TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(MAYBE_16kHzOutput)) {
   Run(16000, PlatformChecksum("f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
                               "8cffa6abcb3e18e33b9d857666dff66a",
                               "a909560b5ca49fa472b17b7b277195e9"),
@@ -957,7 +952,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
 #else
 #define MAYBE_32kHzOutput 32kHzOutput
 #endif
-TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
+TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(MAYBE_32kHzOutput)) {
   Run(32000, PlatformChecksum("306e0d990ee6e92de3fbecc0123ece37",
                               "3e126fe894720c3f85edadcc91964ba5",
                               "441aab4b347fb3db4e9244337aca8d8e"),
@@ -970,7 +965,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
 #else
 #define MAYBE_48kHzOutput 48kHzOutput
 #endif
-TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
+TEST_F(AcmReceiverBitExactnessOldApi, IF_ALL_CODECS(MAYBE_48kHzOutput)) {
   Run(48000, PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
                               "0155665e93067c4e89256b944dd11999",
                               "4ee2730fa1daae755e8a8fd3abd779ec"),
@@ -983,8 +978,9 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
 #else
 #define MAYBE_48kHzOutputExternalDecoder 48kHzOutputExternalDecoder
 #endif
-TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutputExternalDecoder) {
-  AudioDecoderPcmU decoder;
+TEST_F(AcmReceiverBitExactnessOldApi,
+       IF_ALL_CODECS(MAYBE_48kHzOutputExternalDecoder)) {
+  AudioDecoderPcmU decoder(1);
   MockAudioDecoder mock_decoder;
   // Set expectations on the mock decoder and also delegate the calls to the
   // real decoder.
@@ -1199,7 +1195,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
 #else
 #define MAYBE_IsacWb30ms IsacWb30ms
 #endif
-TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacWb30ms) {
+TEST_F(AcmSenderBitExactnessOldApi, IF_ISAC(MAYBE_IsacWb30ms)) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 480, 480));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "c7e5bdadfa2871df95639fcc297cf23d",
@@ -1219,7 +1215,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacWb30ms) {
 #else
 #define MAYBE_IsacWb60ms IsacWb60ms
 #endif
-TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacWb60ms) {
+TEST_F(AcmSenderBitExactnessOldApi, IF_ISAC(MAYBE_IsacWb60ms)) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "14d63c5f08127d280e722e3191b73bdd",
@@ -1233,13 +1229,14 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacWb60ms) {
       test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
-#if defined(WEBRTC_ANDROID) || !defined(WEBRTC_CODEC_ISAC)
-#define MAYBE_IsacSwb30ms DISABLED_IsacSwb30ms
+#ifdef WEBRTC_CODEC_ISAC
+#define IF_ISAC_FLOAT(x) x
 #else
-#define MAYBE_IsacSwb30ms IsacSwb30ms
+#define IF_ISAC_FLOAT(x) DISABLED_##x
 #endif
 
-TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacSwb30ms) {
+TEST_F(AcmSenderBitExactnessOldApi,
+       DISABLED_ON_ANDROID(IF_ISAC_FLOAT(IsacSwb30ms))) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 32000, 1, 104, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "2b3c387d06f00b7b7aad4c9be56fb83d",
@@ -1332,7 +1329,13 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcma_stereo_20ms) {
       test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(Ilbc_30ms)) {
+#ifdef WEBRTC_CODEC_ILBC
+#define IF_ILBC(x) x
+#else
+#define IF_ILBC(x) DISABLED_##x
+#endif
+
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IF_ILBC(Ilbc_30ms))) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ILBC", 8000, 1, 102, 240, 240));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "7b6ec10910debd9af08011d3ed5249f7",
@@ -1346,7 +1349,13 @@ TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(Ilbc_30ms)) {
       test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(G722_20ms)) {
+#ifdef WEBRTC_CODEC_G722
+#define IF_G722(x) x
+#else
+#define IF_G722(x) DISABLED_##x
+#endif
+
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(IF_G722(G722_20ms))) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "7d759436f2533582950d148b5161a36c",
@@ -1360,7 +1369,8 @@ TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(G722_20ms)) {
       test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_ON_ANDROID(G722_stereo_20ms)) {
+TEST_F(AcmSenderBitExactnessOldApi,
+       DISABLED_ON_ANDROID(IF_G722(G722_stereo_20ms))) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "7190ee718ab3d80eca181e5f7140c210",

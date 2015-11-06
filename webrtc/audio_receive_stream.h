@@ -17,6 +17,7 @@
 
 #include "webrtc/config.h"
 #include "webrtc/stream.h"
+#include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -25,7 +26,32 @@ class AudioDecoder;
 
 class AudioReceiveStream : public ReceiveStream {
  public:
-  struct Stats {};
+  struct Stats {
+    uint32_t remote_ssrc = 0;
+    int64_t bytes_rcvd = 0;
+    uint32_t packets_rcvd = 0;
+    uint32_t packets_lost = 0;
+    float fraction_lost = 0.0f;
+    std::string codec_name;
+    uint32_t ext_seqnum = 0;
+    uint32_t jitter_ms = 0;
+    uint32_t jitter_buffer_ms = 0;
+    uint32_t jitter_buffer_preferred_ms = 0;
+    uint32_t delay_estimate_ms = 0;
+    int32_t audio_level = -1;
+    float expand_rate = 0.0f;
+    float speech_expand_rate = 0.0f;
+    float secondary_decoded_rate = 0.0f;
+    float accelerate_rate = 0.0f;
+    float preemptive_expand_rate = 0.0f;
+    int32_t decoding_calls_to_silence_generator = 0;
+    int32_t decoding_calls_to_neteq = 0;
+    int32_t decoding_normal = 0;
+    int32_t decoding_plc = 0;
+    int32_t decoding_cng = 0;
+    int32_t decoding_plc_cng = 0;
+    int64_t capture_start_ntp_time_ms = 0;
+  };
 
   struct Config {
     std::string ToString() const;
@@ -44,9 +70,13 @@ class AudioReceiveStream : public ReceiveStream {
       std::vector<RtpExtension> extensions;
     } rtp;
 
-    // Underlying VoiceEngine handle, used to map AudioReceiveStream to
-    // lower-level components. Temporarily used while VoiceEngine channels are
-    // created outside of Call.
+    Transport* receive_transport = nullptr;
+    Transport* rtcp_send_transport = nullptr;
+
+    // Underlying VoiceEngine handle, used to map AudioReceiveStream to lower-
+    // level components.
+    // TODO(solenberg): Remove when VoiceEngine channels are created outside
+    // of Call.
     int voe_channel_id = -1;
 
     // Identifier for an A/V synchronization group. Empty string to disable.

@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'eb9d8b4cce499f0962034e17d806925e1eb743b1',
+  'chromium_revision': '38ed253f09644f26fd7a7785b7fc0cc7ba911b4f',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -46,11 +46,6 @@ include_rules = [
   '+vpx',
 ]
 
-# checkdeps.py shouldn't check include paths for files in these dirs:
-skip_child_includes = [
-  'webrtc/overrides',
-]
-
 hooks = [
   {
     # Check for legacy named top-level dir (named 'trunk').
@@ -74,6 +69,21 @@ hooks = [
     'name': 'setup_links',
     'pattern': '.',
     'action': ['python', 'src/setup_links.py'],
+  },
+  {
+    # This clobbers when necessary (based on get_landmines.py). It should be
+    # an early hook but it will need to be run after syncing Chromium and
+    # setting up the links, so the script actually exists.
+    'name': 'landmines',
+    'pattern': '.',
+    'action': [
+        'python',
+        'src/build/landmines.py',
+        '--landmine-scripts',
+        'src/webrtc/build/get_landmines.py',
+        '--src-dir',
+        'src',
+    ],
   },
   {
      # Pull sanitizer-instrumented third-party libraries if requested via

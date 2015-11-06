@@ -29,26 +29,30 @@
 #ifndef TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
 #define TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
 
-#include "webrtc/base/checks.h"
+#include <jni.h>
+
 #include "webrtc/common_video/interface/video_frame_buffer.h"
 
 namespace webrtc_jni {
 
 // Wrapper for texture object.
+struct NativeTextureHandleImpl {
+  NativeTextureHandleImpl(JNIEnv* jni,
+                          jint j_oes_texture_id,
+                          jfloatArray j_transform_matrix);
+
+  const int oes_texture_id;
+  float sampling_matrix[16];
+};
+
+// Native handle for SurfaceTexture + texture id.
 class NativeHandleImpl {
  public:
-  NativeHandleImpl() : texture_object_(NULL), texture_id_(-1) {}
+  NativeHandleImpl();
 
-  void* GetHandle() {
-    return texture_object_;
-  }
-  int GetTextureId() {
-    return texture_id_;
-  }
-  void SetTextureObject(void *texture_object, int texture_id) {
-    texture_object_ = reinterpret_cast<jobject>(texture_object);
-    texture_id_ = texture_id;
-  }
+  void* GetHandle();
+  int GetTextureId();
+  void SetTextureObject(void* texture_object, int texture_id);
 
  private:
   jobject texture_object_;
@@ -57,19 +61,27 @@ class NativeHandleImpl {
 
 class JniNativeHandleBuffer : public webrtc::NativeHandleBuffer {
  public:
-  JniNativeHandleBuffer(void* native_handle, int width, int height)
-      : NativeHandleBuffer(native_handle, width, height) {}
+  JniNativeHandleBuffer(void* native_handle, int width, int height);
 
   // TODO(pbos): Override destructor to release native handle, at the moment the
   // native handle is not released based on refcount.
 
  private:
-  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
-    // TODO(pbos): Implement before using this in the encoder pipeline (or
-    // remove the RTC_CHECK() in VideoCapture).
-    RTC_NOTREACHED();
-    return nullptr;
-  }
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> NativeToI420Buffer() override;
+};
+
+class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
+ public:
+  AndroidTextureBuffer(int width,
+                       int height,
+                       const NativeTextureHandleImpl& native_handle,
+                       const rtc::Callback0<void>& no_longer_used);
+  ~AndroidTextureBuffer();
+  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
+
+ private:
+  NativeTextureHandleImpl native_handle_;
+  rtc::Callback0<void> no_longer_used_cb_;
 };
 
 }  // namespace webrtc_jni

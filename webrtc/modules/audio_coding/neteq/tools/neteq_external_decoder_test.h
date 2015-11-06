@@ -13,8 +13,8 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
-#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 namespace test {

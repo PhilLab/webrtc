@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <vector>
 
-#include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/testutils.h"
@@ -44,7 +43,7 @@ namespace {
 const int kMsCallbackWait = 500;
 // For HD only the height matters.
 const int kMinHdHeight = 720;
-const uint32 kTimeout = 5000U;
+const uint32_t kTimeout = 5000U;
 
 }  // namespace
 
@@ -56,7 +55,6 @@ class VideoCapturerTest
       : capture_state_(cricket::CS_STOPPED),
         num_state_changes_(0),
         video_frames_received_(0),
-        last_frame_elapsed_time_(0),
         expects_rotation_applied_(true) {
     capturer_.SignalVideoFrame.connect(this, &VideoCapturerTest::OnVideoFrame);
     capturer_.SignalStateChange.connect(this,
@@ -70,7 +68,6 @@ class VideoCapturerTest
  protected:
   void OnVideoFrame(cricket::VideoCapturer*, const cricket::VideoFrame* frame) {
     ++video_frames_received_;
-    last_frame_elapsed_time_ = frame->GetElapsedTime();
     if (expects_rotation_applied_) {
       EXPECT_EQ(webrtc::kVideoRotation_0, frame->GetRotation());
     } else {
@@ -88,13 +85,11 @@ class VideoCapturerTest
   int video_frames_received() const {
     return video_frames_received_;
   }
-  int64 last_frame_elapsed_time() const { return last_frame_elapsed_time_; }
 
   cricket::FakeVideoCapturer capturer_;
   cricket::CaptureState capture_state_;
   int num_state_changes_;
   int video_frames_received_;
-  int64 last_frame_elapsed_time_;
   cricket::FakeVideoRenderer renderer_;
   bool expects_rotation_applied_;
 };

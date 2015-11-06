@@ -11,12 +11,7 @@
     'audio_coding_dependencies': [
       'cng',
       'g711',
-      'g722',
-      'ilbc',
-      'isac',
-      'isac_fix',
       'pcm16b',
-      'red',
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
@@ -27,9 +22,50 @@
         'audio_coding_dependencies': ['webrtc_opus',],
         'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
       }],
+      ['build_with_mozilla==0', {
+        'conditions': [
+          ['target_arch=="arm"', {
+            'audio_coding_dependencies': ['isac_fix',],
+            'audio_coding_defines': ['WEBRTC_CODEC_ISACFX',],
+          }, {
+            'audio_coding_dependencies': ['isac',],
+            'audio_coding_defines': ['WEBRTC_CODEC_ISAC',],
+          }],
+        ],
+        'audio_coding_dependencies': ['g722',],
+        'audio_coding_defines': ['WEBRTC_CODEC_G722',],
+      }],
+      ['build_with_mozilla==0 and build_with_chromium==0', {
+        'audio_coding_dependencies': ['ilbc', 'red',],
+        'audio_coding_defines': ['WEBRTC_CODEC_ILBC', 'WEBRTC_CODEC_RED',],
+      }],
     ],
   },
   'targets': [
+    {
+      'target_name': 'rent_a_codec',
+      'type': 'static_library',
+      'defines': [
+        '<@(audio_coding_defines)',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+      ],
+      'include_dirs': [
+        '<(webrtc_root)',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(webrtc_root)',
+        ],
+      },
+      'sources': [
+        'acm2/acm_codec_database.cc',
+        'acm2/acm_codec_database.h',
+        'acm2/rent_a_codec.cc',
+        'acm2/rent_a_codec.h',
+      ],
+    },
     {
       'target_name': 'audio_coding_module',
       'type': 'static_library',
@@ -41,22 +77,21 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/webrtc.gyp:rtc_event_log',
         'neteq',
+        'rent_a_codec',
       ],
       'include_dirs': [
-        'interface',
-        '../../interface',
+        'include',
+        '../../include',
         '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
-          '../../interface',
+          'include',
+          '../../include',
           '<(webrtc_root)',
         ],
       },
       'sources': [
-        'acm2/acm_codec_database.cc',
-        'acm2/acm_codec_database.h',
         'acm2/acm_common_defs.h',
         'acm2/acm_receiver.cc',
         'acm2/acm_receiver.h',
@@ -73,10 +108,8 @@
         'acm2/codec_owner.h',
         'acm2/initial_delay_manager.cc',
         'acm2/initial_delay_manager.h',
-        'acm2/nack.cc',
-        'acm2/nack.h',
-        'interface/audio_coding_module.h',
-        'interface/audio_coding_module_typedefs.h',
+        'include/audio_coding_module.h',
+        'include/audio_coding_module_typedefs.h',
       ],
     },
   ],
@@ -96,8 +129,6 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            'acm2/acm_receive_test.cc',
-            'acm2/acm_receive_test.h',
             'acm2/acm_receive_test_oldapi.cc',
             'acm2/acm_receive_test_oldapi.h',
           ],
@@ -115,8 +146,6 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            'acm2/acm_send_test.cc',
-            'acm2/acm_send_test.h',
             'acm2/acm_send_test_oldapi.cc',
             'acm2/acm_send_test_oldapi.h',
           ],

@@ -26,6 +26,13 @@ namespace webrtc {
 class LoadObserver;
 class VideoEncoder;
 
+class EncodingTimeObserver {
+ public:
+  virtual ~EncodingTimeObserver() {}
+
+  virtual void OnReportEncodedTime(int64_t ntp_time_ms, int encode_time_ms) = 0;
+};
+
 // Class to deliver captured frame to the video send stream.
 class VideoCaptureInput {
  public:
@@ -67,7 +74,7 @@ class VideoSendStream : public SendStream {
 
   struct Config {
     Config() = delete;
-    explicit Config(newapi::Transport* send_transport)
+    explicit Config(Transport* send_transport)
         : send_transport(send_transport) {}
 
     std::string ToString() const;
@@ -121,7 +128,7 @@ class VideoSendStream : public SendStream {
     } rtp;
 
     // Transport for outgoing packets.
-    newapi::Transport* send_transport = nullptr;
+    Transport* send_transport = nullptr;
 
     // Callback for overuse and normal usage based on the jitter of incoming
     // captured frames. 'nullptr' disables the callback.
@@ -152,6 +159,11 @@ class VideoSendStream : public SendStream {
     // below the minimum configured bitrate. If this variable is false, the
     // stream may send at a rate higher than the estimated available bitrate.
     bool suspend_below_min_bitrate = false;
+
+    // Called for each encoded frame. Passes the total time spent on encoding.
+    // TODO(ivica): Consolidate with post_encode_callback:
+    // https://code.google.com/p/webrtc/issues/detail?id=5042
+    EncodingTimeObserver* encoding_time_observer = nullptr;
   };
 
   // Gets interface used to insert captured frames. Valid as long as the

@@ -30,7 +30,6 @@ package org.webrtc;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -40,6 +39,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import org.webrtc.Logging;
+
+import java.util.concurrent.CountDownLatch;
+
+import javax.microedition.khronos.egl.EGLContext;
 
 /**
  * Implements org.webrtc.VideoRenderer.Callbacks by displaying the video stream on a SurfaceView.
@@ -91,6 +94,8 @@ public class SurfaceViewRenderer extends SurfaceView
   // layout and surface size.
   private int surfaceWidth;
   private int surfaceHeight;
+  // |isSurfaceCreated| keeps track of the current status in surfaceCreated()/surfaceDestroyed().
+  private boolean isSurfaceCreated;
   // Last rendered frame dimensions, or 0 if no frame has been rendered yet.
   private int frameWidth;
   private int frameHeight;
@@ -128,6 +133,7 @@ public class SurfaceViewRenderer extends SurfaceView
    */
   public SurfaceViewRenderer(Context context) {
     super(context);
+    getHolder().addCallback(this);
   }
 
   /**
@@ -135,24 +141,48 @@ public class SurfaceViewRenderer extends SurfaceView
    */
   public SurfaceViewRenderer(Context context, AttributeSet attrs) {
     super(context, attrs);
+    getHolder().addCallback(this);
   }
 
   /**
-   * Initialize this class, sharing resources with |sharedContext|.
+   * Initialize this class, sharing resources with |sharedContext|. It is allowed to call init() to
+   * reinitialize the renderer after a previous init()/release() cycle.
    */
   public void init(
       EGLContext sharedContext, RendererCommon.RendererEvents rendererEvents) {
-    if (renderThreadHandler != null) {
-      throw new IllegalStateException("Already initialized");
+    synchronized (handlerLock) {
+      if (renderThreadHandler != null) {
+        throw new IllegalStateException("Already initialized");
+      }
+      Logging.d(TAG, "Initializing");
+      this.rendererEvents = rendererEvents;
+      renderThread = new HandlerThread(TAG);
+      renderThread.start();
+      drawer = new GlRectDrawer();
+      eglBase = new EglBase(sharedContext, EglBase.ConfigType.PLAIN);
+      renderThreadHandler = new Handler(renderThread.getLooper());
     }
-    Logging.d(TAG, "Initializing");
-    this.rendererEvents = rendererEvents;
-    renderThread = new HandlerThread(TAG);
-    renderThread.start();
-    renderThreadHandler = new Handler(renderThread.getLooper());
-    eglBase = new EglBase(sharedContext, EglBase.ConfigType.PLAIN);
-    drawer = new GlRectDrawer();
-    getHolder().addCallback(this);
+    tryCreateEglSurface();
+  }
+
+  /**
+   * Create and make an EGLSurface current if both init() and surfaceCreated() have been called.
+   */
+  public void tryCreateEglSurface() {
+    // |renderThreadHandler| is only created after |eglBase| is created in init(), so the
+    // following code will only execute if eglBase != null.
+    runOnRenderThread(new Runnable() {
+      @Override public void run() {
+        synchronized (layoutLock) {
+          if (isSurfaceCreated) {
+            eglBase.createSurface(getHolder());
+            eglBase.makeCurrent();
+            // Necessary for YUV frames with odd width.
+            GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -162,6 +192,7 @@ public class SurfaceViewRenderer extends SurfaceView
    * don't call this function, the GL resources might leak.
    */
   public void release() {
+    final CountDownLatch eglCleanupBarrier = new CountDownLatch(1);
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         Logging.d(TAG, "Already released");
@@ -179,15 +210,22 @@ public class SurfaceViewRenderer extends SurfaceView
             GLES20.glDeleteTextures(3, yuvTextures, 0);
             yuvTextures = null;
           }
+          if (eglBase.hasSurface()) {
+            // Clear last rendered image to black.
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+            eglBase.swapBuffers();
+          }
           eglBase.release();
           eglBase = null;
+          eglCleanupBarrier.countDown();
         }
       });
       // Don't accept any more frames or messages to the render thread.
       renderThreadHandler = null;
     }
-    // Quit safely to make sure the EGL/GL cleanup posted above is executed.
-    renderThread.quitSafely();
+    // Make sure the EGL/GL cleanup posted above is executed.
+    ThreadUtils.awaitUninterruptibly(eglCleanupBarrier);
+    renderThread.quit();
     synchronized (frameLock) {
       if (pendingFrame != null) {
         VideoRenderer.renderFrameDone(pendingFrame);
@@ -195,22 +233,21 @@ public class SurfaceViewRenderer extends SurfaceView
       }
     }
     // The |renderThread| cleanup is not safe to cancel and we need to wait until it's done.
-    boolean wasInterrupted = false;
-    while (true) {
-      try {
-        renderThread.join();
-        renderThread = null;
-        break;
-      } catch (InterruptedException e) {
-        // Someone is asking us to return early at our convenience. We can't cancel this cleanup,
-        // but we should preserve the information and pass it along. Any rendering in progress
-        // should complete in a few ms.
-        wasInterrupted = true;
-      }
+    ThreadUtils.joinUninterruptibly(renderThread);
+    renderThread = null;
+    // Reset statistics and event reporting.
+    synchronized (layoutLock) {
+      frameWidth = 0;
+      frameHeight = 0;
+      frameRotation = 0;
+      rendererEvents = null;
     }
-    // Pass interruption information along.
-    if (wasInterrupted) {
-      Thread.currentThread().interrupt();
+    synchronized (statisticsLock) {
+      framesReceived = 0;
+      framesDropped = 0;
+      framesRendered = 0;
+      firstFrameTimeNs = 0;
+      renderTimeNs = 0;
     }
   }
 
@@ -282,9 +319,9 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (layoutLock) {
       this.widthSpec = widthSpec;
       this.heightSpec = heightSpec;
+      final Point size = getDesiredLayoutSize();
+      setMeasuredDimension(size.x, size.y);
     }
-    final Point size = getDesiredLayoutSize();
-    setMeasuredDimension(size.x, size.y);
   }
 
   @Override
@@ -301,20 +338,17 @@ public class SurfaceViewRenderer extends SurfaceView
   @Override
   public void surfaceCreated(final SurfaceHolder holder) {
     Logging.d(TAG, "Surface created");
-    runOnRenderThread(new Runnable() {
-      @Override public void run() {
-        eglBase.createSurface(holder.getSurface());
-        eglBase.makeCurrent();
-        // Necessary for YUV frames with odd width.
-        GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
-      }
-    });
+    synchronized (layoutLock) {
+      isSurfaceCreated = true;
+    }
+    tryCreateEglSurface();
   }
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
     Logging.d(TAG, "Surface destroyed");
     synchronized (layoutLock) {
+      isSurfaceCreated = false;
       surfaceWidth = 0;
       surfaceHeight = 0;
     }
@@ -404,19 +438,28 @@ public class SurfaceViewRenderer extends SurfaceView
     }
 
     final long startTimeNs = System.nanoTime();
-    if (!frame.yuvFrame) {
+    final float[] samplingMatrix;
+    if (frame.yuvFrame) {
+      // The convention in WebRTC is that the first element in a ByteBuffer corresponds to the
+      // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
+      // bottom-left corner. We correct this discrepancy by setting a vertical flip as sampling
+      // matrix.
+      samplingMatrix = RendererCommon.verticalFlipMatrix();
+    } else {
       // TODO(magjed): Move updateTexImage() to the video source instead.
       SurfaceTexture surfaceTexture = (SurfaceTexture) frame.textureObject;
       surfaceTexture.updateTexImage();
+      samplingMatrix = new float[16];
+      surfaceTexture.getTransformMatrix(samplingMatrix);
     }
 
-    final float[] texMatrix = new float[16];
+    final float[] texMatrix;
     synchronized (layoutLock) {
-      final float[] samplingMatrix = RendererCommon.getSamplingMatrix(
-          (SurfaceTexture) frame.textureObject, frame.rotationDegree);
+      final float[] rotatedSamplingMatrix =
+          RendererCommon.rotateTextureMatrix(samplingMatrix, frame.rotationDegree);
       final float[] layoutMatrix = RendererCommon.getLayoutMatrix(
           mirror, frameAspectRatio(), (float) layoutWidth / layoutHeight);
-      Matrix.multiplyMM(texMatrix, 0, samplingMatrix, 0, layoutMatrix, 0);
+      texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
     }
 
     GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);

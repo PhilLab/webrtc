@@ -12,8 +12,8 @@
 
 #include <assert.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
@@ -85,9 +85,6 @@ int VoEHardwareImpl::SetAudioDeviceLayer(AudioLayers audioLayer) {
 }
 
 int VoEHardwareImpl::GetAudioDeviceLayer(AudioLayers& audioLayer) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetAudioDeviceLayer(devices=?)");
-
   // Can always be called regardless of VoE state
 
   AudioDeviceModule::AudioLayer activeLayer(
@@ -127,15 +124,9 @@ int VoEHardwareImpl::GetAudioDeviceLayer(AudioLayers& audioLayer) {
                             "  unknown audio layer");
   }
 
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "  Output: audioLayer=%d", audioLayer);
-
   return 0;
 }
 int VoEHardwareImpl::GetNumOfRecordingDevices(int& devices) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetNumOfRecordingDevices(devices=?)");
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -143,16 +134,10 @@ int VoEHardwareImpl::GetNumOfRecordingDevices(int& devices) {
 
   devices = static_cast<int>(_shared->audio_device()->RecordingDevices());
 
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "  Output: devices=%d", devices);
-
   return 0;
 }
 
 int VoEHardwareImpl::GetNumOfPlayoutDevices(int& devices) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetNumOfPlayoutDevices(devices=?)");
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -160,18 +145,12 @@ int VoEHardwareImpl::GetNumOfPlayoutDevices(int& devices) {
 
   devices = static_cast<int>(_shared->audio_device()->PlayoutDevices());
 
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "  Output: devices=%d", devices);
-
   return 0;
 }
 
 int VoEHardwareImpl::GetRecordingDeviceName(int index,
                                             char strNameUTF8[128],
                                             char strGuidUTF8[128]) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetRecordingDeviceName(index=%d)", index);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -203,14 +182,9 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
 
   // Copy to vectors supplied by user
   strncpy(strNameUTF8, name, strLen);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "  Output: strNameUTF8=%s", strNameUTF8);
 
   if (strGuidUTF8 != NULL) {
     strncpy(strGuidUTF8, guid, strLen);
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_shared->instance_id(), -1), "  Output: strGuidUTF8=%s",
-                 strGuidUTF8);
   }
 
   return 0;
@@ -219,9 +193,6 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
 int VoEHardwareImpl::GetPlayoutDeviceName(int index,
                                           char strNameUTF8[128],
                                           char strGuidUTF8[128]) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetPlayoutDeviceName(index=%d)", index);
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -253,14 +224,9 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
 
   // Copy to vectors supplied by user
   strncpy(strNameUTF8, name, strLen);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "  Output: strNameUTF8=%s", strNameUTF8);
 
   if (strGuidUTF8 != NULL) {
     strncpy(strGuidUTF8, guid, strLen);
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_shared->instance_id(), -1), "  Output: strGuidUTF8=%s",
-                 strGuidUTF8);
   }
 
   return 0;
@@ -476,8 +442,6 @@ int VoEHardwareImpl::SetRecordingSampleRate(unsigned int samples_per_sec) {
 }
 
 int VoEHardwareImpl::RecordingSampleRate(unsigned int* samples_per_sec) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "%s", __FUNCTION__);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return false;
@@ -496,8 +460,6 @@ int VoEHardwareImpl::SetPlayoutSampleRate(unsigned int samples_per_sec) {
 }
 
 int VoEHardwareImpl::PlayoutSampleRate(unsigned int* samples_per_sec) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "%s", __FUNCTION__);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return false;
@@ -519,6 +481,38 @@ int VoEHardwareImpl::EnableBuiltInAEC(bool enable) {
     return -1;
   }
   return _shared->audio_device()->EnableBuiltInAEC(enable);
+}
+
+bool VoEHardwareImpl::BuiltInAGCIsAvailable() const {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->BuiltInAGCIsAvailable();
+}
+
+int VoEHardwareImpl::EnableBuiltInAGC(bool enable) {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  return _shared->audio_device()->EnableBuiltInAGC(enable);
+}
+
+bool VoEHardwareImpl::BuiltInNSIsAvailable() const {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->BuiltInNSIsAvailable();
+}
+
+int VoEHardwareImpl::EnableBuiltInNS(bool enable) {
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  return _shared->audio_device()->EnableBuiltInNS(enable);
 }
 
 #endif  // WEBRTC_VOICE_ENGINE_HARDWARE_API

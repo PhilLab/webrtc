@@ -13,9 +13,9 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace webrtc {
@@ -130,9 +130,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
            RtcpBandwidthObserver* bandwidthCallback));
-  MOCK_CONST_METHOD0(RTCP,
-      RTCPMethod());
-  MOCK_METHOD1(SetRTCPStatus, void(const RTCPMethod method));
+  MOCK_CONST_METHOD0(RTCP, RtcpMode());
+  MOCK_METHOD1(SetRTCPStatus, void(const RtcpMode method));
   MOCK_METHOD1(SetCNAME,
       int32_t(const char cName[RTCP_CNAME_SIZE]));
   MOCK_CONST_METHOD2(RemoteCNAME,

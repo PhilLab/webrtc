@@ -14,12 +14,15 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"  // RTCPReportBlock
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPReportBlock
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+namespace rtcp {
+class TransportFeedback;
+}
 namespace RTCPHelp
 {
 
@@ -83,6 +86,8 @@ public:
     uint32_t xr_originator_ssrc;
     bool xr_dlrr_item;
     RTCPVoIPMetric*  VoIPMetric;
+
+    rtc::scoped_ptr<rtcp::TransportFeedback> transport_feedback_;
 
 private:
     RTC_DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);

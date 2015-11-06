@@ -13,8 +13,9 @@
 #include <assert.h> //assert
 #include <string.h> //memcpy
 
+#include "webrtc/base/trace_event.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -207,8 +208,8 @@ int32_t RTPSenderAudio::SendAudio(
   // A source MAY send events and coded audio packets for the same time
   // but we don't support it
   if (_dtmfEventIsOn) {
-    if (frameType == kFrameEmpty) {
-      // kFrameEmpty is used to drive the DTMF when in CN mode
+    if (frameType == kEmptyFrame) {
+      // kEmptyFrame is used to drive the DTMF when in CN mode
       // it can be triggered more frequently than we want to send the
       // DTMF packets.
       if (packet_size_samples > (captureTimeStamp - _dtmfTimestampLastSent)) {
@@ -258,7 +259,7 @@ int32_t RTPSenderAudio::SendAudio(
     return 0;
   }
   if (payloadSize == 0 || payloadData == NULL) {
-    if (frameType == kFrameEmpty) {
+    if (frameType == kEmptyFrame) {
       // we don't send empty audio RTP packets
       // no error since we use it to drive DTMF when we use VAD
       return 0;
@@ -368,7 +369,7 @@ int32_t RTPSenderAudio::SendAudio(
                            _rtpSender->SequenceNumber());
     return _rtpSender->SendToNetwork(dataBuffer, payloadSize, rtpHeaderLength,
                                      -1, kAllowRetransmission,
-                                     PacedSender::kHighPriority);
+                                     RtpPacketSender::kHighPriority);
   }
 
     // Audio level magnitude and voice activity flag are set for each RTP packet
@@ -477,7 +478,7 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                              _rtpSender->SequenceNumber());
         retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12, -1,
                                            kAllowRetransmission,
-                                           PacedSender::kHighPriority);
+                                           RtpPacketSender::kHighPriority);
         sendCount--;
 
     }while (sendCount > 0 && retVal == 0);

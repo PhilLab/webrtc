@@ -14,15 +14,15 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
+#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_processing/rms_level.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "webrtc/modules/utility/interface/file_player.h"
-#include "webrtc/modules/utility/interface/file_recorder.h"
+#include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/utility/include/file_player.h"
+#include "webrtc/modules/utility/include/file_recorder.h"
 #include "webrtc/voice_engine/dtmf_inband.h"
 #include "webrtc/voice_engine/dtmf_inband_queue.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
@@ -280,7 +280,6 @@ public:
     bool GetDelayEstimate(int* jitter_buffer_delay_ms,
                           int* playout_buffer_delay_ms) const;
     int LeastRequiredDelayMs() const;
-    int SetInitialPlayoutDelay(int delay_ms);
     int SetMinimumPlayoutDelay(int delayMs);
     int GetPlayoutTimestamp(unsigned int& timestamp);
     int SetInitTimestamp(unsigned int timestamp);
@@ -378,8 +377,10 @@ public:
                               uint8_t volume) override;
 
     // From Transport (called by the RTP/RTCP module)
-    int SendPacket(const void* data, size_t len) override;
-    int SendRTCPPacket(const void* data, size_t len) override;
+    bool SendRtp(const uint8_t* data,
+                 size_t len,
+                 const PacketOptions& packet_options) override;
+    bool SendRtcp(const uint8_t* data, size_t len) override;
 
     // From MixerParticipant
     int32_t GetAudioFrame(int32_t id, AudioFrame* audioFrame) override;
@@ -465,7 +466,6 @@ private:
     int InsertInbandDtmfTone();
     int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
     int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
-    int32_t SendPacketRaw(const void *data, size_t len, bool RTCP);
     void UpdatePlayoutTimestamp(bool rtcp);
     void UpdatePacketDelay(uint32_t timestamp,
                            uint16_t sequenceNumber);
@@ -499,7 +499,6 @@ private:
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;
-    rtc::scoped_ptr<int16_t[]> mono_recording_audio_;
     // Downsamples to the codec rate if necessary.
     PushResampler<int16_t> input_resampler_;
     FilePlayer* _inputFilePlayerPtr;

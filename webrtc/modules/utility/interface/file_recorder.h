@@ -8,15 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
-#define WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/media_file/interface/media_file_defines.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/media_file/include/media_file_defines.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 
@@ -40,14 +41,12 @@ public:
     virtual int32_t StartRecordingAudioFile(
         const char* fileName,
         const CodecInst& codecInst,
-        uint32_t notification,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage) = 0;
+        uint32_t notification) = 0;
 
     virtual int32_t StartRecordingAudioFile(
         OutStream& destStream,
         const CodecInst& codecInst,
-        uint32_t notification,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage) = 0;
+        uint32_t notification) = 0;
 
     // Stop recording.
     // Note: this API is for both audio and video.
@@ -74,7 +73,6 @@ public:
         const char* fileName,
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
-        ACMAMRPackingFormat amrFormat = AMRFileStorage,
         bool videoOnly = false) = 0;
 
     // Record the video frame in videoFrame to AVI file.
@@ -85,4 +83,4 @@ protected:
 
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
+#endif // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_

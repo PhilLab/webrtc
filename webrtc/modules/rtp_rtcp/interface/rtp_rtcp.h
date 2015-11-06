@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
-#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
+
+#pragma message("WARNING: rtp_rtcp/interface is DEPRECATED; use include dir.")
 
 #include <set>
 #include <vector>
 
-#include "webrtc/modules/interface/module.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 // Forward declarations.
-class PacedSender;
-class PacketRouter;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpReceiver;
@@ -69,8 +69,8 @@ class RtpRtcp : public Module {
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer;
     RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
-    PacedSender* paced_sender;
-    PacketRouter* packet_router;
+    RtpPacketSender* paced_sender;
+    TransportSequenceNumberAllocator* transport_sequence_number_allocator;
     BitrateStatisticsObserver* send_bitrate_observer;
     FrameCountObserver* send_frame_count_observer;
     SendSideDelayObserver* send_side_delay_observer;
@@ -329,14 +329,14 @@ class RtpRtcp : public Module {
     /*
     *    Get RTCP status
     */
-    virtual RTCPMethod RTCP() const = 0;
+    virtual RtcpMode RTCP() const = 0;
 
     /*
     *   configure RTCP status i.e on(compound or non- compound)/off
     *
     *   method  - RTCP method to use
     */
-    virtual void SetRTCPStatus(RTCPMethod method) = 0;
+    virtual void SetRTCPStatus(RtcpMode method) = 0;
 
     /*
     *   Set RTCP CName (i.e unique identifier)
@@ -640,4 +640,4 @@ class RtpRtcp : public Module {
     virtual int32_t RequestKeyFrame() = 0;
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
+#endif // WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_

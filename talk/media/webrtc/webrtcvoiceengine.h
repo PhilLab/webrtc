@@ -47,48 +47,19 @@
 #include "webrtc/common.h"
 #include "webrtc/config.h"
 
-namespace webrtc {
-class VideoEngine;
-}
-
 namespace cricket {
-
-// WebRtcSoundclipStream is an adapter object that allows a memory stream to be
-// passed into WebRtc, and support looping.
-class WebRtcSoundclipStream : public webrtc::InStream {
- public:
-  WebRtcSoundclipStream(const char* buf, size_t len)
-      : mem_(buf, len), loop_(true) {
-  }
-  void set_loop(bool loop) { loop_ = loop; }
-
-  int Read(void* buf, size_t len) override;
-  int Rewind() override;
-
- private:
-  rtc::MemoryStream mem_;
-  bool loop_;
-};
-
-// WebRtcMonitorStream is used to monitor a stream coming from WebRtc.
-// For now we just dump the data.
-class WebRtcMonitorStream : public webrtc::OutStream {
-  bool Write(const void* buf, size_t len) override { return true; }
-};
 
 class AudioDeviceModule;
 class AudioRenderer;
 class VoETraceWrapper;
 class VoEWrapper;
-class VoiceProcessor;
 class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
 // It uses the WebRtc VoiceEngine library for audio handling.
 class WebRtcVoiceEngine
     : public webrtc::VoiceEngineObserver,
-      public webrtc::TraceCallback,
-      public webrtc::VoEMediaProcess  {
+      public webrtc::TraceCallback  {
   friend class WebRtcVoiceMediaChannel;
 
  public:
@@ -99,19 +70,16 @@ class WebRtcVoiceEngine
   bool Init(rtc::Thread* worker_thread);
   void Terminate();
 
-  int GetCapabilities();
   webrtc::VoiceEngine* GetVoE() { return voe()->engine(); }
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const AudioOptions& options);
 
   AudioOptions GetOptions() const { return options_; }
   bool SetOptions(const AudioOptions& options);
-  bool SetDelayOffset(int offset);
   bool SetDevices(const Device* in_device, const Device* out_device);
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
   int GetInputLevel();
-  bool SetLocalMonitor(bool enable);
 
   const std::vector<AudioCodec>& codecs();
   bool FindCodec(const AudioCodec& codec);
@@ -121,26 +89,11 @@ class WebRtcVoiceEngine
 
   void SetLogging(int min_sev, const char* filter);
 
-  bool RegisterProcessor(uint32 ssrc,
-                         VoiceProcessor* voice_processor,
-                         MediaProcessorDirection direction);
-  bool UnregisterProcessor(uint32 ssrc,
-                           VoiceProcessor* voice_processor,
-                           MediaProcessorDirection direction);
-
-  // Method from webrtc::VoEMediaProcess
-  void Process(int channel,
-               webrtc::ProcessingTypes type,
-               int16_t audio10ms[],
-               size_t length,
-               int sampling_freq,
-               bool is_stereo) override;
-
   // For tracking WebRtc channels. Needed because we have to pause them
   // all when switching devices.
   // May only be called by WebRtcVoiceMediaChannel.
-  void RegisterChannel(WebRtcVoiceMediaChannel *channel);
-  void UnregisterChannel(WebRtcVoiceMediaChannel *channel);
+  void RegisterChannel(WebRtcVoiceMediaChannel* channel);
+  void UnregisterChannel(WebRtcVoiceMediaChannel* channel);
 
   // Called by WebRtcVoiceMediaChannel to set a gain offset from
   // the default AGC target level.
@@ -155,76 +108,41 @@ class WebRtcVoiceEngine
   // Starts AEC dump using existing file.
   bool StartAecDump(rtc::PlatformFile file);
 
-  // Check whether the supplied trace should be ignored.
-  bool ShouldIgnoreTrace(const std::string& trace);
+  // Stops AEC dump.
+  void StopAecDump();
 
-  // Create a VoiceEngine Channel.
-  int CreateMediaVoiceChannel();
+  // Starts recording an RtcEventLog using an existing file until 10 minutes
+  // pass or the StopRtcEventLog function is called.
+  bool StartRtcEventLog(rtc::PlatformFile file);
+
+  // Stops recording the RtcEventLog.
+  void StopRtcEventLog();
 
  private:
-  typedef std::vector<WebRtcVoiceMediaChannel*> ChannelList;
-  typedef sigslot::
-      signal3<uint32, MediaProcessorDirection, AudioFrame*> FrameSignal;
-
   void Construct();
   void ConstructCodecs();
   bool GetVoeCodec(int index, webrtc::CodecInst* codec);
   bool InitInternal();
   void SetTraceFilter(int filter);
   void SetTraceOptions(const std::string& options);
-  // Applies either options or overrides.  Every option that is "set"
-  // will be applied.  Every option not "set" will be ignored.  This
-  // allows us to selectively turn on and off different options easily
-  // at any time.
+  // Every option that is "set" will be applied. Every option not "set" will be
+  // ignored. This allows us to selectively turn on and off different options
+  // easily at any time.
   bool ApplyOptions(const AudioOptions& options);
-  // Overrides, when set, take precedence over the options on a
-  // per-option basis.  For example, if AGC is set in options and AEC
-  // is set in overrides, AGC and AEC will be both be set.  Overrides
-  // can also turn off options.  For example, if AGC is set to "on" in
-  // options and AGC is set to "off" in overrides, the result is that
-  // AGC will be off until different overrides are applied or until
-  // the overrides are cleared.  Only one set of overrides is present
-  // at a time (they do not "stack").  And when the overrides are
-  // cleared, the media engine's state reverts back to the options set
-  // via SetOptions.  This allows us to have both "persistent options"
-  // (the normal options) and "temporary options" (overrides).
-  bool SetOptionOverrides(const AudioOptions& options);
-  bool ClearOptionOverrides();
 
   // webrtc::TraceCallback:
   void Print(webrtc::TraceLevel level, const char* trace, int length) override;
 
   // webrtc::VoiceEngineObserver:
-  void CallbackOnError(int channel, int errCode) override;
+  void CallbackOnError(int channel_id, int errCode) override;
 
   // Given the device type, name, and id, find device id. Return true and
   // set the output parameter rtc_id if successful.
   bool FindWebRtcAudioDeviceId(
       bool is_input, const std::string& dev_name, int dev_id, int* rtc_id);
-  bool FindChannelAndSsrc(int channel_num,
-                          WebRtcVoiceMediaChannel** channel,
-                          uint32* ssrc) const;
-  bool FindChannelNumFromSsrc(uint32 ssrc,
-                              MediaProcessorDirection direction,
-                              int* channel_num);
-  bool ChangeLocalMonitor(bool enable);
-  bool PauseLocalMonitor();
-  bool ResumeLocalMonitor();
-
-  bool UnregisterProcessorChannel(MediaProcessorDirection channel_direction,
-                                  uint32 ssrc,
-                                  VoiceProcessor* voice_processor,
-                                  MediaProcessorDirection processor_direction);
 
   void StartAecDump(const std::string& filename);
-  void StopAecDump();
-  int CreateVoiceChannel(VoEWrapper* voe);
-
-  // When a voice processor registers with the engine, it is connected
-  // to either the Rx or Tx signals, based on the direction parameter.
-  // SignalXXMediaFrame will be invoked for every audio packet.
-  FrameSignal SignalRxMediaFrame;
-  FrameSignal SignalTxMediaFrame;
+  int CreateVoEChannel();
 
   static const int kDefaultLogSeverity = rtc::LS_WARNING;
 
@@ -238,9 +156,7 @@ class WebRtcVoiceEngine
   bool is_dumping_aec_;
   std::vector<AudioCodec> codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
-  bool desired_local_monitor_enable_;
-  rtc::scoped_ptr<WebRtcMonitorStream> monitor_;
-  ChannelList channels_;
+  std::vector<WebRtcVoiceMediaChannel*> channels_;
   // channels_ can be read from WebRtc callback thread. We need a lock on that
   // callback as well as the RegisterChannel/UnregisterChannel.
   rtc::CriticalSection channels_cs_;
@@ -249,32 +165,17 @@ class WebRtcVoiceEngine
   webrtc::Config voe_config_;
 
   bool initialized_;
-  // See SetOptions and SetOptionOverrides for a description of the
-  // difference between options and overrides.
-  // options_ are the base options, which combined with the
-  // option_overrides_, create the current options being used.
-  // options_ is stored so that when option_overrides_ is cleared, we
-  // can restore the options_ without the option_overrides.
   AudioOptions options_;
-  AudioOptions option_overrides_;
-
-  // When the media processor registers with the engine, the ssrc is cached
-  // here so that a look up need not be made when the callback is invoked.
-  // This is necessary because the lookup results in mux_channels_cs lock being
-  // held and if a remote participant leaves the hangout at the same time
-  // we hit a deadlock.
-  uint32 tx_processor_ssrc_;
-  uint32 rx_processor_ssrc_;
-
-  rtc::CriticalSection signal_media_critical_;
 
   // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
   // values, and apply them in case they are missing in the audio options. We
   // need to do this because SetExtraOptions() will revert to defaults for
   // options which are not provided.
-  Settable<bool> extended_filter_aec_;
-  Settable<bool> delay_agnostic_aec_;
-  Settable<bool> experimental_ns_;
+  rtc::Maybe<bool> extended_filter_aec_;
+  rtc::Maybe<bool> delay_agnostic_aec_;
+  rtc::Maybe<bool> experimental_ns_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcVoiceEngine);
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses
@@ -287,8 +188,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                           webrtc::Call* call);
   ~WebRtcVoiceMediaChannel() override;
 
-  int voe_channel() const { return voe_channel_; }
-  bool valid() const { return voe_channel_ != -1; }
   const AudioOptions& options() const { return options_; }
 
   bool SetSendParameters(const AudioSendParameters& params) override;
@@ -299,13 +198,14 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool SetSend(SendFlags send) override;
   bool PauseSend();
   bool ResumeSend();
-  bool SetAudioSend(uint32 ssrc, bool mute, const AudioOptions* options,
+  bool SetAudioSend(uint32_t ssrc,
+                    bool enable,
+                    const AudioOptions* options,
                     AudioRenderer* renderer) override;
   bool AddSendStream(const StreamParams& sp) override;
-  bool RemoveSendStream(uint32 ssrc) override;
+  bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
-  bool RemoveRecvStream(uint32 ssrc) override;
-  bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) override;
+  bool RemoveRecvStream(uint32_t ssrc) override;
   bool GetActiveStreams(AudioInfo::StreamList* actives) override;
   int GetOutputLevel() override;
   int GetTimeSinceLastTyping() override;
@@ -314,12 +214,10 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                                     int reporting_threshold,
                                     int penalty_decay,
                                     int type_event_delay) override;
-  bool SetOutputScaling(uint32 ssrc, double left, double right) override;
+  bool SetOutputVolume(uint32_t ssrc, double volume) override;
 
-  bool SetRingbackTone(const char* buf, int len) override;
-  bool PlayRingbackTone(uint32 ssrc, bool play, bool loop) override;
   bool CanInsertDtmf() override;
-  bool InsertDtmf(uint32 ssrc, int event, int duration, int flags) override;
+  bool InsertDtmf(uint32_t ssrc, int event, int duration, int flags) override;
 
   void OnPacketReceived(rtc::Buffer* packet,
                         const rtc::PacketTime& packet_time) override;
@@ -327,30 +225,28 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
                       const rtc::PacketTime& packet_time) override;
   void OnReadyToSend(bool ready) override {}
   bool GetStats(VoiceMediaInfo* info) override;
-  // Gets last reported error from WebRtc voice engine.  This should be only
-  // called in response a failure.
-  void GetLastMediaError(uint32* ssrc,
-                         VoiceMediaChannel::Error* error) override;
 
   // implements Transport interface
-  int SendPacket(const void* data, size_t len) override {
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const webrtc::PacketOptions& options) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
+    rtc::PacketOptions rtc_options;
+    rtc_options.packet_id = options.packet_id;
+    return VoiceMediaChannel::SendPacket(&packet, rtc_options);
   }
 
-  int SendRTCPPacket(const void* data, size_t len) override {
+  bool SendRtcp(const uint8_t* data, size_t len) override {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
                        kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
+    return VoiceMediaChannel::SendRtcp(&packet, rtc::PacketOptions());
   }
 
-  bool FindSsrc(int channel_num, uint32* ssrc);
-  void OnError(uint32 ssrc, int error);
+  void OnError(int error);
 
-  bool sending() const { return send_ != SEND_NOTHING; }
-  int GetReceiveChannelNum(uint32 ssrc) const;
-  int GetSendChannelNum(uint32 ssrc) const;
+  int GetReceiveChannelId(uint32_t ssrc) const;
+  int GetSendChannelId(uint32_t ssrc) const;
 
  private:
   bool SetSendCodecs(const std::vector<AudioCodec>& codecs);
@@ -361,8 +257,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs);
   bool SetRecvRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions);
-  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
-  bool MuteStream(uint32 ssrc, bool mute);
+  bool SetLocalRenderer(uint32_t ssrc, AudioRenderer* renderer);
+  bool MuteStream(uint32_t ssrc, bool mute);
 
   WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
@@ -370,35 +266,22 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool GetRedSendCodec(const AudioCodec& red_codec,
                        const std::vector<AudioCodec>& all_codecs,
                        webrtc::CodecInst* send_codec);
-  bool EnableRtcp(int channel);
-  bool ResetRecvCodecs(int channel);
   bool SetPlayout(int channel, bool playout);
-  static uint32 ParseSsrc(const void* data, size_t len, bool rtcp);
   static Error WebRtcErrorToChannelError(int err_code);
 
-  class WebRtcVoiceChannelRenderer;
-  // Map of ssrc to WebRtcVoiceChannelRenderer object.  A new object of
-  // WebRtcVoiceChannelRenderer will be created for every new stream and
-  // will be destroyed when the stream goes away.
-  typedef std::map<uint32, WebRtcVoiceChannelRenderer*> ChannelMap;
   typedef int (webrtc::VoERTP_RTCP::* ExtensionSetterFunction)(int, bool,
       unsigned char);
 
   void SetNack(int channel, bool nack_enabled);
-  void SetNack(const ChannelMap& channels, bool nack_enabled);
-  bool SetSendCodec(const webrtc::CodecInst& send_codec);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool ChangePlayout(bool playout);
   bool ChangeSend(SendFlags send);
   bool ChangeSend(int channel, SendFlags send);
-  void ConfigureSendChannel(int channel);
   bool ConfigureRecvChannel(int channel);
+  int CreateVoEChannel();
   bool DeleteChannel(int channel);
-  bool InConferenceMode() const {
-    return options_.conference_mode.GetWithDefaultIfUnset(false);
-  }
-  bool IsDefaultChannel(int channel_id) const {
-    return channel_id == voe_channel();
+  bool IsDefaultRecvStream(uint32_t ssrc) {
+    return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBitrateInternal(int bps);
@@ -406,8 +289,8 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
                           const RtpHeaderExtension* extension);
   void RecreateAudioReceiveStreams();
-  void AddAudioReceiveStream(uint32 ssrc);
-  void RemoveAudioReceiveStream(uint32 ssrc);
+  void AddAudioReceiveStream(uint32_t ssrc);
+  void RemoveAudioReceiveStream(uint32_t ssrc);
   bool SetRecvCodecsInternal(const std::vector<AudioCodec>& new_codecs);
 
   bool SetChannelRecvRtpHeaderExtensions(
@@ -420,9 +303,6 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   rtc::ThreadChecker thread_checker_;
 
   WebRtcVoiceEngine* const engine_;
-  const int voe_channel_;
-  rtc::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
-  std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   rtc::scoped_ptr<webrtc::CodecInst> send_codec_;
@@ -438,27 +318,29 @@ class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
   SendFlags send_;
   webrtc::Call* const call_;
 
-  // send_channels_ contains the channels which are being used for sending.
-  // When the default channel (voe_channel) is used for sending, it is
-  // contained in send_channels_, otherwise not.
-  ChannelMap send_channels_;
+  // SSRC of unsignalled receive stream, or -1 if there isn't one.
+  int64_t default_recv_ssrc_ = -1;
+  // Volume for unsignalled stream, which may be set before the stream exists.
+  double default_recv_volume_ = 1.0;
+  // SSRC to use for RTCP receiver reports; default to 1 in case of no signaled
+  // send streams. See: https://code.google.com/p/webrtc/issues/detail?id=4740
+  uint32_t receiver_reports_ssrc_ = 1;
+
+  class WebRtcAudioSendStream;
+  std::map<uint32_t, WebRtcAudioSendStream*> send_streams_;
   std::vector<RtpHeaderExtension> send_extensions_;
-  uint32 default_receive_ssrc_;
-  // Note the default channel (voe_channel()) can reside in both
-  // receive_channels_ and send_channels_ in non-conference mode and in that
-  // case it will only be there if a non-zero default_receive_ssrc_ is set.
-  ChannelMap receive_channels_;  // for multiple sources
-  std::map<uint32, webrtc::AudioReceiveStream*> receive_streams_;
-  std::map<uint32, StreamParams> receive_stream_params_;
+
+  class WebRtcAudioReceiveStream;
+  std::map<uint32_t, WebRtcAudioReceiveStream*> receive_channels_;
+  std::map<uint32_t, webrtc::AudioReceiveStream*> receive_streams_;
+  std::map<uint32_t, StreamParams> receive_stream_params_;
   // receive_channels_ can be read from WebRtc callback thread.  Access from
   // the WebRtc thread must be synchronized with edits on the worker thread.
   // Reads on the worker thread are ok.
   std::vector<RtpHeaderExtension> receive_extensions_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
 
-  // Do not lock this on the VoE media processor thread; potential for deadlock
-  // exists.
-  mutable rtc::CriticalSection receive_channels_cs_;
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };
 
 }  // namespace cricket

@@ -39,14 +39,6 @@ config("openssl_config") {
   ]
 }
 
-config("nss_config") {
-  defines = [
-    "SSL_USE_NSS",
-    "HAVE_NSS_SSL_H",
-    "SSL_USE_NSS_RNG",
-  ]
-}
-
 config("ios_config") {
   libs = [
     "CFNetwork.framework",
@@ -84,15 +76,6 @@ if (is_linux && !build_with_chromium) {
       deps = [
         "//third_party/boringssl",
       ]
-    } else {
-      deps = [
-        "//net/third_party/nss/ssl:libssl",
-      ]
-
-      public_configs = [
-        "//net/third_party/nss/ssl:ssl_config",
-        "//third_party/nss:system_nss_no_ssl_config",
-      ]
     }
   }
 }
@@ -111,6 +94,7 @@ static_library("rtc_base_approved") {
   public_configs = [ "..:common_inherited_config" ]
 
   sources = [
+    "array_view.h",
     "atomicops.h",
     "bitbuffer.cc",
     "bitbuffer.h",
@@ -131,6 +115,7 @@ static_library("rtc_base_approved") {
     "event_tracer.h",
     "exp_filter.cc",
     "exp_filter.h",
+    "maybe.h",
     "md5.cc",
     "md5.h",
     "md5digest.cc",
@@ -254,6 +239,8 @@ static_library("rtc_base") {
     "nethelpers.h",
     "network.cc",
     "network.h",
+    "networkmonitor.cc",
+    "networkmonitor.h",
     "nullsocketserver.h",
     "pathutils.cc",
     "pathutils.h",
@@ -332,18 +319,18 @@ static_library("rtc_base") {
 
   if (build_with_chromium) {
     sources += [
-      "../overrides/webrtc/base/logging.cc",
-      "../overrides/webrtc/base/logging.h",
+      "../../webrtc_overrides/webrtc/base/logging.cc",
+      "../../webrtc_overrides/webrtc/base/logging.h",
     ]
 
     deps += [ "..:webrtc_common" ]
 
     if (is_win) {
-      sources += [ "../overrides/webrtc/base/win32socketinit.cc" ]
+      sources += [ "../../webrtc_overrides/webrtc/base/win32socketinit.cc" ]
     }
 
     include_dirs = [
-      "../overrides",
+      "../../webrtc_overrides",
       "../../boringssl/src/include",
     ]
 
@@ -497,31 +484,6 @@ static_library("rtc_base") {
       "opensslstreamadapter.cc",
       "opensslstreamadapter.h",
     ]
-  } else {
-    public_configs += [ ":nss_config" ]
-    if (rtc_build_ssl) {
-      if (build_with_chromium) {
-        deps += [ "//crypto:platform" ]
-      } else {
-        deps += [ "//net/third_party/nss/ssl:libssl" ]
-        if (is_linux) {
-          deps += [ ":linux_system_ssl" ]
-        } else {
-          deps += [
-            "//third_party/nss:nspr",
-            "//third_party/nss:nss",
-          ]
-        }
-      }
-    } else {
-      configs += [ "external_ssl_library" ]
-    }
-    sources += [
-      "nssidentity.cc",
-      "nssidentity.h",
-      "nssstreamadapter.cc",
-      "nssstreamadapter.h",
-    ]
   }
 
   if (is_android) {
@@ -586,8 +548,6 @@ static_library("rtc_base") {
 
   if (is_win && target_runtime == "win32") {
     sources += [
-      "schanneladapter.cc",
-      "schanneladapter.h",
       "win32.cc",
       "win32.h",
       "win32filesystem.cc",

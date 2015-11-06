@@ -76,13 +76,20 @@ TCPPort::TCPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
                  const rtc::IPAddress& ip,
-                 uint16 min_port,
-                 uint16 max_port,
+                 uint16_t min_port,
+                 uint16_t max_port,
                  const std::string& username,
                  const std::string& password,
                  bool allow_listen)
-    : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
-           username, password),
+    : Port(thread,
+           LOCAL_PORT_TYPE,
+           factory,
+           network,
+           ip,
+           min_port,
+           max_port,
+           username,
+           password),
       incoming_only_(false),
       allow_listen_(allow_listen),
       socket_(NULL),
@@ -374,9 +381,18 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   // given a binding address, and the platform is expected to pick the
   // correct local address.
   const rtc::IPAddress& socket_ip = socket->GetLocalAddress().ipaddr();
-  if (socket_ip == port()->ip()) {
-    LOG_J(LS_VERBOSE, this) << "Connection established to "
-                            << socket->GetRemoteAddress().ToSensitiveString();
+  if (socket_ip == port()->ip() || IPIsAny(port()->ip())) {
+    if (socket_ip == port()->ip()) {
+      LOG_J(LS_VERBOSE, this) << "Connection established to "
+                              << socket->GetRemoteAddress().ToSensitiveString();
+    } else {
+      LOG(LS_WARNING) << "Socket is bound to a different address:"
+                      << socket->GetLocalAddress().ipaddr().ToString()
+                      << ", rather then the local port:"
+                      << port()->ip().ToString()
+                      << ". Still allowing it since it's any address"
+                      << ", possibly caused by multi-routes being disabled.";
+    }
     set_connected(true);
     connection_pending_ = false;
   } else {

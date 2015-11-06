@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package org.webrtc;
 
 import android.media.MediaCodec;
@@ -41,11 +40,10 @@ import org.webrtc.Logging;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
-// MediaCodec is thread-hostile so this class must be operated on a single
-// thread.
 public class MediaCodecVideoEncoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
@@ -61,7 +59,14 @@ public class MediaCodecVideoEncoder {
     VIDEO_CODEC_H264
   }
 
+  private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
+  // Active running encoder instance. Set in initDecode() (called from native code)
+  // and reset to null in release() call.
+  private static MediaCodecVideoEncoder runningInstance = null;
+  private static MediaCodecVideoEncoderErrorCallback errorCallback = null;
+  private static int codecErrors = 0;
+
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
@@ -78,7 +83,8 @@ public class MediaCodecVideoEncoder {
     // HW H.264 encoder on below devices has poor bitrate control - actual
     // bitrates deviates a lot from the target value.
     "SAMSUNG-SGH-I337",
-    "Nexus 7"
+    "Nexus 7",
+    "Nexus 4"
   };
 
   // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
@@ -102,7 +108,20 @@ public class MediaCodecVideoEncoder {
   // SPS and PPS NALs (Config frame) for H.264.
   private ByteBuffer configData = null;
 
-  private MediaCodecVideoEncoder() {}
+  private MediaCodecVideoEncoder() {
+  }
+
+  // MediaCodec error handler - invoked when critical error happens which may prevent
+  // further use of media codec API. Now it means that one of media codec instances
+  // is hanging and can no longer be used in the next call.
+  public static interface MediaCodecVideoEncoderErrorCallback {
+    void onMediaCodecVideoEncoderCriticalError(int codecErrors);
+  }
+
+  public static void setErrorCallback(MediaCodecVideoEncoderErrorCallback errorCallback) {
+    Logging.d(TAG, "Set error callback");
+    MediaCodecVideoEncoder.errorCallback = errorCallback;
+  }
 
   // Helper struct for findHwEncoder() below.
   private static class EncoderProperties {
@@ -126,8 +145,7 @@ public class MediaCodecVideoEncoder {
     if (mime.equals(H264_MIME_TYPE)) {
       List<String> exceptionModels = Arrays.asList(H264_HW_EXCEPTION_MODELS);
       if (exceptionModels.contains(Build.MODEL)) {
-        Logging.w(TAG, "Model: " + Build.MODEL +
-            " has black listed H.264 encoder.");
+        Logging.w(TAG, "Model: " + Build.MODEL + " has black listed H.264 encoder.");
         return null;
       }
     }
@@ -197,6 +215,18 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  public static void printStackTrace() {
+    if (runningInstance != null && runningInstance.mediaCodecThread != null) {
+      StackTraceElement[] mediaCodecStackTraces = runningInstance.mediaCodecThread.getStackTrace();
+      if (mediaCodecStackTraces.length > 0) {
+        Logging.d(TAG, "MediaCodecVideoEncoder stacks trace:");
+        for (StackTraceElement stackTrace : mediaCodecStackTraces) {
+          Logging.d(TAG, stackTrace.toString());
+        }
+      }
+    }
+  }
+
   static MediaCodec createByCodecName(String codecName) {
     try {
       // In the L-SDK this call can throw IOException so in order to work in
@@ -232,6 +262,7 @@ public class MediaCodecVideoEncoder {
     if (properties == null) {
       throw new RuntimeException("Can not find HW encoder for " + type);
     }
+    runningInstance = this; // Encoder is now running and can be queried for stack traces.
     mediaCodecThread = Thread.currentThread();
     try {
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
@@ -243,6 +274,7 @@ public class MediaCodecVideoEncoder {
       Logging.d(TAG, "  Format: " + format);
       mediaCodec = createByCodecName(properties.codecName);
       if (mediaCodec == null) {
+        Logging.e(TAG, "Can not create media encoder");
         return null;
       }
       mediaCodec.configure(
@@ -288,14 +320,40 @@ public class MediaCodecVideoEncoder {
   private void release() {
     Logging.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
-    try {
-      mediaCodec.stop();
-      mediaCodec.release();
-    } catch (IllegalStateException e) {
-      Logging.e(TAG, "release failed", e);
+
+    // Run Mediacodec stop() and release() on separate thread since sometime
+    // Mediacodec.stop() may hang.
+    final CountDownLatch releaseDone = new CountDownLatch(1);
+
+    Runnable runMediaCodecRelease = new Runnable() {
+      @Override
+      public void run() {
+        try {
+          Logging.d(TAG, "Java releaseEncoder on release thread");
+          mediaCodec.stop();
+          mediaCodec.release();
+          Logging.d(TAG, "Java releaseEncoder on release thread done");
+        } catch (Exception e) {
+          Logging.e(TAG, "Media encoder release failed", e);
+        }
+        releaseDone.countDown();
+      }
+    };
+    new Thread(runMediaCodecRelease).start();
+
+    if (!ThreadUtils.awaitUninterruptibly(releaseDone, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+      Logging.e(TAG, "Media encoder release timeout");
+      codecErrors++;
+      if (errorCallback != null) {
+        Logging.e(TAG, "Invoke codec error callback. Errors: " + codecErrors);
+        errorCallback.onMediaCodecVideoEncoderCriticalError(codecErrors);
+      }
     }
+
     mediaCodec = null;
     mediaCodecThread = null;
+    runningInstance = null;
+    Logging.d(TAG, "Java releaseEncoder done");
   }
 
   private boolean setRates(int kbps, int frameRateIgnored) {

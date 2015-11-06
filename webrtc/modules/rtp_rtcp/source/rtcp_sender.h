@@ -20,12 +20,13 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
+#include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -33,9 +34,6 @@ namespace webrtc {
 class ModuleRtpRtcpImpl;
 class RTCPReceiver;
 
-namespace rtcp {
-class TransportFeedback;
-}
 class NACKStringBuilder {
  public:
   NACKStringBuilder();
@@ -76,13 +74,12 @@ public:
  RTCPSender(bool audio,
             Clock* clock,
             ReceiveStatistics* receive_statistics,
-            RtcpPacketTypeCounterObserver* packet_type_counter_observer);
+            RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+            Transport* outgoing_transport);
  virtual ~RTCPSender();
 
- int32_t RegisterSendTransport(Transport* outgoingTransport);
-
- RTCPMethod Status() const;
- void SetRTCPStatus(RTCPMethod method);
+ RtcpMode Status() const;
+ void SetRTCPStatus(RtcpMode method);
 
  bool Sending() const;
  int32_t SetSendingStatus(const FeedbackState& feedback_state,
@@ -228,10 +225,9 @@ private:
 private:
  const bool audio_;
  Clock* const clock_;
- RTCPMethod method_ GUARDED_BY(critical_section_rtcp_sender_);
+ RtcpMode method_ GUARDED_BY(critical_section_rtcp_sender_);
 
- rtc::scoped_ptr<CriticalSectionWrapper> critical_section_transport_;
- Transport* cbTransport_ GUARDED_BY(critical_section_transport_);
+ Transport* const transport_;
 
  rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtcp_sender_;
  bool using_nack_ GUARDED_BY(critical_section_rtcp_sender_);

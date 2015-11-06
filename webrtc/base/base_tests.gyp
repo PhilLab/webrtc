@@ -29,6 +29,7 @@
       'dependencies': [
         'base.gyp:rtc_base',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/test/test.gyp:field_trial',
       ],
       'direct_dependent_settings': {
         'defines': [
@@ -52,6 +53,7 @@
       'type': 'none',
       'direct_dependent_settings': {
         'sources': [
+          'array_view_unittest.cc',
           'atomicops_unittest.cc',
           'autodetectproxy_unittest.cc',
           'bandwidthsmoother_unittest.cc',
@@ -77,16 +79,15 @@
           'httpserver_unittest.cc',
           'ipaddress_unittest.cc',
           'logging_unittest.cc',
+          'maybe_unittest.cc',
           'md5digest_unittest.cc',
           'messagedigest_unittest.cc',
           'messagequeue_unittest.cc',
           'multipart_unittest.cc',
           'nat_unittest.cc',
           'network_unittest.cc',
-          'nullsocketserver_unittest.cc',
           'optionsfile_unittest.cc',
           'pathutils_unittest.cc',
-          'physicalsocketserver_unittest.cc',
           'profiler_unittest.cc',
           'proxy_unittest.cc',
           'proxydetect_unittest.cc',
@@ -101,9 +102,6 @@
           'sigslot_unittest.cc',
           'sigslottester.h',
           'sigslottester.h.pump',
-          'socket_unittest.cc',
-          'socket_unittest.h',
-          'socketaddress_unittest.cc',
           'stream_unittest.cc',
           'stringencode_unittest.cc',
           'stringutils_unittest.cc',
@@ -116,7 +114,6 @@
           'timeutils_unittest.cc',
           'urlencode_unittest.cc',
           'versionparsing_unittest.cc',
-          'virtualsocket_unittest.cc',
           # TODO(ronghuawu): Reenable this test.
           # 'windowpicker_unittest.cc',
         ],
@@ -133,17 +130,12 @@
             'sources': [
               'win32_unittest.cc',
               'win32regkey_unittest.cc',
-              'win32socketserver_unittest.cc',
               'win32window_unittest.cc',
               'win32windowpicker_unittest.cc',
               'winfirewall_unittest.cc',
             ],
             'sources!': [
-              # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot
-              # then reenable these tests.
-              'physicalsocketserver_unittest.cc',
-              'socket_unittest.cc',
-              'win32socketserver_unittest.cc',
+              # TODO(pbos): Reenable this test.
               'win32windowpicker_unittest.cc',
             ],
           }],
@@ -159,7 +151,6 @@
           }],
           ['OS=="mac"', {
             'sources': [
-              'macsocketserver_unittest.cc',
               'macutils_unittest.cc',
             ],
           }],

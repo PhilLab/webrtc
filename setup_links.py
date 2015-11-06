@@ -34,8 +34,6 @@ import textwrap
 DIRECTORIES = [
   'build',
   'buildtools',
-  'google_apis',  # Needed by build/common.gypi.
-  'net',
   'testing',
   'third_party/binutils',
   'third_party/boringssl',
@@ -49,7 +47,7 @@ DIRECTORIES = [
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
   'third_party/libudev',
-  'third_party/libvpx',
+  'third_party/libvpx_new',
   'third_party/libyuv',
   'third_party/llvm-build',
   'third_party/lss',
@@ -75,6 +73,7 @@ DIRECTORIES = [
   'tools/valgrind',
   'tools/vim',
   'tools/win',
+  'tools/xdisplaycheck',
 ]
 
 from sync_chromium import get_target_os_list
@@ -83,7 +82,6 @@ if 'android' in target_os:
   DIRECTORIES += [
     'base',
     'third_party/android_platform',
-    'third_party/android_testrunner',
     'third_party/android_tools',
     'third_party/appurify-python',
     'third_party/ashmem',
@@ -98,13 +96,12 @@ if 'android' in target_os:
     'third_party/robolectric',
     'tools/android',
     'tools/grit',
-    'tools/relocation_packer'
   ]
 if 'ios' in target_os:
   DIRECTORIES.append('third_party/class-dump')
 
 FILES = {
-  'tools/find_depot_tools.py': None,
+  'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,
 }
 

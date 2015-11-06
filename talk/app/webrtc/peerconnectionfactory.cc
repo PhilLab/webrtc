@@ -29,6 +29,7 @@
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/localaudiosource.h"
+#include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/peerconnection.h"
@@ -38,7 +39,6 @@
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videosourceproxy.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "talk/media/devices/dummydevicemanager.h"
 #include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
@@ -220,17 +220,14 @@ bool PeerConnectionFactory::Initialize() {
   if (!default_allocator_factory_)
     return false;
 
-  cricket::DummyDeviceManager* device_manager(
-      new cricket::DummyDeviceManager());
-
   // TODO:  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
   cricket::MediaEngineInterface* media_engine =
       worker_thread_->Invoke<cricket::MediaEngineInterface*>(rtc::Bind(
       &PeerConnectionFactory::CreateMediaEngine_w, this));
 
-  channel_manager_.reset(new cricket::ChannelManager(
-      media_engine, device_manager, worker_thread_));
+  channel_manager_.reset(
+      new cricket::ChannelManager(media_engine, worker_thread_));
 
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {
@@ -265,6 +262,21 @@ PeerConnectionFactory::CreateVideoSource(
 bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return channel_manager_->StartAecDump(file);
+}
+
+void PeerConnectionFactory::StopAecDump() {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  channel_manager_->StopAecDump();
+}
+
+bool PeerConnectionFactory::StartRtcEventLog(rtc::PlatformFile file) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  return channel_manager_->StartRtcEventLog(file);
+}
+
+void PeerConnectionFactory::StopRtcEventLog() {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  channel_manager_->StopRtcEventLog();
 }
 
 rtc::scoped_refptr<PeerConnectionInterface>
@@ -328,9 +340,11 @@ PeerConnectionFactory::CreateAudioTrack(const std::string& id,
   return AudioTrackProxy::Create(signaling_thread_, track);
 }
 
-cricket::ChannelManager* PeerConnectionFactory::channel_manager() {
+webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController()
+    const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  return channel_manager_.get();
+  return MediaControllerInterface::Create(worker_thread_,
+                                          channel_manager_.get());
 }
 
 rtc::Thread* PeerConnectionFactory::signaling_thread() {

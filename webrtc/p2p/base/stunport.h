@@ -50,8 +50,8 @@ class UDPPort : public Port {
                          rtc::PacketSocketFactory* factory,
                          rtc::Network* network,
                          const rtc::IPAddress& ip,
-                         uint16 min_port,
-                         uint16 max_port,
+                         uint16_t min_port,
+                         uint16_t max_port,
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
@@ -110,8 +110,8 @@ class UDPPort : public Port {
           rtc::PacketSocketFactory* factory,
           rtc::Network* network,
           const rtc::IPAddress& ip,
-          uint16 min_port,
-          uint16 max_port,
+          uint16_t min_port,
+          uint16_t max_port,
           const std::string& username,
           const std::string& password,
           const std::string& origin,
@@ -139,6 +139,9 @@ class UDPPort : public Port {
                     const char* data, size_t size,
                     const rtc::SocketAddress& remote_addr,
                     const rtc::PacketTime& packet_time);
+
+  void OnSentPacket(rtc::AsyncPacketSocket* socket,
+                    const rtc::SentPacket& sent_packet);
 
   void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
@@ -220,7 +223,8 @@ class StunPort : public UDPPort {
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
                           const rtc::IPAddress& ip,
-                          uint16 min_port, uint16 max_port,
+                          uint16_t min_port,
+                          uint16_t max_port,
                           const std::string& username,
                           const std::string& password,
                           const ServerAddresses& servers,
@@ -247,14 +251,22 @@ class StunPort : public UDPPort {
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
            const rtc::IPAddress& ip,
-           uint16 min_port,
-           uint16 max_port,
+           uint16_t min_port,
+           uint16_t max_port,
            const std::string& username,
            const std::string& password,
            const ServerAddresses& servers,
            const std::string& origin)
-     : UDPPort(thread, factory, network, ip, min_port, max_port, username,
-               password, origin, false) {
+      : UDPPort(thread,
+                factory,
+                network,
+                ip,
+                min_port,
+                max_port,
+                username,
+                password,
+                origin,
+                false) {
     // UDPPort will set these to local udp, updating these to STUN.
     set_type(STUN_PORT_TYPE);
     set_server_addresses(servers);

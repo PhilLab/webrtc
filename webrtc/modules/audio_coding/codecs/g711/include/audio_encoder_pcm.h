@@ -42,7 +42,7 @@ class AudioEncoderPcm : public AudioEncoder {
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
+                             rtc::ArrayView<const int16_t> audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
   void Reset() override;
@@ -87,6 +87,7 @@ class AudioEncoderPcmA final : public AudioEncoderPcm {
 
  private:
   static const int kSampleRateHz = 8000;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcmA);
 };
 
 class AudioEncoderPcmU final : public AudioEncoderPcm {
@@ -108,7 +109,9 @@ class AudioEncoderPcmU final : public AudioEncoderPcm {
 
  private:
   static const int kSampleRateHz = 8000;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcmU);
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_G711_INCLUDE_AUDIO_ENCODER_PCM_H_

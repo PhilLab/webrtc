@@ -49,6 +49,7 @@
 #include <algorithm>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socket.h"  // includes something that makes windows happy
 #include "webrtc/base/stream.h"
@@ -63,8 +64,8 @@ namespace {
 // limit of IPv6 networks but could be changed by set_max_ipv6_networks().
 const int kMaxIPv6Networks = 5;
 
-const uint32 kUpdateNetworksMessage = 1;
-const uint32 kSignalNetworksMessage = 2;
+const uint32_t kUpdateNetworksMessage = 1;
+const uint32_t kSignalNetworksMessage = 2;
 
 // Fetch list of networks every two seconds.
 const int kNetworksUpdateIntervalMs = 2000;
@@ -330,6 +331,11 @@ BasicNetworkManager::BasicNetworkManager()
 BasicNetworkManager::~BasicNetworkManager() {
 }
 
+void BasicNetworkManager::OnNetworksChanged() {
+  LOG(LS_VERBOSE) << "Network change was observed at the network manager";
+  UpdateNetworksOnce();
+}
+
 #if defined(__native_client__)
 
 bool BasicNetworkManager::CreateNetworks(bool include_ignored,
@@ -543,14 +549,14 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
       PIP_ADAPTER_PREFIX prefixlist = adapter_addrs->FirstPrefix;
       std::string name;
       std::string description;
-#ifdef _DEBUG
+#if !defined(NDEBUG)
       name = ToUtf8(adapter_addrs->FriendlyName,
                     wcslen(adapter_addrs->FriendlyName));
 #endif
       description = ToUtf8(adapter_addrs->Description,
                            wcslen(adapter_addrs->Description));
       for (; address; address = address->Next) {
-#ifndef _DEBUG
+#if defined(NDEBUG)
         name = rtc::ToString(count);
 #endif
 
@@ -702,6 +708,7 @@ void BasicNetworkManager::StartUpdating() {
       thread_->Post(this, kSignalNetworksMessage);
   } else {
     thread_->Post(this, kUpdateNetworksMessage);
+    StartNetworkMonitor();
   }
   ++start_count_;
 }
@@ -715,13 +722,36 @@ void BasicNetworkManager::StopUpdating() {
   if (!start_count_) {
     thread_->Clear(this);
     sent_first_update_ = false;
+    StopNetworkMonitor();
   }
+}
+
+void BasicNetworkManager::StartNetworkMonitor() {
+  NetworkMonitorFactory* factory = NetworkMonitorFactory::GetFactory();
+  if (factory == nullptr) {
+    return;
+  }
+  network_monitor_.reset(factory->CreateNetworkMonitor());
+  if (!network_monitor_) {
+    return;
+  }
+  network_monitor_->SignalNetworksChanged.connect(
+      this, &BasicNetworkManager::OnNetworksChanged);
+  network_monitor_->Start();
+}
+
+void BasicNetworkManager::StopNetworkMonitor() {
+  if (!network_monitor_) {
+    return;
+  }
+  network_monitor_->Stop();
+  network_monitor_.reset();
 }
 
 void BasicNetworkManager::OnMessage(Message* msg) {
   switch (msg->message_id) {
-    case kUpdateNetworksMessage:  {
-      DoUpdateNetworks();
+    case kUpdateNetworksMessage: {
+      UpdateNetworksContinually();
       break;
     }
     case kSignalNetworksMessage:  {
@@ -733,7 +763,7 @@ void BasicNetworkManager::OnMessage(Message* msg) {
   }
 }
 
-void BasicNetworkManager::DoUpdateNetworks() {
+void BasicNetworkManager::UpdateNetworksOnce() {
   if (!start_count_)
     return;
 
@@ -750,7 +780,10 @@ void BasicNetworkManager::DoUpdateNetworks() {
       sent_first_update_ = true;
     }
   }
+}
 
+void BasicNetworkManager::UpdateNetworksContinually() {
+  UpdateNetworksOnce();
   thread_->PostDelayed(kNetworksUpdateIntervalMs, this, kUpdateNetworksMessage);
 }
 

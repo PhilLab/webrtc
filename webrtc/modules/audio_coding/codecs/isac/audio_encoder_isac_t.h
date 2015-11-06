@@ -13,7 +13,6 @@
 
 #include <vector>
 
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 
@@ -28,7 +27,6 @@ class AudioEncoderIsacT final : public AudioEncoder {
   //  - 16000 Hz, 30 ms, 10000-32000 bps
   //  - 16000 Hz, 60 ms, 10000-32000 bps
   //  - 32000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
-  //  - 48000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
   struct Config {
     bool IsOk() const;
 
@@ -63,7 +61,7 @@ class AudioEncoderIsacT final : public AudioEncoder {
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
+                             rtc::ArrayView<const int16_t> audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
   void Reset() override;
@@ -94,36 +92,6 @@ class AudioEncoderIsacT final : public AudioEncoder {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderIsacT);
 };
 
-template <typename T>
-class AudioDecoderIsacT final : public AudioDecoder {
- public:
-  AudioDecoderIsacT();
-  explicit AudioDecoderIsacT(LockedIsacBandwidthInfo* bwinfo);
-  ~AudioDecoderIsacT() override;
-
-  bool HasDecodePlc() const override;
-  size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
-  void Reset() override;
-  int IncomingPacket(const uint8_t* payload,
-                     size_t payload_len,
-                     uint16_t rtp_sequence_number,
-                     uint32_t rtp_timestamp,
-                     uint32_t arrival_timestamp) override;
-  int ErrorCode() override;
-  size_t Channels() const override;
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  typename T::instance_type* isac_state_;
-  LockedIsacBandwidthInfo* bwinfo_;
-  int decoder_sample_rate_hz_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);
-};
-
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_AUDIO_ENCODER_ISAC_T_H_

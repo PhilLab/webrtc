@@ -45,11 +45,6 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 
-#ifdef HAVE_NSS_SSL_H
-// TODO(thorcarpenter): Remove after webrtc switches over to BoringSSL.
-#include "webrtc/base/nssstreamadapter.h"
-#endif  // HAVE_NSS_SSL_H
-
 enum {
   MSG_PACKET = 1,
 };
@@ -69,7 +64,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
  protected:
   // Called to send raw packet down the wire (e.g. SCTP an packet).
   virtual bool SendPacket(rtc::Buffer* packet,
-                          rtc::DiffServCodePoint dscp) {
+                          const rtc::PacketOptions& options) {
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket";
 
     // TODO(ldixon): Can/should we use Buffer.TransferTo here?
@@ -98,7 +93,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
   // TODO(ldixon): Refactor parent NetworkInterface class so these are not
   // required. They are RTC specific and should be in an appropriate subclass.
   virtual bool SendRtcp(rtc::Buffer* packet,
-                        rtc::DiffServCodePoint dscp) {
+                        const rtc::PacketOptions& options) {
     LOG(LS_WARNING) << "Unsupported: SctpFakeNetworkInterface::SendRtcp.";
     return false;
   }
@@ -174,21 +169,19 @@ class SignalChannelClosedObserver : public sigslot::has_slots<> {
     channel->SignalStreamClosedRemotely.connect(
         this, &SignalChannelClosedObserver::OnStreamClosed);
   }
-  void OnStreamClosed(uint32 stream) {
-    streams_.push_back(stream);
-  }
+  void OnStreamClosed(uint32_t stream) { streams_.push_back(stream); }
 
-  int StreamCloseCount(uint32 stream) {
+  int StreamCloseCount(uint32_t stream) {
     return std::count(streams_.begin(), streams_.end(), stream);
   }
 
-  bool WasStreamClosed(uint32 stream) {
+  bool WasStreamClosed(uint32_t stream) {
     return std::find(streams_.begin(), streams_.end(), stream)
         != streams_.end();
   }
 
  private:
-  std::vector<uint32> streams_;
+  std::vector<uint32_t> streams_;
 };
 
 class SignalChannelClosedReopener : public sigslot::has_slots<> {
@@ -223,12 +216,6 @@ class SctpDataMediaChannelTest : public testing::Test,
   // usrsctp uses the NSS random number generator on non-Android platforms,
   // so we need to initialize SSL.
   static void SetUpTestCase() {
-#ifdef HAVE_NSS_SSL_H
-  // TODO(thorcarpenter): Remove after webrtc switches over to BoringSSL.
-  if (!rtc::NSSContext::InitializeSSL(NULL)) {
-    LOG(LS_WARNING) << "Unabled to initialize NSS.";
-  }
-#endif  // HAVE_NSS_SSL_H
   }
 
   virtual void SetUp() {
@@ -303,7 +290,8 @@ class SctpDataMediaChannelTest : public testing::Test,
     return channel;
   }
 
-  bool SendData(cricket::SctpDataMediaChannel* chan, uint32 ssrc,
+  bool SendData(cricket::SctpDataMediaChannel* chan,
+                uint32_t ssrc,
                 const std::string& msg,
                 cricket::SendDataResult* result) {
     cricket::SendDataParams params;
@@ -313,8 +301,9 @@ class SctpDataMediaChannelTest : public testing::Test,
         &msg[0], msg.length()), result);
   }
 
-  bool ReceivedData(const SctpFakeDataReceiver* recv, uint32 ssrc,
-                    const std::string& msg ) {
+  bool ReceivedData(const SctpFakeDataReceiver* recv,
+                    uint32_t ssrc,
+                    const std::string& msg) {
     return (recv->received() &&
             recv->last_params().ssrc == ssrc &&
             recv->last_data() == msg);

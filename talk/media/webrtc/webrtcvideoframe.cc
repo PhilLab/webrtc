@@ -42,19 +42,16 @@ namespace cricket {
 WebRtcVideoFrame::WebRtcVideoFrame():
     pixel_width_(0),
     pixel_height_(0),
-    elapsed_time_ns_(0),
     time_stamp_ns_(0),
     rotation_(webrtc::kVideoRotation_0) {}
 
 WebRtcVideoFrame::WebRtcVideoFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-    int64_t elapsed_time_ns,
     int64_t time_stamp_ns,
     webrtc::VideoRotation rotation)
     : video_frame_buffer_(buffer),
       pixel_width_(1),
       pixel_height_(1),
-      elapsed_time_ns_(elapsed_time_ns),
       time_stamp_ns_(time_stamp_ns),
       rotation_(rotation) {
 }
@@ -66,45 +63,45 @@ WebRtcVideoFrame::WebRtcVideoFrame(
     : video_frame_buffer_(buffer),
       pixel_width_(1),
       pixel_height_(1),
-      elapsed_time_ns_(elapsed_time_ns),
       time_stamp_ns_(time_stamp_ns),
       rotation_(webrtc::kVideoRotation_0) {
 }
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
-bool WebRtcVideoFrame::Init(uint32 format,
+bool WebRtcVideoFrame::Init(uint32_t format,
                             int w,
                             int h,
                             int dw,
                             int dh,
-                            uint8* sample,
+                            uint8_t* sample,
                             size_t sample_size,
                             size_t pixel_width,
                             size_t pixel_height,
-                            int64_t elapsed_time_ns,
                             int64_t time_stamp_ns,
                             webrtc::VideoRotation rotation) {
   return Reset(format, w, h, dw, dh, sample, sample_size, pixel_width,
-               pixel_height, elapsed_time_ns, time_stamp_ns, rotation,
+               pixel_height, time_stamp_ns, rotation,
                true /*apply_rotation*/);
 }
 
 bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
                             bool apply_rotation) {
   return Reset(frame->fourcc, frame->width, frame->height, dw, dh,
-               static_cast<uint8*>(frame->data), frame->data_size,
-               frame->pixel_width, frame->pixel_height, frame->elapsed_time,
-               frame->time_stamp,
-               frame->GetRotation(),
-               apply_rotation);
+               static_cast<uint8_t*>(frame->data), frame->data_size,
+               frame->pixel_width, frame->pixel_height, frame->time_stamp,
+               frame->GetRotation(), apply_rotation);
 }
 
 bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
-                                   size_t pixel_height, int64_t elapsed_time_ns,
+                                   size_t pixel_height, int64_t,
                                    int64_t time_stamp_ns) {
-  InitToEmptyBuffer(w, h, pixel_width, pixel_height, elapsed_time_ns,
-                    time_stamp_ns);
+  return InitToBlack(w, h, pixel_width, pixel_height, time_stamp_ns);
+}
+
+bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
+                                   size_t pixel_height, int64_t time_stamp_ns) {
+  InitToEmptyBuffer(w, h, pixel_width, pixel_height, time_stamp_ns);
   return SetToBlack();
 }
 
@@ -116,42 +113,42 @@ size_t WebRtcVideoFrame::GetHeight() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
-const uint8* WebRtcVideoFrame::GetYPlane() const {
+const uint8_t* WebRtcVideoFrame::GetYPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kYPlane) : nullptr;
 }
 
-const uint8* WebRtcVideoFrame::GetUPlane() const {
+const uint8_t* WebRtcVideoFrame::GetUPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kUPlane) : nullptr;
 }
 
-const uint8* WebRtcVideoFrame::GetVPlane() const {
+const uint8_t* WebRtcVideoFrame::GetVPlane() const {
   return video_frame_buffer_ ? video_frame_buffer_->data(kVPlane) : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetYPlane() {
+uint8_t* WebRtcVideoFrame::GetYPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->MutableData(kYPlane)
                              : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetUPlane() {
+uint8_t* WebRtcVideoFrame::GetUPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->MutableData(kUPlane)
                              : nullptr;
 }
 
-uint8* WebRtcVideoFrame::GetVPlane() {
+uint8_t* WebRtcVideoFrame::GetVPlane() {
   return video_frame_buffer_ ? video_frame_buffer_->MutableData(kVPlane)
                              : nullptr;
 }
 
-int32 WebRtcVideoFrame::GetYPitch() const {
+int32_t WebRtcVideoFrame::GetYPitch() const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(kYPlane) : 0;
 }
 
-int32 WebRtcVideoFrame::GetUPitch() const {
+int32_t WebRtcVideoFrame::GetUPitch() const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(kUPlane) : 0;
 }
 
-int32 WebRtcVideoFrame::GetVPitch() const {
+int32_t WebRtcVideoFrame::GetVPitch() const {
   return video_frame_buffer_ ? video_frame_buffer_->stride(kVPlane) : 0;
 }
 
@@ -170,7 +167,7 @@ WebRtcVideoFrame::GetVideoFrameBuffer() const {
 
 VideoFrame* WebRtcVideoFrame::Copy() const {
   WebRtcVideoFrame* new_frame = new WebRtcVideoFrame(
-      video_frame_buffer_, elapsed_time_ns_, time_stamp_ns_, rotation_);
+      video_frame_buffer_, time_stamp_ns_, rotation_);
   new_frame->pixel_width_ = pixel_width_;
   new_frame->pixel_height_ = pixel_height_;
   return new_frame;
@@ -200,23 +197,24 @@ bool WebRtcVideoFrame::MakeExclusive() {
   return true;
 }
 
-size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
-                                            size_t size, int stride_rgb) const {
+size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
+                                            uint8_t* buffer,
+                                            size_t size,
+                                            int stride_rgb) const {
   RTC_CHECK(video_frame_buffer_);
   RTC_CHECK(video_frame_buffer_->native_handle() == nullptr);
   return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
 }
 
-bool WebRtcVideoFrame::Reset(uint32 format,
+bool WebRtcVideoFrame::Reset(uint32_t format,
                              int w,
                              int h,
                              int dw,
                              int dh,
-                             uint8* sample,
+                             uint8_t* sample,
                              size_t sample_size,
                              size_t pixel_width,
                              size_t pixel_height,
-                             int64_t elapsed_time_ns,
                              int64_t time_stamp_ns,
                              webrtc::VideoRotation rotation,
                              bool apply_rotation) {
@@ -237,7 +235,7 @@ bool WebRtcVideoFrame::Reset(uint32 format,
   }
 
   InitToEmptyBuffer(new_width, new_height, pixel_width, pixel_height,
-                    elapsed_time_ns, time_stamp_ns);
+                    time_stamp_ns);
   rotation_ = apply_rotation ? webrtc::kVideoRotation_0 : rotation;
 
   int horiz_crop = ((w - dw) / 2) & ~1;
@@ -267,21 +265,18 @@ bool WebRtcVideoFrame::Reset(uint32 format,
 
 VideoFrame* WebRtcVideoFrame::CreateEmptyFrame(
     int w, int h, size_t pixel_width, size_t pixel_height,
-    int64_t elapsed_time_ns, int64_t time_stamp_ns) const {
+    int64_t time_stamp_ns) const {
   WebRtcVideoFrame* frame = new WebRtcVideoFrame();
-  frame->InitToEmptyBuffer(w, h, pixel_width, pixel_height, elapsed_time_ns,
-                           time_stamp_ns);
+  frame->InitToEmptyBuffer(w, h, pixel_width, pixel_height, time_stamp_ns);
   return frame;
 }
 
 void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
                                          size_t pixel_height,
-                                         int64_t elapsed_time_ns,
                                          int64_t time_stamp_ns) {
   video_frame_buffer_ = new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
   pixel_width_ = pixel_width;
   pixel_height_ = pixel_height;
-  elapsed_time_ns_ = elapsed_time_ns;
   time_stamp_ns_ = time_stamp_ns;
   rotation_ = webrtc::kVideoRotation_0;
 }
@@ -315,7 +310,7 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
 
   rotated_frame_.reset(CreateEmptyFrame(rotated_width, rotated_height,
                                         GetPixelWidth(), GetPixelHeight(),
-                                        GetElapsedTime(), GetTimeStamp()));
+                                        GetTimeStamp()));
 
   // TODO(guoweis): Add a function in webrtc_libyuv.cc to convert from
   // VideoRotation to libyuv::RotationMode.

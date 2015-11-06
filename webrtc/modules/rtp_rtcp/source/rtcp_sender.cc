@@ -18,13 +18,13 @@
 #include <limits>     // max
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -135,13 +135,12 @@ RTCPSender::RTCPSender(
     bool audio,
     Clock* clock,
     ReceiveStatistics* receive_statistics,
-    RtcpPacketTypeCounterObserver* packet_type_counter_observer)
+    RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+    Transport* outgoing_transport)
     : audio_(audio),
       clock_(clock),
-      method_(kRtcpOff),
-      critical_section_transport_(
-          CriticalSectionWrapper::CreateCriticalSection()),
-      cbTransport_(nullptr),
+      method_(RtcpMode::kOff),
+      transport_(outgoing_transport),
 
       critical_section_rtcp_sender_(
           CriticalSectionWrapper::CreateCriticalSection()),
@@ -173,6 +172,7 @@ RTCPSender::RTCPSender(
       packet_type_counter_observer_(packet_type_counter_observer) {
   memset(last_send_report_, 0, sizeof(last_send_report_));
   memset(last_rtcp_time_, 0, sizeof(last_rtcp_time_));
+  RTC_DCHECK(transport_ != nullptr);
 
   builders_[kRtcpSr] = &RTCPSender::BuildSR;
   builders_[kRtcpRr] = &RTCPSender::BuildRR;
@@ -196,22 +196,16 @@ RTCPSender::RTCPSender(
 RTCPSender::~RTCPSender() {
 }
 
-int32_t RTCPSender::RegisterSendTransport(Transport* outgoingTransport) {
-  CriticalSectionScoped lock(critical_section_transport_.get());
-  cbTransport_ = outgoingTransport;
-  return 0;
-}
-
-RTCPMethod RTCPSender::Status() const {
+RtcpMode RTCPSender::Status() const {
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
   return method_;
 }
 
-void RTCPSender::SetRTCPStatus(RTCPMethod method) {
+void RTCPSender::SetRTCPStatus(RtcpMode method) {
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
   method_ = method;
 
-  if (method == kRtcpOff)
+  if (method == RtcpMode::kOff)
     return;
   next_time_to_send_rtcp_ =
       clock_->TimeInMilliseconds() +
@@ -229,7 +223,7 @@ int32_t RTCPSender::SetSendingStatus(const FeedbackState& feedback_state,
   {
     CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
 
-    if (method_ != kRtcpOff) {
+    if (method_ != RtcpMode::kOff) {
       if (sending == false && sending_ == true) {
         // Trigger RTCP bye
         sendRTCPBye = true;
@@ -408,7 +402,7 @@ From RFC 3550
 
   CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
 
-  if (method_ == kRtcpOff)
+  if (method_ == RtcpMode::kOff)
     return false;
 
   if (!audio_ && sendKeyframeBeforeRTP) {
@@ -939,7 +933,7 @@ int32_t RTCPSender::SendCompoundRTCP(
     uint64_t pictureID) {
   {
     CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-    if (method_ == kRtcpOff) {
+    if (method_ == RtcpMode::kOff) {
       LOG(LS_WARNING) << "Can't send rtcp if it is disabled.";
       return -1;
     }
@@ -983,8 +977,8 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
     RTC_DCHECK(ConsumeFlag(kRtcpReport) == false);
   } else {
     generate_report =
-        (ConsumeFlag(kRtcpReport) && method_ == kRtcpNonCompound) ||
-        method_ == kRtcpCompound;
+        (ConsumeFlag(kRtcpReport) && method_ == RtcpMode::kReducedSize) ||
+        method_ == RtcpMode::kCompound;
     if (generate_report)
       SetFlag(sending_ ? kRtcpSr : kRtcpRr, true);
   }
@@ -1115,11 +1109,8 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
 }
 
 int32_t RTCPSender::SendToNetwork(const uint8_t* dataBuffer, size_t length) {
-  CriticalSectionScoped lock(critical_section_transport_.get());
-  if (cbTransport_) {
-    if (cbTransport_->SendRTCPPacket(dataBuffer, length) > 0)
-      return 0;
-  }
+  if (transport_->SendRtcp(dataBuffer, length))
+    return 0;
   return -1;
 }
 
@@ -1210,23 +1201,19 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
 }
 
 bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
-  CriticalSectionScoped lock(critical_section_transport_.get());
-  if (!cbTransport_)
-    return false;
-
   class Sender : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
     Sender(Transport* transport)
         : transport_(transport), send_failure_(false) {}
 
     void OnPacketReady(uint8_t* data, size_t length) override {
-      if (transport_->SendRTCPPacket(data, length) <= 0)
+      if (!transport_->SendRtcp(data, length))
         send_failure_ = true;
     }
 
     Transport* const transport_;
     bool send_failure_;
-  } sender(cbTransport_);
+  } sender(transport_);
 
   uint8_t buffer[IP_PACKET_SIZE];
   return packet.BuildExternalBuffer(buffer, IP_PACKET_SIZE, &sender) &&

@@ -11,9 +11,9 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/generic_decoder.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/trace_event.h"
 
 namespace webrtc {
 
@@ -50,8 +50,7 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
     VCMReceiveCallback* callback;
     {
         CriticalSectionScoped cs(_critSect);
-        frameInfo = static_cast<VCMFrameInformation*>(
-            _timestampMap.Pop(decodedImage.timestamp()));
+        frameInfo = _timestampMap.Pop(decodedImage.timestamp());
         callback = _receiveCallback;
     }
 
@@ -124,10 +123,10 @@ uint64_t VCMDecodedFrameCallback::LastReceivedPictureID() const {
     return _lastReceivedPictureID;
 }
 
-int32_t VCMDecodedFrameCallback::Map(uint32_t timestamp,
-                                    VCMFrameInformation* frameInfo) {
-    CriticalSectionScoped cs(_critSect);
-    return _timestampMap.Add(timestamp, frameInfo);
+void VCMDecodedFrameCallback::Map(uint32_t timestamp,
+                                  VCMFrameInformation* frameInfo) {
+  CriticalSectionScoped cs(_critSect);
+  _timestampMap.Add(timestamp, frameInfo);
 }
 
 int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp) {

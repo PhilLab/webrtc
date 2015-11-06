@@ -249,10 +249,10 @@ class MediaContentDescription : public ContentDescription {
     streams_.push_back(stream);
   }
   // Legacy streams have an ssrc, but nothing else.
-  void AddLegacyStream(uint32 ssrc) {
+  void AddLegacyStream(uint32_t ssrc) {
     streams_.push_back(StreamParams::CreateLegacy(ssrc));
   }
-  void AddLegacyStream(uint32 ssrc, uint32 fid_ssrc) {
+  void AddLegacyStream(uint32_t ssrc, uint32_t fid_ssrc) {
     StreamParams sp = StreamParams::CreateLegacy(ssrc);
     sp.AddFidSsrc(ssrc, fid_ssrc);
     streams_.push_back(sp);
@@ -266,7 +266,7 @@ class MediaContentDescription : public ContentDescription {
         it->cname = cname;
     }
   }
-  uint32 first_ssrc() const {
+  uint32_t first_ssrc() const {
     if (streams_.empty()) {
       return 0;
     }
@@ -550,7 +550,7 @@ const DataContentDescription* GetFirstDataContentDescription(
 void GetSupportedAudioCryptoSuites(std::vector<std::string>* crypto_suites);
 void GetSupportedVideoCryptoSuites(std::vector<std::string>* crypto_suites);
 void GetSupportedDataCryptoSuites(std::vector<std::string>* crypto_suites);
-void GetSupportedDefaultCryptoSuites(std::vector<std::string>* crypto_suites);
+void GetDefaultSrtpCryptoSuiteNames(std::vector<std::string>* crypto_suites);
 }  // namespace cricket
 
 #endif  // TALK_SESSION_MEDIA_MEDIASESSION_H_

@@ -13,7 +13,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 
 namespace webrtc {
 namespace test {
@@ -47,7 +47,7 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
 
 int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                             const CodecSpecificInfo* codec_specific_info,
-                            const std::vector<VideoFrameType>* frame_types) {
+                            const std::vector<FrameType>* frame_types) {
   assert(config_.maxFramerate > 0);
   int64_t time_since_last_encode_ms = 1000 / config_.maxFramerate;
   int64_t time_now_ms = clock_->TimeInMilliseconds();
@@ -100,10 +100,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded._encodedWidth = config_.simulcastStream[i].width;
     encoded._encodedHeight = config_.simulcastStream[i].height;
     // Always encode something on the first frame.
-    if (min_stream_bits > bits_available && i > 0) {
-      encoded._length = 0;
-      encoded._frameType = kSkipFrame;
-    }
+    if (min_stream_bits > bits_available && i > 0)
+      continue;
     assert(callback_ != NULL);
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
       return -1;
@@ -191,7 +189,7 @@ DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)
 
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
-                               const std::vector<VideoFrameType>* frame_types) {
+                               const std::vector<FrameType>* frame_types) {
   SleepMs(delay_ms_);
   return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
 }

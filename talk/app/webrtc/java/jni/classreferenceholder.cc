@@ -63,6 +63,7 @@ void FreeGlobalClassReferenceHolder() {
 
 ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "java/nio/ByteBuffer");
+  LoadClass(jni, "java/util/ArrayList");
   LoadClass(jni, "org/webrtc/AudioTrack");
   LoadClass(jni, "org/webrtc/DataChannel");
   LoadClass(jni, "org/webrtc/DataChannel$Buffer");
@@ -71,32 +72,29 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/IceCandidate");
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   LoadClass(jni, "android/graphics/SurfaceTexture");
+  LoadClass(jni, "javax/microedition/khronos/egl/EGLContext");
   LoadClass(jni, "org/webrtc/CameraEnumerator");
   LoadClass(jni, "org/webrtc/Camera2Enumerator");
   LoadClass(jni, "org/webrtc/CameraEnumerationAndroid");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeObserver");
   LoadClass(jni, "org/webrtc/EglBase");
+  LoadClass(jni, "org/webrtc/NetworkMonitor");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
-  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
+  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedTextureBuffer");
+  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecodedByteBuffer");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$VideoCodecType");
-  jclass j_egl_base_class = GetClass("org/webrtc/EglBase");
-  jmethodID j_is_egl14_supported_method = jni->GetStaticMethodID(
-      j_egl_base_class, "isEGL14Supported", "()Z");
-  bool is_egl14_supported = jni->CallStaticBooleanMethod(
-      j_egl_base_class, j_is_egl14_supported_method);
-  CHECK_EXCEPTION(jni);
-  if (is_egl14_supported) {
-    LoadClass(jni, "android/opengl/EGLContext");
-  }
+  LoadClass(jni, "org/webrtc/SurfaceTextureHelper");
 #endif
   LoadClass(jni, "org/webrtc/MediaSource$State");
   LoadClass(jni, "org/webrtc/MediaStream");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$State");
+  LoadClass(jni, "org/webrtc/PeerConnectionFactory");
   LoadClass(jni, "org/webrtc/PeerConnection$BundlePolicy");
+  LoadClass(jni, "org/webrtc/PeerConnection$ContinualGatheringPolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$RtcpMuxPolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$IceConnectionState");
   LoadClass(jni, "org/webrtc/PeerConnection$IceGatheringState");
@@ -104,6 +102,8 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/PeerConnection$TcpCandidatePolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$KeyType");
   LoadClass(jni, "org/webrtc/PeerConnection$SignalingState");
+  LoadClass(jni, "org/webrtc/RtpReceiver");
+  LoadClass(jni, "org/webrtc/RtpSender");
   LoadClass(jni, "org/webrtc/SessionDescription");
   LoadClass(jni, "org/webrtc/SessionDescription$Type");
   LoadClass(jni, "org/webrtc/StatsReport");

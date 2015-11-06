@@ -39,6 +39,8 @@
 
 namespace webrtc_jni {
 
+class NativeTextureHandleImpl;
+
 // AndroidVideoCapturerJni implements AndroidVideoCapturerDelegate.
 // The purpose of the delegate is to hide the JNI specifics from the C++ only
 // AndroidVideoCapturer.
@@ -46,12 +48,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
  public:
   static int SetAndroidObjects(JNIEnv* jni, jobject appliction_context);
 
-  // Creates a new instance of AndroidVideoCapturerJni. Returns a nullptr if
-  // it can't be created. This happens if |device_name| is invalid.
-  static rtc::scoped_refptr<AndroidVideoCapturerJni> Create(
-      JNIEnv* jni,
-      jobject j_video_capture, // Instance of VideoCapturerAndroid
-      jstring device_name); // Name of the camera to use.
+  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
 
   void Start(int width, int height, int framerate,
              webrtc::AndroidVideoCapturer* capturer) override;
@@ -61,21 +58,24 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
 
   // Called from VideoCapturerAndroid::NativeObserver on a Java thread.
   void OnCapturerStarted(bool success);
-  void OnIncomingFrame(void* video_frame,
-                       int length,
-                       int width,
-                       int height,
-                       int rotation,
-                       int64 time_stamp);
+  void OnMemoryBufferFrame(void* video_frame, int length, int width,
+                           int height, int rotation, int64_t timestamp_ns);
+  void OnTextureFrame(int width, int height, int64_t timestamp_ns,
+                      const NativeTextureHandleImpl& handle);
   void OnOutputFormatRequest(int width, int height, int fps);
-protected:
-  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
+
+ protected:
   ~AndroidVideoCapturerJni();
 
-private:
-  bool Init(jstring device_name);
-  void ReturnBuffer(int64 time_stamp);
+ private:
+  void ReturnBuffer(int64_t time_stamp);
   JNIEnv* jni();
+
+  // To avoid deducing Args from the 3rd parameter of AsyncCapturerInvoke.
+  template <typename T>
+  struct Identity {
+    typedef T type;
+  };
 
   // Helper function to make safe asynchronous calls to |capturer_|. The calls
   // are not guaranteed to be delivered.
@@ -83,7 +83,7 @@ private:
   void AsyncCapturerInvoke(
       const char* method_name,
       void (webrtc::AndroidVideoCapturer::*method)(Args...),
-      Args... args);
+      typename Identity<Args>::type... args);
 
   const ScopedGlobalRef<jobject> j_capturer_global_;
   const ScopedGlobalRef<jclass> j_video_capturer_class_;

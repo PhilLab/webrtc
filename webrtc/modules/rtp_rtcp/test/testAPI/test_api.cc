@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
+#include "webrtc/test/null_transport.h"
 
 #include <algorithm>
 #include <vector>
@@ -30,37 +31,39 @@ void LoopBackTransport::DropEveryNthPacket(int n) {
   packet_loss_ = n;
 }
 
-int LoopBackTransport::SendPacket(const void* data, size_t len) {
+bool LoopBackTransport::SendRtp(const uint8_t* data,
+                                size_t len,
+                                const PacketOptions& options) {
   count_++;
   if (packet_loss_ > 0) {
     if ((count_ % packet_loss_) == 0) {
-      return len;
+      return true;
     }
   }
   RTPHeader header;
   rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
-    return -1;
+    return false;
   }
   PayloadUnion payload_specific;
   if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                   &payload_specific)) {
-    return -1;
+    return false;
   }
   receive_statistics_->IncomingPacket(header, len, false);
   if (!rtp_receiver_->IncomingRtpPacket(header,
                                         static_cast<const uint8_t*>(data), len,
                                         payload_specific, true)) {
-    return -1;
+    return false;
   }
-  return len;
+  return true;
 }
 
-int LoopBackTransport::SendRTCPPacket(const void* data, size_t len) {
+bool LoopBackTransport::SendRtcp(const uint8_t* data, size_t len) {
   if (rtp_rtcp_module_->IncomingRtcpPacket((const uint8_t*)data, len) < 0) {
-    return -1;
+    return false;
   }
-  return static_cast<int>(len);
+  return true;
 }
 
 int32_t TestRtpReceiver::OnReceivedPayloadData(
@@ -90,6 +93,7 @@ class RtpRtcpAPITest : public ::testing::Test {
     RtpRtcp::Configuration configuration;
     configuration.audio = true;
     configuration.clock = &fake_clock_;
+    configuration.outgoing_transport = &null_transport_;
     module_.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_payload_registry_.reset(new RTPPayloadRegistry(
             RTPPayloadStrategy::CreateStrategy(true)));
@@ -105,6 +109,7 @@ class RtpRtcpAPITest : public ::testing::Test {
   uint16_t test_sequence_number_;
   std::vector<uint32_t> test_csrcs_;
   SimulatedClock fake_clock_;
+  test::NullTransport null_transport_;
 };
 
 TEST_F(RtpRtcpAPITest, Basic) {
@@ -136,9 +141,9 @@ TEST_F(RtpRtcpAPITest, SSRC) {
 }
 
 TEST_F(RtpRtcpAPITest, RTCP) {
-  EXPECT_EQ(kRtcpOff, module_->RTCP());
-  module_->SetRTCPStatus(kRtcpCompound);
-  EXPECT_EQ(kRtcpCompound, module_->RTCP());
+  EXPECT_EQ(RtcpMode::kOff, module_->RTCP());
+  module_->SetRTCPStatus(RtcpMode::kCompound);
+  EXPECT_EQ(RtcpMode::kCompound, module_->RTCP());
 
   EXPECT_EQ(0, module_->SetCNAME("john.doe@test.test"));
 

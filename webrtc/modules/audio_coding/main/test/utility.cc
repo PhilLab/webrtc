@@ -18,7 +18,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 
 #define NUM_CODECS_WITH_FIXED_PAYLOAD_TYPE 13
@@ -288,7 +288,7 @@ VADCallback::VADCallback() {
 }
 
 void VADCallback::PrintFrameTypes() {
-  printf("kFrameEmpty......... %d\n", _numFrameTypes[kFrameEmpty]);
+  printf("kEmptyFrame......... %d\n", _numFrameTypes[kEmptyFrame]);
   printf("kAudioFrameSpeech... %d\n", _numFrameTypes[kAudioFrameSpeech]);
   printf("kAudioFrameCN....... %d\n", _numFrameTypes[kAudioFrameCN]);
   printf("kVideoFrameKey...... %d\n", _numFrameTypes[kVideoFrameKey]);

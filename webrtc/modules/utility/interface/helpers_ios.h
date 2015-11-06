@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INTERFACE_HELPERS_IOS_H_
-#define WEBRTC_MODULES_UTILITY_INTERFACE_HELPERS_IOS_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
+
+#pragma message("WARNING: utility/interface is DEPRECATED; use utility/include")
 
 #if defined(WEBRTC_IOS)
 
@@ -20,6 +22,8 @@ namespace ios {
 
 bool CheckAndLogError(BOOL success, NSError* error);
 
+std::string StdStringFromNSString(NSString* nsString);
+
 // Return thread ID as a string.
 std::string GetThreadId();
 
@@ -29,6 +33,8 @@ std::string GetThreadInfo();
 // Returns [NSThread currentThread] description as string.
 // Example: <NSThread: 0x170066d80>{number = 1, name = main}
 std::string GetCurrentThreadDescription();
+
+std::string GetAudioSessionCategory();
 
 // Returns the current name of the operating system.
 std::string GetSystemName();
@@ -52,4 +58,4 @@ std::string GetDeviceName();
 
 #endif  // defined(WEBRTC_IOS)
 
-#endif  // WEBRTC_MODULES_UTILITY_INTERFACE_HELPERS_IOS_H_
+#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_

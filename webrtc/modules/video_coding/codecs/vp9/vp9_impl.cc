@@ -23,12 +23,12 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace {
 
@@ -112,42 +112,72 @@ int VP9EncoderImpl::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+bool VP9EncoderImpl::ExplicitlyConfiguredSpatialLayers() const {
+  // We check target_bitrate_bps of the 0th layer to see if the spatial layers
+  // (i.e. bitrates) were explicitly configured.
+  return num_spatial_layers_ > 1 &&
+         codec_.spatialLayers[0].target_bitrate_bps > 0;
+}
+
 bool VP9EncoderImpl::SetSvcRates() {
-  float rate_ratio[VPX_MAX_LAYERS] = {0};
-  float total = 0;
   uint8_t i = 0;
 
-  for (i = 0; i < num_spatial_layers_; ++i) {
-    if (svc_internal_.svc_params.scaling_factor_num[i] <= 0 ||
-        svc_internal_.svc_params.scaling_factor_den[i] <= 0) {
+  if (ExplicitlyConfiguredSpatialLayers()) {
+    if (num_temporal_layers_ > 1) {
+      LOG(LS_ERROR) << "Multiple temporal layers when manually specifying "
+                       "spatial layers not implemented yet!";
       return false;
     }
-    rate_ratio[i] = static_cast<float>(
-        svc_internal_.svc_params.scaling_factor_num[i]) /
-        svc_internal_.svc_params.scaling_factor_den[i];
-    total += rate_ratio[i];
-  }
+    int total_bitrate_bps = 0;
+    for (i = 0; i < num_spatial_layers_; ++i)
+      total_bitrate_bps += codec_.spatialLayers[i].target_bitrate_bps;
+    // If total bitrate differs now from what has been specified at the
+    // beginning, update the bitrates in the same ratio as before.
+    for (i = 0; i < num_spatial_layers_; ++i) {
+      config_->ss_target_bitrate[i] = config_->layer_target_bitrate[i] =
+          static_cast<int>(static_cast<int64_t>(config_->rc_target_bitrate) *
+                           codec_.spatialLayers[i].target_bitrate_bps /
+                           total_bitrate_bps);
+    }
+  } else {
+    float rate_ratio[VPX_MAX_LAYERS] = {0};
+    float total = 0;
 
-  for (i = 0; i < num_spatial_layers_; ++i) {
-    config_->ss_target_bitrate[i] = static_cast<unsigned int>(
-        config_->rc_target_bitrate * rate_ratio[i] / total);
-    if (num_temporal_layers_ == 1) {
-      config_->layer_target_bitrate[i] = config_->ss_target_bitrate[i];
-    } else if (num_temporal_layers_ == 2) {
-      config_->layer_target_bitrate[i * num_temporal_layers_] =
-          config_->ss_target_bitrate[i] * 2 / 3;
-      config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
-          config_->ss_target_bitrate[i];
-    } else if (num_temporal_layers_ == 3) {
-      config_->layer_target_bitrate[i * num_temporal_layers_] =
-          config_->ss_target_bitrate[i] / 2;
-      config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
-          config_->layer_target_bitrate[i * num_temporal_layers_] +
-          (config_->ss_target_bitrate[i] / 4);
-      config_->layer_target_bitrate[i * num_temporal_layers_ + 2] =
-          config_->ss_target_bitrate[i];
-    } else {
-      return false;
+    for (i = 0; i < num_spatial_layers_; ++i) {
+      if (svc_internal_.svc_params.scaling_factor_num[i] <= 0 ||
+          svc_internal_.svc_params.scaling_factor_den[i] <= 0) {
+        LOG(LS_ERROR) << "Scaling factors not specified!";
+        return false;
+      }
+      rate_ratio[i] =
+          static_cast<float>(svc_internal_.svc_params.scaling_factor_num[i]) /
+          svc_internal_.svc_params.scaling_factor_den[i];
+      total += rate_ratio[i];
+    }
+
+    for (i = 0; i < num_spatial_layers_; ++i) {
+      config_->ss_target_bitrate[i] = static_cast<unsigned int>(
+          config_->rc_target_bitrate * rate_ratio[i] / total);
+      if (num_temporal_layers_ == 1) {
+        config_->layer_target_bitrate[i] = config_->ss_target_bitrate[i];
+      } else if (num_temporal_layers_ == 2) {
+        config_->layer_target_bitrate[i * num_temporal_layers_] =
+            config_->ss_target_bitrate[i] * 2 / 3;
+        config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
+            config_->ss_target_bitrate[i];
+      } else if (num_temporal_layers_ == 3) {
+        config_->layer_target_bitrate[i * num_temporal_layers_] =
+            config_->ss_target_bitrate[i] / 2;
+        config_->layer_target_bitrate[i * num_temporal_layers_ + 1] =
+            config_->layer_target_bitrate[i * num_temporal_layers_] +
+            (config_->ss_target_bitrate[i] / 4);
+        config_->layer_target_bitrate[i * num_temporal_layers_ + 2] =
+            config_->ss_target_bitrate[i];
+      } else {
+        LOG(LS_ERROR) << "Unsupported number of temporal layers: "
+                      << num_temporal_layers_;
+        return false;
+      }
     }
   }
 
@@ -334,12 +364,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 int VP9EncoderImpl::NumberOfThreads(int width,
                                     int height,
                                     int number_of_cores) {
-  // For the current libvpx library, only 1 thread is supported when SVC is
-  // turned on.
-  if (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) {
-    return 1;
-  }
-
   // Keep the number of encoder threads equal to the possible number of column
   // tiles, which is (1, 2, 4, 8). See comments below for VP9E_SET_TILE_COLUMNS.
   if (width * height >= 1280 * 720 && number_of_cores > 4) {
@@ -355,14 +379,24 @@ int VP9EncoderImpl::NumberOfThreads(int width,
 int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   config_->ss_number_layers = num_spatial_layers_;
 
-  int scaling_factor_num = 256;
-  for (int i = num_spatial_layers_ - 1; i >= 0; --i) {
-    svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
-    svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
-    // 1:2 scaling in each dimension.
-    svc_internal_.svc_params.scaling_factor_num[i] = scaling_factor_num;
-    svc_internal_.svc_params.scaling_factor_den[i] = 256;
-    scaling_factor_num /= 2;
+  if (ExplicitlyConfiguredSpatialLayers()) {
+    for (int i = 0; i < num_spatial_layers_; ++i) {
+      const auto& layer = codec_.spatialLayers[i];
+      svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
+      svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
+      svc_internal_.svc_params.scaling_factor_num[i] = layer.scaling_factor_num;
+      svc_internal_.svc_params.scaling_factor_den[i] = layer.scaling_factor_den;
+    }
+  } else {
+    int scaling_factor_num = 256;
+    for (int i = num_spatial_layers_ - 1; i >= 0; --i) {
+      svc_internal_.svc_params.max_quantizers[i] = config_->rc_max_quantizer;
+      svc_internal_.svc_params.min_quantizers[i] = config_->rc_min_quantizer;
+      // 1:2 scaling in each dimension.
+      svc_internal_.svc_params.scaling_factor_num[i] = scaling_factor_num;
+      svc_internal_.svc_params.scaling_factor_den[i] = 256;
+      scaling_factor_num /= 2;
+    }
   }
 
   if (!SetSvcRates()) {
@@ -428,7 +462,7 @@ uint32_t VP9EncoderImpl::MaxIntraTarget(uint32_t optimal_buffer_size) {
 
 int VP9EncoderImpl::Encode(const VideoFrame& input_image,
                            const CodecSpecificInfo* codec_specific_info,
-                           const std::vector<VideoFrameType>* frame_types) {
+                           const std::vector<FrameType>* frame_types) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -438,7 +472,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  VideoFrameType frame_type = kDeltaFrame;
+  FrameType frame_type = kVideoFrameDelta;
   // We only support one stream at the moment.
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
@@ -462,7 +496,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   raw_->stride[VPX_PLANE_V] = input_image.stride(kVPlane);
 
   int flags = 0;
-  bool send_keyframe = (frame_type == kKeyFrame);
+  bool send_keyframe = (frame_type == kVideoFrameKey);
   if (send_keyframe) {
     // Key frame request from caller.
     flags = VPX_EFLAG_FORCE_KF;
@@ -566,7 +600,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 
 int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   encoded_image_._length = 0;
-  encoded_image_._frameType = kDeltaFrame;
+  encoded_image_._frameType = kVideoFrameDelta;
   RTPFragmentationHeader frag_info;
   // Note: no data partitioning in VP9, so 1 partition only. We keep this
   // fragmentation data for now, until VP9 packetizer is implemented.
@@ -588,7 +622,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   // End of frame.
   // Check if encoded frame is a key frame.
   if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
-    encoded_image_._frameType = kKeyFrame;
+    encoded_image_._frameType = kVideoFrameKey;
   }
   PopulateCodecSpecific(&codec_specific, *pkt, input_image_->timestamp());
 
@@ -694,7 +728,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   }
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (input_image._frameType != kKeyFrame)
+    if (input_image._frameType != kVideoFrameKey)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // We have a key frame - is it complete?
     if (input_image._completeFrame) {

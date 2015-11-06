@@ -20,13 +20,13 @@
       ],
       'include_dirs': [
         '.',
-        '../interface',
+        '../include',
         'include',
         'dummy',  # Contains dummy audio device implementations.
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          '../include',
           'include',
         ],
       },
@@ -262,25 +262,6 @@
           ],
         },
       ], # targets
-      'conditions': [
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'audio_device_tests_run',
-              'type': 'none',
-              'dependencies': [
-                'audio_device_tests',
-              ],
-              'includes': [
-                '../../build/isolate.gypi',
-              ],
-              'sources': [
-                'audio_device_tests.isolate',
-              ],
-            },
-          ],
-        }],
-      ],
     }], # include_tests
   ],
 }

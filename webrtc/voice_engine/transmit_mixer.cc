@@ -11,11 +11,11 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 
 #include "webrtc/base/format_macros.h"
-#include "webrtc/modules/utility/interface/audio_frame_operations.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/modules/utility/include/audio_frame_operations.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
+#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
@@ -645,9 +645,6 @@ int TransmitMixer::StopPlayingFileAsMicrophone()
 
     if (!_filePlaying)
     {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceWarning,
-            "StopPlayingFileAsMicrophone() isnot playing");
         return 0;
     }
 
@@ -1136,31 +1133,25 @@ void TransmitMixer::GenerateAudioFrame(const int16_t* audio,
   int codec_rate;
   int num_codec_channels;
   GetSendCodecInfo(&codec_rate, &num_codec_channels);
-  // TODO(ajm): This currently restricts the sample rate to 32 kHz.
-  // See: https://code.google.com/p/webrtc/issues/detail?id=3146
-  // When 48 kHz is supported natively by AudioProcessing, this will have
-  // to be changed to handle 44.1 kHz.
-  int max_sample_rate_hz = kAudioProcMaxNativeSampleRateHz;
-  if (audioproc_->echo_control_mobile()->is_enabled()) {
-    // AECM only supports 8 and 16 kHz.
-    max_sample_rate_hz = 16000;
-  }
-  codec_rate = std::min(codec_rate, max_sample_rate_hz);
   stereo_codec_ = num_codec_channels == 2;
 
-  if (!mono_buffer_.get()) {
-    // Temporary space for DownConvertToCodecFormat.
-    mono_buffer_.reset(new int16_t[kMaxMonoDataSizeSamples]);
+  // We want to process at the lowest rate possible without losing information.
+  // Choose the lowest native rate at least equal to the input and codec rates.
+  const int min_processing_rate = std::min(sample_rate_hz, codec_rate);
+  for (size_t i = 0; i < AudioProcessing::kNumNativeSampleRates; ++i) {
+    _audioFrame.sample_rate_hz_ = AudioProcessing::kNativeSampleRatesHz[i];
+    if (_audioFrame.sample_rate_hz_ >= min_processing_rate) {
+      break;
+    }
   }
-  DownConvertToCodecFormat(audio,
-                           samples_per_channel,
-                           num_channels,
-                           sample_rate_hz,
-                           num_codec_channels,
-                           codec_rate,
-                           mono_buffer_.get(),
-                           &resampler_,
-                           &_audioFrame);
+  if (audioproc_->echo_control_mobile()->is_enabled()) {
+    // AECM only supports 8 and 16 kHz.
+    _audioFrame.sample_rate_hz_ = std::min(
+        _audioFrame.sample_rate_hz_, AudioProcessing::kMaxAECMSampleRateHz);
+  }
+  _audioFrame.num_channels_ = std::min(num_channels, num_codec_channels);
+  RemixAndResample(audio, samples_per_channel, num_channels, sample_rate_hz,
+                   &resampler_, &_audioFrame);
 }
 
 int32_t TransmitMixer::RecordAudioToFile(

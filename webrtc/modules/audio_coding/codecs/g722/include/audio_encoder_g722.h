@@ -42,7 +42,7 @@ class AudioEncoderG722 final : public AudioEncoder {
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
+                             rtc::ArrayView<const int16_t> audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
   void Reset() override;
@@ -66,6 +66,7 @@ class AudioEncoderG722 final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   const rtc::scoped_ptr<EncoderState[]> encoders_;
   rtc::Buffer interleave_buffer_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderG722);
 };
 
 }  // namespace webrtc

@@ -44,7 +44,7 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
+                             rtc::ArrayView<const int16_t> audio,
                              size_t max_encoded_bytes,
                              uint8_t* encoded) override;
   void Reset() override;
@@ -60,7 +60,9 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   int red_payload_type_;
   rtc::Buffer secondary_encoded_;
   EncodedInfoLeaf secondary_info_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderCopyRed);
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_RED_AUDIO_ENCODER_COPY_RED_H_

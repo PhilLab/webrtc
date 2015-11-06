@@ -61,7 +61,11 @@ inline void RtcUnused(const void*) {}
 /////////////////////////////////////////////////////////////////////////////
 
 #ifndef ENABLE_DEBUG
-#define ENABLE_DEBUG _DEBUG
+#if !defined(NDEBUG)
+#define ENABLE_DEBUG 1
+#else
+#define ENABLE_DEBUG 0
+#endif
 #endif  // !defined(ENABLE_DEBUG)
 
 // Even for release builds, allow for the override of LogAssert. Though no
@@ -190,7 +194,7 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 // TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
 // libjingle are merged.
 #if !defined(WARN_UNUSED_RESULT)
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #define WARN_UNUSED_RESULT

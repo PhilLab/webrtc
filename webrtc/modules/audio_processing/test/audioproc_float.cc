@@ -20,7 +20,7 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
 DEFINE_string(dump, "", "The name of the debug dump file to read from.");
@@ -37,6 +37,7 @@ DEFINE_string(mic_positions, "",
     "Space delimited cartesian coordinates of microphones in meters. "
     "The coordinates of each point are contiguous. "
     "For a two element array: \"x1 y1 z1 x2 y2 z2\"");
+DEFINE_double(target_angle_degrees, 90, "The azimuth of the target in radians");
 
 DEFINE_bool(aec, false, "Enable echo cancellation.");
 DEFINE_bool(agc, false, "Enable automatic gain control.");
@@ -107,7 +108,10 @@ int main(int argc, char* argv[]) {
         ParseArrayGeometry(FLAGS_mic_positions, num_mics);
     RTC_CHECK_EQ(array_geometry.size(), num_mics);
 
-    config.Set<Beamforming>(new Beamforming(true, array_geometry));
+    config.Set<Beamforming>(new Beamforming(
+        true, array_geometry,
+        SphericalPointf(DegreesToRadians(FLAGS_target_angle_degrees), 0.f,
+                        1.f)));
   }
 
   rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
@@ -124,10 +128,12 @@ int main(int argc, char* argv[]) {
                ap->gain_control()->set_mode(GainControl::kFixedDigital));
   RTC_CHECK_EQ(kNoErr, ap->high_pass_filter()->Enable(FLAGS_hpf || FLAGS_all));
   RTC_CHECK_EQ(kNoErr, ap->noise_suppression()->Enable(FLAGS_ns || FLAGS_all));
-  if (FLAGS_ns_level != -1)
+  if (FLAGS_ns_level != -1) {
     RTC_CHECK_EQ(kNoErr,
                  ap->noise_suppression()->set_level(
                      static_cast<NoiseSuppression::Level>(FLAGS_ns_level)));
+  }
+  ap->set_stream_key_pressed(FLAGS_ts);
 
   printf("Input file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
          FLAGS_i.c_str(), in_file.num_channels(), in_file.sample_rate());
