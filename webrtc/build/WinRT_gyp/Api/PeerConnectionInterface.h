@@ -20,6 +20,7 @@
 #include "GlobalObserver.h"
 #include "DataChannel.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 
 using Platform::String;
 using Platform::IBox;
@@ -317,6 +318,11 @@ public:
   property String^ RemoteCandidateType;
 };
 
+public ref class RTCStatsReportsReadyEvent sealed {
+public:
+  property RTCStatsReports rtcStatsReports;
+};
+
 // ------------------
 public ref class MediaStreamEvent sealed {
 public:
@@ -389,6 +395,12 @@ public:
   /// New connection health stats are available.
   /// </summary>
   event RTCPeerConnectionHealthStatsDelegate^ OnConnectionHealthStats;
+
+  /// <summary>
+  /// Webrtc statistics report is ready <see cref="RTCStatsReports"/>.
+  /// </summary>
+  event RTCStatsReportsReadyEventDelegate^  OnRTCStatsReportsReady;
+
 
   /// <summary>
   /// Generates a blob of SDP that contains an RFC 3264 offer with the
@@ -520,6 +532,11 @@ public:
   //  event is raised.
   /// </summary>
   void ToggleConnectionHealthStats(bool enable);
+
+  /// <summary>
+  /// Enable/Disable WebRTC statistics for exposing report.
+  /// </summary>
+  void ToggleRTCStats(bool enable);
 
   /// <summary>
   /// The last <see cref="RTCSessionDescription"/> that was successfully set

@@ -25,7 +25,8 @@ ref class RTCDataChannel;
 
 namespace webrtc_winrt_api_internal {
 
-class GlobalObserver : public webrtc::PeerConnectionObserver, public webrtc::ConnectionHealthStatsObserver {
+class GlobalObserver : public webrtc::PeerConnectionObserver,
+                       public webrtc::WebRTCStatsObserverWinRT {
  public:
   GlobalObserver();
 
@@ -34,6 +35,8 @@ class GlobalObserver : public webrtc::PeerConnectionObserver, public webrtc::Con
   void ToggleETWStats(bool enable);
 
   void ToggleConnectionHealthStats(bool enable);
+
+  void ToggleRTCStats(bool enable);
 
   // PeerConnectionObserver functions
   virtual void OnSignalingChange(
@@ -59,15 +62,18 @@ class GlobalObserver : public webrtc::PeerConnectionObserver, public webrtc::Con
 
   virtual void OnIceComplete();
 
-  // ConnectionHealthStatsObserver functions
+  // WebRTCStatsObserverWinRT functions
   virtual void OnConnectionHealthStats(
     const webrtc::ConnectionHealthStats& stats);
+  virtual void OnRTCStatsReportsReady(
+    const webrtc_winrt_api::RTCStatsReports& rtcStatsReports);
 
  private:
   webrtc_winrt_api::RTCPeerConnection^ _pc;
   rtc::scoped_refptr<webrtc::WebRTCStatsObserver> _stats_observer_etw;
   bool _etwStatsEnabled;
   bool _connectionHealthStatsEnabled;
+  bool _rtcStatsEnabled;
 };
 
 // There is one of those per call to CreateOffer().
