@@ -3264,6 +3264,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
       rinfo.packets_lost = cs.cumulativeLost;
       rinfo.ext_seqnum = cs.extendedMax;
       rinfo.capture_start_ntp_time_ms = cs.capture_start_ntp_time_ms_;
+
       if (codec.pltype != -1) {
         rinfo.codec_name = codec.plname;
       }
@@ -3302,6 +3303,9 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
         rinfo.decoding_plc = ds.decoded_plc;
         rinfo.decoding_cng = ds.decoded_cng;
         rinfo.decoding_plc_cng = ds.decoded_plc_cng;
+#ifdef WINRT
+        rinfo.end_to_end_delayMs = ds.end_to_end_delayMs;
+#endif
       }
 
       if (engine()->voe()->sync()) {
