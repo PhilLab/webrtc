@@ -454,6 +454,12 @@ void RTCPeerConnection::ToggleConnectionHealthStats(bool enable) {
   });
 }
 
+void RTCPeerConnection::ToggleRTCStats(bool enable) {
+  globals::RunOnGlobalThread<void>([this, enable] {
+    _observer->ToggleRTCStats(enable);
+  });
+}
+
 RTCSessionDescription^ RTCPeerConnection::LocalDescription::get() {
   RTCSessionDescription^ ret;
   globals::RunOnGlobalThread<void>([this, &ret] {

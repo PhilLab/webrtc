@@ -42,6 +42,10 @@ namespace webrtc_winrt_api_internal {
                           webrtc::PeerConnectionInterface::IceGatheringState);
   DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCIceConnectionState,
                           webrtc::PeerConnectionInterface::IceConnectionState);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCStatsType,
+                          webrtc::StatsReport::StatsType);
+  DECLARE_MARSHALLED_ENUM(webrtc_winrt_api::RTCStatsValueName,
+                          webrtc::StatsReport::StatsValueName);
 
   template <typename I, typename O>
   void FromCx(
@@ -115,6 +119,12 @@ namespace webrtc_winrt_api_internal {
   void ToCx(
     const webrtc::SessionDescriptionInterface* inObj,
     webrtc_winrt_api::RTCSessionDescription^* outObj);
+
+  // ==========================
+  void ToCx(
+    const webrtc::StatsReport* inObj,
+    webrtc_winrt_api::RTCStatsReport^* outObj);
+
 }  // namespace webrtc_winrt_api_internal
 
 #endif  // WEBRTC_BUILD_WINRT_GYP_API_MARSHALLING_H_
