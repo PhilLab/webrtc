@@ -93,6 +93,10 @@ class FakeVideoSource : public Notifier<VideoSourceInterface> {
   virtual const cricket::VideoOptions* options() const { return &options_; }
   virtual cricket::VideoRenderer* FrameInput() { return NULL; }
 
+#ifdef WINRT
+  virtual void SetIsH264Source(bool isH264){};
+  virtual bool IsH264Source() { return false; };
+#endif
  protected:
   FakeVideoSource() : state_(kLive) {}
   ~FakeVideoSource() {}
