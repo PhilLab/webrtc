@@ -54,6 +54,9 @@ class VideoSourceInterface : public MediaSourceInterface {
   virtual const cricket::VideoOptions* options() const = 0;
   virtual cricket::VideoRenderer* FrameInput() = 0;
 
+  virtual void SetIsH264Source(bool isH264) = 0;
+  virtual bool IsH264Source() = 0;
+
  protected:
   virtual ~VideoSourceInterface() {}
 };
