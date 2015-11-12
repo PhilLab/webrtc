@@ -834,6 +834,21 @@ bool ChannelManager::RestartVideoCapture(
       generateDesiredFormat(desired_format), options));
 }
 
+bool ChannelManager::SuspendVideoCapture(VideoCapturer* video_capturer) {
+  return initialized_ && worker_thread_->Invoke<bool>(
+    Bind(&VideoCapturer::Suspend, video_capturer));
+}
+
+bool ChannelManager::ResumeVideoCapture(VideoCapturer* video_capturer) {
+  return initialized_ && worker_thread_->Invoke<bool>(
+    Bind(&VideoCapturer::Resume, video_capturer));
+}
+
+bool ChannelManager::IsSuspended(VideoCapturer* video_capturer) {
+  return initialized_ && worker_thread_->Invoke<bool>(
+    Bind(&VideoCapturer::IsSuspended, video_capturer));
+}
+
 bool ChannelManager::AddVideoRenderer(
     VideoCapturer* capturer, VideoRenderer* renderer) {
   return initialized_ && worker_thread_->Invoke<bool>(

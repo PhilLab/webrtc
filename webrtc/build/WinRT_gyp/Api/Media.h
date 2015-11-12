@@ -75,6 +75,8 @@ namespace webrtc_winrt_api {
     virtual property String^ Kind { String^ get(); }
     virtual property String^ Id { String^ get(); }
     virtual property bool Enabled { bool get(); void set(bool value); }
+
+    property bool Suspended { bool get(); void set(bool value); }
     virtual void Stop();
   internal:
     void SetRenderer(webrtc::VideoRendererInterface* renderer);
