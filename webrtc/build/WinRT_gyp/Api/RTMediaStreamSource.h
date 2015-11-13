@@ -100,7 +100,12 @@ ref class RTMediaStreamSource sealed {
     LONGLONG GetNextSampleTimeHns();
 
     ThreadPoolTimer^ _progressTimer;
-    void TimerElapsedExecute(ThreadPoolTimer^ source);
+    void ProgressTimerElapsedExecute(ThreadPoolTimer^ source);
+
+    ThreadPoolTimer^ _fpsTimer;
+    void FPSTimerElapsedExecute(ThreadPoolTimer^ source);
+    bool _frameSentThisTime;
+    bool _isFirstFrame;
 
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 
@@ -114,6 +119,7 @@ ref class RTMediaStreamSource sealed {
     //Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> _request;
     MediaStreamSourceSampleRequest^ _request;
     Windows::Media::Core::MediaStreamSourceSampleRequestDeferral^ _deferral;
+    Windows::Media::Core::MediaStreamSourceStartingRequestDeferral^ _startingDeferral;
     bool _isH264;
 };
 
