@@ -490,13 +490,8 @@ void MediaStreamSignaling::OnRemoteDescriptionChanged(
         static_cast<const cricket::VideoContentDescription*>(
             video_content->description);
 
-    bool isH264 = false;
-    for (auto codec : desc->codecs()) {
-      if (codec.name == "H264") {
-        isH264 = true;
-        break;
-      }
-    }
+    bool isH264 = desc->codecs().size()>0 && desc->codecs()[0].name == "H264";
+
     UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams, isH264);
     remote_info_.default_video_track_needed =
         MediaContentDirectionHasSend(desc->direction()) &&
