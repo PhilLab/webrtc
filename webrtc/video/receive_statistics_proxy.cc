@@ -154,6 +154,9 @@ void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
   render_height_counter_.Add(height);
   render_fps_tracker_.AddSamples(1);
 #ifdef WINRT
+  TRACE_COUNTER1("webrtc", "RcvStreamFrameWidth", width);
+  TRACE_COUNTER1("webrtc", "RcvStreamFrameHeight", height);
+
   int32 frameRate = stats_.render_frame_rate;
   TRACE_COUNTER1("webrtc", "RcvStreamFramerate", frameRate);
 #endif
