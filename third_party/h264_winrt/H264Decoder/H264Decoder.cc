@@ -37,7 +37,9 @@ namespace webrtc {
 //////////////////////////////////////////
 
 H264WinRTDecoderImpl::H264WinRTDecoderImpl()
-  : _cbLock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
+  : width_(0),
+  height_(0),
+  _cbLock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
   , decodeCompleteCallback_(nullptr) {
 }
 
@@ -106,11 +108,12 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
   const CodecSpecificInfo* codec_specific_info,
   int64_t render_time_ms) {
 
+  UpdateVideoFrameDimensions(input_image);
   auto sample = FromEncodedImage(input_image);
 
   if (sample != nullptr) {
     rtc::scoped_refptr<VideoFrameBuffer> buffer(new rtc::RefCountedObject<H264NativeHandleBuffer>(
-      sample, 1, 1));
+      sample, width_, height_));
     VideoFrame decodedFrame(buffer, input_image._timeStamp, render_time_ms, kVideoRotation_0);
 
     webrtc::CriticalSectionScoped csLock(_cbLock.get());
@@ -143,6 +146,15 @@ int H264WinRTDecoderImpl::Reset() {
 VideoDecoder* H264WinRTDecoderImpl::Copy() {
   // TODO(winrt): Implement?
   return nullptr;
+}
+
+void H264WinRTDecoderImpl::UpdateVideoFrameDimensions(const EncodedImage& input_image)
+{
+  if (input_image._frameType == VideoFrameType::kKeyFrame)
+  {
+    width_ = input_image._encodedWidth;
+    height_ = input_image._encodedHeight;
+  }
 }
 
 }  // namespace webrtc

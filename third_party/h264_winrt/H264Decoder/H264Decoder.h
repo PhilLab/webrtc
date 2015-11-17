@@ -50,6 +50,11 @@ class H264WinRTDecoderImpl : public VideoDecoder {
   VideoDecoder* Copy();
 
  private:
+  void UpdateVideoFrameDimensions(const EncodedImage& input_image);
+
+ private:
+  uint32_t width_;
+  uint32_t height_;
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _cbLock;
   DecodedImageCallback* decodeCompleteCallback_;
 };  // end of H264WinRTDecoderImpl class
