@@ -100,7 +100,7 @@ int Vp8UnitTestDecodeCompleteCallback::Decoded(VideoFrame& image) {
   return 0;
 }
 
-class TestVp8Impl : public ::testing::Test {
+class TestVp8ImplUnitTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     encoder_.reset(VP8Encoder::Create());
@@ -190,7 +190,7 @@ class TestVp8Impl : public ::testing::Test {
   VideoCodec codec_inst_;
 };
 
-TEST_F(TestVp8Impl, EncoderParameterTest) {
+TEST_F(TestVp8ImplUnitTest, EncoderParameterTest) {
   strncpy(codec_inst_.plName, "VP8", 31);
   codec_inst_.plType = 126;
   codec_inst_.maxBitrate = 0;
@@ -216,7 +216,7 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_inst_, 1));
 }
 
-TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
+TEST_F(TestVp8ImplUnitTest, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);
@@ -232,7 +232,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   EXPECT_EQ(kTestNtpTimeMs, decoded_frame_.ntp_time_ms());
 }
 
-TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
+TEST_F(TestVp8ImplUnitTest, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);
@@ -252,7 +252,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
   EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);
 }
 
-TEST_F(TestVp8Impl, TestReset) {
+TEST_F(TestVp8ImplUnitTest, TestReset) {
   SetUpEncodeDecode();
   EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
   EXPECT_EQ(0, decoder_->Decode(encoded_frame_, false, NULL));
