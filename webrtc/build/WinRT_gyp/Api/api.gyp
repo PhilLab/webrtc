@@ -24,6 +24,7 @@
         '../../../../talk/libjingle.gyp:libjingle_peerconnection',
         '../../../../third_party/h264_winrt/h264_winrt.gyp:webrtc_h264_winrt',
         '../stats/stats.gyp:webrtc_stats_observer',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
          '_HAS_EXCEPTIONS=1',
@@ -52,7 +53,7 @@
       'conditions': [
         ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
           'msvs_disabled_warnings': [
-            '4458',  # local members hides previously defined memebers or function members or class members
+            '4458',  # local members hides previously defined members or function members or class members
           ],
         }],
       ],

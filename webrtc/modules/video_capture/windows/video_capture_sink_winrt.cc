@@ -19,8 +19,8 @@
 
 #include <windows.foundation.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 using Microsoft::WRL::ComPtr;
 using Windows::Foundation::IPropertyValue;

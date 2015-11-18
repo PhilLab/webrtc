@@ -14,7 +14,7 @@
 
 #include <string>
 
-#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/base/Win32.h"
 
 using Windows::Devices::Enumeration::DeviceClass;

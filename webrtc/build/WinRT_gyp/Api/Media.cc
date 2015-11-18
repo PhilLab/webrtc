@@ -23,7 +23,7 @@
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;

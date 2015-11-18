@@ -52,7 +52,7 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#include "webrtc/system_wrappers/include/field_trial_default.h"
 
 namespace {
 

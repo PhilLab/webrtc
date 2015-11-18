@@ -9,8 +9,8 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/base/trace_event.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/base/physicalsocketserver.h"
 
 namespace rtc {

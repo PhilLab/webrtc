@@ -13,7 +13,7 @@
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/logging.h"
-#include "webrtc/system_wrappers/include/trace_event.h"
+#include "webrtc/base/trace_event.h"
 
 namespace webrtc {
 

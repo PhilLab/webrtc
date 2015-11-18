@@ -14,8 +14,8 @@
 
 #include <WinSock2.h>
 
-#include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/test/channel_transport/udp_socket_wrapper.h"
 
 namespace webrtc {

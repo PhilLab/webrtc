@@ -40,8 +40,8 @@
 #include <ppltasks.h>
 #include <collection.h>
 
-#include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/system_wrappers/include/trace.h"
 
 #include "webrtc/base/scoped_ptr.h"
 

@@ -19,7 +19,7 @@
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 #if defined WINRT
-#include "webrtc/system_wrappers/interface/utf_util_win.h"
+#include "webrtc/system_wrappers/include/utf_util_win.h"
 #endif
 
 #if defined(WIN32) && !defined(WINRT)

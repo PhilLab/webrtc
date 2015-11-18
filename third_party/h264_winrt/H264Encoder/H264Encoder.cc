@@ -224,7 +224,7 @@ ComPtr<IMFSample> FromVideoFrame(const VideoFrame& frame) {
 int H264WinRTEncoderImpl::Encode(
   const VideoFrame& frame,
   const CodecSpecificInfo* codec_specific_info,
-  const std::vector<VideoFrameType>* frame_types) {
+  const std::vector<FrameType>* frame_types) {
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (!inited_) {
@@ -353,7 +353,7 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
         MFSampleExtension_CleanPoint, &cleanPoint);
       if (SUCCEEDED(hr) && cleanPoint) {
         encodedImage._completeFrame = true;
-        encodedImage._frameType = kKeyFrame;
+        encodedImage._frameType = kVideoFrameKey;
       }
     }
 

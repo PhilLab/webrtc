@@ -21,7 +21,7 @@
 #include "SourceReaderCB.h"
 #include "Utils/SampleAttributeQueue.h"
 #include "webrtc/video_decoder.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")

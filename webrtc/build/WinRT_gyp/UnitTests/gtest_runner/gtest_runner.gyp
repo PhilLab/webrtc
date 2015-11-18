@@ -37,6 +37,7 @@
         '../../../../../webrtc/webrtc.gyp:rtc_unittests',
         '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
         '../../../../test/webrtc_test_common.gyp:webrtc_test_common_unittests',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',

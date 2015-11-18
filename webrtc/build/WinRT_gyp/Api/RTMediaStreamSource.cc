@@ -12,9 +12,8 @@
 #include <mfidl.h>
 #include "talk/media/base/videoframe.h"
 #include "talk/app/webrtc/videosourceinterface.h"
-#include "libyuv/video_common.h"
 #include "libyuv/convert.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
 using Platform::Collections::Vector;
@@ -183,7 +182,7 @@ void RTMediaStreamSource::OnSampleRequested(
       }
     }
     hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width,
-      _videoDesc->EncodingProperties->Height, libyuv::FOURCC_NV12, FALSE,
+      _videoDesc->EncodingProperties->Height, cricket::FOURCC_NV12, FALSE,
       mediaBuffer.GetAddressOf());
     if (FAILED(hr)) {
       deferral->Complete();

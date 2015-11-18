@@ -26,7 +26,7 @@
 #endif
 
 #ifdef WINRT
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #endif
 
 #include "webrtc/base/checks.h"

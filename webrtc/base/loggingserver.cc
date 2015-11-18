@@ -2,7 +2,7 @@
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/include/thread_wrapper.h"
 #include "webrtc/base/physicalsocketserver.h"
 
 namespace rtc {

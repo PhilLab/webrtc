@@ -20,7 +20,7 @@
 #include <winsock2.h>
 #include <io.h>
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
 #include "webrtc/test/channel_transport/udp_socket_wrapper.h"
 

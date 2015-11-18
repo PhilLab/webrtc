@@ -30,8 +30,8 @@
 #include "webrtc/test/field_trial.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/session/media/channelmanager.h"
-#include "webrtc/system_wrappers/interface/utf_util_win.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/include/utf_util_win.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 #include "third_party/h264_winrt/h264_winrt_factory.h"
 
 using webrtc_winrt_api_internal::FromCx;

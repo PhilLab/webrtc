@@ -45,7 +45,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #ifdef WINRT
-#include "webrtc/system_wrappers/interface/field_trial_default.h"
+#include "webrtc/system_wrappers/include/field_trial_default.h"
 #endif
 
 namespace webrtc {
@@ -345,6 +345,11 @@ webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController()
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return MediaControllerInterface::Create(worker_thread_,
                                           channel_manager_.get());
+}
+
+cricket::ChannelManager* PeerConnectionFactory::channel_manager() {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  return channel_manager_.get();
 }
 
 rtc::Thread* PeerConnectionFactory::signaling_thread() {
