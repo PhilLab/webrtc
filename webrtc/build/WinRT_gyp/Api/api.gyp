@@ -74,15 +74,13 @@
               'AdditionalOptions': [
                 # Fixes linking for assembler opus source files 
                 '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
-                '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx/*.obj',
+                '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx_new/*.obj',
                 '../../../../third_party/libyuv/source/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_armv7/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_neon/*.obj',
                 '<(PRODUCT_DIR)/obj/common_audio/spl_sqrt_floor_arm.obj',
                 '<(PRODUCT_DIR)/obj/common_audio/filter_ar_fast_q12_armv7.obj',
                 '<(PRODUCT_DIR)/obj/common_audio/complex_bit_reverse_arm.obj',
-                '<(PRODUCT_DIR)/obj/isac_fix/lattice_armv7.obj',
-                '<(PRODUCT_DIR)/obj/isac_fix/pitch_filter_armv6.obj',
               ],
             }],
           ],
