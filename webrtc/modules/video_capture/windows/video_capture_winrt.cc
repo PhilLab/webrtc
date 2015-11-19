@@ -13,6 +13,7 @@
 #include <ppltasks.h>
 
 #include <string>
+#include <vector>
 
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
@@ -22,6 +23,11 @@ using Microsoft::WRL::ComPtr;
 using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
+using Windows::Devices::Enumeration::Panel;
+using Windows::Devices::Sensors::SimpleOrientation;
+using Windows::Devices::Sensors::SimpleOrientationSensor;
+using Windows::Devices::Sensors::
+      SimpleOrientationSensorOrientationChangedEventArgs;
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureFailedEventArgs;
 using Windows::Media::Capture::MediaCaptureFailedEventHandler;
@@ -32,12 +38,13 @@ using Windows::Media::MediaProperties::IVideoEncodingProperties;
 using Windows::Media::MediaProperties::MediaEncodingProfile;
 using Windows::Media::MediaProperties::MediaEncodingSubtypes;
 using Windows::Media::MediaProperties::VideoEncodingProperties;
-using Windows::Graphics::Display::DisplayInformation;
-using Windows::Graphics::Display::DisplayOrientations;
 using Windows::UI::Core::DispatchedHandler;
 using Windows::UI::Core::CoreDispatcherPriority;
 using Windows::Foundation::IAsyncAction;
 using Windows::Foundation::TypedEventHandler;
+
+using Windows::System::Threading::TimerElapsedHandler;
+using Windows::System::Threading::ThreadPoolTimer;
 
 // Necessary to access CoreDispatcher for operations that can
 // only be done on the UI thread.
@@ -343,73 +350,170 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
   }
 }
 
-ref class DisplayOrientation sealed {
- public:
-  virtual ~DisplayOrientation();
+ref class BlackFramesGenerator sealed {
+public:
+  virtual ~BlackFramesGenerator();
 
- internal:
-  DisplayOrientation(DisplayOrientationListener* listener);
-  void OnOrientationChanged(
-    Windows::Graphics::Display::DisplayInformation^ sender,
-    Platform::Object^ args);
+internal:
+  BlackFramesGenerator(CaptureDeviceListener* capture_device_listener);
 
-  property DisplayOrientations orientation;
- private:
-  DisplayOrientationListener* listener_;
-  DisplayInformation^ display_info;
+  void StartCapture(const VideoCaptureCapability& frame_info);
+
+  void StopCapture();
+
+  bool CaptureStarted() { return capture_started_; }
+
+  void Cleanup();
+
+  VideoCaptureCapability GetFrameInfo() { return frame_info_; }
+
+private:
+  CaptureDeviceListener* capture_device_listener_;
+  bool capture_started_;
+  VideoCaptureCapability frame_info_;
+  ThreadPoolTimer^ timer_;
+};
+
+BlackFramesGenerator::BlackFramesGenerator(
+  CaptureDeviceListener* capture_device_listener) :
+  capture_started_(false), capture_device_listener_(capture_device_listener),
+  timer_(nullptr) {
+}
+
+BlackFramesGenerator::~BlackFramesGenerator() {
+  Cleanup();
+}
+
+void BlackFramesGenerator::StartCapture(
+  const VideoCaptureCapability& frame_info) {
+  frame_info_ = frame_info;
+  frame_info_.rawType = kVideoRGB24;
+
+  if (capture_started_) {
+    LOG(LS_INFO) << "Black frame generator already stsarted";
+    throw ref new Platform::Exception(
+      __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
+  }
+  LOG(LS_INFO) << "Starting black frame generator";
+
+  size_t black_frame_size = frame_info_.width * frame_info_.height * 3;
+  std::shared_ptr<std::vector<uint8_t>> black_frame(
+    new std::vector<uint8_t>(black_frame_size, 0));
+  auto handler = ref new TimerElapsedHandler(
+    [this, black_frame_size, black_frame]
+    (ThreadPoolTimer^ timer) -> void {
+    if (this->capture_device_listener_ != nullptr){
+      this->capture_device_listener_->OnIncomingFrame(
+        black_frame->data(),
+        black_frame_size,
+        this->frame_info_);
+    }
+  });
+  auto timespan = Windows::Foundation::TimeSpan();
+  timespan.Duration = (1000 * 1000 * 10 /*1s in hns*/) /
+                      frame_info_.maxFPS;
+  timer_ = ThreadPoolTimer::CreatePeriodicTimer(handler, timespan);
+  capture_started_ = true;
+}
+
+void BlackFramesGenerator::StopCapture() {
+  if (!capture_started_) {
+    throw ref new Platform::Exception(
+      __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
+  }
+
+  LOG(LS_INFO) << "Stopping black frame generator";
+  timer_->Cancel();
+  timer_ = nullptr;
+  capture_started_ = false;
+}
+
+void BlackFramesGenerator::Cleanup() {
+  if (capture_started_) {
+    capture_device_listener_ = nullptr;
+    StopCapture();
+  }
+}
+
+ref class DeviceOrientation sealed {
+public:
+  virtual ~DeviceOrientation();
+
+internal:
+  DeviceOrientation(DeviceOrientationObserver* listener);
+  void OnOrientationChanged(SimpleOrientationSensor^,
+    SimpleOrientationSensorOrientationChangedEventArgs^);
+
+  property SimpleOrientation orientation;
+
+private:
+  DeviceOrientationObserver* listener_;
+  SimpleOrientationSensor^ orientation_sensor_;
   Windows::Foundation::EventRegistrationToken
     orientation_changed_registration_token_;
 };
 
-DisplayOrientation::~DisplayOrientation() {
-  auto tmpDisplayInfo = display_info;
+DeviceOrientation::~DeviceOrientation() {
+  auto tmpOrientationSensor = orientation_sensor_;
   auto tmpToken = orientation_changed_registration_token_;
-  if (tmpDisplayInfo != nullptr) {
-    RunOnCoreDispatcher([tmpDisplayInfo, tmpToken]() {
-      tmpDisplayInfo->OrientationChanged::remove(tmpToken);
+  if (tmpOrientationSensor != nullptr) {
+    RunOnCoreDispatcher([tmpOrientationSensor, tmpToken]() {
+      tmpOrientationSensor->OrientationChanged::remove(tmpToken);
     }, true);  // Run async because it can deadlock with core thread.
   }
 }
 
-DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
-  : listener_(listener) {
+DeviceOrientation::DeviceOrientation(DeviceOrientationObserver* listener)
+  : listener_(listener), orientation_sensor_(nullptr) {
   RunOnCoreDispatcher([this]() {
-    // TODO(winrt): GetForCurrentView() only works on a thread associated with
-    // a CoreWindow.  Need to find a way to do this from a background task.
+    orientation = SimpleOrientation::NotRotated;
     try {
-      display_info = DisplayInformation::GetForCurrentView();
-      orientation = display_info->CurrentOrientation;
-      orientation_changed_registration_token_ =
-        display_info->OrientationChanged::add(
-          ref new TypedEventHandler<DisplayInformation^,
-          Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
+      orientation_sensor_ = SimpleOrientationSensor::GetDefault();
+      if (orientation_sensor_ != nullptr) {
+        orientation = orientation_sensor_->GetCurrentOrientation();
+        orientation_changed_registration_token_ =
+          orientation_sensor_->OrientationChanged::add(
+            ref new TypedEventHandler<
+              SimpleOrientationSensor^,
+              SimpleOrientationSensorOrientationChangedEventArgs^>
+            (this, &DeviceOrientation::OnOrientationChanged));
+      }
     }
     catch (...) {
-      display_info = nullptr;
-      orientation = Windows::Graphics::Display::DisplayOrientations::Portrait;
-      LOG(LS_ERROR) << "DisplayOrientation could not be initialized.";
+      orientation_sensor_ = nullptr;
+      orientation = SimpleOrientation::NotRotated;
+      LOG(LS_ERROR) << "DeviceOrientation could not be initialized.";
     }
   });
 }
 
-void DisplayOrientation::OnOrientationChanged(DisplayInformation^ sender,
-  Platform::Object^ args) {
-  orientation = sender->CurrentOrientation;
-  if (listener_)
-    listener_->DisplayOrientationChanged(sender->CurrentOrientation);
+void DeviceOrientation::OnOrientationChanged(
+  SimpleOrientationSensor^ orientation_sensor,
+  SimpleOrientationSensorOrientationChangedEventArgs^ evt) {
+  orientation = evt->Orientation;
+  if (listener_) {
+    listener_->DeviceOrientationChanged(evt->Orientation);
+  }
 }
 
 VideoCaptureWinRT::VideoCaptureWinRT(const int32_t id)
   : VideoCaptureImpl(id),
     device_(nullptr),
-    camera_location_(Windows::Devices::Enumeration::Panel::Unknown),
-    display_orientation_(ref new DisplayOrientation(this)) {
+    camera_location_(Panel::Unknown),
+    device_orientation_(ref new DeviceOrientation(this)),
+    fake_device_(nullptr),
+    last_frame_info_(),
+    video_encoding_properties_(nullptr),
+    media_encoding_profile_(nullptr) {
   _captureDelay = 120;
 }
 
 VideoCaptureWinRT::~VideoCaptureWinRT() {
   if (device_ != nullptr)
     device_->Cleanup();
+  if (fake_device_ != nullptr) {
+    fake_device_->Cleanup();
+  }
 }
 
 int32_t VideoCaptureWinRT::Init(const int32_t id,
@@ -447,7 +551,7 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
           if (dev_info->EnclosureLocation != nullptr)
             camera_location_ = dev_info->EnclosureLocation->Panel;
           else
-            camera_location_ = Windows::Devices::Enumeration::Panel::Unknown;
+            camera_location_ = Panel::Unknown;
           break;
         }
       }
@@ -466,6 +570,8 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
   device_ = ref new CaptureDevice(this);
 
   device_->Initialize(device_id_);
+
+  fake_device_ = ref new BlackFramesGenerator(this);
 
   return 0;
 }
@@ -503,17 +609,15 @@ int32_t VideoCaptureWinRT::StartCapture(
     return -1;
   }
 
-  MediaEncodingProfile^ media_encoding_profile =
-    ref new MediaEncodingProfile();
-  media_encoding_profile->Audio = nullptr;
-  media_encoding_profile->Container = nullptr;
-  media_encoding_profile->Video =
-    VideoEncodingProperties::CreateUncompressed(
+  media_encoding_profile_ = ref new MediaEncodingProfile();
+  media_encoding_profile_->Audio = nullptr;
+  media_encoding_profile_->Container = nullptr;
+  media_encoding_profile_->Video = VideoEncodingProperties::CreateUncompressed(
       subtype, capability.width, capability.height);
-  media_encoding_profile->Video->FrameRate->Numerator = capability.maxFPS;
-  media_encoding_profile->Video->FrameRate->Denominator = 1;
+  media_encoding_profile_->Video->FrameRate->Numerator = capability.maxFPS;
+  media_encoding_profile_->Video->FrameRate->Denominator = 1;
 
-  IVideoEncodingProperties^ video_encoding_properties;
+  video_encoding_properties_ = nullptr;
   int min_width_diff = INT_MAX;
   int min_height_diff = INT_MAX;
   int min_fps_diff = INT_MAX;
@@ -537,27 +641,28 @@ int32_t VideoCaptureWinRT::StartCapture(
     int fps_diff = abs(static_cast<int>(prop_fps - capability.maxFPS));
 
     if (width_diff < min_width_diff) {
-      video_encoding_properties = prop;
+      video_encoding_properties_ = prop;
       min_width_diff = width_diff;
       min_height_diff = height_diff;
       min_fps_diff = fps_diff;
     } else if (width_diff == min_width_diff) {
       if (height_diff < min_height_diff) {
-        video_encoding_properties = prop;
+        video_encoding_properties_ = prop;
         min_height_diff = height_diff;
         min_fps_diff = fps_diff;
       } else if (height_diff == min_height_diff) {
         if (fps_diff < min_fps_diff) {
-          video_encoding_properties = prop;
+          video_encoding_properties_ = prop;
           min_fps_diff = fps_diff;
         }
       }
     }
   }
-
   try {
-    ApplyDisplayOrientation(display_orientation_->orientation);
-    device_->StartCapture(media_encoding_profile, video_encoding_properties);
+    ApplyDeviceOrientation(device_orientation_->orientation);
+    device_->StartCapture(media_encoding_profile_,
+                            video_encoding_properties_);
+    last_frame_info_ = capability;
   } catch (Platform::Exception^ e) {
     LOG(LS_ERROR) << "Failed to start capture. "
       << rtc::ToUtf8(e->Message->Data());
@@ -567,32 +672,30 @@ int32_t VideoCaptureWinRT::StartCapture(
   return 0;
 }
 
-void VideoCaptureWinRT::DisplayOrientationChanged(
-  DisplayOrientations orientation) {
-  ApplyDisplayOrientation(orientation);
-}
-
-void VideoCaptureWinRT::ApplyDisplayOrientation(
-  DisplayOrientations orientation) {
-  if (camera_location_ == Windows::Devices::Enumeration::Panel::Unknown)
+void VideoCaptureWinRT::ApplyDeviceOrientation(SimpleOrientation orientation) {
+  if (camera_location_ == Panel::Unknown)
     return;
+  // TODO(WinRT/Adam) - Verify rotation corectness after video renderer will
+  // be added to ChatterBox
   switch (orientation) {
-    case Windows::Graphics::Display::DisplayOrientations::Portrait:
-      if (camera_location_ == Windows::Devices::Enumeration::Panel::Front)
+    case SimpleOrientation::NotRotated:  // Portrait
+      if (camera_location_ == Panel::Front) {
         SetCaptureRotation(VideoRotation::kVideoRotation_270);
-      else
+      } else {
         SetCaptureRotation(VideoRotation::kVideoRotation_90);
+      }
       break;
-    case Windows::Graphics::Display::DisplayOrientations::PortraitFlipped:
-      if (camera_location_ == Windows::Devices::Enumeration::Panel::Front)
+    case SimpleOrientation::Rotated90DegreesCounterclockwise:
+        SetCaptureRotation(VideoRotation::kVideoRotation_0);
+      break;
+    case SimpleOrientation::Rotated180DegreesCounterclockwise:
+      if (camera_location_ == Panel::Front) {
         SetCaptureRotation(VideoRotation::kVideoRotation_90);
-      else
+      } else {
         SetCaptureRotation(VideoRotation::kVideoRotation_270);
+      }
       break;
-    case Windows::Graphics::Display::DisplayOrientations::Landscape:
-      SetCaptureRotation(VideoRotation::kVideoRotation_0);
-      break;
-    case Windows::Graphics::Display::DisplayOrientations::LandscapeFlipped:
+    case SimpleOrientation::Rotated270DegreesCounterclockwise:
       SetCaptureRotation(VideoRotation::kVideoRotation_180);
       break;
     default:
@@ -605,7 +708,12 @@ int32_t VideoCaptureWinRT::StopCapture() {
   CriticalSectionScoped cs(&_apiCs);
 
   try {
-    device_->StopCapture();
+    if (device_->CaptureStarted()) {
+      device_->StopCapture();
+    }
+    if (fake_device_->CaptureStarted()) {
+      fake_device_->StopCapture();
+    }
   } catch (Platform::Exception^ e) {
     LOG(LS_ERROR) << "Failed to stop capture. "
       << rtc::ToUtf8(e->Message->Data());
@@ -616,7 +724,7 @@ int32_t VideoCaptureWinRT::StopCapture() {
 
 bool VideoCaptureWinRT::CaptureStarted() {
   CriticalSectionScoped cs(&_apiCs);
-  return device_->CaptureStarted();
+  return device_->CaptureStarted() || fake_device_->CaptureStarted();
 }
 
 int32_t VideoCaptureWinRT::CaptureSettings(VideoCaptureCapability& settings) {
@@ -625,10 +733,45 @@ int32_t VideoCaptureWinRT::CaptureSettings(VideoCaptureCapability& settings) {
   return 0;
 }
 
+bool VideoCaptureWinRT::SuspendCapture() {
+  if (device_->CaptureStarted()) {
+    LOG(LS_INFO) << "SuspendCapture";
+    device_->StopCapture();
+    fake_device_->StartCapture(last_frame_info_);
+    return true;
+  }
+  LOG(LS_INFO) << "SuspendCapture capture is not started";
+  return false;
+}
+
+bool VideoCaptureWinRT::ResumeCapture() {
+  if (fake_device_->CaptureStarted()) {
+    LOG(LS_INFO) << "ResumeCapture";
+    fake_device_->StopCapture();
+    device_->StartCapture(media_encoding_profile_,
+      video_encoding_properties_);
+    return true;
+  }
+  LOG(LS_INFO) << "ResumeCapture, capture is not started";
+  return false;
+}
+
+bool VideoCaptureWinRT::IsSuspended() {
+  return fake_device_->CaptureStarted();
+}
+
+void VideoCaptureWinRT::DeviceOrientationChanged(
+  SimpleOrientation orientation) {
+  ApplyDeviceOrientation(orientation);
+}
+
 void VideoCaptureWinRT::OnIncomingFrame(
   uint8_t* video_frame,
   size_t video_frame_length,
   const VideoCaptureCapability& frame_info) {
+  if (device_->CaptureStarted()) {
+    last_frame_info_ = frame_info;
+  }
   IncomingFrame(video_frame, video_frame_length, frame_info);
 }
 

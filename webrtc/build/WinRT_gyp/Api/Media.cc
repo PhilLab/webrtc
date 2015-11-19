@@ -64,6 +64,18 @@ void MediaVideoTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
 }
 
+bool MediaVideoTrack::Suspended::get() {
+  return _impl->GetSource()->IsSuspended();
+}
+
+void MediaVideoTrack::Suspended::set(bool value) {
+  if (value) {
+    _impl->GetSource()->Suspend();
+  } else {
+    _impl->GetSource()->Resume();
+  }
+}
+
 void MediaVideoTrack::Stop() {
   _impl->GetSource()->Stop();
 }
@@ -228,7 +240,6 @@ Media::Media() {
     LOG(LS_ERROR) << "Can't create device manager";
     return;
   }
-
 }
 
 // TODO(winrt): Remove this function and always use the async one.
@@ -412,13 +423,14 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
 }
 
 void Media::OnAppSuspending() {
-  webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->OnAppSuspending();
+  webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
+    OnAppSuspending();
 }
 
 IAsyncOperation<IVector<CaptureCapability^>^>^
   MediaDevice::GetVideoCaptureCapabilities() {
   auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^ {
-	auto mediaCapture =
+  auto mediaCapture =
       webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
       GetMediaCapture(_id);
     if (mediaCapture == nullptr) {

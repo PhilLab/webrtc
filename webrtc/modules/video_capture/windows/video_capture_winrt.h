@@ -12,14 +12,18 @@
 #define WEBRTC_MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
 
 #include <functional>
+#include <vector>
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
+
+#include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
 
 namespace webrtc {
 namespace videocapturemodule {
 
 ref class CaptureDevice;
-ref class DisplayOrientation;
+ref class BlackFramesGenerator;
+ref class DeviceOrientation;
 
 class CaptureDeviceListener {
  public:
@@ -30,16 +34,16 @@ class CaptureDeviceListener {
     Platform::String^ message) = 0;
 };
 
-class DisplayOrientationListener {
+class DeviceOrientationObserver {
  public:
-  virtual void DisplayOrientationChanged(
-    Windows::Graphics::Display::DisplayOrientations orientation) = 0;
+  virtual void DeviceOrientationChanged(
+    Windows::Devices::Sensors::SimpleOrientation orientation) = 0;
 };
 
 class VideoCaptureWinRT
     : public VideoCaptureImpl,
       public CaptureDeviceListener,
-      public DisplayOrientationListener{
+      public DeviceOrientationObserver {
  public:
   explicit VideoCaptureWinRT(const int32_t id);
 
@@ -51,6 +55,14 @@ class VideoCaptureWinRT
   virtual bool CaptureStarted();
   virtual int32_t CaptureSettings(VideoCaptureCapability& settings);
 
+  virtual bool SuspendCapture();
+  virtual bool ResumeCapture();
+  virtual bool IsSuspended();
+
+  // Overrides from DeviceOrientationObserver
+  virtual void DeviceOrientationChanged(
+    Windows::Devices::Sensors::SimpleOrientation orientation);
+
  protected:
   virtual ~VideoCaptureWinRT();
 
@@ -61,16 +73,20 @@ class VideoCaptureWinRT
   virtual void OnCaptureDeviceFailed(HRESULT code,
                                      Platform::String^ message);
 
-  virtual void DisplayOrientationChanged(
-    Windows::Graphics::Display::DisplayOrientations orientation);
-  virtual void ApplyDisplayOrientation(
-    Windows::Graphics::Display::DisplayOrientations orientation);
+  virtual void ApplyDeviceOrientation(
+    Windows::Devices::Sensors::SimpleOrientation orientation);
 
  private:
   Platform::String^ device_id_;
   CaptureDevice^ device_;
   Windows::Devices::Enumeration::Panel camera_location_;
-  DisplayOrientation^ display_orientation_;
+  DeviceOrientation^ device_orientation_;
+  BlackFramesGenerator^ fake_device_;
+  VideoCaptureCapability last_frame_info_;
+  Windows::Media::MediaProperties::IVideoEncodingProperties^
+    video_encoding_properties_;
+  Windows::Media::MediaProperties::MediaEncodingProfile^
+    media_encoding_profile_;
 };
 
 // Helper function to run code on the WinRT CoreDispatcher

@@ -218,9 +218,15 @@ class VideoCapturer
   virtual bool IsMuted() const {
     return muted_;
   }
+
   CaptureState capture_state() const {
     return capture_state_;
   }
+
+  // Suspend/Resume flow default behavior
+  virtual bool Suspend() { return false; }
+  virtual bool Resume() { return false; }
+  virtual bool IsSuspended() { return false; }
 
   // Tells videocapturer whether to apply the pending rotation. By default, the
   // rotation is applied and the generated frame is up right. When set to false,

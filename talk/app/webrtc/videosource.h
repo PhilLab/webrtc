@@ -78,6 +78,9 @@ class VideoSource : public Notifier<VideoSourceInterface>,
 
   void Stop() override;
   void Restart() override;
+  bool Suspend() override;
+  bool Resume() override;
+  bool IsSuspended() override;
 
   // |output| will be served video frames as long as the underlying capturer
   // is running video frames.
