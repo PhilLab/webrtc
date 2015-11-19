@@ -6,7 +6,6 @@
 // tree. An additional intellectual property rights grant can be found
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
-
 #include "webrtc/build/WinRT_gyp/Api/PeerConnectionInterface.h"
 
 #include <ppltasks.h>
@@ -33,6 +32,8 @@
 #include "webrtc/system_wrappers/interface/utf_util_win.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "third_party/h264_winrt/h264_winrt_factory.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
+
 
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
@@ -45,6 +46,7 @@ Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
 
 // Any globals we need to keep around.
 namespace webrtc_winrt_api {
+
 namespace globals {
 
 bool certificateVerifyCallBack(void* cert) {
@@ -52,6 +54,8 @@ bool certificateVerifyCallBack(void* cert) {
 }
 
 static const std::string logFileName = "_webrtc_logging.log";
+double gCurrentCPUUsage = 0.0;
+uint64 gCurrentMEMUsage = 0;
 
 // helper function to get default output path for the app
 std::string OutputPath() {
@@ -712,6 +716,31 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
 void WebRTC::SynNTPTime(int64 current_ntp_time) {
   webrtc::TickTime::SyncWithNtp(current_ntp_time);
 }
+
+
+void WebRTC::UpdateCPUUsage(double cpu_usage) {
+  globals::gCurrentCPUUsage = cpu_usage;
+
+  //TRACE_COUNTER1 can only log 32bit integer value
+  // also, when the app is idle, CPUUsage is very low <1%
+  TRACE_COUNTER1("webrtc", "winrtCPUUsage", (int32)(globals::gCurrentCPUUsage * 100));
+}
+
+double WebRTC::GetCPUUsage() {
+  return globals::gCurrentCPUUsage;
+}
+
+void WebRTC::UpdateMemUsage(INT64 mem_usage) {
+  globals::gCurrentMEMUsage = mem_usage;
+
+  //TRACE_COUNTER1 can only log 32bit integer value
+  TRACE_COUNTER1("webrtc", "winrtMemUsage", (int32)(globals::gCurrentMEMUsage / 1024));
+}
+
+INT64 WebRTC::GetMemUsage() {
+  return globals::gCurrentMEMUsage;
+}
+
 
 void WebRTC::SetPreferredVideoCaptureFormat(int frame_width,
                                             int frame_height, int fps) {
