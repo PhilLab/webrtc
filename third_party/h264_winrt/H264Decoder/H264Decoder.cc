@@ -115,6 +115,7 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
     rtc::scoped_refptr<VideoFrameBuffer> buffer(new rtc::RefCountedObject<H264NativeHandleBuffer>(
       sample, width_, height_));
     VideoFrame decodedFrame(buffer, input_image._timeStamp, render_time_ms, kVideoRotation_0);
+    decodedFrame.set_ntp_time_ms(input_image.ntp_time_ms_);
 
     webrtc::CriticalSectionScoped csLock(_cbLock.get());
 
