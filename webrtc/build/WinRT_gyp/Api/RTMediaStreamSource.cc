@@ -70,6 +70,17 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
   streamState->_startTime = webrtc::TickTime::Now();
 
+  streamSource->Starting +=
+    ref new Windows::Foundation::TypedEventHandler<MediaStreamSource ^,
+    MediaStreamSourceStartingEventArgs ^>([streamState](
+      MediaStreamSource^ sender,
+      MediaStreamSourceStartingEventArgs^ args) {
+    // Get a deferall on the starting event so we can trigger it
+    // when the first frame arrives.
+    streamState->_startingDeferral = args->Request->GetDeferral();
+  });
+
+
   streamState->_mediaStreamSource = streamSource;
 
   // Use a lambda to capture a strong reference to RTMediaStreamSource.
@@ -90,10 +101,22 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   track->SetRenderer(streamState->_rtcRenderer.get());
 
   // Create a timer which sends request progress periodically.
-  auto handler = ref new TimerElapsedHandler(streamState, &RTMediaStreamSource::TimerElapsedExecute);
-  auto timespan = Windows::Foundation::TimeSpan();
-  timespan.Duration = 500 * 1000 * 10;  // 500 ms in hns
-  streamState->_progressTimer = ThreadPoolTimer::CreatePeriodicTimer(handler, timespan);
+  {
+    auto handler = ref new TimerElapsedHandler(streamState, &RTMediaStreamSource::ProgressTimerElapsedExecute);
+    auto timespan = Windows::Foundation::TimeSpan();
+    timespan.Duration = 500 * 1000 * 10;  // 500 ms in hns
+    streamState->_progressTimer = ThreadPoolTimer::CreatePeriodicTimer(handler, timespan);
+  }
+
+  // Create a timer which ensures we don't display frames faster that expected.
+  // Required because Media Foundation sometimes requests samples in burst mode
+  // but we use the wall clock to drive timestamps.
+  {
+    auto handler = ref new TimerElapsedHandler(streamState, &RTMediaStreamSource::FPSTimerElapsedExecute);
+    auto timespan = Windows::Foundation::TimeSpan();
+    timespan.Duration = 15 * 1000 * 10;
+    streamState->_fpsTimer = ThreadPoolTimer::CreatePeriodicTimer(handler, timespan);
+  }
 
   return streamSource;
 }
@@ -101,13 +124,15 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack, bool isH264) :
     _videoTrack(videoTrack), _stride(0),
     _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-    _frameCounter(0), _isH264(isH264), _futureOffsetMs(70), _lastSampleTime(0),
+    _frameCounter(0), _isH264(isH264), _futureOffsetMs(150), _lastSampleTime(0),
+    _frameSentThisTime(false), _isFirstFrame(true),
     _lastTimeFPSCalculated(webrtc::TickTime::Now()) {
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
   LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource";
   _progressTimer->Cancel();
+  _fpsTimer->Cancel();
   if (_rtcRenderer != nullptr && _videoTrack != nullptr) {
     _videoTrack->UnsetRenderer(_rtcRenderer.get());
   }
@@ -212,21 +237,6 @@ bool RTMediaStreamSource::DropFramesToIDR() {
 }
 
 LONGLONG RTMediaStreamSource::GetNextSampleTimeHns() {
-  // Shift start time in response to queue size.
-  //if (!_frames.empty()) {
-  //  // Frame queue is not empty, this might indicate that our
-  //  // start time is too far in the past.
-  //  // Move it forward a bit.
-  //  _startTime += webrtc::TickTime::MillisecondsToTicks(1);
-  //}
-  //else {
-  //  // Slowly shift the start back to improve visual delay
-  //  // When it gets moved too far back we'll hit the case above.
-  //  if (rand() % 60 == 0) {
-  //    _startTime += webrtc::TickTime::MillisecondsToTicks(-1);
-  //  }
-  //}
-
   webrtc::TickTime now = webrtc::TickTime::Now();
 
   LONGLONG frameTime = ((now - _startTime).Milliseconds() + _futureOffsetMs) * 1000 * 10;
@@ -243,10 +253,23 @@ LONGLONG RTMediaStreamSource::GetNextSampleTimeHns() {
   return frameTime;
 }
 
-void RTMediaStreamSource::TimerElapsedExecute(ThreadPoolTimer^ source) {
+void RTMediaStreamSource::ProgressTimerElapsedExecute(ThreadPoolTimer^ source) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   if (_request != nullptr) {
     _request->ReportSampleProgress(1);
+  }
+}
+
+void RTMediaStreamSource::FPSTimerElapsedExecute(ThreadPoolTimer^ source) {
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+  _frameSentThisTime = false;
+  if (_frames.size() > 0 && _request != nullptr) {
+    if (_isH264) {
+      ReplyToRequestH264();
+    }
+    else {
+      ReplyToRequestI420();
+    }
   }
 }
 
@@ -308,6 +331,11 @@ void RTMediaStreamSource::ReplyToRequestH264() {
   OutputDebugString((L"frameTime: " + frameTime + L"\n")->Data());
   spSample->SetSampleTime(frameTime);
 
+  if (_isFirstFrame) {
+    _isFirstFrame = false;
+    spSample->SetSampleTime(0);
+  }
+
   Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> spRequest;
   HRESULT hr = reinterpret_cast<IInspectable*>(_request)->QueryInterface(
     spRequest.ReleaseAndGetAddressOf());
@@ -318,10 +346,11 @@ void RTMediaStreamSource::ReplyToRequestH264() {
     _deferral->Complete();
   }
 
+  _frameSentThisTime = true;
+
   UpdateFrameRate();
 
   _request = nullptr;
-  //_request.Reset();
   _deferral = nullptr;
 }
 
@@ -407,6 +436,8 @@ void RTMediaStreamSource::ReplyToRequestI420() {
     _deferral->Complete();
   }
 
+  _frameSentThisTime = true;
+
   UpdateFrameRate();
 
   _request = nullptr;
@@ -452,7 +483,7 @@ void RTMediaStreamSource::OnSampleRequested(
 
     webrtc::TickTime now = webrtc::TickTime::Now();
 
-    if (_frames.size() > 0) {
+    if (_frames.size() > 0 && !_frameSentThisTime) {
       if (_isH264) {
         ReplyToRequestH264();
       }
@@ -483,6 +514,12 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   }
   webrtc::CriticalSectionScoped csLock(_lock.get());
 
+  if (_startingDeferral != nullptr) {
+    _startTime = webrtc::TickTime::Now();
+    _startingDeferral->Complete();
+    _startingDeferral = nullptr;
+  }
+
   if (_isH264) {
     // For H264 we keep all frames since they are encoded.
     _frames.push_back(frame->Copy());
@@ -497,7 +534,7 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   }
 
   // If we have a pending request, reply to it now.
-  if (_deferral != nullptr && _request != nullptr) {
+  if (_deferral != nullptr && _request != nullptr && !_frameSentThisTime) {
     if (_isH264) {
       ReplyToRequestH264();
     }
