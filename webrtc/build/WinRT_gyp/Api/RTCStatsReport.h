@@ -128,6 +128,7 @@ namespace webrtc_winrt_api {
     StatsValueNameTypingNoiseState,
     StatsValueNameViewLimitedResolution,
     StatsValueNameWritable,
+    StatsValueNameCurrentEndToEndDelayMs,
   };
 
   public enum class RTCStatsType {

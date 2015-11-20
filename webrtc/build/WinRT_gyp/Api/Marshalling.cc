@@ -361,6 +361,8 @@ namespace webrtc_winrt_api_internal {
     webrtc::StatsReport::kStatsValueNameViewLimitedResolution},
   { RTCStatsValueName::StatsValueNameWritable,
     webrtc::StatsReport::kStatsValueNameWritable},
+	{ RTCStatsValueName::StatsValueNameCurrentEndToEndDelayMs,
+	  webrtc::StatsReport::kStatsValueNameCurrentEndToEndDelayMs }
   DEFINE_MARSHALLED_ENUM_END(StatsValueName)
 
   std::string FromCx(String^ inObj) {
