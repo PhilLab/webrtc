@@ -181,6 +181,28 @@ public:
   /// <param name="current_ntp_time">NTP time in miliseconds.</param>
   static void SynNTPTime(int64 current_ntp_time);
 
+  /// <summary>
+  /// Update CPUUsage statitics data
+  /// </summary>
+  /// <param name="cpu_usage">cpu usage in percentage</param>
+  static void UpdateCPUUsage(double cpu_usage);
+
+  /// <summary>
+  /// Get the last known CPUUsage statitics data
+  /// </summary>
+  static double GetCPUUsage();
+
+  /// <summary>
+  /// Update Memory statitics data
+  /// </summary>
+  /// <param name="mem_usage">cpu usage in bytes</param>
+  static void UpdateMemUsage(INT64 mem_usage);
+
+  /// <summary>
+  /// Get the last known CPUUsage statitics data
+  /// </summary>
+  static INT64 GetMemUsage();
+
 private:
   // This type is not meant to be created.
   WebRTC();

@@ -176,6 +176,29 @@ void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
             break;
           }
         }
+        int64 memUsage = webrtc_winrt_api::WebRTC::GetMemUsage();
+        double cpuUsage = webrtc_winrt_api::WebRTC::GetCPUUsage();
+
+        //(ToDo: Ling)
+        // Temporary put CPU/Memory usage under video group for now.
+        // will need to sync with bakshi for where is the proper place to put them.
+        /**
+        EventWriteStatsReportInt64("System_Resource", timestamp, "MemUsage",
+        memUsage);
+
+
+        EventWriteStatsReportFloat("System_Resource", timestamp, "CPUUsage",
+        cpuUsage);
+
+         */
+
+        EventWriteStatsReportInt64(stat_group_name, timestamp, "MemUsage",
+          memUsage);
+
+
+        EventWriteStatsReportFloat(stat_group_name, timestamp, "CPUUsage",
+          cpuUsage);
+
       }
     }
     if (conn_health_stats_enabled_ && webrtc_stats_observer_winrt_) {
