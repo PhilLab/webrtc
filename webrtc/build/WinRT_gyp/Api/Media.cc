@@ -23,6 +23,7 @@
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
+#include "webrtc/modules/video_capture/windows/video_capture_winrt.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 using Platform::Collections::Vector;
@@ -425,6 +426,12 @@ void Media::SelectAudioDevice(MediaDevice^ device) {
 void Media::OnAppSuspending() {
   webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
     OnAppSuspending();
+}
+
+void Media::SetDisplayOrientation(
+ Windows::Graphics::Display::DisplayOrientations display_orientation) {
+  webrtc::videocapturemodule::AppStateDispatcher::Instance()->
+    DisplayOrientationChanged(display_orientation);
 }
 
 IAsyncOperation<IVector<CaptureCapability^>^>^
