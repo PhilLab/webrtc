@@ -554,7 +554,7 @@ IAsyncOperation<bool>^  WebRTC::RequestAccessForMediaCapture() {
     Windows::Media::Capture::PhotoCaptureSource::VideoPreview;
   Concurrency::task<void> initTask = Concurrency::create_task(
     mediaAccessRequester->InitializeAsync(mediaSettings));
-  return Concurrency::create_async([initTask, mediaAccessRequester] {
+  return Concurrency::create_async([initTask] {
     bool accessRequestAccepted = true;
     try {
       initTask.get();
