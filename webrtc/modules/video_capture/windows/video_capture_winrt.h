@@ -23,7 +23,7 @@ namespace videocapturemodule {
 
 ref class CaptureDevice;
 ref class BlackFramesGenerator;
-ref class DeviceOrientation;
+ref class DisplayOrientation;
 
 class CaptureDeviceListener {
  public:
@@ -34,16 +34,41 @@ class CaptureDeviceListener {
     Platform::String^ message) = 0;
 };
 
-class DeviceOrientationObserver {
+class DisplayOrientationListener {
  public:
-  virtual void DeviceOrientationChanged(
-    Windows::Devices::Sensors::SimpleOrientation orientation) = 0;
+  virtual void OnDisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations orientation) = 0;
+};
+
+class AppStateObserver {
+ public:
+  virtual void DisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations display_orientation) = 0;
+};
+
+class AppStateDispatcher : public AppStateObserver {
+ public:
+  static AppStateDispatcher* Instance();
+
+  void DisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations display_orientation);
+  Windows::Graphics::Display::DisplayOrientations GetOrientation() const;
+  void AddObserver(AppStateObserver* observer);
+  void RemoveObserver(AppStateObserver* observer);
+
+ private:
+  AppStateDispatcher();
+
+  std::vector<AppStateObserver*> observers;
+  static AppStateDispatcher* instance_;
+  Windows::Graphics::Display::DisplayOrientations display_orientation_;
 };
 
 class VideoCaptureWinRT
     : public VideoCaptureImpl,
       public CaptureDeviceListener,
-      public DeviceOrientationObserver {
+      public AppStateObserver,
+      public DisplayOrientationListener {
  public:
   explicit VideoCaptureWinRT(const int32_t id);
 
@@ -59,9 +84,13 @@ class VideoCaptureWinRT
   virtual bool ResumeCapture();
   virtual bool IsSuspended();
 
-  // Overrides from DeviceOrientationObserver
-  virtual void DeviceOrientationChanged(
-    Windows::Devices::Sensors::SimpleOrientation orientation);
+  // Overrides from AppStateObserver
+  void DisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations display_orientation) override;
+
+  // Overrides from DisplayOrientationListener
+  void OnDisplayOrientationChanged(
+    Windows::Graphics::Display::DisplayOrientations orientation) override;
 
  protected:
   virtual ~VideoCaptureWinRT();
@@ -73,14 +102,14 @@ class VideoCaptureWinRT
   virtual void OnCaptureDeviceFailed(HRESULT code,
                                      Platform::String^ message);
 
-  virtual void ApplyDeviceOrientation(
-    Windows::Devices::Sensors::SimpleOrientation orientation);
+  virtual void ApplyDisplayOrientation(
+    Windows::Graphics::Display::DisplayOrientations orientation);
 
  private:
   Platform::String^ device_id_;
   CaptureDevice^ device_;
   Windows::Devices::Enumeration::Panel camera_location_;
-  DeviceOrientation^ device_orientation_;
+  DisplayOrientation^ display_orientation_;
   BlackFramesGenerator^ fake_device_;
   VideoCaptureCapability last_frame_info_;
   Windows::Media::MediaProperties::IVideoEncodingProperties^

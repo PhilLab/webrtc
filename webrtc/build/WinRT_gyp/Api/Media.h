@@ -419,6 +419,16 @@ namespace webrtc_winrt_api {
     void OnAppSuspending();
 
     /// <summary>
+    /// Set display orientation, used to rotate captured video in case the
+    /// capturer is attached to the enclosure.
+    /// This method should be called only if WebRTC::Initialize was called with
+    /// null core dispatcher, otherwise, the display orientation detection is
+    /// performed internally.
+    /// </summary>
+    void SetDisplayOrientation(Windows::Graphics::Display::DisplayOrientations
+      display_orientation);
+
+    /// <summary>
     /// Fired when a video capture device (webcam) is found on the system
     /// while enumerating devices.
     /// </summary>

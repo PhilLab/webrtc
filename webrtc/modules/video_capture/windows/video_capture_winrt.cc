@@ -24,10 +24,9 @@ using Windows::Devices::Enumeration::DeviceClass;
 using Windows::Devices::Enumeration::DeviceInformation;
 using Windows::Devices::Enumeration::DeviceInformationCollection;
 using Windows::Devices::Enumeration::Panel;
-using Windows::Devices::Sensors::SimpleOrientation;
-using Windows::Devices::Sensors::SimpleOrientationSensor;
-using Windows::Devices::Sensors::
-      SimpleOrientationSensorOrientationChangedEventArgs;
+using Windows::Graphics::Display::DisplayInformation;
+using Windows::Graphics::Display::DisplayOrientations;
+
 using Windows::Media::Capture::MediaCapture;
 using Windows::Media::Capture::MediaCaptureFailedEventArgs;
 using Windows::Media::Capture::MediaCaptureFailedEventHandler;
@@ -68,6 +67,98 @@ void RunOnCoreDispatcher(std::function<void()> fn, bool async) {
   } else {
     fn();
   }
+}
+
+AppStateDispatcher* AppStateDispatcher::instance_ = NULL;
+
+AppStateDispatcher* AppStateDispatcher::Instance() {
+  if (!instance_)
+    instance_ = new AppStateDispatcher;
+  return instance_;
+}
+
+AppStateDispatcher::AppStateDispatcher() :
+  display_orientation_(DisplayOrientations::Portrait) {
+}
+
+void AppStateDispatcher::DisplayOrientationChanged(
+  DisplayOrientations display_orientation) {
+  display_orientation_ = display_orientation;
+  for (auto obs_it = observers.begin(); obs_it != observers.end(); ++obs_it) {
+    (*obs_it)->DisplayOrientationChanged(display_orientation);
+  }
+}
+
+DisplayOrientations AppStateDispatcher::GetOrientation() const {
+  return display_orientation_;
+}
+
+void AppStateDispatcher::AddObserver(AppStateObserver* observer) {
+  observers.push_back(observer);
+}
+void AppStateDispatcher::RemoveObserver(AppStateObserver* observer) {
+  for (auto obs_it = observers.begin(); obs_it != observers.end(); ++obs_it) {
+    if (*obs_it == observer) {
+      observers.erase(obs_it);
+      break;
+    }
+  }
+}
+
+ref class DisplayOrientation sealed {
+public:
+  virtual ~DisplayOrientation();
+
+internal:
+  DisplayOrientation(DisplayOrientationListener* listener);
+  void OnOrientationChanged(
+    Windows::Graphics::Display::DisplayInformation^ sender,
+    Platform::Object^ args);
+
+  property DisplayOrientations orientation;
+private:
+  DisplayOrientationListener* listener_;
+  DisplayInformation^ display_info;
+  Windows::Foundation::EventRegistrationToken
+    orientation_changed_registration_token_;
+};
+
+DisplayOrientation::~DisplayOrientation() {
+  auto tmpDisplayInfo = display_info;
+  auto tmpToken = orientation_changed_registration_token_;
+  if (tmpDisplayInfo != nullptr) {
+    RunOnCoreDispatcher([tmpDisplayInfo, tmpToken]() {
+      tmpDisplayInfo->OrientationChanged::remove(tmpToken);
+    }, true);  // Run async because it can deadlock with core thread.
+  }
+}
+
+DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
+  : listener_(listener) {
+  RunOnCoreDispatcher([this]() {
+    // TODO(winrt): GetForCurrentView() only works on a thread associated with
+    // a CoreWindow.  Need to find a way to do this from a background task.
+    try {
+      display_info = DisplayInformation::GetForCurrentView();
+      orientation = display_info->CurrentOrientation;
+      orientation_changed_registration_token_ =
+        display_info->OrientationChanged::add(
+        ref new TypedEventHandler<DisplayInformation^,
+        Platform::Object^>(this, &DisplayOrientation::OnOrientationChanged));
+    }
+    catch (...) {
+      display_info = nullptr;
+      orientation = Windows::Graphics::Display::DisplayOrientations::Portrait;
+      LOG(LS_ERROR) << "DisplayOrientation could not be initialized.";
+    }
+  });
+}
+
+void DisplayOrientation::OnOrientationChanged(DisplayInformation^ sender,
+  Platform::Object^ args) {
+  orientation = sender->CurrentOrientation;
+  if (listener_)
+    listener_->OnDisplayOrientationChanged(sender->CurrentOrientation);
 }
 
 ref class CaptureDevice sealed {
@@ -435,77 +526,24 @@ void BlackFramesGenerator::Cleanup() {
   }
 }
 
-ref class DeviceOrientation sealed {
-public:
-  virtual ~DeviceOrientation();
-
-internal:
-  DeviceOrientation(DeviceOrientationObserver* listener);
-  void OnOrientationChanged(SimpleOrientationSensor^,
-    SimpleOrientationSensorOrientationChangedEventArgs^);
-
-  property SimpleOrientation orientation;
-
-private:
-  DeviceOrientationObserver* listener_;
-  SimpleOrientationSensor^ orientation_sensor_;
-  Windows::Foundation::EventRegistrationToken
-    orientation_changed_registration_token_;
-};
-
-DeviceOrientation::~DeviceOrientation() {
-  auto tmpOrientationSensor = orientation_sensor_;
-  auto tmpToken = orientation_changed_registration_token_;
-  if (tmpOrientationSensor != nullptr) {
-    RunOnCoreDispatcher([tmpOrientationSensor, tmpToken]() {
-      tmpOrientationSensor->OrientationChanged::remove(tmpToken);
-    }, true);  // Run async because it can deadlock with core thread.
-  }
-}
-
-DeviceOrientation::DeviceOrientation(DeviceOrientationObserver* listener)
-  : listener_(listener), orientation_sensor_(nullptr) {
-  RunOnCoreDispatcher([this]() {
-    orientation = SimpleOrientation::NotRotated;
-    try {
-      orientation_sensor_ = SimpleOrientationSensor::GetDefault();
-      if (orientation_sensor_ != nullptr) {
-        orientation = orientation_sensor_->GetCurrentOrientation();
-        orientation_changed_registration_token_ =
-          orientation_sensor_->OrientationChanged::add(
-            ref new TypedEventHandler<
-              SimpleOrientationSensor^,
-              SimpleOrientationSensorOrientationChangedEventArgs^>
-            (this, &DeviceOrientation::OnOrientationChanged));
-      }
-    }
-    catch (...) {
-      orientation_sensor_ = nullptr;
-      orientation = SimpleOrientation::NotRotated;
-      LOG(LS_ERROR) << "DeviceOrientation could not be initialized.";
-    }
-  });
-}
-
-void DeviceOrientation::OnOrientationChanged(
-  SimpleOrientationSensor^ orientation_sensor,
-  SimpleOrientationSensorOrientationChangedEventArgs^ evt) {
-  orientation = evt->Orientation;
-  if (listener_) {
-    listener_->DeviceOrientationChanged(evt->Orientation);
-  }
-}
-
 VideoCaptureWinRT::VideoCaptureWinRT(const int32_t id)
   : VideoCaptureImpl(id),
     device_(nullptr),
     camera_location_(Panel::Unknown),
-    device_orientation_(ref new DeviceOrientation(this)),
+    display_orientation_(nullptr),
     fake_device_(nullptr),
     last_frame_info_(),
     video_encoding_properties_(nullptr),
     media_encoding_profile_(nullptr) {
   _captureDelay = 120;
+  if (g_windowDispatcher == nullptr) {
+    LOG(LS_INFO) << "Using AppStateDispatcher as orientation source";
+    AppStateDispatcher::Instance()->AddObserver(this);
+  } else {
+    // DisplayOrientation needs access to UI thread.
+    LOG(LS_INFO) << "Using local detection for orientation source";
+    display_orientation_ = ref new DisplayOrientation(this);
+  }
 }
 
 VideoCaptureWinRT::~VideoCaptureWinRT() {
@@ -514,10 +552,13 @@ VideoCaptureWinRT::~VideoCaptureWinRT() {
   if (fake_device_ != nullptr) {
     fake_device_->Cleanup();
   }
+  if (display_orientation_ == nullptr) {
+    AppStateDispatcher::Instance()->RemoveObserver(this);
+  }
 }
 
 int32_t VideoCaptureWinRT::Init(const int32_t id,
-                                const char* device_unique_id) {
+  const char* device_unique_id) {
   CriticalSectionScoped cs(&_apiCs);
   const int32_t device_unique_id_length = (int32_t)strlen(device_unique_id);
   if (device_unique_id_length > kVideoCaptureUniqueNameLength) {
@@ -534,8 +575,8 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
 
   Concurrency::create_task(
     DeviceInformation::FindAllAsync(DeviceClass::VideoCapture)).
-      then([this, device_unique_id, device_unique_id_length](
-        Concurrency::task<DeviceInformationCollection^> find_task) {
+    then([this, device_unique_id, device_unique_id_length](
+      Concurrency::task<DeviceInformationCollection^> find_task) {
     try {
       DeviceInformationCollection^ dev_info_collection = find_task.get();
       if (dev_info_collection == nullptr || dev_info_collection->Size == 0) {
@@ -548,14 +589,16 @@ int32_t VideoCaptureWinRT::Init(const int32_t id,
         auto dev_info = dev_info_collection->GetAt(i);
         if (rtc::ToUtf8(dev_info->Id->Data()) == device_unique_id) {
           device_id_ = dev_info->Id;
-          if (dev_info->EnclosureLocation != nullptr)
+          if (dev_info->EnclosureLocation != nullptr) {
             camera_location_ = dev_info->EnclosureLocation->Panel;
-          else
+          } else {
             camera_location_ = Panel::Unknown;
+          }
           break;
         }
       }
-    } catch (Platform::Exception^ e) {
+    }
+    catch (Platform::Exception^ e) {
       LOG(LS_ERROR)
         << "Failed to retrieve device info collection. "
         << rtc::ToUtf8(e->Message->Data());
@@ -659,7 +702,11 @@ int32_t VideoCaptureWinRT::StartCapture(
     }
   }
   try {
-    ApplyDeviceOrientation(device_orientation_->orientation);
+    if (display_orientation_) {
+      ApplyDisplayOrientation(display_orientation_->orientation);
+    } else {
+      ApplyDisplayOrientation(AppStateDispatcher::Instance()->GetOrientation());
+    }
     device_->StartCapture(media_encoding_profile_,
                             video_encoding_properties_);
     last_frame_info_ = capability;
@@ -672,35 +719,32 @@ int32_t VideoCaptureWinRT::StartCapture(
   return 0;
 }
 
-void VideoCaptureWinRT::ApplyDeviceOrientation(SimpleOrientation orientation) {
-  if (camera_location_ == Panel::Unknown)
+void VideoCaptureWinRT::ApplyDisplayOrientation(
+  DisplayOrientations orientation) {
+  if (camera_location_ == Windows::Devices::Enumeration::Panel::Unknown)
     return;
-  // TODO(WinRT/Adam) - Verify rotation corectness after video renderer will
-  // be added to ChatterBox
   switch (orientation) {
-    case SimpleOrientation::NotRotated:  // Portrait
-      if (camera_location_ == Panel::Front) {
-        SetCaptureRotation(VideoRotation::kVideoRotation_270);
-      } else {
-        SetCaptureRotation(VideoRotation::kVideoRotation_90);
-      }
-      break;
-    case SimpleOrientation::Rotated90DegreesCounterclockwise:
-        SetCaptureRotation(VideoRotation::kVideoRotation_0);
-      break;
-    case SimpleOrientation::Rotated180DegreesCounterclockwise:
-      if (camera_location_ == Panel::Front) {
-        SetCaptureRotation(VideoRotation::kVideoRotation_90);
-      } else {
-        SetCaptureRotation(VideoRotation::kVideoRotation_270);
-      }
-      break;
-    case SimpleOrientation::Rotated270DegreesCounterclockwise:
-      SetCaptureRotation(VideoRotation::kVideoRotation_180);
-      break;
-    default:
-      SetCaptureRotation(VideoRotation::kVideoRotation_0);
-      break;
+  case Windows::Graphics::Display::DisplayOrientations::Portrait:
+    if (camera_location_ == Windows::Devices::Enumeration::Panel::Front)
+      SetCaptureRotation(VideoRotation::kVideoRotation_270);
+    else
+      SetCaptureRotation(VideoRotation::kVideoRotation_90);
+    break;
+  case Windows::Graphics::Display::DisplayOrientations::PortraitFlipped:
+    if (camera_location_ == Windows::Devices::Enumeration::Panel::Front)
+      SetCaptureRotation(VideoRotation::kVideoRotation_90);
+    else
+      SetCaptureRotation(VideoRotation::kVideoRotation_270);
+    break;
+  case Windows::Graphics::Display::DisplayOrientations::Landscape:
+    SetCaptureRotation(VideoRotation::kVideoRotation_0);
+    break;
+  case Windows::Graphics::Display::DisplayOrientations::LandscapeFlipped:
+    SetCaptureRotation(VideoRotation::kVideoRotation_180);
+    break;
+  default:
+    SetCaptureRotation(VideoRotation::kVideoRotation_0);
+    break;
   }
 }
 
@@ -760,9 +804,19 @@ bool VideoCaptureWinRT::IsSuspended() {
   return fake_device_->CaptureStarted();
 }
 
-void VideoCaptureWinRT::DeviceOrientationChanged(
-  SimpleOrientation orientation) {
-  ApplyDeviceOrientation(orientation);
+void VideoCaptureWinRT::DisplayOrientationChanged(
+  Windows::Graphics::Display::DisplayOrientations display_orientation) {
+  if (display_orientation_ != nullptr) {
+    LOG(LS_WARNING) <<
+      "Ignoring orientation change notification from AppStateDispatcher";
+    return;
+  }
+  ApplyDisplayOrientation(display_orientation);
+}
+
+void VideoCaptureWinRT::OnDisplayOrientationChanged(
+  DisplayOrientations orientation) {
+  ApplyDisplayOrientation(orientation);
 }
 
 void VideoCaptureWinRT::OnIncomingFrame(
