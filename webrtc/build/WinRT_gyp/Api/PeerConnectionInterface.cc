@@ -735,6 +735,9 @@ void WebRTC::UpdateMemUsage(INT64 mem_usage) {
 
   //TRACE_COUNTER1 can only log 32bit integer value
   TRACE_COUNTER1("webrtc", "winrtMemUsage", (int32)(globals::gCurrentMEMUsage / 1024));
+
+  TRACE_COUNTER1("webrtc", "winrtTraceMemSize", (int32)(globals::gTraceLog.CurrentTraceMemUsage() / 1024));
+
 }
 
 INT64 WebRTC::GetMemUsage() {
