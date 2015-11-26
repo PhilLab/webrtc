@@ -46,6 +46,12 @@ void TraceLog::EnableTraceInternalStorage() {
 #endif
 }
 
+#ifdef WINRT
+int64 TraceLog::CurrentTraceMemUsage(){
+  return this->oss_.tellp();
+}
+#endif
+
 TraceLog::~TraceLog() {
   if (tw_) {
     tw_->Stop();
