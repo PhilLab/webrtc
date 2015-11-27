@@ -170,7 +170,12 @@ IAsyncOperation<T2>^ CreateCallbackBridge(
   // Return an async operation that waits on the return value
   // of the callback and returns it.
   return Concurrency::create_async([tceTask] {
-    return tceTask.get();
+    try {
+      return tceTask.get();
+    }
+    catch (...) {
+      return (T2)nullptr;
+    }
   });
 }
 

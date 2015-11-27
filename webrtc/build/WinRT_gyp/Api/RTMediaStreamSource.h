@@ -47,6 +47,7 @@ namespace webrtc_winrt_api_internal {
 ref class RTMediaStreamSource sealed {
   public:
     virtual ~RTMediaStreamSource();
+    void Teardown();
 
     void OnSampleRequested(Windows::Media::Core::MediaStreamSource ^sender,
       Windows::Media::Core::MediaStreamSourceSampleRequestedEventArgs ^args);
@@ -69,11 +70,9 @@ ref class RTMediaStreamSource sealed {
     };
 
     RTMediaStreamSource(MediaVideoTrack^ videoTrack, bool isH264);
-    void ProcessReceivedFrame(const cricket::VideoFrame *frame);
+    void ProcessReceivedFrame(cricket::VideoFrame *frame);
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::VideoFrame* frame);
     void ResizeSource(uint32 width, uint32 height);
-    static void OnClosed(Windows::Media::Core::MediaStreamSource ^sender,
-      Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args);
 
     MediaVideoTrack^ _videoTrack;
     String^ _id;  // Provided by the calling API.
@@ -116,7 +115,6 @@ ref class RTMediaStreamSource sealed {
     void ReplyToRequestH264();
     void ReplyToRequestI420();
     bool DropFramesToIDR();
-    //Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> _request;
     MediaStreamSourceSampleRequest^ _request;
     Windows::Media::Core::MediaStreamSourceSampleRequestDeferral^ _deferral;
     Windows::Media::Core::MediaStreamSourceStartingRequestDeferral^ _startingDeferral;
