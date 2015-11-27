@@ -71,7 +71,8 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   streamState->_startTime = webrtc::TickTime::Now();
 
   streamSource->Starting +=
-    ref new Windows::Foundation::TypedEventHandler<MediaStreamSource ^,
+    ref new Windows::Foundation::TypedEventHandler<
+    MediaStreamSource ^,
     MediaStreamSourceStartingEventArgs ^>([streamState](
       MediaStreamSource^ sender,
       MediaStreamSourceStartingEventArgs^ args) {
@@ -87,18 +88,22 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   // This is the only way to tie the lifetime of the RTMediaStreamSource
   // to that of the MediaStreamSource.
   streamSource->SampleRequested +=
-    ref new Windows::Foundation::TypedEventHandler<MediaStreamSource ^,
-    MediaStreamSourceSampleRequestedEventArgs ^>([streamState](
+    ref new Windows::Foundation::TypedEventHandler<
+    MediaStreamSource^,
+    MediaStreamSourceSampleRequestedEventArgs^>([streamState](
         MediaStreamSource^ sender,
         MediaStreamSourceSampleRequestedEventArgs^ args) {
     streamState->OnSampleRequested(sender, args);
   });
   streamSource->Closed +=
     ref new Windows::Foundation::TypedEventHandler<
-      Windows::Media::Core::MediaStreamSource ^,
-      Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>(
-        &webrtc_winrt_api_internal::RTMediaStreamSource::OnClosed);
-  track->SetRenderer(streamState->_rtcRenderer.get());
+      Windows::Media::Core::MediaStreamSource^,
+      Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>([streamState](
+        Windows::Media::Core::MediaStreamSource^ sender,
+        Windows::Media::Core::MediaStreamSourceClosedEventArgs^ args) {
+    LOG(LS_INFO) << "RTMediaStreamSource::OnClosed";
+    streamState->Teardown();
+  });
 
   // Create a timer which sends request progress periodically.
   {
@@ -127,15 +132,41 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack, bool isH26
     _frameCounter(0), _isH264(isH264), _futureOffsetMs(150), _lastSampleTime(0),
     _frameSentThisTime(false), _isFirstFrame(true),
     _lastTimeFPSCalculated(webrtc::TickTime::Now()) {
+  LOG(LS_INFO) << "RTMediaStreamSource::RTMediaStreamSource";
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
-  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource";
-  _progressTimer->Cancel();
-  _fpsTimer->Cancel();
+  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource : " << rtc::ToUtf8(_id->Data()).c_str();
+  Teardown();
+}
+
+void RTMediaStreamSource::Teardown() {
+  LOG(LS_INFO) << "RTMediaStreamSource::Teardown()";
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+  if (_progressTimer != nullptr) {
+    _progressTimer->Cancel();
+    _progressTimer = nullptr;
+  }
+  if (_fpsTimer != nullptr) {
+    _fpsTimer->Cancel();
+    _fpsTimer = nullptr;
+  }
   if (_rtcRenderer != nullptr && _videoTrack != nullptr) {
     _videoTrack->UnsetRenderer(_rtcRenderer.get());
   }
+  _videoTrack = nullptr;
+  _rtcRenderer.reset();
+
+  _request = nullptr;
+  _deferral = nullptr;
+  _startingDeferral = nullptr;
+
+  // Clear the buffered frames.
+  while (!_frames.empty()) {
+    rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
+    _frames.pop_front();
+  }
+
 }
 
 RTMediaStreamSource::RTCRenderer::RTCRenderer(
@@ -156,10 +187,16 @@ void RTMediaStreamSource::RTCRenderer::SetSize(
 
 void RTMediaStreamSource::RTCRenderer::RenderFrame(
   const cricket::VideoFrame *frame) {
-  auto stream = _streamSource.Resolve<RTMediaStreamSource>();
-  if (stream != nullptr) {
-    stream->ProcessReceivedFrame(frame);
-  }
+
+  auto frameCopy = frame->Copy();
+  // Do the processing async because there's a risk of a deadlock otherwise.
+  Concurrency::create_async([this, frameCopy] {
+    auto stream = _streamSource.Resolve<RTMediaStreamSource>();
+    if (stream != nullptr) {
+      stream->ProcessReceivedFrame(frameCopy);
+    }
+  });
+
 }
 
 // Guid to cache the IDR check result in the sample attributes.
@@ -507,7 +544,7 @@ void RTMediaStreamSource::OnSampleRequested(
 }
 
 void RTMediaStreamSource::ProcessReceivedFrame(
-  const cricket::VideoFrame *frame) {
+  cricket::VideoFrame *frame) {
   // Debugging helper to see when a frame is received.
   if (_isH264) {
     OutputDebugString(L"!");
@@ -522,7 +559,7 @@ void RTMediaStreamSource::ProcessReceivedFrame(
 
   if (_isH264) {
     // For H264 we keep all frames since they are encoded.
-    _frames.push_back(frame->Copy());
+    _frames.push_back(frame);
   }
   else {
     // For I420 frame, keep only the latest.
@@ -530,7 +567,7 @@ void RTMediaStreamSource::ProcessReceivedFrame(
       delete oldFrame;
     }
     _frames.clear();
-    _frames.push_back(frame->Copy());
+    _frames.push_back(frame);
   }
 
   // If we have a pending request, reply to it now.
@@ -580,11 +617,6 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::Vid
 void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {
 }
 
-void RTMediaStreamSource::OnClosed(
-  Windows::Media::Core::MediaStreamSource ^sender,
-  Windows::Media::Core::MediaStreamSourceClosedEventArgs ^args) {
-  LOG(LS_INFO) << "RTMediaStreamSource::OnClosed";
-}
 }  // namespace webrtc_winrt_api_internal
 
 extern Windows::UI::Core::CoreDispatcher^ g_windowDispatcher;
