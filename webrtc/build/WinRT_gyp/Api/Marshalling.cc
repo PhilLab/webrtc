@@ -1,4 +1,6 @@
-﻿
+﻿// https://stackoverflow.com/questions/34013930/error-c4592-symbol-will-be-dynamically-initialized-vs2015-1-static-const-std
+#pragma warning( disable : 4592)
+
 // Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
