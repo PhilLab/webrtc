@@ -68,7 +68,10 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut_));
   ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
   ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_ConstrainedBase));
+  // TODO(winrt): Lumia 635 and Lumia 1520 Windows phones don't work well
+  //              with constrained baseline profile. Uncomment or delete
+  //              the line below as soon as we find the reason why.
+  // ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_ConstrainedBase));
   // 900kbit represents a good balance between video quality and
   // the bandwidth that a 620 Windows phone can handle.
   // TODO(winrt): Make bitrate a function of resolution.
