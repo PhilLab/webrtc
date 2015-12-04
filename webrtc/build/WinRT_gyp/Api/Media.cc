@@ -207,7 +207,7 @@ void MediaStream::Stop() {
   // TODO(winrt): Investigate if this is the proper way
   // to stop the stream. If something else holds
   // a reference, the stream may not stop.
-  _impl.release();
+  _impl = nullptr;
 }
 
 bool MediaStream::Active::get() {
