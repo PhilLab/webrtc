@@ -425,7 +425,7 @@ namespace webrtc_winrt_api {
     /// null core dispatcher, otherwise, the display orientation detection is
     /// performed internally.
     /// </summary>
-    void SetDisplayOrientation(Windows::Graphics::Display::DisplayOrientations
+    static void SetDisplayOrientation(Windows::Graphics::Display::DisplayOrientations
       display_orientation);
 
     /// <summary>
