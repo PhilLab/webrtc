@@ -27,7 +27,7 @@ void TraceLog::EnableTraceInternalStorage() {
   if (traces_storage_enabled_)
     return;  // already enabled.
 
-#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#if WINRT
   Platform::String^ path_w =
     Windows::Storage::ApplicationData::Current->LocalFolder->Path;
   int len8 = WideCharToMultiByte(CP_UTF8, 0, path_w->Data(), path_w->Length(),
