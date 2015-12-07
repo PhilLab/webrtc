@@ -19,6 +19,7 @@
 #include "RTMediaStreamSource.h"
 #include "webrtc/base/logging.h"
 #include "talk/app/webrtc/videosourceinterface.h"
+#include "talk/session/media/channelmanager.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
@@ -33,6 +34,8 @@ using Windows::Media::Capture::MediaStreamType;
 
 namespace {
   std::vector<cricket::Device> g_videoDevices;
+  std::vector<cricket::Device> g_audioCapturerDevices;
+  std::vector<cricket::Device> g_audioPlayoutDevices;
   webrtc::CriticalSectionWrapper& gMediaStreamListLock(
     *webrtc::CriticalSectionWrapper::CreateCriticalSection());
 }
@@ -233,7 +236,11 @@ const char kStreamLabel[] = "stream_label_%x";
 // we will append current time (uint32 in Hex, e.g.:
 // 8chars to the end to generate a unique string)
 
-Media::Media() {
+Media::Media() :
+  _selectedAudioCapturerDevice(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
+  _selectedAudioPlayoutDevice(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0) {
   _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>
     (cricket::DeviceManagerFactory::Create());
 
@@ -245,16 +252,7 @@ Media::Media() {
 
 // TODO(winrt): Remove this function and always use the async one.
 Media^ Media::CreateMedia() {
-  auto ret = ref new Media();
-  globals::RunOnGlobalThread<void>([ret]() {
-    ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
-      webrtc::AudioDeviceModule::kWindowsWasapiAudio);
-    if (ret->_audioDevice == NULL) {
-      LOG(LS_ERROR) << "Can't create audio device manager";
-    }
-    ret->_audioDevice->Init();
-  });
-  return ret;
+  return ref new Media();
 }
 
 IAsyncOperation<Media^>^ Media::CreateMediaAsync() {
@@ -280,14 +278,10 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
       if (mediaStreamConstraints->audioEnabled) {
-        if (_selectedAudioDevice == -1) {
-          // select default device if wasn't set
-          _audioDevice->SetRecordingDevice(
-            webrtc::AudioDeviceModule::kDefaultDevice);
-        } else {
-          _audioDevice->SetRecordingDevice(_selectedAudioDevice);
-        }
-        // Add an audio track.
+        globals::gPeerConnectionFactory->channel_manager()->SetAudioDevices(
+          &_selectedAudioCapturerDevice,
+          &_selectedAudioPlayoutDevice);
+
         LOG(LS_INFO) << "Creating audio track.";
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
@@ -352,15 +346,27 @@ IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
 
 IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
-  char name[webrtc::kAdmMaxDeviceNameSize];
-  char guid[webrtc::kAdmMaxGuidSize];
-  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-  for (int i = 0; i < recordingDeviceCount; i++) {
-    _audioDevice->RecordingDeviceName(i, name, guid);
-
-    ret->Append(ref new MediaDevice(ToCx(guid), ToCx(name)));
+  g_audioCapturerDevices.clear();
+  if (!_dev_manager->GetAudioInputDevices(&g_audioCapturerDevices)) {
+    LOG(LS_ERROR) << "Can't enumerate audio input devices";
   }
+  for (auto audioCaptureDev : g_audioCapturerDevices) {
+    ret->Append(ref new MediaDevice(ToCx(audioCaptureDev.id),
+                                    ToCx(audioCaptureDev.name)));
+  }
+  return ret;
+}
 
+IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
+  auto ret = ref new Vector<MediaDevice^>();
+  g_audioPlayoutDevices.clear();
+  if (!_dev_manager->GetAudioOutputDevices(&g_audioPlayoutDevices)) {
+    LOG(LS_ERROR) << "Can't enumerate audio playout devices";
+  }
+  for (auto audioPlayoutDev : g_audioPlayoutDevices) {
+    ret->Append(ref new MediaDevice(ToCx(audioPlayoutDev.id),
+                                    ToCx(audioPlayoutDev.name)));
+  }
   return ret;
 }
 
@@ -380,14 +386,13 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
                                                     ToCx(videoDev.name)));
     }
 
-    char name[webrtc::kAdmMaxDeviceNameSize];
-    char guid[webrtc::kAdmMaxGuidSize];
-
-    int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-    for (int i = 0; i < recordingDeviceCount; i++) {
-      _audioDevice->RecordingDeviceName(i, name, guid);
-
-      OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
+    if (!_dev_manager->GetAudioInputDevices(&g_audioCapturerDevices)) {
+      LOG(LS_ERROR) << "Can't enumerate audio capture devices";
+      return false;
+    }
+    for (auto audioInputDev : g_audioCapturerDevices) {
+      OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(audioInputDev.id),
+        ToCx(audioInputDev.name)));
     }
     return true;
   });
@@ -407,20 +412,33 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
   }
 }
 
-void Media::SelectAudioDevice(MediaDevice^ device) {
+// TODO(winrt): Consider renaming this method to SelectAudioCaptureDevice.
+bool Media::SelectAudioDevice(MediaDevice^ device) {
   std::string id = FromCx(device->Id);
-  _selectedAudioDevice = 0;
-  char name[webrtc::kAdmMaxDeviceNameSize];
-  char guid[webrtc::kAdmMaxGuidSize];
-
-  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-  for (int i = 0; i < recordingDeviceCount; i++) {
-    _audioDevice->RecordingDeviceName(i, name, guid);
-    if (strcmp(guid, id.c_str()) == 0) {
-      _selectedAudioDevice = i;
-      return;
+  _selectedAudioCapturerDevice.id = "";
+  _selectedAudioCapturerDevice.name =
+    cricket::DeviceManagerInterface::kDefaultDeviceName;
+  for (auto audioCapturer : g_audioCapturerDevices) {
+    if (audioCapturer.id == id.c_str()) {
+      _selectedAudioCapturerDevice = audioCapturer;
+      return true;
     }
   }
+  return false;
+}
+
+bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
+  std::string id = FromCx(device->Id);
+  _selectedAudioPlayoutDevice.id = "";
+  _selectedAudioPlayoutDevice.name =
+    cricket::DeviceManagerInterface::kDefaultDeviceName;
+  for (auto audioPlayoutDevice : g_audioPlayoutDevices) {
+    if (audioPlayoutDevice.id == id.c_str()) {
+      _selectedAudioPlayoutDevice = audioPlayoutDevice;
+      return true;
+    }
+  }
+  return false;
 }
 
 void Media::OnAppSuspending() {
@@ -429,7 +447,7 @@ void Media::OnAppSuspending() {
 }
 
 void Media::SetDisplayOrientation(
- Windows::Graphics::Display::DisplayOrientations display_orientation) {
+  Windows::Graphics::Display::DisplayOrientations display_orientation) {
   webrtc::videocapturemodule::AppStateDispatcher::Instance()->
     DisplayOrientationChanged(display_orientation);
 }

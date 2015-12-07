@@ -146,6 +146,8 @@ class ChannelManager : public rtc::MessageHandler,
   bool SetAudioOptions(const std::string& wave_in_device,
                        const std::string& wave_out_device,
                        const AudioOptions& options);
+  bool SetAudioDevices(const Device* in_dev,
+                       const Device* out_dev);
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
   bool IsSameCapturer(const std::string& capturer_name,
@@ -278,6 +280,7 @@ class ChannelManager : public rtc::MessageHandler,
   void DestroyDataChannel_w(DataChannel* data_channel);
   bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
                          const Device* in_dev, const Device* out_dev);
+  bool SetAudioDevices_w(const Device* in_dev, const Device* out_dev);
   bool SetCaptureDevice_w(const Device* cam_device);
   void OnVideoCaptureStateChange(VideoCapturer* capturer,
                                  CaptureState result);
