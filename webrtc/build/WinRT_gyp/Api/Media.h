@@ -371,12 +371,19 @@ namespace webrtc_winrt_api {
 
     /// <summary>
     /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.
-    /// Retrieves system devices that can be used for audio capturing
+    /// Retrieves system devices that can be used for audio capturing.
     /// (microphones).
     /// </summary>
     /// <returns>Vector of system devices that can be used for audio capturing
     /// (microphones).</returns>
     IVector<MediaDevice^>^ GetAudioCaptureDevices();
+
+    /// <summary>
+    /// Retrieves system devices that can be used for audio playout (speakers)
+    /// </summary>
+    /// <returns>Vector of system devices that can be used for audio playout
+    /// (speakers).</returns>
+    IVector<MediaDevice^>^ GetAudioPlayoutDevices();
 
     /// <summary>
     /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.
@@ -385,7 +392,6 @@ namespace webrtc_winrt_api {
     /// <returns>Vector of system devices that can be used for video capturing
     /// (webcams).</returns>
     IVector<MediaDevice^>^ GetVideoCaptureDevices();
-
 
     /// <summary>
     /// Enumerates through all capture devices on the system.
@@ -411,7 +417,16 @@ namespace webrtc_winrt_api {
     /// Allows switching between microphones.
     /// </summary>
     /// <param name="device">Microphone to be used for audio capturing.</param>
-    void SelectAudioDevice(MediaDevice^ device);
+    /// <returns>True if the operation succeeded.</returns>
+    bool SelectAudioDevice(MediaDevice^ device);
+
+    /// <summary>
+    /// Allows switching between audio playout devices (speakers).
+    /// </summary>
+    /// <param name="device">Device to be used for audio playback. If null,
+    /// default audio playout device will be used.</param>
+    /// <returns>True if the operation succeeded.</returns>*/
+    bool SelectAudioPlayoutDevice(MediaDevice^ device);
 
     /// <summary>
     /// App suspending event handler.
@@ -444,8 +459,8 @@ namespace webrtc_winrt_api {
     Media();
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
     cricket::Device _selectedVideoDevice;
-    webrtc::AudioDeviceModule *_audioDevice;
-    uint16_t _selectedAudioDevice;
+    cricket::Device _selectedAudioCapturerDevice;
+    cricket::Device _selectedAudioPlayoutDevice;
   };
 
 }  // namespace webrtc_winrt_api

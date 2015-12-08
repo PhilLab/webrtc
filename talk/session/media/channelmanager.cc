@@ -586,6 +586,33 @@ bool ChannelManager::SetAudioOptions_w(
   return ret;
 }
 
+bool ChannelManager::SetAudioDevices(const Device* in_dev,
+                                     const Device* out_dev) {
+  // If we're initialized, pass the settings to the media engine.
+  bool ret = true;
+  if (initialized_) {
+    ret = worker_thread_->Invoke<bool>(
+      Bind(&ChannelManager::SetAudioDevices_w, this,
+        in_dev, out_dev));
+  }
+
+  // If all worked well, save the values for use in GetAudioOptions.
+  if (ret) {
+    audio_in_device_ = in_dev->name;
+    audio_out_device_ = out_dev->name;
+  }
+  return ret;
+}
+
+bool ChannelManager::SetAudioDevices_w(const Device* in_dev,
+                                       const Device* out_dev) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(initialized_);
+
+  // Set the audio devices
+  return media_engine_->SetSoundDevices(in_dev, out_dev);
+}
+
 bool ChannelManager::GetOutputVolume(int* level) {
   if (!initialized_) {
     return false;
