@@ -16,8 +16,6 @@
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 
-#include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
-
 namespace webrtc {
 namespace videocapturemodule {
 
