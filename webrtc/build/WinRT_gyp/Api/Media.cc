@@ -227,8 +227,8 @@ bool MediaStream::Active::get() {
 
 // = Media ===================================================================
 
-const char kAudioLabel[] = "audio_label";
-const char kVideoLabel[] = "video_label";
+const char kAudioLabel[] = "audio_label_%x";
+const char kVideoLabel[] = "video_label_%x";
 const char kStreamLabel[] = "stream_label_%x";
 // we will append current time (uint32 in Hex, e.g.:
 // 8chars to the end to generate a unique string)
@@ -275,7 +275,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
                                       mediaStreamConstraints]()->MediaStream^ {
       // This is the stream returned.
       char streamLabel[32];
-      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel, rtc::Time());
+      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel, rtc::CreateRandomId64());
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
@@ -289,9 +289,11 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
         }
         // Add an audio track.
         LOG(LS_INFO) << "Creating audio track.";
+        char audioLabel[32];
+        _snprintf(audioLabel, sizeof(audioLabel), kAudioLabel, rtc::CreateRandomId64());
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
-            kAudioLabel,
+            audioLabel,
             globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
         LOG(LS_INFO) << "Adding audio track to stream.";
         stream->AddTrack(audio_track);
@@ -311,13 +313,15 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           videoCapturer = _dev_manager->CreateVideoCapturer(
                                                         _selectedVideoDevice);
         }
+        char videoLabel[32];
+        _snprintf(videoLabel, sizeof(videoLabel), kVideoLabel, rtc::CreateRandomId64());
 
         // Add a video track
         if (videoCapturer != nullptr) {
           LOG(LS_INFO) << "Creating video track.";
           rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
             globals::gPeerConnectionFactory->CreateVideoTrack(
-            kVideoLabel,
+            videoLabel,
             globals::gPeerConnectionFactory->CreateVideoSource(
             videoCapturer, NULL)));
           LOG(LS_INFO) << "Adding video track to stream.";
