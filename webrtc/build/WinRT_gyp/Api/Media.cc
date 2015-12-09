@@ -130,6 +130,8 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface> MediaStream::GetImpl() {
 }
 
 IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks() {
+  if (_impl == nullptr)
+    return nullptr;
   auto ret = ref new Vector<MediaAudioTrack^>();
   for (auto track : _impl->GetAudioTracks()) {
     ret->Append(ref new MediaAudioTrack(track));
@@ -138,10 +140,14 @@ IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks() {
 }
 
 String^ MediaStream::Id::get() {
+  if (_impl == nullptr)
+    return nullptr;
   return ToCx(_impl->label());
 }
 
 IVector<MediaVideoTrack^>^ MediaStream::GetVideoTracks() {
+  if (_impl == nullptr)
+    return nullptr;
   auto ret = ref new Vector<MediaVideoTrack^>();
   for (auto track : _impl->GetVideoTracks()) {
     ret->Append(ref new MediaVideoTrack(track));
@@ -150,6 +156,8 @@ IVector<MediaVideoTrack^>^ MediaStream::GetVideoTracks() {
 }
 
 IVector<IMediaStreamTrack^>^ MediaStream::GetTracks() {
+  if (_impl == nullptr)
+    return nullptr;
   auto ret = ref new Vector<IMediaStreamTrack^>();
   for (auto track : _impl->GetAudioTracks()) {
     ret->Append(ref new MediaAudioTrack(track));
@@ -161,6 +169,8 @@ IVector<IMediaStreamTrack^>^ MediaStream::GetTracks() {
 }
 
 IMediaStreamTrack^ MediaStream::GetTrackById(String^ trackId) {
+  if (_impl == nullptr)
+    return nullptr;
   IMediaStreamTrack^ ret = nullptr;
   std::string trackIdStr = FromCx(trackId);
   // Search the audio tracks.
@@ -178,6 +188,8 @@ IMediaStreamTrack^ MediaStream::GetTrackById(String^ trackId) {
 }
 
 void MediaStream::AddTrack(IMediaStreamTrack^ track) {
+  if (_impl == nullptr)
+    return;
   std::string kind = FromCx(track->Kind);
   if (kind == "audio") {
     auto audioTrack = static_cast<MediaAudioTrack^>(track);
@@ -191,6 +203,8 @@ void MediaStream::AddTrack(IMediaStreamTrack^ track) {
 }
 
 void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
+  if (_impl == nullptr)
+    return;
   std::string kind = FromCx(track->Kind);
   if (kind == "audio") {
     auto audioTrack = static_cast<MediaAudioTrack^>(track);
@@ -211,6 +225,8 @@ void MediaStream::Stop() {
 }
 
 bool MediaStream::Active::get() {
+  if (_impl == nullptr)
+    return false;
   bool ret = false;
   for (auto track : _impl->GetAudioTracks()) {
     if (track->state() < webrtc::MediaStreamTrackInterface::kEnded) {
