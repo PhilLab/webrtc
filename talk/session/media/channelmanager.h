@@ -163,6 +163,10 @@ class ChannelManager : public rtc::MessageHandler,
                            const VideoFormat& desired_format,
                            CaptureManager::RestartOptions options);
 
+  bool SuspendVideoCapture(VideoCapturer* video_capturer);
+  bool ResumeVideoCapture(VideoCapturer* video_capturer);
+  bool IsSuspended(VideoCapturer* video_capturer);
+
   bool AddVideoRenderer(VideoCapturer* capturer, VideoRenderer* renderer);
   bool RemoveVideoRenderer(VideoCapturer* capturer, VideoRenderer* renderer);
   bool IsScreencastRunning() const;

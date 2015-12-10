@@ -8,8 +8,8 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 // Class1.cpp
-#include <vector>
 #include <ppltasks.h>
+#include <vector>
 
 #include "webrtc/build/WinRT_gyp/Api/GlobalObserver.h"
 #include "PeerConnectionInterface.h"
@@ -56,7 +56,8 @@ namespace webrtc_winrt_api_internal {
   }
 
 GlobalObserver::GlobalObserver() :
-  _etwStatsEnabled(false), _connectionHealthStatsEnabled(false) {
+  _etwStatsEnabled(false), _connectionHealthStatsEnabled(false),
+  _rtcStatsEnabled(false) {
 }
 
 void GlobalObserver::SetPeerConnection(
@@ -78,6 +79,13 @@ void GlobalObserver::ToggleConnectionHealthStats(bool enable) {
   _connectionHealthStatsEnabled = enable;
   if (_stats_observer_etw) {
     _stats_observer_etw->ToggleConnectionHealthStats(enable ? this : NULL);
+  }
+}
+
+void GlobalObserver::ToggleRTCStats(bool enable) {
+  _rtcStatsEnabled = enable;
+  if (_stats_observer_etw) {
+    _stats_observer_etw->ToggleRTCStats(enable ? this : NULL);
   }
 }
 
@@ -132,6 +140,8 @@ void GlobalObserver::OnIceConnectionChange(
     _stats_observer_etw->ToggleETWStats(_etwStatsEnabled);
     _stats_observer_etw->ToggleConnectionHealthStats(
       _connectionHealthStatsEnabled ? this : NULL);
+    _stats_observer_etw->ToggleRTCStats(
+      _rtcStatsEnabled ? this : NULL);
   }
   auto evt = ref new webrtc_winrt_api::RTCPeerConnectionIceStateChangeEvent();
   webrtc_winrt_api::RTCIceConnectionState cxNewState;
@@ -184,6 +194,12 @@ void GlobalObserver::OnConnectionHealthStats(
   POST_PC_EVENT(OnConnectionHealthStats, evt);
 }
 
+void GlobalObserver::OnRTCStatsReportsReady(
+  const webrtc_winrt_api::RTCStatsReports& rtcStatsReports) {
+  auto evt = ref new webrtc_winrt_api::RTCStatsReportsReadyEvent();
+  evt->rtcStatsReports = rtcStatsReports;
+  POST_PC_EVENT(OnRTCStatsReportsReady, evt);
+}
 
 //============================================================================
 

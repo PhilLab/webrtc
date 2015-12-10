@@ -19,10 +19,12 @@
 #include "RTMediaStreamSource.h"
 #include "webrtc/base/logging.h"
 #include "talk/app/webrtc/videosourceinterface.h"
+#include "talk/session/media/channelmanager.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
+#include "webrtc/modules/video_capture/windows/video_capture_winrt.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 using Platform::Collections::Vector;
@@ -32,6 +34,8 @@ using Windows::Media::Capture::MediaStreamType;
 
 namespace {
   std::vector<cricket::Device> g_videoDevices;
+  std::vector<cricket::Device> g_audioCapturerDevices;
+  std::vector<cricket::Device> g_audioPlayoutDevices;
   webrtc::CriticalSectionWrapper& gMediaStreamListLock(
     *webrtc::CriticalSectionWrapper::CreateCriticalSection());
 }
@@ -62,6 +66,18 @@ bool MediaVideoTrack::Enabled::get() {
 
 void MediaVideoTrack::Enabled::set(bool value) {
   _impl->set_enabled(value);
+}
+
+bool MediaVideoTrack::Suspended::get() {
+  return _impl->GetSource()->IsSuspended();
+}
+
+void MediaVideoTrack::Suspended::set(bool value) {
+  if (value) {
+    _impl->GetSource()->Suspend();
+  } else {
+    _impl->GetSource()->Resume();
+  }
 }
 
 void MediaVideoTrack::Stop() {
@@ -117,6 +133,8 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface> MediaStream::GetImpl() {
 }
 
 IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks() {
+  if (_impl == nullptr)
+    return nullptr;
   auto ret = ref new Vector<MediaAudioTrack^>();
   for (auto track : _impl->GetAudioTracks()) {
     ret->Append(ref new MediaAudioTrack(track));
@@ -125,10 +143,14 @@ IVector<MediaAudioTrack^>^ MediaStream::GetAudioTracks() {
 }
 
 String^ MediaStream::Id::get() {
+  if (_impl == nullptr)
+    return nullptr;
   return ToCx(_impl->label());
 }
 
 IVector<MediaVideoTrack^>^ MediaStream::GetVideoTracks() {
+  if (_impl == nullptr)
+    return nullptr;
   auto ret = ref new Vector<MediaVideoTrack^>();
   for (auto track : _impl->GetVideoTracks()) {
     ret->Append(ref new MediaVideoTrack(track));
@@ -137,6 +159,8 @@ IVector<MediaVideoTrack^>^ MediaStream::GetVideoTracks() {
 }
 
 IVector<IMediaStreamTrack^>^ MediaStream::GetTracks() {
+  if (_impl == nullptr)
+    return nullptr;
   auto ret = ref new Vector<IMediaStreamTrack^>();
   for (auto track : _impl->GetAudioTracks()) {
     ret->Append(ref new MediaAudioTrack(track));
@@ -148,6 +172,8 @@ IVector<IMediaStreamTrack^>^ MediaStream::GetTracks() {
 }
 
 IMediaStreamTrack^ MediaStream::GetTrackById(String^ trackId) {
+  if (_impl == nullptr)
+    return nullptr;
   IMediaStreamTrack^ ret = nullptr;
   std::string trackIdStr = FromCx(trackId);
   // Search the audio tracks.
@@ -165,6 +191,8 @@ IMediaStreamTrack^ MediaStream::GetTrackById(String^ trackId) {
 }
 
 void MediaStream::AddTrack(IMediaStreamTrack^ track) {
+  if (_impl == nullptr)
+    return;
   std::string kind = FromCx(track->Kind);
   if (kind == "audio") {
     auto audioTrack = static_cast<MediaAudioTrack^>(track);
@@ -178,6 +206,8 @@ void MediaStream::AddTrack(IMediaStreamTrack^ track) {
 }
 
 void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
+  if (_impl == nullptr)
+    return;
   std::string kind = FromCx(track->Kind);
   if (kind == "audio") {
     auto audioTrack = static_cast<MediaAudioTrack^>(track);
@@ -194,10 +224,12 @@ void MediaStream::Stop() {
   // TODO(winrt): Investigate if this is the proper way
   // to stop the stream. If something else holds
   // a reference, the stream may not stop.
-  _impl.release();
+  _impl = nullptr;
 }
 
 bool MediaStream::Active::get() {
+  if (_impl == nullptr)
+    return false;
   bool ret = false;
   for (auto track : _impl->GetAudioTracks()) {
     if (track->state() < webrtc::MediaStreamTrackInterface::kEnded) {
@@ -214,13 +246,17 @@ bool MediaStream::Active::get() {
 
 // = Media ===================================================================
 
-const char kAudioLabel[] = "audio_label";
-const char kVideoLabel[] = "video_label";
+const char kAudioLabel[] = "audio_label_%x";
+const char kVideoLabel[] = "video_label_%x";
 const char kStreamLabel[] = "stream_label_%x";
 // we will append current time (uint32 in Hex, e.g.:
 // 8chars to the end to generate a unique string)
 
-Media::Media() {
+Media::Media() :
+  _selectedAudioCapturerDevice(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
+  _selectedAudioPlayoutDevice(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0) {
   _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>
     (cricket::DeviceManagerFactory::Create());
 
@@ -228,21 +264,11 @@ Media::Media() {
     LOG(LS_ERROR) << "Can't create device manager";
     return;
   }
-
 }
 
 // TODO(winrt): Remove this function and always use the async one.
 Media^ Media::CreateMedia() {
-  auto ret = ref new Media();
-  globals::RunOnGlobalThread<void>([ret]() {
-    ret->_audioDevice = webrtc::AudioDeviceModuleImpl::Create(555,
-      webrtc::AudioDeviceModule::kWindowsWasapiAudio);
-    if (ret->_audioDevice == NULL) {
-      LOG(LS_ERROR) << "Can't create audio device manager";
-    }
-    ret->_audioDevice->Init();
-  });
-  return ret;
+  return ref new Media();
 }
 
 IAsyncOperation<Media^>^ Media::CreateMediaAsync() {
@@ -263,23 +289,22 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
                                       mediaStreamConstraints]()->MediaStream^ {
       // This is the stream returned.
       char streamLabel[32];
-      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel, rtc::Time());
+      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel, rtc::CreateRandomId64());
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
       if (mediaStreamConstraints->audioEnabled) {
-        if (_selectedAudioDevice == -1) {
-          // select default device if wasn't set
-          _audioDevice->SetRecordingDevice(
-            webrtc::AudioDeviceModule::kDefaultDevice);
-        } else {
-          _audioDevice->SetRecordingDevice(_selectedAudioDevice);
-        }
-        // Add an audio track.
+        // TODO(pull): SetAudioDevices no longer present.
+        //globals::gPeerConnectionFactory->channel_manager()->SetAudioDevices(
+        //  &_selectedAudioCapturerDevice,
+        //  &_selectedAudioPlayoutDevice);
+
         LOG(LS_INFO) << "Creating audio track.";
+        char audioLabel[32];
+        _snprintf(audioLabel, sizeof(audioLabel), kAudioLabel, rtc::CreateRandomId64());
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
-            kAudioLabel,
+            audioLabel,
             globals::gPeerConnectionFactory->CreateAudioSource(NULL)));
         LOG(LS_INFO) << "Adding audio track to stream.";
         stream->AddTrack(audio_track);
@@ -299,13 +324,15 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           videoCapturer = _dev_manager->CreateVideoCapturer(
                                                         _selectedVideoDevice);
         }
+        char videoLabel[32];
+        _snprintf(videoLabel, sizeof(videoLabel), kVideoLabel, rtc::CreateRandomId64());
 
         // Add a video track
         if (videoCapturer != nullptr) {
           LOG(LS_INFO) << "Creating video track.";
           rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
             globals::gPeerConnectionFactory->CreateVideoTrack(
-            kVideoLabel,
+            videoLabel,
             globals::gPeerConnectionFactory->CreateVideoSource(
             videoCapturer, NULL)));
           LOG(LS_INFO) << "Adding video track to stream.";
@@ -340,15 +367,23 @@ IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
 
 IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
-  char name[webrtc::kAdmMaxDeviceNameSize];
-  char guid[webrtc::kAdmMaxGuidSize];
-  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-  for (int i = 0; i < recordingDeviceCount; i++) {
-    _audioDevice->RecordingDeviceName(i, name, guid);
-
-    ret->Append(ref new MediaDevice(ToCx(guid), ToCx(name)));
+  for (auto audioCaptureDev : g_audioCapturerDevices) {
+    ret->Append(ref new MediaDevice(ToCx(audioCaptureDev.id),
+                                    ToCx(audioCaptureDev.name)));
   }
+  return ret;
+}
 
+IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
+  auto ret = ref new Vector<MediaDevice^>();
+  g_audioPlayoutDevices.clear();
+  if (!_dev_manager->GetAudioOutputDevices(&g_audioPlayoutDevices)) {
+    LOG(LS_ERROR) << "Can't enumerate audio playout devices";
+  }
+  for (auto audioPlayoutDev : g_audioPlayoutDevices) {
+    ret->Append(ref new MediaDevice(ToCx(audioPlayoutDev.id),
+                                    ToCx(audioPlayoutDev.name)));
+  }
   return ret;
 }
 
@@ -368,14 +403,17 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
                                                     ToCx(videoDev.name)));
     }
 
-    char name[webrtc::kAdmMaxDeviceNameSize];
-    char guid[webrtc::kAdmMaxGuidSize];
+    std::vector<cricket::Device> audioDevices;
+    if (!_dev_manager->GetAudioInputDevices(&audioDevices)) {
+      LOG(LS_ERROR) << "Can't enumerate audio capture devices";
+      return false;
+    }
+    g_audioCapturerDevices.clear();
 
-    int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-    for (int i = 0; i < recordingDeviceCount; i++) {
-      _audioDevice->RecordingDeviceName(i, name, guid);
-
-      OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(guid), ToCx(name)));
+    for (auto audioInputDev : audioDevices) {
+      g_audioCapturerDevices.push_back(audioInputDev);
+      OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(audioInputDev.id),
+        ToCx(audioInputDev.name)));
     }
     return true;
   });
@@ -395,30 +433,50 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
   }
 }
 
-void Media::SelectAudioDevice(MediaDevice^ device) {
+// TODO(winrt): Consider renaming this method to SelectAudioCaptureDevice.
+bool Media::SelectAudioDevice(MediaDevice^ device) {
   std::string id = FromCx(device->Id);
-  _selectedAudioDevice = 0;
-  char name[webrtc::kAdmMaxDeviceNameSize];
-  char guid[webrtc::kAdmMaxGuidSize];
-
-  int16_t recordingDeviceCount = _audioDevice->RecordingDevices();
-  for (int i = 0; i < recordingDeviceCount; i++) {
-    _audioDevice->RecordingDeviceName(i, name, guid);
-    if (strcmp(guid, id.c_str()) == 0) {
-      _selectedAudioDevice = i;
-      return;
+  _selectedAudioCapturerDevice.id = "";
+  _selectedAudioCapturerDevice.name =
+    cricket::DeviceManagerInterface::kDefaultDeviceName;
+  for (auto audioCapturer : g_audioCapturerDevices) {
+    if (audioCapturer.id == id.c_str()) {
+      _selectedAudioCapturerDevice = audioCapturer;
+      return true;
     }
   }
+  return false;
+}
+
+bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
+  std::string id = FromCx(device->Id);
+  _selectedAudioPlayoutDevice.id = "";
+  _selectedAudioPlayoutDevice.name =
+    cricket::DeviceManagerInterface::kDefaultDeviceName;
+  for (auto audioPlayoutDevice : g_audioPlayoutDevices) {
+    if (audioPlayoutDevice.id == id.c_str()) {
+      _selectedAudioPlayoutDevice = audioPlayoutDevice;
+      return true;
+    }
+  }
+  return false;
 }
 
 void Media::OnAppSuspending() {
-  webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->OnAppSuspending();
+  webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
+    OnAppSuspending();
+}
+
+void Media::SetDisplayOrientation(
+  Windows::Graphics::Display::DisplayOrientations display_orientation) {
+  webrtc::videocapturemodule::AppStateDispatcher::Instance()->
+    DisplayOrientationChanged(display_orientation);
 }
 
 IAsyncOperation<IVector<CaptureCapability^>^>^
   MediaDevice::GetVideoCaptureCapabilities() {
   auto op = concurrency::create_async([this]() -> IVector<CaptureCapability^>^ {
-	auto mediaCapture =
+  auto mediaCapture =
       webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
       GetMediaCapture(_id);
     if (mediaCapture == nullptr) {

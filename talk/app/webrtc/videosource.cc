@@ -344,6 +344,7 @@ VideoSource::VideoSource(cricket::ChannelManager* channel_manager,
                          cricket::VideoCapturer* capturer)
     : channel_manager_(channel_manager),
       video_capturer_(capturer),
+      _isH264Source(false),
       state_(kInitializing) {
   channel_manager_->SignalVideoCaptureStateChange.connect(
       this, &VideoSource::OnStateChange);
@@ -435,9 +436,21 @@ void VideoSource::Restart() {
     SetState(kEnded);
     return;
   }
-  for(cricket::VideoRenderer* sink : sinks_) {
+  for (cricket::VideoRenderer* sink : sinks_) {
     channel_manager_->AddVideoRenderer(video_capturer_.get(), sink);
   }
+}
+
+bool VideoSource::Suspend() {
+  return channel_manager_->SuspendVideoCapture(video_capturer_.get());
+}
+
+bool VideoSource::Resume() {
+  return channel_manager_->ResumeVideoCapture(video_capturer_.get());
+}
+
+bool VideoSource::IsSuspended() {
+  return channel_manager_->IsSuspended(video_capturer_.get());
 }
 
 void VideoSource::AddSink(cricket::VideoRenderer* output) {
@@ -448,6 +461,14 @@ void VideoSource::AddSink(cricket::VideoRenderer* output) {
 void VideoSource::RemoveSink(cricket::VideoRenderer* output) {
   sinks_.remove(output);
   channel_manager_->RemoveVideoRenderer(video_capturer_.get(), output);
+}
+
+void VideoSource::SetIsH264Source(bool isH264Source) {
+  _isH264Source = isH264Source;
+}
+
+bool VideoSource::IsH264Source() {
+  return _isH264Source;
 }
 
 // OnStateChange listens to the ChannelManager::SignalVideoCaptureStateChange.

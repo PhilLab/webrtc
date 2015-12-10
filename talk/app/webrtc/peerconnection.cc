@@ -1028,7 +1028,7 @@ void PeerConnection::SetRemoteDescription(
     const cricket::AudioContentDescription* desc =
         static_cast<const cricket::AudioContentDescription*>(
             audio_content->description);
-    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
+    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams, false);
     remote_info_.default_audio_track_needed =
         !remote_desc->msid_supported() && desc->streams().empty() &&
         MediaContentDirectionHasSend(desc->direction());
@@ -1041,7 +1041,8 @@ void PeerConnection::SetRemoteDescription(
     const cricket::VideoContentDescription* desc =
         static_cast<const cricket::VideoContentDescription*>(
             video_content->description);
-    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams);
+    bool isH264 = desc->codecs().size()>0 && desc->codecs()[0].name == "H264";
+    UpdateRemoteStreamsList(GetActiveStreams(desc), desc->type(), new_streams, isH264);
     remote_info_.default_video_track_needed =
         !remote_desc->msid_supported() && desc->streams().empty() &&
         MediaContentDirectionHasSend(desc->direction());
@@ -1438,7 +1439,7 @@ bool PeerConnection::GetOptionsForAnswer(
 void PeerConnection::UpdateRemoteStreamsList(
     const cricket::StreamParamsVec& streams,
     cricket::MediaType media_type,
-    StreamCollection* new_streams) {
+    StreamCollection* new_streams, bool isH264) {
   TrackInfos* current_tracks = GetRemoteTracks(media_type);
 
   // Find removed tracks. I.e., tracks where the track id or ssrc don't match
@@ -1478,7 +1479,7 @@ void PeerConnection::UpdateRemoteStreamsList(
         FindTrackInfo(*current_tracks, stream_label, track_id);
     if (!track_info) {
       current_tracks->push_back(TrackInfo(stream_label, track_id, ssrc));
-      OnRemoteTrackSeen(stream_label, track_id, ssrc, media_type);
+      OnRemoteTrackSeen(stream_label, track_id, ssrc, media_type, isH264);
     }
   }
 }
@@ -1486,7 +1487,8 @@ void PeerConnection::UpdateRemoteStreamsList(
 void PeerConnection::OnRemoteTrackSeen(const std::string& stream_label,
                                        const std::string& track_id,
                                        uint32_t ssrc,
-                                       cricket::MediaType media_type) {
+                                       cricket::MediaType media_type,
+                                       bool isH264) {
   MediaStreamInterface* stream = remote_streams_->find(stream_label);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
@@ -1496,6 +1498,7 @@ void PeerConnection::OnRemoteTrackSeen(const std::string& stream_label,
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     VideoTrackInterface* video_track =
         remote_stream_factory_->AddVideoTrack(stream, track_id);
+    video_track->GetSource()->SetIsH264Source(isH264);
     CreateVideoReceiver(stream, video_track, ssrc);
   } else {
     RTC_DCHECK(false && "Invalid media type");

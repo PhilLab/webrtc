@@ -1,4 +1,6 @@
-﻿
+﻿// https://stackoverflow.com/questions/34013930/error-c4592-symbol-will-be-dynamically-initialized-vs2015-1-static-const-std
+#pragma warning( disable : 4592)
+
 // Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
@@ -12,6 +14,7 @@
 
 #include "webrtc/p2p/base/candidate.h"
 #include "talk/app/webrtc/webrtcsdp.h"
+#include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 
 using webrtc_winrt_api::RTCBundlePolicy;
 using webrtc_winrt_api::RTCIceTransportPolicy;
@@ -21,6 +24,8 @@ using webrtc_winrt_api::RTCIceGatheringState;
 using webrtc_winrt_api::RTCIceConnectionState;
 using webrtc_winrt_api::RTCIceServer;
 using webrtc_winrt_api::RTCConfiguration;
+using webrtc_winrt_api::RTCStatsValueName;
+using webrtc_winrt_api::RTCStatsType;
 
 namespace webrtc_winrt_api_internal {
 
@@ -121,6 +126,244 @@ namespace webrtc_winrt_api_internal {
       { RTCIceConnectionState::Closed,
         webrtc::PeerConnectionInterface::kIceConnectionClosed },
   DEFINE_MARSHALLED_ENUM_END(IceConnectionState)
+
+  DEFINE_MARSHALLED_ENUM(StatsType,
+  RTCStatsType, webrtc::StatsReport::StatsType)
+  { RTCStatsType::StatsReportTypeSession,
+      webrtc::StatsReport::kStatsReportTypeSession },
+  { RTCStatsType::StatsReportTypeTransport,
+    webrtc::StatsReport::kStatsReportTypeTransport },
+  { RTCStatsType::StatsReportTypeComponent,
+    webrtc::StatsReport::kStatsReportTypeComponent },
+  { RTCStatsType::StatsReportTypeCandidatePair,
+    webrtc::StatsReport::kStatsReportTypeCandidatePair },
+  { RTCStatsType::StatsReportTypeBwe,
+    webrtc::StatsReport::kStatsReportTypeBwe },
+  { RTCStatsType::StatsReportTypeSsrc,
+    webrtc::StatsReport::kStatsReportTypeSsrc },
+  { RTCStatsType::StatsReportTypeRemoteSsrc,
+    webrtc::StatsReport::kStatsReportTypeRemoteSsrc },
+  { RTCStatsType::StatsReportTypeTrack,
+    webrtc::StatsReport::kStatsReportTypeTrack },
+  { RTCStatsType::StatsReportTypeIceLocalCandidate,
+    webrtc::StatsReport::kStatsReportTypeIceLocalCandidate },
+  { RTCStatsType::StatsReportTypeIceRemoteCandidate,
+    webrtc::StatsReport::kStatsReportTypeIceRemoteCandidate },
+  { RTCStatsType::StatsReportTypeCertificate,
+    webrtc::StatsReport::kStatsReportTypeCertificate },
+  { RTCStatsType::StatsReportTypeDataChannel,
+    webrtc::StatsReport::kStatsReportTypeDataChannel },
+  DEFINE_MARSHALLED_ENUM_END(StatsType)
+
+  DEFINE_MARSHALLED_ENUM(StatsValueName,
+    RTCStatsValueName, webrtc::StatsReport::StatsValueName)
+  { RTCStatsValueName::StatsValueNameActiveConnection,
+    webrtc::StatsReport::kStatsValueNameActiveConnection },
+  { RTCStatsValueName::StatsValueNameAudioInputLevel,
+    webrtc::StatsReport::kStatsValueNameAudioInputLevel },
+  { RTCStatsValueName::StatsValueNameAudioOutputLevel,
+    webrtc::StatsReport::kStatsValueNameAudioOutputLevel},
+  { RTCStatsValueName::StatsValueNameBytesReceived,
+    webrtc::StatsReport::kStatsValueNameBytesReceived },
+  { RTCStatsValueName::StatsValueNameBytesSent,
+    webrtc::StatsReport::kStatsValueNameBytesSent },
+  { RTCStatsValueName::StatsValueNameDataChannelId,
+    webrtc::StatsReport::kStatsValueNameDataChannelId },
+  { RTCStatsValueName::StatsValueNamePacketsLost,
+    webrtc::StatsReport::kStatsValueNamePacketsLost },
+  { RTCStatsValueName::StatsValueNamePacketsReceived,
+    webrtc::StatsReport::kStatsValueNamePacketsReceived },
+  { RTCStatsValueName::StatsValueNamePacketsSent,
+    webrtc::StatsReport::kStatsValueNamePacketsSent },
+  { RTCStatsValueName::StatsValueNameProtocol,
+    webrtc::StatsReport::kStatsValueNameProtocol },
+  { RTCStatsValueName::StatsValueNameSelectedCandidatePairId,
+    webrtc::StatsReport::kStatsValueNameSelectedCandidatePairId },
+  { RTCStatsValueName::StatsValueNameSsrc,
+    webrtc::StatsReport::kStatsValueNameSsrc },
+  { RTCStatsValueName::StatsValueNameState,
+    webrtc::StatsReport::kStatsValueNameState },
+  { RTCStatsValueName::StatsValueNameTransportId,
+    webrtc::StatsReport::kStatsValueNameTransportId},
+  { RTCStatsValueName::StatsValueNameAccelerateRate,
+    webrtc::StatsReport::kStatsValueNameAccelerateRate},
+  { RTCStatsValueName::StatsValueNameActualEncBitrate,
+    webrtc::StatsReport::kStatsValueNameActualEncBitrate },
+  { RTCStatsValueName::StatsValueNameAdaptationChanges,
+    webrtc::StatsReport::kStatsValueNameAdaptationChanges },
+  { RTCStatsValueName::StatsValueNameAvailableReceiveBandwidth,
+    webrtc::StatsReport::kStatsValueNameAvailableReceiveBandwidth },
+  { RTCStatsValueName::StatsValueNameAvailableSendBandwidth,
+    webrtc::StatsReport::kStatsValueNameAvailableSendBandwidth },
+  { RTCStatsValueName::StatsValueNameAvgEncodeMs,
+    webrtc::StatsReport::kStatsValueNameAvgEncodeMs },
+  { RTCStatsValueName::StatsValueNameBandwidthLimitedResolution,
+    webrtc::StatsReport::kStatsValueNameBandwidthLimitedResolution },
+  { RTCStatsValueName::StatsValueNameBucketDelay,
+    webrtc::StatsReport::kStatsValueNameBucketDelay},
+  { RTCStatsValueName::StatsValueNameCaptureStartNtpTimeMs,
+    webrtc::StatsReport::kStatsValueNameCaptureStartNtpTimeMs },
+  { RTCStatsValueName::StatsValueNameCandidateIPAddress,
+    webrtc::StatsReport::kStatsValueNameCandidateIPAddress },
+  { RTCStatsValueName::StatsValueNameCandidateNetworkType,
+    webrtc::StatsReport::kStatsValueNameCandidateNetworkType },
+  { RTCStatsValueName::StatsValueNameCandidatePortNumber,
+    webrtc::StatsReport::kStatsValueNameCandidatePortNumber },
+  { RTCStatsValueName::StatsValueNameCandidatePriority,
+    webrtc::StatsReport::kStatsValueNameCandidatePriority },
+  { RTCStatsValueName::StatsValueNameCandidateTransportType,
+    webrtc::StatsReport::kStatsValueNameCandidateTransportType },
+  { RTCStatsValueName::StatsValueNameCandidateType,
+    webrtc::StatsReport::kStatsValueNameCandidateType },
+  { RTCStatsValueName::StatsValueNameChannelId,
+    webrtc::StatsReport::kStatsValueNameChannelId },
+  { RTCStatsValueName::StatsValueNameCodecName,
+    webrtc::StatsReport::kStatsValueNameCodecName },
+  { RTCStatsValueName::StatsValueNameComponent,
+    webrtc::StatsReport::kStatsValueNameComponent },
+  { RTCStatsValueName::StatsValueNameContentName,
+    webrtc::StatsReport::kStatsValueNameContentName },
+  { RTCStatsValueName::StatsValueNameCpuLimitedResolution,
+    webrtc::StatsReport::kStatsValueNameCpuLimitedResolution },
+  { RTCStatsValueName::StatsValueNameCurrentDelayMs,
+    webrtc::StatsReport::kStatsValueNameCurrentDelayMs },
+  { RTCStatsValueName::StatsValueNameDecodeMs,
+    webrtc::StatsReport::kStatsValueNameDecodeMs },
+  { RTCStatsValueName::StatsValueNameDecodingCNG,
+    webrtc::StatsReport::kStatsValueNameDecodingCNG },
+  { RTCStatsValueName::StatsValueNameDecodingCTN,
+    webrtc::StatsReport::kStatsValueNameDecodingCTN },
+  { RTCStatsValueName::StatsValueNameDecodingCTSG,
+    webrtc::StatsReport::kStatsValueNameDecodingCTSG },
+  { RTCStatsValueName::StatsValueNameDecodingNormal,
+    webrtc::StatsReport::kStatsValueNameDecodingNormal },
+  { RTCStatsValueName::StatsValueNameDecodingPLC,
+    webrtc::StatsReport::kStatsValueNameDecodingPLC },
+  { RTCStatsValueName::StatsValueNameDecodingPLCCNG,
+    webrtc::StatsReport::kStatsValueNameDecodingPLCCNG },
+  { RTCStatsValueName::StatsValueNameDer,
+    webrtc::StatsReport::kStatsValueNameDer },
+  { RTCStatsValueName::StatsValueNameDtlsCipher,
+    webrtc::StatsReport::kStatsValueNameDtlsCipher },
+  { RTCStatsValueName::StatsValueNameEchoCancellationQualityMin,
+    webrtc::StatsReport::kStatsValueNameEchoCancellationQualityMin },
+  { RTCStatsValueName::StatsValueNameEchoDelayMedian,
+    webrtc::StatsReport::kStatsValueNameEchoDelayMedian },
+  { RTCStatsValueName::StatsValueNameEchoDelayStdDev,
+    webrtc::StatsReport::kStatsValueNameEchoDelayStdDev },
+  { RTCStatsValueName::StatsValueNameEchoReturnLoss,
+    webrtc::StatsReport::kStatsValueNameEchoReturnLoss },
+  { RTCStatsValueName::StatsValueNameEchoReturnLossEnhancement,
+    webrtc::StatsReport::kStatsValueNameEchoReturnLossEnhancement },
+  { RTCStatsValueName::StatsValueNameEncodeUsagePercent,
+    webrtc::StatsReport::kStatsValueNameEncodeUsagePercent },
+  { RTCStatsValueName::StatsValueNameExpandRate,
+    webrtc::StatsReport::kStatsValueNameExpandRate },
+  { RTCStatsValueName::StatsValueNameFingerprint,
+    webrtc::StatsReport::kStatsValueNameFingerprint },
+  { RTCStatsValueName::StatsValueNameFingerprintAlgorithm,
+    webrtc::StatsReport::kStatsValueNameFingerprintAlgorithm },
+  { RTCStatsValueName::StatsValueNameFirsReceived,
+    webrtc::StatsReport::kStatsValueNameFirsReceived },
+  { RTCStatsValueName::StatsValueNameFirsSent,
+    webrtc::StatsReport::kStatsValueNameFirsSent },
+  { RTCStatsValueName::StatsValueNameFrameHeightInput,
+    webrtc::StatsReport::kStatsValueNameFrameHeightInput },
+  { RTCStatsValueName::StatsValueNameFrameHeightReceived,
+    webrtc::StatsReport::kStatsValueNameFrameHeightReceived },
+  { RTCStatsValueName::StatsValueNameFrameHeightSent,
+    webrtc::StatsReport::kStatsValueNameFrameHeightSent },
+  { RTCStatsValueName::StatsValueNameFrameRateDecoded,
+    webrtc::StatsReport::kStatsValueNameFrameRateDecoded },
+  { RTCStatsValueName::StatsValueNameFrameRateInput,
+    webrtc::StatsReport::kStatsValueNameFrameRateInput },
+  { RTCStatsValueName::StatsValueNameFrameRateOutput,
+    webrtc::StatsReport::kStatsValueNameFrameRateOutput },
+  { RTCStatsValueName::StatsValueNameFrameRateReceived,
+    webrtc::StatsReport::kStatsValueNameFrameRateReceived },
+  { RTCStatsValueName::StatsValueNameFrameRateSent,
+    webrtc::StatsReport::kStatsValueNameFrameRateSent },
+  { RTCStatsValueName::StatsValueNameFrameWidthInput,
+    webrtc::StatsReport::kStatsValueNameFrameWidthInput },
+  { RTCStatsValueName::StatsValueNameFrameWidthReceived,
+    webrtc::StatsReport::kStatsValueNameFrameWidthReceived },
+  { RTCStatsValueName::StatsValueNameFrameWidthSent,
+    webrtc::StatsReport::kStatsValueNameFrameWidthSent },
+  { RTCStatsValueName::StatsValueNameInitiator,
+    webrtc::StatsReport::kStatsValueNameInitiator },
+  { RTCStatsValueName::StatsValueNameIssuerId,
+    webrtc::StatsReport::kStatsValueNameIssuerId },
+  { RTCStatsValueName::StatsValueNameJitterBufferMs,
+    webrtc::StatsReport::kStatsValueNameJitterBufferMs },
+  { RTCStatsValueName::StatsValueNameJitterReceived,
+    webrtc::StatsReport::kStatsValueNameJitterReceived },
+  { RTCStatsValueName::StatsValueNameLabel,
+    webrtc::StatsReport::kStatsValueNameLabel },
+  { RTCStatsValueName::StatsValueNameLocalAddress,
+    webrtc::StatsReport::kStatsValueNameLocalAddress },
+  { RTCStatsValueName::StatsValueNameLocalCandidateId,
+    webrtc::StatsReport::kStatsValueNameLocalCandidateId },
+  { RTCStatsValueName::StatsValueNameLocalCandidateType,
+    webrtc::StatsReport::kStatsValueNameLocalCandidateType },
+  { RTCStatsValueName::StatsValueNameLocalCertificateId,
+    webrtc::StatsReport::kStatsValueNameLocalCertificateId },
+  { RTCStatsValueName::StatsValueNameMaxDecodeMs,
+    webrtc::StatsReport::kStatsValueNameMaxDecodeMs },
+  { RTCStatsValueName::StatsValueNameMinPlayoutDelayMs,
+    webrtc::StatsReport::kStatsValueNameMinPlayoutDelayMs },
+  { RTCStatsValueName::StatsValueNameNacksReceived,
+    webrtc::StatsReport::kStatsValueNameNacksReceived },
+  { RTCStatsValueName::StatsValueNameNacksSent,
+    webrtc::StatsReport::kStatsValueNameNacksSent },
+  { RTCStatsValueName::StatsValueNamePlisReceived,
+    webrtc::StatsReport::kStatsValueNamePlisReceived },
+  { RTCStatsValueName::StatsValueNamePlisSent,
+    webrtc::StatsReport::kStatsValueNamePlisSent },
+  { RTCStatsValueName::StatsValueNamePreemptiveExpandRate,
+    webrtc::StatsReport::kStatsValueNamePreemptiveExpandRate },
+  { RTCStatsValueName::StatsValueNamePreferredJitterBufferMs,
+    webrtc::StatsReport::kStatsValueNamePreferredJitterBufferMs },
+  { RTCStatsValueName::StatsValueNameRemoteAddress,
+    webrtc::StatsReport::kStatsValueNameRemoteAddress },
+  { RTCStatsValueName::StatsValueNameRemoteCandidateId,
+    webrtc::StatsReport::kStatsValueNameRemoteCandidateId },
+  { RTCStatsValueName::StatsValueNameRemoteCandidateType,
+    webrtc::StatsReport::kStatsValueNameRemoteCandidateType },
+  { RTCStatsValueName::StatsValueNameRemoteCertificateId,
+    webrtc::StatsReport::kStatsValueNameRemoteCertificateId },
+  { RTCStatsValueName::StatsValueNameRenderDelayMs,
+    webrtc::StatsReport::kStatsValueNameRenderDelayMs },
+  { RTCStatsValueName::StatsValueNameRetransmitBitrate,
+    webrtc::StatsReport::kStatsValueNameRetransmitBitrate },
+  { RTCStatsValueName::StatsValueNameRtt,
+    webrtc::StatsReport::kStatsValueNameRtt },
+  { RTCStatsValueName::StatsValueNameSecondaryDecodedRate,
+    webrtc::StatsReport::kStatsValueNameSecondaryDecodedRate },
+  { RTCStatsValueName::StatsValueNameSendPacketsDiscarded,
+    webrtc::StatsReport::kStatsValueNameSendPacketsDiscarded },
+  { RTCStatsValueName::StatsValueNameSpeechExpandRate,
+    webrtc::StatsReport::kStatsValueNameSpeechExpandRate },
+  { RTCStatsValueName::StatsValueNameSrtpCipher,
+    webrtc::StatsReport::kStatsValueNameSrtpCipher },
+  { RTCStatsValueName::StatsValueNameTargetDelayMs,
+    webrtc::StatsReport::kStatsValueNameTargetDelayMs },
+  { RTCStatsValueName::StatsValueNameTargetEncBitrate,
+    webrtc::StatsReport::kStatsValueNameTargetEncBitrate },
+  { RTCStatsValueName::StatsValueNameTrackId,
+    webrtc::StatsReport::kStatsValueNameTrackId },
+  { RTCStatsValueName::StatsValueNameTransmitBitrate,
+    webrtc::StatsReport::kStatsValueNameTransmitBitrate },
+  { RTCStatsValueName::StatsValueNameTransportType,
+    webrtc::StatsReport::kStatsValueNameTransportType },
+  { RTCStatsValueName::StatsValueNameTypingNoiseState,
+    webrtc::StatsReport::kStatsValueNameTypingNoiseState},
+  { RTCStatsValueName::StatsValueNameViewLimitedResolution,
+    webrtc::StatsReport::kStatsValueNameViewLimitedResolution},
+  { RTCStatsValueName::StatsValueNameWritable,
+    webrtc::StatsReport::kStatsValueNameWritable},
+	{ RTCStatsValueName::StatsValueNameCurrentEndToEndDelayMs,
+	  webrtc::StatsReport::kStatsValueNameCurrentEndToEndDelayMs }
+  DEFINE_MARSHALLED_ENUM_END(StatsValueName)
 
   std::string FromCx(String^ inObj) {
     return rtc::ToUtf8(inObj->Data());
@@ -247,5 +490,50 @@ namespace webrtc_winrt_api_internal {
     (*outObj)->Type = type;
   }
 
+  void ToCx(
+    const webrtc::StatsReport* inObj,
+    webrtc_winrt_api::RTCStatsReport^* outObj) {
+    (*outObj) = ref new webrtc_winrt_api::RTCStatsReport();
+
+    (*outObj)->Timestamp = inObj->timestamp();
+
+    webrtc_winrt_api::RTCStatsType type;
+    ToCx(inObj->id()->type(), &type);
+    (*outObj)->StatsType = type;
+
+    for (auto value : inObj->values()) {
+      webrtc_winrt_api::RTCStatsValueName stat_name;
+      ToCx(value.first, &stat_name);
+      Platform::Object^ val = nullptr;
+      switch (value.second->type()) {
+      case webrtc::StatsReport::Value::kInt:
+        val = value.second->int_val();
+        break;
+      case webrtc::StatsReport::Value::kInt64:
+        val = value.second->int64_val();
+        break;
+      case webrtc::StatsReport::Value::kFloat:
+        val = value.second->float_val();
+        break;
+      case webrtc::StatsReport::Value::kBool:
+        val = value.second->bool_val();
+        break;
+      case webrtc::StatsReport::Value::kStaticString: {
+        val = ToCx(value.second->static_string_val());
+      }
+        break;
+      case webrtc::StatsReport::Value::kString: {
+        val = ToCx(value.second->string_val().c_str());
+      }
+        break;
+      default:
+        break;
+      }
+
+      if (val != nullptr) {
+        (*outObj)->Values->Insert(stat_name, val);
+      }
+    }
+  }
 }  // namespace webrtc_winrt_api_internal
 

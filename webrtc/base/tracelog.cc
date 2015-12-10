@@ -25,9 +25,9 @@ TraceLog::TraceLog() : is_tracing_(false), offset_(0),
 
 void TraceLog::EnableTraceInternalStorage() {
   if (traces_storage_enabled_)
-    return;//already enabled.
+    return;  // already enabled.
 
-#if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+#if WINRT
   Platform::String^ path_w =
     Windows::Storage::ApplicationData::Current->LocalFolder->Path;
   int len8 = WideCharToMultiByte(CP_UTF8, 0, path_w->Data(), path_w->Length(),
@@ -44,8 +44,13 @@ void TraceLog::EnableTraceInternalStorage() {
     traces_storage_enabled_ = true;
   }
 #endif
-
 }
+
+#ifdef WINRT
+int64 TraceLog::CurrentTraceMemUsage(){
+  return this->oss_.tellp();
+}
+#endif
 
 TraceLog::~TraceLog() {
   if (tw_) {
@@ -242,7 +247,9 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
       while (offset_ < send_chunk_size_) {
         int sent_size = socket->Send(
           (const void*)(send_chunk_buffer_.data() + offset_),
-          send_chunk_size_ - offset_);
+          send_max_block_size_ ? std::min(send_max_block_size_,
+                                          send_chunk_size_ - offset_)
+                               : send_chunk_size_ - offset_);
         if (sent_size == -1) {
           if (!IsBlockingError(socket->GetError())) {
             if (!HandleWriteError(socket)) {
@@ -273,8 +280,9 @@ void TraceLog::OnWriteEvent(AsyncSocket* socket) {
   int sent_size = 0;
   while (offset_ < tmp_size) {
     sent_size = socket->Send((const void*) (data + offset_),
-      send_max_block_size_ ? std::min(send_max_block_size_, tmp_size - offset_)
-                          : tmp_size - offset_);
+      send_max_block_size_ ? std::min<size_t>(send_max_block_size_,
+                                              tmp_size - offset_)
+                           : tmp_size - offset_);
     if (sent_size == -1) {
       if (!IsBlockingError(socket->GetError())) {
         if (!HandleWriteError(socket)) {

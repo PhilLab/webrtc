@@ -583,6 +583,9 @@ private:
     // An associated send channel.
     rtc::scoped_ptr<CriticalSectionWrapper> assoc_send_channel_lock_;
     ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
+#ifdef WINRT
+    int64_t current_endtoend_delay_ms_ GUARDED_BY(ts_stats_lock_);
+#endif
 };
 
 }  // namespace voe

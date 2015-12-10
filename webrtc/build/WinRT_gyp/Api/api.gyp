@@ -85,6 +85,9 @@
             }],
           ],
         },
+		'VCCLCompilerTool' : {
+		  'GenerateXMLDocumentationFiles': "true",
+		},
       },
     },
   ],

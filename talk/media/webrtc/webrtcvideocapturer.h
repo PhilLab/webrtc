@@ -72,6 +72,11 @@ class WebRtcVideoCapturer : public VideoCapturer,
   virtual CaptureState Start(const VideoFormat& capture_format);
   virtual void Stop();
   virtual bool IsRunning();
+
+  virtual bool Suspend();
+  virtual bool Resume();
+  virtual bool IsSuspended();
+
   virtual bool IsScreencast() const { return false; }
   virtual bool SetApplyRotation(bool enable);
 

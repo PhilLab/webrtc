@@ -20,6 +20,7 @@
 #include "GlobalObserver.h"
 #include "DataChannel.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 
 using Platform::String;
 using Platform::IBox;
@@ -180,6 +181,28 @@ public:
   /// <param name="current_ntp_time">NTP time in miliseconds.</param>
   static void SynNTPTime(int64 current_ntp_time);
 
+  /// <summary>
+  /// Update CPUUsage statitics data
+  /// </summary>
+  /// <param name="cpu_usage">cpu usage in percentage</param>
+  static void UpdateCPUUsage(double cpu_usage);
+
+  /// <summary>
+  /// Get the last known CPUUsage statitics data
+  /// </summary>
+  static double GetCPUUsage();
+
+  /// <summary>
+  /// Update Memory statitics data
+  /// </summary>
+  /// <param name="mem_usage">cpu usage in bytes</param>
+  static void UpdateMemUsage(INT64 mem_usage);
+
+  /// <summary>
+  /// Get the last known CPUUsage statitics data
+  /// </summary>
+  static INT64 GetMemUsage();
+
 private:
   // This type is not meant to be created.
   WebRTC();
@@ -317,6 +340,11 @@ public:
   property String^ RemoteCandidateType;
 };
 
+public ref class RTCStatsReportsReadyEvent sealed {
+public:
+  property RTCStatsReports rtcStatsReports;
+};
+
 // ------------------
 public ref class MediaStreamEvent sealed {
 public:
@@ -389,6 +417,12 @@ public:
   /// New connection health stats are available.
   /// </summary>
   event RTCPeerConnectionHealthStatsDelegate^ OnConnectionHealthStats;
+
+  /// <summary>
+  /// Webrtc statistics report is ready <see cref="RTCStatsReports"/>.
+  /// </summary>
+  event RTCStatsReportsReadyEventDelegate^  OnRTCStatsReportsReady;
+
 
   /// <summary>
   /// Generates a blob of SDP that contains an RFC 3264 offer with the
@@ -520,6 +554,11 @@ public:
   //  event is raised.
   /// </summary>
   void ToggleConnectionHealthStats(bool enable);
+
+  /// <summary>
+  /// Enable/Disable WebRTC statistics for exposing report.
+  /// </summary>
+  void ToggleRTCStats(bool enable);
 
   /// <summary>
   /// The last <see cref="RTCSessionDescription"/> that was successfully set

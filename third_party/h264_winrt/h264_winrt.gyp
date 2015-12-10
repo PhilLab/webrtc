@@ -40,13 +40,6 @@
 
         'H264Decoder/H264Decoder.h',
         'H264Decoder/H264Decoder.cc',
-        'H264Decoder/H264MediaSource.h',
-        'H264Decoder/H264MediaSource.cc',
-        'H264Decoder/H264MediaStream.h',
-        'H264Decoder/H264MediaStream.cc',
-        'H264Decoder/SourceReaderCB.h',
-        'H264Decoder/SourceReaderCB.cc',
-        'H264Decoder/IH264DecodingCallback.h',
       ],
     },
   ], # targets

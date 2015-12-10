@@ -13,11 +13,12 @@
 #include <string>
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 
 
 namespace webrtc {
 class CriticalSectionWrapper;
-class ConnectionHealthStatsObserver;
+class WebRTCStatsObserverWinRT;
 
 struct ConnectionHealthStats {
   ConnectionHealthStats();
@@ -34,7 +35,7 @@ struct ConnectionHealthStats {
 
 // A webrtc::StatsObserver implementation used to receive statistics about the
 // current PeerConnection. The statistics are logged to an ETW session and/or
-// sent to a ConnectionHealthStatsObserver.
+// sent to a WebRTCStatsObserverWinRT.
 class WebRTCStatsObserver : public StatsObserver, public rtc::MessageHandler {
  public:
   enum Status {
@@ -45,7 +46,8 @@ class WebRTCStatsObserver : public StatsObserver, public rtc::MessageHandler {
   WebRTCStatsObserver(rtc::scoped_refptr<webrtc::PeerConnectionInterface> pci);
 
   void ToggleETWStats(bool enable);
-  void ToggleConnectionHealthStats(ConnectionHealthStatsObserver* observer);
+  void ToggleConnectionHealthStats(WebRTCStatsObserverWinRT* observer);
+  void ToggleRTCStats(WebRTCStatsObserverWinRT* observer);
 
   // StatsObserver
   virtual void OnComplete(const StatsReports& reports);
@@ -72,15 +74,20 @@ class WebRTCStatsObserver : public StatsObserver, public rtc::MessageHandler {
 
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Status status_;
-  ConnectionHealthStatsObserver* conn_health_stats_observer_;
+  WebRTCStatsObserverWinRT* webrtc_stats_observer_winrt_;
   bool etw_stats_enabled_;
   ConnectionHealthStats conn_health_stats_prev;
   ConnectionHealthStats conn_health_stats_;
+  bool rtc_stats_enabled_;
+  bool conn_health_stats_enabled_;
 };
 
-class ConnectionHealthStatsObserver {
+class WebRTCStatsObserverWinRT {
  public:
   virtual void OnConnectionHealthStats(const ConnectionHealthStats& stats) = 0;
+
+  virtual void OnRTCStatsReportsReady(
+    const webrtc_winrt_api::RTCStatsReports& rtcStatsReports) = 0;
 };
 
 }  // namespace webrtc

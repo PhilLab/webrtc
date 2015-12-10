@@ -358,6 +358,27 @@ bool WebRtcVideoCapturer::IsRunning() {
   return (module_ != NULL && module_->CaptureStarted());
 }
 
+bool WebRtcVideoCapturer::Suspend() {
+  if (module_ == NULL) {
+    return false;
+  }
+  return module_->SuspendCapture();
+}
+
+bool WebRtcVideoCapturer::Resume() {
+  if (module_ == NULL) {
+    return false;
+  }
+  return module_->ResumeCapture();
+}
+
+bool WebRtcVideoCapturer::IsSuspended() {
+  if (module_ == NULL) {
+    return false;
+  }
+  return module_->IsSuspended();
+}
+
 bool WebRtcVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   if (!fourccs) {
     return false;

@@ -27,6 +27,10 @@ ref class RTCPeerConnectionHealthStats;
 public delegate void RTCPeerConnectionHealthStatsDelegate(
   RTCPeerConnectionHealthStats^);
 
+ref class RTCStatsReportsReadyEvent;
+public delegate void RTCStatsReportsReadyEventDelegate(
+  RTCStatsReportsReadyEvent^);
+
 // ------------------
 ref class MediaStreamEvent;
 public delegate void MediaStreamEventEventDelegate(

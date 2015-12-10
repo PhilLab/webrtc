@@ -243,7 +243,7 @@ class PeerConnection : public PeerConnectionInterface,
   void UpdateRemoteStreamsList(
       const std::vector<cricket::StreamParams>& streams,
       cricket::MediaType media_type,
-      StreamCollection* new_streams);
+      StreamCollection* new_streams, bool isH264 = false);
 
   // Triggered when a remote track has been seen for the first time in a remote
   // session description. It creates a remote MediaStreamTrackInterface
@@ -251,7 +251,8 @@ class PeerConnection : public PeerConnectionInterface,
   void OnRemoteTrackSeen(const std::string& stream_label,
                          const std::string& track_id,
                          uint32_t ssrc,
-                         cricket::MediaType media_type);
+                         cricket::MediaType media_type,
+                         bool isH264 = false);
 
   // Triggered when a remote track has been removed from a remote session
   // description. It removes the remote track with id |track_id| from a remote

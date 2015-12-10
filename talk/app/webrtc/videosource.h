@@ -78,11 +78,17 @@ class VideoSource : public Notifier<VideoSourceInterface>,
 
   void Stop() override;
   void Restart() override;
+  bool Suspend() override;
+  bool Resume() override;
+  bool IsSuspended() override;
 
   // |output| will be served video frames as long as the underlying capturer
   // is running video frames.
   virtual void AddSink(cricket::VideoRenderer* output);
   virtual void RemoveSink(cricket::VideoRenderer* output);
+
+  virtual void SetIsH264Source(bool isH264);
+  virtual bool IsH264Source();
 
  protected:
   VideoSource(cricket::ChannelManager* channel_manager,
@@ -104,6 +110,8 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;
   SourceState state_;
+
+  bool _isH264Source;
 };
 
 }  // namespace webrtc

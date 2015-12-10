@@ -68,21 +68,18 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut_));
   ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
   ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
-  // I find that 300kbit represents a good balance between video quality and
+  // TODO(winrt): Lumia 635 and Lumia 1520 Windows phones don't work well
+  //              with constrained baseline profile. Uncomment or delete
+  //              the line below as soon as we find the reason why.
+  // ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_ConstrainedBase));
+  // 900kbit represents a good balance between video quality and
   // the bandwidth that a 620 Windows phone can handle.
   // TODO(winrt): Make bitrate a function of resolution.
   //              Change it when resolution changes.
   ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE,
-    inst->targetBitrate > 0 ? inst->targetBitrate : 300 * 1024));
+    inst->targetBitrate > 0 ? inst->targetBitrate : 900 * 1024));
   ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE,
     MFVideoInterlace_Progressive));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
-  // These are for increasing the number of keyframes.
-  // It improves time to first frame and recovery when the video freezes.
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, 30));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(CODECAPI_AVEncMPVGOPSize, 10));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(
-    CODECAPI_AVEncVideoMaxKeyframeDistance, 10));
   ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut_.Get(),
     MF_MT_FRAME_SIZE, inst->width, inst->height));
   ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeOut_.Get(),
@@ -121,8 +118,6 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
 
   // SinkWriter encoder properties
   ON_SUCCEEDED(MFCreateAttributes(&sinkWriterEncoderAttributes_, 1));
-  ON_SUCCEEDED(sinkWriterEncoderAttributes_->SetUINT32(
-    MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
   ON_SUCCEEDED(sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(),
     sinkWriterEncoderAttributes_.Get()));
 
