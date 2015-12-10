@@ -350,10 +350,6 @@ IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
 
 IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
-  g_audioCapturerDevices.clear();
-  if (!_dev_manager->GetAudioInputDevices(&g_audioCapturerDevices)) {
-    LOG(LS_ERROR) << "Can't enumerate audio input devices";
-  }
   for (auto audioCaptureDev : g_audioCapturerDevices) {
     ret->Append(ref new MediaDevice(ToCx(audioCaptureDev.id),
                                     ToCx(audioCaptureDev.name)));
@@ -390,11 +386,15 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
                                                     ToCx(videoDev.name)));
     }
 
-    if (!_dev_manager->GetAudioInputDevices(&g_audioCapturerDevices)) {
+    std::vector<cricket::Device> audioDevices;
+    if (!_dev_manager->GetAudioInputDevices(&audioDevices)) {
       LOG(LS_ERROR) << "Can't enumerate audio capture devices";
       return false;
     }
-    for (auto audioInputDev : g_audioCapturerDevices) {
+    g_audioCapturerDevices.clear();
+
+    for (auto audioInputDev : audioDevices) {
+      g_audioCapturerDevices.push_back(audioInputDev);
       OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(audioInputDev.id),
         ToCx(audioInputDev.name)));
     }
