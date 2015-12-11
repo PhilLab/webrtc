@@ -177,6 +177,8 @@ namespace webrtc_winrt_api_internal {
     webrtc::StatsReport::kStatsValueNamePacketsSent },
   { RTCStatsValueName::StatsValueNameProtocol,
     webrtc::StatsReport::kStatsValueNameProtocol },
+  { RTCStatsValueName::StatsValueNameReceiving,
+    webrtc::StatsReport::kStatsValueNameReceiving },
   { RTCStatsValueName::StatsValueNameSelectedCandidatePairId,
     webrtc::StatsReport::kStatsValueNameSelectedCandidatePairId },
   { RTCStatsValueName::StatsValueNameSsrc,
