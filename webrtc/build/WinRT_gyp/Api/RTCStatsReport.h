@@ -33,6 +33,7 @@ namespace webrtc_winrt_api {
     StatsValueNamePacketsReceived,
     StatsValueNamePacketsSent,
     StatsValueNameProtocol,
+    StatsValueNameReceiving,
     StatsValueNameSelectedCandidatePairId,
     StatsValueNameSsrc,
     StatsValueNameState,
