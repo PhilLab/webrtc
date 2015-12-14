@@ -20,6 +20,7 @@
 #include "webrtc/base/logging.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/session/media/channelmanager.h"
+#include "talk/media/base/mediaengine.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
@@ -294,11 +295,9 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
       if (mediaStreamConstraints->audioEnabled) {
-        // TODO(pull): SetAudioDevices no longer present.
-        //globals::gPeerConnectionFactory->channel_manager()->SetAudioDevices(
-        //  &_selectedAudioCapturerDevice,
-        //  &_selectedAudioPlayoutDevice);
-
+        globals::gPeerConnectionFactory->channel_manager()->media_engine()->SetSoundDevices(
+          &_selectedAudioCapturerDevice,
+          &_selectedAudioPlayoutDevice);
         LOG(LS_INFO) << "Creating audio track.";
         char audioLabel[32];
         _snprintf(audioLabel, sizeof(audioLabel), kAudioLabel, rtc::CreateRandomId64());
