@@ -151,10 +151,13 @@ VideoDecoder* H264WinRTDecoderImpl::Copy() {
 
 void H264WinRTDecoderImpl::UpdateVideoFrameDimensions(const EncodedImage& input_image)
 {
-  if (input_image._frameType == FrameType::kVideoFrameKey)
+  auto w = input_image._encodedWidth;
+  auto h = input_image._encodedHeight;
+
+  if (input_image._frameType == FrameType::kVideoFrameKey && w > 0 && h > 0)
   {
-    width_ = input_image._encodedWidth;
-    height_ = input_image._encodedHeight;
+    width_ = w;
+    height_ = h;
   }
 }
 
