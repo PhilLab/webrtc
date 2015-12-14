@@ -319,8 +319,7 @@ void CaptureDevice::StartCapture(
     frame_info_.rawType = kVideoARGB;
   } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
     MediaEncodingSubtypes::Mjpg->Data()) == 0) {
-      LOG(LS_ERROR) << "MJPEG format is not supported.";
-      return;
+    frame_info_.rawType = kVideoMJPEG;
   } else if (_wcsicmp(media_encoding_profile->Video->Subtype->Data(),
     MediaEncodingSubtypes::Nv12->Data()) == 0) {
     frame_info_.rawType = kVideoNV12;
@@ -332,8 +331,8 @@ void CaptureDevice::StartCapture(
     MediaCaptureDevicesWinRT::Instance()->GetMediaCapture(device_id_);
   media_capture_failed_event_registration_token_ =
     media_capture_->Failed +=
-    ref new MediaCaptureFailedEventHandler(this,
-    &CaptureDevice::OnCaptureFailed);
+      ref new MediaCaptureFailedEventHandler(this,
+        &CaptureDevice::OnCaptureFailed);
 
   media_sink_ = ref new VideoCaptureMediaSinkProxyWinRT();
   media_sink_video_sample_event_registration_token_ =
@@ -360,8 +359,7 @@ void CaptureDevice::StartCapture(
     try {
       async_info.get();
       capture_started_ = true;
-    }
-    catch (Platform::Exception^ e) {
+    } catch (Platform::Exception^ e) {
       LOG(LS_ERROR) << "StartRecordToCustomSinkAsync exception: "
                     << rtc::ToUtf8(e->Message->Data());
       CleanupSink();
@@ -641,7 +639,8 @@ int32_t VideoCaptureWinRT::StartCapture(
     subtype = MediaEncodingSubtypes::Argb32;
     break;
   case kVideoMJPEG:
-    subtype = MediaEncodingSubtypes::Mjpg;
+    // MJPEG format is decoded internally by MF engine to NV12
+    subtype = MediaEncodingSubtypes::Nv12;
     break;
   case kVideoNV12:
     subtype = MediaEncodingSubtypes::Nv12;
@@ -656,7 +655,7 @@ int32_t VideoCaptureWinRT::StartCapture(
   media_encoding_profile_->Audio = nullptr;
   media_encoding_profile_->Container = nullptr;
   media_encoding_profile_->Video = VideoEncodingProperties::CreateUncompressed(
-      subtype, capability.width, capability.height);
+    subtype, capability.width, capability.height);
   media_encoding_profile_->Video->FrameRate->Numerator = capability.maxFPS;
   media_encoding_profile_->Video->FrameRate->Denominator = 1;
 
@@ -673,8 +672,10 @@ int32_t VideoCaptureWinRT::StartCapture(
     IVideoEncodingProperties^ prop =
       static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
 
-    if (_wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0)
+    if (capability.rawType != kVideoMJPEG && _wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0 ||
+      capability.rawType == kVideoMJPEG && _wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Mjpg->Data()) != 0) {
       continue;
+    }
 
     int width_diff = abs(static_cast<int>(prop->Width - capability.width));
     int height_diff = abs(static_cast<int>(prop->Height - capability.height));
@@ -708,7 +709,7 @@ int32_t VideoCaptureWinRT::StartCapture(
       ApplyDisplayOrientation(AppStateDispatcher::Instance()->GetOrientation());
     }
     device_->StartCapture(media_encoding_profile_,
-                            video_encoding_properties_);
+                          video_encoding_properties_);
     last_frame_info_ = capability;
   } catch (Platform::Exception^ e) {
     LOG(LS_ERROR) << "Failed to start capture. "
