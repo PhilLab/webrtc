@@ -69,7 +69,7 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
   streamState->_startTime = webrtc::TickTime::Now();
 
-  streamSource->Starting +=
+  auto startingCookie = streamSource->Starting +=
     ref new Windows::Foundation::TypedEventHandler<
     MediaStreamSource ^,
     MediaStreamSourceStartingEventArgs ^>([streamState](
@@ -80,13 +80,12 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
     streamState->_startingDeferral = args->Request->GetDeferral();
   });
 
-
   streamState->_mediaStreamSource = streamSource;
 
   // Use a lambda to capture a strong reference to RTMediaStreamSource.
   // This is the only way to tie the lifetime of the RTMediaStreamSource
   // to that of the MediaStreamSource.
-  streamSource->SampleRequested +=
+  auto sampleRequestedCookie = streamSource->SampleRequested +=
     ref new Windows::Foundation::TypedEventHandler<
     MediaStreamSource^,
     MediaStreamSourceSampleRequestedEventArgs^>([streamState](
@@ -97,11 +96,14 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   streamSource->Closed +=
     ref new Windows::Foundation::TypedEventHandler<
       Windows::Media::Core::MediaStreamSource^,
-      Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>([streamState](
+      Windows::Media::Core::MediaStreamSourceClosedEventArgs ^>(
+        [streamState, startingCookie, sampleRequestedCookie](
         Windows::Media::Core::MediaStreamSource^ sender,
         Windows::Media::Core::MediaStreamSourceClosedEventArgs^ args) {
     LOG(LS_INFO) << "RTMediaStreamSource::OnClosed";
     streamState->Teardown();
+    sender->Starting -= startingCookie;
+    sender->SampleRequested -= sampleRequestedCookie;
   });
 
   // Create a timer which sends request progress periodically.
@@ -157,8 +159,14 @@ void RTMediaStreamSource::Teardown() {
   _rtcRenderer.reset();
 
   _request = nullptr;
-  _deferral = nullptr;
-  _startingDeferral = nullptr;
+  if (_deferral != nullptr) {
+    _deferral->Complete();
+    _deferral = nullptr;
+  }
+  if (_startingDeferral != nullptr) {
+    _startingDeferral->Complete();
+    _startingDeferral = nullptr;
+  }
 
   // Clear the buffered frames.
   while (!_frames.empty()) {
