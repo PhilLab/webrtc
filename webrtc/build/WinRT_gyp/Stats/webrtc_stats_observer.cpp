@@ -137,8 +137,10 @@ void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
           StatsReport::kStatsValueNameTrackId);
         if (v) {
           const std::string& id = v->string_val();
-          auto streams = pci_->local_streams();
-          if (streams->FindAudioTrack(id) || streams->FindVideoTrack(id)) {
+          auto ls = pci_->local_streams();
+          auto rs = pci_->remote_streams();
+          if (ls->FindAudioTrack(id) || ls->FindVideoTrack(id) ||
+              rs->FindAudioTrack(id) || rs->FindVideoTrack(id)) {
             sendToEtwPlugin = true;
           }
         }
