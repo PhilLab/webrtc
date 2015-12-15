@@ -376,9 +376,11 @@ IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
 IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
   auto ret = ref new Vector<MediaDevice^>();
   g_audioPlayoutDevices.clear();
-  if (!_dev_manager->GetAudioOutputDevices(&g_audioPlayoutDevices)) {
-    LOG(LS_ERROR) << "Can't enumerate audio playout devices";
-  }
+  globals::RunOnGlobalThread<void>([this] {
+    if (!_dev_manager->GetAudioOutputDevices(&g_audioPlayoutDevices)) {
+      LOG(LS_ERROR) << "Can't enumerate audio playout devices";
+    }
+  });
   for (auto audioPlayoutDev : g_audioPlayoutDevices) {
     ret->Append(ref new MediaDevice(ToCx(audioPlayoutDev.id),
                                     ToCx(audioPlayoutDev.name)));
@@ -389,32 +391,34 @@ IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
 IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
   IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
     [this]() -> bool {
-    std::vector<cricket::Device> videoDevices;
-    if (!_dev_manager->GetVideoCaptureDevices(&videoDevices)) {
-      LOG(LS_ERROR) << "Can't enumerate video devices";
-      return false;
-    }
-    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
-    g_videoDevices.clear();
-    for (auto videoDev : videoDevices) {
-      g_videoDevices.push_back(videoDev);
-      OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id),
-                                                    ToCx(videoDev.name)));
-    }
+    return globals::RunOnGlobalThread<bool>([this]()->bool {
+      std::vector<cricket::Device> videoDevices;
+      if (!_dev_manager->GetVideoCaptureDevices(&videoDevices)) {
+        LOG(LS_ERROR) << "Can't enumerate video devices";
+        return false;
+      }
+      webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+      g_videoDevices.clear();
+      for (auto videoDev : videoDevices) {
+        g_videoDevices.push_back(videoDev);
+        OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id),
+          ToCx(videoDev.name)));
+      }
 
-    std::vector<cricket::Device> audioDevices;
-    if (!_dev_manager->GetAudioInputDevices(&audioDevices)) {
-      LOG(LS_ERROR) << "Can't enumerate audio capture devices";
-      return false;
-    }
-    g_audioCapturerDevices.clear();
+      std::vector<cricket::Device> audioDevices;
+      if (!_dev_manager->GetAudioInputDevices(&audioDevices)) {
+        LOG(LS_ERROR) << "Can't enumerate audio capture devices";
+        return false;
+      }
+      g_audioCapturerDevices.clear();
 
-    for (auto audioInputDev : audioDevices) {
-      g_audioCapturerDevices.push_back(audioInputDev);
-      OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(audioInputDev.id),
-        ToCx(audioInputDev.name)));
-    }
-    return true;
+      for (auto audioInputDev : audioDevices) {
+        g_audioCapturerDevices.push_back(audioInputDev);
+        OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(audioInputDev.id),
+          ToCx(audioInputDev.name)));
+      }
+      return true;
+    });
   });
   return asyncOp;
 }
