@@ -431,7 +431,7 @@ namespace webrtc_winrt_api {
     /// <summary>
     /// App suspending event handler.
     /// </summary>
-    void OnAppSuspending();
+    static void OnAppSuspending();
 
     /// <summary>
     /// Set display orientation, used to rotate captured video in case the
