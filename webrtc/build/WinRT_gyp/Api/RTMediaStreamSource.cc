@@ -393,6 +393,7 @@ void RTMediaStreamSource::ReplyToRequestH264() {
   _frameSentThisTime = true;
 
   UpdateFrameRate();
+  UpdateVideoFrameSize(frame.get());
 
   _request = nullptr;
   _deferral = nullptr;
@@ -445,18 +446,8 @@ void RTMediaStreamSource::ReplyToRequestI420() {
 
   ComPtr<IMFMediaBuffer> mediaBuffer;
 
-  if (frame != nullptr) {
-    if ((_videoDesc->EncodingProperties->Width != frame->GetWidth()) ||
-      (_videoDesc->EncodingProperties->Height != frame->GetHeight())) {
-      _videoDesc->EncodingProperties->Width =
-        (unsigned int)frame->GetWidth();
-      _videoDesc->EncodingProperties->Height =
-        (unsigned int)frame->GetHeight();
-      webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
-        _videoDesc->EncodingProperties->Width,
-        _videoDesc->EncodingProperties->Height);
-    }
-  }
+  UpdateVideoFrameSize(frame.get());
+
   hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width,
     _videoDesc->EncodingProperties->Height, cricket::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
@@ -486,6 +477,22 @@ void RTMediaStreamSource::ReplyToRequestI420() {
 
   _request = nullptr;
   _deferral = nullptr;
+}
+
+void RTMediaStreamSource::UpdateVideoFrameSize(cricket::VideoFrame* frame)
+{
+  if (frame != nullptr) {
+    if ((_videoDesc->EncodingProperties->Width != frame->GetWidth()) ||
+      (_videoDesc->EncodingProperties->Height != frame->GetHeight())) {
+      _videoDesc->EncodingProperties->Width =
+        (unsigned int)frame->GetWidth();
+      _videoDesc->EncodingProperties->Height =
+        (unsigned int)frame->GetHeight();
+      webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
+        _videoDesc->EncodingProperties->Width,
+        _videoDesc->EncodingProperties->Height);
+    }
+  }
 }
 
 void RTMediaStreamSource::UpdateFrameRate() {

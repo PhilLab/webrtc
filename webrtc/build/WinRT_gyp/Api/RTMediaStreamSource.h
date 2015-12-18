@@ -94,6 +94,7 @@ ref class RTMediaStreamSource sealed {
 
     // Called whenever we give the stream a new frame to render.
     void UpdateFrameRate();
+    void UpdateVideoFrameSize(cricket::VideoFrame* frame);
 
     // Gets the next timestamp using the clock
     LONGLONG GetNextSampleTimeHns();
