@@ -18,6 +18,7 @@
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
 #include "webrtc/base/Win32.h"
+#include "libyuv/planar_functions.h"
 
 using Microsoft::WRL::ComPtr;
 using Windows::Devices::Enumeration::DeviceClass;
@@ -424,16 +425,50 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
       video_frame_length = cbCurrentLength;
       // conversion from 100-nanosecond to millisecond units
       capture_time = hnsSampleTime / 10000;
+
+      // When MJPEG is used as a capturing format and picture size doesn't
+      // match 16 bits boundaries, MJPEG decoding engine inserts padding
+      // pixels. The procedure beneath transforms image to its original
+      // size.
+      if (frame_info_.rawType == kVideoNV12 &&
+        (int32_t)video_frame_length >
+        frame_info_.width * frame_info_.height * 3 / 2) {
+        int padded_row_num = 16 - frame_info_.height % 16;
+        int padded_col_num = 16 - frame_info_.width % 16;
+        if (padded_row_num == 16)
+          padded_row_num = 0;
+        if (padded_col_num == 16)
+          padded_col_num = 0;
+        uint8_t* src_video_y = video_frame;
+        uint8_t* src_video_uv = src_video_y +
+          (frame_info_.width + padded_col_num) *
+          (frame_info_.height + padded_row_num);
+        uint8_t* dst_video_y = src_video_y;
+        uint8_t* dst_video_uv = dst_video_y +
+          frame_info_.width * frame_info_.height;
+        video_frame_length = frame_info_.width * frame_info_.height * 3 / 2;
+        video_frame = dst_video_y;
+
+        libyuv::CopyPlane(src_video_y, frame_info_.width + padded_col_num,
+          dst_video_y, frame_info_.width,
+          frame_info_.width, frame_info_.height);
+
+        libyuv::CopyPlane(src_video_uv, frame_info_.width + padded_col_num,
+          dst_video_uv, frame_info_.width,
+          frame_info_.width, frame_info_.height / 2);
+      }
+
       LOG(LS_VERBOSE) <<
         "Video Capture - Media sample received - video frame length: " <<
-        video_frame_length <<", capture time : " << capture_time;
+        video_frame_length << ", capture time : " << capture_time;
+
       capture_device_listener_->OnIncomingFrame(video_frame,
                                                 video_frame_length,
                                                 frame_info_);
-    }
-    if (SUCCEEDED(hr)) {
+
       hr = spMediaBuffer->Unlock();
-    } else {
+    }
+    if (FAILED(hr)) {
       LOG(LS_ERROR) << "Failed to send media sample. " << hr;
     }
   }
@@ -672,8 +707,11 @@ int32_t VideoCaptureWinRT::StartCapture(
     IVideoEncodingProperties^ prop =
       static_cast<IVideoEncodingProperties^>(streamProperties->GetAt(i));
 
-    if (capability.rawType != kVideoMJPEG && _wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0 ||
-      capability.rawType == kVideoMJPEG && _wcsicmp(prop->Subtype->Data(), MediaEncodingSubtypes::Mjpg->Data()) != 0) {
+    if (capability.rawType != kVideoMJPEG &&
+      _wcsicmp(prop->Subtype->Data(), subtype->Data()) != 0 ||
+      capability.rawType == kVideoMJPEG &&
+      _wcsicmp(prop->Subtype->Data(),
+        MediaEncodingSubtypes::Mjpg->Data()) != 0) {
       continue;
     }
 
