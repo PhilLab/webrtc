@@ -346,12 +346,6 @@ TEST_F(VideoCaptureTest, Capabilities) {
     if (frame_rates_by_resolution[resolution].size() > 2)
       continue;
 
-#ifdef WINRT
-    // MJPEG format is not supported on WinRT platform.
-    if (capability.rawType == webrtc::kVideoMJPEG)
-      continue;
-#endif
-
     capture_observer.SetExpectedCapability(capability);
     ASSERT_NO_FATAL_FAILURE(StartCapture(module.get(), capability));
     // Make sure at least one frame is captured.

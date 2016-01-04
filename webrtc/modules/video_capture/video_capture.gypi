@@ -117,6 +117,9 @@
               },
             }],
             ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'dependencies': [
+                '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
+              ],
               'sources': [
                 'windows/device_info_winrt.cc',
                 'windows/device_info_winrt.h',
