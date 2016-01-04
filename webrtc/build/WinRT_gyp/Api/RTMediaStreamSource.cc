@@ -367,6 +367,8 @@ void RTMediaStreamSource::ReplyToRequestH264() {
     }
   }
 
+  UpdateVideoFrameSize(frame.get());
+
   LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
   spSample->SetSampleDuration(duration);
 
@@ -393,7 +395,6 @@ void RTMediaStreamSource::ReplyToRequestH264() {
   _frameSentThisTime = true;
 
   UpdateFrameRate();
-  UpdateVideoFrameSize(frame.get());
 
   _request = nullptr;
   _deferral = nullptr;
@@ -491,6 +492,9 @@ void RTMediaStreamSource::UpdateVideoFrameSize(cricket::VideoFrame* frame)
       webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
         _videoDesc->EncodingProperties->Width,
         _videoDesc->EncodingProperties->Height);
+      OutputDebugString((L"Video frame size changed for " + _id +
+        L" W=" + frame->GetWidth() +
+        L" H=" + frame->GetHeight() + L"\n")->Data());
     }
   }
 }
