@@ -3170,14 +3170,24 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
   WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
     "[REND] endpointBufferSizeMS : %3.2f", endpointBufferSizeMS);
 
-  // Before starting the stream, fill the rendering buffer with silence.
   BYTE *pData = NULL;
-  hr = _ptrRenderClient->GetBuffer(bufferLength, &pData);
-  EXIT_ON_ERROR(hr);
+  // Before starting the stream, fill the rendering buffer with silence.
+  {
+    UINT32 initialPadding = 0;
+    hr = _ptrClientOut->GetCurrentPadding(&initialPadding);
+    EXIT_ON_ERROR(hr);
 
-  hr = _ptrRenderClient->ReleaseBuffer(bufferLength,
-    AUDCLNT_BUFFERFLAGS_SILENT);
-  EXIT_ON_ERROR(hr);
+    // Derive the amount of available space in the output buffer
+    // TODO(winrt): Is is possible to silence the padding as well?
+    uint32_t initialFramesAvailable = bufferLength - initialPadding;
+
+    hr = _ptrRenderClient->GetBuffer(initialFramesAvailable, &pData);
+    EXIT_ON_ERROR(hr);
+
+    hr = _ptrRenderClient->ReleaseBuffer(initialFramesAvailable,
+      AUDCLNT_BUFFERFLAGS_SILENT);
+    EXIT_ON_ERROR(hr);
+  }
 
   _writtenSamples += bufferLength;
 
