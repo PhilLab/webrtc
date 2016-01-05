@@ -43,8 +43,7 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   if (isH264) {
     videoProperties = VideoEncodingProperties::CreateH264();
     //videoProperties->ProfileId = Windows::Media::MediaProperties::H264ProfileIds::Baseline;
-  }
-  else {
+  } else {
     videoProperties =
       VideoEncodingProperties::CreateUncompressed(
         MediaEncodingSubtypes::Nv12, 10, 10);
@@ -108,26 +107,31 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
   // Create a timer which sends request progress periodically.
   {
-    auto handler = ref new TimerElapsedHandler(streamState, &RTMediaStreamSource::ProgressTimerElapsedExecute);
+    auto handler = ref new TimerElapsedHandler(streamState,
+      &RTMediaStreamSource::ProgressTimerElapsedExecute);
     auto timespan = Windows::Foundation::TimeSpan();
     timespan.Duration = 500 * 1000 * 10;  // 500 ms in hns
-    streamState->_progressTimer = ThreadPoolTimer::CreatePeriodicTimer(handler, timespan);
+    streamState->_progressTimer = ThreadPoolTimer::CreatePeriodicTimer(
+      handler, timespan);
   }
 
   // Create a timer which ensures we don't display frames faster that expected.
   // Required because Media Foundation sometimes requests samples in burst mode
   // but we use the wall clock to drive timestamps.
   {
-    auto handler = ref new TimerElapsedHandler(streamState, &RTMediaStreamSource::FPSTimerElapsedExecute);
+    auto handler = ref new TimerElapsedHandler(streamState,
+      &RTMediaStreamSource::FPSTimerElapsedExecute);
     auto timespan = Windows::Foundation::TimeSpan();
     timespan.Duration = 15 * 1000 * 10;
-    streamState->_fpsTimer = ThreadPoolTimer::CreatePeriodicTimer(handler, timespan);
+    streamState->_fpsTimer = ThreadPoolTimer::CreatePeriodicTimer(handler,
+      timespan);
   }
 
   return streamSource;
 }
 
-RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack, bool isH264) :
+RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack,
+                                         bool isH264) :
     _videoTrack(videoTrack), _stride(0),
     _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
     _frameCounter(0), _isH264(isH264), _futureOffsetMs(150), _lastSampleTime(0),
@@ -137,7 +141,8 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack, bool isH26
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
-  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource : " << rtc::ToUtf8(_id->Data()).c_str();
+  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource : "
+               << rtc::ToUtf8(_id->Data()).c_str();
   Teardown();
 }
 
@@ -173,7 +178,6 @@ void RTMediaStreamSource::Teardown() {
     rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
     _frames.pop_front();
   }
-
 }
 
 RTMediaStreamSource::RTCRenderer::RTCRenderer(
@@ -194,7 +198,6 @@ void RTMediaStreamSource::RTCRenderer::SetSize(
 
 void RTMediaStreamSource::RTCRenderer::RenderFrame(
   const cricket::VideoFrame *frame) {
-
   auto frameCopy = frame->Copy();
   // Do the processing async because there's a risk of a deadlock otherwise.
   Concurrency::create_async([this, frameCopy] {
@@ -203,7 +206,6 @@ void RTMediaStreamSource::RTCRenderer::RenderFrame(
       stream->ProcessReceivedFrame(frameCopy);
     }
   });
-
 }
 
 // Guid to cache the IDR check result in the sample attributes.
@@ -232,8 +234,7 @@ bool IsSampleIDR(IMFSample* sample) {
     int prefixLengthFound = 0;
     if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x00 && ptr[3] == 0x01) {
       prefixLengthFound = 4;
-    }
-    else if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01) {
+    } else if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01) {
       prefixLengthFound = 3;
     }
 
@@ -256,7 +257,7 @@ bool RTMediaStreamSource::DropFramesToIDR() {
   for (auto it = _frames.rbegin(); it != _frames.rend(); ++it) {
     IMFSample* pSample = (IMFSample*)(*it)->GetNativeHandle();
     if (pSample == nullptr) {
-      continue; // I don't expect this will ever happen.
+      continue;  // I don't expect this will ever happen.
     }
 
     if (IsSampleIDR(pSample)) {
@@ -288,7 +289,8 @@ LONGLONG RTMediaStreamSource::GetNextSampleTimeHns() {
   // Sometimes we get requests so fast they have identical timestamp.
   // Add a bit to the timetamp so it's different from the last sample.
   if (_lastSampleTime >= frameTime) {
-    LOG(LS_INFO) << "!!!!! Bad sample time " << _lastSampleTime << "->" << frameTime;
+    LOG(LS_INFO) << "!!!!! Bad sample time "
+                 << _lastSampleTime << "->" << frameTime;
     frameTime = _lastSampleTime + 500;  // Make the timestamp slightly after the last one.
   }
 
@@ -310,8 +312,7 @@ void RTMediaStreamSource::FPSTimerElapsedExecute(ThreadPoolTimer^ source) {
   if (_frames.size() > 0 && _request != nullptr) {
     if (_isH264) {
       ReplyToRequestH264();
-    }
-    else {
+    } else {
       ReplyToRequestI420();
     }
   }
@@ -323,7 +324,8 @@ void RTMediaStreamSource::ReplyToRequestH264() {
   OutputDebugString((L"Queue:" + (_frames.size().ToString()) + L"\n")->Data());
   if (_frames.size() > 30) {
     OutputDebugString(L"Frame queue > 30, scanning ahead for IDR.\n");
-    LOG(LS_INFO) << "Frame queue > 30, scanning ahead for IDR: " << _frames.size();
+    LOG(LS_INFO) << "Frame queue > 30, scanning ahead for IDR: "
+                 << _frames.size();
     DropFramesToIDR();
   }
 
@@ -367,6 +369,9 @@ void RTMediaStreamSource::ReplyToRequestH264() {
     }
   }
 
+  // Frame size in EncodingProperties needs to be updated before completing
+  // defferal, otherwise the MediaElement will receive a frame having different
+  // size and application may crash.
   UpdateVideoFrameSize(frame.get());
 
   LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
@@ -480,8 +485,7 @@ void RTMediaStreamSource::ReplyToRequestI420() {
   _deferral = nullptr;
 }
 
-void RTMediaStreamSource::UpdateVideoFrameSize(cricket::VideoFrame* frame)
-{
+void RTMediaStreamSource::UpdateVideoFrameSize(cricket::VideoFrame* frame) {
   if (frame != nullptr) {
     if ((_videoDesc->EncodingProperties->Width != frame->GetWidth()) ||
       (_videoDesc->EncodingProperties->Height != frame->GetHeight())) {
@@ -541,13 +545,11 @@ void RTMediaStreamSource::OnSampleRequested(
     if (_frames.size() > 0 && !_frameSentThisTime) {
       if (_isH264) {
         ReplyToRequestH264();
-      }
-      else {
+      } else {
         ReplyToRequestI420();
       }
       return;
-    }
-    else {
+    } else {
       // Save the request and referral for when a sample comes in.
       if (_deferral != nullptr) {
         LOG(LS_ERROR) << "Got referral when another hasn't completed.";
@@ -578,8 +580,7 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   if (_isH264) {
     // For H264 we keep all frames since they are encoded.
     _frames.push_back(frame);
-  }
-  else {
+  } else {
     // For I420 frame, keep only the latest.
     for (auto oldFrame : _frames) {
       delete oldFrame;
@@ -592,14 +593,14 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   if (_deferral != nullptr && _request != nullptr && !_frameSentThisTime) {
     if (_isH264) {
       ReplyToRequestH264();
-    }
-    else {
+    } else {
       ReplyToRequestI420();
     }
   }
 }
 
-bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::VideoFrame* frame) {
+bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer,
+                                       cricket::VideoFrame* frame) {
     ComPtr<IMF2DBuffer2> imageBuffer;
   if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf()))) {
     return false;
@@ -623,7 +624,8 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::Vid
       frame->GetVPlane(), frame->GetVPitch(),
       reinterpret_cast<uint8*>(destRawData), pitch,
       uvDest, pitch,
-      static_cast<int>(frame->GetWidth()), static_cast<int>(frame->GetHeight()));
+      static_cast<int>(frame->GetWidth()),
+      static_cast<int>(frame->GetHeight()));
   }
   catch (...) {
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
