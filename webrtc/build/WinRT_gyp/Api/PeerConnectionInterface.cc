@@ -34,7 +34,6 @@
 #include "third_party/h264_winrt/h264_winrt_factory.h"
 #include "webrtc/base/trace_event.h"
 
-
 using webrtc_winrt_api_internal::FromCx;
 using webrtc_winrt_api_internal::ToCx;
 using Platform::Collections::Vector;
@@ -101,6 +100,22 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   rtc::scoped_ptr<rtc::LoggingServer> gLoggingServer;
   rtc::scoped_ptr<FileLogSink> gLoggingFile;
   cricket::VideoFormat gPreferredVideoCaptureFormat;
+
+  // Helper function, this is to replace the webrtc macro TRACE_COUNTER1
+  // as it is not working when it is directly called from background process
+  void WebRTCTraceONE(const char* category_group_enabled,
+      const char* name, INT32 value) {
+      unsigned char arg_types[1];
+      char* arg_name = "value";
+      unsigned long long arg_values[1];
+      arg_types[0] = TRACE_VALUE_TYPE_UINT;
+      arg_values[0] = value;
+      gTraceLog.Add('c',/*phase c*/
+          (const unsigned char*)category_group_enabled, name, 0, 1,
+          (const char**)&arg_name, arg_types, arg_values,
+          'N'/*dummy flag*/);
+
+  }
 }  // namespace globals
 
 RTCIceCandidate::RTCIceCandidate() {
@@ -728,7 +743,7 @@ void WebRTC::UpdateCPUUsage(double cpu_usage) {
 
   //TRACE_COUNTER1 can only log 32bit integer value
   // also, when the app is idle, CPUUsage is very low <1%
-  TRACE_COUNTER1("webrtc", "winrtCPUUsage", (int32)(globals::gCurrentCPUUsage * 100));
+  globals::WebRTCTraceONE("webrtc", "winrtCPUUsage", (int32)(globals::gCurrentCPUUsage * 100));
 }
 
 double WebRTC::GetCPUUsage() {
@@ -739,9 +754,9 @@ void WebRTC::UpdateMemUsage(INT64 mem_usage) {
   globals::gCurrentMEMUsage = mem_usage;
 
   //TRACE_COUNTER1 can only log 32bit integer value
-  TRACE_COUNTER1("webrtc", "winrtMemUsage", (int32)(globals::gCurrentMEMUsage / 1024));
+  globals::WebRTCTraceONE("webrtc", "winrtMemUsage", (int32)(globals::gCurrentMEMUsage / 1024));
 
-  TRACE_COUNTER1("webrtc", "winrtTraceMemSize", (int32)(globals::gTraceLog.CurrentTraceMemUsage() / 1024));
+  globals::WebRTCTraceONE("webrtc", "winrtTraceMemSize", (int32)(globals::gTraceLog.CurrentTraceMemUsage() / 1024));
 
 }
 
