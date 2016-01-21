@@ -361,11 +361,8 @@ void RTMediaStreamSource::ReplyToRequestH264() {
     uint32_t currentRotation = (uint32_t)frame->GetRotation();
 
     if (lastRotation == nullptr || (uint32_t)lastRotation != currentRotation) {
-      // Only update the rotation when we have an IDR.
-      if (IsSampleIDR(spSample.Get())) {
-        OutputDebugString(L"Setting new rotation!!!\n");
-        props->Insert(MF_MT_VIDEO_ROTATION, currentRotation);
-      }
+      OutputDebugString(L"Setting new rotation!!!\n");
+      props->Insert(MF_MT_VIDEO_ROTATION, currentRotation);
     }
   }
 
