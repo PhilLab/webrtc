@@ -667,7 +667,9 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _ptrCaptureVolume(NULL),
     _ptrRenderSimpleVolume(NULL),
     _builtInAecEnabled(false),
-    _playAudioFrameSize(0),
+	_builtInNSEnabled(false),
+	_builtInAGCEnabled(false),
+	_playAudioFrameSize(0),
     _playSampleRate(0),
     _playBlockSize(0),
     _playChannels(2),
@@ -3751,6 +3753,121 @@ int32_t AudioDeviceWindowsWasapi::EnableBuiltInAEC(bool enable) {
 bool AudioDeviceWindowsWasapi::BuiltInAECIsEnabled() const {
   return _builtInAecEnabled;
 }
+
+bool AudioDeviceWindowsWasapi::BuiltInAECIsAvailable() const {
+    return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::AcousticEchoCancellation);
+}
+
+int32_t AudioDeviceWindowsWasapi::EnableBuiltInNS(bool enable) {
+    if (_recIsInitialized) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "Attempt to set Windows Noise Suppression with recording already initialized");
+        return -1;
+    }
+
+    _builtInNSEnabled = enable;
+    return 0;
+}
+
+bool AudioDeviceWindowsWasapi::BuiltInNSIsAvailable() const {
+    return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::NoiseSuppression);
+}
+
+int32_t AudioDeviceWindowsWasapi::EnableBuiltInAGC(bool enable) {
+    if (_playIsInitialized) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "Attempt to set Windows Automatic Gain Control with playout already initialized");
+        return -1;
+    }
+
+    _builtInAGCEnabled = enable;
+    return 0;
+}
+
+bool AudioDeviceWindowsWasapi::BuiltInAGCIsAvailable() const {
+    return CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType::AutomaticGainControl);
+}
+
+
+bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType effect) const {
+
+    // Check to see if the current device supports AccousticEchoCancellation
+
+    Windows::Media::Effects::AudioCaptureEffectsManager^ effManager;
+
+    Windows::Media::Capture::MediaCategory Category;
+    Category = Windows::Media::Capture::MediaCategory::Communications;
+
+    Platform::String^ deviceId;
+
+    if (_deviceIdStringIn != nullptr)
+    {
+        deviceId = _deviceIdStringIn;
+    }
+    else
+    {
+        deviceId = _defaultCaptureDevice->Id;
+    }
+
+    effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioCaptureEffectsManager(
+        deviceId, Category, Windows::Media::AudioProcessing::Default);
+
+    Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
+
+    effectsList = effManager->GetAudioCaptureEffects();
+
+    unsigned int i;
+    // Iterate through the supported effect to see if Echo Cancellation is supported
+    for (i = 0; i < effectsList->Size; i++)
+    {
+        if (effectsList->GetAt(i)->AudioEffectType == effect)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType effect) const {
+
+    // Check to see if the current device supports AccousticEchoCancellation
+
+    Windows::Media::Effects::AudioRenderEffectsManager^ effManager;
+
+    Windows::Media::Render::AudioRenderCategory Category;
+    Category = Windows::Media::Render::AudioRenderCategory::Communications;
+
+    Platform::String^ deviceId;
+
+    if (_deviceIdStringOut != nullptr)
+    {
+        deviceId = _deviceIdStringOut;
+    }
+    else
+    {
+        deviceId = _defaultRenderDevice->Id;
+    }
+
+    effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioRenderEffectsManager(
+        deviceId, Category, Windows::Media::AudioProcessing::Default);
+
+    Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
+
+    effectsList = effManager->GetAudioRenderEffects();
+
+    unsigned int i;
+    // Iterate through the supported effect to see if Echo Cancellation is supported
+    for (i = 0; i < effectsList->Size; i++)
+    {
+        if (effectsList->GetAt(i)->AudioEffectType == effect)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 int AudioDeviceWindowsWasapi::SetBoolProperty(IPropertyStore* ptrPS,
                                           REFPROPERTYKEY key,

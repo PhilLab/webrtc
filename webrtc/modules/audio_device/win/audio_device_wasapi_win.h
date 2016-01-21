@@ -229,8 +229,16 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     // CPU load
     virtual int32_t CPULoad(uint16_t& load) const;
 
+    virtual bool BuiltInAECIsAvailable() const;
     virtual int32_t EnableBuiltInAEC(bool enable);
     virtual bool BuiltInAECIsEnabled() const;
+
+    virtual bool BuiltInNSIsAvailable() const;
+    virtual int32_t EnableBuiltInNS(bool enable);
+    
+    virtual bool BuiltInAGCIsAvailable() const;
+    virtual int32_t EnableBuiltInAGC(bool enable);
+
 
  public:
     virtual bool PlayoutWarning() const;
@@ -269,6 +277,9 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     static DWORD WINAPI SetCaptureVolumeThread(LPVOID context);
     DWORD DoSetCaptureVolumeThread();
+
+    bool CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType) const;
+    bool CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType) const;
 
     void _SetThreadName(DWORD dwThreadID, LPCSTR szThreadName);
     void _Lock() { _critSect.Enter(); }
@@ -355,6 +366,8 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
 
     bool                                    _builtInAecEnabled;
+    bool                                    _builtInNSEnabled;
+    bool                                    _builtInAGCEnabled;
 
     HANDLE                                  _hRenderSamplesReadyEvent;
     HANDLE                                  _hPlayThread;
