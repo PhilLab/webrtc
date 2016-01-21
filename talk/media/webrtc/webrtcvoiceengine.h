@@ -71,6 +71,7 @@ class WebRtcVoiceEngine
   void Terminate();
 
   webrtc::VoiceEngine* GetVoE() { return voe()->engine(); }
+  webrtc::VoEHardware* GetVoEHardware() { return voe()->hw(); }
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const AudioOptions& options);
 

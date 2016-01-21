@@ -27,6 +27,7 @@
 #include "webrtc/modules/video_capture/windows/device_info_winrt.h"
 #include "webrtc/modules/video_capture/windows/video_capture_winrt.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/voice_engine/include/voe_hardware.h"
 
 using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
@@ -377,10 +378,29 @@ IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
   auto ret = ref new Vector<MediaDevice^>();
   g_audioPlayoutDevices.clear();
   globals::RunOnGlobalThread<void>([this] {
-    if (!_dev_manager->GetAudioOutputDevices(&g_audioPlayoutDevices)) {
+    webrtc::VoEHardware* voiceEngineHardware =
+      globals::gPeerConnectionFactory->channel_manager()->media_engine()->
+      GetVoEHardware();
+    if (voiceEngineHardware == nullptr) {
+      LOG(LS_ERROR) << "Can't enumerate audio playout devices: "
+                    << "VoEHardware API not available.";
+      return;
+    }
+    int playoutDeviceCount(0);
+    char audioDeviceName[128];
+    char audioDeviceGuid[128];
+    if (voiceEngineHardware->GetNumOfPlayoutDevices(playoutDeviceCount) == 0) {
+      for (int i = 0; i < playoutDeviceCount; ++i) {
+        voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
+          audioDeviceGuid);
+        g_audioPlayoutDevices.push_back(cricket::Device(audioDeviceName,
+          audioDeviceGuid));
+      }
+    } else {
       LOG(LS_ERROR) << "Can't enumerate audio playout devices";
     }
   });
+
   for (auto audioPlayoutDev : g_audioPlayoutDevices) {
     ret->Append(ref new MediaDevice(ToCx(audioPlayoutDev.id),
                                     ToCx(audioPlayoutDev.name)));
@@ -406,9 +426,28 @@ IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
       }
 
       std::vector<cricket::Device> audioDevices;
-      if (!_dev_manager->GetAudioInputDevices(&audioDevices)) {
-        LOG(LS_ERROR) << "Can't enumerate audio capture devices";
-        return false;
+      webrtc::VoEHardware* voiceEngineHardware =
+        globals::gPeerConnectionFactory->channel_manager()->media_engine()->
+        GetVoEHardware();
+      if (voiceEngineHardware == nullptr) {
+        LOG(LS_ERROR) << "Can't enumerate audio capture devices: "
+                      << "VoEHardware API not available.";
+      } else {
+        int recordingDeviceCount(0);
+        char audioDeviceName[128];
+        char audioDeviceGuid[128];
+        if (voiceEngineHardware->GetNumOfRecordingDevices(
+          recordingDeviceCount) == 0) {
+          for (int i = 0; i < recordingDeviceCount; ++i) {
+            voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
+              audioDeviceGuid);
+            audioDevices.push_back(cricket::Device(audioDeviceName,
+              audioDeviceGuid));
+          }
+        } else {
+          LOG(LS_ERROR) << "Can't enumerate audio capture devices";
+          return false;
+        }
       }
       g_audioCapturerDevices.clear();
 
