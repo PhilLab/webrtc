@@ -312,14 +312,14 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     Platform::String^ _GetDefaultDeviceID(DeviceClass cls);
     Platform::String^ _GetDeviceID(DeviceInformation^ device);
 
-    DeviceInformation^ _GetDefaultDevice(DeviceClass cls);
+    DeviceInformation^ _GetDefaultDevice(DeviceClass cls, AudioDeviceRole role);
     DeviceInformation^ _GetListDevice(DeviceClass cls, int index);
 
-    Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceInAsync();
-    Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceOutAsync();
+    Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceInAsync(Platform::String^ deviceId);
+    Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceOutAsync(Platform::String^ deviceId);
 
-    HRESULT _InitializeAudioDeviceIn();
-    HRESULT _InitializeAudioDeviceOut();
+    HRESULT _InitializeAudioDeviceIn(Platform::String^ deviceId);
+    HRESULT _InitializeAudioDeviceOut(Platform::String^ deviceId);
 
     // Surround system support
     bool ShouldUpmix();
