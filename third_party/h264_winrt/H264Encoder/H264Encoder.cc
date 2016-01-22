@@ -421,7 +421,7 @@ int H264WinRTEncoderImpl::SetRates(
   uint32_t new_bitrate_kbit, uint32_t new_framerate) {
   // TODO(winrt): Revisit this function once we know how to work around
   //              the crash in the H264 stack that sometimes happens.
-  return WEBRTC_VIDEO_CODEC_OK;
+  //return WEBRTC_VIDEO_CODEC_OK;
 
   setRatesBuffer++;
   if (setRatesBuffer < 20) {
