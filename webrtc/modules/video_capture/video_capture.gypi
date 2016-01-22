@@ -117,6 +117,11 @@
               },
             }],
             ['OS=="win" and OS_RUNTIME=="winrt"', {
+              'conditions':[
+                ['winrt_platform=="win10_arm"',{
+                 'defines': ['WINDOWS_PHONE_APP'],
+                }],
+              ],
               'dependencies': [
                 '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
               ],

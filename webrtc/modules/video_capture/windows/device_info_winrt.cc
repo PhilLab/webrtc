@@ -61,22 +61,27 @@ void MediaCaptureDevicesWinRT::OnAppSuspending() {
 }
 
 Platform::Agile<MediaCapture>
-  MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
-  CriticalSectionScoped cs(critical_section_);
+MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
+	CriticalSectionScoped cs(critical_section_);
 
-  // We cache MediaCapture objects
-  auto iter = media_capture_map_.find(device_id);
-  if (iter != media_capture_map_.end()) {
-    return iter->second;
-  } else {
-  #if (defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+	// We cache MediaCapture objects
+	auto iter = media_capture_map_.find(device_id);
+	if (iter != media_capture_map_.end()) {
+		return iter->second;
+	}
+	else {
+#if (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP || \
+		                        defined(WINDOWS_PHONE_APP)))
+    // WINDOWS_PHONE_APP is defined at gyp level to overcome the missing WINAPI_FAMILY
+    // when building with VS2015
+
     // On some Windows Phone 8 devices, two calls of InitializeAsync on two
     // different coexisting instances causes exception to be thrown from the
     // second call.
     // Since after calling the second InitializeAsync all further calls fail
     // with exception, we maintain a maximum of one MediaCapture instance
     // in cache.
-    // The behavior is present on Lumia620, OS version 8.10.14219.341.
+    // The behavior is present on Lumia620, OS version 8.10.14219.341 and 10.0.10586.36
     media_capture_map_.clear();
 #endif
     Platform::Agile<MediaCapture> media_capture_agile(ref new MediaCapture());
