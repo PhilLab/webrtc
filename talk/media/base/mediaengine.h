@@ -52,6 +52,7 @@
 namespace webrtc {
 class Call;
 class VoiceEngine;
+class VoEHardware;
 }
 
 namespace cricket {
@@ -73,6 +74,8 @@ class MediaEngineInterface {
   virtual void Terminate() = 0;
   // TODO(solenberg): Remove once VoE API refactoring is done.
   virtual webrtc::VoiceEngine* GetVoE() = 0;
+
+  virtual webrtc::VoEHardware* GetVoEHardware() = 0;
 
   // MediaChannel creation
   // Creates a voice media channel. Returns NULL on failure.
@@ -170,6 +173,11 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual webrtc::VoiceEngine* GetVoE() {
     return voice_.GetVoE();
   }
+
+  virtual webrtc::VoEHardware* GetVoEHardware() {
+    return voice_.GetVoEHardware();
+  }
+
   virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                            const AudioOptions& options) {
     return voice_.CreateChannel(call, options);
