@@ -86,6 +86,7 @@ Platform::Agile<MediaCapture>
       [this, &initialize_async_task, media_capture_agile, device_id]() {
       auto settings = ref new MediaCaptureInitializationSettings();
       settings->VideoDeviceId = device_id;
+      settings->MediaCategory = Windows::Media::Capture::MediaCategory::Communications;
       auto initOp = media_capture_agile->InitializeAsync(settings);
       initialize_async_task = Concurrency::create_task(initOp).
         then([this, media_capture_agile](Concurrency::task<void> initTask) {
@@ -107,7 +108,9 @@ Platform::Agile<MediaCapture>
     else {
       handler->Invoke();
     }
+
     initialize_async_task.wait();
+
     // Cache the MediaCapture object so we don't recreate it later.
     media_capture_map_[device_id] = media_capture_agile;
     return media_capture_agile;

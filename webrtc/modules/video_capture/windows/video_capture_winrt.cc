@@ -208,6 +208,7 @@ ref class CaptureDevice sealed {
 
   bool capture_started_;
   VideoCaptureCapability frame_info_;
+  int autoExposureCounter_;
 };
 
 CaptureDevice::CaptureDevice(
@@ -216,7 +217,8 @@ CaptureDevice::CaptureDevice(
     device_id_(nullptr),
     media_sink_(nullptr),
     capture_device_listener_(capture_device_listener),
-    capture_started_(false) {
+    capture_started_(false),
+    autoExposureCounter_(0) {
 }
 
 CaptureDevice::~CaptureDevice() {
@@ -411,6 +413,22 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     BYTE* pbBuffer = NULL;
     DWORD cbMaxLength = 0;
     DWORD cbCurrentLength = 0;
+
+    // Some Camera driver on some phone (like Lumia 550) are using a lot of CPU
+    // in processing Auto Exposure on every frame. As an optimization, 
+    // keep the Auto Exposure on for 50% of the time (20 frames out of 40)
+    if (++autoExposureCounter_ >= 40) {
+      autoExposureCounter_ = 0;
+      if (media_capture_->VideoDeviceController->ExposureControl->Supported) {
+        media_capture_->VideoDeviceController->ExposureControl->SetAutoAsync(true);
+      }
+    }
+    else if (autoExposureCounter_ == 20) {
+      if (media_capture_->VideoDeviceController->ExposureControl->Supported) {
+        media_capture_->VideoDeviceController->ExposureControl->SetAutoAsync(false);
+      }
+    }
+
     if (SUCCEEDED(hr)) {
       hr = spMediaSample->GetSampleTime(&hnsSampleTime);
     }
@@ -807,6 +825,7 @@ int32_t VideoCaptureWinRT::StopCapture() {
 
 bool VideoCaptureWinRT::CaptureStarted() {
   CriticalSectionScoped cs(&_apiCs);
+
   return device_->CaptureStarted() || fake_device_->CaptureStarted();
 }
 
@@ -864,6 +883,8 @@ void VideoCaptureWinRT::OnIncomingFrame(
   const VideoCaptureCapability& frame_info) {
   if (device_->CaptureStarted()) {
     last_frame_info_ = frame_info;
+
+
   }
   IncomingFrame(video_frame, video_frame_length, frame_info);
 }
