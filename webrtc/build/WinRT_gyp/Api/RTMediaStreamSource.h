@@ -75,7 +75,7 @@ ref class RTMediaStreamSource sealed {
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::VideoFrame* frame);
     void ResizeSource(uint32 width, uint32 height);
 
-    ComPtr<IMFSample> MakeSampleCallback(cricket::VideoFrame* frame);
+    HRESULT MakeSampleCallback(cricket::VideoFrame* frame, IMFSample** sample);
     void FpsCallback(int fps);
 
     MediaVideoTrack^ _videoTrack;

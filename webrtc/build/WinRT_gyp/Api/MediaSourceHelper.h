@@ -31,7 +31,7 @@ struct SampleData {
 class MediaSourceHelper {
  public:
   MediaSourceHelper(bool isH264,
-    std::function<ComPtr<IMFSample>(cricket::VideoFrame*)> mkSample,
+    std::function<HRESULT(cricket::VideoFrame* frame, IMFSample** sample)> mkSample,
     std::function<void(int)> fpsCallback);
   ~MediaSourceHelper();
 
@@ -68,7 +68,7 @@ class MediaSourceHelper {
 
   void CheckForAttributeChanges(cricket::VideoFrame* frame, SampleData* data);
 
-  std::function<ComPtr<IMFSample>(cricket::VideoFrame*)> _mkSample;
+  std::function<HRESULT(cricket::VideoFrame* frame, IMFSample** sample)> _mkSample;
   std::function<void(int)> _fpsCallback;
 
   // Called whenever a new sample is sent for rendering.

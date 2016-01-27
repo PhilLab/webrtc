@@ -42,12 +42,12 @@ SampleData::SampleData()
 }
 
 MediaSourceHelper::MediaSourceHelper(bool isH264,
-  std::function<ComPtr<IMFSample>(cricket::VideoFrame*)> mkSample,
+  std::function<HRESULT(cricket::VideoFrame* frame, IMFSample** sample)> mkSample,
   std::function<void(int)> fpsCallback)
   : _mkSample(mkSample)
   , _fpsCallback(fpsCallback)
   , _isFirstFrame(true)
-  , _futureOffsetMs(150)
+  , _futureOffsetMs(30)
   , _lastSampleTime(0)
   , _lastSize({0, 0})
   , _lastRotation(-1)
@@ -114,7 +114,8 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueFrame() {
   }
   else {
     LONGLONG frameTime = GetNextSampleTimeHns();
-    OutputDebugString((L"frameTime: " + frameTime + L"\n")->Data());
+    //if (_isH264)
+    //  OutputDebugString((L"frameTime: " + frameTime + L"\n")->Data());
     data->sample->SetSampleTime(frameTime);
   }
 
@@ -131,7 +132,8 @@ bool MediaSourceHelper::HasFrames() {
 // === Private functions below ===
 
 rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueH264Frame() {
-  OutputDebugString((L"Queue:" + (_frames.size().ToString()) + L"\n")->Data());
+  //if (_isH264)
+  //  OutputDebugString((L"Queue:" + (_frames.size().ToString()) + L"\n")->Data());
   if (_frames.size() > 30) {
     OutputDebugString(L"Frame queue > 30, scanning ahead for IDR.\n");
     LOG(LS_INFO) << "Frame queue > 30, scanning ahead for IDR: "
@@ -171,7 +173,9 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueI420Frame() {
 
   rtc::scoped_ptr<SampleData> data(new SampleData);
 
-  data->sample = _mkSample(frame.get());
+  if (FAILED(_mkSample(frame.get(), &data->sample))) {
+    return nullptr;
+  }
 
   ComPtr<IMFAttributes> sampleAttributes;
   data->sample.As(&sampleAttributes);

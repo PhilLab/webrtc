@@ -17,6 +17,7 @@
 #include "PeerConnectionInterface.h"
 #include "Marshalling.h"
 #include "RTMediaStreamSource.h"
+#include "WebRtcMediaSource.h"
 #include "webrtc/base/logging.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/session/media/channelmanager.h"
@@ -349,12 +350,22 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
 }
 
 IMediaSource^ Media::CreateMediaStreamSource(
-    MediaVideoTrack^ track, uint32 framerate, String^ id) {
-    return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate,
-      id]()->MediaStreamSource^{
-        return webrtc_winrt_api_internal::RTMediaStreamSource::
-          CreateMediaSource(track, framerate, id);
-    });
+  MediaVideoTrack^ track, uint32 framerate, String^ id) {
+  return globals::RunOnGlobalThread<MediaStreamSource^>([track, framerate,
+    id]()->MediaStreamSource^ {
+    return webrtc_winrt_api_internal::RTMediaStreamSource::
+      CreateMediaSource(track, framerate, id);
+  });
+}
+
+IMediaSource^ Media::CreateMediaSource(
+  MediaVideoTrack^ track, String^ id) {
+  return globals::RunOnGlobalThread<IMediaSource^>([track, id]() -> IMediaSource^ {
+    ComPtr<ABI::Windows::Media::Core::IMediaSource> comSource;
+    webrtc_winrt_api_internal::WebRtcMediaSource::CreateMediaSource(&comSource, track, id);
+    IMediaSource^ source = reinterpret_cast<IMediaSource^>(comSource.Get());
+    return source;
+  });
 }
 
 IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {

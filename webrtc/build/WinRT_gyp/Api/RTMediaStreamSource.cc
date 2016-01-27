@@ -137,8 +137,8 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack,
 
   // Create the helper with the callback functions.
   _helper.reset(new MediaSourceHelper(isH264,
-    [this](cricket::VideoFrame* frame) -> ComPtr<IMFSample> {
-    return MakeSampleCallback(frame);
+    [this](cricket::VideoFrame* frame, IMFSample** sample) -> HRESULT {
+    return MakeSampleCallback(frame, sample);
   },
     [this](int fps) {
     return FpsCallback(fps);
@@ -269,12 +269,12 @@ void RTMediaStreamSource::ReplyToSampleRequest() {
   _deferral = nullptr;
 }
 
-ComPtr<IMFSample> RTMediaStreamSource::MakeSampleCallback(
-  cricket::VideoFrame* frame) {
+HRESULT RTMediaStreamSource::MakeSampleCallback(
+  cricket::VideoFrame* frame, IMFSample** sample) {
   ComPtr<IMFSample> spSample;
   HRESULT hr = MFCreateSample(spSample.GetAddressOf());
   if (FAILED(hr)) {
-    return nullptr;
+    return E_FAIL;
   }
   ComPtr<IMFMediaBuffer> mediaBuffer;
   hr = MFCreate2DMediaBuffer(
@@ -282,14 +282,14 @@ ComPtr<IMFSample> RTMediaStreamSource::MakeSampleCallback(
     cricket::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
   if (FAILED(hr)) {
-    return nullptr;
+    return E_FAIL;
   }
 
   spSample->AddBuffer(mediaBuffer.Get());
 
   ComPtr<IMF2DBuffer2> imageBuffer;
   if (FAILED(mediaBuffer.As(&imageBuffer))) {
-    return nullptr;
+    return E_FAIL;
   }
 
   BYTE* destRawData;
@@ -299,7 +299,7 @@ ComPtr<IMFSample> RTMediaStreamSource::MakeSampleCallback(
 
   if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
     &destRawData, &pitch, &buffer, &destMediaBufferSize))) {
-    return nullptr;
+    return E_FAIL;
   }
   try {
     frame->MakeExclusive();
@@ -318,7 +318,8 @@ ComPtr<IMFSample> RTMediaStreamSource::MakeSampleCallback(
   }
   imageBuffer->Unlock2D();
 
-  return spSample;
+  *sample = spSample.Detach();
+  return S_OK;
 }
 
 void RTMediaStreamSource::FpsCallback(int fps) {
@@ -328,7 +329,6 @@ void RTMediaStreamSource::FpsCallback(int fps) {
 
 void RTMediaStreamSource::OnSampleRequested(
   MediaStreamSource ^sender, MediaStreamSourceSampleRequestedEventArgs ^args) {
-  OutputDebugString(L"RTMediaStreamSource::OnSampleRequested()\n");
   try {
     // Check to detect cases where samples are still being requested
     // but the source has ended.
@@ -366,7 +366,6 @@ void RTMediaStreamSource::OnSampleRequested(
 
 void RTMediaStreamSource::ProcessReceivedFrame(
   cricket::VideoFrame *frame) {
-  OutputDebugString(L"RTMediaStreamSource::ProcessReceivedFrame()\n");
   webrtc::CriticalSectionScoped csLock(_lock.get());
 
   if (_startingDeferral != nullptr) {
