@@ -120,7 +120,7 @@ class VCMTiming {
   uint32_t jitter_delay_ms_ GUARDED_BY(crit_sect_);
   uint32_t current_delay_ms_ GUARDED_BY(crit_sect_);
 #ifdef WINRT
-  uint32_t current_endtoend_delay_ms_ GUARDED_BY(crit_sect_);
+  int current_endtoend_delay_ms_ GUARDED_BY(crit_sect_);
 #endif
   int last_decode_ms_ GUARDED_BY(crit_sect_);
   uint32_t prev_frame_timestamp_ GUARDED_BY(crit_sect_);

@@ -164,6 +164,9 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
     stats.decoding_plc = ds.decoded_plc;
     stats.decoding_cng = ds.decoded_cng;
     stats.decoding_plc_cng = ds.decoded_plc_cng;
+#ifdef WINRT
+    stats.end_to_end_delayMs = ds.end_to_end_delayMs;
+#endif
   }
 
   stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;
