@@ -66,8 +66,6 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
   streamState->_videoDesc->EncodingProperties->FrameRate->Denominator = 1;
   auto streamSource = ref new MediaStreamSource(streamState->_videoDesc);
 
-  streamState->_startTime = webrtc::TickTime::Now();
-
   auto startingCookie = streamSource->Starting +=
     ref new Windows::Foundation::TypedEventHandler<
     MediaStreamSource ^,
@@ -132,12 +130,19 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
 RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack,
                                          bool isH264) :
-    _videoTrack(videoTrack), _stride(0),
+    _videoTrack(videoTrack),
     _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-    _frameCounter(0), _isH264(isH264), _futureOffsetMs(150), _lastSampleTime(0),
-    _frameSentThisTime(false), _isFirstFrame(true),
-    _lastTimeFPSCalculated(webrtc::TickTime::Now()) {
+    _frameSentThisTime(false) {
   LOG(LS_INFO) << "RTMediaStreamSource::RTMediaStreamSource";
+
+  // Create the helper with the callback functions.
+  _helper.reset(new MediaSourceHelper(isH264,
+    [this](cricket::VideoFrame* frame, IMFSample** sample) -> HRESULT {
+    return MakeSampleCallback(frame, sample);
+  },
+    [this](int fps) {
+    return FpsCallback(fps);
+  }));
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
@@ -172,12 +177,7 @@ void RTMediaStreamSource::Teardown() {
     _startingDeferral->Complete();
     _startingDeferral = nullptr;
   }
-
-  // Clear the buffered frames.
-  while (!_frames.empty()) {
-    rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
-    _frames.pop_front();
-  }
+  _helper.reset();
 }
 
 RTMediaStreamSource::RTCRenderer::RTCRenderer(
@@ -208,97 +208,6 @@ void RTMediaStreamSource::RTCRenderer::RenderFrame(
   });
 }
 
-// Guid to cache the IDR check result in the sample attributes.
-const GUID GUID_IS_IDR = { 0x588e319a, 0x218c, 0x4d0d, { 0x99, 0x6e, 0x77, 0x96, 0xb1, 0x46, 0x3e, 0x7e } };
-
-bool IsSampleIDR(IMFSample* sample) {
-  ComPtr<IMFAttributes> sampleAttributes;
-  sample->QueryInterface<IMFAttributes>(&sampleAttributes);
-
-  UINT32 isIdr;
-  if (SUCCEEDED(sampleAttributes->GetUINT32(GUID_IS_IDR, &isIdr))) {
-    return isIdr > 0;
-  }
-
-  ComPtr<IMFMediaBuffer> pBuffer;
-  sample->GetBufferByIndex(0, &pBuffer);
-  BYTE* pBytes;
-  DWORD maxLength, curLength;
-  if (FAILED(pBuffer->Lock(&pBytes, &maxLength, &curLength))) {
-    return false;
-  }
-
-  // Search for the beginnings of nal units.
-  for (DWORD i = 0; i < curLength - 5; ++i) {
-    BYTE* ptr = pBytes + i;
-    int prefixLengthFound = 0;
-    if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x00 && ptr[3] == 0x01) {
-      prefixLengthFound = 4;
-    } else if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01) {
-      prefixLengthFound = 3;
-    }
-
-    if (prefixLengthFound > 0 && (ptr[prefixLengthFound] & 0x1f) == 0x05) {
-      // Found IDR NAL unit
-      pBuffer->Unlock();
-      sampleAttributes->SetUINT32(GUID_IS_IDR, 1);  // Cache result
-      return true;
-    }
-  }
-  pBuffer->Unlock();
-  sampleAttributes->SetUINT32(GUID_IS_IDR, 0);  // Cache result
-  return false;
-}
-
-bool RTMediaStreamSource::DropFramesToIDR() {
-  cricket::VideoFrame* idrFrame = nullptr;
-  // Go through the frames in reverse order (from newest to oldest) and look
-  // for an IDR frame.
-  for (auto it = _frames.rbegin(); it != _frames.rend(); ++it) {
-    IMFSample* pSample = (IMFSample*)(*it)->GetNativeHandle();
-    if (pSample == nullptr) {
-      continue;  // I don't expect this will ever happen.
-    }
-
-    if (IsSampleIDR(pSample)) {
-      idrFrame = *it;
-      break;
-    }
-  }
-
-  // If we have an IDR frame, drop all older frames.
-  if (idrFrame != nullptr) {
-    OutputDebugString(L"IDR found, dropping all other samples.\n");
-    while (!_frames.empty()) {
-      if (_frames.front() == idrFrame) {
-        break;
-      }
-      auto frame = _frames.front();
-      _frames.pop_front();
-      delete frame;
-    }
-  }
-  return idrFrame != nullptr;
-}
-
-LONGLONG RTMediaStreamSource::GetNextSampleTimeHns() {
-  webrtc::TickTime now = webrtc::TickTime::Now();
-
-  LONGLONG frameTime = ((now - _startTime).Milliseconds() + _futureOffsetMs) * 1000 * 10;
-
-  // Sometimes we get requests so fast they have identical timestamp.
-  // Add a bit to the timetamp so it's different from the last sample.
-  if (_lastSampleTime >= frameTime) {
-    LOG(LS_INFO) << "!!!!! Bad sample time "
-                 << _lastSampleTime << "->" << frameTime;
-    frameTime = _lastSampleTime + 500;  // Make the timestamp slightly after the last one.
-  }
-
-  _lastSampleTime = frameTime;
-
-  return frameTime;
-}
-
 void RTMediaStreamSource::ProgressTimerElapsedExecute(ThreadPoolTimer^ source) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   if (_request != nullptr) {
@@ -309,86 +218,46 @@ void RTMediaStreamSource::ProgressTimerElapsedExecute(ThreadPoolTimer^ source) {
 void RTMediaStreamSource::FPSTimerElapsedExecute(ThreadPoolTimer^ source) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   _frameSentThisTime = false;
-  if (_frames.size() > 0 && _request != nullptr) {
-    if (_isH264) {
-      ReplyToRequestH264();
-    } else {
-      ReplyToRequestI420();
-    }
+  if (_request != nullptr) {
+    OutputDebugString(L"RTMediaStreamSource::FPSTimerElapsedExecute()\n");
+    ReplyToSampleRequest();
   }
 }
 
-void RTMediaStreamSource::ReplyToRequestH264() {
-  // Scan for IDR.  If we find one, skip directly to it.
-  // Scan backwards to get the latest IDR frame.
-  OutputDebugString((L"Queue:" + (_frames.size().ToString()) + L"\n")->Data());
-  if (_frames.size() > 30) {
-    OutputDebugString(L"Frame queue > 30, scanning ahead for IDR.\n");
-    LOG(LS_INFO) << "Frame queue > 30, scanning ahead for IDR: "
-                 << _frames.size();
-    DropFramesToIDR();
+void RTMediaStreamSource::ReplyToSampleRequest() {
+  auto sampleData = _helper->DequeueFrame();
+  if (sampleData == nullptr) {
+    return;
   }
-
-  rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
-  _frames.pop_front();
-
-  // Get the IMFSample in the frame.
-  ComPtr<IMFSample> spSample;
-  {
-    IMFSample* tmp = (IMFSample*)frame->GetNativeHandle();
-    if (tmp != nullptr) {
-      tmp->AddRef();
-      spSample.Attach(tmp);
-    }
-  }
-
-  if (IsSampleIDR(spSample.Get())) {
-    ComPtr<IMFAttributes> sampleAttributes;
-    spSample.As(&sampleAttributes);
-    sampleAttributes->SetUINT32(MFSampleExtension_CleanPoint, TRUE);
-    // TODO(winrt): Can this help in any way?
-    // sampleAttributes->SetUINT32(MFSampleExtension_Discontinuity, TRUE);
-  }
+  OutputDebugString(L"RTMediaStreamSource::ReplyToSampleRequest()\n");
 
   // Update rotation property
+  if (sampleData->rotationHasChanged)
   {
     auto props = _videoDesc->EncodingProperties->Properties;
-
-    auto lastRotation = props->HasKey(MF_MT_VIDEO_ROTATION)
-      ? props->Lookup(MF_MT_VIDEO_ROTATION)
-      : nullptr;
-
-    uint32_t currentRotation = (uint32_t)frame->GetRotation();
-
-    if (lastRotation == nullptr || (uint32_t)lastRotation != currentRotation) {
-      OutputDebugString(L"Setting new rotation!!!\n");
-      props->Insert(MF_MT_VIDEO_ROTATION, currentRotation);
-    }
+    OutputDebugString(L"Setting new rotation!!!\n");
+    props->Insert(MF_MT_VIDEO_ROTATION, sampleData->rotation);
   }
 
   // Frame size in EncodingProperties needs to be updated before completing
-  // defferal, otherwise the MediaElement will receive a frame having different
+  // deferral, otherwise the MediaElement will receive a frame having different
   // size and application may crash.
-  UpdateVideoFrameSize(frame.get());
-
-  LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
-  spSample->SetSampleDuration(duration);
-
-  LONGLONG frameTime = GetNextSampleTimeHns();
-  // Set timestamp
-  OutputDebugString((L"frameTime: " + frameTime + L"\n")->Data());
-  spSample->SetSampleTime(frameTime);
-
-  if (_isFirstFrame) {
-    _isFirstFrame = false;
-    spSample->SetSampleTime(0);
+  if (sampleData->sizeHasChanged) {
+    auto props = _videoDesc->EncodingProperties;
+    props->Width = (unsigned int)sampleData->size.cx;
+    props->Height = (unsigned int)sampleData->size.cy;
+      webrtc_winrt_api::ResolutionHelper::FireEvent(
+        _id, props->Width, props->Height);
+      OutputDebugString((L"Video frame size changed for " + _id +
+        L" W=" + props->Width +
+        L" H=" + props->Height + L"\n")->Data());
   }
 
   Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> spRequest;
   HRESULT hr = reinterpret_cast<IInspectable*>(_request)->QueryInterface(
     spRequest.ReleaseAndGetAddressOf());
 
-  hr = spRequest->SetSample(spSample.Get());
+  hr = spRequest->SetSample(sampleData->sample.Get());
 
   if (_deferral != nullptr) {
     _deferral->Complete();
@@ -396,221 +265,41 @@ void RTMediaStreamSource::ReplyToRequestH264() {
 
   _frameSentThisTime = true;
 
-  UpdateFrameRate();
-
   _request = nullptr;
   _deferral = nullptr;
 }
 
-void RTMediaStreamSource::ReplyToRequestI420() {
-  rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
-  _frames.pop_front();
-
-  // Update rotation property
-  {
-    auto props = _videoDesc->EncodingProperties->Properties;
-
-    auto lastRotation = props->HasKey(MF_MT_VIDEO_ROTATION)
-      ? props->Lookup(MF_MT_VIDEO_ROTATION)
-      : nullptr;
-
-    uint32_t currentRotation = (uint32_t)frame->GetRotation();
-
-    if (lastRotation == nullptr || (uint32_t)lastRotation != currentRotation) {
-      OutputDebugString(L"Setting new rotation!!!\n");
-      props->Insert(MF_MT_VIDEO_ROTATION, currentRotation);
-    }
-  }
-
+HRESULT RTMediaStreamSource::MakeSampleCallback(
+  cricket::VideoFrame* frame, IMFSample** sample) {
   ComPtr<IMFSample> spSample;
-
   HRESULT hr = MFCreateSample(spSample.GetAddressOf());
   if (FAILED(hr)) {
-    if (_deferral != nullptr) {
-      _deferral->Complete();
-    }
-    return;
+    return E_FAIL;
   }
-
-  ComPtr<IMFAttributes> sampleAttributes;
-  spSample.As(&sampleAttributes);
-  sampleAttributes->SetUINT32(MFSampleExtension_CleanPoint, TRUE);
-  sampleAttributes->SetUINT32(MFSampleExtension_Discontinuity, TRUE);
-
-  LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
-  spSample->SetSampleDuration(duration);
-
-  //LONGLONG sampleTime = (LONGLONG)frame->GetTimeStamp() * 10 * 1000 / 90;
-  spSample->SetSampleTime(0);
-
-  //LONGLONG frameTime = GetNextSampleTimeHns();
-  //spSample->SetSampleTime(frameTime);
-
-
   ComPtr<IMFMediaBuffer> mediaBuffer;
-
-  UpdateVideoFrameSize(frame.get());
-
-  hr = MFCreate2DMediaBuffer(_videoDesc->EncodingProperties->Width,
-    _videoDesc->EncodingProperties->Height, cricket::FOURCC_NV12, FALSE,
+  hr = MFCreate2DMediaBuffer(
+    frame->GetWidth(), frame->GetHeight(),
+    cricket::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
   if (FAILED(hr)) {
-    if (_deferral != nullptr) {
-      _deferral->Complete();
-    }
-    return;
+    return E_FAIL;
   }
 
   spSample->AddBuffer(mediaBuffer.Get());
 
-  ConvertFrame(mediaBuffer.Get(), frame.get());
-
-  Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> spRequest;
-  hr = reinterpret_cast<IInspectable*>(_request)->QueryInterface(
-    spRequest.ReleaseAndGetAddressOf());
-
-  hr = spRequest->SetSample(spSample.Get());
-  if (_deferral != nullptr) {
-    _deferral->Complete();
+  ComPtr<IMF2DBuffer2> imageBuffer;
+  if (FAILED(mediaBuffer.As(&imageBuffer))) {
+    return E_FAIL;
   }
 
-  _frameSentThisTime = true;
-
-  UpdateFrameRate();
-
-  _request = nullptr;
-  _deferral = nullptr;
-}
-
-void RTMediaStreamSource::UpdateVideoFrameSize(cricket::VideoFrame* frame) {
-  if (frame != nullptr) {
-    if ((_videoDesc->EncodingProperties->Width != frame->GetWidth()) ||
-      (_videoDesc->EncodingProperties->Height != frame->GetHeight())) {
-      _videoDesc->EncodingProperties->Width =
-        (unsigned int)frame->GetWidth();
-      _videoDesc->EncodingProperties->Height =
-        (unsigned int)frame->GetHeight();
-      webrtc_winrt_api::ResolutionHelper::FireEvent(_id,
-        _videoDesc->EncodingProperties->Width,
-        _videoDesc->EncodingProperties->Height);
-      OutputDebugString((L"Video frame size changed for " + _id +
-        L" W=" + frame->GetWidth() +
-        L" H=" + frame->GetHeight() + L"\n")->Data());
-    }
-  }
-}
-
-void RTMediaStreamSource::UpdateFrameRate() {
-  // Do FPS calculation and notification.
-  _frameCounter++;
-  // If we have about a second worth of frames
-  webrtc::TickTime now = webrtc::TickTime::Now();
-  if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
-    webrtc_winrt_api::FrameCounterHelper::FireEvent(_id,
-      _frameCounter.ToString());
-    _frameCounter = 0;
-    _lastTimeFPSCalculated = now;
-  }
-}
-
-
-void RTMediaStreamSource::OnSampleRequested(
-  MediaStreamSource ^sender, MediaStreamSourceSampleRequestedEventArgs ^args) {
-  // Debugging helper to see when a frame is requested.
-  if (_isH264) {
-    OutputDebugString(L"?");
-  }
-  try {
-    // Check to detect cases where samples are still being requested
-    // but the source has ended.
-    auto trackState = _videoTrack->GetImpl()->GetSource()->state();
-    if (trackState == webrtc::MediaSourceInterface::kEnded) {
-      return;
-    }
-    if (_mediaStreamSource == nullptr)
-      return;
-
-    webrtc::CriticalSectionScoped csLock(_lock.get());
-
-    _request = args->Request;
-    if (_request == nullptr) {
-      return;
-    }
-
-    webrtc::TickTime now = webrtc::TickTime::Now();
-
-    if (_frames.size() > 0 && !_frameSentThisTime) {
-      if (_isH264) {
-        ReplyToRequestH264();
-      } else {
-        ReplyToRequestI420();
-      }
-      return;
-    } else {
-      // Save the request and referral for when a sample comes in.
-      if (_deferral != nullptr) {
-        LOG(LS_ERROR) << "Got referral when another hasn't completed.";
-      }
-      _deferral = _request->GetDeferral();
-      return;
-    }
-  }
-  catch (...) {
-    LOG(LS_ERROR) << "Exception in RTMediaStreamSource::OnSampleRequested.";
-  }
-}
-
-void RTMediaStreamSource::ProcessReceivedFrame(
-  cricket::VideoFrame *frame) {
-  // Debugging helper to see when a frame is received.
-  if (_isH264) {
-    OutputDebugString(L"!");
-  }
-  webrtc::CriticalSectionScoped csLock(_lock.get());
-
-  if (_startingDeferral != nullptr) {
-    _startTime = webrtc::TickTime::Now();
-    _startingDeferral->Complete();
-    _startingDeferral = nullptr;
-  }
-
-  if (_isH264) {
-    // For H264 we keep all frames since they are encoded.
-    _frames.push_back(frame);
-  } else {
-    // For I420 frame, keep only the latest.
-    for (auto oldFrame : _frames) {
-      delete oldFrame;
-    }
-    _frames.clear();
-    _frames.push_back(frame);
-  }
-
-  // If we have a pending request, reply to it now.
-  if (_deferral != nullptr && _request != nullptr && !_frameSentThisTime) {
-    if (_isH264) {
-      ReplyToRequestH264();
-    } else {
-      ReplyToRequestI420();
-    }
-  }
-}
-
-bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer,
-                                       cricket::VideoFrame* frame) {
-    ComPtr<IMF2DBuffer2> imageBuffer;
-  if (FAILED(mediaBuffer->QueryInterface(imageBuffer.GetAddressOf()))) {
-    return false;
-  }
   BYTE* destRawData;
   BYTE* buffer;
   LONG pitch;
   DWORD destMediaBufferSize;
 
-
   if (FAILED(imageBuffer->Lock2DSize(MF2DBuffer_LockFlags_Write,
     &destRawData, &pitch, &buffer, &destMediaBufferSize))) {
-    return false;
+    return E_FAIL;
   }
   try {
     frame->MakeExclusive();
@@ -628,7 +317,69 @@ bool RTMediaStreamSource::ConvertFrame(IMFMediaBuffer* mediaBuffer,
     LOG(LS_ERROR) << "Exception caught in RTMediaStreamSource::ConvertFrame()";
   }
   imageBuffer->Unlock2D();
-  return true;
+
+  *sample = spSample.Detach();
+  return S_OK;
+}
+
+void RTMediaStreamSource::FpsCallback(int fps) {
+  webrtc_winrt_api::FrameCounterHelper::FireEvent(
+    _id, fps.ToString());
+}
+
+void RTMediaStreamSource::OnSampleRequested(
+  MediaStreamSource ^sender, MediaStreamSourceSampleRequestedEventArgs ^args) {
+  try {
+    // Check to detect cases where samples are still being requested
+    // but the source has ended.
+    auto trackState = _videoTrack->GetImpl()->GetSource()->state();
+    if (trackState == webrtc::MediaSourceInterface::kEnded) {
+      return;
+    }
+    if (_mediaStreamSource == nullptr)
+      return;
+
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+
+    _request = args->Request;
+    if (_request == nullptr) {
+      return;
+    }
+
+    if (!_frameSentThisTime && _helper->HasFrames()) {
+      ReplyToSampleRequest();
+      return;
+    }
+    else {
+      // Save the request and referral for when a sample comes in.
+      if (_deferral != nullptr) {
+        LOG(LS_ERROR) << "Got deferral when another hasn't completed.";
+      }
+      _deferral = _request->GetDeferral();
+      return;
+    }
+  }
+  catch (...) {
+    LOG(LS_ERROR) << "Exception in RTMediaStreamSource::OnSampleRequested.";
+  }
+}
+
+void RTMediaStreamSource::ProcessReceivedFrame(
+  cricket::VideoFrame *frame) {
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+
+  if (_startingDeferral != nullptr) {
+    _helper->SetStartTimeNow();
+    _startingDeferral->Complete();
+    _startingDeferral = nullptr;
+  }
+
+  _helper->QueueFrame(frame);
+
+  // If we have a pending request, reply to it now.
+  if (_deferral != nullptr && _request != nullptr && !_frameSentThisTime) {
+    ReplyToSampleRequest();
+  }
 }
 
 void RTMediaStreamSource::ResizeSource(uint32 width, uint32 height) {

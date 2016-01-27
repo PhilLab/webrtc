@@ -532,7 +532,7 @@ void BlackFramesGenerator::StartCapture(
   frame_info_.rawType = kVideoRGB24;
 
   if (capture_started_) {
-    LOG(LS_INFO) << "Black frame generator already stsarted";
+    LOG(LS_INFO) << "Black frame generator already started";
     throw ref new Platform::Exception(
       __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
   }

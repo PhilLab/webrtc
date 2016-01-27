@@ -11,6 +11,7 @@
 #define WEBRTC_BUILD_WINRT_GYP_API_RTMEDIASTREAMSOURCE_H_
 
 #include "Media.h"
+#include "MediaSourceHelper.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -74,6 +75,9 @@ ref class RTMediaStreamSource sealed {
     bool ConvertFrame(IMFMediaBuffer* mediaBuffer, cricket::VideoFrame* frame);
     void ResizeSource(uint32 width, uint32 height);
 
+    HRESULT MakeSampleCallback(cricket::VideoFrame* frame, IMFSample** sample);
+    void FpsCallback(int fps);
+
     MediaVideoTrack^ _videoTrack;
     String^ _id;  // Provided by the calling API.
 
@@ -82,22 +86,8 @@ ref class RTMediaStreamSource sealed {
     WeakReference _mediaStreamSource;
     rtc::scoped_ptr<RTCRenderer> _rtcRenderer;
     rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
-    //rtc::scoped_ptr<cricket::VideoFrame> _frame;
-    std::list<cricket::VideoFrame*> _frames;
-    uint32 _stride;
 
-    webrtc::TickTime _startTime;
-    // One peculiarity, the timestamp of a sample should be slightly
-    // in the future for Media Foundation to handle it properly.
-    int _futureOffsetMs;
-    LONGLONG _lastSampleTime;
-
-    // Called whenever we give the stream a new frame to render.
-    void UpdateFrameRate();
-    void UpdateVideoFrameSize(cricket::VideoFrame* frame);
-
-    // Gets the next timestamp using the clock
-    LONGLONG GetNextSampleTimeHns();
+    rtc::scoped_ptr<MediaSourceHelper> _helper;
 
     ThreadPoolTimer^ _progressTimer;
     void ProgressTimerElapsedExecute(ThreadPoolTimer^ source);
@@ -105,21 +95,14 @@ ref class RTMediaStreamSource sealed {
     ThreadPoolTimer^ _fpsTimer;
     void FPSTimerElapsedExecute(ThreadPoolTimer^ source);
     bool _frameSentThisTime;
-    bool _isFirstFrame;
 
     Windows::Media::Core::VideoStreamDescriptor^ _videoDesc;
 
-    // State related to calculating FPS.
-    int _frameCounter;
-    webrtc::TickTime _lastTimeFPSCalculated;
+    void ReplyToSampleRequest();
 
-    void ReplyToRequestH264();
-    void ReplyToRequestI420();
-    bool DropFramesToIDR();
     MediaStreamSourceSampleRequest^ _request;
     Windows::Media::Core::MediaStreamSourceSampleRequestDeferral^ _deferral;
     Windows::Media::Core::MediaStreamSourceStartingRequestDeferral^ _startingDeferral;
-    bool _isH264;
 };
 
 }  // namespace webrtc_winrt_api_internal

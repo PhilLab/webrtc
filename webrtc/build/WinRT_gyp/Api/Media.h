@@ -355,6 +355,20 @@ namespace webrtc_winrt_api {
 
     /// <summary>
     /// Creates an <see cref="IMediaSource"/> for a video track, with a given
+    /// identifier to be used for notifications on media changes.
+    /// </summary>
+    /// <param name="track">Video track to create a <see cref="IMediaSource"/>
+    /// from</param>
+    /// <param name="id">Identifier that can be used by applications for
+    /// distinguishing between <see cref="MediaStream"/>s
+    /// when receiving media change event notifications.
+    /// </param>
+    /// <returns>A media source.</returns>
+    IMediaSource^ CreateMediaStreamSource(
+      MediaVideoTrack^ track, uint32 framerate, String^ id);
+
+    /// <summary>
+    /// Creates an <see cref="IMediaSource"/> for a video track, with a given
     /// frame rate and identifier to be used for notifications on media
     /// changes.
     /// </summary>
@@ -366,8 +380,8 @@ namespace webrtc_winrt_api {
     /// when receiving media change event notifications.
     /// </param>
     /// <returns>A media source.</returns>
-    IMediaSource^ CreateMediaStreamSource(
-      MediaVideoTrack^ track, uint32 framerate, String^ id);
+    IMediaSource^ CreateMediaSource(
+      MediaVideoTrack^ track, String^ id);
 
     /// <summary>
     /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.

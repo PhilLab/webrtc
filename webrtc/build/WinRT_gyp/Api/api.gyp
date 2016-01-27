@@ -49,6 +49,12 @@
         'Delegates.h',
         'RTMediaStreamSource.h',
         'RTMediaStreamSource.cc',
+        'MediaSourceHelper.h',
+        'MediaSourceHelper.cc',
+        'WebRtcMediaSource.h',
+        'WebRtcMediaSource.cc',
+        'WebRtcMediaStream.h',
+        'WebRtcMediaStream.cc',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
@@ -67,7 +73,7 @@
           'conditions': [
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
               'AdditionalDependencies': [
-                'WindowsApp.lib',
+                'WindowsApp.lib', 'dxguid.lib',
               ],
             }],
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win_phone" or winrt_platform=="win10_arm")', {
