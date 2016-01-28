@@ -43,6 +43,9 @@ WebRtcMediaStream::WebRtcMediaStream() :
 }
 
 WebRtcMediaStream::~WebRtcMediaStream() {
+  // To be safe.  Sometimes we get destroyed
+  // without having been shutdown.
+  Shutdown();
 }
 
 HRESULT WebRtcMediaStream::RuntimeClassInitialize(

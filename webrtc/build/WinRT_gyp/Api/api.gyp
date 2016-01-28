@@ -69,11 +69,14 @@
           'AdditionalOptions': [
             '/WINMD',
           ],
+          'AdditionalDependencies': [
+            'dxguid.lib',
+          ],
           'WindowsMetadataFile':'$(OutDir)webrtc_winrt_api.winmd',
           'conditions': [
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
               'AdditionalDependencies': [
-                'WindowsApp.lib', 'dxguid.lib',
+                'WindowsApp.lib',
               ],
             }],
             ['OS_RUNTIME=="winrt" and (winrt_platform=="win_phone" or winrt_platform=="win10_arm")', {
