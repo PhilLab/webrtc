@@ -278,7 +278,7 @@ HRESULT RTMediaStreamSource::MakeSampleCallback(
   }
   ComPtr<IMFMediaBuffer> mediaBuffer;
   hr = MFCreate2DMediaBuffer(
-    frame->GetWidth(), frame->GetHeight(),
+	(DWORD)frame->GetWidth(), (DWORD)frame->GetHeight(),
     cricket::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
   if (FAILED(hr)) {

@@ -208,7 +208,8 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
     RETURN_ON_FAIL(MFGetAttributeSize(
       _mediaType.Get(), MF_MT_FRAME_SIZE, &width, &height));
     if (frame->GetWidth() != width || frame->GetHeight() != height) {
-      RETURN_ON_FAIL(CreateMediaType(frame->GetWidth(), frame->GetHeight(),
+      RETURN_ON_FAIL(CreateMediaType((unsigned int)frame->GetWidth(),
+		(unsigned int)frame->GetHeight(),
         frame->GetRotation(), &_mediaType,
         _track->GetImpl()->GetSource()->IsH264Source()));
       ResetMediaBuffers();
