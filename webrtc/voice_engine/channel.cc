@@ -569,9 +569,9 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame)
           if (endToEndDelay > 0) 
           {
             TRACE_COUNTER1("webrtc", "EndToEndAudioDecoded", endToEndDelay);
+            current_endtoend_delay_ms_ = endToEndDelay;
           }
 
-          current_endtoend_delay_ms_ = endToEndDelay;
 #endif
         }
       }
@@ -786,7 +786,7 @@ Channel::Channel(int32_t channelId,
     _rxNsIsEnabled(false),
     restored_packet_in_use_(false),
 #ifdef WINRT
-    current_endtoend_delay_ms_(-1),
+    current_endtoend_delay_ms_(0),
 #endif
     rtcp_observer_(new VoERtcpObserver(this)),
     network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
