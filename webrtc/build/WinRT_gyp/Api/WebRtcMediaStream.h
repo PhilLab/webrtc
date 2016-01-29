@@ -102,6 +102,7 @@ class WebRtcMediaStream :
 
   // This goes away in WebRTC API.
   int _pixelValue;
+  bool _gpuVideoBuffer;
 };
 
 
