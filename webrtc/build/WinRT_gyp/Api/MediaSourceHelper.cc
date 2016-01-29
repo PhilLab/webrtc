@@ -285,7 +285,7 @@ LONGLONG MediaSourceHelper::GetNextSampleTimeHns() {
 }
 
 void MediaSourceHelper::CheckForAttributeChanges(cricket::VideoFrame* frame, SampleData* data) {
-  SIZE currentSize = { frame->GetWidth(), frame->GetHeight() };
+  SIZE currentSize = { (LONG)frame->GetWidth(), (LONG)frame->GetHeight() };
   if (_lastSize.cx != currentSize.cx || _lastSize.cy != currentSize.cy) {
     data->sizeHasChanged = true;
     data->size = currentSize;
