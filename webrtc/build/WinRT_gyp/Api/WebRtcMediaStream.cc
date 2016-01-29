@@ -352,20 +352,22 @@ STDMETHODIMP WebRtcMediaStream::SetD3DManager(
   _deviceManager = manager;
   HANDLE deviceHandle;
   _deviceManager->OpenDeviceHandle(&deviceHandle);
+  AutoFunction autoCloseHandle([this, deviceHandle]() {
+      _deviceManager->CloseDeviceHandle(deviceHandle); });
   ComPtr<ID3D11Device> device;
-  _deviceManager->LockDevice(deviceHandle, __uuidof(ID3D11Device),
-      (void**)device.GetAddressOf(), TRUE);
+  _deviceManager->LockDevice(deviceHandle, IID_ID3D11Device, &device, TRUE);
+  AutoFunction autoUnlockDevice([this, deviceHandle]() {
+    _deviceManager->UnlockDevice(deviceHandle, TRUE); });
   if ((unsigned int)device->GetFeatureLevel() >=
-      (unsigned int)D3D_FEATURE_LEVEL_11_1)
-  {
-      _gpuVideoBuffer = true;
+    (unsigned int)D3D_FEATURE_LEVEL_11_1) {
+    _gpuVideoBuffer = true;
+    OutputDebugString(L"DirectX 11.1 or greater detected, using GPU video render buffers\r\n");
   }
-  else
-  {
-      _gpuVideoBuffer = false;
+  else {
+    _gpuVideoBuffer = false;
+    OutputDebugString(L"GPU video render buffers are NOT supported\r\n");
   }
   _deviceManager->UnlockDevice(deviceHandle, FALSE);
-  _deviceManager->CloseDeviceHandle(deviceHandle);
   ResetMediaBuffers();
   return S_OK;
 }
@@ -396,8 +398,8 @@ HRESULT WebRtcMediaStream::ResetMediaBuffers() {
     for (auto&& buffer : _mediaBuffers) {
       D3D11_TEXTURE2D_DESC texDesc;
       ComPtr<ID3D11Texture2D> frameTexture;
-     ZeroMemory(&texDesc, sizeof(texDesc));
-        texDesc.Width = width;
+      ZeroMemory(&texDesc, sizeof(texDesc));
+      texDesc.Width = width;
       texDesc.Height = height;
       texDesc.MipLevels = 1;
       texDesc.ArraySize = 1;
@@ -407,10 +409,11 @@ HRESULT WebRtcMediaStream::ResetMediaBuffers() {
       texDesc.BindFlags = D3D11_BIND_DECODER;
       texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
       if (FAILED(device->CreateTexture2D(&texDesc, nullptr,
-          frameTexture.ReleaseAndGetAddressOf())))
-      {
+        frameTexture.ReleaseAndGetAddressOf()))) {
           _gpuVideoBuffer = false;
-          return ResetMediaBuffers();
+          OutputDebugString(
+            L"Failed to create DirectX 2D texture for video buffers, falling back to main memory buffers\r\n");
+        return ResetMediaBuffers();
       }
       RETURN_ON_FAIL(MFCreateDXGISurfaceBuffer(__uuidof(ID3D11Texture2D),
         frameTexture.Get(), 0, FALSE, &buffer));
