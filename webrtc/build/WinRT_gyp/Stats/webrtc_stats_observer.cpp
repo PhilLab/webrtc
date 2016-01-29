@@ -54,6 +54,7 @@ WebRTCStatsObserver::WebRTCStatsObserver(
 }
 
 WebRTCStatsObserver::~WebRTCStatsObserver() {
+  EventWriteCommand("stop");
   EventUnregisterWebRTCInternals();
   // Will trigger Stop()
   ToggleETWStats(false);
