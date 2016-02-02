@@ -20,9 +20,11 @@
 #include "libyuv/convert.h"
 
 using Microsoft::WRL::MakeAndInitialize;
+using Windows::System::Threading::TimerElapsedHandler;
 
 namespace webrtc_winrt_api_internal {
 
+#define MAX_FRAME_DELAY_MS 30
 #define RETURN_ON_FAIL(code) { HRESULT hr = code; if (FAILED(hr)) {OutputDebugString(L"[Failed]"); return hr;} }
 
 // #define USE_MEMORY_BUFFERS
@@ -37,9 +39,9 @@ class AutoFunction {
 
 
 WebRtcMediaStream::WebRtcMediaStream() :
-  _frameBufferIndex(0), _pixelValue(0), _frameReady(0), _frameCount(0),
+  _frameBufferIndex(0), _frameReady(0), _frameCount(0),
   _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-  _gpuVideoBuffer(false) {
+  _gpuVideoBuffer(false), _frameSentThisTime(false) {
   _mediaBuffers.resize(BufferCount);
 }
 
@@ -59,12 +61,12 @@ HRESULT WebRtcMediaStream::RuntimeClassInitialize(
   _track = track;
   _id = id;
 
-  bool isH264 = track->GetImpl()->GetSource()->IsH264Source();
+  _isH264 = track->GetImpl()->GetSource()->IsH264Source();
 
   track->SetRenderer(this);
 
   // Create the helper with the callback functions.
-  _helper.reset(new MediaSourceHelper(isH264,
+  _helper.reset(new MediaSourceHelper(_isH264,
     [this](cricket::VideoFrame* frame, IMFSample** sample) -> HRESULT {
     return MakeSampleCallback(frame, sample);
   },
@@ -72,7 +74,7 @@ HRESULT WebRtcMediaStream::RuntimeClassInitialize(
     return FpsCallback(fps);
   }));
 
-  RETURN_ON_FAIL(CreateMediaType(64, 64, 0, &_mediaType, isH264));
+  RETURN_ON_FAIL(CreateMediaType(64, 64, 0, &_mediaType, _isH264));
   RETURN_ON_FAIL(MFCreateEventQueue(&_eventQueue));
   RETURN_ON_FAIL(MFCreateStreamDescriptor(1, 1, _mediaType.GetAddressOf(), &_streamDescriptor));
   ComPtr<IMFMediaTypeHandler> mediaTypeHandler;
@@ -210,9 +212,9 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
       _mediaType.Get(), MF_MT_FRAME_SIZE, &width, &height));
     if (frame->GetWidth() != width || frame->GetHeight() != height) {
       RETURN_ON_FAIL(CreateMediaType((unsigned int)frame->GetWidth(),
-		(unsigned int)frame->GetHeight(),
+        (unsigned int)frame->GetHeight(),
         frame->GetRotation(), &_mediaType,
-        _track->GetImpl()->GetSource()->IsH264Source()));
+        _isH264));
       ResetMediaBuffers();
     }
   }
@@ -255,13 +257,15 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
 }
 
 void WebRtcMediaStream::FpsCallback(int fps) {
-  webrtc_winrt_api::FrameCounterHelper::FireEvent(
-    _id, fps.ToString());
+  Concurrency::create_async([this, fps] {
+    webrtc_winrt_api::FrameCounterHelper::FireEvent(
+      _id, fps.ToString());
+  });
 }
 
 HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-  if (_frameReady == 0 || !_helper->HasFrames()) {
+  if (_frameReady == 0 || !_helper->HasFrames() || _frameSentThisTime) {
     return S_OK;
   }
 
@@ -296,13 +300,12 @@ HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
       RETURN_ON_FAIL(_mediaType->GetUINT32(MF_MT_VIDEO_ROTATION, &rotation));
     }
 
-    if (_track->GetImpl()->GetSource()->IsH264Source())
+    if (_isH264)
       OutputDebugString((L"Frame format changed!!! "
       + width.ToString() + L"x" + height.ToString()
       + " rotation:" + rotation.ToString() + L"\n")->Data());
 
-    CreateMediaType(width, height, rotation, &_mediaType,
-      _track->GetImpl()->GetSource()->IsH264Source());
+    CreateMediaType(width, height, rotation, &_mediaType, _isH264);
     _eventQueue->QueueEventParamUnk(MEStreamFormatChanged,
       GUID_NULL, S_OK, _mediaType.Get());
     ResetMediaBuffers();
@@ -313,6 +316,23 @@ HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
 
   _eventQueue->QueueEventParamUnk(MEMediaSample,
     GUID_NULL, S_OK, sampleData->sample.Get());
+
+  // Create a timer which ensures we don't display frames faster that expected.
+  // Required because Media Foundation sometimes requests samples in burst mode
+  // but we use the wall clock to drive timestamps.
+  {
+    _frameSentThisTime = true;
+    if (_fpsTimer != nullptr)
+      _fpsTimer->Cancel();
+    _fpsTimer = nullptr;
+    auto handler = ref new TimerElapsedHandler([this](ThreadPoolTimer^ timer) {
+      this->FPSTimerElapsedExecute(timer);
+    });
+    auto timespan = Windows::Foundation::TimeSpan();
+    timespan.Duration = MAX_FRAME_DELAY_MS * 1000 * 10;
+    _fpsTimer = ThreadPoolTimer::CreateTimer(handler, timespan);
+  }
+
   InterlockedDecrement(&_frameReady);
   return S_OK;
 }
@@ -340,6 +360,12 @@ STDMETHODIMP WebRtcMediaStream::Stop() {
 
 STDMETHODIMP WebRtcMediaStream::Shutdown() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
+
+  if (_fpsTimer != nullptr) {
+    _fpsTimer->Cancel();
+    _fpsTimer = nullptr;
+  }
+
   _track->UnsetRenderer(this);
   if (_eventQueue != nullptr) {
     _eventQueue->Shutdown();
@@ -432,6 +458,12 @@ HRESULT WebRtcMediaStream::ResetMediaBuffers() {
     }
   }
   return S_OK;
+}
+
+void WebRtcMediaStream::FPSTimerElapsedExecute(ThreadPoolTimer^ source) {
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+  _frameSentThisTime = false;
+  ReplyToSampleRequest();
 }
 
 }  // namespace webrtc_winrt_api_internal
