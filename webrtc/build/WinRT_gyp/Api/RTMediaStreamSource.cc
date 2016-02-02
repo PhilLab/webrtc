@@ -369,7 +369,6 @@ void RTMediaStreamSource::ProcessReceivedFrame(
   webrtc::CriticalSectionScoped csLock(_lock.get());
 
   if (_startingDeferral != nullptr) {
-    _helper->SetStartTimeNow();
     _startingDeferral->Complete();
     _startingDeferral = nullptr;
   }

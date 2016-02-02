@@ -269,9 +269,6 @@ HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
     return S_OK;
   }
 
-  if (_frameCount == 0) {
-    _helper->SetStartTimeNow();
-  }
   _frameCount++;
 
   auto sampleData = _helper->DequeueFrame();
