@@ -62,18 +62,17 @@ void MediaCaptureDevicesWinRT::OnAppSuspending() {
 
 Platform::Agile<MediaCapture>
 MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
-	CriticalSectionScoped cs(critical_section_);
+  CriticalSectionScoped cs(critical_section_);
 
-	// We cache MediaCapture objects
-	auto iter = media_capture_map_.find(device_id);
-	if (iter != media_capture_map_.end()) {
-		return iter->second;
-	}
-	else {
+  // We cache MediaCapture objects
+  auto iter = media_capture_map_.find(device_id);
+  if (iter != media_capture_map_.end()) {
+    return iter->second;
+  } else {
 #if (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP || \
-		                        defined(WINDOWS_PHONE_APP)))
-    // WINDOWS_PHONE_APP is defined at gyp level to overcome the missing WINAPI_FAMILY
-    // when building with VS2015
+                                defined(WINDOWS_PHONE_APP)))
+    // WINDOWS_PHONE_APP is defined at gyp level to overcome the missing
+    // WINAPI_FAMILY when building with VS2015
 
     // On some Windows Phone 8 devices, two calls of InitializeAsync on two
     // different coexisting instances causes exception to be thrown from the
@@ -81,7 +80,8 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
     // Since after calling the second InitializeAsync all further calls fail
     // with exception, we maintain a maximum of one MediaCapture instance
     // in cache.
-    // The behavior is present on Lumia620, OS version 8.10.14219.341 and 10.0.10586.36
+    // The behavior is present on Lumia620, OS version 8.10.14219.341 and
+    // 10.0.10586.36
     media_capture_map_.clear();
 #endif
     Platform::Agile<MediaCapture> media_capture_agile(ref new MediaCapture());
@@ -91,7 +91,15 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
       [this, &initialize_async_task, media_capture_agile, device_id]() {
       auto settings = ref new MediaCaptureInitializationSettings();
       settings->VideoDeviceId = device_id;
-      settings->MediaCategory = Windows::Media::Capture::MediaCategory::Communications;
+
+      // If Communications media category is configured, the
+      // GetAvailableMediaStreamProperties will report only H264 frame format
+      // for some devices (ex: Surface Pro 3). Since at the moment, WebRTC does
+      // not support receiving H264 frames from capturer, the Communications
+      // category is not configured.
+
+      // settings->MediaCategory =
+      //  Windows::Media::Capture::MediaCategory::Communications;
       auto initOp = media_capture_agile->InitializeAsync(settings);
       initialize_async_task = Concurrency::create_task(initOp).
         then([this, media_capture_agile](Concurrency::task<void> initTask) {
@@ -109,8 +117,7 @@ MediaCaptureDevicesWinRT::GetMediaCapture(Platform::String^ device_id) {
       auto dispatcher_action = g_windowDispatcher->RunAsync(
         CoreDispatcherPriority::Normal, handler);
       Concurrency::create_task(dispatcher_action).wait();
-    }
-    else {
+    } else {
       handler->Invoke();
     }
 
