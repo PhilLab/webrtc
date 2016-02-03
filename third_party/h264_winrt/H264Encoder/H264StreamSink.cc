@@ -567,9 +567,6 @@ HRESULT AsyncStreamSinkOperation::GetOp(StreamOperation* op) {
 HRESULT H264StreamSink::RegisterEncodingCallback(
   IH264EncodingCallback *callback) {
   AutoLock lock(cbCritSec_);
-  if (callback == nullptr) {
-    return E_INVALIDARG;
-  }
   encodingCallback_ = callback;
   return S_OK;
 }

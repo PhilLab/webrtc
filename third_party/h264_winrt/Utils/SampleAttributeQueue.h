@@ -45,6 +45,12 @@ class SampleAttributeQueue {
     return false;
   }
 
+  void clear() {
+    while (!_attributes.empty()) {
+      _attributes.pop();
+    }
+  }
+
  private:
   std::queue<std::pair<uint64_t, const T>> _attributes;
 };
