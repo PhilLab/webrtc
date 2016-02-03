@@ -146,6 +146,7 @@ int H264WinRTEncoderImpl::Release() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   sinkWriter_.Reset();
   if (mediaSink_ != nullptr) {
+    mediaSink_->RegisterEncodingCallback(nullptr);
     mediaSink_->Shutdown();
   }
   sinkWriterCreationAttributes_.Reset();
@@ -158,6 +159,8 @@ int H264WinRTEncoderImpl::Release() {
   lastTimestampHns_ = 0;
   firstFrame_ = true;
   inited_ = false;
+  framePendingCount_ = 0;
+  _sampleAttributeQueue.clear();
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
