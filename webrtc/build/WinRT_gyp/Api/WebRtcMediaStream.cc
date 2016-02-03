@@ -409,7 +409,7 @@ HRESULT WebRtcMediaStream::ResetMediaBuffers() {
       texDesc.ArraySize = 1;
       texDesc.Format = DXGI_FORMAT_NV12;
       texDesc.SampleDesc.Count = 1;
-      texDesc.Usage = D3D11_USAGE_DYNAMIC;
+      texDesc.Usage = D3D11_USAGE_DEFAULT;
       texDesc.BindFlags = D3D11_BIND_DECODER;
       texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
       if (FAILED(device->CreateTexture2D(&texDesc, nullptr,
