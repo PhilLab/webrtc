@@ -44,6 +44,9 @@
             <data inType="win:AnsiString" name="stat_name" />
             <data inType="win:AnsiString" name="stat_value" />
           </template>
+          <template tid="T_Command">
+            <data inType="win:AnsiString" name="command_name" />
+          </template>
         </templates>
         <events>
           <event symbol="StatsReportInt32" template="T_StatsReportInt32" value="101" />
@@ -51,6 +54,7 @@
           <event symbol="StatsReportFloat" template="T_StatsReportFloat" value="103" />
           <event symbol="StatsReportString" template="T_StatsReportString" value="104" />
           <event symbol="StatsReportBool" template="T_StatsReportBool" value="105" />
+          <event symbol="Command" template="T_Command" value="106" />
         </events>
       </provider>
 
