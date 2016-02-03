@@ -61,8 +61,6 @@ HRESULT WebRtcMediaStream::RuntimeClassInitialize(
 
   bool isH264 = track->GetImpl()->GetSource()->IsH264Source();
 
-  track->SetRenderer(this);
-
   // Create the helper with the callback functions.
   _helper.reset(new MediaSourceHelper(isH264,
     [this](cricket::VideoFrame* frame, IMFSample** sample) -> HRESULT {
@@ -78,6 +76,8 @@ HRESULT WebRtcMediaStream::RuntimeClassInitialize(
   ComPtr<IMFMediaTypeHandler> mediaTypeHandler;
   RETURN_ON_FAIL(_streamDescriptor->GetMediaTypeHandler(&mediaTypeHandler));
   RETURN_ON_FAIL(mediaTypeHandler->SetCurrentMediaType(_mediaType.Get()));
+
+  track->SetRenderer(this);
 
   return S_OK;
 }
