@@ -23,6 +23,7 @@ using Microsoft::WRL::ComPtr;
 using Microsoft::WRL::RuntimeClass;
 using Microsoft::WRL::RuntimeClassFlags;
 using Microsoft::WRL::RuntimeClassType;
+using Windows::System::Threading::ThreadPoolTimer;
 
 namespace webrtc_winrt_api_internal {
 
@@ -100,9 +101,14 @@ class WebRtcMediaStream :
   std::vector<ComPtr<IMFMediaBuffer>> _mediaBuffers;
   int _frameBufferIndex;
 
-  // This goes away in WebRTC API.
-  int _pixelValue;
+  // Used to smooth out frame samples to prevent sample being
+  // rendered faster than a certain rate.
+  ThreadPoolTimer^ _fpsTimer;
+  void FPSTimerElapsedExecute(ThreadPoolTimer^ source);
+  bool _frameSentThisTime;
+
   bool _gpuVideoBuffer;
+  bool _isH264;
 };
 
 

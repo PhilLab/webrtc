@@ -26,6 +26,7 @@ struct SampleData {
   SIZE size;
   bool rotationHasChanged;
   int rotation;
+  LONGLONG renderTime;
 };
 
 class MediaSourceHelper {
@@ -35,8 +36,6 @@ class MediaSourceHelper {
     std::function<void(int)> fpsCallback);
   ~MediaSourceHelper();
 
-  void SetStartTimeNow();
-
   void QueueFrame(cricket::VideoFrame* frame);
   rtc::scoped_ptr<SampleData> DequeueFrame();
   bool HasFrames();
@@ -45,7 +44,7 @@ class MediaSourceHelper {
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
   std::list<cricket::VideoFrame*> _frames;
   bool _isFirstFrame;
-  webrtc::TickTime _startTime;
+  LONGLONG _startTime;
   // One peculiarity, the timestamp of a sample should be slightly
   // in the future for Media Foundation to handle it properly.
   int _futureOffsetMs;
@@ -64,7 +63,7 @@ class MediaSourceHelper {
 
   // Gets the next timestamp using the clock.
   // Guarantees no duplicate timestamps.
-  LONGLONG GetNextSampleTimeHns();
+  LONGLONG GetNextSampleTimeHns(LONGLONG frameRenderTime);
 
   void CheckForAttributeChanges(cricket::VideoFrame* frame, SampleData* data);
 

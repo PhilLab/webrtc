@@ -47,12 +47,13 @@ MediaSourceHelper::MediaSourceHelper(bool isH264,
   : _mkSample(mkSample)
   , _fpsCallback(fpsCallback)
   , _isFirstFrame(true)
-  , _futureOffsetMs(30)
+  , _futureOffsetMs(45)
   , _lastSampleTime(0)
   , _lastSize({0, 0})
   , _lastRotation(-1)
   , _isH264(isH264)
   , _frameCounter(0)
+  , _startTime(0)
   , _lastTimeFPSCalculated(webrtc::TickTime::Now())
   , _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
 
@@ -64,11 +65,6 @@ MediaSourceHelper::~MediaSourceHelper() {
     rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
     _frames.pop_front();
   }
-}
-
-void MediaSourceHelper::SetStartTimeNow() {
-  webrtc::CriticalSectionScoped csLock(_lock.get());
-  _startTime = webrtc::TickTime::Now();
 }
 
 void MediaSourceHelper::QueueFrame(cricket::VideoFrame* frame) {
@@ -103,20 +99,34 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueFrame() {
     data = DequeueI420Frame();
   }
 
-  // Set the duration property
-  LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
-  data->sample->SetSampleDuration(duration);
-
   // Set the timestamp property
   if (_isFirstFrame) {
     _isFirstFrame = false;
     data->sample->SetSampleTime(0);
   }
   else {
-    LONGLONG frameTime = GetNextSampleTimeHns();
-    //if (_isH264)
-    //  OutputDebugString((L"frameTime: " + frameTime + L"\n")->Data());
+
+    LONGLONG frameTime = GetNextSampleTimeHns(data->renderTime);
+#if 0
+    auto oldSampleTime = _lastSampleTime;
+    if (_isH264)
+      OutputDebugString((
+          L"queue:" + (_frames.size().ToString()) +
+          L"\tframeTime:" + frameTime +
+          L"\tdelta:" + ((frameTime - oldSampleTime) / 10000) + L"\n")->Data());
+#endif
+
     data->sample->SetSampleTime(frameTime);
+
+    // Set the duration property
+    if (_isH264) {
+        data->sample->SetSampleDuration(frameTime - _lastSampleTime);
+    }
+    else {
+        LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
+        data->sample->SetSampleDuration(duration);
+    }
+    _lastSampleTime = frameTime;
   }
 
   UpdateFrameRate();
@@ -132,14 +142,7 @@ bool MediaSourceHelper::HasFrames() {
 // === Private functions below ===
 
 rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueH264Frame() {
-  //if (_isH264)
-  //  OutputDebugString((L"Queue:" + (_frames.size().ToString()) + L"\n")->Data());
-  if (_frames.size() > 30) {
-    OutputDebugString(L"Frame queue > 30, scanning ahead for IDR.\n");
-    LOG(LS_INFO) << "Frame queue > 30, scanning ahead for IDR: "
-      << _frames.size();
-    DropFramesToIDR(_frames);
-  }
+  DropFramesToIDR(_frames);
 
   rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
   _frames.pop_front();
@@ -152,15 +155,8 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueH264Frame() {
     if (tmp != nullptr) {
       tmp->AddRef();
       data->sample.Attach(tmp);
+      data->renderTime = frame->GetTimeStamp();
     }
-  }
-
-  if (IsSampleIDR(data->sample.Get())) {
-    ComPtr<IMFAttributes> sampleAttributes;
-    data->sample.As(&sampleAttributes);
-    sampleAttributes->SetUINT32(MFSampleExtension_CleanPoint, TRUE);
-    // TODO(winrt): Can this help in any way?
-    // sampleAttributes->SetUINT32(MFSampleExtension_Discontinuity, TRUE);
   }
 
   CheckForAttributeChanges(frame.get(), data.get());
@@ -260,11 +256,16 @@ bool DropFramesToIDR(std::list<cricket::VideoFrame*>& frames) {
   return idrFrame != nullptr;
 }
 
-LONGLONG MediaSourceHelper::GetNextSampleTimeHns() {
+LONGLONG MediaSourceHelper::GetNextSampleTimeHns(LONGLONG frameRenderTime) {
 
   if (_isH264) {
-    webrtc::TickTime now = webrtc::TickTime::Now();
-    LONGLONG frameTime = ((now - _startTime).Milliseconds() + _futureOffsetMs) * 1000 * 10;
+
+    if (_startTime == 0) {
+
+      _startTime = frameRenderTime;
+    }
+
+    LONGLONG frameTime = (frameRenderTime - _startTime) / 100;
 
     // Sometimes we get requests so fast they have identical timestamp.
     // Add a bit to the timetamp so it's different from the last sample.
@@ -273,8 +274,6 @@ LONGLONG MediaSourceHelper::GetNextSampleTimeHns() {
         << _lastSampleTime << "->" << frameTime;
       frameTime = _lastSampleTime + 500;  // Make the timestamp slightly after the last one.
     }
-
-    _lastSampleTime = frameTime;
 
     return frameTime;
   }
