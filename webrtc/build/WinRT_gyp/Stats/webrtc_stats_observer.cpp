@@ -12,6 +12,7 @@
 
 #include "webrtc/build/WinRT_gyp/Stats/webrtc_stats_observer.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/timing.h"
 #include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 #include "webrtc/build/WinRT_gyp/Api/Marshalling.h"
 
@@ -122,6 +123,14 @@ void WebRTCStatsObserver::ToggleRTCStats(WebRTCStatsObserverWinRT* observer) {
 void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
   webrtc_winrt_api::RTCStatsReports rtcStatsReports =
                 ref new Vector<webrtc_winrt_api::RTCStatsReport^>();
+
+  auto t = rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
+  int64 memUsage = webrtc_winrt_api::WebRTC::GetMemUsage();
+  double cpuUsage = webrtc_winrt_api::WebRTC::GetCPUUsage();
+
+  EventWriteStatsReportInt64("system", t, "MemUsage", memUsage);
+  EventWriteStatsReportFloat("system", t, "CPUUsage", cpuUsage);
+
   for (auto report : reports) {
     std::string sgn = report->id()->ToString();
     auto stat_group_name = sgn.c_str();
@@ -179,29 +188,6 @@ void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
             break;
           }
         }
-        int64 memUsage = webrtc_winrt_api::WebRTC::GetMemUsage();
-        double cpuUsage = webrtc_winrt_api::WebRTC::GetCPUUsage();
-
-        //(ToDo: Ling)
-        // Temporary put CPU/Memory usage under video group for now.
-        // will need to sync with bakshi for where is the proper place to put them.
-        /**
-        EventWriteStatsReportInt64("System_Resource", timestamp, "MemUsage",
-        memUsage);
-
-
-        EventWriteStatsReportFloat("System_Resource", timestamp, "CPUUsage",
-        cpuUsage);
-
-         */
-
-        EventWriteStatsReportInt64(stat_group_name, timestamp, "MemUsage",
-          memUsage);
-
-
-        EventWriteStatsReportFloat(stat_group_name, timestamp, "CPUUsage",
-          cpuUsage);
-
       }
     }
     if (conn_health_stats_enabled_ && webrtc_stats_observer_winrt_) {
