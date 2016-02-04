@@ -142,7 +142,9 @@ bool MediaSourceHelper::HasFrames() {
 // === Private functions below ===
 
 rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueH264Frame() {
-  DropFramesToIDR(_frames);
+  
+  if (_frames.size() > 15)
+    DropFramesToIDR(_frames);
 
   rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
   _frames.pop_front();
@@ -265,7 +267,7 @@ LONGLONG MediaSourceHelper::GetNextSampleTimeHns(LONGLONG frameRenderTime) {
       _startTime = frameRenderTime;
     }
 
-    LONGLONG frameTime = (frameRenderTime - _startTime) / 100;
+    LONGLONG frameTime = (frameRenderTime - _startTime) / 100 + _futureOffsetMs;
 
     // Sometimes we get requests so fast they have identical timestamp.
     // Add a bit to the timetamp so it's different from the last sample.
