@@ -257,6 +257,11 @@ void RTMediaStreamSource::ReplyToSampleRequest() {
   HRESULT hr = reinterpret_cast<IInspectable*>(_request)->QueryInterface(
     spRequest.ReleaseAndGetAddressOf());
 
+  //Fixme: it appears that MSS works well if we hardcode the sample duration with 33ms,
+  // Don' know why, override the value set by the mediahelper
+  LONGLONG duration = (LONGLONG)((1.0 / 30) * 1000 * 1000 * 10);
+  sampleData->sample.Get()->SetSampleDuration(duration);
+
   hr = spRequest->SetSample(sampleData->sample.Get());
 
   if (_deferral != nullptr) {
