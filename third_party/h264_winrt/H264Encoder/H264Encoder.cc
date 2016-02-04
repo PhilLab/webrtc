@@ -143,24 +143,34 @@ int H264WinRTEncoderImpl::RegisterEncodeCompleteCallback(
 
 int H264WinRTEncoderImpl::Release() {
   OutputDebugString(L"H264WinRTEncoderImpl::Release()\n");
-  webrtc::CriticalSectionScoped csLock(_lock.get());
-  sinkWriter_.Reset();
-  if (mediaSink_ != nullptr) {
-    mediaSink_->RegisterEncodingCallback(nullptr);
-    mediaSink_->Shutdown();
+
+  // Use a temporary sink variable to prevent lock inversion
+  // between the shutdown call and OnH264Encoded() callback.
+  ComPtr<H264MediaSink> tmpMediaSink;
+
+  {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    sinkWriter_.Reset();
+    if (mediaSink_ != nullptr) {
+      tmpMediaSink = mediaSink_;
+    }
+    sinkWriterCreationAttributes_.Reset();
+    sinkWriterEncoderAttributes_.Reset();
+    mediaTypeOut_.Reset();
+    mediaTypeIn_.Reset();
+    mediaSink_.Reset();
+    encodedCompleteCallback_ = nullptr;
+    startTime_ = 0;
+    lastTimestampHns_ = 0;
+    firstFrame_ = true;
+    inited_ = false;
+    framePendingCount_ = 0;
+    _sampleAttributeQueue.clear();
   }
-  sinkWriterCreationAttributes_.Reset();
-  sinkWriterEncoderAttributes_.Reset();
-  mediaTypeOut_.Reset();
-  mediaTypeIn_.Reset();
-  mediaSink_.Reset();
-  encodedCompleteCallback_ = nullptr;
-  startTime_ = 0;
-  lastTimestampHns_ = 0;
-  firstFrame_ = true;
-  inited_ = false;
-  framePendingCount_ = 0;
-  _sampleAttributeQueue.clear();
+
+  if (tmpMediaSink != nullptr) {
+    tmpMediaSink->Shutdown();
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -254,6 +264,13 @@ int H264WinRTEncoderImpl::Encode(
     if (SUCCEEDED(hr)) {
       lastTimestampHns_ = timestampHns;
 
+      if (framePendingCount_ > 30) {
+        OutputDebugString(L"framePendingCount_ > 30, flushing sink writer.\n");
+        hr = sinkWriter_->Flush((DWORD)MF_SINK_WRITER_ALL_STREAMS);
+        framePendingCount_ = 0;
+        _sampleAttributeQueue.clear();
+      }
+
       // Cache the frame attributes to get them back after the encoding.
       CachedFrameAttributes frameAttributes;
       frameAttributes.timestamp = frame.timestamp();
@@ -279,12 +296,6 @@ int H264WinRTEncoderImpl::Encode(
         mediaTypeOut_.Get(), sinkWriterEncoderAttributes_.Get()));
       ON_SUCCEEDED(sinkWriter_->SetInputMediaType(streamIndex_,
         mediaTypeIn_.Get(), sinkWriterEncoderAttributes_.Get()));
-    }
-
-    if (SUCCEEDED(hr) && framePendingCount_ > 30) {
-      OutputDebugString(L"!");
-      hr = sinkWriter_->Flush((DWORD)MF_SINK_WRITER_ALL_STREAMS);
-      framePendingCount_ = 0;
     }
 
     ON_SUCCEEDED(sinkWriter_->WriteSample(streamIndex_, sample.Get()));
@@ -424,7 +435,7 @@ int H264WinRTEncoderImpl::SetRates(
   uint32_t new_bitrate_kbit, uint32_t new_framerate) {
   // TODO(winrt): Revisit this function once we know how to work around
   //              the crash in the H264 stack that sometimes happens.
-  //return WEBRTC_VIDEO_CODEC_OK;
+  return WEBRTC_VIDEO_CODEC_OK;
 
   setRatesBuffer++;
   if (setRatesBuffer < 20) {
