@@ -41,7 +41,8 @@ class AutoFunction {
 WebRtcMediaStream::WebRtcMediaStream() :
   _frameBufferIndex(0), _frameReady(0), _frameCount(0),
   _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-  _gpuVideoBuffer(false), _frameSentThisTime(false) {
+  _gpuVideoBuffer(false), _frameSentThisTime(false),
+  _frameBeingQueued(0) {
   _mediaBuffers.resize(BufferCount);
 }
 
@@ -49,6 +50,11 @@ WebRtcMediaStream::~WebRtcMediaStream() {
   // To be safe.  Sometimes we get destroyed
   // without having been shutdown.
   Shutdown();
+  // Wait until no frames are being queued
+  // from the webrtc callback.
+  while (_frameBeingQueued > 0) {
+    Sleep(1);
+  }
 }
 
 HRESULT WebRtcMediaStream::RuntimeClassInitialize(
@@ -163,13 +169,17 @@ void WebRtcMediaStream::SetSize(
 void WebRtcMediaStream::RenderFrame(
   const cricket::VideoFrame *frame) {
   auto frameCopy = frame->Copy();
+  InterlockedIncrement(&_frameBeingQueued);
   // Do the processing async because there's a risk of a deadlock otherwise.
   Concurrency::create_async([this, frameCopy] {
-    webrtc::CriticalSectionScoped csLock(_lock.get());
-    if (_helper != nullptr) {
-      _helper->QueueFrame(frameCopy);
-      ReplyToSampleRequest();
+    {
+      webrtc::CriticalSectionScoped csLock(_lock.get());
+      if (_helper != nullptr) {
+        _helper->QueueFrame(frameCopy);
+        ReplyToSampleRequest();
+      }
     }
+    InterlockedDecrement(&_frameBeingQueued);
   });
 }
 
@@ -370,6 +380,8 @@ STDMETHODIMP WebRtcMediaStream::Shutdown() {
 
   _deviceManager = nullptr;
   _eventQueue = nullptr;
+
+  _helper.reset();
   return S_OK;
 }
 

@@ -439,6 +439,8 @@ HRESULT H264StreamSink::Shutdown() {
     spEventQueue_.Reset();
     spCurrentType_.Reset();
 
+    encodingCallback_ = nullptr;
+
     isShutdown_ = true;
   }
 

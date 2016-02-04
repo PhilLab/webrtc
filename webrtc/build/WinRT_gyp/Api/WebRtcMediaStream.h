@@ -94,6 +94,7 @@ class WebRtcMediaStream :
   ULONGLONG _frameCount;
   int _index;
   ULONG _frameReady;
+  ULONG _frameBeingQueued;
 
   // From the sample manager.
   HRESULT ResetMediaBuffers();
