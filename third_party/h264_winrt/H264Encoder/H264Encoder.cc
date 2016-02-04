@@ -72,12 +72,11 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   //              with constrained baseline profile. Uncomment or delete
   //              the line below as soon as we find the reason why.
   // ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_ConstrainedBase));
-  // 900kbit represents a good balance between video quality and
+
+  // Weight*Height*2 kbit represents a good balance between video quality and
   // the bandwidth that a 620 Windows phone can handle.
-  // TODO(winrt): Make bitrate a function of resolution.
-  //              Change it when resolution changes.
   ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE,
-    inst->targetBitrate > 0 ? inst->targetBitrate : 900 * 1024));
+      inst->targetBitrate > 0 ? inst->targetBitrate : inst->height * inst->width * 2.0));
   ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE,
     MFVideoInterlace_Progressive));
   ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut_.Get(),
