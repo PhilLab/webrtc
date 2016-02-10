@@ -196,6 +196,9 @@ ref class CaptureDevice sealed {
   }
 
  private:
+  void RemovePaddingPixels(uint8_t* video_frame, size_t& video_frame_length);
+
+ private:
   Platform::Agile<Windows::Media::Capture::MediaCapture> media_capture_;
   Platform::String^ device_id_;
   VideoCaptureMediaSinkProxyWinRT^ media_sink_;
@@ -444,37 +447,7 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
       // conversion from 100-nanosecond to millisecond units
       capture_time = hnsSampleTime / 10000;
 
-      // When MJPEG is used as a capturing format and picture size doesn't
-      // match 16 bits boundaries, MJPEG decoding engine inserts padding
-      // pixels. The procedure beneath transforms image to its original
-      // size.
-      if (frame_info_.rawType == kVideoNV12 &&
-        (int32_t)video_frame_length >
-        frame_info_.width * frame_info_.height * 3 / 2) {
-        int padded_row_num = 16 - frame_info_.height % 16;
-        int padded_col_num = 16 - frame_info_.width % 16;
-        if (padded_row_num == 16)
-          padded_row_num = 0;
-        if (padded_col_num == 16)
-          padded_col_num = 0;
-        uint8_t* src_video_y = video_frame;
-        uint8_t* src_video_uv = src_video_y +
-          (frame_info_.width + padded_col_num) *
-          (frame_info_.height + padded_row_num);
-        uint8_t* dst_video_y = src_video_y;
-        uint8_t* dst_video_uv = dst_video_y +
-          frame_info_.width * frame_info_.height;
-        video_frame_length = frame_info_.width * frame_info_.height * 3 / 2;
-        video_frame = dst_video_y;
-
-        libyuv::CopyPlane(src_video_y, frame_info_.width + padded_col_num,
-          dst_video_y, frame_info_.width,
-          frame_info_.width, frame_info_.height);
-
-        libyuv::CopyPlane(src_video_uv, frame_info_.width + padded_col_num,
-          dst_video_uv, frame_info_.width,
-          frame_info_.width, frame_info_.height / 2);
-      }
+      RemovePaddingPixels(video_frame, video_frame_length);
 
       LOG(LS_VERBOSE) <<
         "Video Capture - Media sample received - video frame length: " <<
@@ -489,6 +462,113 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     if (FAILED(hr)) {
       LOG(LS_ERROR) << "Failed to send media sample. " << hr;
     }
+  }
+}
+
+void CaptureDevice::RemovePaddingPixels(uint8_t* video_frame,
+                                        size_t& video_frame_length) {
+
+  int padded_row_num = 16 - frame_info_.height % 16;
+  int padded_col_num = 16 - frame_info_.width % 16;
+  if (padded_row_num == 16)
+    padded_row_num = 0;
+  if (padded_col_num == 16)
+    padded_col_num = 0;
+
+  if (frame_info_.rawType == kVideoYV12 &&
+    (int32_t)video_frame_length >
+    frame_info_.width * frame_info_.height * 3 / 2) {
+    uint8_t* src_video_y = video_frame;
+    uint8_t* src_video_v = src_video_y +
+      (frame_info_.width + padded_col_num) *
+      (frame_info_.height + padded_row_num);
+    uint8_t* src_video_u = src_video_v +
+      (frame_info_.width + padded_col_num) *
+      (frame_info_.height + padded_row_num) / 4;
+    uint8_t* dst_video_y = src_video_y;
+    uint8_t* dst_video_v = dst_video_y +
+      frame_info_.width * frame_info_.height;
+    uint8_t* dst_video_u = dst_video_v +
+      frame_info_.width * frame_info_.height / 4;
+    video_frame_length = frame_info_.width * frame_info_.height * 3 / 2;
+    libyuv::CopyPlane(src_video_y, frame_info_.width + padded_col_num,
+      dst_video_y, frame_info_.width,
+      frame_info_.width, frame_info_.height);
+    libyuv::CopyPlane(src_video_v, (frame_info_.width + padded_col_num) / 2,
+      dst_video_v, frame_info_.width / 2,
+      frame_info_.width / 2, frame_info_.height / 2);
+    libyuv::CopyPlane(src_video_u, (frame_info_.width + padded_col_num) / 2,
+      dst_video_u, frame_info_.width / 2,
+      frame_info_.width / 2, frame_info_.height / 2);
+  } else if (frame_info_.rawType == kVideoYUY2 &&
+    (int32_t)video_frame_length >
+    frame_info_.width * frame_info_.height * 2) {
+    uint8_t* src_video = video_frame;
+    uint8_t* dst_video = src_video;
+    video_frame_length = frame_info_.width * frame_info_.height * 2;
+    libyuv::CopyPlane(src_video, 2 * (frame_info_.width + padded_col_num),
+      dst_video, 2 * frame_info_.width,
+      2 * frame_info_.width, frame_info_.height);
+  } else if (frame_info_.rawType == kVideoIYUV &&
+    (int32_t)video_frame_length >
+    frame_info_.width * frame_info_.height * 3 / 2) {
+    uint8_t* src_video_y = video_frame;
+    uint8_t* src_video_u = src_video_y +
+      (frame_info_.width + padded_col_num) *
+      (frame_info_.height + padded_row_num);
+    uint8_t* src_video_v = src_video_u +
+      (frame_info_.width + padded_col_num) *
+      (frame_info_.height + padded_row_num) / 4;
+    uint8_t* dst_video_y = src_video_y;
+    uint8_t* dst_video_u = dst_video_y +
+      frame_info_.width * frame_info_.height;
+    uint8_t* dst_video_v = dst_video_u +
+      frame_info_.width * frame_info_.height / 4;
+    video_frame_length = frame_info_.width * frame_info_.height * 3 / 2;
+    libyuv::CopyPlane(src_video_y, frame_info_.width + padded_col_num,
+      dst_video_y, frame_info_.width,
+      frame_info_.width, frame_info_.height);
+    libyuv::CopyPlane(src_video_u, (frame_info_.width + padded_col_num) / 2,
+      dst_video_u, frame_info_.width / 2,
+      frame_info_.width / 2, frame_info_.height / 2);
+    libyuv::CopyPlane(src_video_v, (frame_info_.width + padded_col_num) / 2,
+      dst_video_v, frame_info_.width / 2,
+      frame_info_.width / 2, frame_info_.height / 2);
+  } else if (frame_info_.rawType == kVideoRGB24 &&
+    (int32_t)video_frame_length >
+    frame_info_.width * frame_info_.height * 3) {
+    uint8_t* src_video = video_frame;
+    uint8_t* dst_video = src_video;
+    video_frame_length = frame_info_.width * frame_info_.height * 3;
+    libyuv::CopyPlane(src_video, 3 * (frame_info_.width + padded_col_num),
+      dst_video, 3 * frame_info_.width,
+      3 * frame_info_.width, frame_info_.height);
+  } else if (frame_info_.rawType == kVideoARGB &&
+    (int32_t)video_frame_length >
+    frame_info_.width * frame_info_.height * 4) {
+    uint8_t* src_video = video_frame;
+    uint8_t* dst_video = src_video;
+    video_frame_length = frame_info_.width * frame_info_.height * 4;
+    libyuv::CopyPlane(src_video, 4 * (frame_info_.width + padded_col_num),
+      dst_video, 4 * frame_info_.width,
+      4 * frame_info_.width, frame_info_.height);
+  } else if (frame_info_.rawType == kVideoNV12 &&
+    (int32_t)video_frame_length >
+    frame_info_.width * frame_info_.height * 3 / 2) {
+    uint8_t* src_video_y = video_frame;
+    uint8_t* src_video_uv = src_video_y +
+      (frame_info_.width + padded_col_num) *
+      (frame_info_.height + padded_row_num);
+    uint8_t* dst_video_y = src_video_y;
+    uint8_t* dst_video_uv = dst_video_y +
+      frame_info_.width * frame_info_.height;
+    video_frame_length = frame_info_.width * frame_info_.height * 3 / 2;
+    libyuv::CopyPlane(src_video_y, frame_info_.width + padded_col_num,
+      dst_video_y, frame_info_.width,
+      frame_info_.width, frame_info_.height);
+    libyuv::CopyPlane(src_video_uv, frame_info_.width + padded_col_num,
+      dst_video_uv, frame_info_.width,
+      frame_info_.width, frame_info_.height / 2);
   }
 }
 
