@@ -267,15 +267,7 @@ LONGLONG MediaSourceHelper::GetNextSampleTimeHns(LONGLONG frameRenderTime) {
       _startTime = frameRenderTime;
     }
 
-    LONGLONG frameTime = (frameRenderTime - _startTime) / 100 + _futureOffsetMs;
-
-    // Sometimes we get requests so fast they have identical timestamp.
-    // Add a bit to the timetamp so it's different from the last sample.
-    if (_lastSampleTime >= frameTime) {
-      LOG(LS_WARNING) << "!!!!! Bad sample time "
-        << _lastSampleTime << "->" << frameTime;
-      frameTime = _lastSampleTime + 500;  // Make the timestamp slightly after the last one.
-    }
+    LONGLONG frameTime = (frameRenderTime - _startTime) / 100 + (_futureOffsetMs * 1000 * 10);
 
     return frameTime;
   }

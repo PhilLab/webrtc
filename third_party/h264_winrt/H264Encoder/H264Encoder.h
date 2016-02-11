@@ -21,6 +21,8 @@
 #include "Utils/SampleAttributeQueue.h"
 #include "webrtc/video_encoder.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
+#include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
@@ -46,9 +48,13 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
     const std::vector<FrameType>* frame_types) override;
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
+  void OnDroppedFrame() override;
 
   // === IH264EncodingCallback overrides ===
   void OnH264Encoded(ComPtr<IMFSample> sample) override;
+
+ private:
+  ComPtr<IMFSample> FromVideoFrame(const VideoFrame& frame);
 
  private:
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
@@ -57,8 +63,6 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   ComPtr<IMFSinkWriter> sinkWriter_;
   ComPtr<IMFAttributes> sinkWriterCreationAttributes_;
   ComPtr<IMFAttributes> sinkWriterEncoderAttributes_;
-  ComPtr<IMFMediaType> mediaTypeOut_;  // h264
-  ComPtr<IMFMediaType> mediaTypeIn_;   // nv12
   ComPtr<H264MediaSink> mediaSink_;
   EncodedImageCallback* encodedCompleteCallback_;
   DWORD streamIndex_;
@@ -71,8 +75,16 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
     uint32_t timestamp;
     uint64_t ntpTime;
     uint64_t captureRenderTime;
+    uint32_t frameWidth;
+    uint32_t frameHeight;
   };
   SampleAttributeQueue<CachedFrameAttributes> _sampleAttributeQueue;
+
+  // Used to dynamically scale down the frames
+  // in response to QP and dropped frames stats.
+  QualityScaler quality_scaler_;
+  // Used to parse QP values out of the samples.
+  H264BitstreamParser _h264Parser;
 };  // end of H264WinRTEncoderImpl class
 
 }  // namespace webrtc
