@@ -38,17 +38,17 @@ namespace webrtc_winrt_api {
   /// </remarks>
   public interface class IMediaStreamTrack {
     /// <summary>
-    /// Type of media, "audio" or "video".
+    /// Gets a description of the type of media, e.g., "audio" or "video".
     /// </summary>
     property String^ Kind { String^ get(); }
 
     /// <summary>
-    /// Identifier.
+    /// Gets an identifier of the media track.
     /// </summary>
     property String^ Id { String^ get(); }
 
     /// <summary>
-    /// Controls the enabled state for the track.
+    /// Get and sets the availibility of the media.
     /// </summary>
     property bool Enabled { bool get(); void set(bool value); }
 
@@ -72,11 +72,25 @@ namespace webrtc_winrt_api {
     }
   public:
     virtual ~MediaVideoTrack();
+    /// <summary>
+    /// Gets a description of the type of media, e.g., "audio" or "video".
+    /// </summary>
     virtual property String^ Kind { String^ get(); }
+    /// <summary>
+    /// Gets an identifier of the media track.
+    /// </summary>
     virtual property String^ Id { String^ get(); }
+    /// <summary>
+    /// Get and sets the availibility of the media.
+    /// </summary>
     virtual property bool Enabled { bool get(); void set(bool value); }
-
+    /// <summary>
+    /// Determines or set whether the media track is paused.
+    /// </summary>
     property bool Suspended { bool get(); void set(bool value); }
+    /// <summary>
+    /// Stops the media and releases associated resources.
+    /// </summary>
     virtual void Stop();
   internal:
     void SetRenderer(webrtc::VideoRendererInterface* renderer);
@@ -96,9 +110,21 @@ namespace webrtc_winrt_api {
       return _impl;
     }
   public:
+    /// <summary>
+    /// Gets a description of the type of media, e.g., "audio" or "video".
+    /// </summary>
     virtual property String^ Kind { String^ get(); }
+    /// <summary>
+    /// Gets an identifier of the media track.
+    /// </summary>
     virtual property String^ Id { String^ get(); }
+    /// <summary>
+    /// Get and sets the availibility of the media.
+    /// </summary>
     virtual property bool Enabled { bool get(); void set(bool value); }
+    /// <summary>
+    /// Stops the media and releases associated resources.
+    /// </summary>
     virtual void Stop();
   private:
     rtc::scoped_refptr<webrtc::AudioTrackInterface> _impl;
@@ -181,13 +207,12 @@ namespace webrtc_winrt_api {
     void RemoveTrack(IMediaStreamTrack^ track);
 
     /// <summary>
-    /// Identifier.
+    /// Gets an identifier of the media stream.
     /// </summary>
     property String^ Id { String^ get();}
 
     /// <summary>
-    /// TODO(winrt): fix comment after removing the TODO from the method
-    /// definition.
+    /// Stops and releases resources of all tracks within this stream.
     /// </summary>
     void Stop();
 
@@ -207,6 +232,14 @@ namespace webrtc_winrt_api {
   /// </summary>
   public ref class CaptureCapability sealed {
   public:
+    /// <summary>
+    /// CaptureCapability constructor.
+    /// </summary>
+    /// <param name="width">Sets the width in pixels of a capability on the video capture device.</param>
+    /// <param name="height">Sets the height in pixesl of a capability on the video capture device.</param>
+    /// <param name="fps">Set the frames per second of a capability on the video capture device.</param>
+    /// <param name="pixelAspect">Sets the shape of a pixel. Some codecs, such as H.264, support
+    /// non-square pixels. Codecs that support only square pixes, such as VPx, will force a 1:1 ratio.</param>
     CaptureCapability(unsigned int width, unsigned int height,
       unsigned int fps,
       Windows::Media::MediaProperties::MediaRatio^ pixelAspect) {
@@ -225,36 +258,61 @@ namespace webrtc_winrt_api {
       swprintf_s(desc, 128, L"%s %s", resolutionDesc, fpsDesc);
       _description = ref new String(desc);
     }
+    /// <summary>
+    /// Gets the width in pixes of a video capture device capibility.
+    /// </summary>
     property unsigned int Width {
       unsigned int get() {
         return _width;
       }
     }
+    /// <summary>
+    /// Gets the height in pixes of a video capture device capibility.
+    /// </summary>
     property unsigned int Height {
       unsigned int get() {
         return _height;
       }
     }
+    /// <summary>
+    /// Gets the frame rate in frames per second of a video capture device capibility.
+    /// </summary>
     property unsigned int FrameRate {
       unsigned int get() {
         return _fps;
       }
     }
+    /// <summary>
+    /// Get the aspect ratio of the pixels of a video capture device capibility.
+    /// </summary>
     property Windows::Media::MediaProperties::MediaRatio^ PixelAspectRatio {
       Windows::Media::MediaProperties::MediaRatio^ get() {
         return _pixelAspectRatio;
       }
     }
+    /// <summary>
+    /// Get a displayable string describing all the features of a
+    /// video capture device capability. Displays resolution, frame rate, 
+    /// and pixel aspect ratio.
+    /// </summary>
     property String^ FullDescription {
       String^ get() {
         return _description;
       }
     }
+    /// <summary>
+    /// Get a displayable string describing the resolution of a
+    /// video capture device capability.
+    /// </summary>
     property String^ ResolutionDescription {
       String^ get() {
         return _resolutionDescription;
       }
     }
+    /// <summary>
+    /// Get a displayable string describing the frame rate in
+    // frames per second of a video capture device capability.
+    /// </summary>
     property String^ FrameRateDescription {
       String^ get() {
         return _fpsDescription;
@@ -282,6 +340,10 @@ namespace webrtc_winrt_api {
       _id = id;
       _name = name;
     }
+    /// <summary>
+    /// Gets or sets an identifier of the media device.
+    /// This value defaults to a unique OS assigned identifier of the media device.
+    /// </summary>
     property String^ Id {
       String^ get() {
         return _id;
@@ -291,6 +353,9 @@ namespace webrtc_winrt_api {
       }
     }
 
+    /// <summary>
+    /// Get or sets a displayable name that describes the media device.
+    /// </summary>
     property String^ Name {
       String^ get() {
         return _name;
@@ -302,8 +367,6 @@ namespace webrtc_winrt_api {
 
     /// <summary>
     /// Retrieves video capabilities for a given device.
-    /// TODO(winrt) move to the Media class, video specific method should not
-    /// be in generic MediaDevice class.
     /// </summary>
     /// <returns>This is an asynchronous method. The result is a vector of the
     /// capabilities supported by the video device.</returns>
