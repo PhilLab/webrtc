@@ -354,6 +354,7 @@ public:
   property String^ SdpMid;
   /// <summary>
   /// Sets or get the "m=" line used as the ICE candidate in the SDP.
+  /// </summary>
   property uint16 SdpMLineIndex;
 };
 
