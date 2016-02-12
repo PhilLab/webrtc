@@ -51,7 +51,6 @@ H264WinRTEncoderImpl::H264WinRTEncoderImpl()
 }
 
 H264WinRTEncoderImpl::~H264WinRTEncoderImpl() {
-  OutputDebugString(L"H264WinRTEncoderImpl::~H264WinRTEncoderImpl()\n");
   Release();
 }
 
@@ -144,8 +143,6 @@ int H264WinRTEncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 int H264WinRTEncoderImpl::Release() {
-  OutputDebugString(L"H264WinRTEncoderImpl::Release()\n");
-
   // Use a temporary sink variable to prevent lock inversion
   // between the shutdown call and OnH264Encoded() callback.
   ComPtr<H264MediaSink> tmpMediaSink;
@@ -241,8 +238,11 @@ ComPtr<IMFSample> H264WinRTEncoderImpl::FromVideoFrame(const VideoFrame& frame) 
         ON_SUCCEEDED(transform->SetOutputType(0, nullptr, 0));
         ON_SUCCEEDED(transform->SetOutputType(0, mediaTypeOut_.Get(), 0));
         ON_SUCCEEDED(transform->SetInputType(0, mediaTypeIn_.Get(), 0));
-        OutputDebugString((L"Resolution: " + dstFrame.width().ToString() + L"x" + dstFrame.height().ToString() + L"\n")->Data());
-        LOG(LS_WARNING) << "Resolution: " << dstFrame.width() << "x" << dstFrame.height();
+        OutputDebugString((L"H264WinRTDecoder: resolution updated: " +
+          dstFrame.width().ToString() + L"x" +
+          dstFrame.height().ToString() + L"\r\n")->Data());
+        LOG(LS_WARNING) << "Resolution updated: " <<
+          dstFrame.width() << "x" << dstFrame.height();
       }
     }
 
@@ -368,9 +368,8 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     int lastQp;
     if (_h264Parser.GetLastSliceQp(&lastQp)) {
       quality_scaler_.ReportQP(lastQp);
-    }
-    else {
-      OutputDebugString(L"Couldn't find QP\n");
+    } else {
+      OutputDebugString(L"H264WinRTDecoder: Couldn't find QP\r\n");
     }
 
     // Scan for and create mark all fragments.
@@ -451,9 +450,7 @@ int H264WinRTEncoderImpl::SetChannelParameters(
 
 int H264WinRTEncoderImpl::SetRates(
   uint32_t new_bitrate_kbit, uint32_t new_framerate) {
-  OutputDebugString((L"H264WinRTEncoderImpl::SetRates(" + new_bitrate_kbit.ToString() + L"kbps, " + new_framerate + L"fps)\n")->Data());
-
-  // This may happen.  Ignore it.
+  // This may happen. Ignore it.
   if (new_framerate == 0) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -479,8 +476,11 @@ int H264WinRTEncoderImpl::SetRates(
     MF_MT_FRAME_RATE, &old_framerate, &one);
 
   if (old_bitrate_kbit != new_bitrate_kbit) {
-    LOG(LS_INFO) << "H264WinRTEncoderImpl::SetRates("
-      << new_bitrate_kbit << "kbit " << new_framerate << "fps)";
+    LOG(LS_INFO) << "H264WinRTEncoder: SetRates "
+      << new_bitrate_kbit << "kbit " << new_framerate << "fps";
+    OutputDebugString((L"H264WinRTEncoder: SetRates " +
+      new_bitrate_kbit.ToString() + L"kbps, " +
+      new_framerate + L"fps\r\n")->Data());
 
     bool bitrateUpdated = false;
     bool fpsUpdated = false;

@@ -245,7 +245,7 @@ bool DropFramesToIDR(std::list<cricket::VideoFrame*>& frames) {
 
   // If we have an IDR frame, drop all older frames.
   if (idrFrame != nullptr) {
-    OutputDebugString(L"IDR found, dropping all other samples.\n");
+    OutputDebugString(L"IDR found, dropping all other samples.\r\n");
     while (!frames.empty()) {
       if (frames.front() == idrFrame) {
         break;

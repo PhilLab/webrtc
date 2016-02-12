@@ -219,7 +219,6 @@ void RTMediaStreamSource::FPSTimerElapsedExecute(ThreadPoolTimer^ source) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   _frameSentThisTime = false;
   if (_request != nullptr) {
-    OutputDebugString(L"RTMediaStreamSource::FPSTimerElapsedExecute()\n");
     ReplyToSampleRequest();
   }
 }
@@ -229,13 +228,12 @@ void RTMediaStreamSource::ReplyToSampleRequest() {
   if (sampleData == nullptr) {
     return;
   }
-  OutputDebugString(L"RTMediaStreamSource::ReplyToSampleRequest()\n");
 
   // Update rotation property
   if (sampleData->rotationHasChanged)
   {
     auto props = _videoDesc->EncodingProperties->Properties;
-    OutputDebugString(L"Setting new rotation!!!\n");
+    OutputDebugString((L"Video rotation changed: " + sampleData->rotation + "\r\n")->Data());
     props->Insert(MF_MT_VIDEO_ROTATION, sampleData->rotation);
   }
 
@@ -250,7 +248,7 @@ void RTMediaStreamSource::ReplyToSampleRequest() {
         _id, props->Width, props->Height);
       OutputDebugString((L"Video frame size changed for " + _id +
         L" W=" + props->Width +
-        L" H=" + props->Height + L"\n")->Data());
+        L" H=" + props->Height + L"\r\n")->Data());
   }
 
   Microsoft::WRL::ComPtr<IMFMediaStreamSourceSampleRequest> spRequest;

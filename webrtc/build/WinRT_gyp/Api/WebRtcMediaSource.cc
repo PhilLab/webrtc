@@ -13,7 +13,7 @@
 namespace webrtc_winrt_api_internal {
 using Microsoft::WRL::MakeAndInitialize;
 
-#define RETURN_ON_FAIL(code) { HRESULT hr = code; if (FAILED(hr)) {OutputDebugString(L"Failed"); return hr;} }
+#define RETURN_ON_FAIL(code) { HRESULT hr = code; if (FAILED(hr)) {OutputDebugString(L"Failed\r\n"); return hr;} }
 
 WebRtcMediaSource::WebRtcMediaSource() :
   _rateControlThin(FALSE), _rate(1.0f), _started(false),
@@ -120,7 +120,7 @@ IFACEMETHODIMP WebRtcMediaSource::Start(
   IMFPresentationDescriptor *pPresentationDescriptor,
   const GUID *pguidTimeFormat, const PROPVARIANT *pvarStartPosition) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-  OutputDebugString(L"WebRtcMediaSource::Start\n");
+  OutputDebugString(L"WebRtcMediaSource::Start\r\n");
   if (_eventQueue == nullptr) {
     return MF_E_SHUTDOWN;
   }
@@ -141,7 +141,7 @@ IFACEMETHODIMP WebRtcMediaSource::Start(
 
 IFACEMETHODIMP WebRtcMediaSource::Stop() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-  OutputDebugString(L"WebRtcMediaSource::Stop\n");
+  OutputDebugString(L"WebRtcMediaSource::Stop\r\n");
   if (_eventQueue == nullptr) {
     return MF_E_SHUTDOWN;
   }
@@ -156,7 +156,7 @@ IFACEMETHODIMP WebRtcMediaSource::Pause() {
 
 IFACEMETHODIMP WebRtcMediaSource::Shutdown() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-  OutputDebugString(L"WebRtcMediaSource::Shutdown\n");
+  OutputDebugString(L"WebRtcMediaSource::Shutdown\r\n");
   if (_eventQueue != nullptr) {
     _eventQueue->Shutdown();
   }

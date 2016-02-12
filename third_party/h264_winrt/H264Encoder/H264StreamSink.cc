@@ -28,7 +28,7 @@ H264StreamSink::H264StreamSink()
 }
 
 H264StreamSink::~H264StreamSink() {
-  OutputDebugString(L"H264StreamSink::~H264StreamSink()\n");
+  OutputDebugString(L"H264StreamSink::~H264StreamSink()\r\n");
 }
 
 HRESULT H264StreamSink::RuntimeClassInitialize(
