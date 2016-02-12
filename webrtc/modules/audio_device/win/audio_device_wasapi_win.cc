@@ -1739,6 +1739,9 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneVolumeStepSize(
 int16_t AudioDeviceWindowsWasapi::PlayoutDevices() {
   CriticalSectionScoped lock(&_critSect);
 
+  // Refresh the list of rendering endpoint devices
+  _RefreshDeviceList(DeviceClass::AudioRender);
+
   if (_initialized) {
     return (_DeviceListCount(DeviceClass::AudioRender));
   }
@@ -1991,6 +1994,9 @@ int32_t AudioDeviceWindowsWasapi::RecordingDeviceName(
 
 int16_t AudioDeviceWindowsWasapi::RecordingDevices() {
   CriticalSectionScoped lock(&_critSect);
+
+  // Refresh the list of capture endpoint devices
+  _RefreshDeviceList(DeviceClass::AudioCapture);
 
   if (_initialized) {
     return (_DeviceListCount(DeviceClass::AudioCapture));
