@@ -63,6 +63,8 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   ComPtr<IMFSinkWriter> sinkWriter_;
   ComPtr<IMFAttributes> sinkWriterCreationAttributes_;
   ComPtr<IMFAttributes> sinkWriterEncoderAttributes_;
+  ComPtr<IMFMediaType> mediaTypeOut_;
+  ComPtr<IMFMediaType> mediaTypeIn_;
   ComPtr<H264MediaSink> mediaSink_;
   EncodedImageCallback* encodedCompleteCallback_;
   DWORD streamIndex_;
