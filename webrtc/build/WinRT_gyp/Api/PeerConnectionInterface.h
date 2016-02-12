@@ -44,7 +44,9 @@ public enum class LogLevel {
   LOGLVL_WARNING = rtc::LS_WARNING,
   LOGLVL_ERROR = rtc::LS_ERROR
 };
-
+/// <summary>
+/// Defines the paremeters of a media codec.
+/// </summary>
 public ref class CodecInfo sealed {
 private:
     int _id;
@@ -57,7 +59,9 @@ public:
         _clockrate = clockrate;
         _name = name;
     }
-
+    /// <summary>
+    /// Get or sets a unique identifier that represents a codec.
+    /// </summary>
     property int Id {
         int get() {
             return _id;
@@ -66,7 +70,9 @@ public:
             _id = value;
         }
     }
-
+    /// <summary>
+    /// Get or sets a clock rate in cycles per second.
+    /// </summary>
     property int Clockrate {
         int get() {
             return _clockrate;
@@ -75,7 +81,9 @@ public:
             _clockrate = value;
         }
     }
-
+    /// <summary>
+    /// Get or sets a display name that represents the codec.
+    /// </summary>
     property String^ Name {
         String^ get() {
             return _name;
@@ -93,7 +101,15 @@ public:
 /// </summary>
 public ref class WebRTC sealed {
 public:
+  /// <summary>
+  /// Gets permission from the OS to get access to a media capture device. If
+  /// permissions are not enabled for the calling application, the OS will
+  /// display a prompt asking the user for permission.
+  /// </summary>
   static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
+  /// <summary>
+  /// Initializes WebRTC dispatch and worker threads.
+  /// </summary>
   static void Initialize(Windows::UI::Core::CoreDispatcher^ dispatcher);
 
   /// <summary>
@@ -281,28 +297,63 @@ public enum class RTCSignalingState {
   Closed
 };
 
+/// <summary>
+/// Stores the configuration parameters of an ICE server.
+/// </summary>
 public ref class RTCIceServer sealed {
 public:
+  /// <summary>
+  /// Gets or sets an ICE server network address as a URL.
+  /// </summary>
   property String^ Url;
+  /// <summary>
+  /// Gets or set a user name to login to the ice server.
+  /// </summary>
   property String^ Username;
+  /// <summary>
+  /// Gets or sets the credentials to login to the ice server.
+  /// </summary>
   property String^ Credential;
 };
 
+/// <summary>
+/// Stores the ICE servers configuration.
+/// </summary>
 public ref class RTCConfiguration sealed {
 public:
+  /// <summary>
+  /// Gets or sets a list of ICE servers and their configuration parameters.
+  /// </summary>
   property IVector<RTCIceServer^>^ IceServers;
+  /// <summary>
+  /// Gets or sets the transport policy of the ICE servers.
+  /// </summary>
   property IBox<RTCIceTransportPolicy>^ IceTransportPolicy;
+  /// <summary>
+  /// Get or sets the ICE server transport connection policy.
+  /// </summary>
   property IBox<RTCBundlePolicy>^ BundlePolicy;
   // TODO(WINRT): DOMString PeerIdentity
 };
 
+/// <summary>
+/// Stores ICE candidate parameters.
+/// </summary>
 public ref class RTCIceCandidate sealed {
 public:
   RTCIceCandidate();
   RTCIceCandidate(String^ candidate, String^ sdpMid,
     uint16 sdpMLineIndex);
+  /// <summary>
+  /// Gets or sets the name of the ICE candidate.
+  /// </summary>
   property String^ Candidate;
+  /// <summary>
+  /// Gets or sets the SDP media identifier.
+  /// </summary>
   property String^ SdpMid;
+  /// <summary>
+  /// Sets or get the "m=" line used as the ICE candidate in the SDP.
   property uint16 SdpMLineIndex;
 };
 
@@ -313,41 +364,97 @@ public ref class RTCSessionDescription sealed {
 public:
   RTCSessionDescription();
   RTCSessionDescription(RTCSdpType type, String^ sdp);
+  /// <summary>
+  /// Gets or sets the SDP type.
+  /// </summary>
   property IBox<RTCSdpType>^ Type;
+  /// <summary>
+  /// Gets or sets the complete raw SDP.
+  /// </summary>
   property String^ Sdp;
 };
 
 // Events and delegates
 // ------------------
+/// <summary>
+/// Stores ICE candidate parameters received by an event.
+/// </summary>
 public ref class RTCPeerConnectionIceEvent sealed {
 public:
+  /// <summary>
+  /// Gets or set ICE candidate parameters.
+  /// </summary>
   property RTCIceCandidate^ Candidate;
 };
 
+/// <summary>
+/// Stores ICE peer connection state received by an event.
+/// </summary>
 public ref class RTCPeerConnectionIceStateChangeEvent sealed {
 public:
+  /// <summary>
+  /// Gets or sets the ICE peer connection state.
+  /// </summary>
   property RTCIceConnectionState State;
 };
 
+/// <summary>
+/// Stores peer connection statistics.
+/// </summary>
 public ref class RTCPeerConnectionHealthStats sealed {
 public:
+  /// <summary>
+  /// Gets or sets the number of bytes received during the
+  /// lifetime of a peer connection.
+  /// </summary>
   property int64 ReceivedBytes;
+  /// <summary>
+  /// Gets or sets the receive bit rate in Kilobits per second.
+  /// </summary>
   property int64 ReceivedKpbs;
+  /// <summary>
+  /// Gets or sets the number of bytes sent during the
+  /// lifetime of a peer connection.
+  /// </summary>
   property int64 SentBytes;
+  /// <summary>
+  /// Gets or sets the send bit rate in Kilobits per second.
+  /// </summary>
   property int64 SentKbps;
+  /// <summary>
+  /// Gets or set the round-trip time.
+  /// </summary>
   property int64 RTT;
+  /// <summary>
+  /// Stores a description of the ICE candidate connected to this peer.
+  /// </summary>
   property String^ LocalCandidateType;
+  /// <summary>
+  /// Stores a description of the ICE candidate connected to a remote peer.
+  /// </summary>
   property String^ RemoteCandidateType;
 };
 
+/// <summary>
+/// Stores peer connection statistics received by an event.
+/// </summary>
 public ref class RTCStatsReportsReadyEvent sealed {
 public:
+  /// <summary>
+  /// Gets or sets peer connection statistics.
+  /// </summary>
   property RTCStatsReports rtcStatsReports;
 };
 
 // ------------------
+/// <summary>
+/// Stores media stream object received by an event.
+/// </summary>
 public ref class MediaStreamEvent sealed {
 public:
+  /// <summary>
+  /// Gets or sets a media stream object.
+  /// </summary>
   property MediaStream^ Stream;
 };
 /// <summary>
