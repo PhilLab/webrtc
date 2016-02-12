@@ -119,15 +119,15 @@ int QualityScaler::GetTargetFramerate() const {
   return target_framerate_;
 }
 
-const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
+const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame, int multipleOf) {
   Resolution res = GetScaledResolution();
   if (res.width == frame.width())
     return frame;
 
   scaler_.Set(frame.width(),
               frame.height(),
-              res.width,
-              res.height,
+              res.width - (res.width % multipleOf),
+              res.height - (res.height % multipleOf),
               kI420,
               kI420,
               kScaleBox);
