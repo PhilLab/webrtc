@@ -3806,8 +3806,14 @@ bool AudioDeviceWindowsWasapi::BuiltInAGCIsAvailable() const {
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType effect) const {
 
-    // Check to see if the current device supports AccousticEchoCancellation
+    // Check to see if the current device supports the capability
 
+    // There's an issue in this code, where we are not detecting properly on WIn Phone 10
+    // For now return always true, because we know noise suppression and AEC is supported on all devices
+    // We need to revisit this function before end of Feb 2016
+    return true;
+
+    /*
     Windows::Media::Effects::AudioCaptureEffectsManager^ effManager;
 
     Windows::Media::Capture::MediaCategory Category;
@@ -3841,6 +3847,7 @@ bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Eff
         }
     }
     return false;
+    */
 }
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType effect) const {
