@@ -25,7 +25,7 @@ using Windows::System::Threading::TimerElapsedHandler;
 namespace webrtc_winrt_api_internal {
 
 #define MAX_FRAME_DELAY_MS 30
-#define RETURN_ON_FAIL(code) { HRESULT hr = code; if (FAILED(hr)) {OutputDebugString(L"[Failed]"); return hr;} }
+#define RETURN_ON_FAIL(code) { HRESULT hr = code; if (FAILED(hr)) {OutputDebugString(L"[Failed]\r\n"); return hr;} }
 
 // #define USE_MEMORY_BUFFERS
 
@@ -308,9 +308,9 @@ HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
     }
 
     if (_isH264)
-      OutputDebugString((L"Frame format changed!!! "
+      OutputDebugString((L"Frame format changed: "
       + width.ToString() + L"x" + height.ToString()
-      + " rotation:" + rotation.ToString() + L"\n")->Data());
+      + " rotation:" + rotation.ToString() + L"\r\n")->Data());
 
     CreateMediaType(width, height, rotation, &_mediaType, _isH264);
     _eventQueue->QueueEventParamUnk(MEStreamFormatChanged,

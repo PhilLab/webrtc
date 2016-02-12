@@ -20,7 +20,7 @@ H264MediaSink::H264MediaSink()
 
 
 H264MediaSink::~H264MediaSink() {
-  OutputDebugString(L"H264MediaSink::~H264MediaSink()\n");
+  OutputDebugString(L"H264MediaSink::~H264MediaSink()\r\n");
 }
 
 HRESULT H264MediaSink::RuntimeClassInitialize() {
