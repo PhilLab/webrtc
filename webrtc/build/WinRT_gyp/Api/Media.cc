@@ -292,17 +292,84 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
                                       mediaStreamConstraints]()->MediaStream^ {
       // This is the stream returned.
       char streamLabel[32];
-      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel, rtc::CreateRandomId64());
+      _snprintf(streamLabel, sizeof(streamLabel), kStreamLabel,
+        rtc::CreateRandomId64());
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
       if (mediaStreamConstraints->audioEnabled) {
-        globals::gPeerConnectionFactory->channel_manager()->media_engine()->SetSoundDevices(
-          &_selectedAudioCapturerDevice,
-          &_selectedAudioPlayoutDevice);
+        // Check if audio devices candidates are still available.
+        // Application may request to use audio devices that are not
+        // connected anymore. In this case, fallback to default device.
+        webrtc::VoEHardware* voiceEngineHardware =
+          globals::gPeerConnectionFactory->channel_manager()->media_engine()->
+          GetVoEHardware();
+        bool useDefaultAudioPlayoutDevice = true;
+        bool useDefaultAudioRecordingDevice = true;
+        if (voiceEngineHardware == nullptr) {
+          LOG(LS_ERROR) << "Can't validate audio devices: "
+            << "VoEHardware API not available.";
+        } else {
+          int deviceCount(0);
+          char audioDeviceName[128];
+          char audioDeviceGuid[128];
+
+          if (voiceEngineHardware->GetNumOfRecordingDevices(deviceCount) == 0) {
+            for (int i = 0; i < deviceCount; ++i) {
+              voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
+                audioDeviceGuid);
+              std::string webrtc_name(audioDeviceName);
+              if (_selectedAudioCapturerDevice.name.compare(0,
+                strlen(audioDeviceName), audioDeviceName) == 0) {
+                useDefaultAudioRecordingDevice = false;
+                break;
+              }
+            }
+            if (useDefaultAudioRecordingDevice) {
+              LOG(LS_WARNING) << "Audio capture device "
+                << _selectedAudioCapturerDevice.name
+                << " not found, using default device";
+            }
+          } else {
+            LOG(LS_ERROR) << "Can't obtain audio recording audio devices.";
+          }
+
+          if (voiceEngineHardware->GetNumOfPlayoutDevices(deviceCount) == 0) {
+            for (int i = 0; i < deviceCount; ++i) {
+              voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
+                audioDeviceGuid);
+              if (_selectedAudioPlayoutDevice.name.compare(0,
+                strlen(audioDeviceName), audioDeviceName) == 0) {
+                useDefaultAudioPlayoutDevice = false;
+                break;
+              }
+            }
+            if (useDefaultAudioPlayoutDevice) {
+              LOG(LS_WARNING) << "Audio playout device "
+                << _selectedAudioPlayoutDevice.name
+                << " not found, using default device";
+            }
+          } else {
+            LOG(LS_ERROR) << "Can't obtain audio playout devices.";
+          }
+        }
+
+        cricket::Device* audioCaptureDevice = useDefaultAudioRecordingDevice ?
+          nullptr : &_selectedAudioCapturerDevice;
+        cricket::Device* audioPlayoutDevice = useDefaultAudioPlayoutDevice ?
+          nullptr : &_selectedAudioPlayoutDevice;
+
+        if (!globals::gPeerConnectionFactory->channel_manager()
+          ->media_engine()->SetSoundDevices(
+          audioCaptureDevice,
+          audioPlayoutDevice)) {
+          LOG(LS_ERROR) << "Failed to set audio devices.";
+        }
+
         LOG(LS_INFO) << "Creating audio track.";
         char audioLabel[32];
-        _snprintf(audioLabel, sizeof(audioLabel), kAudioLabel, rtc::CreateRandomId64());
+        _snprintf(audioLabel, sizeof(audioLabel), kAudioLabel,
+          rtc::CreateRandomId64());
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           globals::gPeerConnectionFactory->CreateAudioTrack(
             audioLabel,
@@ -326,7 +393,8 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
                                                         _selectedVideoDevice);
         }
         char videoLabel[32];
-        _snprintf(videoLabel, sizeof(videoLabel), kVideoLabel, rtc::CreateRandomId64());
+        _snprintf(videoLabel, sizeof(videoLabel), kVideoLabel,
+          rtc::CreateRandomId64());
 
         // Add a video track
         if (videoCapturer != nullptr) {
