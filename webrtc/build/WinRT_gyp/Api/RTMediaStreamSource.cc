@@ -36,6 +36,7 @@ MediaStreamSource^ RTMediaStreamSource::CreateMediaSource(
 
   auto streamState = ref new RTMediaStreamSource(track, isH264);
   streamState->_id = id;
+  streamState->_idUtf8 = rtc::ToUtf8(streamState->_id->Data());
   streamState->_rtcRenderer = rtc::scoped_ptr<RTCRenderer>(
     new RTCRenderer(streamState));
   track->SetRenderer(streamState->_rtcRenderer.get());
@@ -132,7 +133,8 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack,
                                          bool isH264) :
     _videoTrack(videoTrack),
     _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-    _frameSentThisTime(false) {
+    _frameSentThisTime(false),
+    _frameBeingQueued(0) {
   LOG(LS_INFO) << "RTMediaStreamSource::RTMediaStreamSource";
 
   // Create the helper with the callback functions.
@@ -146,38 +148,53 @@ RTMediaStreamSource::RTMediaStreamSource(MediaVideoTrack^ videoTrack,
 }
 
 RTMediaStreamSource::~RTMediaStreamSource() {
-  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource : "
-               << rtc::ToUtf8(_id->Data()).c_str();
+  LOG(LS_INFO) << "RTMediaStreamSource::~RTMediaStreamSource ID=" << _idUtf8;
   Teardown();
 }
 
 void RTMediaStreamSource::Teardown() {
-  LOG(LS_INFO) << "RTMediaStreamSource::Teardown()";
-  webrtc::CriticalSectionScoped csLock(_lock.get());
-  if (_progressTimer != nullptr) {
-    _progressTimer->Cancel();
-    _progressTimer = nullptr;
-  }
-  if (_fpsTimer != nullptr) {
-    _fpsTimer->Cancel();
-    _fpsTimer = nullptr;
-  }
-  if (_rtcRenderer != nullptr && _videoTrack != nullptr) {
-    _videoTrack->UnsetRenderer(_rtcRenderer.get());
-  }
-  _videoTrack = nullptr;
-  _rtcRenderer.reset();
+  LOG(LS_INFO) << "RTMediaStreamSource::Teardown() ID=" << _idUtf8;
+  {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_progressTimer != nullptr) {
+      _progressTimer->Cancel();
+      _progressTimer = nullptr;
+    }
+    if (_fpsTimer != nullptr) {
+      _fpsTimer->Cancel();
+      _fpsTimer = nullptr;
+    }
+    if (_rtcRenderer != nullptr && _videoTrack != nullptr) {
+      _videoTrack->UnsetRenderer(_rtcRenderer.get());
+    }
 
-  _request = nullptr;
-  if (_deferral != nullptr) {
-    _deferral->Complete();
-    _deferral = nullptr;
+    _videoTrack = nullptr;
+
+    _request = nullptr;
+    if (_deferral != nullptr) {
+      _deferral->Complete();
+      _deferral = nullptr;
+    }
+    if (_startingDeferral != nullptr) {
+      _startingDeferral->Complete();
+      _startingDeferral = nullptr;
+    }
+    _helper.reset();
   }
-  if (_startingDeferral != nullptr) {
-    _startingDeferral->Complete();
-    _startingDeferral = nullptr;
+
+  // Wait until no frames are being queued
+  // from the webrtc callback.
+  while (_frameBeingQueued > 0) {
+    Sleep(1);
   }
-  _helper.reset();
+
+  {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_rtcRenderer != nullptr) {
+      _rtcRenderer.reset();
+    }
+  }
+  LOG(LS_INFO) << "RTMediaStreamSource::Teardown() done ID=" << _idUtf8;
 }
 
 RTMediaStreamSource::RTCRenderer::RTCRenderer(
@@ -198,13 +215,17 @@ void RTMediaStreamSource::RTCRenderer::SetSize(
 
 void RTMediaStreamSource::RTCRenderer::RenderFrame(
   const cricket::VideoFrame *frame) {
+  auto stream = _streamSource.Resolve<RTMediaStreamSource>();
+  if (stream == nullptr) {
+    LOG(LS_WARNING) << "RTCRenderer::RenderFrame: associated stream is null";
+    return;
+  }
+  InterlockedIncrement(&stream->_frameBeingQueued);
   auto frameCopy = frame->Copy();
   // Do the processing async because there's a risk of a deadlock otherwise.
-  Concurrency::create_async([this, frameCopy] {
-    auto stream = _streamSource.Resolve<RTMediaStreamSource>();
-    if (stream != nullptr) {
-      stream->ProcessReceivedFrame(frameCopy);
-    }
+  Concurrency::create_async([this, frameCopy, stream] {
+    stream->ProcessReceivedFrame(frameCopy);
+    InterlockedDecrement(&stream->_frameBeingQueued);
   });
 }
 
@@ -230,8 +251,7 @@ void RTMediaStreamSource::ReplyToSampleRequest() {
   }
 
   // Update rotation property
-  if (sampleData->rotationHasChanged)
-  {
+  if (sampleData->rotationHasChanged) {
     auto props = _videoDesc->EncodingProperties->Properties;
     OutputDebugString((L"Video rotation changed: " + sampleData->rotation + "\r\n")->Data());
     props->Insert(MF_MT_VIDEO_ROTATION, sampleData->rotation);
@@ -281,7 +301,7 @@ HRESULT RTMediaStreamSource::MakeSampleCallback(
   }
   ComPtr<IMFMediaBuffer> mediaBuffer;
   hr = MFCreate2DMediaBuffer(
-	(DWORD)frame->GetWidth(), (DWORD)frame->GetHeight(),
+  (DWORD)frame->GetWidth(), (DWORD)frame->GetHeight(),
     cricket::FOURCC_NV12, FALSE,
     mediaBuffer.GetAddressOf());
   if (FAILED(hr)) {
@@ -348,12 +368,14 @@ void RTMediaStreamSource::OnSampleRequested(
     if (_request == nullptr) {
       return;
     }
+    if (_helper == nullptr) {  // may be null while tearing down
+      return;
+    }
 
     if (!_frameSentThisTime && _helper->HasFrames()) {
       ReplyToSampleRequest();
       return;
-    }
-    else {
+    } else {
       // Save the request and referral for when a sample comes in.
       if (_deferral != nullptr) {
         LOG(LS_ERROR) << "Got deferral when another hasn't completed.";
@@ -376,6 +398,9 @@ void RTMediaStreamSource::ProcessReceivedFrame(
     _startingDeferral = nullptr;
   }
 
+  if (_helper == nullptr) {  // May be null while tearing down the MSS
+    return;
+  }
   _helper->QueueFrame(frame);
 
   // If we have a pending request, reply to it now.

@@ -80,6 +80,7 @@ ref class RTMediaStreamSource sealed {
 
     MediaVideoTrack^ _videoTrack;
     String^ _id;  // Provided by the calling API.
+    std::string _idUtf8; // Provided by the calling API, same as _id
 
     // Keep a weak reference here.
     // Its _mediaStreamSource that keeps a reference to this object.
@@ -103,6 +104,8 @@ ref class RTMediaStreamSource sealed {
     MediaStreamSourceSampleRequest^ _request;
     Windows::Media::Core::MediaStreamSourceSampleRequestDeferral^ _deferral;
     Windows::Media::Core::MediaStreamSourceStartingRequestDeferral^ _startingDeferral;
+
+    ULONG _frameBeingQueued;
 };
 
 }  // namespace webrtc_winrt_api_internal
