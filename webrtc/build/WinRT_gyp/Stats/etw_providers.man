@@ -47,6 +47,10 @@
           <template tid="T_Command">
             <data inType="win:AnsiString" name="command_name" />
           </template>
+          <template tid="T_Mark">
+            <data inType="win:AnsiString" name="mark_name" />
+            <data inType="win:Double" name="timestamp" />
+          </template>
         </templates>
         <events>
           <event symbol="StatsReportInt32" template="T_StatsReportInt32" value="101" />
@@ -55,6 +59,7 @@
           <event symbol="StatsReportString" template="T_StatsReportString" value="104" />
           <event symbol="StatsReportBool" template="T_StatsReportBool" value="105" />
           <event symbol="Command" template="T_Command" value="106" />
+          <event symbol="Mark" template="T_Mark" value="107" />
         </events>
       </provider>
 
