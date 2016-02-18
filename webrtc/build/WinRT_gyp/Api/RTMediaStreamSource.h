@@ -23,21 +23,38 @@ using Windows::System::Threading::ThreadPoolTimer;
 using Windows::Media::Core::MediaStreamSourceSampleRequest;
 
 namespace webrtc_winrt_api {
-// Delegate used to notify an update of the frame per second on a video stream.
+/// <summary>
+/// Delegate used to notify an update of the frame per second on a video stream.
+/// </summary>
 public delegate void FramesPerSecondChangedEventHandler(String^ id,
   Platform::String^ fps);
+/// <summary>
+/// Delegate used to notify an update of the frame resolutions.
+/// </summary>
 public delegate void ResolutionChangedEventHandler(String^ id,
   unsigned int width, unsigned int height);
 
+/// <summary>
+/// Class used to get frame rate events from renderer.
+/// </summary>
 public ref class FrameCounterHelper sealed {
   public:
+    /// <summary>
+    /// Event fires when the frame rate changes.
+    /// </summary>
     static event FramesPerSecondChangedEventHandler^ FramesPerSecondChanged;
   internal:
     static void FireEvent(String^ id, Platform::String^ str);
   };
 
+/// <summary>
+/// Class used to get frame size change events from renderer.
+/// </summary>
 public ref class ResolutionHelper sealed {
 public:
+  /// <summary>
+  /// Event fires when the resolution changes.
+  /// </summary>
   static event ResolutionChangedEventHandler^ ResolutionChanged;
 internal:
   static void FireEvent(String^ id, unsigned int width, unsigned int height);

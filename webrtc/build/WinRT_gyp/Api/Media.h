@@ -380,7 +380,13 @@ namespace webrtc_winrt_api {
   /// </summary>
   public ref class RTCMediaStreamConstraints sealed {
   public:
+    /// <summary>
+    /// Set or gets the availability of audio.
+    /// </summary>
     property bool audioEnabled;
+    /// <summary>
+    /// Sets or gets the availability of video.
+    /// </summary>
     property bool videoEnabled;
   };
 

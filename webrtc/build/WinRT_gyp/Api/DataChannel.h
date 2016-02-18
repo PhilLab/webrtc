@@ -38,11 +38,30 @@ public enum class RTCDataChannelState {
 /// </summary>
 public ref class RTCDataChannelInit sealed {
 public:
+  /// <summary>
+  /// true if the<see cref="RTCDataChannel"/> is ordered, and false if other of order delivery is allowed.
+  /// </summary>
   property IBox<bool>^ Ordered;
+  /// <summary>
+  /// Length of the time window (in milliseconds) during which transmissions and retransmissions may occur in 
+  /// unreliable mode, or nullptr if unset. 
+  /// </summary>
   property IBox<uint16>^ MaxPacketLifeTime;
+  /// <summary>
+  /// Maximum number of retransmissions that are attempted in unreliable mode, or nullptr if unset.
+  /// </summary>
   property IBox<uint16>^ MaxRetransmits;
+  /// <summary>
+  /// The name of the sub-protocol used with this RTCDataChannel if any.
+  /// </summary>
   property String^ Protocol;
+  /// <summary>
+  /// true if this RTCDataChannel was negotiated by the application, false otherwise.
+  /// </summary>
   property IBox<bool>^ Negotiated;
+  /// <summary>
+  /// Unique identifier for the data channel.
+  /// </summary>
   property IBox<uint16>^ Id;
 };
 
@@ -54,6 +73,9 @@ public enum class RTCDataChannelMessageType {
   Binary
 };
 
+/// <summary>
+/// Interface for determining the data type of a data channel message.
+/// </summary>
 public interface class IDataChannelMessage {
   property RTCDataChannelMessageType DataType;
 };
@@ -88,6 +110,9 @@ public:
   };
 };
 
+/// <summary>
+/// Event data received from a data channel.
+/// </summary>
 public ref class RTCDataChannelMessageEvent sealed {
 public:
   property IDataChannelMessage^ Data;
@@ -166,9 +191,14 @@ public:
   /// </summary>
   event EventDelegate^ OnClose;
 
-  // TODO(WINRT): Figure out how OnError is received.
+  /// <summary>
+  /// Event triggered when an error occurs.
+  /// </summary>
   event EventDelegate^ OnError;
 
+  /// <summary>
+  /// Closes the data channel connection.
+  /// </summary>
   void Close();
 
   /// <summary>
@@ -181,10 +211,19 @@ private:
   rtc::scoped_refptr<webrtc::DataChannelInterface> _impl;
 };
 
+/// <summary>
+/// Message from a data channel event.
+/// </summary>
 public ref class RTCDataChannelEvent sealed {
 public:
+  /// <summary>
+  /// Returns a channel connection object.
+  /// </summary>
   property RTCDataChannel^ Channel;
 };
+/// <summary>
+/// Delegate for receiving data channel events.
+/// </summary>
 public delegate void RTCDataChannelEventDelegate(RTCDataChannelEvent^);
 
 }  // namespace webrtc_winrt_api
