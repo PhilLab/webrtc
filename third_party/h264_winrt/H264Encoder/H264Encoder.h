@@ -48,7 +48,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
     const std::vector<FrameType>* frame_types) override;
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
-  void OnDroppedFrame() override;
+  void OnDroppedFrame(uint32_t timestamp) override;
 
   // === IH264EncodingCallback overrides ===
   void OnH264Encoded(ComPtr<IMFSample> sample) override;
@@ -72,6 +72,8 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   LONGLONG lastTimestampHns_;
   bool firstFrame_;
   int framePendingCount_;
+  DWORD frameCount_;
+  bool lastFrameDropped_;
 
   struct CachedFrameAttributes {
     uint32_t timestamp;

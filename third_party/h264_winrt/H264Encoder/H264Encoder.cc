@@ -47,6 +47,8 @@ H264WinRTEncoderImpl::H264WinRTEncoderImpl()
   , firstFrame_(true)
   , startTime_(0)
   , framePendingCount_(0)
+  , frameCount_(0)
+  , lastFrameDropped_(false)
   , lastTimestampHns_(0) {
 }
 
@@ -106,7 +108,7 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ON_SUCCEEDED(sinkWriterCreationAttributes_->SetUINT32(
     MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE));
   ON_SUCCEEDED(sinkWriterCreationAttributes_->SetUINT32(
-    MF_SINK_WRITER_DISABLE_THROTTLING, FALSE));
+    MF_SINK_WRITER_DISABLE_THROTTLING, TRUE));
   ON_SUCCEEDED(sinkWriterCreationAttributes_->SetUINT32(
     MF_LOW_LATENCY, TRUE));
 
@@ -280,6 +282,11 @@ ComPtr<IMFSample> H264WinRTEncoderImpl::FromVideoFrame(const VideoFrame& frame) 
     }
 
     ON_SUCCEEDED(sample->AddBuffer(mediaBuffer.Get()));
+
+    if (lastFrameDropped_) {
+      lastFrameDropped_ = false;
+      sampleAttributes->SetUINT32(MFSampleExtension_Discontinuity, TRUE);
+    }
   }
 
   return sample;
@@ -306,6 +313,11 @@ int H264WinRTEncoderImpl::Encode(
     auto sample = FromVideoFrame(frame);
 
     ON_SUCCEEDED(sinkWriter_->WriteSample(streamIndex_, sample.Get()));
+
+    ++frameCount_;
+    if (frameCount_ % 30 == 0) {
+      ON_SUCCEEDED(sinkWriter_->NotifyEndOfSegment(streamIndex_));
+    }
 
     ++framePendingCount_;
   }
@@ -464,12 +476,6 @@ int H264WinRTEncoderImpl::SetRates(
 
   uint32_t old_bitrate_kbit, old_framerate, one;
 
-  ComPtr<IMFSinkWriterEx> sinkWriterEx;
-  sinkWriter_.As(&sinkWriterEx);
-  ComPtr<IMFTransform> transform;
-  GUID transformCategory;
-  ON_SUCCEEDED(sinkWriterEx->GetTransformForStream(streamIndex_, 0, &transformCategory, &transform));
-
   hr = mediaTypeOut_->GetUINT32(MF_MT_AVG_BITRATE, &old_bitrate_kbit);
   old_bitrate_kbit /= 1024;
   hr = MFGetAttributeRatio(mediaTypeOut_.Get(),
@@ -499,17 +505,52 @@ int H264WinRTEncoderImpl::SetRates(
     quality_scaler_.ReportFramerate(new_framerate);
 
     if (bitrateUpdated || fpsUpdated) {
-      ON_SUCCEEDED(transform->SetOutputType(0, mediaTypeOut_.Get(), 0));
-      ON_SUCCEEDED(transform->SetInputType(0, mediaTypeIn_.Get(), 0));
+      ComPtr<IMFSinkWriterEx> sinkWriterEx;
+      sinkWriter_.As(&sinkWriterEx);
+      ComPtr<IMFTransform> transform;
+      GUID transformCategory = { 0 };
+      int transformIndex = 0;
+      do
+      {
+        ON_SUCCEEDED(sinkWriterEx->GetTransformForStream(streamIndex_, transformIndex, &transformCategory, &transform));
+        OutputDebugString((L"GetTransformForStream returned guid: " + transformCategory.Data1.ToString() + L"\n")->Data());
+        transformIndex++;
+      } while (SUCCEEDED(hr) && transformCategory != MFT_CATEGORY_VIDEO_ENCODER && transform != nullptr);
+      // MFT_CATEGORY_AUDIO_DECODER
+      if (transform.Get() == nullptr || transformCategory != MFT_CATEGORY_VIDEO_ENCODER) {
+        OutputDebugString(L"GetTransformForStream() couldn't find transform.\n");
+        LOG(LS_WARNING) << "GetTransformForStream() couldn't find transform";
+        return WEBRTC_VIDEO_CODEC_OK;
+      }
+
+      ComPtr<IMFSinkWriterEncoderConfig> encoderConfig;
+      sinkWriter_.As(&encoderConfig);
+
+      if (false) {
+        // For now, we don't use these functions.
+        // They cause serious issues on every devices I test with except Surface Book.
+        // TODO(winrt): Detect programatically the Surface Book and use these APIs.
+        ON_SUCCEEDED(encoderConfig->SetTargetMediaType(0, mediaTypeOut_.Get(), nullptr));
+        ON_SUCCEEDED(sinkWriter_->SetInputMediaType(0, mediaTypeIn_.Get(), nullptr));
+      }
+      else {
+        // This works extremely smoothly accross all devices
+        // except Surface Book.
+        ON_SUCCEEDED(transform->SetOutputType(0, mediaTypeOut_.Get(), 0));
+        ON_SUCCEEDED(transform->SetInputType(0, mediaTypeIn_.Get(), 0));
+      }
     }
   }
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void H264WinRTEncoderImpl::OnDroppedFrame() {
+void H264WinRTEncoderImpl::OnDroppedFrame(uint32_t timestamp) {
   webrtc::CriticalSectionScoped csLock(_lock.get());
   quality_scaler_.ReportDroppedFrame();
+  auto timestampHns = ((timestamp - startTime_) / 90) * 1000 * 10;
+  sinkWriter_->SendStreamTick(streamIndex_, timestampHns);
+  lastFrameDropped_ = true;
 }
 
 }  // namespace webrtc

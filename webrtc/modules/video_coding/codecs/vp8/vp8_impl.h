@@ -56,7 +56,7 @@ class VP8EncoderImpl : public VP8Encoder {
 
   virtual int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate);
 
-  void OnDroppedFrame() override {}
+  void OnDroppedFrame(uint32_t timestamp) override {}
 
  private:
   void SetupTemporalLayers(int num_streams, int num_temporal_layers,

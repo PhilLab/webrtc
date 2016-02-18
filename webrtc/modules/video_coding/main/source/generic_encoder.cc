@@ -200,8 +200,8 @@ VCMGenericEncoder::InternalSource() const
     return internal_source_;
 }
 
-void VCMGenericEncoder::OnDroppedFrame() {
-  encoder_->OnDroppedFrame();
+void VCMGenericEncoder::OnDroppedFrame(uint32_t timestamp) {
+  encoder_->OnDroppedFrame(timestamp);
 }
 
 bool VCMGenericEncoder::SupportsNativeHandle() const {

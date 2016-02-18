@@ -299,7 +299,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
     return VCM_OK;
   }
   if (_mediaOpt.DropFrame()) {
-    _encoder->OnDroppedFrame();
+    _encoder->OnDroppedFrame(videoFrame.timestamp());
     return VCM_OK;
   }
   _mediaOpt.UpdateContentData(contentMetrics);
