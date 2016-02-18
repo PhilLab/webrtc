@@ -24,19 +24,20 @@ using Microsoft::WRL::ComPtr;
 namespace webrtc {
 
 enum State {
-    State_TypeNotSet = 0,    // No media type is set
-    State_Ready,             // Media type is set, Start has never been called.
-    State_Started,
-    State_Stopped,
-    State_Count              // Number of states
+  State_TypeNotSet = 0,    // No media type is set
+  State_Ready,             // Media type is set, Start has never been called.
+  State_Started,
+  State_Stopped,
+  State_Count              // Number of states
 };
 
 enum StreamOperation {
-    OpSetMediaType = 0,
-    OpStart,
-    OpStop,
-    OpProcessSample,
-    Op_Count
+  OpSetMediaType = 0,
+  OpStart,
+  OpStop,
+  OpProcessSample,
+  OpPlaceMarker,
+  Op_Count
 };
 
 class H264MediaSink;
@@ -45,6 +46,7 @@ class H264MediaSink;
 class IAsyncStreamSinkOperation : public IUnknown {
  public:
   STDMETHOD(GetOp)(StreamOperation* op) PURE;
+  STDMETHOD(GetPropVariant)(PROPVARIANT* propVariant) PURE;
 };
 
 class DECLSPEC_UUID("0c89c2e1-79bb-4ad7-a34f-cc006225f8e1")
@@ -55,12 +57,14 @@ class DECLSPEC_UUID("0c89c2e1-79bb-4ad7-a34f-cc006225f8e1")
   IAsyncStreamSinkOperation> {
   InspectableClass(L"AsyncStreamSinkOperation", BaseTrust)
  public:
-  HRESULT RuntimeClassInitialize(StreamOperation op);
+  HRESULT RuntimeClassInitialize(StreamOperation op, const PROPVARIANT* propVariant);
   virtual ~AsyncStreamSinkOperation();
 
   IFACEMETHOD(GetOp) (StreamOperation* op);
+  IFACEMETHOD(GetPropVariant)(PROPVARIANT* propVariant);
 
  private:
+  PROPVARIANT m_propVariant;
   StreamOperation m_op;
 };
 
@@ -129,7 +133,7 @@ class H264StreamSink : public Microsoft::WRL::RuntimeClass<
  private:
   HRESULT     ValidateOperation(StreamOperation op);
 
-  HRESULT     QueueAsyncOperation(StreamOperation op);
+  HRESULT     QueueAsyncOperation(StreamOperation op, const PROPVARIANT* propVariant = nullptr);
 
   HRESULT     OnDispatchWorkItem(IMFAsyncResult *pAsyncResult);
 

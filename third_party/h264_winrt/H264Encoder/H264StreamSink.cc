@@ -207,6 +207,9 @@ IFACEMETHODIMP H264StreamSink::PlaceMarker(
   AutoLock lock(critSec_);
   HRESULT hr = S_OK;
   hr = CheckShutdown();
+  if (SUCCEEDED(hr)) {
+    hr = QueueAsyncOperation(OpPlaceMarker, pvarContextValue);
+  }
   return hr;
 }
 
@@ -312,7 +315,6 @@ IFACEMETHODIMP H264StreamSink::SetCurrentMediaType(
 
   ON_SUCCEEDED(CheckShutdown());
 
-  // We don't allow format changes after streaming starts.
   ON_SUCCEEDED(ValidateOperation(OpSetMediaType));
 
   // We set media type already
@@ -447,10 +449,10 @@ HRESULT H264StreamSink::Shutdown() {
   return S_OK;
 }
 
-HRESULT H264StreamSink::QueueAsyncOperation(StreamOperation op) {
+HRESULT H264StreamSink::QueueAsyncOperation(StreamOperation op, const PROPVARIANT* propVariant) {
   HRESULT hr = S_OK;
   Microsoft::WRL::ComPtr<IUnknown> spOp;
-  hr = Microsoft::WRL::MakeAndInitialize<AsyncStreamSinkOperation>(&spOp, op);
+  hr = Microsoft::WRL::MakeAndInitialize<AsyncStreamSinkOperation>(&spOp, op, propVariant);
 
   if (SUCCEEDED(hr)) {
     hr = MFPutWorkItem2(workQueueId_, 0, &workQueueCB_, spOp.Get());
@@ -502,6 +504,15 @@ HRESULT H264StreamSink::OnDispatchWorkItem(IMFAsyncResult *pAsyncResult) {
         }
         break;
 
+      case OpPlaceMarker:
+        {
+          PROPVARIANT propVariant;
+          PropVariantInit(&propVariant);
+          if (SUCCEEDED(pOp->GetPropVariant(&propVariant))) {
+            hr = QueueEvent(MEStreamSinkMarker, GUID_NULL, S_OK, &propVariant);
+          }
+      } break;
+
       case OpSetMediaType:
         break;
       }
@@ -550,9 +561,16 @@ void H264StreamSink::HandleError(HRESULT hr) {
 }
 
 
-HRESULT AsyncStreamSinkOperation::RuntimeClassInitialize(StreamOperation op) {
+HRESULT AsyncStreamSinkOperation::RuntimeClassInitialize(
+  StreamOperation op, const PROPVARIANT* propVariant) {
   HRESULT hr = S_OK;
   m_op = op;
+  if (propVariant != nullptr) {
+    PropVariantCopy(&m_propVariant, propVariant);
+  }
+  else {
+    PropVariantInit(&m_propVariant);
+  }
   return hr;
 }
 
@@ -563,6 +581,13 @@ HRESULT AsyncStreamSinkOperation::GetOp(StreamOperation* op) {
   if (op == nullptr)
     return E_INVALIDARG;
   *op = m_op;
+  return S_OK;
+}
+
+HRESULT AsyncStreamSinkOperation::GetPropVariant(PROPVARIANT* propVariant) {
+  if (propVariant == nullptr)
+    return E_INVALIDARG;
+  PropVariantCopy(propVariant, &m_propVariant);
   return S_OK;
 }
 
