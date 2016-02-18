@@ -438,25 +438,54 @@ IMediaSource^ Media::CreateMediaSource(
 
 IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
-  for (auto videoDev : g_videoDevices) {
-    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
-  }
+  globals::RunOnGlobalThread<void>([this, ret] {
+    g_videoDevices.clear();
+    if (!_dev_manager->GetVideoCaptureDevices(&g_videoDevices)) {
+      LOG(LS_ERROR) << "Can't enumerate video capture devices";
+    }
+    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+    for (auto videoDev : g_videoDevices) {
+      ret->Append(ref new MediaDevice(ToCx(videoDev.id),
+        ToCx(videoDev.name)));
+    }
+  });
   return ret;
 }
 
 IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
   auto ret = ref new Vector<MediaDevice^>();
-  for (auto audioCaptureDev : g_audioCapturerDevices) {
-    ret->Append(ref new MediaDevice(ToCx(audioCaptureDev.id),
-                                    ToCx(audioCaptureDev.name)));
-  }
+  globals::RunOnGlobalThread<void>([this, ret] {
+    webrtc::VoEHardware* voiceEngineHardware =
+      globals::gPeerConnectionFactory->channel_manager()->media_engine()->
+      GetVoEHardware();
+    if (voiceEngineHardware == nullptr) {
+      LOG(LS_ERROR) << "Can't enumerate audio capture devices: "
+        << "VoEHardware API not available.";
+      return;
+    }
+    int recordingDeviceCount(0);
+    char audioDeviceName[128];
+    char audioDeviceGuid[128];
+    if (voiceEngineHardware->GetNumOfRecordingDevices(recordingDeviceCount) == 0) {
+      for (int i = 0; i < recordingDeviceCount; ++i) {
+        voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
+          audioDeviceGuid);
+        g_audioCapturerDevices.push_back(cricket::Device(audioDeviceName,
+          audioDeviceGuid));
+        ret->Append(ref new MediaDevice(ToCx(audioDeviceGuid),
+          ToCx(audioDeviceName)));
+      }
+    } else {
+      LOG(LS_ERROR) << "Can't enumerate audio capture devices";
+    }
+  });
   return ret;
 }
 
 IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
   auto ret = ref new Vector<MediaDevice^>();
   g_audioPlayoutDevices.clear();
-  globals::RunOnGlobalThread<void>([this] {
+  globals::RunOnGlobalThread<void>([this, ret] {
     webrtc::VoEHardware* voiceEngineHardware =
       globals::gPeerConnectionFactory->channel_manager()->media_engine()->
       GetVoEHardware();
@@ -474,71 +503,14 @@ IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
           audioDeviceGuid);
         g_audioPlayoutDevices.push_back(cricket::Device(audioDeviceName,
           audioDeviceGuid));
+        ret->Append(ref new MediaDevice(ToCx(audioDeviceGuid),
+          ToCx(audioDeviceName)));
       }
     } else {
       LOG(LS_ERROR) << "Can't enumerate audio playout devices";
     }
   });
-
-  for (auto audioPlayoutDev : g_audioPlayoutDevices) {
-    ret->Append(ref new MediaDevice(ToCx(audioPlayoutDev.id),
-                                    ToCx(audioPlayoutDev.name)));
-  }
   return ret;
-}
-
-IAsyncOperation<bool>^ Media::EnumerateAudioVideoCaptureDevices() {
-  IAsyncOperation<bool>^ asyncOp = Concurrency::create_async(
-    [this]() -> bool {
-    return globals::RunOnGlobalThread<bool>([this]()->bool {
-      std::vector<cricket::Device> videoDevices;
-      if (!_dev_manager->GetVideoCaptureDevices(&videoDevices)) {
-        LOG(LS_ERROR) << "Can't enumerate video devices";
-        return false;
-      }
-      webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
-      g_videoDevices.clear();
-      for (auto videoDev : videoDevices) {
-        g_videoDevices.push_back(videoDev);
-        OnVideoCaptureDeviceFound(ref new MediaDevice(ToCx(videoDev.id),
-          ToCx(videoDev.name)));
-      }
-
-      std::vector<cricket::Device> audioDevices;
-      webrtc::VoEHardware* voiceEngineHardware =
-        globals::gPeerConnectionFactory->channel_manager()->media_engine()->
-        GetVoEHardware();
-      if (voiceEngineHardware == nullptr) {
-        LOG(LS_ERROR) << "Can't enumerate audio capture devices: "
-                      << "VoEHardware API not available.";
-      } else {
-        int recordingDeviceCount(0);
-        char audioDeviceName[128];
-        char audioDeviceGuid[128];
-        if (voiceEngineHardware->GetNumOfRecordingDevices(
-          recordingDeviceCount) == 0) {
-          for (int i = 0; i < recordingDeviceCount; ++i) {
-            voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
-              audioDeviceGuid);
-            audioDevices.push_back(cricket::Device(audioDeviceName,
-              audioDeviceGuid));
-          }
-        } else {
-          LOG(LS_ERROR) << "Can't enumerate audio capture devices";
-          return false;
-        }
-      }
-      g_audioCapturerDevices.clear();
-
-      for (auto audioInputDev : audioDevices) {
-        g_audioCapturerDevices.push_back(audioInputDev);
-        OnAudioCaptureDeviceFound(ref new MediaDevice(ToCx(audioInputDev.id),
-          ToCx(audioInputDev.name)));
-      }
-      return true;
-    });
-  });
-  return asyncOp;
 }
 
 void Media::SelectVideoDevice(MediaDevice^ device) {

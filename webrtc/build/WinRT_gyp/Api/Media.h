@@ -447,7 +447,6 @@ namespace webrtc_winrt_api {
       MediaVideoTrack^ track, String^ id);
 
     /// <summary>
-    /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.
     /// Retrieves system devices that can be used for audio capturing.
     /// (microphones).
     /// </summary>
@@ -456,33 +455,18 @@ namespace webrtc_winrt_api {
     IVector<MediaDevice^>^ GetAudioCaptureDevices();
 
     /// <summary>
-    /// Retrieves system devices that can be used for audio playout (speakers)
+    /// Retrieves system devices that can be used for audio playout (speakers).
     /// </summary>
     /// <returns>Vector of system devices that can be used for audio playout
     /// (speakers).</returns>
     IVector<MediaDevice^>^ GetAudioPlayoutDevices();
 
     /// <summary>
-    /// Has to be called after <see cref="EnumerateAudioVideoCaptureDevices"/>.
     /// Retrieves system devices that can be used for video capturing (webcams).
     /// </summary>
     /// <returns>Vector of system devices that can be used for video capturing
     /// (webcams).</returns>
     IVector<MediaDevice^>^ GetVideoCaptureDevices();
-
-    /// <summary>
-    /// Enumerates through all capture devices on the system.
-    /// Has to be called before <see cref="GetAudioCaptureDevices"/> and
-    /// <see cref="GetVideoCaptureDevices"/>.
-    /// Sends events: <see cref="OnVideoCaptureDeviceFound"/>,
-    /// <see cref="OnAudioCaptureDeviceFound"/>.
-    /// TODO(winrt): we should be able to refactor this so that it returns
-    /// a list of devices and get rid of GetAudio/GetVideoCaptureDevices
-    /// </summary>
-    /// <returns>This is an asynchronous method. The result is true if the
-    /// operation completed successfully, and false otherwise.</returns>
-    IAsyncOperation<bool>^ EnumerateAudioVideoCaptureDevices();
-
 
     /// <summary>
     /// Allows switching between webcams.
@@ -519,18 +503,6 @@ namespace webrtc_winrt_api {
     /// </summary>
     static void SetDisplayOrientation(Windows::Graphics::Display::DisplayOrientations
       display_orientation);
-
-    /// <summary>
-    /// Fired when a video capture device (webcam) is found on the system
-    /// while enumerating devices.
-    /// </summary>
-    event OnMediaCaptureDeviceFoundDelegate^ OnVideoCaptureDeviceFound;
-
-    /// <summary>
-    /// Fired when an audio capture device (microphone) is found on the system
-    /// while enumerating devices.
-    /// </summary>
-    event OnMediaCaptureDeviceFoundDelegate^ OnAudioCaptureDeviceFound;
 
   private:
     Media();
