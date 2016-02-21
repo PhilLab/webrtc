@@ -333,7 +333,6 @@ public:
   /// Get or sets the ICE server transport connection policy.
   /// </summary>
   property IBox<RTCBundlePolicy>^ BundlePolicy;
-  // TODO(WINRT): DOMString PeerIdentity
 };
 
 /// <summary>
@@ -575,7 +574,7 @@ public:
   IAsyncAction^ SetRemoteDescription(RTCSessionDescription^ description);
 
   /// <summary>
-  /// TODO(WINRT) Implementation
+  /// Gets the configuration of this connection.
   /// </summary>
   /// <returns>A handle to the current configuration for this object.</returns>
   RTCConfiguration^ GetConfiguration();
@@ -700,10 +699,16 @@ public:
     RTCSignalingState get();
   }
 
+  /// <summary>
+  /// Gets the ICE gathering state such as New, Gathering, or Complete.
+  /// </summary>
   property RTCIceGatheringState IceGatheringState {
     RTCIceGatheringState get();
   }
 
+  /// <summary>
+  /// Gets the state of the connection.
+  /// </summary>
   property RTCIceConnectionState IceConnectionState {
     RTCIceConnectionState get();
   }
