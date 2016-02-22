@@ -45,6 +45,7 @@ namespace webrtc {
   void H264WinRTEncoderFactory::DestroyVideoEncoder(
     webrtc::VideoEncoder* encoder) {
       encoder->Release();
+      delete encoder;
   }
 
 
@@ -60,6 +61,7 @@ namespace webrtc {
   void H264WinRTDecoderFactory::DestroyVideoDecoder(
     webrtc::VideoDecoder* decoder) {
     decoder->Release();
+    delete decoder;
   }
 
 }  // namespace webrtc

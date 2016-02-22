@@ -14,6 +14,7 @@
 #include <mfapi.h>
 #include <mfidl.h>
 #include "Utils/Utils.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 
@@ -168,9 +169,9 @@ IFACEMETHODIMP H264StreamSink::GetMediaTypeHandler(
 
   HRESULT hr = CheckShutdown();
 
+  // This stream object acts as its own type handler, so we QI ourselves.
   if (SUCCEEDED(hr)) {
-    AddRef();
-    *ppHandler = this;
+    hr = QueryInterface(IID_IMFMediaTypeHandler, (void**)ppHandler);
   }
 
   return hr;
@@ -514,6 +515,7 @@ HRESULT H264StreamSink::OnDispatchWorkItem(IMFAsyncResult *pAsyncResult) {
       } break;
 
       case OpSetMediaType:
+        hr = QueueEvent(MEStreamSinkFormatChanged, GUID_NULL, S_OK, nullptr);
         break;
       }
     }

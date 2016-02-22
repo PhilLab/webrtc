@@ -19,7 +19,6 @@
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <wrl\implements.h>
-#include <codecapi.h>
 #include <sstream>
 #include <vector>
 #include <iomanip>
@@ -28,8 +27,11 @@
 #include "H264MediaSink.h"
 #include "Utils/Utils.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/common_video/libyuv/include/scaler.h"
 #include "libyuv/convert.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/win32.h"
 
 
 #pragma comment(lib, "mfreadwrite")
@@ -49,6 +51,10 @@ H264WinRTEncoderImpl::H264WinRTEncoderImpl()
   , framePendingCount_(0)
   , frameCount_(0)
   , lastFrameDropped_(false)
+  , currentWidth_(0)
+  , currentHeight_(0)
+  , currentBitrateBps_(0)
+  , currentFps_(0)
   , lastTimestampHns_(0) {
 }
 
@@ -57,8 +63,17 @@ H264WinRTEncoderImpl::~H264WinRTEncoderImpl() {
 }
 
 int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
-  int number_of_cores,
+  int /*number_of_cores*/,
   size_t /*maxPayloadSize */) {
+  currentWidth_ = inst->width;
+  currentHeight_ = inst->height;
+  currentBitrateBps_ = inst->targetBitrate > 0 ? inst->targetBitrate * 1024 : currentWidth_ * currentHeight_ * 2.0;
+  currentFps_ = inst->maxFramerate;
+  quality_scaler_.Init(inst->qpMax / 2, 64, false);
+  return InitEncoderWithSettings(inst);
+}
+
+int H264WinRTEncoderImpl::InitEncoderWithSettings(const VideoCodec* inst) {
   HRESULT hr = S_OK;
 
   webrtc::CriticalSectionScoped csLock(_lock.get());
@@ -66,9 +81,10 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   ON_SUCCEEDED(MFStartup(MF_VERSION));
 
   // output media type (h264)
-  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut_));
-  ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-  ON_SUCCEEDED(mediaTypeOut_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
+  ComPtr<IMFMediaType> mediaTypeOut;
+  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut));
+  ON_SUCCEEDED(mediaTypeOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+  ON_SUCCEEDED(mediaTypeOut->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
   // TODO(winrt): Lumia 635 and Lumia 1520 Windows phones don't work well
   //              with constrained baseline profile. Uncomment or delete
   //              the line below as soon as we find the reason why.
@@ -76,29 +92,34 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
 
   // Weight*Height*2 kbit represents a good balance between video quality and
   // the bandwidth that a 620 Windows phone can handle.
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE,
-      inst->targetBitrate > 0 ? inst->targetBitrate : inst->height * inst->width * 2.0));
-  ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_INTERLACE_MODE,
-    MFVideoInterlace_Progressive));
-  ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut_.Get(),
-    MF_MT_FRAME_SIZE, inst->width, inst->height));
-  ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeOut_.Get(),
-    MF_MT_FRAME_RATE, inst->maxFramerate, 1));
+  ON_SUCCEEDED(mediaTypeOut->SetUINT32(
+    MF_MT_AVG_BITRATE, currentBitrateBps_));
+  ON_SUCCEEDED(mediaTypeOut->SetUINT32(
+    MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
+  ON_SUCCEEDED(MFSetAttributeSize(mediaTypeOut.Get(),
+    MF_MT_FRAME_SIZE, currentWidth_, currentHeight_));
+  ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeOut.Get(),
+    MF_MT_FRAME_RATE, currentFps_, 1));
 
   // input media type (nv12)
-  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeIn_));
-  ON_SUCCEEDED(mediaTypeIn_->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-  ON_SUCCEEDED(mediaTypeIn_->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12));
-  ON_SUCCEEDED(mediaTypeIn_->SetUINT32(
+  ComPtr<IMFMediaType> mediaTypeIn;
+  ON_SUCCEEDED(MFCreateMediaType(&mediaTypeIn));
+  ON_SUCCEEDED(mediaTypeIn->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+  ON_SUCCEEDED(mediaTypeIn->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12));
+  ON_SUCCEEDED(mediaTypeIn->SetUINT32(
     MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
-  ON_SUCCEEDED(mediaTypeIn_->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
-  ON_SUCCEEDED(MFSetAttributeSize(mediaTypeIn_.Get(),
-    MF_MT_FRAME_SIZE, inst->width, inst->height));
-  ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeIn_.Get(),
-    MF_MT_FRAME_RATE, inst->maxFramerate, 1));
+  ON_SUCCEEDED(mediaTypeIn->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
+  ON_SUCCEEDED(MFSetAttributeSize(mediaTypeIn.Get(),
+    MF_MT_FRAME_SIZE, currentWidth_, currentHeight_));
+  ON_SUCCEEDED(MFSetAttributeRatio(mediaTypeIn.Get(),
+    MF_MT_FRAME_RATE, currentFps_, 1));
 
-  quality_scaler_.Init(inst->qpMax / QualityScaler::kDefaultLowQpDenominator, 64, false);
-  quality_scaler_.ReportFramerate(inst->maxFramerate);
+  quality_scaler_.ReportFramerate(currentFps_);
+  _scaler.Set(
+    inst->width, inst->height,
+    currentWidth_, currentHeight_,
+    kI420, kI420,
+    kScalePoint);
 
   // Create the media sink
   ON_SUCCEEDED(Microsoft::WRL::MakeAndInitialize<H264MediaSink>(&mediaSink_));
@@ -117,20 +138,22 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
     sinkWriterCreationAttributes_.Get(), &sinkWriter_));
 
   // Add the h264 output stream to the writer
-  ON_SUCCEEDED(sinkWriter_->AddStream(mediaTypeOut_.Get(), &streamIndex_));
+  ON_SUCCEEDED(sinkWriter_->AddStream(mediaTypeOut.Get(), &streamIndex_));
 
   // SinkWriter encoder properties
   ON_SUCCEEDED(MFCreateAttributes(&sinkWriterEncoderAttributes_, 1));
-  ON_SUCCEEDED(sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn_.Get(),
-    sinkWriterEncoderAttributes_.Get()));
+  ON_SUCCEEDED(sinkWriter_->SetInputMediaType(streamIndex_, mediaTypeIn.Get(), nullptr));
 
   // Register this as the callback for encoded samples.
   ON_SUCCEEDED(mediaSink_->RegisterEncodingCallback(this));
 
   ON_SUCCEEDED(sinkWriter_->BeginWriting());
 
+  codec_ = *inst;
+
   if (SUCCEEDED(hr)) {
     inited_ = true;
+    lastTimeSettingsChanged_ = webrtc::TickTime::Now();
     return WEBRTC_VIDEO_CODEC_OK;
   } else {
     return hr;
@@ -145,6 +168,7 @@ int H264WinRTEncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 int H264WinRTEncoderImpl::Release() {
+
   // Use a temporary sink variable to prevent lock inversion
   // between the shutdown call and OnH264Encoded() callback.
   ComPtr<H264MediaSink> tmpMediaSink;
@@ -157,10 +181,7 @@ int H264WinRTEncoderImpl::Release() {
     }
     sinkWriterCreationAttributes_.Reset();
     sinkWriterEncoderAttributes_.Reset();
-    mediaTypeOut_.Reset();
-    mediaTypeIn_.Reset();
     mediaSink_.Reset();
-    encodedCompleteCallback_ = nullptr;
     startTime_ = 0;
     lastTimestampHns_ = 0;
     firstFrame_ = true;
@@ -175,7 +196,7 @@ int H264WinRTEncoderImpl::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-//#define DYNAMIC_SCALING
+#define DYNAMIC_SCALING
 
 ComPtr<IMFSample> H264WinRTEncoderImpl::FromVideoFrame(const VideoFrame& frame) {
   HRESULT hr = S_OK;
@@ -222,29 +243,12 @@ ComPtr<IMFSample> H264WinRTEncoderImpl::FromVideoFrame(const VideoFrame& frame) 
     }
 
     {
-      ComPtr<IMFSinkWriterEx> sinkWriterEx;
-      sinkWriter_.As(&sinkWriterEx);
-      ComPtr<IMFTransform> transform;
-      GUID transformCategory;
-      ON_SUCCEEDED(sinkWriterEx->GetTransformForStream(streamIndex_, 0, &transformCategory, &transform));
-
-      UINT32 currentWidth, currentHeight;
-      MFGetAttributeSize(mediaTypeOut_.Get(),
-        MF_MT_FRAME_SIZE, &currentWidth, &currentHeight);
-
-      if (dstFrame.width() != (int)currentWidth || dstFrame.height() != (int)currentHeight) {
-        MFSetAttributeSize(mediaTypeOut_.Get(), MF_MT_FRAME_SIZE, dstFrame.width(), dstFrame.height());
-        MFSetAttributeSize(mediaTypeIn_.Get(), MF_MT_FRAME_SIZE, dstFrame.width(), dstFrame.height());
-
-        ON_SUCCEEDED(transform->SetInputType(0, nullptr, 0));
-        ON_SUCCEEDED(transform->SetOutputType(0, nullptr, 0));
-        ON_SUCCEEDED(transform->SetOutputType(0, mediaTypeOut_.Get(), 0));
-        ON_SUCCEEDED(transform->SetInputType(0, mediaTypeIn_.Get(), 0));
-        OutputDebugString((L"H264WinRTDecoder: resolution updated: " +
-          dstFrame.width().ToString() + L"x" +
-          dstFrame.height().ToString() + L"\r\n")->Data());
-        LOG(LS_WARNING) << "Resolution updated: " <<
-          dstFrame.width() << "x" << dstFrame.height();
+      if (dstFrame.width() != (int)currentWidth_ || dstFrame.height() != (int)currentHeight_) {
+        Release();
+        currentWidth_ = dstFrame.width();
+        currentHeight_ = dstFrame.height();
+        InitEncoderWithSettings(&codec_);
+        LOG(LS_WARNING) << "Resolution changed to: " << dstFrame.width() << "x" << dstFrame.height();
       }
     }
 
@@ -311,9 +315,9 @@ int H264WinRTEncoderImpl::Encode(
     webrtc::CriticalSectionScoped csLock(_lock.get());
 
     auto sample = FromVideoFrame(frame);
-
     ON_SUCCEEDED(sinkWriter_->WriteSample(streamIndex_, sample.Get()));
 
+    // Some threads online mention this is useful to do regularly.
     ++frameCount_;
     if (frameCount_ % 30 == 0) {
       ON_SUCCEEDED(sinkWriter_->NotifyEndOfSegment(streamIndex_));
@@ -376,14 +380,6 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
       }
     }
 
-    _h264Parser.ParseBitstream(sendBuffer.data(), sendBuffer.size());
-    int lastQp;
-    if (_h264Parser.GetLastSliceQp(&lastQp)) {
-      quality_scaler_.ReportQP(lastQp);
-    } else {
-      OutputDebugString(L"H264WinRTDecoder: Couldn't find QP\r\n");
-    }
-
     // Scan for and create mark all fragments.
     RTPFragmentationHeader fragmentationHeader;
     uint32_t fragIdx = 0;
@@ -430,6 +426,12 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     {
       webrtc::CriticalSectionScoped csLock(_lock.get());
 
+      _h264Parser.ParseBitstream(sendBuffer.data(), sendBuffer.size());
+      int lastQp;
+      if (_h264Parser.GetLastSliceQp(&lastQp)) {
+        quality_scaler_.ReportQP(lastQp);
+      }
+
       LONGLONG sampleTimestamp;
       sample->GetSampleTime(&sampleTimestamp);
 
@@ -442,6 +444,11 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
         encodedImage._encodedHeight = frameAttributes.frameHeight;
         encodedImage.adapt_reason_.quality_resolution_downscales =
           quality_scaler_.downscale_shift();
+      }
+      else {
+        // No point in confusing the callback with a frame that doesn't
+        // have correct attributes.
+        return;
       }
 
       if (encodedCompleteCallback_ != nullptr) {
@@ -462,7 +469,10 @@ int H264WinRTEncoderImpl::SetChannelParameters(
 
 int H264WinRTEncoderImpl::SetRates(
   uint32_t new_bitrate_kbit, uint32_t new_framerate) {
-  // This may happen. Ignore it.
+  LOG(LS_INFO) << "H264WinRTEncoderImpl::SetRates("
+    << new_bitrate_kbit << "kbit " << new_framerate << "fps)";
+
+  // This may happen.  Ignore it.
   if (new_framerate == 0) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -472,74 +482,33 @@ int H264WinRTEncoderImpl::SetRates(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  HRESULT hr = S_OK;
+  bool bitrateUpdated = false;
+  bool fpsUpdated = false;
 
-  uint32_t old_bitrate_kbit, old_framerate, one;
-
-  hr = mediaTypeOut_->GetUINT32(MF_MT_AVG_BITRATE, &old_bitrate_kbit);
-  old_bitrate_kbit /= 1024;
-  hr = MFGetAttributeRatio(mediaTypeOut_.Get(),
-    MF_MT_FRAME_RATE, &old_framerate, &one);
-
-  if (old_bitrate_kbit != new_bitrate_kbit) {
-    LOG(LS_INFO) << "H264WinRTEncoder: SetRates "
-      << new_bitrate_kbit << "kbit " << new_framerate << "fps";
-    OutputDebugString((L"H264WinRTEncoder: SetRates " +
-      new_bitrate_kbit.ToString() + L"kbps, " +
-      new_framerate + L"fps\r\n")->Data());
-
-    bool bitrateUpdated = false;
-    bool fpsUpdated = false;
 #ifdef DYNAMIC_BITRATE
-    hr = mediaTypeOut_->SetUINT32(MF_MT_AVG_BITRATE, new_bitrate_kbit * 1024);
+  if (currentBitrateBps_ != (new_bitrate_kbit * 1024)) {
+    currentBitrateBps_ = new_bitrate_kbit * 1024;
     bitrateUpdated = true;
+  }
 #endif
 
 #ifdef DYNAMIC_FPS
-    if (old_framerate != new_framerate) {
-      hr = MFSetAttributeRatio(mediaTypeOut_.Get(), MF_MT_FRAME_RATE, new_framerate, 1);
-      hr = MFSetAttributeRatio(mediaTypeIn_.Get(), MF_MT_FRAME_RATE, new_framerate, 1);
-      fpsUpdated = true;
-    }
+  // Fps changes seems to be expensive, make it granular to several frames per second.
+  if (currentFps_ != new_framerate && std::abs((int)currentFps_ - (int)new_framerate) > 5) {
+    currentFps_ = new_framerate;
+    fpsUpdated = true;
+  }
 #endif
-    quality_scaler_.ReportFramerate(new_framerate);
+  quality_scaler_.ReportFramerate(new_framerate);
 
-    if (bitrateUpdated || fpsUpdated) {
-      ComPtr<IMFSinkWriterEx> sinkWriterEx;
-      sinkWriter_.As(&sinkWriterEx);
-      ComPtr<IMFTransform> transform;
-      GUID transformCategory = { 0 };
-      int transformIndex = 0;
-      do
-      {
-        ON_SUCCEEDED(sinkWriterEx->GetTransformForStream(streamIndex_, transformIndex, &transformCategory, &transform));
-        OutputDebugString((L"GetTransformForStream returned guid: " + transformCategory.Data1.ToString() + L"\n")->Data());
-        transformIndex++;
-      } while (SUCCEEDED(hr) && transformCategory != MFT_CATEGORY_VIDEO_ENCODER && transform != nullptr);
-      // MFT_CATEGORY_AUDIO_DECODER
-      if (transform.Get() == nullptr || transformCategory != MFT_CATEGORY_VIDEO_ENCODER) {
-        OutputDebugString(L"GetTransformForStream() couldn't find transform.\n");
-        LOG(LS_WARNING) << "GetTransformForStream() couldn't find transform";
-        return WEBRTC_VIDEO_CODEC_OK;
-      }
-
-      ComPtr<IMFSinkWriterEncoderConfig> encoderConfig;
-      sinkWriter_.As(&encoderConfig);
-
-      if (false) {
-        // For now, we don't use these functions.
-        // They cause serious issues on every devices I test with except Surface Book.
-        // TODO(winrt): Detect programatically the Surface Book and use these APIs.
-        ON_SUCCEEDED(encoderConfig->SetTargetMediaType(0, mediaTypeOut_.Get(), nullptr));
-        ON_SUCCEEDED(sinkWriter_->SetInputMediaType(0, mediaTypeIn_.Get(), nullptr));
-      }
-      else {
-        // This works extremely smoothly accross all devices
-        // except Surface Book.
-        ON_SUCCEEDED(transform->SetOutputType(0, mediaTypeOut_.Get(), 0));
-        ON_SUCCEEDED(transform->SetInputType(0, mediaTypeIn_.Get(), 0));
-      }
+  if (bitrateUpdated || fpsUpdated) {
+    if ((webrtc::TickTime::Now() - lastTimeSettingsChanged_).Milliseconds() < 15000) {
+      LOG(LS_INFO) << L"Last time settings changed was too soon, skipping this SetRates().\n";
+      return WEBRTC_VIDEO_CODEC_OK;
     }
+
+    Release();
+    InitEncoderWithSettings(&codec_);
   }
 
   return WEBRTC_VIDEO_CODEC_OK;
