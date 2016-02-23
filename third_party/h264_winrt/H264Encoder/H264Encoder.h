@@ -23,6 +23,7 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
+#include "webrtc/system_wrappers/include/tick_util.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
@@ -55,6 +56,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
 
  private:
   ComPtr<IMFSample> FromVideoFrame(const VideoFrame& frame);
+  int InitEncoderWithSettings(const VideoCodec* inst);
 
  private:
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
@@ -63,8 +65,6 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   ComPtr<IMFSinkWriter> sinkWriter_;
   ComPtr<IMFAttributes> sinkWriterCreationAttributes_;
   ComPtr<IMFAttributes> sinkWriterEncoderAttributes_;
-  ComPtr<IMFMediaType> mediaTypeOut_;
-  ComPtr<IMFMediaType> mediaTypeIn_;
   ComPtr<H264MediaSink> mediaSink_;
   EncodedImageCallback* encodedCompleteCallback_;
   DWORD streamIndex_;
@@ -74,6 +74,11 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   int framePendingCount_;
   DWORD frameCount_;
   bool lastFrameDropped_;
+  UINT32 currentWidth_;
+  UINT32 currentHeight_;
+  UINT32 currentBitrateBps_;
+  UINT32 currentFps_;
+  webrtc::TickTime lastTimeSettingsChanged_;
 
   struct CachedFrameAttributes {
     uint32_t timestamp;
@@ -89,6 +94,9 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   QualityScaler quality_scaler_;
   // Used to parse QP values out of the samples.
   H264BitstreamParser _h264Parser;
+  webrtc::Scaler _scaler;
+  // Caching the codec received in InitEncode().
+  VideoCodec codec_;
 };  // end of H264WinRTEncoderImpl class
 
 }  // namespace webrtc
