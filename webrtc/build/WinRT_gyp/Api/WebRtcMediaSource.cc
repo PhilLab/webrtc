@@ -197,7 +197,7 @@ IFACEMETHODIMP WebRtcMediaSource::SetD3DManager(IUnknown *pManager) {
 
 IFACEMETHODIMP WebRtcMediaSource::GetService(
   REFGUID guidService, REFIID riid, LPVOID *ppvObject) {
-  if (guidService == MF_RATE_CONTROL_SERVICE) {
+  if (guidService == MF_RATE_CONTROL_SERVICE || guidService == MF_MEDIASOURCE_SERVICE) {
     HRESULT hr = QueryInterface(riid, ppvObject);
     return hr;
   }
