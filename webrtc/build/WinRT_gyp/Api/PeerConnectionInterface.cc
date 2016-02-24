@@ -231,7 +231,7 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer() {
 
     rtc::scoped_refptr<CreateSdpObserver> observer(
       new rtc::RefCountedObject<CreateSdpObserver>(tce));
-    // TODO(WINRT): Remove it once the callback has been received.
+    // For now the callback is kept for the lifetime of the RTCPeerConnection.
     _createSdpObservers.push_back(observer);
 
     _impl->CreateOffer(observer, nullptr);
@@ -257,7 +257,7 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateAnswer() {
 
     rtc::scoped_refptr<CreateSdpObserver> observer(
       new rtc::RefCountedObject<CreateSdpObserver>(tce));
-    // TODO(WINRT): Remove it once the callback has been received.
+    // For now the callback is kept for the lifetime of the RTCPeerConnection.
     _createSdpObservers.push_back(observer);
 
     _impl->CreateAnswer(observer, nullptr);
@@ -282,7 +282,7 @@ IAsyncAction^ RTCPeerConnection::SetLocalDescription(
 
     rtc::scoped_refptr<SetSdpObserver> observer(
       new rtc::RefCountedObject<SetSdpObserver>(tce));
-    // TODO(WINRT): Remove it once the callback has been received.
+    // For now the callback is kept for the lifetime of the RTCPeerConnection.
     _setSdpObservers.push_back(observer);
 
     rtc::scoped_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
@@ -306,7 +306,7 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(
 
     rtc::scoped_refptr<SetSdpObserver> observer(
       new rtc::RefCountedObject<SetSdpObserver>(tce));
-    // TODO(WINRT): Remove it once the callback has been received.
+    // For now the callback is kept for the lifetime of the RTCPeerConnection.
     _setSdpObservers.push_back(observer);
 
     rtc::scoped_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
@@ -317,13 +317,8 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(
 }
 
 RTCConfiguration^ RTCPeerConnection::GetConfiguration() {
-  RTCConfiguration^ ret = nullptr;
-  globals::RunOnGlobalThread<void>([this, ret] {
-    // TODO(WINRT): Figure out how to rebuild a configuration
-    // object.  There doesn't seem to be a simple function
-    // on the webrtc::PeerConnectionInterface.
-  });
-  return ret;
+  // The WebRtc api doesn't allow us to get the configuration back.
+  return nullptr;
 }
 
 IVector<MediaStream^>^ RTCPeerConnection::GetLocalStreams() {
@@ -371,7 +366,6 @@ MediaStream^ RTCPeerConnection::GetStreamById(String^ streamId) {
     auto streams = _impl->local_streams();
     for (size_t i = 0; i < streams->count(); ++i) {
       auto stream = streams->at(i);
-      // TODO(WINRT): Is the label the stream id?
       if (stream->label() == streamIdStr) {
         ret = ref new MediaStream(stream);
         return;
@@ -381,7 +375,6 @@ MediaStream^ RTCPeerConnection::GetStreamById(String^ streamId) {
     streams = _impl->remote_streams();
     for (size_t i = 0; i < streams->count(); ++i) {
       auto stream = streams->at(i);
-      // TODO(WINRT): Is the label the stream id?
       if (stream->label() == streamIdStr) {
         ret = ref new MediaStream(stream);
         return;

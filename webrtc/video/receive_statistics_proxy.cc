@@ -164,7 +164,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame() {
 }
 
 void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
-  // TODO(winrt): Commented out because h264 encoded frames may not have dimensions.
+  // Commented out because h264 encoded frames may not have dimensions.
   //RTC_DCHECK_GT(width, 0);
   //RTC_DCHECK_GT(height, 0);
   uint64_t now = clock_->TimeInMilliseconds();

@@ -287,7 +287,6 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
   // add to separate sets of constraints
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this, mediaStreamConstraints]() -> MediaStream^ {
-    // TODO(WINRT): Check if a stream already exists.  Create only once.
     return globals::RunOnGlobalThread<MediaStream^>([this,
                                       mediaStreamConstraints]()->MediaStream^ {
       // This is the stream returned.

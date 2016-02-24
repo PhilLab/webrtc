@@ -17,6 +17,7 @@
 #include <robuffer.h>
 #include <wrl.h>
 #include <mfidl.h>
+#include <codecapi.h>
 #include <mfreadwrite.h>
 #include <wrl\implements.h>
 #include <sstream>
@@ -85,10 +86,9 @@ int H264WinRTEncoderImpl::InitEncoderWithSettings(const VideoCodec* inst) {
   ON_SUCCEEDED(MFCreateMediaType(&mediaTypeOut));
   ON_SUCCEEDED(mediaTypeOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
   ON_SUCCEEDED(mediaTypeOut->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
-  // TODO(winrt): Lumia 635 and Lumia 1520 Windows phones don't work well
-  //              with constrained baseline profile. Uncomment or delete
-  //              the line below as soon as we find the reason why.
-  // ON_SUCCEEDED(mediaTypeOut_->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_ConstrainedBase));
+  // Lumia 635 and Lumia 1520 Windows phones don't work well
+  // with constrained baseline profile.
+  //ON_SUCCEEDED(mediaTypeOut->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_ConstrainedBase));
 
   // Weight*Height*2 kbit represents a good balance between video quality and
   // the bandwidth that a 620 Windows phone can handle.
