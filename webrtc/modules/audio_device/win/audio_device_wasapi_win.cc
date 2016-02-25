@@ -42,8 +42,10 @@
 
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/system_wrappers/include/logging.h"
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/win32.h"
 
 #define KSAUDIO_SPEAKER_MONO        (SPEAKER_FRONT_CENTER)
 #define KSAUDIO_SPEAKER_STEREO      (SPEAKER_FRONT_LEFT | \
@@ -3870,8 +3872,14 @@ bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effe
         deviceId = _defaultRenderDevice->Id;
     }
 
-    effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioRenderEffectsManager(
+    try {
+      effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioRenderEffectsManager(
         deviceId, Category, Windows::Media::AudioProcessing::Default);
+    } catch (Platform::Exception^ ex) {
+      LOG(LS_ERROR) << "Failed to create audio render effects manager ("
+        << rtc::ToUtf8(ex->Message->Data()) << ")";
+      return false;
+    }
 
     Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
 
