@@ -34,12 +34,21 @@ using Platform::Collections::Vector;
 using webrtc_winrt_api_internal::ToCx;
 using webrtc_winrt_api_internal::FromCx;
 using Windows::Media::Capture::MediaStreamType;
+using Windows::Devices::Enumeration::DeviceClass;
+using Windows::Devices::Enumeration::DeviceInformation;
+using Windows::Devices::Enumeration::DeviceWatcherStatus;
+using Windows::Foundation::TypedEventHandler;
 
 namespace {
   std::vector<cricket::Device> g_videoDevices;
   std::vector<cricket::Device> g_audioCapturerDevices;
   std::vector<cricket::Device> g_audioPlayoutDevices;
-  webrtc::CriticalSectionWrapper& gMediaStreamListLock(
+
+  webrtc::CriticalSectionWrapper& g_videoDevicesLock(
+    *webrtc::CriticalSectionWrapper::CreateCriticalSection());
+  webrtc::CriticalSectionWrapper& g_audioCapturerDevicesLock(
+    *webrtc::CriticalSectionWrapper::CreateCriticalSection());
+  webrtc::CriticalSectionWrapper& g_audioPlayoutDevicesLock(
     *webrtc::CriticalSectionWrapper::CreateCriticalSection());
 }
 
@@ -259,7 +268,10 @@ Media::Media() :
   _selectedAudioCapturerDevice(
     cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
   _selectedAudioPlayoutDevice(
-    cricket::DeviceManagerInterface::kDefaultDeviceName, 0) {
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
+  _videoCaptureDeviceChanged(true),
+  _audioCaptureDeviceChanged(true),
+  _audioPlayoutDeviceChanged(true) {
   _dev_manager = rtc::scoped_ptr<cricket::DeviceManagerInterface>
     (cricket::DeviceManagerFactory::Create());
 
@@ -267,6 +279,11 @@ Media::Media() :
     LOG(LS_ERROR) << "Can't create device manager";
     return;
   }
+  SubscribeToMediaDeviceChanges();
+}
+
+Media::~Media() {
+  UnsubscribeFromMediaDeviceChanges();
 }
 
 // TODO(winrt): Remove this function and always use the async one.
@@ -381,7 +398,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
         cricket::VideoCapturer* videoCapturer = NULL;
         if (_selectedVideoDevice.id == "") {
           // Select the first video device as the capturer.
-          webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
+          webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
           for (auto videoDev : g_videoDevices) {
             videoCapturer = _dev_manager->CreateVideoCapturer(videoDev);
             if (videoCapturer != NULL)
@@ -436,87 +453,102 @@ IMediaSource^ Media::CreateMediaSource(
 }
 
 IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
+  webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
   auto ret = ref new Vector<MediaDevice^>();
-  globals::RunOnGlobalThread<void>([this, ret] {
-    g_videoDevices.clear();
-    if (!_dev_manager->GetVideoCaptureDevices(&g_videoDevices)) {
-      LOG(LS_ERROR) << "Can't enumerate video capture devices";
-    }
-    webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
-    for (auto videoDev : g_videoDevices) {
-      ret->Append(ref new MediaDevice(ToCx(videoDev.id),
-        ToCx(videoDev.name)));
-    }
-  });
+  if (_videoCaptureDeviceChanged) {
+    globals::RunOnGlobalThread<void>([this] {
+      g_videoDevices.clear();
+      if (!_dev_manager->GetVideoCaptureDevices(&g_videoDevices)) {
+        LOG(LS_ERROR) << "Can't enumerate video capture devices";
+      }
+    });
+    _videoCaptureDeviceChanged = false;
+  }
+  for (auto videoDev : g_videoDevices) {
+    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+  }
   return ret;
 }
 
 IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
+  webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
   auto ret = ref new Vector<MediaDevice^>();
-  globals::RunOnGlobalThread<void>([this, ret] {
-    webrtc::VoEHardware* voiceEngineHardware =
-      globals::gPeerConnectionFactory->channel_manager()->media_engine()->
-      GetVoEHardware();
-    if (voiceEngineHardware == nullptr) {
-      LOG(LS_ERROR) << "Can't enumerate audio capture devices: "
-        << "VoEHardware API not available.";
-      return;
-    }
-    int recordingDeviceCount(0);
-    char audioDeviceName[128];
-    char audioDeviceGuid[128];
-    if (voiceEngineHardware->GetNumOfRecordingDevices(recordingDeviceCount) == 0) {
-      for (int i = 0; i < recordingDeviceCount; ++i) {
-        voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
-          audioDeviceGuid);
-        g_audioCapturerDevices.push_back(cricket::Device(audioDeviceName,
-          audioDeviceGuid));
-        ret->Append(ref new MediaDevice(ToCx(audioDeviceGuid),
-          ToCx(audioDeviceName)));
+  if (_audioCaptureDeviceChanged) {
+    g_audioCapturerDevices.clear();
+    globals::RunOnGlobalThread<void>([this] {
+      webrtc::VoEHardware* voiceEngineHardware =
+        globals::gPeerConnectionFactory->channel_manager()->media_engine()->
+        GetVoEHardware();
+      if (voiceEngineHardware == nullptr) {
+        LOG(LS_ERROR) << "Can't enumerate audio capture devices: "
+          << "VoEHardware API not available.";
+        return;
       }
-    } else {
-      LOG(LS_ERROR) << "Can't enumerate audio capture devices";
-    }
-  });
+      int recordingDeviceCount(0);
+      char audioDeviceName[128];
+      char audioDeviceGuid[128];
+      if (voiceEngineHardware->GetNumOfRecordingDevices(recordingDeviceCount) == 0) {
+        for (int i = 0; i < recordingDeviceCount; ++i) {
+          voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
+            audioDeviceGuid);
+          g_audioCapturerDevices.push_back(cricket::Device(
+            std::string(audioDeviceName),
+            std::string(audioDeviceGuid)));
+        }
+      } else {
+        LOG(LS_ERROR) << "Can't enumerate audio capture devices";
+      }
+    });
+    _audioCaptureDeviceChanged = false;
+  }
+  for (auto videoDev : g_audioCapturerDevices) {
+    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+  }
   return ret;
 }
 
 IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
+  webrtc::CriticalSectionScoped cs(&g_audioPlayoutDevicesLock);
   auto ret = ref new Vector<MediaDevice^>();
-  g_audioPlayoutDevices.clear();
-  globals::RunOnGlobalThread<void>([this, ret] {
-    webrtc::VoEHardware* voiceEngineHardware =
-      globals::gPeerConnectionFactory->channel_manager()->media_engine()->
-      GetVoEHardware();
-    if (voiceEngineHardware == nullptr) {
-      LOG(LS_ERROR) << "Can't enumerate audio playout devices: "
-                    << "VoEHardware API not available.";
-      return;
-    }
-    int playoutDeviceCount(0);
-    char audioDeviceName[128];
-    char audioDeviceGuid[128];
-    if (voiceEngineHardware->GetNumOfPlayoutDevices(playoutDeviceCount) == 0) {
-      for (int i = 0; i < playoutDeviceCount; ++i) {
-        voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
-          audioDeviceGuid);
-        g_audioPlayoutDevices.push_back(cricket::Device(audioDeviceName,
-          audioDeviceGuid));
-        ret->Append(ref new MediaDevice(ToCx(audioDeviceGuid),
-          ToCx(audioDeviceName)));
+  if (_audioPlayoutDeviceChanged) {
+    g_audioPlayoutDevices.clear();
+    globals::RunOnGlobalThread<void>([this] {
+      webrtc::VoEHardware* voiceEngineHardware =
+        globals::gPeerConnectionFactory->channel_manager()->media_engine()->
+        GetVoEHardware();
+      if (voiceEngineHardware == nullptr) {
+        LOG(LS_ERROR) << "Can't enumerate audio playout devices: "
+          << "VoEHardware API not available.";
+        return;
       }
-    } else {
-      LOG(LS_ERROR) << "Can't enumerate audio playout devices";
-    }
-  });
+      int playoutDeviceCount(0);
+      char audioDeviceName[128];
+      char audioDeviceGuid[128];
+      if (voiceEngineHardware->GetNumOfPlayoutDevices(playoutDeviceCount) == 0) {
+        for (int i = 0; i < playoutDeviceCount; ++i) {
+          voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
+            audioDeviceGuid);
+          g_audioPlayoutDevices.push_back(cricket::Device(
+            std::string(audioDeviceName),
+            std::string(audioDeviceGuid)));
+        }
+      } else {
+        LOG(LS_ERROR) << "Can't enumerate audio playout devices";
+      }
+    });
+    _audioPlayoutDeviceChanged = false;
+  }
+  for (auto videoDev : g_audioPlayoutDevices) {
+    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+  }
   return ret;
 }
 
 void Media::SelectVideoDevice(MediaDevice^ device) {
+  webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
   std::string id = FromCx(device->Id);
   _selectedVideoDevice.id = "";
   _selectedVideoDevice.name = "";
-  webrtc::CriticalSectionScoped cs(&gMediaStreamListLock);
   for (auto videoDev : g_videoDevices) {
     if (videoDev.id == id) {
       _selectedVideoDevice = videoDev;
@@ -527,12 +559,13 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
 
 // TODO(winrt): Consider renaming this method to SelectAudioCaptureDevice.
 bool Media::SelectAudioDevice(MediaDevice^ device) {
+  webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
   std::string id = FromCx(device->Id);
   _selectedAudioCapturerDevice.id = "";
   _selectedAudioCapturerDevice.name =
     cricket::DeviceManagerInterface::kDefaultDeviceName;
   for (auto audioCapturer : g_audioCapturerDevices) {
-    if (audioCapturer.id == id.c_str()) {
+    if (audioCapturer.id == id) {
       _selectedAudioCapturerDevice = audioCapturer;
       return true;
     }
@@ -541,12 +574,13 @@ bool Media::SelectAudioDevice(MediaDevice^ device) {
 }
 
 bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
+  webrtc::CriticalSectionScoped cs(&g_audioPlayoutDevicesLock);
   std::string id = FromCx(device->Id);
   _selectedAudioPlayoutDevice.id = "";
   _selectedAudioPlayoutDevice.name =
     cricket::DeviceManagerInterface::kDefaultDeviceName;
   for (auto audioPlayoutDevice : g_audioPlayoutDevices) {
-    if (audioPlayoutDevice.id == id.c_str()) {
+    if (audioPlayoutDevice.id == id) {
       _selectedAudioPlayoutDevice = audioPlayoutDevice;
       return true;
     }
@@ -555,8 +589,12 @@ bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
 }
 
 void Media::OnAppSuspending() {
+  // https://msdn.microsoft.com/library/windows/apps/br241124
+  // Note  For Windows Phone Store apps, music and media apps should clean up
+  // the MediaCapture object and associated resources in the Suspending event
+  // handler and recreate them in the Resuming event handler.
   webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
-    OnAppSuspending();
+    ClearCaptureDevicesCache();
 }
 
 void Media::SetDisplayOrientation(
@@ -606,6 +644,91 @@ IAsyncOperation<IVector<CaptureCapability^>^>^
     return ret;
   });
   return op;
+}
+void Media::SubscribeToMediaDeviceChanges() {
+  _videoCaptureWatcher = DeviceInformation::CreateWatcher(
+    DeviceClass::VideoCapture);
+  _audioCaptureWatcher = DeviceInformation::CreateWatcher(
+    DeviceClass::AudioCapture);
+  _audioPlayoutWatcher = DeviceInformation::CreateWatcher(
+    DeviceClass::AudioRender);
+
+  _videoCaptureWatcher->Added += ref new TypedEventHandler<DeviceWatcher^,
+     DeviceInformation^>(this, &Media::OnMediaDeviceAdded);
+  _videoCaptureWatcher->Removed += ref new TypedEventHandler<DeviceWatcher^,
+     DeviceInformationUpdate^>(this, &Media::OnMediaDeviceRemoved);
+
+  _audioCaptureWatcher->Added += ref new TypedEventHandler<DeviceWatcher^,
+    DeviceInformation^>(this, &Media::OnMediaDeviceAdded);
+  _audioCaptureWatcher->Removed += ref new TypedEventHandler<DeviceWatcher^,
+    DeviceInformationUpdate^>(this, &Media::OnMediaDeviceRemoved);
+
+  _audioPlayoutWatcher->Added += ref new TypedEventHandler<DeviceWatcher^,
+    DeviceInformation^>(this, &Media::OnMediaDeviceAdded);
+  _audioPlayoutWatcher->Removed += ref new TypedEventHandler<DeviceWatcher^,
+    DeviceInformationUpdate^>(this, &Media::OnMediaDeviceRemoved);
+
+  _videoCaptureWatcher->Start();
+  _audioCaptureWatcher->Start();
+  _audioPlayoutWatcher->Start();
+}
+
+void Media::UnsubscribeFromMediaDeviceChanges() {
+  if (_videoCaptureWatcher != nullptr) {
+    _videoCaptureWatcher->Stop();
+  }
+  if (_audioCaptureWatcher != nullptr) {
+    _audioCaptureWatcher->Stop();
+  }
+  if (_audioPlayoutWatcher != nullptr) {
+    _audioPlayoutWatcher->Stop();
+  }
+}
+
+void Media::OnMediaDeviceAdded(DeviceWatcher^ sender,
+                               DeviceInformation^ args) {
+  // Do not send notifications while DeviceWatcher automatically
+  // enumerates devices.
+  if (sender->Status != DeviceWatcherStatus::EnumerationCompleted)
+    return;
+  if (sender == _videoCaptureWatcher) {
+    LOG(LS_INFO) << "OnVideoCaptureAdded";
+    _videoCaptureDeviceChanged = true;
+    OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_VideoCapture);
+    LOG(LS_INFO) << "OnVideoCaptureAdded END";
+  } else if (sender == _audioCaptureWatcher) {
+    LOG(LS_INFO) << "OnAudioCaptureAdded";
+    _audioCaptureDeviceChanged = true;
+    OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_AudioCapture);
+    LOG(LS_INFO) << "OnAudioCaptureAdded END";
+  } else if (sender == _audioPlayoutWatcher) {
+    LOG(LS_INFO) << "OnAudioPlayoutAdded";
+    _audioPlayoutDeviceChanged = true;
+    OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_AudioPlayout);
+    LOG(LS_INFO) << "OnAudioPlayoutAdded END";
+  }
+}
+
+void Media::OnMediaDeviceRemoved(DeviceWatcher^ sender,
+                                 DeviceInformationUpdate^ updateInfo) {
+  // Do not send notifs while DeviceWatcher automaticall enumerates devices
+  if (sender->Status != DeviceWatcherStatus::EnumerationCompleted)
+    return;
+  if (sender == _videoCaptureWatcher) {
+    // Need to remove the cached MediaCapture intance if device removed,
+    // otherwise, DeviceWatchers stops working properly
+    // (event handlers are not called each time)
+    webrtc::videocapturemodule::MediaCaptureDevicesWinRT::Instance()->
+      RemoveMediaCapture(updateInfo->Id);
+    _videoCaptureDeviceChanged = true;
+    OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_VideoCapture);
+  } else if (sender == _audioCaptureWatcher) {
+    _audioCaptureDeviceChanged = true;
+    OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_AudioCapture);
+  } else if (sender == _audioPlayoutWatcher) {
+    _audioPlayoutDeviceChanged = true;
+    OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_AudioPlayout);
+  }
 }
 
 }  // namespace webrtc_winrt_api
