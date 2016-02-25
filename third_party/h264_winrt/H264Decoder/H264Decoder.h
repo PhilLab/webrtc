@@ -47,8 +47,6 @@ class H264WinRTDecoderImpl : public VideoDecoder {
   int Release() override;
   int Reset() override;
 
-  VideoDecoder* Copy();
-
  private:
   void UpdateVideoFrameDimensions(const EncodedImage& input_image);
 

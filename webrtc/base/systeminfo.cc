@@ -111,7 +111,7 @@ int SystemInfo::GetMaxCpus() {
 int SystemInfo::GetCurCpus() {
   int cur_cpus = 0;
 #if defined(WINRT)
-  // TODO(winrt): WinRT alternative to GetProcessAffinityMask.
+  // WinRT doesn't support GetProcessAffinityMask.
   cur_cpus = 1;
 #elif defined(WEBRTC_WIN)
   DWORD_PTR process_mask = 0;
@@ -172,7 +172,7 @@ int64_t SystemInfo::GetMemorySize() {
   int64_t memory = -1;
 
 #if defined(WINRT)
-  // TODO(winrt): How to get system memory size on WinRT?
+  // Can't get system memory size on WinRT
   memory = -1;
 #elif defined(WEBRTC_WIN)
   MEMORYSTATUSEX status = {0};

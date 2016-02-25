@@ -51,7 +51,7 @@ H264WinRTDecoderImpl::~H264WinRTDecoderImpl() {
 int H264WinRTDecoderImpl::InitDecode(const VideoCodec* inst,
   int number_of_cores) {
   // Nothing to do here, decoder acts as a passthrough
-  return 0;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 ComPtr<IMFSample> FromEncodedImage(const EncodedImage& input_image) {
@@ -123,30 +123,23 @@ int H264WinRTDecoderImpl::Decode(const EncodedImage& input_image,
       decodeCompleteCallback_->Decoded(decodedFrame);
     }
   }
-  return 0;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int H264WinRTDecoderImpl::RegisterDecodeCompleteCallback(
   DecodedImageCallback* callback) {
   webrtc::CriticalSectionScoped csLock(_cbLock.get());
   decodeCompleteCallback_ = callback;
-  return 0;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int H264WinRTDecoderImpl::Release() {
   OutputDebugString(L"H264WinRTDecoderImpl::Release()\n");
-  return 0;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int H264WinRTDecoderImpl::Reset() {
-  // TODO(winrt): Figure out when this happens.
-  return 0;
-}
-
-
-VideoDecoder* H264WinRTDecoderImpl::Copy() {
-  // TODO(winrt): Implement?
-  return nullptr;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void H264WinRTDecoderImpl::UpdateVideoFrameDimensions(const EncodedImage& input_image)

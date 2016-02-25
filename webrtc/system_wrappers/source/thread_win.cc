@@ -79,7 +79,8 @@ bool ThreadWindows::Stop() {
   RTC_DCHECK(main_thread_.CalledOnValidThread());
   if (thread_) {
 #if defined(WINRT)
-    // TODO(WINRT): QueueUserAPC alternative.
+    // QueueUserAPC not available on WinRT.
+    // Set the flag directly.
     stop_ = true;
 #else
     // Set stop_ to |true| on the worker thread.

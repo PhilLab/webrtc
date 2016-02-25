@@ -3192,7 +3192,7 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
     EXIT_ON_ERROR(hr);
 
     // Derive the amount of available space in the output buffer
-    // TODO(winrt): Is is possible to silence the padding as well?
+    // Is it possible to silence the padding as well?
     uint32_t initialFramesAvailable = bufferLength - initialPadding;
 
     hr = _ptrRenderClient->GetBuffer(initialFramesAvailable, &pData);

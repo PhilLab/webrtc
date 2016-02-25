@@ -306,10 +306,10 @@
                 'webrtc_opus_fec_test',
               ],
               'dependencies!': [
-                'desktop_capture', # TODO(WinRT) remove when desktop_capture is ported
+                'desktop_capture', # WinRT doesn't support desktop_capture
                 '<(webrtc_root)/modules/modules.gyp:video_capture',
               ],
-              'sources!': [ # TODO(WinRT) remove this section when desktop_capture is ported
+              'sources!': [ # WinRT doesn't support desktop_capture
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
                 'desktop_capture/desktop_region_unittest.cc',
                 'desktop_capture/differ_block_unittest.cc',

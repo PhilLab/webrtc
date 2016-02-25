@@ -161,8 +161,6 @@ LogMessage::LogMessage(const char* file,
         WCHAR msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
 #if defined(WINRT)
-        // TODO(winrt): Review this use of LoadPackagedLibrary() to get an
-        // HMODULE.
         HMODULE hmod = NULL;
         if (module) {
           wchar_t modulew[255];
@@ -384,8 +382,6 @@ void LogMessage::OutputToDebug(const std::string& str,
 #if defined(WINRT)
   // Always log to the debugger.
   OutputDebugString(rtc::ToUtf16(str).c_str());
-  // TODO(winrt): Pipe log to TCP port here?
-  // TODO(winrt): How to open STD_ERROR_HANDLE?
 #elif defined(WEBRTC_WIN)
   // Always log to the debugger.
   // Perhaps stderr should be controlled by a preference, as on Mac?

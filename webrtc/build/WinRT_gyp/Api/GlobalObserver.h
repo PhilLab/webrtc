@@ -79,7 +79,6 @@ class GlobalObserver : public webrtc::PeerConnectionObserver,
 // There is one of those per call to CreateOffer().
 class CreateSdpObserver : public webrtc::CreateSessionDescriptionObserver {
  public:
-  // TODO(WINRT): Get a handle on the async operation to unblock.
   CreateSdpObserver(Concurrency::task_completion_event
     <webrtc::SessionDescriptionInterface*> tce);
 
@@ -94,7 +93,6 @@ class CreateSdpObserver : public webrtc::CreateSessionDescriptionObserver {
 // There is one of those per call to CreateOffer().
 class SetSdpObserver : public webrtc::SetSessionDescriptionObserver {
  public:
-  // TODO(WINRT): Get a handle on the async operation to unblock.
   explicit SetSdpObserver(Concurrency::task_completion_event<void> tce);
 
   // SetSessionDescriptionObserver implementation

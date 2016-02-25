@@ -388,7 +388,7 @@ bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename) {
   std::replace(wfilename, wfilename + wlen, L'/', L'\\');
 
 #if defined(WINRT)
-  // TODO(winrt): Keep relative paths on WinRT?
+  // Keep relative paths on WinRT.
   filename->assign(wfilename);
 #else
   // Convert to complete filename

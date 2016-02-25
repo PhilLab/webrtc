@@ -137,8 +137,10 @@ DisplayOrientation::~DisplayOrientation() {
 DisplayOrientation::DisplayOrientation(DisplayOrientationListener* listener)
   : listener_(listener) {
   RunOnCoreDispatcher([this]() {
-    // TODO(winrt): GetForCurrentView() only works on a thread associated with
-    // a CoreWindow.  Need to find a way to do this from a background task.
+    // GetForCurrentView() only works on a thread associated with
+    // a CoreWindow.  If this doesn't work because we're running in
+    // a background task then the orientation needs to come from the
+    // foreground as a notification.
     try {
       display_info = DisplayInformation::GetForCurrentView();
       orientation = display_info->CurrentOrientation;
