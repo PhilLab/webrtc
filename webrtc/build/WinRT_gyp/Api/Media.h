@@ -26,6 +26,9 @@ using Windows::Foundation::IAsyncOperation;
 using Platform::String;
 using Windows::Foundation::Collections::IVector;
 using Windows::Media::Core::IMediaSource;
+using Windows::Devices::Enumeration::DeviceWatcher;
+using Windows::Devices::Enumeration::DeviceInformation;
+using Windows::Devices::Enumeration::DeviceInformationUpdate;
 
 namespace webrtc_winrt_api {
 
@@ -292,7 +295,7 @@ namespace webrtc_winrt_api {
     }
     /// <summary>
     /// Get a displayable string describing all the features of a
-    /// video capture device capability. Displays resolution, frame rate, 
+    /// video capture device capability. Displays resolution, frame rate,
     /// and pixel aspect ratio.
     /// </summary>
     property String^ FullDescription {
@@ -402,7 +405,9 @@ namespace webrtc_winrt_api {
     static Media^ CreateMedia();
     static IAsyncOperation<Media^>^ CreateMediaAsync();
 
-        /// <summary>
+    virtual ~Media();
+
+    /// <summary>
     /// In order for this method to complete successfully, the user must have
     /// allowed the application permissions to use the devices for the
     /// requested media types (microphone for audio, webcam for video).
@@ -510,12 +515,33 @@ namespace webrtc_winrt_api {
     static void SetDisplayOrientation(Windows::Graphics::Display::DisplayOrientations
       display_orientation);
 
+    /// <summary>
+    /// Fired when audio or video device configuration changed.
+    /// </summary>
+    event MediaDevicesChanged^ OnMediaDevicesChanged;
+
   private:
     Media();
+
+    void SubscribeToMediaDeviceChanges();
+    void UnsubscribeFromMediaDeviceChanges();
+
+    void OnMediaDeviceAdded(DeviceWatcher^ sender,
+                            DeviceInformation^ args);
+    void OnMediaDeviceRemoved(DeviceWatcher^ sender,
+                              DeviceInformationUpdate^ args);
+
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
     cricket::Device _selectedVideoDevice;
     cricket::Device _selectedAudioCapturerDevice;
     cricket::Device _selectedAudioPlayoutDevice;
+
+    DeviceWatcher^ _videoCaptureWatcher;
+    DeviceWatcher^ _audioCaptureWatcher;
+    DeviceWatcher^ _audioPlayoutWatcher;
+    bool _videoCaptureDeviceChanged;
+    bool _audioCaptureDeviceChanged;
+    bool _audioPlayoutDeviceChanged;
   };
 
 }  // namespace webrtc_winrt_api

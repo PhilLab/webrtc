@@ -61,6 +61,19 @@ ref class RTCDataChannelMessageEvent;
 public delegate void RTCDataChannelMessageEventDelegate(
   RTCDataChannelMessageEvent^);
 
+
+public enum class MediaDeviceType {
+  MediaDeviceType_AudioCapture,
+  MediaDeviceType_AudioPlayout,
+  MediaDeviceType_VideoCapture
+};
+
+/// <summary>
+/// Delegate for receiving audio/video device change notification.
+/// </summary>
+public delegate void MediaDevicesChanged(MediaDeviceType);
+
+
 }  // namespace webrtc_winrt_api
 
 #endif  // WEBRTC_BUILD_WINRT_GYP_API_DELEGATES_H_

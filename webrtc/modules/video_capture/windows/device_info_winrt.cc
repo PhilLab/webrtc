@@ -52,11 +52,7 @@ MediaCaptureDevicesWinRT^ MediaCaptureDevicesWinRT::Instance() {
   return instance;
 }
 
-void MediaCaptureDevicesWinRT::OnAppSuspending() {
-  // https://msdn.microsoft.com/library/windows/apps/br241124
-  // Note  For Windows Phone Store apps, music and media apps should clean up
-  // the MediaCapture object and associated resources in the Suspending event
-  // handler and recreate them in the Resuming event handler.
+void MediaCaptureDevicesWinRT::ClearCaptureDevicesCache() {
   media_capture_map_.clear();
 }
 
