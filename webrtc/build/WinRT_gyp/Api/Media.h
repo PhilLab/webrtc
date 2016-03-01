@@ -488,7 +488,8 @@ namespace webrtc_winrt_api {
     /// <summary>
     /// Allows switching between microphones.
     /// </summary>
-    /// <param name="device">Microphone to be used for audio capturing.</param>
+    /// <param name="device">Microphone to be used for audio capturing.If null,
+    /// default audio recording device will be used</param>
     /// <returns>True if the operation succeeded.</returns>
     bool SelectAudioDevice(MediaDevice^ device);
 
@@ -497,7 +498,7 @@ namespace webrtc_winrt_api {
     /// </summary>
     /// <param name="device">Device to be used for audio playback. If null,
     /// default audio playout device will be used.</param>
-    /// <returns>True if the operation succeeded.</returns>*/
+    /// <returns>True if the operation succeeded.</returns>
     bool SelectAudioPlayoutDevice(MediaDevice^ device);
 
     /// <summary>

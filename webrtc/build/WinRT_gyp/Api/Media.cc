@@ -330,43 +330,48 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           char audioDeviceName[128];
           char audioDeviceGuid[128];
 
-          if (voiceEngineHardware->GetNumOfRecordingDevices(deviceCount) == 0) {
-            for (int i = 0; i < deviceCount; ++i) {
-              voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
-                audioDeviceGuid);
-              std::string webrtc_name(audioDeviceName);
-              if (_selectedAudioCapturerDevice.name.compare(0,
-                strlen(audioDeviceName), audioDeviceName) == 0) {
-                useDefaultAudioRecordingDevice = false;
-                break;
+          if (_selectedAudioCapturerDevice.id != "") {
+            // Selected audio capture device is not the default device.
+            if (voiceEngineHardware->GetNumOfRecordingDevices(deviceCount) == 0) {
+              for (int i = 0; i < deviceCount; ++i) {
+                voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
+                  audioDeviceGuid);
+                std::string webrtc_name(audioDeviceName);
+                if (_selectedAudioCapturerDevice.name.compare(0,
+                  strlen(audioDeviceName), audioDeviceName) == 0) {
+                  useDefaultAudioRecordingDevice = false;
+                  break;
+                }
               }
+              if (useDefaultAudioRecordingDevice) {
+                LOG(LS_WARNING) << "Audio capture device "
+                  << _selectedAudioCapturerDevice.name
+                  << " not found, using default device";
+              }
+            } else {
+              LOG(LS_ERROR) << "Can't obtain audio recording audio devices.";
             }
-            if (useDefaultAudioRecordingDevice) {
-              LOG(LS_WARNING) << "Audio capture device "
-                << _selectedAudioCapturerDevice.name
-                << " not found, using default device";
-            }
-          } else {
-            LOG(LS_ERROR) << "Can't obtain audio recording audio devices.";
           }
-
-          if (voiceEngineHardware->GetNumOfPlayoutDevices(deviceCount) == 0) {
-            for (int i = 0; i < deviceCount; ++i) {
-              voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
-                audioDeviceGuid);
-              if (_selectedAudioPlayoutDevice.name.compare(0,
-                strlen(audioDeviceName), audioDeviceName) == 0) {
-                useDefaultAudioPlayoutDevice = false;
-                break;
+          if (_selectedAudioPlayoutDevice.id != "") {
+            // Selected audio playout device is not the default device.
+            if (voiceEngineHardware->GetNumOfPlayoutDevices(deviceCount) == 0) {
+              for (int i = 0; i < deviceCount; ++i) {
+                voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
+                  audioDeviceGuid);
+                if (_selectedAudioPlayoutDevice.name.compare(0,
+                  strlen(audioDeviceName), audioDeviceName) == 0) {
+                  useDefaultAudioPlayoutDevice = false;
+                  break;
+                }
               }
+              if (useDefaultAudioPlayoutDevice) {
+                LOG(LS_WARNING) << "Audio playout device "
+                  << _selectedAudioPlayoutDevice.name
+                  << " not found, using default device";
+              }
+            } else {
+              LOG(LS_ERROR) << "Can't obtain audio playout devices.";
             }
-            if (useDefaultAudioPlayoutDevice) {
-              LOG(LS_WARNING) << "Audio playout device "
-                << _selectedAudioPlayoutDevice.name
-                << " not found, using default device";
-            }
-          } else {
-            LOG(LS_ERROR) << "Can't obtain audio playout devices.";
           }
         }
 
@@ -560,10 +565,14 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
 // TODO(winrt): Consider renaming this method to SelectAudioCaptureDevice.
 bool Media::SelectAudioDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
-  std::string id = FromCx(device->Id);
   _selectedAudioCapturerDevice.id = "";
   _selectedAudioCapturerDevice.name =
     cricket::DeviceManagerInterface::kDefaultDeviceName;
+  if (device == nullptr) {
+    // Default audio capture device will be used.
+    return true;
+  }
+  std::string id = FromCx(device->Id);
   for (auto audioCapturer : g_audioCapturerDevices) {
     if (audioCapturer.id == id) {
       _selectedAudioCapturerDevice = audioCapturer;
@@ -575,10 +584,14 @@ bool Media::SelectAudioDevice(MediaDevice^ device) {
 
 bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioPlayoutDevicesLock);
-  std::string id = FromCx(device->Id);
   _selectedAudioPlayoutDevice.id = "";
   _selectedAudioPlayoutDevice.name =
     cricket::DeviceManagerInterface::kDefaultDeviceName;
+  if (device == nullptr) {
+    // Default audio playout device will be used.
+    return true;
+  }
+  std::string id = FromCx(device->Id);
   for (auto audioPlayoutDevice : g_audioPlayoutDevices) {
     if (audioPlayoutDevice.id == id) {
       _selectedAudioPlayoutDevice = audioPlayoutDevice;
