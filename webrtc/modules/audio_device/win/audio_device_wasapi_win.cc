@@ -4245,8 +4245,15 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
       Enumeration::DeviceInformation ^device) {
       bool rawIsSupported = false;
       if (device->Properties->HasKey(rawProcessingSupportedKey) == true) {
-        rawIsSupported = safe_cast<bool>(device->Properties->Lookup(
-          rawProcessingSupportedKey));
+        auto val = device->Properties->Lookup(rawProcessingSupportedKey);
+        if (val != nullptr) {
+          rawIsSupported = safe_cast<bool>(val);
+        }
+        else {
+          // Sometimes the property is set but the value is empty.
+          // Assume it means it's true.
+          rawIsSupported = true;
+        }
       }
     }).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
@@ -4285,8 +4292,15 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut(Platform::String^ de
         Windows::Devices::Enumeration::DeviceInformation ^device) {
           bool rawIsSupported = false;
           if (device->Properties->HasKey(rawProcessingSupportedKey) == true) {
-            rawIsSupported = safe_cast<bool>(device->Properties->Lookup(
-              rawProcessingSupportedKey));
+            auto val = device->Properties->Lookup(rawProcessingSupportedKey);
+            if (val != nullptr) {
+              rawIsSupported = safe_cast<bool>(val);
+            }
+            else {
+              // Sometimes the property is set but the value is empty.
+              // Assume it means it's true.
+              rawIsSupported = true;
+            }
           }
         }).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
