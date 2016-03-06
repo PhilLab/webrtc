@@ -213,7 +213,6 @@ ref class CaptureDevice sealed {
 
   bool capture_started_;
   VideoCaptureCapability frame_info_;
-  int autoExposureCounter_;
 };
 
 CaptureDevice::CaptureDevice(
@@ -222,8 +221,7 @@ CaptureDevice::CaptureDevice(
     device_id_(nullptr),
     media_sink_(nullptr),
     capture_device_listener_(capture_device_listener),
-    capture_started_(false),
-    autoExposureCounter_(0) {
+    capture_started_(false) {
 }
 
 CaptureDevice::~CaptureDevice() {
@@ -342,6 +340,9 @@ void CaptureDevice::StartCapture(
       ref new MediaCaptureFailedEventHandler(this,
         &CaptureDevice::OnCaptureFailed);
 
+  // Tell the video device controller to optimize for Low Latency then Power consumption
+  media_capture_->VideoDeviceController->DesiredOptimization = Windows::Media::Devices::MediaCaptureOptimization::LatencyThenPower;
+
   media_sink_ = ref new VideoCaptureMediaSinkProxyWinRT();
   media_sink_video_sample_event_registration_token_ =
     media_sink_->MediaSampleEvent +=
@@ -418,21 +419,6 @@ void CaptureDevice::OnMediaSample(Object^ sender, MediaSampleEventArgs^ args) {
     BYTE* pbBuffer = NULL;
     DWORD cbMaxLength = 0;
     DWORD cbCurrentLength = 0;
-
-    // Some Camera driver on some phone (like Lumia 550) are using a lot of CPU
-    // in processing Auto Exposure on every frame. As an optimization, 
-    // keep the Auto Exposure on for 50% of the time (20 frames out of 40)
-    if (++autoExposureCounter_ >= 40) {
-      autoExposureCounter_ = 0;
-      if (media_capture_->VideoDeviceController->ExposureControl->Supported) {
-        media_capture_->VideoDeviceController->ExposureControl->SetAutoAsync(true);
-      }
-    }
-    else if (autoExposureCounter_ == 20) {
-      if (media_capture_->VideoDeviceController->ExposureControl->Supported) {
-        media_capture_->VideoDeviceController->ExposureControl->SetAutoAsync(false);
-      }
-    }
 
     if (SUCCEEDED(hr)) {
       hr = spMediaSample->GetSampleTime(&hnsSampleTime);
