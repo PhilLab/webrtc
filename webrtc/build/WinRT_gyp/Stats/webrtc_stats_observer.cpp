@@ -140,7 +140,8 @@ void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
     if (etw_stats_enabled_) {
       bool sendToEtwPlugin = false;
       if (stat_type == StatsReport::kStatsReportTypeSession ||
-        stat_type == StatsReport::kStatsReportTypeTrack) {
+        stat_type == StatsReport::kStatsReportTypeTrack ||
+		  stat_type == StatsReport::kStatsReportTypeBwe) {
         sendToEtwPlugin = true;
       } else if (stat_type == StatsReport::kStatsReportTypeSsrc) {
         const StatsReport::Value* v = report->FindValue(
