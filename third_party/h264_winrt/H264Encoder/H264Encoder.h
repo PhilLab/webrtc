@@ -60,6 +60,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
 
  private:
   rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
+  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _callbackLock;
   bool inited_;
   const CodecSpecificInfo* codecSpecificInfo_;
   ComPtr<IMFSinkWriter> sinkWriter_;
