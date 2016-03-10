@@ -340,8 +340,10 @@ void CaptureDevice::StartCapture(
       ref new MediaCaptureFailedEventHandler(this,
         &CaptureDevice::OnCaptureFailed);
 
+#ifdef WIN10
   // Tell the video device controller to optimize for Low Latency then Power consumption
   media_capture_->VideoDeviceController->DesiredOptimization = Windows::Media::Devices::MediaCaptureOptimization::LatencyThenPower;
+#endif
 
   media_sink_ = ref new VideoCaptureMediaSinkProxyWinRT();
   media_sink_video_sample_event_registration_token_ =
