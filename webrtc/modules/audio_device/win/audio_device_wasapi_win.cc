@@ -544,7 +544,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
             pWfxClosestMatch->wBitsPerSample);
         } else {
           WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id,
-            "no format suggested");
+            "no format suggested, hr = 0x%08X", hr);
         }
       }
 
@@ -659,6 +659,8 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _comInit(ScopedCOMInitializer::kMTA),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _volumeMutex(*CriticalSectionWrapper::CreateCriticalSection()),
+    _recordingControlMutex(*CriticalSectionWrapper::CreateCriticalSection()),
+    _playoutControlMutex(*CriticalSectionWrapper::CreateCriticalSection()),
     _id(id),
     _ptrAudioBuffer(NULL),
     _ptrActivator(NULL),
@@ -669,9 +671,9 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _ptrCaptureVolume(NULL),
     _ptrRenderSimpleVolume(NULL),
     _builtInAecEnabled(false),
-	_builtInNSEnabled(false),
-	_builtInAGCEnabled(false),
-	_playAudioFrameSize(0),
+    _builtInNSEnabled(false),
+    _builtInAGCEnabled(false),
+    _playAudioFrameSize(0),
     _playSampleRate(0),
     _playBlockSize(0),
     _playChannels(2),
@@ -693,11 +695,16 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _hRecThread(NULL),
     _hShutdownRenderEvent(NULL),
     _hShutdownCaptureEvent(NULL),
+    _hRestartRenderEvent(NULL),
+    _hRestartCaptureEvent(NULL),
     _hRenderStartedEvent(NULL),
     _hCaptureStartedEvent(NULL),
     _hGetCaptureVolumeThread(NULL),
     _hSetCaptureVolumeThread(NULL),
     _hSetCaptureVolumeEvent(NULL),
+    _hObserverThread(NULL),
+    _hObserverStartedEvent(NULL),
+    _hObserverShutdownEvent(NULL),
     _hMmTask(NULL),
     _initialized(false),
     _recording(false),
@@ -735,9 +742,13 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _hCaptureSamplesReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     _hShutdownRenderEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     _hShutdownCaptureEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    _hRestartRenderEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    _hRestartCaptureEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     _hRenderStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     _hCaptureStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     _hSetCaptureVolumeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    _hObserverStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    _hObserverShutdownEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     _perfCounterFreq.QuadPart = 1;
     _perfCounterFactor = 0.0;
@@ -750,7 +761,6 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     // list of number of channels to use on playout side
     _playChannelsPrioList[0] = 2;  // stereo is prio 1
     _playChannelsPrioList[1] = 1;  // mono is prio 2
-
 }
 
 // ----------------------------------------------------------------------------
@@ -795,12 +805,34 @@ AudioDeviceWindowsWasapi::~AudioDeviceWindowsWasapi() {
     _hShutdownCaptureEvent = NULL;
   }
 
+  if (NULL != _hRestartRenderEvent) {
+    CloseHandle(_hRestartRenderEvent);
+    _hRestartRenderEvent = NULL;
+  }
+
+  if (NULL != _hRestartCaptureEvent) {
+    CloseHandle(_hRestartCaptureEvent);
+    _hRestartCaptureEvent = NULL;
+  }
+
+  if (NULL != _hObserverStartedEvent) {
+    CloseHandle(_hObserverStartedEvent);
+    _hObserverStartedEvent = NULL;
+  }
+
+  if (NULL != _hObserverShutdownEvent) {
+    CloseHandle(_hObserverShutdownEvent);
+    _hObserverShutdownEvent = NULL;
+  }
+
   if (NULL != _hSetCaptureVolumeEvent) {
     CloseHandle(_hSetCaptureVolumeEvent);
     _hSetCaptureVolumeEvent = NULL;
   }
   delete &_critSect;
   delete &_volumeMutex;
+  delete &_recordingControlMutex;
+  delete &_playoutControlMutex;
 }
 
 // ============================================================================
@@ -887,6 +919,7 @@ int32_t AudioDeviceWindowsWasapi::Init() {
 
   _initialized = true;
 
+  StartObserverThread();
   return 0;
 }
 
@@ -913,6 +946,8 @@ int32_t AudioDeviceWindowsWasapi::Terminate() {
   SAFE_RELEASE(_ptrCaptureClient);
   SAFE_RELEASE(_ptrCaptureVolume);
   SAFE_RELEASE(_ptrRenderSimpleVolume);
+
+  StopObserverThread();
 
   return 0;
 }
@@ -946,27 +981,42 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker() {
   }
 
   int32_t ret(0);
-  _defaultRenderDevice = nullptr;
+  _renderDevice = nullptr;
 
   if (_usingOutputDeviceIndex) {
-    // Refresh the selected rendering endpoint device using current index
-    _defaultRenderDevice = _GetListDevice(DeviceClass::AudioRender,
-      _outputDeviceIndex);
-  } else {
+    // Refresh the selected rendering endpoint device using selected device id
+    _renderDevice = _GetListDevice(DeviceClass::AudioRender,
+                                   _deviceIdStringOut);
+    if (_renderDevice == nullptr) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+        "selected audio playout device not found %s, using default.",
+        rtc::ToUtf8(_deviceIdStringOut->Data()));
+    } else {
+      WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+        "using selected audio playout device %s.",
+        rtc::ToUtf8(_renderDevice->Name->Data()));
+    }
+  }
+  if (_renderDevice == nullptr) {
     // Refresh the selected rendering endpoint device using default device
-    _defaultRenderDevice = _GetDefaultDevice(DeviceClass::AudioRender, AudioDeviceRole::Default);
+    _renderDevice = _GetDefaultDevice(DeviceClass::AudioRender,
+                                      AudioDeviceRole::Default);
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "using default audio playout device: ",
+      rtc::ToUtf8(_renderDevice->Name->Data()));
   }
 
-  if (ret != 0 || (_defaultRenderDevice == nullptr)) {
+  if (ret != 0 || (_renderDevice == nullptr)) {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
         "failed to initialize the rendering enpoint device");
       return -1;
   }
 
-  Concurrency::task<void>(_InitializeAudioDeviceOutAsync(_defaultRenderDevice->Id))
+  Concurrency::task<void>(_InitializeAudioDeviceOutAsync(_renderDevice->Id))
     .then([this](concurrency::task<void>) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-      "Output audio device activated");
+      "output audio device activated: %s",
+      rtc::ToUtf8(_renderDevice->Name->Data()));
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   SAFE_RELEASE(_ptrRenderSimpleVolume);
@@ -1006,26 +1056,40 @@ int32_t AudioDeviceWindowsWasapi::InitMicrophone() {
 
   int32_t ret(0);
 
-  _defaultCaptureDevice = nullptr;
+  _captureDevice = nullptr;
   if (_usingInputDeviceIndex) {
-    // Refresh the selected capture endpoint device using current index
-    _defaultCaptureDevice = _GetListDevice(DeviceClass::AudioCapture,
-      _inputDeviceIndex);
-  } else {
+    // Refresh the selected capture endpoint device using selected device Id
+    _captureDevice = _GetListDevice(DeviceClass::AudioCapture,
+                                    _deviceIdStringIn);
+    if (_captureDevice == nullptr) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+        "selected audio capture device not found %s, using default.",
+        rtc::ToUtf8(_deviceIdStringIn->Data()));
+    } else {
+      WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+        "using selected audio capture device %s",
+        rtc::ToUtf8(_deviceIdStringIn->Data()));
+    }
+  }
+  if (_captureDevice == nullptr) {
     // Refresh the selected capture endpoint device using default
-    _defaultCaptureDevice = _GetDefaultDevice(DeviceClass::AudioCapture, AudioDeviceRole::Default);
+    _captureDevice = _GetDefaultDevice(DeviceClass::AudioCapture,
+                                       AudioDeviceRole::Default);
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "using default device");
   }
 
-  if (ret != 0 || (_defaultCaptureDevice == nullptr)) {
+  if (ret != 0 || (_captureDevice == nullptr)) {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
       "failed to initialize the capturing enpoint device");
     return -1;
   }
 
-  Concurrency::task<void>(_InitializeAudioDeviceInAsync(_defaultCaptureDevice->Id))
+  Concurrency::task<void>(_InitializeAudioDeviceInAsync(_captureDevice->Id))
     .then([this](concurrency::task<void>) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-      "Input audio device activated");
+      "input audio device activated %s",
+      rtc::ToUtf8(_captureDevice->Name->Data()));
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
 
@@ -1775,16 +1839,16 @@ int32_t AudioDeviceWindowsWasapi::SetPlayoutDevice(uint16_t index) {
   assert(_ptrRenderCollection != nullptr);
 
   // Select an endpoint rendering device given the specified index
-  _defaultRenderDevice = nullptr;
+  _renderDevice = nullptr;
   _deviceIdStringOut = nullptr;
 
-  _defaultRenderDevice = _ptrRenderCollection->GetAt(index);
-  _deviceIdStringOut = _defaultRenderDevice->Id;
+  _renderDevice = _ptrRenderCollection->GetAt(index);
+  _deviceIdStringOut = _renderDevice->Id;
 
   // Get the endpoint device's friendly-name
-  if (_GetDeviceName(_defaultRenderDevice) != nullptr) {
+  if (_GetDeviceName(_renderDevice) != nullptr) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "friendly name: \"%S\"",
-      _GetDeviceName(_defaultRenderDevice));
+      _GetDeviceName(_renderDevice));
   }
 
   _usingOutputDeviceIndex = true;
@@ -1817,16 +1881,16 @@ int32_t AudioDeviceWindowsWasapi::SetPlayoutDevice(
   _RefreshDeviceList(DeviceClass::AudioRender);
 
   //  Select an endpoint rendering device given the specified role
-  _defaultRenderDevice = nullptr;
+  _renderDevice = nullptr;
   _deviceIdStringOut = nullptr;
 
-  _defaultRenderDevice = AudioDeviceModule::WindowsDeviceType::kDefaultCommunicationDevice ?
+  _renderDevice = AudioDeviceModule::WindowsDeviceType::kDefaultCommunicationDevice ?
     _GetDefaultDevice(DeviceClass::AudioRender, AudioDeviceRole::Communications) :
     _GetDefaultDevice(DeviceClass::AudioRender, AudioDeviceRole::Default);
-  _deviceIdStringOut = _defaultRenderDevice->Id;
+  _deviceIdStringOut = _renderDevice->Id;
 
   // Get the endpoint device's friendly-name
-  std::wstring str = _GetDeviceName(_defaultRenderDevice)->Data();
+  std::wstring str = _GetDeviceName(_renderDevice)->Data();
   if (str.length() > 0) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "friendly name: \"%S\"",
       str);
@@ -2031,17 +2095,17 @@ int32_t AudioDeviceWindowsWasapi::SetRecordingDevice(uint16_t index) {
   assert(_ptrCaptureCollection != nullptr);
 
   // Select an endpoint capture device given the specified index
-  _defaultCaptureDevice = nullptr;
+  _captureDevice = nullptr;
   _deviceIdStringIn = nullptr;
 
-  _defaultCaptureDevice = _ptrCaptureCollection->GetAt(index); //_GetDefaultDevice(DeviceClass::AudioCapture);
-  _deviceIdStringIn = _defaultCaptureDevice->Id;
+  _captureDevice = _ptrCaptureCollection->GetAt(index);
+  _deviceIdStringIn = _captureDevice->Id;
 
 
   // Get the endpoint device's friendly-name
-  if (_GetDeviceName(_defaultCaptureDevice) != nullptr) {
+  if (_GetDeviceName(_captureDevice) != nullptr) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "friendly name: \"%S\"",
-      _GetDeviceName(_defaultCaptureDevice));
+      _GetDeviceName(_captureDevice));
   }
 
   _usingInputDeviceIndex = true;
@@ -2074,22 +2138,20 @@ int32_t AudioDeviceWindowsWasapi::SetRecordingDevice(
   _RefreshDeviceList(DeviceClass::AudioCapture);
 
   // Select an endpoint capture device given the specified role
-  _defaultCaptureDevice = nullptr;
+  _captureDevice = nullptr;
   _deviceIdStringIn = nullptr;
 
-  _defaultCaptureDevice = device == AudioDeviceModule::WindowsDeviceType::kDefaultCommunicationDevice ?
+  _captureDevice = device == AudioDeviceModule::WindowsDeviceType::kDefaultCommunicationDevice ?
     _GetDefaultDevice(DeviceClass::AudioCapture, AudioDeviceRole::Communications) :
     _GetDefaultDevice(DeviceClass::AudioCapture, AudioDeviceRole::Default);
-  _deviceIdStringIn = _defaultCaptureDevice->Id;
-
-   
+  _deviceIdStringIn = _captureDevice->Id;
 
   Platform::String^ deviceName = nullptr;
 
   // Get the endpoint device's friendly-name
-  if (_GetDeviceName(_defaultCaptureDevice) != nullptr) {
+  if (_GetDeviceName(_captureDevice) != nullptr) {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "friendly name: \"%S\"",
-      _GetDeviceName(_defaultCaptureDevice));
+      _GetDeviceName(_captureDevice));
   }
 
   _usingInputDeviceIndex = false;
@@ -2143,6 +2205,11 @@ int32_t AudioDeviceWindowsWasapi::RecordingIsAvailable(bool& available) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::InitPlayout() {
+  CriticalSectionScoped lock(&_playoutControlMutex);
+  return InitPlayoutInternal();
+}
+
+int32_t AudioDeviceWindowsWasapi::InitPlayoutInternal() {
   CriticalSectionScoped lock(&_critSect);
 
   if (_playing) {
@@ -2153,7 +2220,7 @@ int32_t AudioDeviceWindowsWasapi::InitPlayout() {
       return 0;
   }
 
-  if (_defaultRenderDevice == nullptr) {
+  if (_renderDevice == nullptr) {
       return -1;
   }
 
@@ -2164,7 +2231,7 @@ int32_t AudioDeviceWindowsWasapi::InitPlayout() {
   }
 
   // Ensure that the updated rendering endpoint device is valid
-  if (_defaultRenderDevice == nullptr) {
+  if (_renderDevice == nullptr) {
       return -1;
   }
 
@@ -2371,6 +2438,11 @@ Exit:
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::InitRecording() {
+  CriticalSectionScoped lock(&_recordingControlMutex);
+  return InitRecordingInternal();
+}
+
+int32_t AudioDeviceWindowsWasapi::InitRecordingInternal() {
   CriticalSectionScoped lock(&_critSect);
 
   if (_recording) {
@@ -2387,7 +2459,7 @@ int32_t AudioDeviceWindowsWasapi::InitRecording() {
   _perfCounterFactor = 10000000.0 / static_cast<double>(
     _perfCounterFreq.QuadPart);
 
-  if (_defaultCaptureDevice == nullptr) {
+  if (_captureDevice == nullptr) {
     return -1;
   }
 
@@ -2398,7 +2470,7 @@ int32_t AudioDeviceWindowsWasapi::InitRecording() {
   }
 
   // Ensure that the updated capturing endpoint device is valid
-  if (_defaultCaptureDevice == nullptr) {
+  if (_captureDevice == nullptr) {
     return -1;
   }
 
@@ -2564,6 +2636,11 @@ Exit:
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::StartRecording() {
+  CriticalSectionScoped critScoped(&_recordingControlMutex);
+  return StartRecordingInternal();
+}
+
+int32_t AudioDeviceWindowsWasapi::StartRecordingInternal() {
   if (!_recIsInitialized) {
     return -1;
   }
@@ -2646,6 +2723,11 @@ int32_t AudioDeviceWindowsWasapi::StartRecording() {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::StopRecording() {
+  CriticalSectionScoped critScoped(&_recordingControlMutex);
+  return StopRecordingInternal();
+}
+
+int32_t AudioDeviceWindowsWasapi::StopRecordingInternal() {
   int32_t err = 0;
 
   if (!_recIsInitialized) {
@@ -2675,7 +2757,8 @@ int32_t AudioDeviceWindowsWasapi::StopRecording() {
   DWORD ret = WaitForSingleObject(_hRecThread, 2000);
   if (ret != WAIT_OBJECT_0) {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-      "failed to close down webrtc_core_audio_capture_thread");
+      "failed to close down webrtc_core_audio_capture_thread (errCode=%d)",
+      ret);
     err = -1;
   } else {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
@@ -2756,8 +2839,12 @@ bool AudioDeviceWindowsWasapi::PlayoutIsInitialized() const {
 // ----------------------------------------------------------------------------
 //  StartPlayout
 // ----------------------------------------------------------------------------
-
 int32_t AudioDeviceWindowsWasapi::StartPlayout() {
+  CriticalSectionScoped critScoped(&_playoutControlMutex);
+  return StartPlayoutInternal();
+}
+
+int32_t AudioDeviceWindowsWasapi::StartPlayoutInternal() {
   if (!_playIsInitialized) {
     return -1;
   }
@@ -2809,8 +2896,12 @@ int32_t AudioDeviceWindowsWasapi::StartPlayout() {
 // ----------------------------------------------------------------------------
 //  StopPlayout
 // ----------------------------------------------------------------------------
-
 int32_t AudioDeviceWindowsWasapi::StopPlayout() {
+  CriticalSectionScoped critScoped(&_playoutControlMutex);
+  return StopPlayoutInternal();
+}
+
+int32_t AudioDeviceWindowsWasapi::StopPlayoutInternal() {
   if (!_playIsInitialized) {
     return 0;
   }
@@ -3396,6 +3487,10 @@ Exit:
   _Lock();
 
   if (keepPlaying) {
+    // In case of AUDCLNT_E_DEVICE_INVALIDATED, restart the rendering.
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/dd316605(v=vs.85).aspx
+    bool isRecoverableError = hr == AUDCLNT_E_DEVICE_INVALIDATED;
+
     if (_ptrClientOut != NULL) {
         hr = _ptrClientOut->Stop();
         if (FAILED(hr)) {
@@ -3406,10 +3501,17 @@ Exit:
           _TraceCOMError(hr);
         }
     }
-    // Trigger callback from module process thread
-    _playError = 1;
-    WEBRTC_TRACE(kTraceError, kTraceUtility, _id,
-      "kPlayoutError message posted: rendering thread has ended pre-maturely");
+
+    if (isRecoverableError) {
+      WEBRTC_TRACE(kTraceWarning, kTraceUtility, _id,
+        "audio rendering thread has ended pre-maturely, restarting renderer...");
+      SetEvent(_hRestartRenderEvent);
+    } else {
+      // Trigger callback from module process thread
+      WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kPlayoutError message "
+        "posted: rendering thread has ended pre-maturely");
+      _playError = 1;
+    }
   } else {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
       "_Rendering thread is now terminated properly");
@@ -3561,7 +3663,7 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
       if (_ptrCaptureClient == NULL || _ptrClientIn == NULL) {
         _UnLock();
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-            "input state has been modified during unlocked period");
+          "input state has been modified during unlocked period");
         goto Exit;
       }
 
@@ -3615,7 +3717,7 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
         // Get the current recording and playout delay.
         uint32_t sndCardRecDelay = (uint32_t)
           (((((UINT64)t1.QuadPart * _perfCounterFactor) - recTime) /
-          10000) + (10*syncBufIndex) / _recBlockSize - 10);
+            10000) + (10 * syncBufIndex) / _recBlockSize - 10);
         uint32_t sndCardPlayDelay =
           static_cast<uint32_t>(_sndCardPlayDelay);
 
@@ -3669,7 +3771,7 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
           // store remaining data which was not able to deliver as 10ms segment
           MoveMemory(&syncBuffer[0],
             &syncBuffer[_recBlockSize*_recAudioFrameSize],
-            (syncBufIndex-_recBlockSize)*_recAudioFrameSize);
+            (syncBufIndex - _recBlockSize)*_recAudioFrameSize);
           syncBufIndex -= _recBlockSize;
           sndCardRecDelay -= 10;
         }
@@ -3681,7 +3783,7 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
             // change is needed. Set this new mic level (received from the
             // observer as return value in the callback).
             WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
-              "AGC change of volume: new=%u",  newMicLevel);
+              "AGC change of volume: new=%u", newMicLevel);
             // We store this outside of the audio buffer to avoid
             // having it overwritten by the getter thread.
             _newMicLevel = newMicLevel;
@@ -3697,8 +3799,8 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
         // calling IAudioClient::Stop, IAudioClient::Reset, and releasing the
         // audio client.
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-          R"(IAudioCaptureClient::GetBuffer returned AUDCLNT_E_BUFFER_ERROR
-          , hr = 0x%08X)",  hr);
+          R"(IAudioCaptureClient::GetBuffer returned hr = 0x%08X)",
+          hr);
         goto Exit;
       }
 
@@ -3724,6 +3826,9 @@ Exit:
   _Lock();
 
   if (keepRecording) {
+    // In case of AUDCLNT_E_DEVICE_INVALIDATED, restart the capturing.
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/dd316605(v=vs.85).aspx
+    bool isRecoverableError = hr == AUDCLNT_E_DEVICE_INVALIDATED;
     if (_ptrClientIn != NULL) {
       hr = _ptrClientIn->Stop();
       if (FAILED(hr)) {
@@ -3734,11 +3839,16 @@ Exit:
         _TraceCOMError(hr);
       }
     }
-
-    // Trigger callback from module process thread
-    _recError = 1;
-    WEBRTC_TRACE(kTraceError, kTraceUtility, _id, R"(kRecordingError message
-      posted: capturing thread has ended pre-maturely)");
+    if (isRecoverableError) {
+      WEBRTC_TRACE(kTraceWarning, kTraceUtility, _id, "capturing thread has "
+        "ended pre-maturely, restarting capturer...");
+      SetEvent(_hRestartCaptureEvent);
+    } else {
+      WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kRecordingError message "
+        "posted: capturing thread has ended pre-maturely");
+      // Trigger callback from module process thread
+      _recError = 1;
+    }
   } else {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
       "_Capturing thread is now terminated properly");
@@ -3754,6 +3864,139 @@ Exit:
   }
 
   return (DWORD)hr;
+}
+
+int32 AudioDeviceWindowsWasapi::StartObserverThread() {
+  if (_hObserverThread != NULL) {
+    return 0;  // Already started.
+  }
+
+  // Create thread which will restart renderer or capturer if needed.
+  LPTHREAD_START_ROUTINE lpStartAddress = WSAPIObserverThread;
+  assert(_hObserverThread == NULL);
+  _hObserverThread = CreateThread(NULL,
+    0,
+    lpStartAddress,
+    this,
+    0,
+    NULL);
+  if (_hObserverThread == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "failed to create the observer thread");
+    return -1;
+  }
+
+  DWORD ret = WaitForSingleObject(_hObserverStartedEvent, 1000);
+  if (ret != WAIT_OBJECT_0) {
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+      "observer did not start up properly");
+    return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+    "audio observer has now started");
+  return 0;
+}
+
+int32 AudioDeviceWindowsWasapi::StopObserverThread() {
+  if (_hObserverThread == NULL) {
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+      "no observer thread was started");
+    return 0;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+    "closing down the audio observer thead...");
+
+  SetEvent(_hObserverShutdownEvent);
+
+  DWORD ret = WaitForSingleObject(_hObserverThread, 2000);
+  if (ret != WAIT_OBJECT_0) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "failed to close down audio observer thread (errCode=%d)", ret);
+
+    ResetEvent(_hObserverShutdownEvent);  // Must be manually reset.
+
+    // These will create thread leaks in the result of an error,
+    // but we can reinitialize this module.
+    CloseHandle(_hObserverThread);
+    _hObserverThread = NULL;
+    return -1;
+  } else {
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+      "audio observer thead is now closed");
+  }
+
+  ResetEvent(_hObserverShutdownEvent);  // Must be manually reset.
+  CloseHandle(_hObserverThread);
+  _hObserverThread = NULL;
+
+  return 0;
+}
+
+DWORD WINAPI AudioDeviceWindowsWasapi::WSAPIObserverThread(LPVOID context) {
+  return reinterpret_cast<AudioDeviceWindowsWasapi*>(context)->
+    DoObserverThread();
+}
+
+DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
+  SetEvent(_hObserverStartedEvent);
+  bool keepObserving = true;
+  HANDLE waitArray[3] = { _hObserverShutdownEvent,
+                          _hRestartCaptureEvent,
+                          _hRestartRenderEvent };
+  while (keepObserving) {
+    // Wait shutdown or restart capturer/renderer events
+    DWORD waitResult = WaitForMultipleObjects(3, waitArray, FALSE, INFINITE);
+    switch (waitResult) {
+    case WAIT_OBJECT_0 + 0:        // _hShutdownCaptureEvent
+      keepObserving = false;
+      break;
+    case WAIT_OBJECT_0 + 1: {      // _hRestartCaptureEvent
+      CriticalSectionScoped critScoped(&_recordingControlMutex);
+      int32_t result = StopRecordingInternal();
+      if (result == 0) {
+        result = InitRecordingInternal();
+      }
+      if (result == 0) {
+        result = StartRecordingInternal();
+      }
+      if (result != 0) {
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+          "failed to restart audio capture");
+      } else {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+          "audio capture restarted");
+      }
+      ResetEvent(_hRestartCaptureEvent);
+      break;
+    }
+    case WAIT_OBJECT_0 + 2: {      // _hRestartRenderEvent
+      CriticalSectionScoped critScoped(&_playoutControlMutex);
+      int32_t result = StopPlayoutInternal();
+      if (result == 0) {
+        result = InitPlayoutInternal();
+      }
+      if (result == 0) {
+        result = StartPlayoutInternal();
+      }
+      if (result != 0) {
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+          "failed to restart audio renderer");
+      } else {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+          "audio renderer restarted");
+      }
+      ResetEvent(_hRestartRenderEvent);
+    }
+
+    default:                       // unexpected error
+      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+        "audio device observer unknown wait termination");
+      break;
+    }
+  }
+  WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+    "audio device observer thread terminated");
+  return 0;
 }
 
 int32_t AudioDeviceWindowsWasapi::EnableBuiltInAEC(bool enable) {
@@ -3772,39 +4015,38 @@ bool AudioDeviceWindowsWasapi::BuiltInAECIsEnabled() const {
 }
 
 bool AudioDeviceWindowsWasapi::BuiltInAECIsAvailable() const {
-    return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::AcousticEchoCancellation);
+  return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::AcousticEchoCancellation);
 }
 
 int32_t AudioDeviceWindowsWasapi::EnableBuiltInNS(bool enable) {
-    if (_recIsInitialized) {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "Attempt to set Windows Noise Suppression with recording already initialized");
-        return -1;
-    }
+  if (_recIsInitialized) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "Attempt to set Windows Noise Suppression with recording already initialized");
+    return -1;
+  }
 
-    _builtInNSEnabled = enable;
-    return 0;
+  _builtInNSEnabled = enable;
+  return 0;
 }
 
 bool AudioDeviceWindowsWasapi::BuiltInNSIsAvailable() const {
-    return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::NoiseSuppression);
+  return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::NoiseSuppression);
 }
 
 int32_t AudioDeviceWindowsWasapi::EnableBuiltInAGC(bool enable) {
-    if (_playIsInitialized) {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "Attempt to set Windows Automatic Gain Control with playout already initialized");
-        return -1;
-    }
+  if (_playIsInitialized) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "Attempt to set Windows Automatic Gain Control with playout already initialized");
+    return -1;
+  }
 
-    _builtInAGCEnabled = enable;
-    return 0;
+  _builtInAGCEnabled = enable;
+  return 0;
 }
 
 bool AudioDeviceWindowsWasapi::BuiltInAGCIsAvailable() const {
-    return CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType::AutomaticGainControl);
+  return CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType::AutomaticGainControl);
 }
-
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType effect) const {
 
@@ -3853,48 +4095,39 @@ bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Eff
 }
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType effect) const {
+  Windows::Media::Effects::AudioRenderEffectsManager^ effManager;
 
-    // Check to see if the current device supports AccousticEchoCancellation
+  Windows::Media::Render::AudioRenderCategory Category;
+  Category = Windows::Media::Render::AudioRenderCategory::Communications;
 
-    Windows::Media::Effects::AudioRenderEffectsManager^ effManager;
+  Platform::String^ deviceId;
 
-    Windows::Media::Render::AudioRenderCategory Category;
-    Category = Windows::Media::Render::AudioRenderCategory::Communications;
+  if (_deviceIdStringOut != nullptr) {
+    deviceId = _deviceIdStringOut;
+  } else {
+    deviceId = _renderDevice->Id;
+  }
 
-    Platform::String^ deviceId;
-
-    if (_deviceIdStringOut != nullptr)
-    {
-        deviceId = _deviceIdStringOut;
-    }
-    else
-    {
-        deviceId = _defaultRenderDevice->Id;
-    }
-
-    try {
-      effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioRenderEffectsManager(
-        deviceId, Category, Windows::Media::AudioProcessing::Default);
-    } catch (Platform::Exception^ ex) {
-      LOG(LS_ERROR) << "Failed to create audio render effects manager ("
-        << rtc::ToUtf8(ex->Message->Data()) << ")";
-      return false;
-    }
-
-    Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
-
-    effectsList = effManager->GetAudioRenderEffects();
-
-    unsigned int i;
-    // Iterate through the supported effect to see if Echo Cancellation is supported
-    for (i = 0; i < effectsList->Size; i++)
-    {
-        if (effectsList->GetAt(i)->AudioEffectType == effect)
-        {
-            return true;
-        }
-    }
+  try {
+    effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioRenderEffectsManager(
+      deviceId, Category, Windows::Media::AudioProcessing::Default);
+  } catch (Platform::Exception^ ex) {
+    LOG(LS_ERROR) << "Failed to create audio render effects manager ("
+      << rtc::ToUtf8(ex->Message->Data()) << ")";
     return false;
+  }
+
+  Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
+
+  effectsList = effManager->GetAudioRenderEffects();
+
+  unsigned int i;
+  for (i = 0; i < effectsList->Size; ++i) {
+    if (effectsList->GetAt(i)->AudioEffectType == effect) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -4028,9 +4261,13 @@ Platform::String^ AudioDeviceWindowsWasapi::_GetDefaultDeviceName(
   WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
   if (cls == DeviceClass::AudioRender) {
-    return _defaultRenderDevice->Name;
+    DeviceInformation^ defaultDevice = _GetDefaultDevice(
+      DeviceClass::AudioRender, AudioDeviceRole::Default);
+    return defaultDevice != nullptr ? defaultDevice->Name : nullptr;
   } else if (cls == DeviceClass::AudioCapture) {
-    return _defaultCaptureDevice->Name;
+    DeviceInformation^ defaultDevice = _GetDefaultDevice(
+      DeviceClass::AudioCapture, AudioDeviceRole::Default);
+    return defaultDevice != nullptr ? defaultDevice->Name : nullptr;
   }
 
   return nullptr;
@@ -4074,9 +4311,13 @@ Platform::String^ AudioDeviceWindowsWasapi::_GetDefaultDeviceID(
   WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
   if (cls == DeviceClass::AudioRender) {
-    return _defaultRenderDevice->Id;
+    DeviceInformation^ defaultDevice = _GetDefaultDevice(
+      DeviceClass::AudioRender, AudioDeviceRole::Default);
+    return defaultDevice != nullptr ? defaultDevice->Id : nullptr;
   } else if (cls == DeviceClass::AudioCapture) {
-    return _defaultCaptureDevice->Id;
+    DeviceInformation^ defaultDevice = _GetDefaultDevice(
+      DeviceClass::AudioCapture, AudioDeviceRole::Default);
+    return defaultDevice != nullptr ? defaultDevice->Id : nullptr;
   }
 
   return nullptr;
@@ -4112,27 +4353,25 @@ DeviceInformation^ AudioDeviceWindowsWasapi::_GetDefaultDevice(
   DeviceClass cls, AudioDeviceRole role) {
   WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
   if (cls == DeviceClass::AudioRender) {
-    if (_defaultRenderDevice == nullptr) {
-      Concurrency::create_task(
-        Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(
-        MediaDevice::GetDefaultAudioRenderId(role))).then(
-        [this](Windows::Devices::Enumeration::DeviceInformation^
-        deviceInformation) {
-        _defaultRenderDevice = deviceInformation;
-      }, concurrency::task_continuation_context::use_arbitrary()).wait();
-    }
-    return _defaultRenderDevice;
+    DeviceInformation^ defaultRenderDevice = nullptr;
+    Concurrency::create_task(
+      Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(
+      MediaDevice::GetDefaultAudioRenderId(role))).then(
+      [this, &defaultRenderDevice](Windows::Devices::Enumeration::DeviceInformation^
+      deviceInformation) {
+      defaultRenderDevice = deviceInformation;
+    }, concurrency::task_continuation_context::use_arbitrary()).wait();
+    return defaultRenderDevice;
   } else if (cls == DeviceClass::AudioCapture) {
-    if (_defaultCaptureDevice == nullptr) {
-      Concurrency::create_task(Windows::Devices::Enumeration::
-        DeviceInformation::CreateFromIdAsync(MediaDevice::
-        GetDefaultAudioCaptureId(role))).then(
-        [this](Windows::Devices::Enumeration::DeviceInformation^
-        deviceInformation) {
-        _defaultCaptureDevice = deviceInformation;
-      }, concurrency::task_continuation_context::use_arbitrary()).wait();
-    }
-    return _defaultCaptureDevice;
+    DeviceInformation^ defaultCaptureDevice = nullptr;
+    Concurrency::create_task(Windows::Devices::Enumeration::
+      DeviceInformation::CreateFromIdAsync(MediaDevice::
+      GetDefaultAudioCaptureId(role))).then(
+      [this, &defaultCaptureDevice](Windows::Devices::Enumeration::DeviceInformation^
+      deviceInformation) {
+      defaultCaptureDevice = deviceInformation;
+    }, concurrency::task_continuation_context::use_arbitrary()).wait();
+    return defaultCaptureDevice;
   }
   return nullptr;
 }
@@ -4147,6 +4386,35 @@ DeviceInformation^ AudioDeviceWindowsWasapi::_GetListDevice(DeviceClass cls,
     return _ptrRenderCollection->GetAt(index);
   } else if (cls == DeviceClass::AudioCapture) {
     return _ptrCaptureCollection->GetAt(index);
+  }
+
+  return nullptr;
+}
+
+// ----------------------------------------------------------------------------
+//  _GetListDevice
+// ----------------------------------------------------------------------------
+
+DeviceInformation^ AudioDeviceWindowsWasapi::_GetListDevice(DeviceClass cls,
+  Platform::String^ deviceId) {
+  if (deviceId == nullptr) {
+    return nullptr;
+  }
+
+  if (cls == DeviceClass::AudioRender) {
+    for (unsigned int i = 0; i < _ptrRenderCollection->Size; ++i) {
+      DeviceInformation^ device = _ptrRenderCollection->GetAt(i);
+      if (device->Id == deviceId) {
+        return device;
+      }
+    }
+  } else if (cls == DeviceClass::AudioCapture) {
+    for (unsigned int i = 0; i < _ptrCaptureCollection->Size; ++i) {
+      DeviceInformation^ device = _ptrCaptureCollection->GetAt(i);
+      if (device->Id == deviceId) {
+        return device;
+      }
+    }
   }
 
   return nullptr;
@@ -4218,7 +4486,7 @@ Exit:
 Windows::Foundation::IAsyncAction^ AudioDeviceWindowsWasapi::
 _InitializeAudioDeviceInAsync(Platform::String^ deviceId) {
   return Concurrency::create_async([this] {
-    _InitializeAudioDeviceIn(_defaultCaptureDevice->Id);
+    _InitializeAudioDeviceIn(_captureDevice->Id);
   });
 }
 
@@ -4248,8 +4516,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
         auto val = device->Properties->Lookup(rawProcessingSupportedKey);
         if (val != nullptr) {
           rawIsSupported = safe_cast<bool>(val);
-        }
-        else {
+        } else {
           // Sometimes the property is set but the value is empty.
           // Assume it means it's true.
           rawIsSupported = true;
@@ -4258,14 +4525,13 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
     }).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
-  _deviceIdStringIn = deviceId;
   return hr;
 }
 
 Windows::Foundation::IAsyncAction^ AudioDeviceWindowsWasapi::
 _InitializeAudioDeviceOutAsync(Platform::String^ deviceId) {
   return Concurrency::create_async([this] {
-    _InitializeAudioDeviceOut(_defaultRenderDevice->Id);
+    _InitializeAudioDeviceOut(_renderDevice->Id);
   });
 }
 
@@ -4295,8 +4561,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut(Platform::String^ de
             auto val = device->Properties->Lookup(rawProcessingSupportedKey);
             if (val != nullptr) {
               rawIsSupported = safe_cast<bool>(val);
-            }
-            else {
+            } else {
               // Sometimes the property is set but the value is empty.
               // Assume it means it's true.
               rawIsSupported = true;
@@ -4304,8 +4569,6 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut(Platform::String^ de
           }
         }).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
-
-  _deviceIdStringOut = deviceId;
 
   return hr;
 }
