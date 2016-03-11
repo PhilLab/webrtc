@@ -17,7 +17,7 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/common_video/rotation.h"
-#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/video_frame.h"
@@ -79,7 +79,7 @@ public:
 
     // Module handling
     virtual int64_t TimeUntilNextProcess();
-    virtual int32_t Process();
+    virtual void Process();
 
     // Implement VideoCaptureExternal
     // |capture_time| must be specified in NTP time format in milliseconds.

@@ -8,24 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_frame.h"
-
 #include <math.h>
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/bind.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/test/frame_utils.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
-bool EqualPlane(const uint8_t* data1,
-                const uint8_t* data2,
-                int stride,
-                int width,
-                int height);
-bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2);
 int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestVideoFrame, InitialValues) {
@@ -43,7 +36,7 @@ TEST(TestVideoFrame, CopiesInitialFrameWithoutCrashing) {
 TEST(TestVideoFrame, WidthHeightValues) {
   VideoFrame frame;
   const int valid_value = 10;
-  EXPECT_EQ(0, frame.CreateEmptyFrame(10, 10, 10, 14, 90));
+  frame.CreateEmptyFrame(10, 10, 10, 14, 90);
   EXPECT_EQ(valid_value, frame.width());
   EXPECT_EQ(valid_value, frame.height());
   frame.set_timestamp(123u);
@@ -56,7 +49,7 @@ TEST(TestVideoFrame, WidthHeightValues) {
 
 TEST(TestVideoFrame, SizeAllocation) {
   VideoFrame frame;
-  EXPECT_EQ(0, frame. CreateEmptyFrame(10, 10, 12, 14, 220));
+  frame. CreateEmptyFrame(10, 10, 12, 14, 220);
   int height = frame.height();
   int stride_y = frame.stride(kYPlane);
   int stride_u = frame.stride(kUPlane);
@@ -81,8 +74,8 @@ TEST(TestVideoFrame, CopyFrame) {
   int height = 15;
   // Copy frame.
   VideoFrame small_frame;
-  EXPECT_EQ(0, small_frame.CreateEmptyFrame(width, height,
-                                            stride_y, stride_u, stride_v));
+  small_frame.CreateEmptyFrame(width, height,
+                               stride_y, stride_u, stride_v);
   small_frame.set_timestamp(timestamp);
   small_frame.set_ntp_time_ms(ntp_time_ms);
   small_frame.set_render_time_ms(render_time_ms);
@@ -97,23 +90,22 @@ TEST(TestVideoFrame, CopyFrame) {
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
   VideoFrame big_frame;
-  EXPECT_EQ(0,
-            big_frame.CreateFrame(buffer_y, buffer_u, buffer_v,
-                                  width + 5, height + 5, stride_y + 5,
-                                  stride_u, stride_v, kRotation));
+  big_frame.CreateFrame(buffer_y, buffer_u, buffer_v,
+                        width + 5, height + 5, stride_y + 5,
+                        stride_u, stride_v, kRotation);
   // Frame of smaller dimensions.
-  EXPECT_EQ(0, small_frame.CopyFrame(big_frame));
-  EXPECT_TRUE(EqualFrames(small_frame, big_frame));
+  small_frame.CopyFrame(big_frame);
+  EXPECT_TRUE(test::FramesEqual(small_frame, big_frame));
   EXPECT_EQ(kRotation, small_frame.rotation());
 
   // Frame of larger dimensions.
-  EXPECT_EQ(0, small_frame.CreateEmptyFrame(width, height,
-                                            stride_y, stride_u, stride_v));
+  small_frame.CreateEmptyFrame(width, height,
+                               stride_y, stride_u, stride_v);
   memset(small_frame.buffer(kYPlane), 1, small_frame.allocated_size(kYPlane));
   memset(small_frame.buffer(kUPlane), 2, small_frame.allocated_size(kUPlane));
   memset(small_frame.buffer(kVPlane), 3, small_frame.allocated_size(kVPlane));
-  EXPECT_EQ(0, big_frame.CopyFrame(small_frame));
-  EXPECT_TRUE(EqualFrames(small_frame, big_frame));
+  big_frame.CopyFrame(small_frame);
+  EXPECT_TRUE(test::FramesEqual(small_frame, big_frame));
 }
 
 TEST(TestVideoFrame, ShallowCopy) {
@@ -137,8 +129,8 @@ TEST(TestVideoFrame, ShallowCopy) {
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
   VideoFrame frame1;
-  EXPECT_EQ(0, frame1.CreateFrame(buffer_y, buffer_u, buffer_v, width, height,
-                                  stride_y, stride_u, stride_v, kRotation));
+  frame1.CreateFrame(buffer_y, buffer_u, buffer_v, width, height,
+                     stride_y, stride_u, stride_v, kRotation);
   frame1.set_timestamp(timestamp);
   frame1.set_ntp_time_ms(ntp_time_ms);
   frame1.set_render_time_ms(render_time_ms);
@@ -174,7 +166,7 @@ TEST(TestVideoFrame, ShallowCopy) {
 
 TEST(TestVideoFrame, Reset) {
   VideoFrame frame;
-  ASSERT_TRUE(frame.CreateEmptyFrame(5, 5, 5, 5, 5) == 0);
+  frame.CreateEmptyFrame(5, 5, 5, 5, 5);
   frame.set_ntp_time_ms(1);
   frame.set_timestamp(2);
   frame.set_render_time_ms(3);
@@ -195,8 +187,8 @@ TEST(TestVideoFrame, CopyBuffer) {
   int stride_uv = 10;
   const int kSizeY = 225;
   const int kSizeUv = 80;
-  EXPECT_EQ(0, frame2.CreateEmptyFrame(width, height,
-                                       stride_y, stride_uv, stride_uv));
+  frame2.CreateEmptyFrame(width, height,
+                          stride_y, stride_uv, stride_uv);
   uint8_t buffer_y[kSizeY];
   uint8_t buffer_u[kSizeUv];
   uint8_t buffer_v[kSizeUv];
@@ -204,11 +196,15 @@ TEST(TestVideoFrame, CopyBuffer) {
   memset(buffer_u, 8, kSizeUv);
   memset(buffer_v, 4, kSizeUv);
   frame2.CreateFrame(buffer_y, buffer_u, buffer_v,
-                     width, height, stride_y, stride_uv, stride_uv);
+                     width, height, stride_y, stride_uv, stride_uv,
+                     kVideoRotation_0);
   // Expect exactly the same pixel data.
-  EXPECT_TRUE(EqualPlane(buffer_y, frame2.buffer(kYPlane), stride_y, 15, 15));
-  EXPECT_TRUE(EqualPlane(buffer_u, frame2.buffer(kUPlane), stride_uv, 8, 8));
-  EXPECT_TRUE(EqualPlane(buffer_v, frame2.buffer(kVPlane), stride_uv, 8, 8));
+  EXPECT_TRUE(
+      test::EqualPlane(buffer_y, frame2.buffer(kYPlane), stride_y, 15, 15));
+  EXPECT_TRUE(
+      test::EqualPlane(buffer_u, frame2.buffer(kUPlane), stride_uv, 8, 8));
+  EXPECT_TRUE(
+      test::EqualPlane(buffer_v, frame2.buffer(kVPlane), stride_uv, 8, 8));
 
   // Compare size.
   EXPECT_LE(kSizeY, frame2.allocated_size(kYPlane));
@@ -244,7 +240,7 @@ TEST(TestVideoFrame, FailToReuseAllocation) {
 
 TEST(TestVideoFrame, TextureInitialValues) {
   test::FakeNativeHandle* handle = new test::FakeNativeHandle();
-  VideoFrame frame = test::CreateFakeNativeHandleFrame(
+  VideoFrame frame = test::FakeNativeHandle::CreateFrame(
       handle, 640, 480, 100, 10, webrtc::kVideoRotation_0);
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
@@ -256,50 +252,6 @@ TEST(TestVideoFrame, TextureInitialValues) {
   EXPECT_EQ(200u, frame.timestamp());
   frame.set_render_time_ms(20);
   EXPECT_EQ(20, frame.render_time_ms());
-}
-
-bool EqualPlane(const uint8_t* data1,
-                const uint8_t* data2,
-                int stride,
-                int width,
-                int height) {
-  for (int y = 0; y < height; ++y) {
-    if (memcmp(data1, data2, width) != 0)
-      return false;
-    data1 += stride;
-    data2 += stride;
-  }
-  return true;
-}
-
-bool EqualFrames(const VideoFrame& frame1, const VideoFrame& frame2) {
-  if ((frame1.width() != frame2.width()) ||
-      (frame1.height() != frame2.height()) ||
-      (frame1.stride(kYPlane) != frame2.stride(kYPlane)) ||
-      (frame1.stride(kUPlane) != frame2.stride(kUPlane)) ||
-      (frame1.stride(kVPlane) != frame2.stride(kVPlane)) ||
-      (frame1.timestamp() != frame2.timestamp()) ||
-      (frame1.ntp_time_ms() != frame2.ntp_time_ms()) ||
-      (frame1.render_time_ms() != frame2.render_time_ms())) {
-    return false;
-  }
-  const int half_width = (frame1.width() + 1) / 2;
-  const int half_height = (frame1.height() + 1) / 2;
-  return EqualPlane(frame1.buffer(kYPlane), frame2.buffer(kYPlane),
-                    frame1.stride(kYPlane), frame1.width(), frame1.height()) &&
-         EqualPlane(frame1.buffer(kUPlane), frame2.buffer(kUPlane),
-                    frame1.stride(kUPlane), half_width, half_height) &&
-         EqualPlane(frame1.buffer(kVPlane), frame2.buffer(kVPlane),
-                    frame1.stride(kVPlane), half_width, half_height);
-}
-
-int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
-  if (type == kYPlane) {
-    return (plane_stride * image_height);
-  } else {
-    int half_height = (image_height + 1) / 2;
-    return (plane_stride * half_height);
-  }
 }
 
 }  // namespace webrtc

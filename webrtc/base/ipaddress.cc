@@ -27,8 +27,10 @@
 
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/byteorder.h"
-#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/base/win32.h"
 
 namespace rtc {
@@ -40,8 +42,6 @@ static const in6_addr k6To4Prefix = {{{0x20, 0x02, 0}}};
 static const in6_addr kTeredoPrefix = {{{0x20, 0x01, 0x00, 0x00}}};
 static const in6_addr kV4CompatibilityPrefix = {{{0}}};
 static const in6_addr k6BonePrefix = {{{0x3f, 0xfe, 0}}};
-
-bool IPAddress::strip_sensitive_ = false;
 
 static bool IsPrivateV4(uint32_t ip);
 static in_addr ExtractMappedAddress(const in6_addr& addr);
@@ -144,9 +144,10 @@ std::string IPAddress::ToString() const {
 }
 
 std::string IPAddress::ToSensitiveString() const {
-  if (!strip_sensitive_)
-    return ToString();
-
+#if !defined(NDEBUG)
+  // Return non-stripped in debug.
+  return ToString();
+#else
   switch (family_) {
     case AF_INET: {
       std::string address = ToString();
@@ -158,12 +159,20 @@ std::string IPAddress::ToSensitiveString() const {
       return address;
     }
     case AF_INET6: {
-      // TODO(grunell): Return a string of format 1:2:3:x:x:x:x:x or such
-      // instead of zeroing out.
-      return TruncateIP(*this, 128 - 80).ToString();
+      std::string result;
+      result.resize(INET6_ADDRSTRLEN);
+      in6_addr addr = ipv6_address();
+      size_t len =
+          rtc::sprintfn(&(result[0]), result.size(), "%x:%x:%x:x:x:x:x:x",
+                        (addr.s6_addr[0] << 8) + addr.s6_addr[1],
+                        (addr.s6_addr[2] << 8) + addr.s6_addr[3],
+                        (addr.s6_addr[4] << 8) + addr.s6_addr[5]);
+      result.resize(len);
+      return result;
     }
   }
   return std::string();
+#endif
 }
 
 IPAddress IPAddress::Normalized() const {
@@ -184,10 +193,6 @@ IPAddress IPAddress::AsIPv6Address() const {
   in6_addr v6addr = kV4MappedPrefix;
   ::memcpy(&v6addr.s6_addr[12], &u_.ip4.s_addr, sizeof(u_.ip4.s_addr));
   return IPAddress(v6addr);
-}
-
-void IPAddress::set_strip_sensitive(bool enable) {
-  strip_sensitive_ = enable;
 }
 
 bool InterfaceAddress::operator==(const InterfaceAddress &other) const {
@@ -407,7 +412,9 @@ int CountIPMaskBits(IPAddress mask) {
   // http://graphics.stanford.edu/~seander/bithacks.html
   // Counts the trailing 0s in the word.
   unsigned int zeroes = 32;
-  word_to_count &= -static_cast<int32_t>(word_to_count);
+  // This could also be written word_to_count &= -word_to_count, but
+  // MSVC emits warning C4146 when negating an unsigned number.
+  word_to_count &= ~word_to_count + 1;  // Isolate lowest set bit.
   if (word_to_count) zeroes--;
   if (word_to_count & 0x0000FFFF) zeroes -= 16;
   if (word_to_count & 0x00FF00FF) zeroes -= 8;
@@ -506,4 +513,15 @@ IPAddress GetLoopbackIP(int family) {
   }
   return rtc::IPAddress();
 }
-}  // Namespace rtc
+
+IPAddress GetAnyIP(int family) {
+  if (family == AF_INET) {
+    return rtc::IPAddress(INADDR_ANY);
+  }
+  if (family == AF_INET6) {
+    return rtc::IPAddress(in6addr_any);
+  }
+  return rtc::IPAddress();
+}
+
+}  // namespace rtc

@@ -444,7 +444,7 @@ int64_t AudioDeviceModuleImpl::TimeUntilNextProcess()
 //  new reports exists.
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceModuleImpl::Process()
+void AudioDeviceModuleImpl::Process()
 {
 
     _lastProcessTime = TickTime::MillisecondTimestamp();
@@ -496,8 +496,6 @@ int32_t AudioDeviceModuleImpl::Process()
         }
         _ptrAudioDevice->ClearRecordingError();
     }
-
-    return 0;
 }
 
 // ============================================================================

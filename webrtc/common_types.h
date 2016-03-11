@@ -11,6 +11,7 @@
 #ifndef WEBRTC_COMMON_TYPES_H_
 #define WEBRTC_COMMON_TYPES_H_
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -37,7 +38,7 @@
 #define NULL 0
 #endif
 
-#define RTP_PAYLOAD_NAME_SIZE 32
+#define RTP_PAYLOAD_NAME_SIZE 32u
 
 #if defined(WEBRTC_WIN) || defined(WIN32)
 // Compares two strings without regard to case.
@@ -211,6 +212,20 @@ struct RtcpPacketTypeCounter {
     }
   }
 
+  void Subtract(const RtcpPacketTypeCounter& other) {
+    nack_packets -= other.nack_packets;
+    fir_packets -= other.fir_packets;
+    pli_packets -= other.pli_packets;
+    nack_requests -= other.nack_requests;
+    unique_nack_requests -= other.unique_nack_requests;
+    if (other.first_packet_time_ms != -1 &&
+        (other.first_packet_time_ms > first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
+      // Use youngest time.
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
   int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
     return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
   }
@@ -291,7 +306,7 @@ struct CodecInst {
   char plname[RTP_PAYLOAD_NAME_SIZE];
   int plfreq;
   int pacsize;
-  int channels;
+  size_t channels;
   int rate;  // bits/sec unlike {start,min,max}Bitrate elsewhere in this file!
 
   bool operator==(const CodecInst& other) const {
@@ -310,12 +325,6 @@ struct CodecInst {
 
 // RTP
 enum {kRtpCsrcSize = 15}; // RFC 3550 page 13
-
-enum RTPDirections
-{
-    kRtpIncoming = 0,
-    kRtpOutgoing
-};
 
 enum PayloadFrequencies
 {
@@ -582,6 +591,7 @@ enum VP8ResilienceMode {
                      // within a frame.
 };
 
+class TemporalLayersFactory;
 // VP8 specific
 struct VideoCodecVP8 {
   bool                 pictureLossIndicationOn;
@@ -594,23 +604,7 @@ struct VideoCodecVP8 {
   bool                 automaticResizeOn;
   bool                 frameDroppingOn;
   int                  keyFrameInterval;
-
-  bool operator==(const VideoCodecVP8& other) const {
-    return pictureLossIndicationOn == other.pictureLossIndicationOn &&
-           feedbackModeOn == other.feedbackModeOn &&
-           complexity == other.complexity &&
-           resilience == other.resilience &&
-           numberOfTemporalLayers == other.numberOfTemporalLayers &&
-           denoisingOn == other.denoisingOn &&
-           errorConcealmentOn == other.errorConcealmentOn &&
-           automaticResizeOn == other.automaticResizeOn &&
-           frameDroppingOn == other.frameDroppingOn &&
-           keyFrameInterval == other.keyFrameInterval;
-  }
-
-  bool operator!=(const VideoCodecVP8& other) const {
-    return !(*this == other);
-  }
+  const TemporalLayersFactory* tl_factory;
 };
 
 // VP9 specific.
@@ -668,20 +662,6 @@ struct SimulcastStream {
   unsigned int        targetBitrate;  // kilobits/sec.
   unsigned int        minBitrate;  // kilobits/sec.
   unsigned int        qpMax; // minimum quality
-
-  bool operator==(const SimulcastStream& other) const {
-    return width == other.width &&
-           height == other.height &&
-           numberOfTemporalLayers == other.numberOfTemporalLayers &&
-           maxBitrate == other.maxBitrate &&
-           targetBitrate == other.targetBitrate &&
-           minBitrate == other.minBitrate &&
-           qpMax == other.qpMax;
-  }
-
-  bool operator!=(const SimulcastStream& other) const {
-    return !(*this == other);
-  }
 };
 
 struct SpatialLayer {
@@ -721,37 +701,8 @@ struct VideoCodec {
 
   VideoCodecMode      mode;
 
-  // When using an external encoder/decoder this allows to pass
-  // extra options without requiring webrtc to be aware of them.
-  Config*  extra_options;
-
-  bool operator==(const VideoCodec& other) const {
-    bool ret = codecType == other.codecType &&
-               (STR_CASE_CMP(plName, other.plName) == 0) &&
-               plType == other.plType &&
-               width == other.width &&
-               height == other.height &&
-               startBitrate == other.startBitrate &&
-               maxBitrate == other.maxBitrate &&
-               minBitrate == other.minBitrate &&
-               targetBitrate == other.targetBitrate &&
-               maxFramerate == other.maxFramerate &&
-               qpMax == other.qpMax &&
-               numberOfSimulcastStreams == other.numberOfSimulcastStreams &&
-               mode == other.mode;
-    if (ret && codecType == kVideoCodecVP8) {
-      ret &= (codecSpecific.VP8 == other.codecSpecific.VP8);
-    }
-
-    for (unsigned char i = 0; i < other.numberOfSimulcastStreams && ret; ++i) {
-      ret &= (simulcastStream[i] == other.simulcastStream[i]);
-    }
-    return ret;
-  }
-
-  bool operator!=(const VideoCodec& other) const {
-    return !(*this == other);
-  }
+  bool operator==(const VideoCodec& other) const = delete;
+  bool operator!=(const VideoCodec& other) const = delete;
 };
 
 // Bandwidth over-use detector options.  These are used to drive
@@ -848,6 +799,17 @@ struct RtpPacketCounter {
     packets += other.packets;
   }
 
+  void Subtract(const RtpPacketCounter& other) {
+    assert(header_bytes >= other.header_bytes);
+    header_bytes -= other.header_bytes;
+    assert(payload_bytes >= other.payload_bytes);
+    payload_bytes -= other.payload_bytes;
+    assert(padding_bytes >= other.padding_bytes);
+    padding_bytes -= other.padding_bytes;
+    assert(packets >= other.packets);
+    packets -= other.packets;
+  }
+
   void AddPacket(size_t packet_length, const RTPHeader& header) {
     ++packets;
     header_bytes += header.headerLength;
@@ -878,6 +840,18 @@ struct StreamDataCounters {
        (other.first_packet_time_ms < first_packet_time_ms ||
         first_packet_time_ms == -1)) {
       // Use oldest time.
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  void Subtract(const StreamDataCounters& other) {
+    transmitted.Subtract(other.transmitted);
+    retransmitted.Subtract(other.retransmitted);
+    fec.Subtract(other.fec);
+    if (other.first_packet_time_ms != -1 &&
+        (other.first_packet_time_ms > first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
+      // Use youngest time.
       first_packet_time_ms = other.first_packet_time_ms;
     }
   }

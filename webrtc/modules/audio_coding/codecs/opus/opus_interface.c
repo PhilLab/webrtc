@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/opus/include/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,40 +33,39 @@ enum {
 };
 
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
-                                 int32_t channels,
+                                 size_t channels,
                                  int32_t application) {
-  OpusEncInst* state;
-  if (inst != NULL) {
-    state = (OpusEncInst*) calloc(1, sizeof(OpusEncInst));
-    if (state) {
-      int opus_app;
-      switch (application) {
-        case 0: {
-          opus_app = OPUS_APPLICATION_VOIP;
-          break;
-        }
-        case 1: {
-          opus_app = OPUS_APPLICATION_AUDIO;
-          break;
-        }
-        default: {
-          free(state);
-          return -1;
-        }
-      }
+  int opus_app;
+  if (!inst)
+    return -1;
 
-      int error;
-      state->encoder = opus_encoder_create(48000, channels, opus_app,
-                                           &error);
-      state->in_dtx_mode = 0;
-      if (error == OPUS_OK && state->encoder != NULL) {
-        *inst = state;
-        return 0;
-      }
-      free(state);
-    }
+  switch (application) {
+    case 0:
+      opus_app = OPUS_APPLICATION_VOIP;
+      break;
+    case 1:
+      opus_app = OPUS_APPLICATION_AUDIO;
+      break;
+    default:
+      return -1;
   }
-  return -1;
+
+  OpusEncInst* state = calloc(1, sizeof(OpusEncInst));
+  assert(state);
+
+  int error;
+  state->encoder = opus_encoder_create(48000, (int)channels, opus_app,
+                                       &error);
+  if (error != OPUS_OK || !state->encoder) {
+    WebRtcOpus_EncoderFree(state);
+    return -1;
+  }
+
+  state->in_dtx_mode = 0;
+  state->channels = channels;
+
+  *inst = state;
+  return 0;
 }
 
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst) {
@@ -205,7 +205,7 @@ int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   }
 }
 
-int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
+int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels) {
   int error;
   OpusDecInst* state;
 
@@ -217,7 +217,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
     }
 
     /* Create new memory, always at 48000 Hz. */
-    state->decoder = opus_decoder_create(48000, channels, &error);
+    state->decoder = opus_decoder_create(48000, (int)channels, &error);
     if (error == OPUS_OK && state->decoder != NULL) {
       /* Creation of memory all ok. */
       state->channels = channels;
@@ -246,7 +246,7 @@ int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst) {
   }
 }
 
-int WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
+size_t WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
   return inst->channels;
 }
 

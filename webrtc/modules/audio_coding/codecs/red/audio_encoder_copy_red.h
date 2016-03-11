@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
 namespace webrtc {
@@ -38,15 +37,11 @@ class AudioEncoderCopyRed final : public AudioEncoder {
 
   size_t MaxEncodedBytes() const override;
   int SampleRateHz() const override;
-  int NumChannels() const override;
+  size_t NumChannels() const override;
   int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             rtc::ArrayView<const int16_t> audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override;
   void Reset() override;
   bool SetFec(bool enable) override;
   bool SetDtx(bool enable) override;
@@ -54,6 +49,11 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   void SetMaxPlaybackRate(int frequency_hz) override;
   void SetProjectedPacketLossRate(double fraction) override;
   void SetTargetBitrate(int target_bps) override;
+
+protected:
+  EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                         rtc::ArrayView<const int16_t> audio,
+                         rtc::Buffer* encoded) override;
 
  private:
   AudioEncoder* speech_encoder_;

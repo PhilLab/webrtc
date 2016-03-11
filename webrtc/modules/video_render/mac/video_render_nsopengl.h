@@ -21,18 +21,22 @@
 #include <QuickTime/QuickTime.h>
 #include <list>
 #include <map>
+#include <memory>
 
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 
 #import "webrtc/modules/video_render/mac/cocoa_full_screen_window.h"
 #import "webrtc/modules/video_render/mac/cocoa_render_view.h"
 
 class Trace;
 
+namespace rtc {
+class PlatformThread;
+}  // namespace rtc
+
 namespace webrtc {
 class EventTimerWrapper;
-class ThreadWrapper;
 class VideoRenderNSOpenGL;
 class CriticalSectionWrapper;
 
@@ -166,7 +170,8 @@ private: // variables
     bool _fullScreen;
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
-    rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
+    // TODO(pbos): Remove unique_ptr and use PlatformThread directly.
+    std::unique_ptr<rtc::PlatformThread> _screenUpdateThread;
     EventTimerWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;

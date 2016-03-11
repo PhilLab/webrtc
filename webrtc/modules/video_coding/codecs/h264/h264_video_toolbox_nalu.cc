@@ -14,6 +14,7 @@
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -139,7 +140,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
   }
   RTC_DCHECK_EQ(bytes_remaining, (size_t)0);
 
-  rtc::scoped_ptr<webrtc::RTPFragmentationHeader> header;
+  std::unique_ptr<webrtc::RTPFragmentationHeader> header;
   header.reset(new webrtc::RTPFragmentationHeader());
   header->VerifyAndAllocateFragmentationHeader(frag_offsets.size());
   RTC_DCHECK_EQ(frag_lengths.size(), frag_offsets.size());
@@ -154,11 +155,10 @@ bool H264CMSampleBufferToAnnexBBuffer(
   return true;
 }
 
-bool H264AnnexBBufferToCMSampleBuffer(
-    const uint8_t* annexb_buffer,
-    size_t annexb_buffer_size,
-    CMVideoFormatDescriptionRef video_format,
-    CMSampleBufferRef* out_sample_buffer) {
+bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
+                                      size_t annexb_buffer_size,
+                                      CMVideoFormatDescriptionRef video_format,
+                                      CMSampleBufferRef* out_sample_buffer) {
   RTC_DCHECK(annexb_buffer);
   RTC_DCHECK(out_sample_buffer);
   *out_sample_buffer = nullptr;

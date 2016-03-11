@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
@@ -36,7 +37,7 @@ class BweSimulation : public BweTest,
     VerboseLogging(true);
   }
 
-  test::Random random_;
+  Random random_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(BweSimulation);
@@ -74,7 +75,6 @@ TEST_P(BweSimulation, Verizon4gDownlinkTest) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
-
   const int kFlowIds[] = {0, 1};
   const size_t kNumFlows = sizeof(kFlowIds) / sizeof(kFlowIds[0]);
 
@@ -106,7 +106,6 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
-
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
@@ -243,23 +242,23 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweSimulation, SelfFairnessTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  Random prng(Clock::GetRealTimeClock()->TimeInMicroseconds());
   const int kAllFlowIds[] = {0, 1, 2, 3};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  rtc::scoped_ptr<VideoSource> sources[kNumFlows];
-  rtc::scoped_ptr<VideoSender> senders[kNumFlows];
+  std::unique_ptr<VideoSource> sources[kNumFlows];
+  std::unique_ptr<VideoSender> senders[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
     sources[i].reset(new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0,
-                                             i * (rand() % 40000)));
+                                             i * prng.Rand(39999)));
     senders[i].reset(new VideoSender(&uplink_, sources[i].get(), GetParam()));
   }
 
   ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
   choke.set_capacity_kbps(1000);
 
-  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
+  std::unique_ptr<RateCounterFilter> rate_counters[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     rate_counters[i].reset(
         new RateCounterFilter(&uplink_, CreateFlowIds(&kAllFlowIds[i], 1),
@@ -270,7 +269,7 @@ TEST_P(BweSimulation, SelfFairnessTest) {
       &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization",
       "Total_link_utilization");
 
-  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
+  std::unique_ptr<PacketReceiver> receivers[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     receivers[i].reset(new PacketReceiver(&uplink_, kAllFlowIds[i], GetParam(),
                                           i == 0, false));

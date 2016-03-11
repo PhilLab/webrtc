@@ -38,6 +38,11 @@
                                      4456, 
                                     ],
         }],
+        ['OS=="ios"', {
+          'dependencies': [
+            'api/api_tests.gyp:rtc_api_objc_tests',
+          ]
+        }]
       ],
     },
     {
@@ -93,9 +98,9 @@
         'video_quality_test',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        'test/webrtc_test_common.gyp:webrtc_test_common',
-        'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        'test/test.gyp:test_common',
         'test/test.gyp:test_main',
+        'test/test.gyp:test_renderer',
         'webrtc',
       ],
     },
@@ -119,9 +124,9 @@
         'video_quality_test',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        'test/webrtc_test_common.gyp:webrtc_test_common',
-        'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        'test/test.gyp:test_common',
         'test/test.gyp:test_main',
+        'test/test.gyp:test_renderer',
         'webrtc',
       ],
     },
@@ -144,8 +149,8 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        'test/webrtc_test_common.gyp:webrtc_test_common',
-        'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        'test/test.gyp:test_common',
+        'test/test.gyp:test_renderer',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
         '<(webrtc_root)/modules/modules.gyp:video_render',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
@@ -159,17 +164,26 @@
       'sources': [
         'audio/audio_receive_stream_unittest.cc',
         'audio/audio_send_stream_unittest.cc',
+        'audio/audio_state_unittest.cc',
+        'call/bitrate_allocator_unittest.cc',
         'call/bitrate_estimator_tests.cc',
         'call/call_unittest.cc',
         'call/packet_injection_tests.cc',
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',
+        'video/call_stats_unittest.cc',
+        'video/encoder_state_feedback_unittest.cc',
         'video/end_to_end_tests.cc',
+        'video/overuse_frame_detector_unittest.cc',
+        'video/payload_router_unittest.cc',
+        'video/report_block_stats_unittest.cc',
         'video/send_statistics_proxy_unittest.cc',
+        'video/stream_synchronization_unittest.cc',
         'video/video_capture_input_unittest.cc',
         'video/video_decoder_unittest.cc',
         'video/video_encoder_unittest.cc',
         'video/video_send_stream_tests.cc',
+        'video/vie_remb_unittest.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
@@ -181,14 +195,25 @@
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         'test/metrics.gyp:metrics',
+        'test/test.gyp:test_common',
         'test/test.gyp:test_main',
-        'test/webrtc_test_common.gyp:webrtc_test_common',
         'webrtc',
       ],
       'conditions': [
+        ['rtc_use_h264==1', {
+          'defines': [
+            'WEBRTC_END_TO_END_H264_TESTS',
+          ],
+        }],
         ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+          ],
+        }],
+        ['OS=="ios"', {
+          'mac_bundle_resources': [
+            '<(DEPTH)/resources/foreman_cif_short.yuv',
+            '<(DEPTH)/resources/voice_engine/audio_long16.pcm',
           ],
         }],
         ['enable_protobuf==1', {
@@ -210,15 +235,18 @@
       'type': '<(gtest_target_type)',
       'sources': [
         'call/call_perf_tests.cc',
+        'call/rampup_tests.cc',
+        'call/rampup_tests.h',
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
+        'modules/audio_processing/audio_processing_performance_unittest.cc',
         'modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
         'video/full_stack.cc',
-        'video/rampup_tests.cc',
-        'video/rampup_tests.h',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/modules/modules.gyp:audio_processing',
+        '<(webrtc_root)/modules/modules.gyp:audioproc_test_utils',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
@@ -226,9 +254,9 @@
         'modules/modules.gyp:neteq_test_support',
         'modules/modules.gyp:bwe_simulator',
         'modules/modules.gyp:rtp_rtcp',
+        'test/test.gyp:test_common',
         'test/test.gyp:test_main',
-        'test/webrtc_test_common.gyp:webrtc_test_common',
-        'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        'test/test.gyp:test_renderer',
         'webrtc',
       ],
       'conditions': [
@@ -337,6 +365,32 @@
           ],
           'sources': [
             'rtc_unittests.isolate',
+          ],
+        },
+        {
+          'target_name': 'rtc_media_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'rtc_media_unittests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'rtc_media_unittests.isolate',
+          ],
+        },
+        {
+          'target_name': 'rtc_pc_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'rtc_pc_unittests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+          ],
+          'sources': [
+            'rtc_pc_unittests.isolate',
           ],
         },
         {

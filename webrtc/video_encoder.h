@@ -11,6 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENCODER_H_
 #define WEBRTC_VIDEO_ENCODER_H_
 
+#include <memory>
+#include <string>
 #include <vector>
 
 #include "webrtc/common_types.h"
@@ -124,6 +126,7 @@ class VideoEncoder {
   virtual void OnDroppedFrame(uint32_t timestamp) {}
   virtual int GetTargetFramerate() { return -1; }
   virtual bool SupportsNativeHandle() const { return false; }
+  virtual const char* ImplementationName() const { return "unknown"; }
 };
 
 // Class used to wrap external VideoEncoders to provide a fallback option on
@@ -151,6 +154,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   void OnDroppedFrame(uint32_t timestamp) override;
   int GetTargetFramerate() override;
   bool SupportsNativeHandle() const override;
+  const char* ImplementationName() const override;
 
  private:
   bool InitFallbackEncoder();
@@ -174,7 +178,8 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   const EncoderType encoder_type_;
   webrtc::VideoEncoder* const encoder_;
 
-  rtc::scoped_ptr<webrtc::VideoEncoder> fallback_encoder_;
+  std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
+  std::string fallback_implementation_name_;
   EncodedImageCallback* callback_;
 };
 }  // namespace webrtc

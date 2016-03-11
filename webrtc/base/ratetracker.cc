@@ -63,6 +63,10 @@ double RateTracker::ComputeRateForInterval(
     milliseconds_to_skip = 0u;
     available_interval_milliseconds =
         TimeDiff(current_time, initialization_time_milliseconds_);
+    // Let one bucket interval pass after initialization before reporting.
+    if (available_interval_milliseconds < bucket_milliseconds_) {
+      return 0.0;
+    }
   }
   // If we're skipping all buckets that means that there have been no samples
   // within the sampling interval so report 0.
@@ -73,8 +77,9 @@ double RateTracker::ComputeRateForInterval(
   size_t start_bucket = NextBucketIndex(current_bucket_ + buckets_to_skip);
   // Only count a portion of the first bucket according to how much of the
   // first bucket is within the current interval.
-  size_t total_samples = sample_buckets_[start_bucket] *
-      (bucket_milliseconds_ - milliseconds_to_skip) /
+  size_t total_samples = ((sample_buckets_[start_bucket] *
+      (bucket_milliseconds_ - milliseconds_to_skip)) +
+      (bucket_milliseconds_ >> 1)) /
       bucket_milliseconds_;
   // All other buckets in the interval are counted in their entirety.
   for (size_t i = NextBucketIndex(start_bucket);

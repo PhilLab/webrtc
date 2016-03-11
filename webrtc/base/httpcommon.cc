@@ -23,6 +23,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/cryptstring.h"
@@ -379,7 +380,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
     gmt = non_gmt + ((zone[0] == '+') ? offset : -offset);
   } else {
     size_t zindex;
-    if (!find_string(zindex, zone, kTimeZones, ARRAY_SIZE(kTimeZones))) {
+    if (!find_string(zindex, zone, kTimeZones, arraysize(kTimeZones))) {
       return false;
     }
     gmt = non_gmt + kTimeZoneOffsets[zindex] * 60 * 60;
