@@ -19,7 +19,6 @@ const int QualityScaler::kDefaultLowQpDenominator = 3;
 // Note that this is the same for width and height to permit 120x90 in both
 // portrait and landscape mode.
 const int QualityScaler::kDefaultMinDownscaleDimension = 90;
-
 QualityScaler::QualityScaler()
     : num_samples_(0),
       low_qp_threshold_(-1),
@@ -59,6 +58,7 @@ void QualityScaler::ReportQP(int qp) {
 void QualityScaler::ReportDroppedFrame() {
   framedrop_percent_.AddSample(100);
 }
+
 
 void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
   // Should be set through InitEncode -> Should be set by now.
@@ -147,7 +147,20 @@ void QualityScaler::ClearSamples() {
 }
 
 void QualityScaler::AdjustScale(bool up) {
-  downscale_shift_ += up ? -1 : 1;
+  // When adjust to scale down the resolution, if current downscale shift 
+  // is already large enough, we shall not stop increasing downscale_shift_ 
+  // Otherwise, potentially, it can become very big ( ex.: 10), then, it will
+  // take very long time to recover it back even when video is playing at very
+  // good rate.
+  if (!up && downscale_shift_ > 0 && res_.width>0 
+    && (res_.width >> downscale_shift_)<=min_width_) {
+    // Current downscale shift is already large enough,
+    // do nothing
+  }
+  else {
+    downscale_shift_ += up ? -1 : 1;
+  }
+  
   if (downscale_shift_ < 0)
     downscale_shift_ = 0;
   ClearSamples();

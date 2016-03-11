@@ -35,7 +35,6 @@ namespace webrtc {
 //////////////////////////////////////////
 // H264 WinRT Decoder Implementation
 //////////////////////////////////////////
-
 H264WinRTDecoderImpl::H264WinRTDecoderImpl()
   : width_(0),
   height_(0),
