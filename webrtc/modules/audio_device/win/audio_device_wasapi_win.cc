@@ -716,8 +716,10 @@ AudioDeviceWindowsWasapi::AudioDeviceWindowsWasapi(const int32_t id) :
     _AGC(false),
     _playWarning(0),
     _playError(0),
+    _playIsRecovering(false),
     _recWarning(0),
     _recError(0),
+    _recIsRecovering(false),
     _playBufType(AudioDeviceModule::kAdaptiveBufferSize),
     _playBufDelay(80),
     _playBufDelayFixed(80),
@@ -3460,6 +3462,10 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
         _sndCardPlayDelay = playout_delay;
       }
 
+      // Clear flag marking a successfull recovery.
+      if (_playIsRecovering) {
+        _playIsRecovering = false;
+      }
       _UnLock();
     }
   }
@@ -3503,9 +3509,19 @@ Exit:
     }
 
     if (isRecoverableError) {
-      WEBRTC_TRACE(kTraceWarning, kTraceUtility, _id,
-        "audio rendering thread has ended pre-maturely, restarting renderer...");
-      SetEvent(_hRestartRenderEvent);
+      if (_playIsRecovering) {
+        // If the AUDCLNT_E_DEVICE_INVALIDATED error is received right
+        // after a recovery, consider it as a failure and avoid another
+        // recovery.
+        WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kPlayoutError message "
+          "posted: rendering thread has ended pre-maturely after recovery");
+        _playIsRecovering = false;
+        _playError = 1;
+      } else {
+        WEBRTC_TRACE(kTraceWarning, kTraceUtility, _id,
+          "audio rendering thread has ended pre-maturely, restarting renderer...");
+        SetEvent(_hRestartRenderEvent);
+      }
     } else {
       // Trigger callback from module process thread
       WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kPlayoutError message "
@@ -3804,6 +3820,10 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
         goto Exit;
       }
 
+      // Clear flag marking a successfull recovery.
+      if (_recIsRecovering) {
+        _recIsRecovering = false;
+      }
       _UnLock();
     }
   }
@@ -3840,9 +3860,19 @@ Exit:
       }
     }
     if (isRecoverableError) {
-      WEBRTC_TRACE(kTraceWarning, kTraceUtility, _id, "capturing thread has "
-        "ended pre-maturely, restarting capturer...");
-      SetEvent(_hRestartCaptureEvent);
+      if (_recIsRecovering) {
+        // If the AUDCLNT_E_DEVICE_INVALIDATED error is received right
+        // after a recovery, consider it as a failure and avoid another
+        // recovery.
+        WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kRecordingError message "
+          "posted: capturing thread has ended pre-maturely after recovery");
+        _recIsRecovering = false;
+        _recError = 1;
+      } else {
+        WEBRTC_TRACE(kTraceWarning, kTraceUtility, _id, "capturing thread has "
+          "ended pre-maturely, restarting capturer...");
+        SetEvent(_hRestartCaptureEvent);
+      }
     } else {
       WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kRecordingError message "
         "posted: capturing thread has ended pre-maturely");
@@ -3938,6 +3968,7 @@ DWORD WINAPI AudioDeviceWindowsWasapi::WSAPIObserverThread(LPVOID context) {
 }
 
 DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
+  _SetThreadName(0, "webrtc_core_audio_observer_thread");
   SetEvent(_hObserverStartedEvent);
   bool keepObserving = true;
   HANDLE waitArray[3] = { _hObserverShutdownEvent,
@@ -3947,13 +3978,14 @@ DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
     // Wait shutdown or restart capturer/renderer events
     DWORD waitResult = WaitForMultipleObjects(3, waitArray, FALSE, INFINITE);
     switch (waitResult) {
-    case WAIT_OBJECT_0 + 0:        // _hShutdownCaptureEvent
+    case WAIT_OBJECT_0 + 0:        // _hObserverShutdownEvent
       keepObserving = false;
       break;
     case WAIT_OBJECT_0 + 1: {      // _hRestartCaptureEvent
       CriticalSectionScoped critScoped(&_recordingControlMutex);
       int32_t result = StopRecordingInternal();
       if (result == 0) {
+        _recIsRecovering = true;
         result = InitRecordingInternal();
       }
       if (result == 0) {
@@ -3962,6 +3994,13 @@ DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
       if (result != 0) {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
           "failed to restart audio capture");
+        if (_recIsRecovering) {
+          // Stop recording thread in case is running
+          StopRecordingInternal();
+          _recIsRecovering = false;
+        }
+        // Trigger callback from module process thread
+        _recError = 2;
       } else {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
           "audio capture restarted");
@@ -3973,6 +4012,7 @@ DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
       CriticalSectionScoped critScoped(&_playoutControlMutex);
       int32_t result = StopPlayoutInternal();
       if (result == 0) {
+        _playIsRecovering = true;
         result = InitPlayoutInternal();
       }
       if (result == 0) {
@@ -3981,6 +4021,13 @@ DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
       if (result != 0) {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
           "failed to restart audio renderer");
+        if (_playIsRecovering) {
+          // Stop playout thread in case is running
+          StopPlayoutInternal();
+          _playIsRecovering = false;
+        }
+        // Trigger callback from module process thread
+        _playError = 2;
       } else {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
           "audio renderer restarted");
