@@ -455,8 +455,10 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     uint16_t                                _playWarning;
     uint16_t                                _playError;
+    bool                                    _playIsRecovering;
     uint16_t                                _recWarning;
     uint16_t                                _recError;
+    bool                                    _recIsRecovering;
 
     AudioDeviceModule::BufferType           _playBufType;
     uint16_t                                _playBufDelay;
