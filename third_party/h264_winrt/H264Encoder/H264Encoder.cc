@@ -44,7 +44,6 @@ namespace webrtc {
 //////////////////////////////////////////
 // H264 WinRT Encoder Implementation
 //////////////////////////////////////////
-
 H264WinRTEncoderImpl::H264WinRTEncoderImpl()
   : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
   , _callbackLock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
@@ -71,7 +70,7 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   currentHeight_ = inst->height;
   currentBitrateBps_ = inst->targetBitrate > 0 ? inst->targetBitrate * 1024 : currentWidth_ * currentHeight_ * 2.0;
   currentFps_ = inst->maxFramerate;
-  quality_scaler_.Init(inst->qpMax / 2, 64, false);
+  quality_scaler_.Init(inst->qpMax / 3, 64, false);
   return InitEncoderWithSettings(inst);
 }
 
@@ -116,11 +115,6 @@ int H264WinRTEncoderImpl::InitEncoderWithSettings(const VideoCodec* inst) {
     MF_MT_FRAME_RATE, currentFps_, 1));
 
   quality_scaler_.ReportFramerate(currentFps_);
-  _scaler.Set(
-    inst->width, inst->height,
-    currentWidth_, currentHeight_,
-    kI420, kI420,
-    kScalePoint);
 
   // Create the media sink
   ON_SUCCEEDED(Microsoft::WRL::MakeAndInitialize<H264MediaSink>(&mediaSink_));
@@ -352,11 +346,13 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     DWORD curLength;
     hr = buffer->Lock(&byteBuffer, &maxLength, &curLength);
     if (FAILED(hr)) {
+      quality_scaler_.ReportDroppedFrame();
       return;
     }
     if (curLength == 0) {
       LOG(LS_WARNING) << "Got empty sample.";
       buffer->Unlock();
+      quality_scaler_.ReportDroppedFrame();
       return;
     }
     std::vector<byte> sendBuffer;
@@ -364,6 +360,7 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     memcpy(sendBuffer.data(), byteBuffer, curLength);
     hr = buffer->Unlock();
     if (FAILED(hr)) {
+      quality_scaler_.ReportDroppedFrame();
       return;
     }
 
@@ -432,18 +429,18 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
         return;
       }
 
-
-      _h264Parser.ParseBitstream(sendBuffer.data(), sendBuffer.size());
-      int lastQp;
-      if (_h264Parser.GetLastSliceQp(&lastQp)) {
-        quality_scaler_.ReportQP(lastQp);
-      }
-
       LONGLONG sampleTimestamp;
       sample->GetSampleTime(&sampleTimestamp);
 
       CachedFrameAttributes frameAttributes;
       if (_sampleAttributeQueue.pop(sampleTimestamp, frameAttributes)) {
+          
+        _h264Parser.ParseBitstream(sendBuffer.data(), sendBuffer.size());
+        int lastQp;
+        if (_h264Parser.GetLastSliceQp(&lastQp)) {
+          quality_scaler_.ReportQP(lastQp);
+        }
+
         encodedImage._timeStamp = frameAttributes.timestamp;
         encodedImage.ntp_time_ms_ = frameAttributes.ntpTime;
         encodedImage.capture_time_ms_ = frameAttributes.captureRenderTime;
@@ -451,10 +448,12 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
         encodedImage._encodedHeight = frameAttributes.frameHeight;
         encodedImage.adapt_reason_.quality_resolution_downscales =
           quality_scaler_.downscale_shift();
+
       }
       else {
         // No point in confusing the callback with a frame that doesn't
         // have correct attributes.
+        quality_scaler_.ReportDroppedFrame();
         return;
       }
 
@@ -483,7 +482,6 @@ int H264WinRTEncoderImpl::SetRates(
   if (new_framerate == 0) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
-
   webrtc::CriticalSectionScoped csLock(_lock.get());
   if (sinkWriter_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -506,7 +504,6 @@ int H264WinRTEncoderImpl::SetRates(
     fpsUpdated = true;
   }
 #endif
-  quality_scaler_.ReportFramerate(new_framerate);
 
   if (bitrateUpdated || fpsUpdated) {
     if ((webrtc::TickTime::Now() - lastTimeSettingsChanged_).Milliseconds() < 15000) {

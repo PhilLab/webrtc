@@ -20,6 +20,10 @@ class QualityScaler {
   static const int kDefaultLowQpDenominator;
   static const int kDefaultMinDownscaleDimension;
   struct Resolution {
+    Resolution():
+      width(0)
+      ,height(0) {
+    }
     int width;
     int height;
   };

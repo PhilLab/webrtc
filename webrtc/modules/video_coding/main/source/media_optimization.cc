@@ -431,11 +431,24 @@ bool MediaOptimization::IsVideoSuspended() const {
 bool MediaOptimization::DropFrame() {
   CriticalSectionScoped lock(crit_sect_.get());
   UpdateIncomingFrameRate();
+
   // Leak appropriate number of bytes.
   frame_dropper_->Leak((uint32_t)(InputFrameRateInternal() + 0.5f));
   if (video_suspended_) {
     return true;  // Drop all frames when muted.
   }
+
+#ifdef WINRT
+  // TODO (winrt): determine if really we need a larger window?
+  // user_frame_rate_ equals to current codec target frame rate, and incoming_frame_rate_
+  // is the actual captured frame rate
+  // For some slower phone, ex.: lumia635, refraining from triggering frame_dropper seems
+  // help maintaining smooth video tranmission.
+  if (user_frame_rate_  * 1.5 > incoming_frame_rate_) {
+    return false;
+  }
+#endif
+
   return frame_dropper_->DropFrame();
 }
 
