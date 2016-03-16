@@ -110,6 +110,7 @@ class WebRtcMediaStream :
 
   bool _gpuVideoBuffer;
   bool _isH264;
+  bool _started;
 };
 
 
