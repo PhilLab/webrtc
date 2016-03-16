@@ -41,7 +41,7 @@ WebRtcMediaStream::WebRtcMediaStream() :
   _frameBufferIndex(0), _frameReady(0), _frameCount(0),
   _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
   _gpuVideoBuffer(false), _frameSentThisTime(false),
-  _frameBeingQueued(0) {
+  _frameBeingQueued(0), _started(false) {
   _mediaBuffers.resize(BufferCount);
 }
 
@@ -351,7 +351,12 @@ STDMETHODIMP WebRtcMediaStream::Start(
     return MF_E_SHUTDOWN;
   }
   // Start stream
-  RETURN_ON_FAIL(QueueEvent(MEStreamStarted, GUID_NULL, S_OK, nullptr));
+  RETURN_ON_FAIL(QueueEvent(MEStreamStarted, GUID_NULL, S_OK, pvarStartPosition));
+
+  if (!_started) {
+    _helper->SetStartTimeNow();
+    _started = true;
+  }
   return S_OK;
 }
 

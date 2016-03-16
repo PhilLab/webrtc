@@ -36,6 +36,7 @@ class MediaSourceHelper {
     std::function<void(int)> fpsCallback);
   ~MediaSourceHelper();
 
+  void SetStartTimeNow();
   void QueueFrame(cricket::VideoFrame* frame);
   rtc::scoped_ptr<SampleData> DequeueFrame();
   bool HasFrames();
@@ -78,6 +79,8 @@ class MediaSourceHelper {
 
   // Are the frames H264 encoded.
   bool _isH264;
+
+  webrtc::TickTime _startTickTime;
 };
 
 

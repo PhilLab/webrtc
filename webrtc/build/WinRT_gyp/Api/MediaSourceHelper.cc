@@ -102,19 +102,12 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueFrame() {
   // Set the timestamp property
   if (_isFirstFrame) {
     _isFirstFrame = false;
-    data->sample->SetSampleTime(0);
+    LONGLONG frameTime = GetNextSampleTimeHns(data->renderTime);
+    data->sample->SetSampleTime(frameTime);
   }
   else {
 
     LONGLONG frameTime = GetNextSampleTimeHns(data->renderTime);
-#if 0
-    auto oldSampleTime = _lastSampleTime;
-    if (_isH264)
-      OutputDebugString((
-          L"queue:" + (_frames.size().ToString()) +
-          L"\tframeTime:" + frameTime +
-          L"\tdelta:" + ((frameTime - oldSampleTime) / 10000) + L"\n")->Data());
-#endif
 
     data->sample->SetSampleTime(frameTime);
 
@@ -159,6 +152,12 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueH264Frame() {
       tmp->AddRef();
       data->sample.Attach(tmp);
       data->renderTime = frame->GetTimeStamp();
+
+      ComPtr<IMFAttributes> sampleAttributes;
+      data->sample.As(&sampleAttributes);
+      if (IsSampleIDR(tmp)) {
+        sampleAttributes->SetUINT32(MFSampleExtension_CleanPoint, TRUE);
+      }
     }
   }
 
@@ -259,16 +258,40 @@ bool DropFramesToIDR(std::list<cricket::VideoFrame*>& frames) {
   return idrFrame != nullptr;
 }
 
-LONGLONG MediaSourceHelper::GetNextSampleTimeHns(LONGLONG frameRenderTime) {
-
+void MediaSourceHelper::SetStartTimeNow() {
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+  _startTickTime = webrtc::TickTime::Now();
   if (_isH264) {
+    if (!DropFramesToIDR(_frames)) {
+      // Flush all frames then.
+      while (!_frames.empty()) {
+        rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
+        _frames.pop_front();
+      }
+    }
+  }
+}
 
+#define USE_WALL_CLOCK
+LONGLONG MediaSourceHelper::GetNextSampleTimeHns(LONGLONG frameRenderTime) {
+  if (_isH264) {
+#ifdef USE_WALL_CLOCK
+    if (_startTickTime.Ticks() == 0) {
+      _startTickTime = webrtc::TickTime::Now();
+      return 0;
+    }
+    LONGLONG frameTime = ((webrtc::TickTime::Now() - _startTickTime).Milliseconds() + _futureOffsetMs) * 1000 * 10;
+#else
     if (_startTime == 0) {
 
       _startTime = frameRenderTime;
+      // Return zero here so the first frame starts at zero.
+      // Only follow-up samples get an future offset.
+      return 0;
     }
 
     LONGLONG frameTime = (frameRenderTime - _startTime) / 100 + (_futureOffsetMs * 1000 * 10);
+#endif
 
     return frameTime;
   }

@@ -507,7 +507,7 @@ int H264WinRTEncoderImpl::SetRates(
 
   if (bitrateUpdated || fpsUpdated) {
     if ((webrtc::TickTime::Now() - lastTimeSettingsChanged_).Milliseconds() < 15000) {
-      LOG(LS_INFO) << L"Last time settings changed was too soon, skipping this SetRates().\n";
+      LOG(LS_INFO) << "Last time settings changed was too soon, skipping this SetRates().\n";
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
