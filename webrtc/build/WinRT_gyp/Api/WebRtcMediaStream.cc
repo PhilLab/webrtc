@@ -26,6 +26,7 @@ namespace webrtc_winrt_api_internal {
 
 #define MAX_FRAME_DELAY_MS 30
 #define RETURN_ON_FAIL(code) { HRESULT hr = code; if (FAILED(hr)) {OutputDebugString(L"[Failed]\r\n"); return hr;} }
+
 // #define USE_MEMORY_BUFFERS
 
 class AutoFunction {

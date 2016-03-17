@@ -136,9 +136,8 @@ bool MediaSourceHelper::HasFrames() {
 
 rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueH264Frame() {
   
-  if (_frames.size() > 15) {
+  if (_frames.size() > 15)
     DropFramesToIDR(_frames);
-  }
 
   rtc::scoped_ptr<cricket::VideoFrame> frame(_frames.front());
   _frames.pop_front();
@@ -305,10 +304,9 @@ void MediaSourceHelper::CheckForAttributeChanges(cricket::VideoFrame* frame, Sam
   SIZE currentSize = { (LONG)frame->GetWidth(), (LONG)frame->GetHeight() };
   if (_lastSize.cx != currentSize.cx || _lastSize.cy != currentSize.cy) {
     data->sizeHasChanged = true;
+    data->size = currentSize;
     _lastSize = currentSize;
   }
-
-  data->size = currentSize;
 
   // Update rotation property
   int currentRotation = frame->GetRotation();
@@ -316,9 +314,9 @@ void MediaSourceHelper::CheckForAttributeChanges(cricket::VideoFrame* frame, Sam
   // If the rotation has changed
   if (_lastRotation == -1 || _lastRotation != currentRotation) {
     data->rotationHasChanged = true;
+    data->rotation = currentRotation;
     _lastRotation = currentRotation;
   }
-  data->rotation = currentRotation;
 
 }
 
@@ -328,9 +326,8 @@ void MediaSourceHelper::UpdateFrameRate() {
   _frameCounter++;
   // If we have about a second worth of frames
   webrtc::TickTime now = webrtc::TickTime::Now();
-  int delta = (now - _lastTimeFPSCalculated).Milliseconds();
-  if (delta > 1000) {
-    _fpsCallback((_frameCounter*1000)/delta);
+  if ((now - _lastTimeFPSCalculated).Milliseconds() > 1000) {
+    _fpsCallback(_frameCounter);
     _frameCounter = 0;
     _lastTimeFPSCalculated = now;
   }

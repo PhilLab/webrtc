@@ -95,7 +95,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   QualityScaler quality_scaler_;
   // Used to parse QP values out of the samples.
   H264BitstreamParser _h264Parser;
-
+  webrtc::Scaler _scaler;
   // Caching the codec received in InitEncode().
   VideoCodec codec_;
 };  // end of H264WinRTEncoderImpl class
