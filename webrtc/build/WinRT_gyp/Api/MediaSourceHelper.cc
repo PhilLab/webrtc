@@ -14,6 +14,7 @@
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "libyuv/convert.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/timing.h"
 
 using Microsoft::WRL::ComPtr;
 using Platform::Collections::Vector;
@@ -102,10 +103,11 @@ rtc::scoped_ptr<SampleData> MediaSourceHelper::DequeueFrame() {
   // Set the timestamp property
   if (_isFirstFrame) {
     _isFirstFrame = false;
+	webrtc_winrt_api::FirstFrameRenderHelper::FireEvent(
+		rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec);
     LONGLONG frameTime = GetNextSampleTimeHns(data->renderTime);
     data->sample->SetSampleTime(frameTime);
-  }
-  else {
+  } else {
 
     LONGLONG frameTime = GetNextSampleTimeHns(data->renderTime);
 
@@ -338,3 +340,6 @@ void MediaSourceHelper::UpdateFrameRate() {
 
 }  // namespace webrtc_winrt_api_internal
 
+void webrtc_winrt_api::FirstFrameRenderHelper::FireEvent(double timestamp) {
+		FirstFrameRendered(timestamp);
+}
