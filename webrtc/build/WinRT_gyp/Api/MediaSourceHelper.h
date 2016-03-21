@@ -16,7 +16,22 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
+namespace webrtc_winrt_api {
+	/// <summary>
+	/// Delegate used to notify about first video frame rendering.
+	/// </summary>
+	public delegate void FirstFrameRenderedEventHandler(double timestamp);
 
+	public ref class FirstFrameRenderHelper sealed {
+	public:
+		/// <summary>
+		/// Event fires when the first video frame renders.
+		/// </summary>
+		static event FirstFrameRenderedEventHandler^ FirstFrameRendered;
+	internal:
+		static void FireEvent(double timestamp);
+	};
+}
 namespace webrtc_winrt_api_internal {
 
 struct SampleData {
