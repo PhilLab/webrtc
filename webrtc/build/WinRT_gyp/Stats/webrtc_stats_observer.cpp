@@ -125,8 +125,8 @@ void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
                 ref new Vector<webrtc_winrt_api::RTCStatsReport^>();
 
   auto t = rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
-  int64 memUsage = webrtc_winrt_api::WebRTC::GetMemUsage();
-  double cpuUsage = webrtc_winrt_api::WebRTC::GetCPUUsage();
+  int64 memUsage = webrtc_winrt_api::WebRTC::MemoryUsage;
+  double cpuUsage = webrtc_winrt_api::WebRTC::CpuUsage;
 
   EventWriteStatsReportInt64("system", t, "MemUsage", memUsage);
   EventWriteStatsReportFloat("system", t, "CPUUsage", cpuUsage);

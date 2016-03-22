@@ -32,11 +32,14 @@ class GlobalObserver : public webrtc::PeerConnectionObserver,
 
   void SetPeerConnection(webrtc_winrt_api::RTCPeerConnection^ pc);
 
-  void ToggleETWStats(bool enable);
+  void EnableETWStats(bool enable);
+  bool AreETWStatsEnabled();
 
-  void ToggleConnectionHealthStats(bool enable);
+  void EnableConnectionHealthStats(bool enable);
+  bool AreConnectionHealthStatsEnabled();
 
-  void ToggleRTCStats(bool enable);
+  void EnableRTCStats(bool enable);
+  bool AreRTCStatsEnabled();
 
   // PeerConnectionObserver functions
   virtual void OnSignalingChange(
