@@ -102,12 +102,6 @@ class WebRtcMediaStream :
   std::vector<ComPtr<IMFMediaBuffer>> _mediaBuffers;
   int _frameBufferIndex;
 
-  // Used to smooth out frame samples to prevent sample being
-  // rendered faster than a certain rate.
-  ThreadPoolTimer^ _fpsTimer;
-  void FPSTimerElapsedExecute(ThreadPoolTimer^ source);
-  bool _frameSentThisTime;
-
   bool _gpuVideoBuffer;
   bool _isH264;
   bool _started;
