@@ -68,25 +68,37 @@ void GlobalObserver::SetPeerConnection(
   }
 }
 
-void GlobalObserver::ToggleETWStats(bool enable) {
+void GlobalObserver::EnableETWStats(bool enable) {
   _etwStatsEnabled = enable;
   if (_stats_observer_etw) {
     _stats_observer_etw->ToggleETWStats(enable);
   }
 }
 
-void GlobalObserver::ToggleConnectionHealthStats(bool enable) {
+bool GlobalObserver::AreETWStatsEnabled() {
+  return _etwStatsEnabled;
+}
+
+void GlobalObserver::EnableConnectionHealthStats(bool enable) {
   _connectionHealthStatsEnabled = enable;
   if (_stats_observer_etw) {
     _stats_observer_etw->ToggleConnectionHealthStats(enable ? this : NULL);
   }
 }
 
-void GlobalObserver::ToggleRTCStats(bool enable) {
+bool GlobalObserver::AreConnectionHealthStatsEnabled() {
+  return _connectionHealthStatsEnabled;
+}
+
+void GlobalObserver::EnableRTCStats(bool enable) {
   _rtcStatsEnabled = enable;
   if (_stats_observer_etw) {
     _stats_observer_etw->ToggleRTCStats(enable ? this : NULL);
   }
+}
+
+bool GlobalObserver::AreRTCStatsEnabled() {
+  return _rtcStatsEnabled;
 }
 
 

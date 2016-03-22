@@ -459,21 +459,39 @@ void RTCPeerConnection::Close() {
   });
 }
 
-void RTCPeerConnection::ToggleETWStats(bool enable) {
-  globals::RunOnGlobalThread<void>([this, enable] {
-    _observer->ToggleETWStats(enable);
+bool RTCPeerConnection::EtwStatsEnabled::get() {
+  return globals::RunOnGlobalThread<bool>([this] {
+    return _observer->AreETWStatsEnabled();
   });
 }
 
-void RTCPeerConnection::ToggleConnectionHealthStats(bool enable) {
-  globals::RunOnGlobalThread<void>([this, enable] {
-    _observer->ToggleConnectionHealthStats(enable);
+void RTCPeerConnection::EtwStatsEnabled::set(bool value) {
+  globals::RunOnGlobalThread<void>([this, value] {
+    _observer->EnableETWStats(value);
   });
 }
 
-void RTCPeerConnection::ToggleRTCStats(bool enable) {
-  globals::RunOnGlobalThread<void>([this, enable] {
-    _observer->ToggleRTCStats(enable);
+bool RTCPeerConnection::ConnectionHealthStatsEnabled::get() {
+  return globals::RunOnGlobalThread<bool>([this] {
+    return _observer->AreConnectionHealthStatsEnabled();
+  });
+}
+
+void RTCPeerConnection::ConnectionHealthStatsEnabled::set(bool value) {
+  globals::RunOnGlobalThread<void>([this, value] {
+    _observer->EnableConnectionHealthStats(value);
+  });
+}
+
+bool RTCPeerConnection::RtcStatsEnabled::get() {
+  return globals::RunOnGlobalThread<bool>([this] {
+    return _observer->AreRTCStatsEnabled();
+  });
+}
+
+void RTCPeerConnection::RtcStatsEnabled::set(bool value) {
+  globals::RunOnGlobalThread<void>([this, value] {
+    _observer->EnableRTCStats(value);
   });
 }
 
@@ -692,14 +710,13 @@ void WebRTC::DisableLogging() {
   globals::gLoggingServer.reset();
 }
 
-Windows::Storage::StorageFolder^  WebRTC::LogFolder() {
-  return  Windows::Storage::ApplicationData::Current->LocalFolder;
+Windows::Storage::StorageFolder^ WebRTC::LogFolder::get() {
+  return Windows::Storage::ApplicationData::Current->LocalFolder;
 }
 
-String^  WebRTC::LogFileName() {
+String^  WebRTC::LogFileName::get() {
   return globals::toPlatformString(globals::logFileName);
 }
-
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
@@ -726,46 +743,44 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
   return ret;
 }
 
-void WebRTC::SynNTPTime(int64 current_ntp_time) {
-  webrtc::TickTime::SyncWithNtp(current_ntp_time);
+void WebRTC::SynNTPTime(int64 currentNtpTime) {
+  webrtc::TickTime::SyncWithNtp(currentNtpTime);
 }
 
+double WebRTC::CpuUsage::get() {
+  return globals::gCurrentCPUUsage;
+}
 
-void WebRTC::UpdateCPUUsage(double cpu_usage) {
-  globals::gCurrentCPUUsage = cpu_usage;
+void WebRTC::CpuUsage::set(double value) {
+  globals::gCurrentCPUUsage = value;
 
   //TRACE_COUNTER1 can only log 32bit integer value
   // also, when the app is idle, CPUUsage is very low <1%
   globals::WebRTCTraceONE("webrtc", "winrtCPUUsage", (int32)(globals::gCurrentCPUUsage * 100));
 }
 
-double WebRTC::GetCPUUsage() {
-  return globals::gCurrentCPUUsage;
+INT64 WebRTC::MemoryUsage::get() {
+  return globals::gCurrentMEMUsage;
 }
 
-void WebRTC::UpdateMemUsage(INT64 mem_usage) {
-  globals::gCurrentMEMUsage = mem_usage;
+void WebRTC::MemoryUsage::set(INT64 value) {
+  globals::gCurrentMEMUsage = value;
 
   //TRACE_COUNTER1 can only log 32bit integer value
   globals::WebRTCTraceONE("webrtc", "winrtMemUsage", (int32)(globals::gCurrentMEMUsage / 1024));
 
   globals::WebRTCTraceONE("webrtc", "winrtTraceMemSize", (int32)(globals::gTraceLog.CurrentTraceMemUsage() / 1024));
-
-}
-
-INT64 WebRTC::GetMemUsage() {
-  return globals::gCurrentMEMUsage;
 }
 
 
-void WebRTC::SetPreferredVideoCaptureFormat(int frame_width,
-                                            int frame_height, int fps) {
+void WebRTC::SetPreferredVideoCaptureFormat(int frameWidth,
+                                            int frameHeight, int fps) {
   globals::gPreferredVideoCaptureFormat.interval =
     cricket::VideoFormat::FpsToInterval(fps);
 
-  globals::gPreferredVideoCaptureFormat.width = frame_width;
+  globals::gPreferredVideoCaptureFormat.width = frameWidth;
 
-  globals::gPreferredVideoCaptureFormat.height = frame_height;
+  globals::gPreferredVideoCaptureFormat.height = frameHeight;
 
   cricket::ChannelManager* chmng =
     globals::gPeerConnectionFactory->channel_manager();
