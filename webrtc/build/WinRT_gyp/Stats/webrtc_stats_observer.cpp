@@ -124,13 +124,6 @@ void WebRTCStatsObserver::OnComplete(const StatsReports& reports) {
   webrtc_winrt_api::RTCStatsReports rtcStatsReports =
                 ref new Vector<webrtc_winrt_api::RTCStatsReport^>();
 
-  auto t = rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
-  int64 memUsage = webrtc_winrt_api::WebRTC::MemoryUsage;
-  double cpuUsage = webrtc_winrt_api::WebRTC::CpuUsage;
-
-  EventWriteStatsReportInt64("system", t, "MemUsage", memUsage);
-  EventWriteStatsReportFloat("system", t, "CPUUsage", cpuUsage);
-
   for (auto report : reports) {
     std::string sgn = report->id()->ToString();
     auto stat_group_name = sgn.c_str();
