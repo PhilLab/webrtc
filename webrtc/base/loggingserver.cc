@@ -2,7 +2,7 @@
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/physicalsocketserver.h"
 
 namespace rtc {
@@ -31,7 +31,7 @@ LoggingServer::~LoggingServer() {
 
 int LoggingServer::Listen(const SocketAddress& addr, LoggingSeverity level) {
   level_ = level;
-  tw_ = webrtc::ThreadWrapper::CreateThread(&LoggingServer::processMessages, thread_, "LoggingServer");
+  tw_.reset(new PlatformThread(&LoggingServer::processMessages, thread_, "LoggingServer"));
   tw_->Start();
 
   LOG(LS_INFO) << "New LoggingServer thread created.";

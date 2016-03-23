@@ -13,7 +13,7 @@
 #include <wrl.h>
 #include <mfidl.h>
 #include <vector>
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "Media.h"

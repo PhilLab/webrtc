@@ -12,9 +12,9 @@
 
 #include <string>
 #include <vector>
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 #include "Media.h"
-#include "talk/app/webrtc/jsep.h"
+#include "webrtc/api/jsep.h"
 #include "PeerConnectionInterface.h"
 
 using Platform::String;

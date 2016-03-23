@@ -24,7 +24,7 @@
 #include "libyuv/convert.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
@@ -135,10 +135,6 @@ int H264WinRTDecoderImpl::RegisterDecodeCompleteCallback(
 
 int H264WinRTDecoderImpl::Release() {
   OutputDebugString(L"H264WinRTDecoderImpl::Release()\n");
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
-int H264WinRTDecoderImpl::Reset() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

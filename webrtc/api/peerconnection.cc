@@ -1161,7 +1161,7 @@ void PeerConnection::SetRemoteDescription(
       bool default_video_track_needed =
           !remote_peer_supports_msid_ &&
           MediaContentDirectionHasSend(video_desc->direction());
-      bool isH264 = desc->codecs().size()>0 && desc->codecs()[0].name == "H264";
+      bool isH264 = video_desc->codecs().size()>0 && video_desc->codecs()[0].name == "H264";
       UpdateRemoteStreamsList(GetActiveStreams(video_desc),
                               default_video_track_needed, video_desc->type(),
                               new_streams, isH264);

@@ -64,6 +64,8 @@ BEGIN_PROXY_MAP(PeerConnectionFactory)
   PROXY_METHOD0(void, StopAecDump)
   PROXY_METHOD1(bool, StartRtcEventLog, rtc::PlatformFile)
   PROXY_METHOD0(void, StopRtcEventLog)
+  PROXY_METHOD0(cricket::MediaEngineInterface*, GetMediaEngine)
+  PROXY_METHOD1(void, SetPreferredCaptureFormat, const cricket::VideoFormat&)
 
  private:
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_ot(

@@ -300,7 +300,7 @@ VideoSource::VideoSource(rtc::Thread* worker_thread,
     : signaling_thread_(rtc::Thread::Current()),
       worker_thread_(worker_thread),
       video_capturer_(capturer),
-      _isH264Source(false),
+     _isH264Source(false),
       started_(false),
       state_(kInitializing),
       remote_(remote) {
@@ -402,26 +402,32 @@ void VideoSource::Restart() {
   started_ = true;
 }
 
+bool VideoSource::Suspend() {
+    return false;
+}
+
+bool VideoSource::Resume() {
+    return false;
+}
+
+bool VideoSource::IsSuspended() {
+    return false;
+}
+
+void VideoSource::SetIsH264Source(bool isH264Source) {
+    _isH264Source = isH264Source;
+}
+
+bool VideoSource::IsH264Source() {
+    return _isH264Source;
+}
+
 void VideoSource::AddOrUpdateSink(
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
   worker_thread_->Invoke<void>(
       rtc::Bind(&cricket::VideoCapturer::AddOrUpdateSink,
                 video_capturer_.get(), sink, wants));
-}
-
-bool VideoSource::Suspend() {
-  return channel_manager_->SuspendVideoCapture(video_capturer_.get());
-}
-
-bool VideoSource::Resume() {
-  return channel_manager_->ResumeVideoCapture(video_capturer_.get());
-}
-
-bool VideoSource::IsSuspended() {
-  return channel_manager_->IsSuspended(video_capturer_.get());
-}
-
 }
 
 void VideoSource::RemoveSink(
@@ -431,12 +437,7 @@ void VideoSource::RemoveSink(
                   video_capturer_.get(), output));
 }
 
-bool VideoSource::IsH264Source() {
-  return _isH264Source;
-}
-
 // OnStateChange listens to the cricket::VideoCapturer::SignalStateChange.
-
 void VideoSource::OnStateChange(cricket::VideoCapturer* capturer,
                                 cricket::CaptureState capture_state) {
   if (rtc::Thread::Current() != signaling_thread_) {

@@ -484,32 +484,6 @@ bool ChannelManager::StopVideoCapture(
            generateDesiredFormat(video_format)));
 }
 
-bool ChannelManager::RestartVideoCapture(
-    VideoCapturer* video_capturer,
-    const VideoFormat& previous_format,
-    const VideoFormat& desired_format,
-    CaptureManager::RestartOptions options) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&CaptureManager::RestartVideoCapture, capture_manager_.get(),
-      video_capturer, previous_format,
-      generateDesiredFormat(desired_format), options));
-}
-
-bool ChannelManager::SuspendVideoCapture(VideoCapturer* video_capturer) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-    Bind(&VideoCapturer::Suspend, video_capturer));
-}
-
-bool ChannelManager::ResumeVideoCapture(VideoCapturer* video_capturer) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-    Bind(&VideoCapturer::Resume, video_capturer));
-}
-
-bool ChannelManager::IsSuspended(VideoCapturer* video_capturer) {
-  return initialized_ && worker_thread_->Invoke<bool>(
-    Bind(&VideoCapturer::IsSuspended, video_capturer));
-}
-
 void ChannelManager::AddVideoSink(
     VideoCapturer* capturer, rtc::VideoSinkInterface<VideoFrame>* sink) {
   if (initialized_)

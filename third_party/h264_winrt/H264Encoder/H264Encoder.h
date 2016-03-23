@@ -21,7 +21,7 @@
 #include "Utils/SampleAttributeQueue.h"
 #include "webrtc/video_encoder.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
@@ -59,7 +59,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   int InitEncoderWithSettings(const VideoCodec* inst);
 
  private:
-  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
+  std::unique_ptr<webrtc::CriticalSectionWrapper> _lock;
   bool inited_;
   const CodecSpecificInfo* codecSpecificInfo_;
   ComPtr<IMFSinkWriter> sinkWriter_;

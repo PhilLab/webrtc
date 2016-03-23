@@ -86,6 +86,7 @@ class ChannelManager;
 namespace webrtc {
 class AudioDeviceModule;
 class MediaConstraintsInterface;
+class VoEHardware;
 
 // MediaStream container interface.
 class StreamCollectionInterface : public rtc::RefCountInterface {
@@ -587,7 +588,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       CreateAudioTrack(const std::string& label,
                        AudioSourceInterface* source) = 0;
 
-  virtual cricket::ChannelManager* channel_manager() = 0;
+  //virtual cricket::ChannelManager* channel_manager() = 0;
 
   // Starts AEC dump using existing file. Takes ownership of |file| and passes
   // it on to VoiceEngine (via other objects) immediately, which will take
@@ -616,6 +617,12 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   // Stops logging the RtcEventLog.
   virtual void StopRtcEventLog() = 0;
+
+  virtual cricket::MediaEngineInterface* GetMediaEngine() = 0;
+
+  //virtual VoEHardware* GetVoEHardware() = 0;
+
+  virtual void SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat) = 0;
 
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via

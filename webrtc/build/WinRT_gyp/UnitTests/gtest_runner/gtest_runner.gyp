@@ -16,11 +16,11 @@
       'target_name': 'gtest_runner',
       'type': 'executable',
       'dependencies': [
-        '../../../../../talk/libjingle_tests.gyp:libjingle_media_unittest',
-        '../../../../../talk/libjingle_tests.gyp:libjingle_p2p_unittest',
-        '../../../../../talk/libjingle_tests.gyp:libjingle_peerconnection_unittest',
+        #'../../../../../libjingle_tests.gyp:libjingle_media_unittest',
+        #'../../../../../libjingle_tests.gyp:libjingle_p2p_unittest',
+        #'../../../../../libjingle_tests.gyp:libjingle_peerconnection_unittest',
         # TODO(winrt) uncomment when the issue with microphone access is fixed
-        #'../../../../../talk/libjingle_tests.gyp:libjingle_peerconnection_unittest',
+        #'../../../../../libjingle_tests.gyp:libjingle_peerconnection_unittest',
         '../../../../../webrtc/common_audio/common_audio.gyp:common_audio_unittests',
         '../../../../../webrtc/common_video/common_video_unittests.gyp:common_video_unittests',
         # TODO(winrt) uncomment when the issue with microphone access is fixed
@@ -32,11 +32,10 @@
         '../../../../../webrtc/test/test.gyp:test_support',
         '../../../../../webrtc/test/test.gyp:test_support_main',
         '../../../../../webrtc/test/test.gyp:test_support_unittests',
-        '../../../../../webrtc/video_engine/video_engine_core_unittests.gyp:video_engine_core_unittests',
         '../../../../../webrtc/voice_engine/voice_engine.gyp:voice_engine_unittests',
         '../../../../../webrtc/webrtc.gyp:rtc_unittests',
         '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
-        '../../../../test/webrtc_test_common.gyp:webrtc_test_common_unittests',
+        '../../../../test/test.gyp:test_common',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
@@ -56,7 +55,7 @@
       'forcePackage': [
             '../../../../../resources/',
             '../../../../../data/',
-            '../../../../../talk/media/testdata/',
+            '../../../../../resources/media/',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
@@ -132,7 +131,7 @@
             'StoreLogo.png',
             '../../../../../data/',
             '../../../../../resources/',
-            '../../../../../talk/media/testdata/',
+            '../../../../../resources/media/',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -158,7 +157,7 @@
             'StoreLogo.png',
             '../../../../../data/',
             '../../../../../resources/',
-            '../../../../../talk/media/testdata/',
+            '../../../../../resources/media/',
           ],
         },
       ],

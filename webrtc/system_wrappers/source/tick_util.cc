@@ -14,22 +14,17 @@
 
 namespace webrtc {
 
-int64_t TickTime::MillisecondTimestamp() {
-  return TicksToMilliseconds(TickTime::Now().Ticks());
-
-
 #ifdef WINRT
-  static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
-  static const uint64 kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
-  LARGE_INTEGER TickTime::app_start_time_ = {};  // record app start time
-  int64_t TickTime::time_since_os_start_ = -1;  // when app start,
-                                                // the os ticks in ms
-  int64_t TickTime::os_ticks_per_second_ = -1;
+    static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+    static const uint64 kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
+    LARGE_INTEGER TickTime::app_start_time_ = {};  // record app start time
+    int64_t TickTime::time_since_os_start_ = -1;  // when app start,
+                                                  // the os ticks in ms
+    int64_t TickTime::os_ticks_per_second_ = -1;
 #endif
 
-void TickTime::UseFakeClock(int64_t start_millisecond) {
-  use_fake_clock_ = true;
-  fake_ticks_ = MillisecondsToTicks(start_millisecond);
+int64_t TickTime::MillisecondTimestamp() {
+  return TicksToMilliseconds(TickTime::Now().Ticks());
 }
 
 int64_t TickTime::MicrosecondTimestamp() {
@@ -39,6 +34,9 @@ int64_t TickTime::MicrosecondTimestamp() {
 int64_t TickTime::MillisecondsToTicks(const int64_t ms) {
   return ms * rtc::kNumNanosecsPerMillisec;
 }
+
+int64_t TickTime::TicksToMilliseconds(const int64_t ticks) {
+    return ticks / rtc::kNumNanosecsPerMillisec;
 }
 
 int64_t TickTime::TicksToMicroseconds(const int64_t ticks) {

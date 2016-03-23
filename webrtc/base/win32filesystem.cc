@@ -468,7 +468,7 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
 bool Win32Filesystem::GetAppDataFolder(Pathname* path, bool per_user) {
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
   TCHAR buffer[MAX_PATH + 1];
-  wcsncpy_s(buffer, ARRAY_SIZE(buffer), folder->Path->Data(), _TRUNCATE);
+  wcsncpy_s(buffer, arraysize(buffer), folder->Path->Data(), _TRUNCATE);
   path->SetPathname(ToUtf8(buffer));
   return true;
 }

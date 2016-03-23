@@ -45,25 +45,6 @@
         'channel_transport/udp_socket_winrt.cc',
         'channel_transport/udp_socket_winrt.h',
       ],
-      'conditions': [
-        ['OS=="win" and OS_RUNTIME=="winrt"', {
-          'sources!' :[
-            'channel_transport/traffic_control_win.cc',
-            'channel_transport/traffic_control_win.h',
-            'channel_transport/udp_socket2_manager_win.cc',
-            'channel_transport/udp_socket2_manager_win.h',
-            'channel_transport/udp_socket2_win.cc',
-            'channel_transport/udp_socket2_win.h',
-          ],
-        }, {
-          'sources!' :[
-            'channel_transport/udp_socket_manager_winrt.cc',
-            'channel_transport/udp_socket_manager_winrt.h',
-            'channel_transport/udp_socket_winrt.cc',
-            'channel_transport/udp_socket_winrt.h',
-          ],
-        }],
-      ],
       'msvs_disabled_warnings': [
         4302,  # cast truncation
       ],
@@ -81,6 +62,23 @@
               ],
             },
           },
+        }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources!' :[
+            'channel_transport/traffic_control_win.cc',
+            'channel_transport/traffic_control_win.h',
+            'channel_transport/udp_socket2_manager_win.cc',
+            'channel_transport/udp_socket2_manager_win.h',
+            'channel_transport/udp_socket2_win.cc',
+            'channel_transport/udp_socket2_win.h',
+          ],
+        }, {
+          'sources!' :[
+            'channel_transport/udp_socket_manager_winrt.cc',
+            'channel_transport/udp_socket_manager_winrt.h',
+            'channel_transport/udp_socket_winrt.cc',
+            'channel_transport/udp_socket_winrt.h',
+          ],
         }],
       ],  # conditions.
     },

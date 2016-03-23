@@ -11,7 +11,7 @@
 #define WEBRTC_BUILD_WINRT_GYP_API_MEDIASOURCEHELPER_H_
 
 #include "Media.h"
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 

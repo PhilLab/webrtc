@@ -13,7 +13,7 @@
 #include <map>
 
 #include "webrtc/p2p/base/candidate.h"
-#include "talk/app/webrtc/webrtcsdp.h"
+#include "webrtc/api/webrtcsdp.h"
 #include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 
 using webrtc_winrt_api::RTCBundlePolicy;

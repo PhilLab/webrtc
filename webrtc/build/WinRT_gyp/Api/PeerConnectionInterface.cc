@@ -27,8 +27,8 @@
 #include "webrtc/base/tracelog.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/test/field_trial.h"
-#include "talk/app/webrtc/test/fakeconstraints.h"
-#include "talk/session/media/channelmanager.h"
+#include "webrtc/api/test/fakeconstraints.h"
+#include "webrtc/pc/channelmanager.h"
 #include "webrtc/system_wrappers/include/utf_util_win.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "third_party/h264_winrt/h264_winrt_factory.h"
@@ -703,26 +703,20 @@ String^  WebRTC::LogFileName() {
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
-  std::vector<cricket::AudioCodec> codecs;
-  cricket::ChannelManager* chmng =
-      globals::gPeerConnectionFactory->channel_manager();
-  chmng->GetSupportedAudioCodecs(&codecs);
-    for (auto it = codecs.begin(); it != codecs.end(); ++it) {
-      ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-    }
+  const std::vector<cricket::AudioCodec>& codecs = globals::gPeerConnectionFactory->GetMediaEngine()->audio_codecs();
+  for (auto it = codecs.begin(); it != codecs.end(); ++it) {
+    ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+  }
   return ret;
 }
 
 IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
-  std::vector<cricket::VideoCodec> codecs;
-  cricket::ChannelManager* chmng =
-      globals::gPeerConnectionFactory->channel_manager();
-  chmng->GetSupportedVideoCodecs(&codecs);
-    for (auto it = codecs.begin(); it != codecs.end(); ++it) {
-      if (it->GetCodecType() == cricket::VideoCodec::CODEC_VIDEO)
-      ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-    }
+  const std::vector<cricket::VideoCodec>& codecs = globals::gPeerConnectionFactory->GetMediaEngine()->video_codecs();
+  for (auto it = codecs.begin(); it != codecs.end(); ++it) {
+    if (it->GetCodecType() == cricket::VideoCodec::CODEC_VIDEO)
+    ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+  }
   return ret;
 }
 
@@ -767,9 +761,7 @@ void WebRTC::SetPreferredVideoCaptureFormat(int frame_width,
 
   globals::gPreferredVideoCaptureFormat.height = frame_height;
 
-  cricket::ChannelManager* chmng =
-    globals::gPeerConnectionFactory->channel_manager();
-  chmng->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
+  globals::gPeerConnectionFactory->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(

@@ -10,7 +10,7 @@
 #define WEBRTC_BUILD_WINRT_GYP_API_RTCSTATSREPORT_H_
 
 #include <collection.h>
-#include <talk/app/webrtc/statstypes.h>
+#include <webrtc/api/statstypes.h>
 
 #include <vector>
 #include <map>

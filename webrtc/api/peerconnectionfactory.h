@@ -92,6 +92,18 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();
   const Options& options() const { return options_; }
+  cricket::MediaEngineInterface* GetMediaEngine() override
+  {
+      return channel_manager_->media_engine();
+  };
+  void SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat) override
+  {
+      channel_manager_->SetPreferredCaptureFormat(aFormat);
+  }
+  //VoEHardware* GetVoEHardware() override
+  //{
+  //    return 0;
+  //}
 
  protected:
   PeerConnectionFactory();

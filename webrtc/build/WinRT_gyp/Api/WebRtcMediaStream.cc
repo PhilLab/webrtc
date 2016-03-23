@@ -14,9 +14,9 @@
 #include <d3d11_2.h>
 #include <d2d1_2.h>
 #include <functional>
-#include "talk/media/base/videoframe.h"
+#include "webrtc/media/base/videoframe.h"
 #include "RTMediaStreamSource.h"
-#include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/api/videosourceinterface.h"
 #include "libyuv/convert.h"
 
 using Microsoft::WRL::MakeAndInitialize;
@@ -223,7 +223,7 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
     if (frame->GetWidth() != width || frame->GetHeight() != height) {
       RETURN_ON_FAIL(CreateMediaType((unsigned int)frame->GetWidth(),
         (unsigned int)frame->GetHeight(),
-        frame->GetRotation(), &_mediaType,
+        (unsigned int)frame->GetVideoRotation(), &_mediaType,
         _isH264));
       ResetMediaBuffers();
     }

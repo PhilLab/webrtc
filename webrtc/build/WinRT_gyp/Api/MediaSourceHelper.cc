@@ -10,8 +10,8 @@
 #include <mfapi.h>
 #include <ppltasks.h>
 #include <mfidl.h>
-#include "talk/media/base/videoframe.h"
-#include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/media/base/videoframe.h"
+#include "webrtc/api/videosourceinterface.h"
 #include "libyuv/convert.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
@@ -286,7 +286,7 @@ void MediaSourceHelper::CheckForAttributeChanges(cricket::VideoFrame* frame, Sam
   }
 
   // Update rotation property
-  int currentRotation = frame->GetRotation();
+  int currentRotation = (int)frame->GetVideoRotation();
 
   // If the rotation has changed
   if (_lastRotation == -1 || _lastRotation != currentRotation) {
