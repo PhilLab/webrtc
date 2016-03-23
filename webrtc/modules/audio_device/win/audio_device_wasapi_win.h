@@ -91,7 +91,7 @@ class AudioInterfaceActivator :
   public Microsoft::WRL::RuntimeClass < Microsoft::WRL::RuntimeClassFlags<
   Microsoft::WRL::ClassicCom >,
   Microsoft::WRL::FtmBase, IActivateAudioInterfaceCompletionHandler > {
-  concurrency::task_completion_event<void> m_ActivateCompleted;
+  concurrency::task_completion_event<HRESULT> m_ActivateCompleted;
   STDMETHODIMP ActivateCompleted(
     IActivateAudioInterfaceAsyncOperation *pAsyncOp);
 

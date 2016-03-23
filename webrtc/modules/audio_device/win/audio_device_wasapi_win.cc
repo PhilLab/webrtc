@@ -570,9 +570,6 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
     }
   }
 
-  // Set the completed event and return success
-  m_ActivateCompleted.set();
-
 exit:
   SAFE_RELEASE(punkAudioInterface);
 
@@ -584,7 +581,7 @@ exit:
       SAFE_RELEASE(m_AudioDevice->_ptrRenderClient);
     }
   }
-
+  m_ActivateCompleted.set(hr);
   return S_OK;
 }
 
@@ -622,7 +619,10 @@ concurrency::task<Microsoft::WRL::ComPtr<IAudioClient2>>
     // Once the wait is completed then pass the async operation (pAsyncOp) to
     // a lambda function which retrieves and returns the IAudioClient2
     // interface pointer
-    [pAsyncOp]() -> Microsoft::WRL::ComPtr<IAudioClient2> {
+    [pAsyncOp](HRESULT activateCompletedResult) -> Microsoft::WRL::ComPtr<IAudioClient2> {
+    if (FAILED(activateCompletedResult)) {
+      throw ref new Platform::COMException(activateCompletedResult);
+    }
     HRESULT hr = S_OK, hr2 = S_OK;
     Microsoft::WRL::ComPtr<IUnknown> pUnk;
     // Get the audio activation result as IUnknown pointer
@@ -1368,6 +1368,7 @@ int32_t AudioDeviceWindowsWasapi::SetSpeakerMute(bool enable) {
 
 Exit:
   _TraceCOMError(hr);
+  SAFE_RELEASE(pVolume);
   return -1;
 }
 
@@ -1438,6 +1439,7 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneMuteIsAvailable(bool& available) {
 
 Exit:
   _TraceCOMError(hr);
+  SAFE_RELEASE(pVolume);
   return -1;
 }
 
@@ -1501,6 +1503,7 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneMute(bool& enabled) const {
   return 0;
 
 Exit:
+  SAFE_RELEASE(pVolume);
   _TraceCOMError(hr);
   return -1;
 }
@@ -1671,6 +1674,7 @@ int32_t AudioDeviceWindowsWasapi::MicrophoneVolumeIsAvailable(
   return 0;
 
 Exit:
+  SAFE_RELEASE(pVolume);
   _TraceCOMError(hr);
   return -1;
 }
@@ -2951,6 +2955,7 @@ int32_t AudioDeviceWindowsWasapi::StopPlayoutInternal() {
 
     SAFE_RELEASE(_ptrClientOut);
     SAFE_RELEASE(_ptrRenderClient);
+    SAFE_RELEASE(_ptrRenderSimpleVolume);
 
     _playIsInitialized = false;
     _playing = false;
@@ -3498,14 +3503,14 @@ Exit:
     bool isRecoverableError = hr == AUDCLNT_E_DEVICE_INVALIDATED;
 
     if (_ptrClientOut != NULL) {
-        hr = _ptrClientOut->Stop();
-        if (FAILED(hr)) {
-          _TraceCOMError(hr);
-        }
-        hr = _ptrClientOut->Reset();
-        if (FAILED(hr)) {
-          _TraceCOMError(hr);
-        }
+      hr = _ptrClientOut->Stop();
+      if (FAILED(hr)) {
+        _TraceCOMError(hr);
+      }
+      hr = _ptrClientOut->Reset();
+      if (FAILED(hr)) {
+        _TraceCOMError(hr);
+      }
     }
 
     if (isRecoverableError) {
@@ -3886,6 +3891,7 @@ Exit:
 
   SAFE_RELEASE(_ptrClientIn);
   SAFE_RELEASE(_ptrCaptureClient);
+  SAFE_RELEASE(_ptrCaptureVolume);
 
   _UnLock();
 
@@ -4545,8 +4551,7 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
   AudioInterfaceActivator::ActivateAudioClientAsync(
     deviceId->Data(),
     AudioInterfaceActivator::ActivatorDeviceType::eInputDevice).then(
-    [deviceId](Microsoft::WRL::ComPtr<IAudioClient2>
-                                                      captureClient) {
+    [deviceId](Microsoft::WRL::ComPtr<IAudioClient2> captureClient) {
     Platform::String^ rawProcessingSupportedKey =
       L"System.Devices.AudioDevice.RawProcessingSupported";
     Platform::Collections::Vector<Platform::String ^> ^properties =
