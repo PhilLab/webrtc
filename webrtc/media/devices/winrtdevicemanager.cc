@@ -27,7 +27,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/win32.h"  // ToUtf8
 #include "webrtc/base/win32window.h"
-#include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/media/base/mediacommon.h"
 
 namespace cricket {

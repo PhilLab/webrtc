@@ -207,6 +207,12 @@
             },
           },
         }],
+        ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources': [
+            'devices/winrtdevicemanager.cc',
+            'devices/winrtdevicemanager.h',
+            ]
+        }],
         ['OS=="win" and OS_RUNTIME!="winrt" and include_internal_device_management==1', {
           'sources': [
             'devices/win32deviceinfo.cc',

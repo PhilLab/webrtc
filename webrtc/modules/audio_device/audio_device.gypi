@@ -211,22 +211,10 @@
               },
             }],
             ['OS=="win" and OS_RUNTIME=="winrt"', {
-                'sources!':[
-                    'win/audio_device_wave_win.cc',
-                    'win/audio_device_wave_win.h',
-                    'win/audio_device_core_win.cc',
-                    'win/audio_device_core_win.h',
-                    'win/audio_mixer_manager_win.cc',
-                    'win/audio_mixer_manager_win.h',
-                    ],
-                'defines!': [
-                    '_HAS_EXCEPTIONS=0',
-                    ]
-            },{
-               'sources!':[
+                'sources':[
                     'win/audio_device_wasapi_win.cc',
                     'win/audio_device_wasapi_win.h',
-                ],
+                    ],
             }],
             ['OS=="win" and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"and clang==1', {
               'msvs_settings': {
