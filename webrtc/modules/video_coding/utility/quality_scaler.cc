@@ -12,7 +12,7 @@
 namespace webrtc {
 
 static const int kMinFps = 10;
-static const int kMeasureSeconds = 5;
+static const int kMeasureSeconds = 15;
 static const int kFramedropPercentThreshold = 60;
 
 const int QualityScaler::kDefaultLowQpDenominator = 3;

@@ -322,6 +322,10 @@ int H264WinRTEncoderImpl::Encode(
   ComPtr<IMFSample> sample;
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
+    if (_sampleAttributeQueue.size() > 2) {
+      quality_scaler_.ReportDroppedFrame();
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
     sample = FromVideoFrame(frame);
   }
 
