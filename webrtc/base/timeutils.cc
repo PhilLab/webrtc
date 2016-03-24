@@ -38,7 +38,7 @@ namespace rtc {
 
 const uint32_t HALF = 0x80000000;
 
-#ifdef (WEBRTC_WIN)
+#if defined(WEBRTC_WIN)
 static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
 #endif
 
