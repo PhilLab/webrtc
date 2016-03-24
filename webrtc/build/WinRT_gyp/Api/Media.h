@@ -338,12 +338,10 @@ namespace webrtc_winrt_api {
   private:
     String^ _id;
     String^ _name;
-    int _index;
   public:
-    MediaDevice(String^ id, String^ name, int index) {
+    MediaDevice(String^ id, String^ name) {
       _id = id;
       _name = name;
-      _index = index;
     }
     /// <summary>
     /// Gets or sets an identifier of the media device.
@@ -368,15 +366,6 @@ namespace webrtc_winrt_api {
       void set(String^ value) {
         _name = value;
       }
-    }
-
-    /// <summary>
-    /// Get or sets an index to the media device used by .
-    /// </summary>
-    property int Index {
-        int get() {
-            return _index;
-        }
     }
 
     /// <summary>
@@ -542,11 +531,17 @@ namespace webrtc_winrt_api {
                             DeviceInformation^ args);
     void OnMediaDeviceRemoved(DeviceWatcher^ sender,
                               DeviceInformationUpdate^ args);
+    static int GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware, 
+                                          const std::string& name,
+                                          const std::string& id);
+    static int GetAudioCaptureDeviceIndex(webrtc::VoEHardware* voeHardware,
+                                           const std::string& name,
+                                           const std::string& id);
 
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
     cricket::Device _selectedVideoDevice;
-    int _selectedAudioCapturerDeviceIndex;
-    int _selectedAudioPlayoutDeviceIndex;
+    cricket::Device _selectedAudioCapturerDevice;
+    cricket::Device _selectedAudioPlayoutDevice;
 
     DeviceWatcher^ _videoCaptureWatcher;
     DeviceWatcher^ _audioCaptureWatcher;

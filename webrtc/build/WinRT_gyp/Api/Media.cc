@@ -265,12 +265,10 @@ const char kStreamLabel[] = "stream_label_%x";
 // 8chars to the end to generate a unique string)
 
 Media::Media() :
-  _selectedAudioCapturerDeviceIndex(-1),
-  _selectedAudioPlayoutDeviceIndex(-1),
-  //_selectedAudioCapturerDevice(
-  //  cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
-  //_selectedAudioPlayoutDevice(
-  //  cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
+  _selectedAudioCapturerDevice(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
+  _selectedAudioPlayoutDevice(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0),
   _videoCaptureDeviceChanged(true),
   _audioCaptureDeviceChanged(true),
   _audioPlayoutDeviceChanged(true) {
@@ -315,6 +313,9 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         globals::gPeerConnectionFactory->CreateLocalMediaStream(streamLabel);
 
+      int audioPlayoutDeviceIndex = -1;
+      int audioCaptureDeviceIndex = -1;
+
       if (mediaStreamConstraints->audioEnabled) {
         // Check if audio devices candidates are still available.
         // Application may request to use audio devices that are not
@@ -327,49 +328,46 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           LOG(LS_ERROR) << "Can't validate audio devices: "
             << "VoEHardware API not available.";
         } else {
-          int deviceCount(0);
-
-          if (_selectedAudioCapturerDeviceIndex >= 0) {
-            // Selected audio capture device is not the default device.
-            if (voiceEngineHardware->GetNumOfRecordingDevices(deviceCount) == 0) {
-              if (_selectedAudioCapturerDeviceIndex < deviceCount) {
-                useDefaultAudioRecordingDevice = false;
+          if (_selectedAudioCapturerDevice.id != "") {
+              // Selected audio playout device is not the default device.
+              audioCaptureDeviceIndex = GetAudioCaptureDeviceIndex(voiceEngineHardware,
+                  _selectedAudioPlayoutDevice.name, _selectedAudioPlayoutDevice.id);
+              if (audioCaptureDeviceIndex >= 0) {
+                  useDefaultAudioRecordingDevice = false;
               }
-            }
-            if (useDefaultAudioRecordingDevice) {
-              LOG(LS_WARNING) << "Audio capture device index "
-                << _selectedAudioCapturerDeviceIndex
-                << " not found, using default device";
-            }
-          } else {
-            LOG(LS_ERROR) << "Can't obtain audio recording audio devices.";
+              else {
+                  LOG(LS_WARNING) << "Audio capture device "
+                      << _selectedAudioCapturerDevice.name
+                      << " not found, using default device";
+              }
           }
-          if (_selectedAudioPlayoutDeviceIndex >= 0) {
-          // Selected audio playout device is not the default device.
-            if (voiceEngineHardware->GetNumOfPlayoutDevices(deviceCount) == 0) {
-              if (_selectedAudioPlayoutDeviceIndex < deviceCount) {
-                useDefaultAudioPlayoutDevice = false;
+          if (_selectedAudioPlayoutDevice.id != "") {
+              // Selected audio playout device is not the default device.
+              audioPlayoutDeviceIndex = GetAudioPlayoutDeviceIndex(voiceEngineHardware,
+                  _selectedAudioPlayoutDevice.name, _selectedAudioPlayoutDevice.id);
+              if (audioPlayoutDeviceIndex >= 0) {
+                  useDefaultAudioPlayoutDevice = false;
               }
-            }
-            if (useDefaultAudioPlayoutDevice) {
-              LOG(LS_WARNING) << "Audio playout device index "
-                << _selectedAudioPlayoutDeviceIndex
-                << " not found, using default device";
-            }
-          } else {
-            LOG(LS_ERROR) << "Can't obtain audio playout devices.";
+              else {
+                  LOG(LS_WARNING) << "Audio playout device "
+                      << _selectedAudioPlayoutDevice.name
+                      << " not found, using default device";
+              }
           }
         }
 
-        int audioCaptureDeviceIndex = useDefaultAudioRecordingDevice ?
-          0 : _selectedAudioCapturerDeviceIndex;
-        int audioPlayoutDeviceInex = useDefaultAudioPlayoutDevice ?
-          0 : _selectedAudioPlayoutDeviceIndex;
-        if (!voiceEngineHardware->SetRecordingDevice(audioCaptureDeviceIndex)) {
-            LOG(LS_ERROR) << "Failed to set audio capture device.";
+        int audioCaptureDeviceIndexSelected = useDefaultAudioRecordingDevice ?
+            0 : audioCaptureDeviceIndex;
+        int audioPlayoutDeviceIndexSelected = useDefaultAudioPlayoutDevice ?
+            0 : audioPlayoutDeviceIndex;
+
+        if (voiceEngineHardware->SetRecordingDevice(audioCaptureDeviceIndexSelected)
+          != 0) {
+          LOG(LS_ERROR) << "Failed to set audio recording devices.";
         }
-        if (!voiceEngineHardware->SetPlayoutDevice(audioPlayoutDeviceInex)) {
-            LOG(LS_ERROR) << "Failed to set audio playout device.";
+        if(voiceEngineHardware->SetPlayoutDevice(audioPlayoutDeviceIndexSelected)
+            != 0) {
+            LOG(LS_ERROR) << "Failed to set audio playout devices.";
         }
 
         LOG(LS_INFO) << "Creating audio track.";
@@ -456,9 +454,8 @@ IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
     });
     _videoCaptureDeviceChanged = false;
   }
-  int index = 0;
   for (auto videoDev : videoDevices) {
-    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name), index++));
+    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
   }
   return ret;
 }
@@ -482,7 +479,7 @@ IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
         for (int i = 0; i < recordingDeviceCount; ++i) {
           voiceEngineHardware->GetRecordingDeviceName(i, audioDeviceName,
             audioDeviceGuid);
-          g_audioCapturerDevices->Append(ref new MediaDevice(ToCx(audioDeviceGuid), ToCx(audioDeviceName), i));
+          g_audioCapturerDevices->Append(ref new MediaDevice(ToCx(audioDeviceGuid), ToCx(audioDeviceName)));
         }
       } else {
         LOG(LS_ERROR) << "Can't enumerate audio capture devices";
@@ -513,8 +510,7 @@ IVector<MediaDevice^>^ Media::GetAudioPlayoutDevices() {
           voiceEngineHardware->GetPlayoutDeviceName(i, audioDeviceName,
             audioDeviceGuid);
           g_audioPlayoutDevices->Append(
-            ref new MediaDevice(ToCx(audioDeviceGuid), ToCx(audioDeviceName),
-            i));
+            ref new MediaDevice(ToCx(audioDeviceGuid), ToCx(audioDeviceName)));
         }
       } else {
         LOG(LS_ERROR) << "Can't enumerate audio playout devices";
@@ -529,37 +525,52 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
   _selectedVideoDevice.id = "";
   _selectedVideoDevice.name = "";
-  if (device->Index >= 0) {
-    _selectedVideoDevice.id = FromCx(device->Id);
-    _selectedVideoDevice.name = FromCx(device->Name);
+  for (auto videoDev : g_videoDevices) {
+      if (videoDev->Id == device->Id) {
+          _selectedVideoDevice.id = FromCx(videoDev->Id);
+          _selectedVideoDevice.name = FromCx(videoDev->Name);
+          break;
+      }
   }
 }
 
 // TODO(winrt): Consider renaming this method to SelectAudioCaptureDevice.
 bool Media::SelectAudioDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
-    cricket::DeviceManagerInterface::kDefaultDeviceName;
+  _selectedAudioCapturerDevice.id = "";
+  _selectedAudioCapturerDevice.name =
+      cricket::DeviceManagerInterface::kDefaultDeviceName;
   if (device == nullptr) {
-    // Default audio capture device will be used.
-    return true;
+      // Default audio capture device will be used.
+      return true;
   }
-  webrtc::VoEHardware* voiceEngineHardware =
-      globals::gPeerConnectionFactory->GetMediaEngine()->GetVoEHardware();
-  voiceEngineHardware->SetRecordingDevice(device->Index);
-  return true;
+  for (auto audioCapturer : g_audioCapturerDevices) {
+    if (audioCapturer->Id == device->Id) {
+      _selectedAudioCapturerDevice.id = FromCx(audioCapturer->Id);
+      _selectedAudioCapturerDevice.name = FromCx(audioCapturer->Name);
+      return true;
+    }
+  }
+  return false;
 }
 
 bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
+  _selectedAudioPlayoutDevice.id = "";
+  _selectedAudioPlayoutDevice.name =
+      cricket::DeviceManagerInterface::kDefaultDeviceName;
   if (device == nullptr) {
-      // Default audio capture device will be used.
-      _selectedAudioPlayoutDeviceIndex = -1;
-      return true;
+    // Default audio playout device will be used.
+    return true;
   }
-  webrtc::VoEHardware* voiceEngineHardware =
-      globals::gPeerConnectionFactory->GetMediaEngine()->GetVoEHardware();
-  voiceEngineHardware->SetPlayoutDevice(device->Index);
-  _selectedAudioPlayoutDeviceIndex = device->Index;
+  std::string id = FromCx(device->Id);
+  for (auto audioPlayoutDevice : g_audioPlayoutDevices) {
+    if (audioPlayoutDevice->Id == device->Id) {
+      _selectedAudioPlayoutDevice.id = FromCx(audioPlayoutDevice->Id);
+      _selectedAudioPlayoutDevice.name = FromCx(audioPlayoutDevice->Name);
+      return true;
+    }
+  }
   return false;
 }
 
@@ -704,6 +715,46 @@ void Media::OnMediaDeviceRemoved(DeviceWatcher^ sender,
     _audioPlayoutDeviceChanged = true;
     OnMediaDevicesChanged(MediaDeviceType::MediaDeviceType_AudioPlayout);
   }
+}
+
+int Media::GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware, 
+    const std::string& name, const std::string& id) {
+  int devices;
+  if (voeHardware->GetNumOfPlayoutDevices(devices) != 0) {
+      LOG(LS_ERROR) << "Can't obtain audio playout devices.";
+      return 0;
+  }
+  int index = -1;
+  char devname[128];
+  char devid[128];
+  for (int i = 0; i < devices; i++) {
+    voeHardware->GetPlayoutDeviceName(i, devname, devid);
+    if (id.compare(id) == 0) {
+      index = i;
+      break;
+    }
+  }
+  return index;
+}
+
+int Media::GetAudioCaptureDeviceIndex(webrtc::VoEHardware* voeHardware,
+    const std::string& name, const std::string& id) {
+    int devices;
+    if (voeHardware->GetNumOfRecordingDevices(devices) != 0) {
+        LOG(LS_ERROR) << "Can't obtain audio capture devices.";
+        return 0;
+    }
+    int index = -1;
+    char devname[128];
+    char devid[128];
+    for (int i = 0; i < devices; i++) {
+        voeHardware->GetRecordingDeviceName(i, devname, devid);
+        if (id.compare(id) == 0) {
+            index = i;
+            break;
+        }
+    }
+    return index;
 }
 
 }  // namespace webrtc_winrt_api
