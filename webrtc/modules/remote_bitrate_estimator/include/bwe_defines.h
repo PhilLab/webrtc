@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-static const int64_t kBitrateWindowMs = 1000;
+static const int64_t kBitrateWindowMs = 15000;
 
 enum BandwidthUsage {
   kBwNormal = 0,

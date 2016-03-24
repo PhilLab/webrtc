@@ -91,7 +91,7 @@ class AudioInterfaceActivator :
   public Microsoft::WRL::RuntimeClass < Microsoft::WRL::RuntimeClassFlags<
   Microsoft::WRL::ClassicCom >,
   Microsoft::WRL::FtmBase, IActivateAudioInterfaceCompletionHandler > {
-  concurrency::task_completion_event<void> m_ActivateCompleted;
+  concurrency::task_completion_event<HRESULT> m_ActivateCompleted;
   STDMETHODIMP ActivateCompleted(
     IActivateAudioInterfaceAsyncOperation *pAsyncOp);
 
@@ -278,6 +278,11 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     static DWORD WINAPI SetCaptureVolumeThread(LPVOID context);
     DWORD DoSetCaptureVolumeThread();
 
+    int32 StartObserverThread();
+    int32 StopObserverThread();
+    static DWORD WINAPI WSAPIObserverThread(LPVOID context);
+    DWORD DoObserverThread();
+
     bool CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType) const;
     bool CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType) const;
 
@@ -289,6 +294,14 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     int32_t Id() {return _id;}
 
  private:
+    int32_t InitRecordingInternal();
+    int32_t StartRecordingInternal();
+    int32_t StopRecordingInternal();
+
+    int32_t InitPlayoutInternal();
+    int32_t StartPlayoutInternal();
+    int32_t StopPlayoutInternal();
+
     int SetBoolProperty(IPropertyStore* ptrPS,
                         REFPROPERTYKEY key,
                         VARIANT_BOOL value);
@@ -314,6 +327,7 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     DeviceInformation^ _GetDefaultDevice(DeviceClass cls, AudioDeviceRole role);
     DeviceInformation^ _GetListDevice(DeviceClass cls, int index);
+    DeviceInformation^ _GetListDevice(DeviceClass cls, Platform::String^ deviceId);
 
     Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceInAsync(Platform::String^ deviceId);
     Windows::Foundation::IAsyncAction^ _InitializeAudioDeviceOutAsync(Platform::String^ deviceId);
@@ -331,7 +345,7 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
-    char* WideToUTF8(const TCHAR* src) const;
+     char* WideToUTF8(const TCHAR* src) const;
 
 
  private:
@@ -339,13 +353,15 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     AudioDeviceBuffer*                      _ptrAudioBuffer;
     CriticalSectionWrapper&                 _critSect;
     CriticalSectionWrapper&                 _volumeMutex;
+    CriticalSectionWrapper&                 _recordingControlMutex;
+    CriticalSectionWrapper&                 _playoutControlMutex;
     int32_t                                 _id;
 
  private:  // MMDevice
     Platform::String^   _deviceIdStringIn;
     Platform::String^   _deviceIdStringOut;
-    DeviceInformation^  _defaultCaptureDevice;
-    DeviceInformation^  _defaultRenderDevice;
+    DeviceInformation^  _captureDevice;
+    DeviceInformation^  _renderDevice;
 
     WAVEFORMATEX           *_mixFormatIn;
     WAVEFORMATEX           *_mixFormatOut;
@@ -373,11 +389,17 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     HANDLE                                  _hPlayThread;
     HANDLE                                  _hRenderStartedEvent;
     HANDLE                                  _hShutdownRenderEvent;
+    HANDLE                                  _hRestartRenderEvent;
 
     HANDLE                                  _hCaptureSamplesReadyEvent;
     HANDLE                                  _hRecThread;
     HANDLE                                  _hCaptureStartedEvent;
     HANDLE                                  _hShutdownCaptureEvent;
+    HANDLE                                  _hRestartCaptureEvent;
+
+    HANDLE                                  _hObserverThread;
+    HANDLE                                  _hObserverStartedEvent;
+    HANDLE                                  _hObserverShutdownEvent;
 
     HANDLE                                  _hGetCaptureVolumeThread;
     HANDLE                                  _hSetCaptureVolumeThread;
@@ -386,12 +408,12 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     HANDLE                                  _hMmTask;
 
     UINT                                    _playAudioFrameSize;
-    uint32_t                          _playSampleRate;
-    uint32_t                          _devicePlaySampleRate;
-    uint32_t                          _playBlockSize;
-    uint32_t                          _devicePlayBlockSize;
-    uint32_t                          _playChannels;
-    uint32_t                          _sndCardPlayDelay;
+    uint32_t                                _playSampleRate;
+    uint32_t                                _devicePlaySampleRate;
+    uint32_t                                _playBlockSize;
+    uint32_t                                _devicePlayBlockSize;
+    uint32_t                                _playChannels;
+    uint32_t                                _sndCardPlayDelay;
 
     float                                   _sampleDriftAt48kHz;
     float                                   _driftAccumulator;
@@ -400,14 +422,14 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     LONGLONG                                _playAcc;
 
     UINT                                    _recAudioFrameSize;
-    uint32_t                          _recSampleRate;
-    uint32_t                          _recBlockSize;
-    uint32_t                          _recChannels;
+    uint32_t                                _recSampleRate;
+    uint32_t                                _recBlockSize;
+    uint32_t                                _recChannels;
     UINT64                                  _readSamples;
-    uint32_t                          _sndCardRecDelay;
+    uint32_t                                _sndCardRecDelay;
 
-    uint16_t                          _recChannelsPrioList[2];
-    uint16_t                          _playChannelsPrioList[2];
+    uint16_t                                _recChannelsPrioList[2];
+    uint16_t                                _playChannelsPrioList[2];
 
     LARGE_INTEGER                           _perfCounterFreq;
     double                                  _perfCounterFactor;
@@ -426,21 +448,23 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
     bool                                    _usingOutputDeviceIndex;
     AudioDeviceModule::WindowsDeviceType    _inputDevice;
     AudioDeviceModule::WindowsDeviceType    _outputDevice;
-    uint16_t                          _inputDeviceIndex;
-    uint16_t                          _outputDeviceIndex;
+    uint16_t                                _inputDeviceIndex;
+    uint16_t                                _outputDeviceIndex;
 
     bool                                    _AGC;
 
-    uint16_t                          _playWarning;
-    uint16_t                          _playError;
-    uint16_t                          _recWarning;
-    uint16_t                          _recError;
+    uint16_t                                _playWarning;
+    uint16_t                                _playError;
+    bool                                    _playIsRecovering;
+    uint16_t                                _recWarning;
+    uint16_t                                _recError;
+    bool                                    _recIsRecovering;
 
     AudioDeviceModule::BufferType           _playBufType;
-    uint16_t                          _playBufDelay;
-    uint16_t                          _playBufDelayFixed;
+    uint16_t                                _playBufDelay;
+    uint16_t                                _playBufDelayFixed;
 
-    uint16_t                          _newMicLevel;
+    uint16_t                                _newMicLevel;
 
     mutable char                            _str[512];
 };

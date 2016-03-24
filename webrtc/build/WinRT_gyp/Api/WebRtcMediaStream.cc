@@ -41,8 +41,8 @@ class AutoFunction {
 WebRtcMediaStream::WebRtcMediaStream() :
   _frameBufferIndex(0), _frameReady(0), _frameCount(0),
   _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-  _gpuVideoBuffer(false), _frameSentThisTime(false),
-  _frameBeingQueued(0) {
+  _gpuVideoBuffer(false),
+  _frameBeingQueued(0), _started(false) {
   _mediaBuffers.resize(BufferCount);
 }
 
@@ -275,7 +275,7 @@ void WebRtcMediaStream::FpsCallback(int fps) {
 
 HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-  if (_frameReady == 0 || !_helper->HasFrames() || _frameSentThisTime) {
+  if (_frameReady == 0 || !_helper->HasFrames()) {
     return S_OK;
   }
 
@@ -324,22 +324,6 @@ HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
   _eventQueue->QueueEventParamUnk(MEMediaSample,
     GUID_NULL, S_OK, sampleData->sample.Get());
 
-  // Create a timer which ensures we don't display frames faster that expected.
-  // Required because Media Foundation sometimes requests samples in burst mode
-  // but we use the wall clock to drive timestamps.
-  {
-    _frameSentThisTime = true;
-    if (_fpsTimer != nullptr)
-      _fpsTimer->Cancel();
-    _fpsTimer = nullptr;
-    auto handler = ref new TimerElapsedHandler([this](ThreadPoolTimer^ timer) {
-      this->FPSTimerElapsedExecute(timer);
-    });
-    auto timespan = Windows::Foundation::TimeSpan();
-    timespan.Duration = MAX_FRAME_DELAY_MS * 1000 * 10;
-    _fpsTimer = ThreadPoolTimer::CreateTimer(handler, timespan);
-  }
-
   InterlockedDecrement(&_frameReady);
   return S_OK;
 }
@@ -352,7 +336,12 @@ STDMETHODIMP WebRtcMediaStream::Start(
     return MF_E_SHUTDOWN;
   }
   // Start stream
-  RETURN_ON_FAIL(QueueEvent(MEStreamStarted, GUID_NULL, S_OK, nullptr));
+  RETURN_ON_FAIL(QueueEvent(MEStreamStarted, GUID_NULL, S_OK, pvarStartPosition));
+
+  if (!_started) {
+    _helper->SetStartTimeNow();
+    _started = true;
+  }
   return S_OK;
 }
 
@@ -367,11 +356,6 @@ STDMETHODIMP WebRtcMediaStream::Stop() {
 
 STDMETHODIMP WebRtcMediaStream::Shutdown() {
   webrtc::CriticalSectionScoped csLock(_lock.get());
-
-  if (_fpsTimer != nullptr) {
-    _fpsTimer->Cancel();
-    _fpsTimer = nullptr;
-  }
 
   _track->UnsetRenderer(this);
   if (_eventQueue != nullptr) {
@@ -465,12 +449,6 @@ HRESULT WebRtcMediaStream::ResetMediaBuffers() {
     }
   }
   return S_OK;
-}
-
-void WebRtcMediaStream::FPSTimerElapsedExecute(ThreadPoolTimer^ source) {
-  webrtc::CriticalSectionScoped csLock(_lock.get());
-  _frameSentThisTime = false;
-  ReplyToSampleRequest();
 }
 
 }  // namespace webrtc_winrt_api_internal

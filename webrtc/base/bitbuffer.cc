@@ -185,7 +185,9 @@ bool BitBuffer::ReadExponentialGolomb(uint32_t* val) {
     // Windows H264 encoder.  Try to continue as gracefully as possible.
     ReadBits(val, 32);
     ConsumeBits(value_bit_count - 32);
-    RTC_CHECK(Seek(original_byte_offset, original_bit_offset));
+    // Disable warning that these variables are not used.
+    original_byte_offset;
+    original_bit_offset;
 #else
     RTC_CHECK(Seek(original_byte_offset, original_bit_offset));
     return false;

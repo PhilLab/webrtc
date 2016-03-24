@@ -16,7 +16,22 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
+namespace webrtc_winrt_api {
+	/// <summary>
+	/// Delegate used to notify about first video frame rendering.
+	/// </summary>
+	public delegate void FirstFrameRenderedEventHandler(double timestamp);
 
+	public ref class FirstFrameRenderHelper sealed {
+	public:
+		/// <summary>
+		/// Event fires when the first video frame renders.
+		/// </summary>
+		static event FirstFrameRenderedEventHandler^ FirstFrameRendered;
+	internal:
+		static void FireEvent(double timestamp);
+	};
+}
 namespace webrtc_winrt_api_internal {
 
 struct SampleData {
@@ -36,6 +51,7 @@ class MediaSourceHelper {
     std::function<void(int)> fpsCallback);
   ~MediaSourceHelper();
 
+  void SetStartTimeNow();
   void QueueFrame(cricket::VideoFrame* frame);
   rtc::scoped_ptr<SampleData> DequeueFrame();
   bool HasFrames();
@@ -78,6 +94,8 @@ class MediaSourceHelper {
 
   // Are the frames H264 encoded.
   bool _isH264;
+
+  webrtc::TickTime _startTickTime;
 };
 
 

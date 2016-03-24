@@ -157,16 +157,18 @@ public:
   static void DisableLogging();
 
   /// <summary>
-  /// Retrieves the folder where the app is currently saving the logging information.
+  /// The folder where the app is currently saving the logging information.
   /// </summary>
-  /// <returns>Path to the folder where the log information is being saved.</returns>
-  static Windows::Storage::StorageFolder^ LogFolder();
+  static property Windows::Storage::StorageFolder^ LogFolder {
+    Windows::Storage::StorageFolder^ get();
+  }
 
   /// <summary>
-  /// Retrieves the name of the file where the app is currently saving the logging information.
+  /// The name of the file where the app is currently saving the logging information.
   /// </summary>
-  /// <returns>Name of the file where logs are saved.</returns>
-  static String^ LogFileName();
+  static property String^ LogFileName {
+    String^ get();
+  }
 
   /// <summary>
   /// Retrieves the audio codecs supported by the device.
@@ -183,41 +185,29 @@ public:
   /// <summary>
   /// This method can be used to overwrite the preferred camera capabilities.
   /// </summary>
-  /// <param name="frame_width">Image width.</param>
-  /// <param name="frame_height">Image height.</param>
+  /// <param name="frameWidth">Image width.</param>
+  /// <param name="frameHeight">Image height.</param>
   /// <param name="fps">Frames per second.</param>
-  static void SetPreferredVideoCaptureFormat(int frame_width,
-                                             int frame_height,
+  static void SetPreferredVideoCaptureFormat(int frameWidth,
+                                             int frameHeight,
                                              int fps);
 
   /// <summary>
   /// Synchronization with NTP is needed for end to end delay measurements,
   /// which involve multiple devices.
   /// </summary>
-  /// <param name="current_ntp_time">NTP time in miliseconds.</param>
-  static void SynNTPTime(int64 current_ntp_time);
+  /// <param name="currentNtpTime">NTP time in miliseconds.</param>
+  static void SynNTPTime(int64 currentNtpTime);
 
   /// <summary>
-  /// Update CPUUsage statitics data
+  /// CPU usage statistics data (in percents). Should be set by application.
   /// </summary>
-  /// <param name="cpu_usage">cpu usage in percentage</param>
-  static void UpdateCPUUsage(double cpu_usage);
+  static property double CpuUsage { double get(); void set(double value); }
 
   /// <summary>
-  /// Get the last known CPUUsage statitics data
+  /// Memory usage statistics data (in bytes). Should be set by application.
   /// </summary>
-  static double GetCPUUsage();
-
-  /// <summary>
-  /// Update Memory statitics data
-  /// </summary>
-  /// <param name="mem_usage">cpu usage in bytes</param>
-  static void UpdateMemUsage(INT64 mem_usage);
-
-  /// <summary>
-  /// Get the last known CPUUsage statitics data
-  /// </summary>
-  static INT64 GetMemUsage();
+  static property INT64 MemoryUsage { INT64 get(); void set(INT64 value); }
 
 private:
   // This type is not meant to be created.
@@ -487,12 +477,12 @@ public:
   /// <summary>
   /// A new ICE candidate has been found.
   /// </summary>
-  event RTCPeerConnectionIceEventDelegate^     OnIceCandidate;
+  event RTCPeerConnectionIceEventDelegate^ OnIceCandidate;
 
   /// <summary>
   /// A state transition has occurred for the <see cref="IceConnectionState"/>.
   /// </summary>
-  event RTCPeerConnectionIceStateChangeEventDelegate^  OnIceConnectionChange;
+  event RTCPeerConnectionIceStateChangeEventDelegate^ OnIceConnectionChange;
 
   /// <summary>
   /// The remote peer has added a new <see cref="MediaStream"/> to this
@@ -528,7 +518,7 @@ public:
   /// <summary>
   /// Webrtc statistics report is ready <see cref="RTCStatsReports"/>.
   /// </summary>
-  event RTCStatsReportsReadyEventDelegate^  OnRTCStatsReportsReady;
+  event RTCStatsReportsReadyEventDelegate^ OnRTCStatsReportsReady;
 
 
   /// <summary>
@@ -652,20 +642,20 @@ public:
 
   /// <summary>
   /// Enable/Disable WebRTC statistics to ETW.
-  /// </summary>
-  void ToggleETWStats(bool enable);
+  /// </summary>;
+  property bool EtwStatsEnabled { bool get(); void set(bool value); }
 
   /// <summary>
   /// Enable/Disable connection health statistics.
   /// When new connection health stats are available OnConnectionHealthStats
   //  event is raised.
   /// </summary>
-  void ToggleConnectionHealthStats(bool enable);
+  property bool ConnectionHealthStatsEnabled { bool get(); void set(bool value); }
 
   /// <summary>
   /// Enable/Disable WebRTC statistics for exposing report.
   /// </summary>
-  void ToggleRTCStats(bool enable);
+  property bool RtcStatsEnabled { bool get(); void set(bool value); }
 
   /// <summary>
   /// The last <see cref="RTCSessionDescription"/> that was successfully set

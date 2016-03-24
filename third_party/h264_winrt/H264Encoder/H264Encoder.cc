@@ -47,6 +47,7 @@ namespace webrtc {
 
 H264WinRTEncoderImpl::H264WinRTEncoderImpl()
   : _lock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
+  , _callbackLock(webrtc::CriticalSectionWrapper::CreateCriticalSection())
   , firstFrame_(true)
   , startTime_(0)
   , framePendingCount_(0)
@@ -163,13 +164,12 @@ int H264WinRTEncoderImpl::InitEncoderWithSettings(const VideoCodec* inst) {
 
 int H264WinRTEncoderImpl::RegisterEncodeCompleteCallback(
   EncodedImageCallback* callback) {
-  webrtc::CriticalSectionScoped csLock(_lock.get());
+  webrtc::CriticalSectionScoped csLock(_callbackLock.get());
   encodedCompleteCallback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int H264WinRTEncoderImpl::Release() {
-
   // Use a temporary sink variable to prevent lock inversion
   // between the shutdown call and OnH264Encoded() callback.
   ComPtr<H264MediaSink> tmpMediaSink;
@@ -189,6 +189,8 @@ int H264WinRTEncoderImpl::Release() {
     inited_ = false;
     framePendingCount_ = 0;
     _sampleAttributeQueue.clear();
+    webrtc::CriticalSectionScoped csCbLock(_callbackLock.get());
+    encodedCompleteCallback_ = nullptr;
   }
 
   if (tmpMediaSink != nullptr) {
@@ -245,7 +247,13 @@ ComPtr<IMFSample> H264WinRTEncoderImpl::FromVideoFrame(const VideoFrame& frame) 
 
     {
       if (dstFrame.width() != (int)currentWidth_ || dstFrame.height() != (int)currentHeight_) {
+        EncodedImageCallback* tempCallback = encodedCompleteCallback_;
         Release();
+        {
+          webrtc::CriticalSectionScoped csLock(_callbackLock.get());
+          encodedCompleteCallback_ = tempCallback;
+        }
+
         currentWidth_ = dstFrame.width();
         currentHeight_ = dstFrame.height();
         InitEncoderWithSettings(&codec_);
@@ -312,32 +320,30 @@ int H264WinRTEncoderImpl::Encode(
 
   codecSpecificInfo_ = codec_specific_info;
 
+  ComPtr<IMFSample> sample;
   {
     webrtc::CriticalSectionScoped csLock(_lock.get());
-
-    auto sample = FromVideoFrame(frame);
-    ON_SUCCEEDED(sinkWriter_->WriteSample(streamIndex_, sample.Get()));
-
-    // Some threads online mention this is useful to do regularly.
-    ++frameCount_;
-    if (frameCount_ % 30 == 0) {
-      ON_SUCCEEDED(sinkWriter_->NotifyEndOfSegment(streamIndex_));
+    if (_sampleAttributeQueue.size() > 2) {
+      quality_scaler_.ReportDroppedFrame();
+      return WEBRTC_VIDEO_CODEC_OK;
     }
-
-    ++framePendingCount_;
+    sample = FromVideoFrame(frame);
   }
+
+  ON_SUCCEEDED(sinkWriter_->WriteSample(streamIndex_, sample.Get()));
+
+  webrtc::CriticalSectionScoped csLock(_lock.get());
+  // Some threads online mention this is useful to do regularly.
+  ++frameCount_;
+  if (frameCount_ % 30 == 0) {
+    ON_SUCCEEDED(sinkWriter_->NotifyEndOfSegment(streamIndex_));
+  }
+
+  ++framePendingCount_;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
-  {
-    webrtc::CriticalSectionScoped csLock(_lock.get());
-    if (!inited_ || encodedCompleteCallback_ == nullptr) {
-      return;
-    }
-    --framePendingCount_;
-  }
-
   DWORD totalLength;
   HRESULT hr = S_OK;
   ON_SUCCEEDED(sample->GetTotalLength(&totalLength));
@@ -425,7 +431,12 @@ void H264WinRTEncoderImpl::OnH264Encoded(ComPtr<IMFSample> sample) {
     }
 
     {
-      webrtc::CriticalSectionScoped csLock(_lock.get());
+      webrtc::CriticalSectionScoped csLock(_callbackLock.get());
+      --framePendingCount_;
+      if (encodedCompleteCallback_ == nullptr) {
+        return;
+      }
+
 
       _h264Parser.ParseBitstream(sendBuffer.data(), sendBuffer.size());
       int lastQp;
@@ -504,11 +515,16 @@ int H264WinRTEncoderImpl::SetRates(
 
   if (bitrateUpdated || fpsUpdated) {
     if ((webrtc::TickTime::Now() - lastTimeSettingsChanged_).Milliseconds() < 15000) {
-      LOG(LS_INFO) << L"Last time settings changed was too soon, skipping this SetRates().\n";
+      LOG(LS_INFO) << "Last time settings changed was too soon, skipping this SetRates().\n";
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
+    EncodedImageCallback* tempCallback = encodedCompleteCallback_;
     Release();
+    {
+      webrtc::CriticalSectionScoped csLock(_callbackLock.get());
+      encodedCompleteCallback_ = tempCallback;
+    }
     InitEncoderWithSettings(&codec_);
   }
 
@@ -516,11 +532,18 @@ int H264WinRTEncoderImpl::SetRates(
 }
 
 void H264WinRTEncoderImpl::OnDroppedFrame(uint32_t timestamp) {
-  webrtc::CriticalSectionScoped csLock(_lock.get());
-  quality_scaler_.ReportDroppedFrame();
-  auto timestampHns = ((timestamp - startTime_) / 90) * 1000 * 10;
-  sinkWriter_->SendStreamTick(streamIndex_, timestampHns);
-  lastFrameDropped_ = true;
+  LONGLONG timestampHns = 0;
+  ComPtr<IMFSinkWriter> tempSinkWriter;
+  {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    quality_scaler_.ReportDroppedFrame();
+    timestampHns = ((timestamp - startTime_) / 90) * 1000 * 10;
+    lastFrameDropped_ = true;
+    tempSinkWriter = sinkWriter_;
+  }
+  if (tempSinkWriter != nullptr) {
+    sinkWriter_->SendStreamTick(streamIndex_, timestampHns);
+  }
 }
 
 }  // namespace webrtc

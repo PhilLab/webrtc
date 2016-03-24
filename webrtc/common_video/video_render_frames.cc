@@ -61,6 +61,10 @@ VideoFrame VideoRenderFrames::FrameToRender() {
   while (!incoming_frames_.empty() && TimeToNextFrameRelease() <= 0) {
     render_frame = incoming_frames_.front();
     incoming_frames_.pop_front();
+
+    if (render_frame.native_handle() != nullptr) {
+      break; // Possibly an encoded sample.  Don't drop them here either.
+    }
   }
   return render_frame;
 }
