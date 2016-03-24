@@ -59,7 +59,12 @@ class SampleAttributeQueue {
     }
   }
 
- private:
+  uint32_t size() {
+    webrtc::CriticalSectionScoped csLock(_lock.get());
+    return static_cast<uint32_t>(_attributes.size());
+  }
+
+private:
    rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
    std::queue<std::pair<uint64_t, const T>> _attributes;
 };
