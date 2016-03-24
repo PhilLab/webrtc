@@ -720,20 +720,24 @@ String^  WebRTC::LogFileName::get() {
 
 IVector<CodecInfo^>^ WebRTC::GetAudioCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
-  const std::vector<cricket::AudioCodec>& codecs = globals::gPeerConnectionFactory->GetMediaEngine()->audio_codecs();
-  for (auto it = codecs.begin(); it != codecs.end(); ++it) {
-    ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-  }
+  globals::RunOnGlobalThread<void>([ret] {
+    const std::vector<cricket::AudioCodec>& codecs = globals::gPeerConnectionFactory->GetMediaEngine()->audio_codecs();
+    for (auto it = codecs.begin(); it != codecs.end(); ++it) {
+      ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+    }
+  });
   return ret;
 }
 
 IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
   auto ret = ref new Vector<CodecInfo^>();
-  const std::vector<cricket::VideoCodec>& codecs = globals::gPeerConnectionFactory->GetMediaEngine()->video_codecs();
-  for (auto it = codecs.begin(); it != codecs.end(); ++it) {
-    if (it->GetCodecType() == cricket::VideoCodec::CODEC_VIDEO)
-    ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
-  }
+  globals::RunOnGlobalThread<void>([ret] {
+    const std::vector<cricket::VideoCodec>& codecs = globals::gPeerConnectionFactory->GetMediaEngine()->video_codecs();
+    for (auto it = codecs.begin(); it != codecs.end(); ++it) {
+      if (it->GetCodecType() == cricket::VideoCodec::CODEC_VIDEO)
+        ret->Append(ref new CodecInfo(it->id, it->clockrate, ToCx(it->name)));
+    }
+  });
   return ret;
 }
 

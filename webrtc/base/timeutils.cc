@@ -38,6 +38,42 @@ namespace rtc {
 
 const uint32_t HALF = 0x80000000;
 
+#if defined(WEBRTC_WIN)
+static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+#endif
+
+#ifdef WINRT
+static const uint64 kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
+LARGE_INTEGER app_start_time_ = {};  // record app start time
+int64_t time_since_os_start_ = -1;  // when app start,
+                                              // the os ticks in ms
+int64_t os_ticks_per_second_ = -1;
+
+inline void InitializeAppStartTimestamp() {
+  if (time_since_os_start_ != -1)  // already initialized
+    return;
+
+  TIME_ZONE_INFORMATION timeZone;
+  GetTimeZoneInformation(&timeZone);
+  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;  // milliseconds
+  FILETIME ft;
+  GetSystemTimeAsFileTime(&ft);  // this will give us system file in UTC format
+  app_start_time_.HighPart = ft.dwHighDateTime;
+  app_start_time_.LowPart = ft.dwLowDateTime;
+
+  app_start_time_.QuadPart = (app_start_time_.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 /* 100nanoSecond/10*1000 = ms*/
+                             - timeZoneBias;
+
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  LARGE_INTEGER qpfreq;
+  QueryPerformanceFrequency(&qpfreq);
+
+  os_ticks_per_second_ = qpfreq.QuadPart;
+  time_since_os_start_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;
+}
+#endif
+
 uint64_t TimeNanos() {
   int64_t ticks = 0;
 #if defined(WEBRTC_MAC)
@@ -59,7 +95,11 @@ uint64_t TimeNanos() {
   ticks = kNumNanosecsPerSec * static_cast<int64_t>(ts.tv_sec) +
           static_cast<int64_t>(ts.tv_nsec);
 #elif defined(WINRT)
-  ticks = webrtc::Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() * 1000 * 1000;
+  //ticks = webrtc::Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() * 1000 * 1000;
+  InitializeAppStartTimestamp();
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  ticks = qpcnt.QuadPart * 1000 / os_ticks_per_second_;  // ms
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64_t num_wrap_timegettime = 0;
@@ -95,7 +135,6 @@ uint64_t TimeMicros() {
 }
 
 #if defined(WEBRTC_WIN)
-static const uint64_t kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
 
 struct timeval {
   long tv_sec, tv_usec;  // NOLINT
