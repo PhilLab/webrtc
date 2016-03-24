@@ -76,6 +76,11 @@
                                      SPEAKER_FRONT_LEFT_OF_CENTER | \
                                      SPEAKER_FRONT_RIGHT_OF_CENTER)
 
+// These defines are not available for Windows Store applications. 
+// However, those flags are needed and acccepted by WASAPI in order to support
+// multichannel devices
+#define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM      0x80000000
+#define AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY 0x08000000
 
 // Macro that calls a COM method returning HRESULT value.
 #define EXIT_ON_ERROR(hres)    do { if (FAILED(hres)) goto Exit; } while (0)
@@ -234,6 +239,12 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
               "nChannels=%d, nSamplesPerSec=%d is not supported",
               Wfx.nChannels, Wfx.nSamplesPerSec);
+
+            if (mixFormat->nChannels > 2)
+            {
+              hr = S_OK;
+              break;
+            }
           }
         }
         if (hr == S_OK)
@@ -273,19 +284,23 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
       }
       // Create a capturing stream.
       hr = audioClient->Initialize(
-        AUDCLNT_SHAREMODE_SHARED,             // share Audio Engine with other
-                                              // applications
-        AUDCLNT_STREAMFLAGS_EVENTCALLBACK |   // processing of the audio buffer
-                                              // by the client will be event
-                                              // driven
-        AUDCLNT_STREAMFLAGS_NOPERSIST,        // volume and mute settings for
-                                              // an audio session will not
-                                              // persist across system restarts
-        0,                                    // required for event-driven
-                                              // shared mode
-        0,                                    // periodicity
-        &Wfx,                                 // selected wave format
-        NULL);                                // session GUID
+        AUDCLNT_SHAREMODE_SHARED,                // share Audio Engine with 
+                                                 // other applications
+        AUDCLNT_STREAMFLAGS_EVENTCALLBACK |      // processing of the audio 
+                                                 // buffer by the client will 
+                                                 // be event driven
+        AUDCLNT_STREAMFLAGS_NOPERSIST |          // volume and mute settings 
+                                                 // for an audio session will 
+                                                 // not persist across system
+                                                 // restarts
+        AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM |     // support for multichannel 
+                                                 // devices
+        AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY, // keep default quality
+        0,                                       // required for event-driven
+                                                 // shared mode
+        0,                                       // periodicity
+        &Wfx,                                    // selected wave format
+        NULL);                                   // session GUID
 
       if (hr != S_OK) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id,
