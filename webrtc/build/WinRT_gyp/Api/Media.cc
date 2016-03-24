@@ -443,21 +443,20 @@ IMediaSource^ Media::CreateMediaSource(
 
 IVector<MediaDevice^>^ Media::GetVideoCaptureDevices() {
   webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
-  auto ret = ref new Vector<MediaDevice^>();
   std::vector<cricket::Device> videoDevices;
   if (_videoCaptureDeviceChanged) {
     globals::RunOnGlobalThread<void>([this, &videoDevices] {
-      g_videoDevices->Clear();
       if (!_dev_manager->GetVideoCaptureDevices(&videoDevices)) {
         LOG(LS_ERROR) << "Can't enumerate video capture devices";
       }
     });
+    g_videoDevices->Clear();
+    for (auto videoDev : videoDevices) {
+      g_videoDevices->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
+    }
     _videoCaptureDeviceChanged = false;
   }
-  for (auto videoDev : videoDevices) {
-    ret->Append(ref new MediaDevice(ToCx(videoDev.id), ToCx(videoDev.name)));
-  }
-  return ret;
+  return g_videoDevices;
 }
 
 IVector<MediaDevice^>^ Media::GetAudioCaptureDevices() {
