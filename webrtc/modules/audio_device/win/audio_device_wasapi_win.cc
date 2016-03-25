@@ -158,8 +158,8 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
     hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
     if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult)) {
       // Get the pointer for the Audio Client
-      punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
-      if (nullptr == audioClient) {
+      hr = punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
+      if ((E_POINTER == hr) || (E_NOINTERFACE == hr)) {
         hr = E_FAIL;
         goto exit;
       }
@@ -239,7 +239,8 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
               "nChannels=%d, nSamplesPerSec=%d is not supported",
               Wfx.nChannels, Wfx.nSamplesPerSec);
-
+            // if number of channels is more than 2, keep mix format which is
+            // prefered by the engine. Wasapi will handle channel mixing. 
             if (mixFormat->nChannels > 2)
             {
               hr = S_OK;
@@ -343,8 +344,8 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
     hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
     if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult)) {
       // Get the pointer for the Audio Client
-      punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
-      if (nullptr == audioClient) {
+      hr = punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
+      if ((E_POINTER == hr) || (E_NOINTERFACE == hr)) {
         hr = E_FAIL;
         goto exit;
       }
@@ -365,9 +366,6 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         goto exit;
       }
 
-      // Retrieve the stream format that the audio engine uses for its internal
-      // processing (mixing) of shared-mode streams.
-      hr = audioClient->GetMixFormat(&mixFormat);
       if (SUCCEEDED(hr)) {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
           "Audio Engine's current rendering mix format:");
@@ -587,6 +585,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
 
 exit:
   SAFE_RELEASE(punkAudioInterface);
+  CoTaskMemFree(mixFormat);
 
   if (FAILED(hr)) {
     SAFE_RELEASE(audioClient);
@@ -872,39 +871,6 @@ void AudioDeviceWindowsWasapi::AttachAudioBuffer(
   _ptrAudioBuffer->SetRecordingChannels(0);
   _ptrAudioBuffer->SetPlayoutChannels(0);
 }
-// ----------------------------------------------------------------------------
-//  IUnknown interface implementation
-// ----------------------------------------------------------------------------
-HRESULT AudioDeviceWindowsWasapi::QueryInterface(REFIID   riid,
-  LPVOID * ppvObj) {
-  // Always set out parameter to NULL, validating it first.
-  if (!ppvObj)
-    return E_INVALIDARG;
-  *ppvObj = NULL;
-  if (riid == IID_IUnknown) {
-    // Increment the reference count and return the pointer.
-    *ppvObj = (LPVOID)this;
-    AddRef();
-    return NOERROR;
-  }
-  return E_NOINTERFACE;
-}
-ULONG AudioDeviceWindowsWasapi::AddRef() {
-  // InterlockedIncrement(m_cRef);
-  // return m_cRef;
-  return 0;
-}
-ULONG AudioDeviceWindowsWasapi::Release() {
-  // Decrement the object's internal counter.
-  // ULONG ulRefCount = InterlockedDecrement(m_cRef);
-  // if (0 == m_cRef)
-  // {
-  //   delete this;
-  // }
-  // return ulRefCount;
-  return 0;
-}
-
 
 // ----------------------------------------------------------------------------
 //  ActiveAudioLayer
@@ -1017,7 +983,7 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker() {
   if (_renderDevice == nullptr) {
     // Refresh the selected rendering endpoint device using default device
     _renderDevice = _GetDefaultDevice(DeviceClass::AudioRender,
-                                      AudioDeviceRole::Default);
+                                      AudioDeviceRole::Communications);
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
       "using default audio playout device: ",
       rtc::ToUtf8(_renderDevice->Name->Data()));
@@ -1091,7 +1057,7 @@ int32_t AudioDeviceWindowsWasapi::InitMicrophone() {
   if (_captureDevice == nullptr) {
     // Refresh the selected capture endpoint device using default
     _captureDevice = _GetDefaultDevice(DeviceClass::AudioCapture,
-                                       AudioDeviceRole::Default);
+                                       AudioDeviceRole::Communications);
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
       "using default device");
   }
@@ -1253,8 +1219,9 @@ Exit:
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::SetWaveOutVolume(uint16_t volumeLeft,
-  uint16_t volumeRight) {
-    return -1;
+  uint16_t volumeRight)
+{
+  return -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -1262,10 +1229,10 @@ int32_t AudioDeviceWindowsWasapi::SetWaveOutVolume(uint16_t volumeLeft,
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::WaveOutVolume(uint16_t& volumeLeft,
-  uint16_t& volumeRight) const {
-    return -1;
+  uint16_t& volumeRight) const
+{
+  return -1;
 }
-
 // ----------------------------------------------------------------------------
 //  MaxSpeakerVolume
 //
@@ -1948,10 +1915,10 @@ int32_t AudioDeviceWindowsWasapi::PlayoutDeviceName(
     return -1;
   }
 
-  memset(name, 0, kAdmMaxDeviceNameSize);
+  memset(name, 0, sizeof(name));
 
   if (guid != NULL) {
-    memset(guid, 0, kAdmMaxGuidSize);
+    memset(guid, 0, sizeof(guid));
   }
 
   CriticalSectionScoped lock(&_critSect);
@@ -2024,10 +1991,10 @@ int32_t AudioDeviceWindowsWasapi::RecordingDeviceName(
     return -1;
   }
 
-  memset(name, 0, kAdmMaxDeviceNameSize);
+  memset(name, 0, sizeof(name));
 
   if (guid != NULL) {
-    memset(guid, 0, kAdmMaxGuidSize);
+    memset(guid, 0, sizeof(guid));
   }
 
   CriticalSectionScoped lock(&_critSect);
@@ -4506,6 +4473,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll() {
       DeviceInformation::FindAllAsync(DeviceClass::AudioCapture)).then(
       [this](concurrency::task<DeviceInformationCollection^> getDevicesTask) {
       _ptrCaptureCollection = getDevicesTask.get();
+
     }, concurrency::task_continuation_context::use_arbitrary()).wait();
   }
   catch (Platform::InvalidArgumentException^) {
@@ -4567,29 +4535,9 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
     deviceId->Data(),
     AudioInterfaceActivator::ActivatorDeviceType::eInputDevice).then(
     [deviceId](Microsoft::WRL::ComPtr<IAudioClient2> captureClient) {
-    Platform::String^ rawProcessingSupportedKey =
-      L"System.Devices.AudioDevice.RawProcessingSupported";
-    Platform::Collections::Vector<Platform::String ^> ^properties =
-      ref new Platform::Collections::Vector<Platform::String ^>();
-    properties->Append(rawProcessingSupportedKey);
-
     return concurrency::create_task(
       Windows::Devices::Enumeration::DeviceInformation::
-      CreateFromIdAsync(deviceId, properties)).then(
-      [rawProcessingSupportedKey, captureClient](Windows::Devices::
-      Enumeration::DeviceInformation ^device) {
-      bool rawIsSupported = false;
-      if (device->Properties->HasKey(rawProcessingSupportedKey) == true) {
-        auto val = device->Properties->Lookup(rawProcessingSupportedKey);
-        if (val != nullptr) {
-          rawIsSupported = safe_cast<bool>(val);
-        } else {
-          // Sometimes the property is set but the value is empty.
-          // Assume it means it's true.
-          rawIsSupported = true;
-        }
-      }
-    }).wait();
+      CreateFromIdAsync(deviceId)).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   return hr;
@@ -4612,29 +4560,9 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut(Platform::String^ de
     AudioInterfaceActivator::ActivatorDeviceType::eOutputDevice).then(
     [deviceId](Microsoft::WRL::ComPtr<IAudioClient2 >
                             renderClient) {
-      Platform::String^ rawProcessingSupportedKey =
-        L"System.Devices.AudioDevice.RawProcessingSupported";
-      Platform::Collections::Vector<Platform::String ^> ^properties =
-        ref new Platform::Collections::Vector<Platform::String ^>();
-      properties->Append(rawProcessingSupportedKey);
-
       return concurrency::create_task(
         Windows::Devices::Enumeration::DeviceInformation::
-        CreateFromIdAsync(deviceId, properties)).then(
-        [rawProcessingSupportedKey, renderClient](
-        Windows::Devices::Enumeration::DeviceInformation ^device) {
-          bool rawIsSupported = false;
-          if (device->Properties->HasKey(rawProcessingSupportedKey) == true) {
-            auto val = device->Properties->Lookup(rawProcessingSupportedKey);
-            if (val != nullptr) {
-              rawIsSupported = safe_cast<bool>(val);
-            } else {
-              // Sometimes the property is set but the value is empty.
-              // Assume it means it's true.
-              rawIsSupported = true;
-            }
-          }
-        }).wait();
+        CreateFromIdAsync(deviceId)).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   return hr;
