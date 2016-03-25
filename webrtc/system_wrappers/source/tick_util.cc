@@ -52,9 +52,9 @@ void TickTime::SyncWithNtp(int64_t timeFromNtpServer /*in ms*/ ){
 
   TIME_ZONE_INFORMATION timeZone;
   GetTimeZoneInformation(&timeZone);
-  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;  // milliseconds
+  int64_t timeZoneBias = timeZone.Bias * 60 * 1000 * 1000 * 1000;  // ns
 
-  app_start_time_.QuadPart = timeFromNtpServer - kNTPTimeToUnixTimeEpochOffset - timeZoneBias;
+  app_start_time_.QuadPart = (timeFromNtpServer - kNTPTimeToUnixTimeEpochOffset) * 1000000 - timeZoneBias;
 
   //since we just update the app refernce time, need to update the reference point as well.
 
@@ -66,7 +66,7 @@ void TickTime::SyncWithNtp(int64_t timeFromNtpServer /*in ms*/ ){
 
   os_ticks_per_second_ = qpfreq.QuadPart;
 
-  time_since_os_start_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;
+  time_since_os_start_ = qpcnt.QuadPart * 1000 * 1000 * 1000 / os_ticks_per_second_;
 }
 
 

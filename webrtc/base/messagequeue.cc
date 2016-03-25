@@ -144,6 +144,7 @@ void MessageQueue::DoInit() {
   }
 
   fInitialized_ = true;
+  MessageQueueManager::Add(this);
 }
 
 void MessageQueue::DoDestroy() {

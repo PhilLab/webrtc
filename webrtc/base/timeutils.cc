@@ -55,13 +55,13 @@ inline void InitializeAppStartTimestamp() {
 
   TIME_ZONE_INFORMATION timeZone;
   GetTimeZoneInformation(&timeZone);
-  int64_t timeZoneBias = timeZone.Bias * 60 * 1000;  // milliseconds
+  int64_t timeZoneBias = timeZone.Bias * 60 * 1000 * 1000 * 1000;  // ns
   FILETIME ft;
   GetSystemTimeAsFileTime(&ft);  // this will give us system file in UTC format
   app_start_time_.HighPart = ft.dwHighDateTime;
   app_start_time_.LowPart = ft.dwLowDateTime;
 
-  app_start_time_.QuadPart = (app_start_time_.QuadPart - kFileTimeToUnixTimeEpochOffset) / 10000 /* 100nanoSecond/10*1000 = ms*/
+  app_start_time_.QuadPart = (app_start_time_.QuadPart - kFileTimeToUnixTimeEpochOffset) * 100 // ns
                              - timeZoneBias;
 
   LARGE_INTEGER qpcnt;
@@ -70,7 +70,7 @@ inline void InitializeAppStartTimestamp() {
   QueryPerformanceFrequency(&qpfreq);
 
   os_ticks_per_second_ = qpfreq.QuadPart;
-  time_since_os_start_ = qpcnt.QuadPart * 1000 / os_ticks_per_second_;
+  time_since_os_start_ = qpcnt.QuadPart * 1000 * 1000 * 1000 / os_ticks_per_second_;
 }
 #endif
 
@@ -95,11 +95,10 @@ uint64_t TimeNanos() {
   ticks = kNumNanosecsPerSec * static_cast<int64_t>(ts.tv_sec) +
           static_cast<int64_t>(ts.tv_nsec);
 #elif defined(WINRT)
-  //ticks = webrtc::Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() * 1000 * 1000;
   InitializeAppStartTimestamp();
   LARGE_INTEGER qpcnt;
   QueryPerformanceCounter(&qpcnt);
-  ticks = qpcnt.QuadPart * 1000 / os_ticks_per_second_;  // ms
+  ticks = qpcnt.QuadPart * 1000 * 1000 * 1000 / os_ticks_per_second_;  // ns
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64_t num_wrap_timegettime = 0;
