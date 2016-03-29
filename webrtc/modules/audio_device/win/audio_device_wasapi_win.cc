@@ -4050,7 +4050,14 @@ bool AudioDeviceWindowsWasapi::BuiltInAECIsEnabled() const {
 }
 
 bool AudioDeviceWindowsWasapi::BuiltInAECIsAvailable() const {
+#if defined(_M_ARM)
+  // There is a bug in the OS preventing the Effects detection (Noise SUppression and AEC) to work for Win10 Phones. 
+  // The bug is severe enough that it's not only the detection that doesn't work but the activation of the effect.
+  // Since turning software AEC is quite costly for the phone, we return true to prevent it until that bug is fixed
+  return true;
+#else
   return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::AcousticEchoCancellation);
+#endif
 }
 
 int32_t AudioDeviceWindowsWasapi::EnableBuiltInNS(bool enable) {
@@ -4085,48 +4092,41 @@ bool AudioDeviceWindowsWasapi::BuiltInAGCIsAvailable() const {
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType effect) const {
 
-    // Check to see if the current device supports the capability
+  // Check to see if the current device supports the capability
 
-    // There's an issue in this code, where we are not detecting properly on WIn Phone 10
-    // For now return always true, because we know noise suppression and AEC is supported on all devices
-    // We need to revisit this function before end of Feb 2016
-    return true;
+  Windows::Media::Effects::AudioCaptureEffectsManager^ effManager;
 
-    /*
-    Windows::Media::Effects::AudioCaptureEffectsManager^ effManager;
+  Windows::Media::Capture::MediaCategory Category;
+  Category = Windows::Media::Capture::MediaCategory::Communications;
 
-    Windows::Media::Capture::MediaCategory Category;
-    Category = Windows::Media::Capture::MediaCategory::Communications;
+  Platform::String^ deviceId;
 
-    Platform::String^ deviceId;
+  if (_deviceIdStringIn != nullptr)
+  {
+    deviceId = _deviceIdStringIn;
+  }
+  else
+  {
+    deviceId = _captureDevice->Id;
+  }
 
-    if (_deviceIdStringIn != nullptr)
-    {
-        deviceId = _deviceIdStringIn;
-    }
-    else
-    {
-        deviceId = _defaultCaptureDevice->Id;
-    }
-
-    effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioCaptureEffectsManager(
+  effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioCaptureEffectsManager(
         deviceId, Category, Windows::Media::AudioProcessing::Default);
 
-    Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
+  Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
 
-    effectsList = effManager->GetAudioCaptureEffects();
+  effectsList = effManager->GetAudioCaptureEffects();
 
-    unsigned int i;
-    // Iterate through the supported effect to see if Echo Cancellation is supported
-    for (i = 0; i < effectsList->Size; i++)
+  unsigned int i;
+  // Iterate through the supported effect to see if Echo Cancellation is supported
+  for (i = 0; i < effectsList->Size; i++)
+  {
+    if (effectsList->GetAt(i)->AudioEffectType == effect)
     {
-        if (effectsList->GetAt(i)->AudioEffectType == effect)
-        {
-            return true;
-        }
+      return true;
     }
-    return false;
-    */
+  }
+  return false;
 }
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType effect) const {
