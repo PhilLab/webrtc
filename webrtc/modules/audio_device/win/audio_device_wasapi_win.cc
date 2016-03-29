@@ -76,6 +76,11 @@
                                      SPEAKER_FRONT_LEFT_OF_CENTER | \
                                      SPEAKER_FRONT_RIGHT_OF_CENTER)
 
+// These defines are not available for Windows Store applications. 
+// However, those flags are needed and acccepted by WASAPI in order to support
+// multichannel devices
+#define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM      0x80000000
+#define AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY 0x08000000
 
 // Macro that calls a COM method returning HRESULT value.
 #define EXIT_ON_ERROR(hres)    do { if (FAILED(hres)) goto Exit; } while (0)
@@ -153,8 +158,8 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
     hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
     if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult)) {
       // Get the pointer for the Audio Client
-      punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
-      if (nullptr == audioClient) {
+      hr = punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
+      if ((E_POINTER == hr) || (E_NOINTERFACE == hr)) {
         hr = E_FAIL;
         goto exit;
       }
@@ -234,6 +239,13 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
               "nChannels=%d, nSamplesPerSec=%d is not supported",
               Wfx.nChannels, Wfx.nSamplesPerSec);
+            // if number of channels is more than 2, keep mix format which is
+            // prefered by the engine. Wasapi will handle channel mixing. 
+            if (mixFormat->nChannels > 2)
+            {
+              hr = S_OK;
+              break;
+            }
           }
         }
         if (hr == S_OK)
@@ -273,19 +285,23 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
       }
       // Create a capturing stream.
       hr = audioClient->Initialize(
-        AUDCLNT_SHAREMODE_SHARED,             // share Audio Engine with other
-                                              // applications
-        AUDCLNT_STREAMFLAGS_EVENTCALLBACK |   // processing of the audio buffer
-                                              // by the client will be event
-                                              // driven
-        AUDCLNT_STREAMFLAGS_NOPERSIST,        // volume and mute settings for
-                                              // an audio session will not
-                                              // persist across system restarts
-        0,                                    // required for event-driven
-                                              // shared mode
-        0,                                    // periodicity
-        &Wfx,                                 // selected wave format
-        NULL);                                // session GUID
+        AUDCLNT_SHAREMODE_SHARED,                // share Audio Engine with 
+                                                 // other applications
+        AUDCLNT_STREAMFLAGS_EVENTCALLBACK |      // processing of the audio 
+                                                 // buffer by the client will 
+                                                 // be event driven
+        AUDCLNT_STREAMFLAGS_NOPERSIST |          // volume and mute settings 
+                                                 // for an audio session will 
+                                                 // not persist across system
+                                                 // restarts
+        AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM |     // support for multichannel 
+                                                 // devices
+        AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY, // keep default quality
+        0,                                       // required for event-driven
+                                                 // shared mode
+        0,                                       // periodicity
+        &Wfx,                                    // selected wave format
+        NULL);                                   // session GUID
 
       if (hr != S_OK) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, m_AudioDevice->_id,
@@ -328,8 +344,8 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
     hr = pAsyncOp->GetActivateResult(&hrActivateResult, &punkAudioInterface);
     if (SUCCEEDED(hr) && SUCCEEDED(hrActivateResult)) {
       // Get the pointer for the Audio Client
-      punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
-      if (nullptr == audioClient) {
+      hr = punkAudioInterface->QueryInterface(IID_PPV_ARGS(&audioClient));
+      if ((E_POINTER == hr) || (E_NOINTERFACE == hr)) {
         hr = E_FAIL;
         goto exit;
       }
@@ -350,9 +366,6 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
         goto exit;
       }
 
-      // Retrieve the stream format that the audio engine uses for its internal
-      // processing (mixing) of shared-mode streams.
-      hr = audioClient->GetMixFormat(&mixFormat);
       if (SUCCEEDED(hr)) {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, m_AudioDevice->_id,
           "Audio Engine's current rendering mix format:");
@@ -572,6 +585,7 @@ HRESULT AudioInterfaceActivator::ActivateCompleted(
 
 exit:
   SAFE_RELEASE(punkAudioInterface);
+  CoTaskMemFree(mixFormat);
 
   if (FAILED(hr)) {
     SAFE_RELEASE(audioClient);
@@ -857,39 +871,6 @@ void AudioDeviceWindowsWasapi::AttachAudioBuffer(
   _ptrAudioBuffer->SetRecordingChannels(0);
   _ptrAudioBuffer->SetPlayoutChannels(0);
 }
-// ----------------------------------------------------------------------------
-//  IUnknown interface implementation
-// ----------------------------------------------------------------------------
-HRESULT AudioDeviceWindowsWasapi::QueryInterface(REFIID   riid,
-  LPVOID * ppvObj) {
-  // Always set out parameter to NULL, validating it first.
-  if (!ppvObj)
-    return E_INVALIDARG;
-  *ppvObj = NULL;
-  if (riid == IID_IUnknown) {
-    // Increment the reference count and return the pointer.
-    *ppvObj = (LPVOID)this;
-    AddRef();
-    return NOERROR;
-  }
-  return E_NOINTERFACE;
-}
-ULONG AudioDeviceWindowsWasapi::AddRef() {
-  // InterlockedIncrement(m_cRef);
-  // return m_cRef;
-  return 0;
-}
-ULONG AudioDeviceWindowsWasapi::Release() {
-  // Decrement the object's internal counter.
-  // ULONG ulRefCount = InterlockedDecrement(m_cRef);
-  // if (0 == m_cRef)
-  // {
-  //   delete this;
-  // }
-  // return ulRefCount;
-  return 0;
-}
-
 
 // ----------------------------------------------------------------------------
 //  ActiveAudioLayer
@@ -1002,7 +983,7 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker() {
   if (_renderDevice == nullptr) {
     // Refresh the selected rendering endpoint device using default device
     _renderDevice = _GetDefaultDevice(DeviceClass::AudioRender,
-                                      AudioDeviceRole::Default);
+                                      AudioDeviceRole::Communications);
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
       "using default audio playout device: ",
       rtc::ToUtf8(_renderDevice->Name->Data()));
@@ -1076,7 +1057,7 @@ int32_t AudioDeviceWindowsWasapi::InitMicrophone() {
   if (_captureDevice == nullptr) {
     // Refresh the selected capture endpoint device using default
     _captureDevice = _GetDefaultDevice(DeviceClass::AudioCapture,
-                                       AudioDeviceRole::Default);
+                                       AudioDeviceRole::Communications);
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
       "using default device");
   }
@@ -1238,8 +1219,9 @@ Exit:
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::SetWaveOutVolume(uint16_t volumeLeft,
-  uint16_t volumeRight) {
-    return -1;
+  uint16_t volumeRight)
+{
+  return -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -1247,10 +1229,10 @@ int32_t AudioDeviceWindowsWasapi::SetWaveOutVolume(uint16_t volumeLeft,
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsWasapi::WaveOutVolume(uint16_t& volumeLeft,
-  uint16_t& volumeRight) const {
-    return -1;
+  uint16_t& volumeRight) const
+{
+  return -1;
 }
-
 // ----------------------------------------------------------------------------
 //  MaxSpeakerVolume
 //
@@ -1933,10 +1915,10 @@ int32_t AudioDeviceWindowsWasapi::PlayoutDeviceName(
     return -1;
   }
 
-  memset(name, 0, kAdmMaxDeviceNameSize);
+  memset(name, 0, sizeof(name));
 
   if (guid != NULL) {
-    memset(guid, 0, kAdmMaxGuidSize);
+    memset(guid, 0, sizeof(guid));
   }
 
   CriticalSectionScoped lock(&_critSect);
@@ -2009,10 +1991,10 @@ int32_t AudioDeviceWindowsWasapi::RecordingDeviceName(
     return -1;
   }
 
-  memset(name, 0, kAdmMaxDeviceNameSize);
+  memset(name, 0, sizeof(name));
 
   if (guid != NULL) {
-    memset(guid, 0, kAdmMaxGuidSize);
+    memset(guid, 0, sizeof(guid));
   }
 
   CriticalSectionScoped lock(&_critSect);
@@ -4068,7 +4050,14 @@ bool AudioDeviceWindowsWasapi::BuiltInAECIsEnabled() const {
 }
 
 bool AudioDeviceWindowsWasapi::BuiltInAECIsAvailable() const {
+#if defined(_M_ARM)
+  // There is a bug in the OS preventing the Effects detection (Noise SUppression and AEC) to work for Win10 Phones. 
+  // The bug is severe enough that it's not only the detection that doesn't work but the activation of the effect.
+  // Since turning software AEC is quite costly for the phone, we return true to prevent it until that bug is fixed
+  return true;
+#else
   return CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType::AcousticEchoCancellation);
+#endif
 }
 
 int32_t AudioDeviceWindowsWasapi::EnableBuiltInNS(bool enable) {
@@ -4103,48 +4092,41 @@ bool AudioDeviceWindowsWasapi::BuiltInAGCIsAvailable() const {
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInCaptureCapability(Windows::Media::Effects::AudioEffectType effect) const {
 
-    // Check to see if the current device supports the capability
+  // Check to see if the current device supports the capability
 
-    // There's an issue in this code, where we are not detecting properly on WIn Phone 10
-    // For now return always true, because we know noise suppression and AEC is supported on all devices
-    // We need to revisit this function before end of Feb 2016
-    return true;
+  Windows::Media::Effects::AudioCaptureEffectsManager^ effManager;
 
-    /*
-    Windows::Media::Effects::AudioCaptureEffectsManager^ effManager;
+  Windows::Media::Capture::MediaCategory Category;
+  Category = Windows::Media::Capture::MediaCategory::Communications;
 
-    Windows::Media::Capture::MediaCategory Category;
-    Category = Windows::Media::Capture::MediaCategory::Communications;
+  Platform::String^ deviceId;
 
-    Platform::String^ deviceId;
+  if (_deviceIdStringIn != nullptr)
+  {
+    deviceId = _deviceIdStringIn;
+  }
+  else
+  {
+    deviceId = _captureDevice->Id;
+  }
 
-    if (_deviceIdStringIn != nullptr)
-    {
-        deviceId = _deviceIdStringIn;
-    }
-    else
-    {
-        deviceId = _defaultCaptureDevice->Id;
-    }
-
-    effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioCaptureEffectsManager(
+  effManager = Windows::Media::Effects::AudioEffectsManager::CreateAudioCaptureEffectsManager(
         deviceId, Category, Windows::Media::AudioProcessing::Default);
 
-    Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
+  Windows::Foundation::Collections::IVectorView<Windows::Media::Effects::AudioEffect^>^ effectsList;
 
-    effectsList = effManager->GetAudioCaptureEffects();
+  effectsList = effManager->GetAudioCaptureEffects();
 
-    unsigned int i;
-    // Iterate through the supported effect to see if Echo Cancellation is supported
-    for (i = 0; i < effectsList->Size; i++)
+  unsigned int i;
+  // Iterate through the supported effect to see if Echo Cancellation is supported
+  for (i = 0; i < effectsList->Size; i++)
+  {
+    if (effectsList->GetAt(i)->AudioEffectType == effect)
     {
-        if (effectsList->GetAt(i)->AudioEffectType == effect)
-        {
-            return true;
-        }
+      return true;
     }
-    return false;
-    */
+  }
+  return false;
 }
 
 bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effects::AudioEffectType effect) const {
@@ -4491,6 +4473,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll() {
       DeviceInformation::FindAllAsync(DeviceClass::AudioCapture)).then(
       [this](concurrency::task<DeviceInformationCollection^> getDevicesTask) {
       _ptrCaptureCollection = getDevicesTask.get();
+
     }, concurrency::task_continuation_context::use_arbitrary()).wait();
   }
   catch (Platform::InvalidArgumentException^) {
@@ -4552,29 +4535,9 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
     deviceId->Data(),
     AudioInterfaceActivator::ActivatorDeviceType::eInputDevice).then(
     [deviceId](Microsoft::WRL::ComPtr<IAudioClient2> captureClient) {
-    Platform::String^ rawProcessingSupportedKey =
-      L"System.Devices.AudioDevice.RawProcessingSupported";
-    Platform::Collections::Vector<Platform::String ^> ^properties =
-      ref new Platform::Collections::Vector<Platform::String ^>();
-    properties->Append(rawProcessingSupportedKey);
-
     return concurrency::create_task(
       Windows::Devices::Enumeration::DeviceInformation::
-      CreateFromIdAsync(deviceId, properties)).then(
-      [rawProcessingSupportedKey, captureClient](Windows::Devices::
-      Enumeration::DeviceInformation ^device) {
-      bool rawIsSupported = false;
-      if (device->Properties->HasKey(rawProcessingSupportedKey) == true) {
-        auto val = device->Properties->Lookup(rawProcessingSupportedKey);
-        if (val != nullptr) {
-          rawIsSupported = safe_cast<bool>(val);
-        } else {
-          // Sometimes the property is set but the value is empty.
-          // Assume it means it's true.
-          rawIsSupported = true;
-        }
-      }
-    }).wait();
+      CreateFromIdAsync(deviceId)).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   return hr;
@@ -4597,29 +4560,9 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut(Platform::String^ de
     AudioInterfaceActivator::ActivatorDeviceType::eOutputDevice).then(
     [deviceId](Microsoft::WRL::ComPtr<IAudioClient2 >
                             renderClient) {
-      Platform::String^ rawProcessingSupportedKey =
-        L"System.Devices.AudioDevice.RawProcessingSupported";
-      Platform::Collections::Vector<Platform::String ^> ^properties =
-        ref new Platform::Collections::Vector<Platform::String ^>();
-      properties->Append(rawProcessingSupportedKey);
-
       return concurrency::create_task(
         Windows::Devices::Enumeration::DeviceInformation::
-        CreateFromIdAsync(deviceId, properties)).then(
-        [rawProcessingSupportedKey, renderClient](
-        Windows::Devices::Enumeration::DeviceInformation ^device) {
-          bool rawIsSupported = false;
-          if (device->Properties->HasKey(rawProcessingSupportedKey) == true) {
-            auto val = device->Properties->Lookup(rawProcessingSupportedKey);
-            if (val != nullptr) {
-              rawIsSupported = safe_cast<bool>(val);
-            } else {
-              // Sometimes the property is set but the value is empty.
-              // Assume it means it's true.
-              rawIsSupported = true;
-            }
-          }
-        }).wait();
+        CreateFromIdAsync(deviceId)).wait();
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
   return hr;

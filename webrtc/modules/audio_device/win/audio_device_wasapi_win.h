@@ -253,13 +253,6 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
  public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
- public:  // IUnknown interface methods
-  virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
-    LPVOID * ppvObj);
-  virtual ULONG STDMETHODCALLTYPE AddRef();
-  virtual ULONG STDMETHODCALLTYPE Release();
-
-
  private:
     bool KeyPressed() const;
 
