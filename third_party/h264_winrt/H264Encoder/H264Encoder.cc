@@ -546,4 +546,8 @@ void H264WinRTEncoderImpl::OnDroppedFrame(uint32_t timestamp) {
   }
 }
 
+const char* H264WinRTEncoderImpl::ImplementationName() const {
+  return "H264_MediaFoundation";
+}
+
 }  // namespace webrtc

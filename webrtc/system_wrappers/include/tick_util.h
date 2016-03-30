@@ -65,20 +65,10 @@ class TickTime {
   // Returns a TickInterval that is the difference in ticks beween rhs and lhs.
   friend TickInterval operator-(const TickTime& lhs, const TickTime& rhs);
 
-#ifdef WINRT
-  static void SyncWithNtp(int64_t timeFromNtpServer/*in ms*/);
-#endif
-
  private:
   static int64_t QueryOsForTicks();
 
   int64_t ticks_;
-#ifdef WINRT
-  static void InitializeAppStartTimestamp();
-  static LARGE_INTEGER app_start_time_; //record app start time in ms since epoch
-  static int64_t time_since_os_start_; //record the time period between the machine starts and the app starts
-  static int64_t os_ticks_per_second_; 
-#endif
 };
 
 // Represents a time delta in ticks.
@@ -159,22 +149,13 @@ inline bool operator>=(const TickInterval& lhs, const TickInterval& rhs) {
 
 inline TickTime::TickTime()
     : ticks_(0) {
-#ifdef WINRT
-  InitializeAppStartTimestamp();
-#endif
 }
 
 inline TickTime::TickTime(int64_t ticks)
     : ticks_(ticks) {
-#ifdef WINRT
-  InitializeAppStartTimestamp();
-#endif
 }
 
 inline TickTime TickTime::Now() {
-#ifdef WINRT
-  InitializeAppStartTimestamp();
-#endif
   return TickTime(QueryOsForTicks());
 }
 

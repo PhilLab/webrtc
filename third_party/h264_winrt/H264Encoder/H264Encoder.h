@@ -50,6 +50,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
   void OnDroppedFrame(uint32_t timestamp) override;
+  const char* ImplementationName() const override;
 
   // === IH264EncodingCallback overrides ===
   void OnH264Encoded(ComPtr<IMFSample> sample) override;

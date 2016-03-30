@@ -31,6 +31,7 @@
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/system_wrappers/include/utf_util_win.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/base/timeutils.h"
 #include "third_party/h264_winrt/h264_winrt_factory.h"
 #include "webrtc/base/trace_event.h"
 
@@ -742,7 +743,7 @@ IVector<CodecInfo^>^ WebRTC::GetVideoCodecs() {
 }
 
 void WebRTC::SynNTPTime(int64 currentNtpTime) {
-  webrtc::TickTime::SyncWithNtp(currentNtpTime);
+  rtc::SyncWithNtp(currentNtpTime);
 }
 
 double WebRTC::CpuUsage::get() {

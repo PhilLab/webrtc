@@ -50,6 +50,7 @@ H264WinRTDecoderImpl::~H264WinRTDecoderImpl() {
 
 int H264WinRTDecoderImpl::InitDecode(const VideoCodec* inst,
   int number_of_cores) {
+  LOG(LS_INFO) << "H264WinRTDecoderImpl::InitDecode()\n";
   // Nothing to do here, decoder acts as a passthrough
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -152,6 +153,10 @@ void H264WinRTDecoderImpl::UpdateVideoFrameDimensions(const EncodedImage& input_
     width_ = w;
     height_ = h;
   }
+}
+
+const char* H264WinRTDecoderImpl::ImplementationName() const {
+  return "H264_MediaFoundation";
 }
 
 }  // namespace webrtc
