@@ -776,12 +776,8 @@ void WebRTC::SetPreferredVideoCaptureFormat(int frameWidth,
                                             int frameHeight, int fps) {
   globals::gPreferredVideoCaptureFormat.interval =
     cricket::VideoFormat::FpsToInterval(fps);
-
   globals::gPreferredVideoCaptureFormat.width = frameWidth;
-
   globals::gPreferredVideoCaptureFormat.height = frameHeight;
-
-  globals::gPeerConnectionFactory->SetPreferredCaptureFormat(globals::gPreferredVideoCaptureFormat);
 }
 
 const unsigned char* /*__cdecl*/ WebRTC::GetCategoryGroupEnabled(

@@ -171,9 +171,6 @@ class ChannelManager : public rtc::MessageHandler,
   typedef std::vector<VideoChannel*> VideoChannels;
   typedef std::vector<DataChannel*> DataChannels;
 
-  cricket::VideoFormat generateDesiredFormat(const cricket::VideoFormat&
-    desiredFormat);
-
   void Construct(MediaEngineInterface* me,
                  DataEngineInterface* dme,
                  CaptureManager* cm,
@@ -211,7 +208,6 @@ class ChannelManager : public rtc::MessageHandler,
   rtc::scoped_ptr<MediaEngineInterface> media_engine_;
   rtc::scoped_ptr<DataEngineInterface> data_media_engine_;
   rtc::scoped_ptr<CaptureManager> capture_manager_;
-  cricket::VideoFormat preferred_format_;
   bool initialized_;
   rtc::Thread* main_thread_;
   rtc::Thread* worker_thread_;

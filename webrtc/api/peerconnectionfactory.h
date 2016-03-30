@@ -96,10 +96,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   {
       return channel_manager_->media_engine();
   };
-  void SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat) override
-  {
-      channel_manager_->SetPreferredCaptureFormat(aFormat);
-  }
   //VoEHardware* GetVoEHardware() override
   //{
   //    return 0;

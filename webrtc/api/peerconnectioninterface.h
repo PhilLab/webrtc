@@ -622,8 +622,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   //virtual VoEHardware* GetVoEHardware() = 0;
 
-  virtual void SetPreferredCaptureFormat(const cricket::VideoFormat& aFormat) = 0;
-
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via
   // this interface.

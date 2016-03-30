@@ -22,6 +22,7 @@
 #include "webrtc/api/videosourceinterface.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/media/base/mediaengine.h"
+#include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
@@ -298,6 +299,10 @@ IAsyncOperation<Media^>^ Media::CreateMediaAsync() {
   return asyncOp;
 }
 
+namespace globals {
+  extern cricket::VideoFormat gPreferredVideoCaptureFormat;
+}
+
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
   RTCMediaStreamConstraints^ mediaStreamConstraints) {
   // TODO(WINRT): error handling - no permissions, no device for media type...
@@ -403,12 +408,19 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
 
         // Add a video track
         if (videoCapturer != nullptr) {
+          webrtc::FakeConstraints constraints;
+          constraints.SetMandatory(webrtc::MediaConstraintsInterface::kMinWidth, globals::gPreferredVideoCaptureFormat.width);
+          constraints.SetMandatory(webrtc::MediaConstraintsInterface::kMinHeight, globals::gPreferredVideoCaptureFormat.height);
+          constraints.SetMandatory(webrtc::MediaConstraintsInterface::kMaxWidth, globals::gPreferredVideoCaptureFormat.width);
+          constraints.SetMandatory(webrtc::MediaConstraintsInterface::kMaxHeight, globals::gPreferredVideoCaptureFormat.height);
+          constraints.SetMandatoryMaxFrameRate(cricket::VideoFormat::IntervalToFps(globals::gPreferredVideoCaptureFormat.height));
+
           LOG(LS_INFO) << "Creating video track.";
           rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
             globals::gPeerConnectionFactory->CreateVideoTrack(
             videoLabel,
             globals::gPeerConnectionFactory->CreateVideoSource(
-            videoCapturer, NULL)));
+            videoCapturer, &constraints)));
           LOG(LS_INFO) << "Adding video track to stream.";
           stream->AddTrack(video_track);
         }
