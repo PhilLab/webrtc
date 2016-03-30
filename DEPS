@@ -13,7 +13,7 @@ vars = {
 # behind proxies.
 deps = {
   'src/third_party/gflags/src':
-    Var('chromium_git') + '/external/github.com/gflags/gflags@e7390f9185c75f8d902c05ed7d20bb94eb914d0c',
+    Var('chromium_git') + '/external/github.com/gflags/gflags@03bebcb065c83beff83d50ae025a55a4bf94dfca',
 }
 
 deps_os = {
