@@ -25,11 +25,8 @@ CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
 CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
 
-# Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
-EXTRA_TRYBOTS = 'tryserver.webrtc:win_baremetal,mac_baremetal,linux_baremetal'
-
 COMMIT_POSITION_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
-CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION=(\d+)$')
+CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION = \'(\d+)\'$')
 ROLL_BRANCH_NAME = 'roll_chromium_revision'
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,13 +40,16 @@ import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
 from gclient import GClientKeywords
 
-CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.sh'
+CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.py'
 CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join('tools', 'clang', 'scripts',
-                                              'update.sh')
+                                              'update.py')
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
 ChangedDep = collections.namedtuple('ChangedDep',
                                     'path url current_rev new_rev')
+
+class RollError(Exception):
+  pass
 
 
 def ParseDepsDict(deps_content):
@@ -237,7 +237,7 @@ def CalculateChangedClang(new_cr_rev):
       match = CLANG_REVISION_RE.match(line)
       if match:
         return match.group(1)
-    return None
+    raise RollError('Could not parse Clang revision!')
 
   chromium_src_path = os.path.join(CHECKOUT_ROOT_DIR, 'chromium', 'src',
                                    CLANG_UPDATE_SCRIPT_LOCAL_PATH)
@@ -245,9 +245,9 @@ def CalculateChangedClang(new_cr_rev):
     current_lines = f.readlines()
   current_rev = GetClangRev(current_lines)
 
-  new_clang_update_sh = ReadRemoteCrFile(CLANG_UPDATE_SCRIPT_URL_PATH,
-                                         new_cr_rev).splitlines()
-  new_rev = GetClangRev(new_clang_update_sh)
+  new_clang_update_py = ReadRemoteCrFile(CLANG_UPDATE_SCRIPT_URL_PATH,
+                                             new_cr_rev).splitlines()
+  new_rev = GetClangRev(new_clang_update_py)
   return ChangedDep(CLANG_UPDATE_SCRIPT_LOCAL_PATH, None, current_rev, new_rev)
 
 
@@ -292,7 +292,6 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
     commit_msg.append('No update to Clang.\n')
 
   commit_msg.append('TBR=%s' % tbr_authors)
-  commit_msg.append('CQ_EXTRA_TRYBOTS=%s' % EXTRA_TRYBOTS)
   return '\n'.join(commit_msg)
 
 
@@ -358,12 +357,6 @@ def _UploadCL(dry_run, rietveld_email=None):
     _RunCommand(cmd, extra_env={'EDITOR': 'true'})
 
 
-def _LaunchTrybots(dry_run, skip_try):
-  logging.info('Sending tryjobs...')
-  if not dry_run and not skip_try:
-    _RunCommand(['git', 'cl', 'try'])
-
-
 def _SendToCQ(dry_run, skip_cq):
   logging.info('Sending the CL to the CQ...')
   if not dry_run and not skip_cq:
@@ -389,8 +382,6 @@ def main():
   p.add_argument('--allow-reverse', action='store_true', default=False,
                  help=('Allow rolling back in time (disabled by default but '
                        'may be useful to be able do to manually).'))
-  p.add_argument('-s', '--skip-try', action='store_true', default=False,
-                 help='Skip sending tryjobs (default: %(default)s)')
   p.add_argument('--skip-cq', action='store_true', default=False,
                  help='Skip sending the CL to the CQ (default: %(default)s)')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -447,7 +438,6 @@ def main():
   UpdateDeps(deps_filename, current_cr_rev, new_cr_rev)
   _LocalCommit(commit_msg, opts.dry_run)
   _UploadCL(opts.dry_run, opts.rietveld_email)
-  _LaunchTrybots(opts.dry_run, opts.skip_try)
   _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
 

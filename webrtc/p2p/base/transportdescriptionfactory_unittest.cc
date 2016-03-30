@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/fakesslidentity.h"
@@ -26,11 +26,10 @@ using cricket::TransportOptions;
 class TransportDescriptionFactoryTest : public testing::Test {
  public:
   TransportDescriptionFactoryTest()
-      : cert1_(rtc::RTCCertificate::Create(scoped_ptr<rtc::SSLIdentity>(
-          new rtc::FakeSSLIdentity("User1")).Pass())),
-        cert2_(rtc::RTCCertificate::Create(scoped_ptr<rtc::SSLIdentity>(
-          new rtc::FakeSSLIdentity("User2")).Pass())) {
-  }
+      : cert1_(rtc::RTCCertificate::Create(
+            scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("User1")))),
+        cert2_(rtc::RTCCertificate::Create(
+            scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("User2")))) {}
 
   void CheckDesc(const TransportDescription* desc,
                  const std::string& opt, const std::string& ice_ufrag,

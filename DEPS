@@ -9,22 +9,17 @@ vars = {
   'chromium_revision': '38ed253f09644f26fd7a7785b7fc0cc7ba911b4f',
 }
 
-# NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
-# https; the latter can cause problems for users behind proxies.
+# NOTE: Use http rather than https; the latter can cause problems for users
+# behind proxies.
 deps = {
-  # When rolling gflags, also update
-  # https://chromium.googlesource.com/chromium/deps/webrtc/webrtc.DEPS
   'src/third_party/gflags/src':
-    'git+https://dpeted.visualstudio.com/DefaultCollection/TED%20Consumer/_git/RTC_gflags@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
-
-  'src/third_party/junit-jar':
-    Var('chromium_git') + '/external/webrtc/deps/third_party/junit@f35596b476aa6e62fd3b3857b9942ddcd13ce35e', # from svn revision 3367
+    Var('chromium_git') + '/external/github.com/gflags/gflags@e7390f9185c75f8d902c05ed7d20bb94eb914d0c',
 }
 
 deps_os = {
   'win': {
     'src/third_party/winsdk_samples/src':
-      Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71@c0cbedd854cb610a53226d9817416c4ab9a7d1e9', # from svn revision 7951
+      Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71@e71b549167a665d7424d6f1dadfbff4b4aad1589',
   },
 }
 
@@ -42,6 +37,7 @@ include_rules = [
   '+testing',
   '+third_party',
   '+unicode',
+  '+usrsctplib',
   '+webrtc',
   '+vpx',
 ]
@@ -102,6 +98,7 @@ hooks = [
                '--recursive',
                '--num_threads=10',
                '--no_auth',
+               '--quiet',
                '--bucket', 'chromium-webrtc-resources',
                'src/resources'],
   },

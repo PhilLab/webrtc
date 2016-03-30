@@ -12,8 +12,8 @@
 #include "third_party/h264_winrt/h264_winrt_factory.h"
 #include "third_party/h264_winrt/H264Encoder/H264Encoder.h"
 #include "third_party/h264_winrt/H264Decoder/H264Decoder.h"
-#include "talk/media/webrtc/webrtcvideoencoderfactory.h"
-#include "talk/media/webrtc/webrtcvideodecoderfactory.h"
+#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 
 
 namespace webrtc {

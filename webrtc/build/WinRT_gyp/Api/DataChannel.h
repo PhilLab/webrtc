@@ -13,7 +13,7 @@
 
 #include <collection.h>
 #include "GlobalObserver.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "Delegates.h"
 

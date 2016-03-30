@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/opus/include/audio_encoder_opus.h"
+#include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/opus/include/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 
 namespace webrtc {
 
@@ -114,7 +114,7 @@ int AudioEncoderOpus::SampleRateHz() const {
   return kSampleRateHz;
 }
 
-int AudioEncoderOpus::NumChannels() const {
+size_t AudioEncoderOpus::NumChannels() const {
   return config_.num_channels;
 }
 
@@ -128,38 +128,6 @@ size_t AudioEncoderOpus::Max10MsFramesInAPacket() const {
 
 int AudioEncoderOpus::GetTargetBitrate() const {
   return config_.bitrate_bps;
-}
-
-AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
-    uint32_t rtp_timestamp,
-    rtc::ArrayView<const int16_t> audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
-  if (input_buffer_.empty())
-    first_timestamp_in_buffer_ = rtp_timestamp;
-  RTC_DCHECK_EQ(static_cast<size_t>(SamplesPer10msFrame()), audio.size());
-  input_buffer_.insert(input_buffer_.end(), audio.cbegin(), audio.cend());
-  if (input_buffer_.size() <
-      (static_cast<size_t>(Num10msFramesPerPacket()) * SamplesPer10msFrame())) {
-    return EncodedInfo();
-  }
-  RTC_CHECK_EQ(
-      input_buffer_.size(),
-      static_cast<size_t>(Num10msFramesPerPacket()) * SamplesPer10msFrame());
-  int status = WebRtcOpus_Encode(
-      inst_, &input_buffer_[0],
-      rtc::CheckedDivExact(input_buffer_.size(),
-                           static_cast<size_t>(config_.num_channels)),
-      rtc::saturated_cast<int16_t>(max_encoded_bytes), encoded);
-  RTC_CHECK_GE(status, 0);  // Fails only if fed invalid data.
-  input_buffer_.clear();
-  EncodedInfo info;
-  info.encoded_bytes = static_cast<size_t>(status);
-  info.encoded_timestamp = first_timestamp_in_buffer_;
-  info.payload_type = config_.payload_type;
-  info.send_even_if_empty = true;  // Allows Opus to send empty packets.
-  info.speech = (status > 0);
-  return info;
 }
 
 void AudioEncoderOpus::Reset() {
@@ -214,11 +182,52 @@ void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.bitrate_bps));
 }
 
-int AudioEncoderOpus::Num10msFramesPerPacket() const {
-  return rtc::CheckedDivExact(config_.frame_size_ms, 10);
+AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
+    uint32_t rtp_timestamp,
+    rtc::ArrayView<const int16_t> audio,
+    rtc::Buffer* encoded) {
+
+  if (input_buffer_.empty())
+    first_timestamp_in_buffer_ = rtp_timestamp;
+
+  input_buffer_.insert(input_buffer_.end(), audio.cbegin(), audio.cend());
+  if (input_buffer_.size() <
+      (Num10msFramesPerPacket() * SamplesPer10msFrame())) {
+    return EncodedInfo();
+  }
+  RTC_CHECK_EQ(input_buffer_.size(),
+               Num10msFramesPerPacket() * SamplesPer10msFrame());
+
+  const size_t max_encoded_bytes = MaxEncodedBytes();
+  EncodedInfo info;
+  info.encoded_bytes =
+      encoded->AppendData(
+          max_encoded_bytes, [&] (rtc::ArrayView<uint8_t> encoded) {
+            int status = WebRtcOpus_Encode(
+                inst_, &input_buffer_[0],
+                rtc::CheckedDivExact(input_buffer_.size(),
+                                     config_.num_channels),
+                rtc::saturated_cast<int16_t>(max_encoded_bytes),
+                encoded.data());
+
+            RTC_CHECK_GE(status, 0);  // Fails only if fed invalid data.
+
+            return static_cast<size_t>(status);
+          });
+  input_buffer_.clear();
+
+  info.encoded_timestamp = first_timestamp_in_buffer_;
+  info.payload_type = config_.payload_type;
+  info.send_even_if_empty = true;  // Allows Opus to send empty packets.
+  info.speech = (info.encoded_bytes > 0);
+  return info;
 }
 
-int AudioEncoderOpus::SamplesPer10msFrame() const {
+size_t AudioEncoderOpus::Num10msFramesPerPacket() const {
+  return static_cast<size_t>(rtc::CheckedDivExact(config_.frame_size_ms, 10));
+}
+
+size_t AudioEncoderOpus::SamplesPer10msFrame() const {
   return rtc::CheckedDivExact(kSampleRateHz, 100) * config_.num_channels;
 }
 

@@ -18,19 +18,24 @@
       'type': 'none',
       'dependencies': [
         'webrtc/webrtc.gyp:*',
-        'talk/libjingle.gyp:*',
         '<@(webrtc_root_additional_dependencies)',
       ],
       'conditions': [
         ['include_examples==1', {
           'dependencies': [
-            'webrtc/libjingle_examples.gyp:*',
             'webrtc/webrtc_examples.gyp:*',
           ],
         }],
-        ['include_tests==1', {
+        ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
           'dependencies': [
-            'talk/libjingle_tests.gyp:*',
+            'talk/app/webrtc/legacy_objc_api.gyp:*',
+          ],
+          'conditions': [
+            ['include_tests==1', {
+              'dependencies': [
+                'talk/app/webrtc/legacy_objc_api_tests.gyp:*',
+              ],
+            }],
           ],
         }],
         ['OS=="win" and OS_RUNTIME=="winrt"', {

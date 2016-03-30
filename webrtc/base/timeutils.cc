@@ -38,6 +38,63 @@ namespace rtc {
 
 const uint32_t HALF = 0x80000000;
 
+#if defined(WEBRTC_WIN)
+static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
+#endif
+
+#ifdef WINRT
+static const uint64 kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
+int64_t gAppStartTime = -1;  // Record app start time
+int64_t gTimeSinceOsStart = -1;  // when app start,
+int64_t gOsTicksPerSecond = -1;
+
+//Warning, right now, the gAppStartTime and gTimeSinceOsStart are not protected with mutex.
+//we only call this function to sync the clock of testing device with ntp when the app starts.
+//if we want to call this function periodically in the runtime,then, suggest to use mutex 
+void SyncWithNtp(int64_t timeFromNtpServer /*in ms*/) {
+  TIME_ZONE_INFORMATION timeZone;
+  GetTimeZoneInformation(&timeZone);
+  int64_t timeZoneBias = (int64_t)timeZone.Bias * 60 * 1000 * 1000 * 1000;  // ns
+
+  gAppStartTime = (timeFromNtpServer - kNTPTimeToUnixTimeEpochOffset) * 1000000 - timeZoneBias;
+
+  // Since we just update the app reference time, need to update the reference point as well.
+
+  LARGE_INTEGER qpfreq;
+  QueryPerformanceFrequency(&qpfreq);
+  gOsTicksPerSecond = qpfreq.QuadPart;
+
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  gTimeSinceOsStart = (int64_t)((((uint64_t)qpcnt.QuadPart) * 100000ull / ((uint64_t)gOsTicksPerSecond)) * 10000ull);  // ns
+}
+
+inline void InitializeAppStartTimestamp() {
+  if (gTimeSinceOsStart != -1)  // already initialized
+    return;
+
+  TIME_ZONE_INFORMATION timeZone;
+  GetTimeZoneInformation(&timeZone);
+  int64_t timeZoneBias = (int64_t)timeZone.Bias * 60 * 1000 * 1000 * 1000;  // ns
+  FILETIME ft; // In hns.
+  GetSystemTimeAsFileTime(&ft);  // this will give us system file in UTC format
+  LARGE_INTEGER li;
+  li.HighPart = ft.dwHighDateTime;
+  li.LowPart = ft.dwLowDateTime;
+
+  gAppStartTime = (li.QuadPart - kFileTimeToUnixTimeEpochOffset) * 100 // ns
+                             - timeZoneBias;
+
+  LARGE_INTEGER qpfreq;
+  QueryPerformanceFrequency(&qpfreq);
+  gOsTicksPerSecond = qpfreq.QuadPart;
+
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  gTimeSinceOsStart = (int64_t)((((uint64_t)qpcnt.QuadPart) * 100000ull / ((uint64_t)gOsTicksPerSecond)) * 10000ull);  // ns
+}
+#endif
+
 uint64_t TimeNanos() {
   int64_t ticks = 0;
 #if defined(WEBRTC_MAC)
@@ -59,7 +116,11 @@ uint64_t TimeNanos() {
   ticks = kNumNanosecsPerSec * static_cast<int64_t>(ts.tv_sec) +
           static_cast<int64_t>(ts.tv_nsec);
 #elif defined(WINRT)
-  ticks = webrtc::Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() * 1000 * 1000;
+  InitializeAppStartTimestamp();
+  LARGE_INTEGER qpcnt;
+  QueryPerformanceCounter(&qpcnt);
+  ticks = (int64_t)((((uint64_t)qpcnt.QuadPart) * 100000ull / ((uint64_t)gOsTicksPerSecond)) * 10000ull);  // ns
+  ticks = gAppStartTime + ticks - gTimeSinceOsStart;
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64_t num_wrap_timegettime = 0;
@@ -80,6 +141,8 @@ uint64_t TimeNanos() {
   // TODO: Calculate with nanosecond precision.  Otherwise, we're just
   // wasting a multiply and divide when doing Time() on Windows.
   ticks = ticks * kNumNanosecsPerMillisec;
+#else
+#error Unsupported platform.
 #endif
   return ticks;
 }
@@ -93,7 +156,6 @@ uint64_t TimeMicros() {
 }
 
 #if defined(WEBRTC_WIN)
-static const uint64_t kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
 
 struct timeval {
   long tv_sec, tv_usec;  // NOLINT
@@ -208,6 +270,50 @@ int64_t TimestampWrapAroundHandler::Unwrap(uint32_t ts) {
   last_ts_ = ts;
   int64_t unwrapped_ts = ts + (num_wrap_ << 32);
   return unwrapped_ts;
+}
+
+int64_t TmToSeconds(const std::tm& tm) {
+  static short int mdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  static short int cumul_mdays[12] = {0,   31,  59,  90,  120, 151,
+                                      181, 212, 243, 273, 304, 334};
+  int year = tm.tm_year + 1900;
+  int month = tm.tm_mon;
+  int day = tm.tm_mday - 1;  // Make 0-based like the rest.
+  int hour = tm.tm_hour;
+  int min = tm.tm_min;
+  int sec = tm.tm_sec;
+
+  bool expiry_in_leap_year = (year % 4 == 0 &&
+                              (year % 100 != 0 || year % 400 == 0));
+
+  if (year < 1970)
+    return -1;
+  if (month < 0 || month > 11)
+    return -1;
+  if (day < 0 || day >= mdays[month] + (expiry_in_leap_year && month == 2 - 1))
+    return -1;
+  if (hour < 0 || hour > 23)
+    return -1;
+  if (min < 0 || min > 59)
+    return -1;
+  if (sec < 0 || sec > 59)
+    return -1;
+
+  day += cumul_mdays[month];
+
+  // Add number of leap days between 1970 and the expiration year, inclusive.
+  day += ((year / 4 - 1970 / 4) - (year / 100 - 1970 / 100) +
+          (year / 400 - 1970 / 400));
+
+  // We will have added one day too much above if expiration is during a leap
+  // year, and expiration is in January or February.
+  if (expiry_in_leap_year && month <= 2 - 1) // |month| is zero based.
+    day -= 1;
+
+  // Combine all variables into seconds from 1970-01-01 00:00 (except |month|
+  // which was accumulated into |day| above).
+  return (((static_cast<int64_t>
+            (year - 1970) * 365 + day) * 24 + hour) * 60 + min) * 60 + sec;
 }
 
 } // namespace rtc

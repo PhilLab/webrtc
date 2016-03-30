@@ -12,13 +12,13 @@
 
 #include <mfidl.h>
 #include <collection.h>
-#include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/app/webrtc/mediaconstraintsinterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "GlobalObserver.h"
-#include "talk/media/devices/devicemanager.h"
-#include "talk/media/devices/winrtdevicemanager.h"
+#include "webrtc/media/devices/devicemanager.h"
+#include "webrtc/media/devices/winrtdevicemanager.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "Delegates.h"
 
@@ -531,6 +531,12 @@ namespace webrtc_winrt_api {
                             DeviceInformation^ args);
     void OnMediaDeviceRemoved(DeviceWatcher^ sender,
                               DeviceInformationUpdate^ args);
+    static int GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware, 
+                                          const std::string& name,
+                                          const std::string& id);
+    static int GetAudioCaptureDeviceIndex(webrtc::VoEHardware* voeHardware,
+                                           const std::string& name,
+                                           const std::string& id);
 
     rtc::scoped_ptr<cricket::DeviceManagerInterface> _dev_manager;
     cricket::Device _selectedVideoDevice;

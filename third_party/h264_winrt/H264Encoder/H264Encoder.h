@@ -21,7 +21,7 @@
 #include "Utils/SampleAttributeQueue.h"
 #include "webrtc/video_encoder.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/rtp_rtcp/source/h264_bitstream_parser.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 
@@ -50,6 +50,7 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
   void OnDroppedFrame(uint32_t timestamp) override;
+  const char* ImplementationName() const override;
 
   // === IH264EncodingCallback overrides ===
   void OnH264Encoded(ComPtr<IMFSample> sample) override;
@@ -59,8 +60,8 @@ class H264WinRTEncoderImpl : public VideoEncoder, public IH264EncodingCallback {
   int InitEncoderWithSettings(const VideoCodec* inst);
 
  private:
-  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _lock;
-  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _callbackLock;
+  std::unique_ptr<webrtc::CriticalSectionWrapper> _lock;
+  std::unique_ptr<webrtc::CriticalSectionWrapper> _callbackLock;
   bool inited_;
   const CodecSpecificInfo* codecSpecificInfo_;
   ComPtr<IMFSinkWriter> sinkWriter_;

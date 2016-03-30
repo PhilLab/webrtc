@@ -35,10 +35,9 @@ class UDPPort : public Port {
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
-                         bool emit_localhost_for_anyaddress) {
-    UDPPort* port = new UDPPort(thread, factory, network, socket,
-                                username, password, origin,
-                                emit_localhost_for_anyaddress);
+                         bool emit_local_for_anyaddress) {
+    UDPPort* port = new UDPPort(thread, factory, network, socket, username,
+                                password, origin, emit_local_for_anyaddress);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -55,11 +54,10 @@ class UDPPort : public Port {
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
-                         bool emit_localhost_for_anyaddress) {
-    UDPPort* port = new UDPPort(thread, factory, network,
-                                ip, min_port, max_port,
-                                username, password, origin,
-                                emit_localhost_for_anyaddress);
+                         bool emit_local_for_anyaddress) {
+    UDPPort* port =
+        new UDPPort(thread, factory, network, ip, min_port, max_port, username,
+                    password, origin, emit_local_for_anyaddress);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -97,12 +95,25 @@ class UDPPort : public Port {
     OnReadPacket(socket, data, size, remote_addr, packet_time);
     return true;
   }
+  virtual bool SupportsProtocol(const std::string& protocol) const {
+    return protocol == UDP_PROTOCOL_NAME;
+  }
 
   void set_stun_keepalive_delay(int delay) {
     stun_keepalive_delay_ = delay;
   }
   int stun_keepalive_delay() const {
     return stun_keepalive_delay_;
+  }
+
+  // Visible for testing.
+  int stun_keepalive_lifetime() const { return stun_keepalive_lifetime_; }
+  void set_stun_keepalive_lifetime(int lifetime) {
+    stun_keepalive_lifetime_ = lifetime;
+  }
+  // Returns true if there is a pending request with type |msg_type|.
+  bool HasPendingRequest(int msg_type) {
+    return requests_.HasRequest(msg_type);
   }
 
  protected:
@@ -115,7 +126,7 @@ class UDPPort : public Port {
           const std::string& username,
           const std::string& password,
           const std::string& origin,
-          bool emit_localhost_for_anyaddress);
+          bool emit_local_for_anyaddress);
 
   UDPPort(rtc::Thread* thread,
           rtc::PacketSocketFactory* factory,
@@ -124,7 +135,7 @@ class UDPPort : public Port {
           const std::string& username,
           const std::string& password,
           const std::string& origin,
-          bool emit_localhost_for_anyaddress);
+          bool emit_local_for_anyaddress);
 
   bool Init();
 
@@ -149,6 +160,12 @@ class UDPPort : public Port {
   void MaybePrepareStunCandidate();
 
   void SendStunBindingRequests();
+
+  // Helper function which will set |addr|'s IP to the default local address if
+  // |addr| is the "any" address and |emit_local_for_anyaddress_| is true. When
+  // returning false, it indicates that the operation has failed and the
+  // address shouldn't be used by any candidate.
+  bool MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const;
 
  private:
   // A helper class which can be called repeatedly to resolve multiple
@@ -210,9 +227,11 @@ class UDPPort : public Port {
   rtc::scoped_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
+  int stun_keepalive_lifetime_;
 
-  // This is true when PORTALLOCATOR_ENABLE_LOCALHOST_CANDIDATE is specified.
-  bool emit_localhost_for_anyaddress_;
+  // This is true by default and false when
+  // PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE is specified.
+  bool emit_local_for_anyaddress_;
 
   friend class StunBindingRequest;
 };

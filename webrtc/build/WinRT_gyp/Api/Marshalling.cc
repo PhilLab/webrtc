@@ -13,7 +13,7 @@
 #include <map>
 
 #include "webrtc/p2p/base/candidate.h"
-#include "talk/app/webrtc/webrtcsdp.h"
+#include "webrtc/api/webrtcsdp.h"
 #include "webrtc/build/WinRT_gyp/Api/RTCStatsReport.h"
 
 using webrtc_winrt_api::RTCBundlePolicy;
@@ -167,8 +167,12 @@ namespace webrtc_winrt_api_internal {
     webrtc::StatsReport::kStatsValueNameBytesReceived },
   { RTCStatsValueName::StatsValueNameBytesSent,
     webrtc::StatsReport::kStatsValueNameBytesSent },
+  { RTCStatsValueName::StatsValueNameCodecImplementationName,
+    webrtc::StatsReport::kStatsValueNameCodecImplementationName },
   { RTCStatsValueName::StatsValueNameDataChannelId,
     webrtc::StatsReport::kStatsValueNameDataChannelId },
+  { RTCStatsValueName::StatsValueNameMediaType,
+    webrtc::StatsReport::kStatsValueNameMediaType },
   { RTCStatsValueName::StatsValueNamePacketsLost,
     webrtc::StatsReport::kStatsValueNamePacketsLost },
   { RTCStatsValueName::StatsValueNamePacketsReceived,

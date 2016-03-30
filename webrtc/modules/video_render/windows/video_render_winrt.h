@@ -19,7 +19,7 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_render/windows/i_video_render_win.h"
-#include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/video_render_defines.h"
 #include "webrtc/modules/video_render/windows/video_render_source_winrt.h"
 
 namespace webrtc {
@@ -195,7 +195,7 @@ class VideoRenderWinRT : IVideoRenderWin {
  private:
   CriticalSectionWrapper& ref_critsect_;
   Trace* trace_;
-  rtc::scoped_ptr<webrtc::ThreadWrapper> screen_update_thread_;
+  rtc::scoped_ptr<rtc::PlatformThread> screen_update_thread_;
   EventTimerWrapper* screen_update_event_;
 
   VideoChannelWinRT* channel_;

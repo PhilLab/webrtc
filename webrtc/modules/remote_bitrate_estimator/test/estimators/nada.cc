@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/nada.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
@@ -63,7 +64,7 @@ void NadaBweReceiver::ReceivePacket(int64_t arrival_time_ms,
   }
 
   delay_signal_ms_ = delay_ms - baseline_delay_ms_;  // Refered as d_n.
-  const int kMedian = ARRAY_SIZE(last_delays_ms_);
+  const int kMedian = arraysize(last_delays_ms_);
   last_delays_ms_[(last_delays_index_++) % kMedian] = delay_signal_ms_;
   int size = std::min(last_delays_index_, kMedian);
 
@@ -177,7 +178,8 @@ void NadaBweSender::GiveFeedback(const FeedbackPacket& feedback) {
 
   // Following parameters might be optimized.
   const int64_t kQueuingDelayUpperBoundMs = 10;
-  const float kDerivativeUpperBound = 10.0f / min_feedback_delay_ms_;
+  const float kDerivativeUpperBound =
+      10.0f / std::max<int64_t>(1, min_feedback_delay_ms_);
   // In the modified version, a higher kMinUpperBound allows a higher d_hat
   // upper bound for calling AcceleratedRampUp.
   const float kProportionalityDelayBits = 20.0f;
@@ -236,8 +238,7 @@ int64_t NadaBweSender::TimeUntilNextProcess() {
   return 100;
 }
 
-int NadaBweSender::Process() {
-  return 0;
+void NadaBweSender::Process() {
 }
 
 void NadaBweSender::AcceleratedRampUp(const NadaFeedback& fb) {

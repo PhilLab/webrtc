@@ -45,7 +45,8 @@ class H264WinRTDecoderImpl : public VideoDecoder {
   int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
 
   int Release() override;
-  int Reset() override;
+
+  const char* ImplementationName() const override;
 
  private:
   void UpdateVideoFrameDimensions(const EncodedImage& input_image);
@@ -53,7 +54,7 @@ class H264WinRTDecoderImpl : public VideoDecoder {
  private:
   uint32_t width_;
   uint32_t height_;
-  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> _cbLock;
+  std::unique_ptr<webrtc::CriticalSectionWrapper> _cbLock;
   DecodedImageCallback* decodeCompleteCallback_;
 };  // end of H264WinRTDecoderImpl class
 

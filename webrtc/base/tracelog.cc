@@ -10,7 +10,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/physicalsocketserver.h"
 
 namespace rtc {
@@ -79,7 +79,7 @@ void TraceLog::Add(char phase,
     << "\"ph\": \"" << phase << "\", "
     << "\"ts\": " << rtc::TimeMicros() << ", "
     << "\"pid\": " << 0 << ", "
-    << "\"tid\": " << webrtc::ThreadWrapper::GetThreadId() << ", "
+    << "\"tid\": " << CurrentThreadId() << ", "
     << "\"args\": {";
 
   webrtc::trace_event_internal::TraceValueUnion tvu;
@@ -196,8 +196,7 @@ bool TraceLog::Save(const std::string& addr, int port) {
   }
 
   if (tw_ == NULL) {
-    tw_ = webrtc::ThreadWrapper::CreateThread(&TraceLog::processMessages,
-                                              thread_, "TraceLog");
+    tw_.reset(new PlatformThread(&TraceLog::processMessages, thread_, "TraceLog"));
     tw_->Start();
 
     LOG(LS_INFO) << "New TraceLog thread created.";

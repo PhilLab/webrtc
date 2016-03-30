@@ -11,24 +11,28 @@
 #ifndef WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
 #define WEBRTC_AUDIO_AUDIO_RECEIVE_STREAM_H_
 
+#include <memory>
+
 #include "webrtc/audio_receive_stream.h"
-#include "webrtc/audio/scoped_voe_interface.h"
+#include "webrtc/audio_state.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {
-
+class CongestionController;
 class RemoteBitrateEstimator;
-class VoiceEngine;
+
+namespace voe {
+class ChannelProxy;
+}  // namespace voe
 
 namespace internal {
 
 class AudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
-  AudioReceiveStream(RemoteBitrateEstimator* remote_bitrate_estimator,
+  AudioReceiveStream(CongestionController* congestion_controller,
                      const webrtc::AudioReceiveStream::Config& config,
-                     VoiceEngine* voice_engine);
+                     const rtc::scoped_refptr<webrtc::AudioState>& audio_state);
   ~AudioReceiveStream() override;
 
   // webrtc::ReceiveStream implementation.
@@ -43,16 +47,19 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   // webrtc::AudioReceiveStream implementation.
   webrtc::AudioReceiveStream::Stats GetStats() const override;
 
+  void SetSink(std::unique_ptr<AudioSinkInterface> sink) override;
+
   const webrtc::AudioReceiveStream::Config& config() const;
 
  private:
+  VoiceEngine* voice_engine() const;
+
   rtc::ThreadChecker thread_checker_;
-  RemoteBitrateEstimator* const remote_bitrate_estimator_;
+  RemoteBitrateEstimator* remote_bitrate_estimator_ = nullptr;
   const webrtc::AudioReceiveStream::Config config_;
-  VoiceEngine* voice_engine_;
-  // We hold one interface pointer to the VoE to make sure it is kept alive.
-  ScopedVoEInterface<VoEBase> voe_base_;
-  rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+  rtc::scoped_refptr<webrtc::AudioState> audio_state_;
+  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
+  std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioReceiveStream);
 };

@@ -22,6 +22,50 @@
         }],
       ],
     }],
+    ['OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")', {
+      'targets': [
+        {
+          'target_name': 'rtc_base_objc',
+          'type': 'static_library',
+          'includes': [ '../build/objc_common.gypi' ],
+          'dependencies': [
+            'rtc_base',
+          ],
+          'sources': [
+            'objc/NSString+StdString.h',
+            'objc/NSString+StdString.mm',
+            'objc/RTCDispatcher.h',
+            'objc/RTCDispatcher.m',
+            'objc/RTCFieldTrials.h',
+            'objc/RTCFieldTrials.mm',
+            'objc/RTCFileLogger.h',
+            'objc/RTCFileLogger.mm',
+            'objc/RTCLogging.h',
+            'objc/RTCLogging.mm',
+            'objc/RTCMacros.h',
+            'objc/RTCSSLAdapter.h',
+            'objc/RTCSSLAdapter.mm',
+            'objc/RTCTracing.h',
+            'objc/RTCTracing.mm',
+          ],
+          'conditions': [
+            ['OS=="ios"', {
+              'sources': [
+                'objc/RTCCameraPreviewView.h',
+                'objc/RTCCameraPreviewView.m',
+              ],
+              'all_dependent_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework AVFoundation',
+                  ],
+                },
+              },
+            }],
+          ],
+        }
+      ],
+    }], # OS=="ios"
   ],
   'targets': [
     {
@@ -31,7 +75,6 @@
       'sources': [
         'array_view.h',
         'atomicops.h',
-        'basictypes.h',
         'bitbuffer.cc',
         'bitbuffer.h',
         'buffer.cc',
@@ -46,6 +89,7 @@
         'constructormagic.h',
         'criticalsection.cc',
         'criticalsection.h',
+        'deprecation.h',
         'event.cc',
         'event.h',
         'event_tracer.cc',
@@ -54,20 +98,27 @@
         'exp_filter.h',
         'logging.cc',
         'logging.h',
-        'maybe.h',
         'md5.cc',
         'md5.h',
         'md5digest.cc',
         'md5digest.h',
+        'optional.h',
         'platform_file.cc',
         'platform_file.h',
         'platform_thread.cc',
         'platform_thread.h',
+        'platform_thread_types.h',
+        'random.cc',
+        'random.h',
+        'rate_statistics.cc',
+        'rate_statistics.h',
         'ratetracker.cc',
         'ratetracker.h',
+        'refcount.h',
         'safe_conversions.h',
         'safe_conversions_impl.h',
         'scoped_ptr.h',
+        'scoped_ref_ptr.h',
         'stringencode.cc',
         'stringencode.h',
         'stringutils.cc',
@@ -85,8 +136,15 @@
       ],
       'conditions': [
         ['build_with_chromium==1', {
+          'dependencies': [
+            '<(DEPTH)/base/base.gyp:base',
+          ],
           'include_dirs': [
             '../../webrtc_overrides',
+          ],
+          'sources': [
+            '../../webrtc_overrides/webrtc/base/logging.cc',
+            '../../webrtc_overrides/webrtc/base/logging.h',
           ],
           'sources!': [
             'logging.cc',
@@ -100,6 +158,9 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common.gyp:webrtc_common',
+        'rtc_base_approved',
+      ],
+      'export_dependent_settings': [
         'rtc_base_approved',
       ],
       'defines': [
@@ -131,11 +192,12 @@
         'bandwidthsmoother.h',
         'base64.cc',
         'base64.h',
-        'basicdefs.h',
         'bind.h',
         'callback.h',
         'common.cc',
         'common.h',
+        'copyonwritebuffer.cc',
+        'copyonwritebuffer.h',
         'crc32.cc',
         'crc32.h',
         'cryptstring.cc',
@@ -172,6 +234,9 @@
         'httpserver.h',
         'ifaddrs-android.cc',
         'ifaddrs-android.h',
+        'ifaddrs_converter.cc',
+        'ifaddrs_converter.h',
+        'macifaddrs_converter.cc',
         'iosfilesystem.mm',
         'ipaddress.cc',
         'ipaddress.h',
@@ -251,14 +316,12 @@
         'proxyserver.h',
         'ratelimiter.cc',
         'ratelimiter.h',
-        'refcount.h',
         'referencecountedsingletonfactory.h',
         'rollingaccumulator.h',
         'rtccertificate.cc',
         'rtccertificate.h',
         'scoped_autorelease_pool.h',
         'scoped_autorelease_pool.mm',
-        'scoped_ref_ptr.h',
         'scopedptrcollection.h',
         'sec_buffer.h',
         'sha1.cc',
@@ -380,17 +443,13 @@
             '../../boringssl/src/include',
           ],
           'sources': [
-            '../../webrtc_overrides/webrtc/base/logging.cc',
-            '../../webrtc_overrides/webrtc/base/logging.h',
             '../../webrtc_overrides/webrtc/base/win32socketinit.cc',
           ],
           'sources!': [
-            'atomicops.h',
             'bandwidthsmoother.cc',
             'bandwidthsmoother.h',
             'bind.h',
             'callback.h',
-            'constructormagic.h',
             'dbus.cc',
             'dbus.h',
             'diskcache_win32.cc',
@@ -438,16 +497,12 @@
             'profiler.h',
             'proxyserver.cc',
             'proxyserver.h',
-            'refcount.h',
             'referencecountedsingletonfactory.h',
             'rollingaccumulator.h',
             'safe_conversions.h',
             'safe_conversions_impl.h',
             'scopedptrcollection.h',
-            'scoped_ref_ptr.h',
             'sec_buffer.h',
-            'sharedexclusivelock.cc',
-            'sharedexclusivelock.h',
             'sslconfig.h',
             'sslroots.h',
             'testbase64.h',
@@ -493,6 +548,18 @@
                 # build.
                 'WEBRTC_EXTERNAL_JSON',
               ],
+            }],
+            ['OS=="win" and clang==1', {
+              'msvs_settings': {
+                'VCCLCompilerTool': {
+                  'AdditionalOptions': [
+                    # Disable warnings failing when compiling with Clang on Windows.
+                    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                    '-Wno-sign-compare',
+                    '-Wno-missing-braces',
+                  ],
+                },
+              },
             }],
           ],
         }],
@@ -609,6 +676,7 @@
             'tracelog.h',
           ],
           'sources!': [
+            'ifaddrs_converter.cc',
             'win32regkey.cc',
             'win32regkey.h',
             'win32window.cc',
@@ -625,6 +693,9 @@
           ],
         }],
         ['OS=="win" and winrt_platform!="win_phone" and  winrt_platform!="win10_arm"', {
+          'sources!': [
+            'ifaddrs_converter.cc',
+          ],
           'link_settings': {
             'libraries': [
               '-lcrypt32.lib',
@@ -677,6 +748,7 @@
         }],
         ['OS!="ios" and OS!="mac"', {
           'sources!': [
+            'macifaddrs_converter.cc',
             'scoped_autorelease_pool.mm',
           ],
         }],
@@ -695,6 +767,13 @@
             '<(ssl_root)',
           ],
         }],
+      ],
+    },
+    {
+     'target_name': 'gtest_prod',
+      'type': 'static_library',
+      'sources': [
+        'gtest_prod_util.h',
       ],
     },
   ],

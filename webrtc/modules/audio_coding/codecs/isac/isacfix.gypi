@@ -77,11 +77,6 @@
         'fix/source/structs.h',
       ],
       'conditions': [
-        ['OS!="win"', {
-          'defines': [
-            'WEBRTC_LINUX',
-          ],
-        }],
         ['winrt_platform=="win_phone" or winrt_platform=="win10_arm"', {
           'rules': [
           {

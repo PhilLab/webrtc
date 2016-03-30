@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 #include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
 #include "webrtc/base/messagequeue.h"
@@ -123,8 +123,8 @@ typedef std::vector<ConnectionInfo> ConnectionInfos;
 struct TransportChannelStats {
   int component = 0;
   ConnectionInfos connection_infos;
-  std::string srtp_cipher;
-  int ssl_cipher = 0;
+  int srtp_crypto_suite = rtc::SRTP_INVALID_CRYPTO_SUITE;
+  int ssl_cipher_suite = rtc::TLS_NULL_WITH_NULL_NULL;
 };
 
 // Information about all the channels of a transport.
@@ -140,9 +140,35 @@ struct TransportStats {
 // Information about ICE configuration.
 struct IceConfig {
   // The ICE connection receiving timeout value.
+  // TODO(honghaiz): Remove suffix _ms to be consistent.
   int receiving_timeout_ms = -1;
+  // Time interval in milliseconds to ping a backup connection when the ICE
+  // channel is strongly connected.
+  int backup_connection_ping_interval = -1;
   // If true, the most recent port allocator session will keep on running.
   bool gather_continually = false;
+
+  // Whether we should prioritize Relay/Relay candidate when nothing
+  // is writable yet.
+  bool prioritize_most_likely_candidate_pairs = false;
+
+  // If the current best connection is both writable and receiving,
+  // then we will also try hard to make sure it is pinged at this rate
+  // (Default value is a little less than 2 * STRONG_PING_DELAY).
+  int max_strong_delay = -1;
+
+  IceConfig() {}
+  IceConfig(int receiving_timeout,
+            int backup_connection_ping_interval,
+            bool gather_continually,
+            bool prioritize_most_likely_candidate_pairs,
+            int max_strong_delay)
+      : receiving_timeout_ms(receiving_timeout),
+        backup_connection_ping_interval(backup_connection_ping_interval),
+        gather_continually(gather_continually),
+        prioritize_most_likely_candidate_pairs(
+            prioritize_most_likely_candidate_pairs),
+        max_strong_delay(max_strong_delay) {}
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);

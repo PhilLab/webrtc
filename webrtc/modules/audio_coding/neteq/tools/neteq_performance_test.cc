@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_performance_test.h"
 
-#include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
@@ -34,6 +34,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   const int kSampRateHz = 32000;
   const webrtc::NetEqDecoder kDecoderType =
       webrtc::NetEqDecoder::kDecoderPCM16Bswb32kHz;
+  const std::string kDecoderName = "pcm16-swb32";
   const int kPayloadType = 95;
 
   // Initialize NetEq instance.
@@ -41,7 +42,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   config.sample_rate_hz = kSampRateHz;
   NetEq* neteq = NetEq::Create(config);
   // Register decoder in |neteq|.
-  if (neteq->RegisterPayloadType(kDecoderType, kPayloadType) != 0)
+  if (neteq->RegisterPayloadType(kDecoderType, kDecoderName, kPayloadType) != 0)
     return -1;
 
   // Set up AudioLoop object.
@@ -68,7 +69,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   uint8_t input_payload[kInputBlockSizeSamples * sizeof(int16_t)];
   size_t payload_len = WebRtcPcm16b_Encode(input_samples.data(),
                                            input_samples.size(), input_payload);
-  assert(payload_len == kInputBlockSizeSamples * sizeof(int16_t));
+  RTC_CHECK_EQ(sizeof(input_payload), payload_len);
 
   // Main loop.
   webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
@@ -82,9 +83,9 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
       }
       if (!lost) {
         // Insert packet.
-        int error = neteq->InsertPacket(
-            rtp_header, input_payload, payload_len,
-            packet_input_time_ms * kSampRateHz / 1000);
+        int error =
+            neteq->InsertPacket(rtp_header, input_payload,
+                                packet_input_time_ms * kSampRateHz / 1000);
         if (error != NetEq::kOK)
           return -1;
       }
@@ -108,7 +109,7 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
     static const size_t kOutDataLen =
         kOutputBlockSizeMs * kMaxSamplesPerMs * kMaxChannels;
     int16_t out_data[kOutDataLen];
-    int num_channels;
+    size_t num_channels;
     size_t samples_per_channel;
     int error = neteq->GetAudio(kOutDataLen, out_data, &samples_per_channel,
                                 &num_channels, NULL);

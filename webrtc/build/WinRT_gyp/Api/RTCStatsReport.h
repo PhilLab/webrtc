@@ -10,7 +10,7 @@
 #define WEBRTC_BUILD_WINRT_GYP_API_RTCSTATSREPORT_H_
 
 #include <collection.h>
-#include <talk/app/webrtc/statstypes.h>
+#include <webrtc/api/statstypes.h>
 
 #include <vector>
 #include <map>
@@ -28,7 +28,9 @@ namespace webrtc_winrt_api {
     StatsValueNameAudioOutputLevel,
     StatsValueNameBytesReceived,
     StatsValueNameBytesSent,
+    StatsValueNameCodecImplementationName,
     StatsValueNameDataChannelId,
+    StatsValueNameMediaType,
     StatsValueNamePacketsLost,
     StatsValueNamePacketsReceived,
     StatsValueNamePacketsSent,

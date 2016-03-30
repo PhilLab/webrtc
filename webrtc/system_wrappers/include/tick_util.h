@@ -56,6 +56,8 @@ class TickTime {
 
   static int64_t TicksToMilliseconds(const int64_t ticks);
 
+  static int64_t TicksToMicroseconds(const int64_t ticks);
+
   // Returns a TickTime that is ticks later than the passed TickTime.
   friend TickTime operator+(const TickTime lhs, const int64_t ticks);
   TickTime& operator+=(const int64_t& ticks);
@@ -63,40 +65,17 @@ class TickTime {
   // Returns a TickInterval that is the difference in ticks beween rhs and lhs.
   friend TickInterval operator-(const TickTime& lhs, const TickTime& rhs);
 
-  // Call to engage the fake clock. This is useful for tests since relying on
-  // a real clock often makes the test flaky.
-  static void UseFakeClock(int64_t start_millisecond);
-
-  // Call to disable the fake clock. Test enabling false clock should disable 
-  // it on TearDown
-  static void DisableFakeClock();
-
-  // Advance the fake clock. Must be called after UseFakeClock.
-  static void AdvanceFakeClock(int64_t milliseconds);
-
-#ifdef WINRT
-  static void SyncWithNtp(int64_t timeFromNtpServer/*in ms*/);
-#endif
-
  private:
   static int64_t QueryOsForTicks();
 
-  static bool use_fake_clock_;
-  static int64_t fake_ticks_;
-
   int64_t ticks_;
-#ifdef WINRT
-  static void InitializeAppStartTimestamp();
-  static LARGE_INTEGER app_start_time_; //record app start time in ms since epoch
-  static int64_t time_since_os_start_; //record the time period between the machine starts and the app starts
-  static int64_t os_ticks_per_second_; 
-#endif
 };
 
 // Represents a time delta in ticks.
 class TickInterval {
  public:
   TickInterval();
+  explicit TickInterval(int64_t interval);
 
   int64_t Milliseconds() const;
   int64_t Microseconds() const;
@@ -117,14 +96,20 @@ class TickInterval {
   friend bool operator>=(const TickInterval& lhs, const TickInterval& rhs);
 
  private:
-  explicit TickInterval(int64_t interval);
-
   friend class TickTime;
   friend TickInterval operator-(const TickTime& lhs, const TickTime& rhs);
 
  private:
   int64_t interval_;
 };
+
+inline int64_t TickInterval::Milliseconds() const {
+  return TickTime::TicksToMilliseconds(interval_);
+}
+
+inline int64_t TickInterval::Microseconds() const {
+  return TickTime::TicksToMicroseconds(interval_);
+}
 
 inline TickInterval operator+(const TickInterval& lhs,
                               const TickInterval& rhs) {
@@ -164,110 +149,18 @@ inline bool operator>=(const TickInterval& lhs, const TickInterval& rhs) {
 
 inline TickTime::TickTime()
     : ticks_(0) {
-#ifdef WINRT
-  InitializeAppStartTimestamp();
-#endif
 }
 
 inline TickTime::TickTime(int64_t ticks)
     : ticks_(ticks) {
-#ifdef WINRT
-  InitializeAppStartTimestamp();
-#endif
 }
 
 inline TickTime TickTime::Now() {
-#ifdef WINRT
-  InitializeAppStartTimestamp();
-#endif
-  if (use_fake_clock_)
-    return TickTime(fake_ticks_);
-  else
-#ifdef WINRT
-    //current local time since epoch in ms
-    return TickTime(app_start_time_.QuadPart + QueryOsForTicks() -time_since_os_start_);
-#else
-    return TickTime(QueryOsForTicks());
-
-#endif
-}
-
-inline int64_t TickTime::MillisecondTimestamp() {
-  int64_t ticks = TickTime::Now().Ticks();
-#if _WIN32
-#ifdef WINRT
-  return ticks;
-#elif defined(USE_QUERY_PERFORMANCE_COUNTER)
-  LARGE_INTEGER qpfreq;
-  QueryPerformanceFrequency(&qpfreq);
-  return (ticks*1000) / qpfreq.QuadPart;
-#else
-  return ticks;
-#endif
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  return ticks / 1000000LL;
-#else
-  return ticks / 1000LL;
-#endif
-}
-
-inline int64_t TickTime::MicrosecondTimestamp() {
-  int64_t ticks = TickTime::Now().Ticks();
-#if _WIN32
-#ifdef WINRT
-  return ticks * 1000LL;
-#elif defined( USE_QUERY_PERFORMANCE_COUNTER)
-  LARGE_INTEGER qpfreq;
-  QueryPerformanceFrequency(&qpfreq);
-  return (ticks * 1000) / (qpfreq.QuadPart / 1000);
-#else
-  return ticks * 1000LL;
-#endif
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  return ticks / 1000LL;
-#else
-  return ticks;
-#endif
+  return TickTime(QueryOsForTicks());
 }
 
 inline int64_t TickTime::Ticks() const {
   return ticks_;
-}
-
-inline int64_t TickTime::MillisecondsToTicks(const int64_t ms) {
-#if _WIN32
-#ifdef WINRT
-  return ms;
-#elif defined(USE_QUERY_PERFORMANCE_COUNTER) 
-  LARGE_INTEGER qpfreq;
-  QueryPerformanceFrequency(&qpfreq);
-  return (qpfreq.QuadPart * ms) / 1000;
-#else
-  return ms;
-#endif
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  return ms * 1000000LL;
-#else
-  return ms * 1000LL;
-#endif
-}
-
-inline int64_t TickTime::TicksToMilliseconds(const int64_t ticks) {
-#if _WIN32
-#ifdef WINRT
-  return ticks;
-#elif defined(USE_QUERY_PERFORMANCE_COUNTER) 
-  LARGE_INTEGER qpfreq;
-  QueryPerformanceFrequency(&qpfreq);
-  return (ticks * 1000) / qpfreq.QuadPart;
-#else
-  return ticks;
-#endif
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  return ticks / 1000000LL;
-#else
-  return ticks / 1000LL;
-#endif
 }
 
 inline TickTime& TickTime::operator+=(const int64_t& ticks) {
@@ -280,48 +173,6 @@ inline TickInterval::TickInterval() : interval_(0) {
 
 inline TickInterval::TickInterval(const int64_t interval)
   : interval_(interval) {
-}
-
-inline int64_t TickInterval::Milliseconds() const {
-#if _WIN32
-#ifdef WINRT
-  return interval_;
-#elif defined(USE_QUERY_PERFORMANCE_COUNTER)
-  LARGE_INTEGER qpfreq;
-  QueryPerformanceFrequency(&qpfreq);
-  return (interval_ * 1000) / qpfreq.QuadPart;
-#else
-  // interval_ is in ms
-  return interval_;
-#endif
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  // interval_ is in ns
-  return interval_ / 1000000;
-#else
-  // interval_ is usecs
-  return interval_ / 1000;
-#endif
-}
-
-inline int64_t TickInterval::Microseconds() const {
-#if _WIN32
-#ifdef WINRT
-  return interval_ * 1000LL;
-#elif USE_QUERY_PERFORMANCE_COUNTER
-  LARGE_INTEGER qpfreq;
-  QueryPerformanceFrequency(&qpfreq);
-  return (interval_ * 1000000) / qpfreq.QuadPart;
-#else
-  // interval_ is in ms
-  return interval_ * 1000LL;
-#endif
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  // interval_ is in ns
-  return interval_ / 1000;
-#else
-  // interval_ is usecs
-  return interval_;
-#endif
 }
 
 inline TickInterval& TickInterval::operator+=(const TickInterval& rhs) {

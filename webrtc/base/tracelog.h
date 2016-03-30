@@ -9,13 +9,10 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/criticalsection.h"
 
-namespace webrtc {
-class ThreadWrapper;
-}  // namespace webrtc
-
 namespace rtc {
 class AsyncSocket;
 class Thread;
+class PlatformThread;
 
 // Aggregates traces. Allows to save traces in local file
 // and send them to remote host. To start aggregating traces
@@ -117,7 +114,7 @@ class TraceLog : public sigslot::has_slots<sigslot::multi_threaded_local> {
   std::ostringstream oss_;
   CriticalSection critical_section_;
   Thread* thread_;
-  scoped_ptr<webrtc::ThreadWrapper> tw_;
+  scoped_ptr<rtc::PlatformThread> tw_;
 };
 
 }  // namespace rtc

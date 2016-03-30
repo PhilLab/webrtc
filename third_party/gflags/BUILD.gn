@@ -13,9 +13,9 @@ if (is_win) {
 }
 
 config("gflags_config") {
- include_dirs = [
+  include_dirs = [
     "$gflags_gen_arch_root/include",  # For configured files.
-    "src",  # For everything else.
+    "src/src",  # For everything else.
   ]
 
   defines = [
@@ -25,24 +25,33 @@ config("gflags_config") {
     "GFLAGS_DLL_DECLARE_FLAG=",
     "GFLAGS_DLL_DEFINE_FLAG=",
   ]
+
+  # GN orders flags on a target before flags from configs. The default config
+  # adds -Wall, and this flag have to be after -Wall -- so they need to
+  # come from a config and can't be on the target directly.
+  if (is_clang) {
+    cflags = [ "-Wno-unused-local-typedef" ]
+  }
 }
 
 source_set("gflags") {
+  cflags = []
   sources = [
-    "src/gflags.cc",
-    "src/gflags_completions.cc",
-    "src/gflags_reporting.cc",
+    "src/src/gflags.cc",
+    "src/src/gflags_completions.cc",
+    "src/src/gflags_reporting.cc",
   ]
   if (is_win) {
-    sources += [ "src/windows/port.cc" ]
+    sources += [ "src/src/windows_port.cc" ]
 
-    cflags = [
+    cflags += [
       "/wd4005",  # WIN32_LEAN_AND_MEAN.
       "/wd4267",  # Conversion from size_t to "type".
     ]
   }
 
   include_dirs = [
+    "$gflags_gen_arch_root/include/gflags",  # For configured files.
     "$gflags_gen_arch_root/include/private",  # For config.h
   ]
 
@@ -51,9 +60,14 @@ source_set("gflags") {
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
 
+  if (is_win) {
+    configs -= [ "//build/config/win:unicode" ]
+  }
+
   if (is_clang) {
     # TODO(andrew): Look into fixing this warning upstream:
     # http://code.google.com/p/webrtc/issues/detail?id=760
     configs -= [ "//build/config/clang:extra_warnings" ]
+    cflags += [ "-Wno-microsoft-include" ]
   }
 }

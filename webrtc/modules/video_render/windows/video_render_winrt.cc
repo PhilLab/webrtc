@@ -22,7 +22,7 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"
-#include "webrtc/system_wrappers/include/thread_wrapper.h"
+#include "webrtc/base/platform_thread.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -182,13 +182,13 @@ VideoRenderWinRT::VideoRenderWinRT(Trace* trace,
     channel_(NULL),
     win_width_(0),
     win_height_(0) {
-  screen_update_thread_ = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
-    this, "VideoRenderWinRT");
+  screen_update_thread_.reset(new rtc::PlatformThread(ScreenUpdateThreadProc,
+   this, "VideoRenderWinRT"));
   screen_update_event_ = EventTimerWrapper::Create();
 }
 
 VideoRenderWinRT::~VideoRenderWinRT() {
-  rtc::scoped_ptr<ThreadWrapper> tmpPtr(screen_update_thread_.release());
+  rtc::scoped_ptr<rtc::PlatformThread> tmpPtr(screen_update_thread_.release());
   if (tmpPtr) {
     screen_update_event_->Set();
     screen_update_event_->StopTimer();
@@ -209,7 +209,7 @@ int32_t VideoRenderWinRT::Init() {
     return -1;
   }
   screen_update_thread_->Start();
-  screen_update_thread_->SetPriority(kRealtimePriority);
+  screen_update_thread_->SetPriority(rtc::kRealtimePriority);
 
   // Start the event triggering the render process
   unsigned int monitorFreq = 60;

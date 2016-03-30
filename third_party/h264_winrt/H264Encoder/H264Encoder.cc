@@ -27,7 +27,7 @@
 #include "H264StreamSink.h"
 #include "H264MediaSink.h"
 #include "Utils/Utils.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "libyuv/convert.h"
@@ -71,7 +71,8 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   currentHeight_ = inst->height;
   currentBitrateBps_ = inst->targetBitrate > 0 ? inst->targetBitrate * 1024 : currentWidth_ * currentHeight_ * 2.0;
   currentFps_ = inst->maxFramerate;
-  quality_scaler_.Init(inst->qpMax / 2, 64, false);
+  // TODO: GoogleMerge - This needs to be tested
+  quality_scaler_.Init(inst->qpMax / 2, 64, false, 0, currentWidth_, currentHeight_);
   return InitEncoderWithSettings(inst);
 }
 
@@ -543,6 +544,10 @@ void H264WinRTEncoderImpl::OnDroppedFrame(uint32_t timestamp) {
   if (tempSinkWriter != nullptr) {
     sinkWriter_->SendStreamTick(streamIndex_, timestampHns);
   }
+}
+
+const char* H264WinRTEncoderImpl::ImplementationName() const {
+  return "H264_MediaFoundation";
 }
 
 }  // namespace webrtc

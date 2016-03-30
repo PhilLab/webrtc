@@ -13,7 +13,7 @@
       'target_name': 'webrtc_stats_observer',
       'type': 'static_library',
       'dependencies': [
-        '../../../../talk/libjingle.gyp:libjingle_peerconnection',
+        '../../../../webrtc/api/api.gyp:libjingle_peerconnection',
       ],
       'sources': [
         'webrtc_stats_observer.cpp',

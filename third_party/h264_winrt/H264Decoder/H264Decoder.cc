@@ -24,7 +24,7 @@
 #include "libyuv/convert.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 
 #pragma comment(lib, "mfreadwrite")
 #pragma comment(lib, "mfplat")
@@ -50,6 +50,7 @@ H264WinRTDecoderImpl::~H264WinRTDecoderImpl() {
 
 int H264WinRTDecoderImpl::InitDecode(const VideoCodec* inst,
   int number_of_cores) {
+  LOG(LS_INFO) << "H264WinRTDecoderImpl::InitDecode()\n";
   // Nothing to do here, decoder acts as a passthrough
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -142,10 +143,6 @@ int H264WinRTDecoderImpl::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int H264WinRTDecoderImpl::Reset() {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 void H264WinRTDecoderImpl::UpdateVideoFrameDimensions(const EncodedImage& input_image)
 {
   auto w = input_image._encodedWidth;
@@ -156,6 +153,10 @@ void H264WinRTDecoderImpl::UpdateVideoFrameDimensions(const EncodedImage& input_
     width_ = w;
     height_ = h;
   }
+}
+
+const char* H264WinRTDecoderImpl::ImplementationName() const {
+  return "H264_MediaFoundation";
 }
 
 }  // namespace webrtc

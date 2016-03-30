@@ -81,6 +81,8 @@ static const SocketAddress kRelaySslTcpExtAddr("99.99.99.3", 5005);
 // The addresses for the public turn server.
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4",
                                            cricket::STUN_SERVER_PORT);
+static const SocketAddress kTurnTcpIntAddr("99.99.99.4",
+                                           cricket::STUN_SERVER_PORT + 1);
 static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
 static const cricket::RelayCredentials kRelayCredentials("test", "test");
 
@@ -101,10 +103,12 @@ enum {
 };
 
 static cricket::IceConfig CreateIceConfig(int receiving_timeout_ms,
-                                          bool gather_continually) {
+                                          bool gather_continually,
+                                          int backup_ping_interval = -1) {
   cricket::IceConfig config;
   config.receiving_timeout_ms = receiving_timeout_ms;
   config.gather_continually = gather_continually;
+  config.backup_connection_ping_interval = backup_ping_interval;
   return config;
 }
 
@@ -304,7 +308,7 @@ class P2PTransportChannelTestBase : public testing::Test,
       const std::string& remote_ice_ufrag,
       const std::string& remote_ice_pwd) {
     cricket::P2PTransportChannel* channel = new cricket::P2PTransportChannel(
-        "test content name", component, NULL, GetAllocator(endpoint));
+        "test content name", component, GetAllocator(endpoint));
     channel->SignalCandidateGathered.connect(
         this, &P2PTransportChannelTestBase::OnCandidate);
     channel->SignalReadPacket.connect(
@@ -365,6 +369,13 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   void AddAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.AddInterface(addr);
+  }
+  void AddAddress(int endpoint,
+                  const SocketAddress& addr,
+                  const std::string& ifname,
+                  rtc::AdapterType adapter_type) {
+    GetEndpoint(endpoint)->network_manager_.AddInterface(addr, ifname,
+                                                         adapter_type);
   }
   void RemoveAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.RemoveInterface(addr);
@@ -650,6 +661,21 @@ class P2PTransportChannelTestBase : public testing::Test,
     GetEndpoint(endpoint)->save_candidates_ = true;
   }
 
+  // Tcp candidate verification has to be done when they are generated.
+  void VerifySavedTcpCandidates(int endpoint, const std::string& tcptype) {
+    for (auto& data : GetEndpoint(endpoint)->saved_candidates_) {
+      EXPECT_EQ(data->candidate.protocol(), cricket::TCP_PROTOCOL_NAME);
+      EXPECT_EQ(data->candidate.tcptype(), tcptype);
+      if (data->candidate.tcptype() == cricket::TCPTYPE_ACTIVE_STR) {
+        EXPECT_EQ(data->candidate.address().port(), cricket::DISCARD_PORT);
+      } else if (data->candidate.tcptype() == cricket::TCPTYPE_PASSIVE_STR) {
+        EXPECT_NE(data->candidate.address().port(), cricket::DISCARD_PORT);
+      } else {
+        FAIL() << "Unknown tcptype: " << data->candidate.tcptype();
+      }
+    }
+  }
+
   void ResumeCandidates(int endpoint) {
     Endpoint* ed = GetEndpoint(endpoint);
     std::vector<CandidateData*>::iterator it = ed->saved_candidates_.begin();
@@ -825,12 +851,12 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
         rtc::SocketAddress(), rtc::SocketAddress(),
         rtc::SocketAddress()));
 
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
-    relay_server.credentials = kRelayCredentials;
-    relay_server.ports.push_back(
+    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
+    turn_server.credentials = kRelayCredentials;
+    turn_server.ports.push_back(
         cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
-    GetEndpoint(0)->allocator_->AddRelay(relay_server);
-    GetEndpoint(1)->allocator_->AddRelay(relay_server);
+    GetEndpoint(0)->allocator_->AddTurnServer(turn_server);
+    GetEndpoint(1)->allocator_->AddTurnServer(turn_server);
 
     int delay = kMinimumStepDelay;
     ConfigureEndpoint(0, config1);
@@ -1290,7 +1316,18 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   SetAllowTcpListen(0, true);   // actpass.
   SetAllowTcpListen(1, false);  // active.
 
+  // Pause candidate so we could verify the candidate properties.
+  PauseCandidates(0);
+  PauseCandidates(1);
   CreateChannels(1);
+
+  // Verify tcp candidates.
+  VerifySavedTcpCandidates(0, cricket::TCPTYPE_PASSIVE_STR);
+  VerifySavedTcpCandidates(1, cricket::TCPTYPE_ACTIVE_STR);
+
+  // Resume candidates.
+  ResumeCandidates(0);
+  ResumeCandidates(1);
 
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                    ep2_ch1()->receiving() && ep2_ch1()->writable(),
@@ -1299,12 +1336,6 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
-
-  std::string kTcpProtocol = "tcp";
-  EXPECT_EQ(kTcpProtocol, RemoteCandidate(ep1_ch1())->protocol());
-  EXPECT_EQ(kTcpProtocol, LocalCandidate(ep1_ch1())->protocol());
-  EXPECT_EQ(kTcpProtocol, RemoteCandidate(ep2_ch1())->protocol());
-  EXPECT_EQ(kTcpProtocol, LocalCandidate(ep2_ch1())->protocol());
 
   TestSendRecv(1);
   DestroyChannels();
@@ -1539,18 +1570,18 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
 
-  // Make the receiving timeout shorter for testing.
-  cricket::IceConfig config = CreateIceConfig(1000, false);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
-
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                   1000);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Make the receiving timeout shorter for testing.
+  cricket::IceConfig config = CreateIceConfig(1000, false);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -1591,17 +1622,18 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  // Make the receiving timeout shorter for testing.
-  cricket::IceConfig config = CreateIceConfig(1000, false);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                   1000);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
   EXPECT_TRUE(
       ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Make the receiving timeout shorter for testing.
+  cricket::IceConfig config = CreateIceConfig(1000, false);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -1627,6 +1659,105 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   DestroyChannels();
 }
 
+// Tests that a Wifi-Wifi connection has the highest precedence.
+TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiToWifiConnection) {
+  // The interface names are chosen so that |cellular| would have higher
+  // candidate priority if it is not for the network type.
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, wifi[0], "test0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, cellular[0], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "test0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  // Need to wait to make sure the connections on both networks are writable.
+  EXPECT_TRUE_WAIT(ep1_ch1()->best_connection() &&
+                       LocalCandidate(ep1_ch1())->address().EqualIPs(wifi[0]) &&
+                       RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
+                   1000);
+  EXPECT_TRUE_WAIT(ep2_ch1()->best_connection() &&
+                       LocalCandidate(ep2_ch1())->address().EqualIPs(wifi[1]) &&
+                       RemoteCandidate(ep2_ch1())->address().EqualIPs(wifi[0]),
+                   1000);
+}
+
+// Tests that a Wifi-Cellular connection has higher precedence than
+// a Cellular-Cellular connection.
+TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiOverCellularNetwork) {
+  // The interface names are chosen so that |cellular| would have higher
+  // candidate priority if it is not for the network type.
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, cellular[0], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "test0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test1", rtc::ADAPTER_TYPE_CELLULAR);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  // Need to wait to make sure the connections on both networks are writable.
+  EXPECT_TRUE_WAIT(ep1_ch1()->best_connection() &&
+                       RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
+                   1000);
+  EXPECT_TRUE_WAIT(ep2_ch1()->best_connection() &&
+                       LocalCandidate(ep2_ch1())->address().EqualIPs(wifi[1]),
+                   1000);
+}
+
+// Test that the backup connection is pinged at a rate no faster than
+// what was configured.
+TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
+  AddAddress(0, kPublicAddrs[0]);
+  // Adding alternate address will make sure |kPublicAddrs| has the higher
+  // priority than others. This is due to FakeNetwork::AddInterface method.
+  AddAddress(1, kAlternateAddrs[1]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  int backup_ping_interval = 2000;
+  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, false, backup_ping_interval));
+  // After the state becomes COMPLETED, the backup connection will be pinged
+  // once every |backup_ping_interval| milliseconds.
+  ASSERT_TRUE_WAIT(ep2_ch1()->GetState() == cricket::STATE_COMPLETED, 1000);
+  const std::vector<cricket::Connection*>& connections =
+      ep2_ch1()->connections();
+  ASSERT_EQ(2U, connections.size());
+  cricket::Connection* backup_conn = connections[1];
+  EXPECT_TRUE_WAIT(backup_conn->writable(), 3000);
+  uint32_t last_ping_response_ms = backup_conn->last_ping_response_received();
+  EXPECT_TRUE_WAIT(
+      last_ping_response_ms < backup_conn->last_ping_response_received(), 5000);
+  int time_elapsed =
+      backup_conn->last_ping_response_received() - last_ping_response_ms;
+  LOG(LS_INFO) << "Time elapsed: " << time_elapsed;
+  EXPECT_GE(time_elapsed, backup_ping_interval);
+}
+
 TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
   AddAddress(0, kAlternateAddrs[0]);
   AddAddress(0, kPublicAddrs[0]);
@@ -1639,6 +1770,37 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
                  ep1_ch1()->GetState(), 1000);
   EXPECT_EQ_WAIT(cricket::TransportChannelState::STATE_COMPLETED,
                  ep2_ch1()->GetState(), 1000);
+}
+
+// Tests that when a network interface becomes inactive, the ports associated
+// with that network will be removed from the port list of the channel if
+// and only if Continual Gathering is enabled.
+TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  ep1_ch1()->SetIceConfig(CreateIceConfig(2000, true));
+  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, false));
+
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          1000, 1000);
+  // More than one port has been created.
+  EXPECT_LE(1U, ep1_ch1()->ports().size());
+  // Endpoint 1 enabled continual gathering; the port will be removed
+  // when the interface is removed.
+  RemoveAddress(0, kPublicAddrs[0]);
+  EXPECT_EQ(0U, ep1_ch1()->ports().size());
+
+  size_t num_ports = ep2_ch1()->ports().size();
+  EXPECT_LE(1U, num_ports);
+  // Endpoint 2 did not enable continual gathering; the port will not be removed
+  // when the interface is removed.
+  RemoveAddress(1, kPublicAddrs[1]);
+  EXPECT_EQ(num_ports, ep2_ch1()->ports().size());
 }
 
 /*
@@ -1705,14 +1867,17 @@ class P2PTransportChannelPingTest : public testing::Test,
     ch->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
   }
 
-  cricket::Candidate CreateCandidate(const std::string& ip,
-                                     int port,
-                                     int priority) {
+  cricket::Candidate CreateHostCandidate(const std::string& ip,
+                                         int port,
+                                         int priority,
+                                         const std::string& ufrag = "") {
     cricket::Candidate c;
     c.set_address(rtc::SocketAddress(ip, port));
     c.set_component(1);
     c.set_protocol(cricket::UDP_PROTOCOL_NAME);
     c.set_priority(priority);
+    c.set_username(ufrag);
+    c.set_type(cricket::LOCAL_PORT_TYPE);
     return c;
   }
 
@@ -1740,6 +1905,15 @@ class P2PTransportChannelPingTest : public testing::Test,
     return port->GetConnection(rtc::SocketAddress(ip, port_num));
   }
 
+  cricket::Connection* FindNextPingableConnectionAndPingIt(
+      cricket::P2PTransportChannel* ch) {
+    cricket::Connection* conn = ch->FindNextPingableConnection();
+    if (conn) {
+      ch->MarkConnectionPinged(conn);
+    }
+    return conn;
+  }
+
  private:
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
   rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
@@ -1748,12 +1922,12 @@ class P2PTransportChannelPingTest : public testing::Test,
 
 TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("trigger checks", 1, &pa);
   PrepareChannel(&ch);
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 2));
 
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
@@ -1762,30 +1936,31 @@ TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
 
   // Before a triggered check, the first connection to ping is the
   // highest priority one.
-  EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+  EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
 
   // Receiving a ping causes a triggered check which should make conn1
   // be pinged first instead of conn2, even though conn2 has a higher
   // priority.
   conn1->ReceivedPing();
-  EXPECT_EQ(conn1, ch.FindNextPingableConnection());
+  EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
 }
 
 TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("trigger checks", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("trigger checks", 1, &pa);
   PrepareChannel(&ch);
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 2));
 
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn1 != nullptr);
   ASSERT_TRUE(conn2 != nullptr);
 
-  EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+  EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
+  EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
   conn1->ReceivedPingResponse();
   ASSERT_TRUE(conn1->writable());
   conn1->ReceivedPing();
@@ -1793,25 +1968,81 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   // Ping received, but the connection is already writable, so no
   // "triggered check" and conn2 is pinged before conn1 because it has
   // a higher priority.
-  EXPECT_EQ(conn2, ch.FindNextPingableConnection());
+  EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
+}
+
+// Test adding remote candidates with different ufrags. If a remote candidate
+// is added with an old ufrag, it will be discarded. If it is added with a
+// ufrag that was not seen before, it will be used to create connections
+// although the ICE pwd in the remote candidate will be set when the ICE
+// credentials arrive. If a remote candidate is added with the current ICE
+// ufrag, its pwd and generation will be set properly.
+TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("add candidate", 1, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  // Add a candidate with a future ufrag.
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1, kIceUfrag[2]));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  const cricket::Candidate& candidate = conn1->remote_candidate();
+  EXPECT_EQ(kIceUfrag[2], candidate.username());
+  EXPECT_TRUE(candidate.password().empty());
+  EXPECT_TRUE(FindNextPingableConnectionAndPingIt(&ch) == nullptr);
+
+  // Set the remote credentials with the "future" ufrag.
+  // This should set the ICE pwd in the remote candidate of |conn1|, making
+  // it pingable.
+  ch.SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  EXPECT_EQ(kIceUfrag[2], candidate.username());
+  EXPECT_EQ(kIcePwd[2], candidate.password());
+  EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
+
+  // Add a candidate with an old ufrag. No connection will be created.
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 2, kIceUfrag[1]));
+  rtc::Thread::Current()->ProcessMessages(500);
+  EXPECT_TRUE(GetConnectionTo(&ch, "2.2.2.2", 2) == nullptr);
+
+  // Add a candidate with the current ufrag, its pwd and generation will be
+  // assigned, even if the generation is not set.
+  ch.AddRemoteCandidate(CreateHostCandidate("3.3.3.3", 3, 0, kIceUfrag[2]));
+  cricket::Connection* conn3 = nullptr;
+  ASSERT_TRUE_WAIT((conn3 = GetConnectionTo(&ch, "3.3.3.3", 3)) != nullptr,
+                   3000);
+  const cricket::Candidate& new_candidate = conn3->remote_candidate();
+  EXPECT_EQ(kIcePwd[2], new_candidate.password());
+  EXPECT_EQ(1U, new_candidate.generation());
+
+  // Check that the pwd of all remote candidates are properly assigned.
+  for (const cricket::RemoteCandidate& candidate : ch.remote_candidates()) {
+    EXPECT_TRUE(candidate.username() == kIceUfrag[1] ||
+                candidate.username() == kIceUfrag[2]);
+    if (candidate.username() == kIceUfrag[1]) {
+      EXPECT_EQ(kIcePwd[1], candidate.password());
+    } else if (candidate.username() == kIceUfrag[2]) {
+      EXPECT_EQ(kIcePwd[2], candidate.password());
+    }
+  }
 }
 
 TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("connection resurrection", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("connection resurrection", 1, &pa);
   PrepareChannel(&ch);
   ch.Connect();
   ch.MaybeStartGathering();
 
   // Create conn1 and keep track of original candidate priority.
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   uint32_t remote_priority = conn1->remote_candidate().priority();
 
   // Create a higher priority candidate and make the connection
   // receiving/writable. This will prune conn1.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 2));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 2));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();
@@ -1851,7 +2082,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
 
 TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
   PrepareChannel(&ch);
   // Default receiving timeout and checking receiving delay should not be too
   // small.
@@ -1862,13 +2093,13 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   EXPECT_EQ(50, ch.check_receiving_delay());
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
 
   conn1->ReceivedPing();
   conn1->OnReadPacket("ABC", 3, rtc::CreatePacketTime(0));
-  EXPECT_TRUE_WAIT(ch.best_connection() != nullptr, 1000)
+  EXPECT_TRUE_WAIT(ch.best_connection() != nullptr, 1000);
   EXPECT_TRUE_WAIT(ch.receiving(), 1000);
   EXPECT_TRUE_WAIT(!ch.receiving(), 1000);
 }
@@ -1879,19 +2110,19 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
 // "best connection".
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
   PrepareChannel(&ch);
   ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
 
   // When a higher priority candidate comes in, the new connection is chosen
   // as the best connection.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 10));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 10));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_EQ(conn2, ch.best_connection());
@@ -1899,7 +2130,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // If a stun request with use-candidate attribute arrives, the receiving
   // connection will be set as the best connection, even though
   // its priority is lower.
-  ch.AddRemoteCandidate(CreateCandidate("3.3.3.3", 3, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("3.3.3.3", 3, 1));
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   // Because it has a lower priority, the best connection is still conn2.
@@ -1914,7 +2145,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   // Even if another higher priority candidate arrives,
   // it will not be set as the best connection because the best connection
   // is nominated by the controlling side.
-  ch.AddRemoteCandidate(CreateCandidate("4.4.4.4", 4, 100));
+  ch.AddRemoteCandidate(CreateHostCandidate("4.4.4.4", 4, 100));
   cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
   EXPECT_EQ(conn3, ch.best_connection());
@@ -1932,10 +2163,11 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
 // The controlled side will select a connection as the "best connection" based
 // on requests from an unknown address before the controlling side nominates
 // a connection, and will nominate a connection from an unknown address if the
-// request contains the use_candidate attribute.
+// request contains the use_candidate attribute. Plus, it will also sends back
+// a ping response and set the ICE pwd in the remote candidate appropriately.
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
   PrepareChannel(&ch);
   ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
   ch.Connect();
@@ -1948,17 +2180,19 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   uint32_t prflx_priority = cricket::ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(new cricket::StunUInt32Attribute(
       cricket::STUN_ATTR_PRIORITY, prflx_priority));
-  cricket::Port* port = GetPort(&ch);
+  cricket::TestUDPPort* port = static_cast<cricket::TestUDPPort*>(GetPort(&ch));
   port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1),
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
   EXPECT_EQ(conn1, ch.best_connection());
   conn1->ReceivedPingResponse();
   EXPECT_EQ(conn1, ch.best_connection());
+  port->set_sent_binding_response(false);
 
   // Another connection is nominated via use_candidate.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   // Because it has a lower priority, the best connection is still conn1.
@@ -1977,8 +2211,10 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
   conn3->ReceivedPingResponse();  // Become writable.
   EXPECT_EQ(conn2, ch.best_connection());
+  port->set_sent_binding_response(false);
 
   // However if the request contains use_candidate attribute, it will be
   // selected as the best connection.
@@ -1988,10 +2224,23 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              cricket::PROTO_UDP, &request, kIceUfrag[1], false);
   cricket::Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
   // conn4 is not the best connection yet because it is not writable.
   EXPECT_EQ(conn2, ch.best_connection());
   conn4->ReceivedPingResponse();  // Become writable.
   EXPECT_EQ(conn4, ch.best_connection());
+
+  // Test that the request from an unknown address contains a ufrag from an old
+  // generation.
+  port->set_sent_binding_response(false);
+  ch.SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  ch.SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  port->SignalUnknownAddress(port, rtc::SocketAddress("5.5.5.5", 5),
+                             cricket::PROTO_UDP, &request, kIceUfrag[2], false);
+  cricket::Connection* conn5 = WaitForConnectionTo(&ch, "5.5.5.5", 5);
+  ASSERT_TRUE(conn5 != nullptr);
+  EXPECT_TRUE(port->sent_binding_response());
+  EXPECT_EQ(kIcePwd[2], conn5->remote_candidate().password());
 }
 
 // The controlled side will select a connection as the "best connection"
@@ -2000,12 +2249,12 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
 // the "best connection".
 TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("receiving state change", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("receiving state change", 1, &pa);
   PrepareChannel(&ch);
   ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 10));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 10));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
@@ -2013,7 +2262,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   // If a data packet is received on conn2, the best connection should
   // switch to conn2 because the controlled side must mirror the media path
   // chosen by the controlling side.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();  // Start receiving.
@@ -2058,12 +2307,12 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
 // be pruned. Otherwise, lower-priority connections are kept.
 TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
@@ -2071,7 +2320,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
 
   // When a higher-priority, nominated candidate comes in, the connections with
   // lower-priority are pruned.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 10));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 10));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse();  // Becomes writable and receiving
@@ -2083,7 +2332,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   // Wait until conn2 becomes not receiving.
   EXPECT_TRUE_WAIT(!conn2->receiving(), 3000);
 
-  ch.AddRemoteCandidate(CreateCandidate("3.3.3.3", 3, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("3.3.3.3", 3, 1));
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   // The best connection should still be conn2. Even through conn3 has lower
@@ -2096,13 +2345,13 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
 // Test that GetState returns the state correctly.
 TEST_F(P2PTransportChannelPingTest, TestGetState) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   ch.Connect();
   ch.MaybeStartGathering();
   EXPECT_EQ(cricket::TransportChannelState::STATE_INIT, ch.GetState());
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn1 != nullptr);
@@ -2114,19 +2363,21 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   EXPECT_TRUE_WAIT(conn2->pruned(), 1000);
   EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
   conn1->Prune();  // All connections are pruned.
-  EXPECT_EQ(cricket::TransportChannelState::STATE_FAILED, ch.GetState());
+  // Need to wait until the channel state is updated.
+  EXPECT_EQ_WAIT(cricket::TransportChannelState::STATE_FAILED, ch.GetState(),
+                 1000);
 }
 
 // Test that when a low-priority connection is pruned, it is not deleted
 // right away, and it can become active and be pruned again.
 TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   ch.SetIceConfig(CreateIceConfig(1000, false));
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 100));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
@@ -2136,7 +2387,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   // not be deleted right away. Once the current best connection becomes not
   // receiving, |conn2| will start to ping and upon receiving the ping response,
   // it will become the best connection.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_TRUE_WAIT(!conn2->active(), 1000);
@@ -2164,12 +2415,12 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
 // will all be deleted. We use Prune to simulate write_time_out.
 TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   ch.Connect();
   ch.MaybeStartGathering();
   // Have one connection only but later becomes write-time-out.
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 100));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPing();  // Becomes receiving
@@ -2177,11 +2428,11 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   EXPECT_TRUE_WAIT(ch.connections().empty(), 1000);
 
   // Have two connections but both become write-time-out later.
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 1));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();  // Becomes receiving
-  ch.AddRemoteCandidate(CreateCandidate("3.3.3.3", 3, 2));
+  ch.AddRemoteCandidate(CreateHostCandidate("3.3.3.3", 3, 2));
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   conn3->ReceivedPing();  // Becomes receiving
@@ -2196,12 +2447,12 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
 // holds even if the transport channel did not lose the writability.
 TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("test channel", 1, nullptr, &pa);
+  cricket::P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   ch.SetIceConfig(CreateIceConfig(2000, false));
   ch.Connect();
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("1.1.1.1", 1, 100));
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 100));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPingResponse();  // Becomes writable and receiving
@@ -2212,9 +2463,237 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   // connected.
   ch.SetIceCredentials(kIceUfrag[1], kIcePwd[1]);
   ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateCandidate("2.2.2.2", 2, 100));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 100));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse();  // Becomes writable and receiving
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
+}
+
+class P2PTransportChannelMostLikelyToWorkFirstTest
+    : public P2PTransportChannelPingTest {
+ public:
+  P2PTransportChannelMostLikelyToWorkFirstTest()
+      : turn_server_(rtc::Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr) {
+    network_manager_.AddInterface(kPublicAddrs[0]);
+    allocator_.reset(new cricket::BasicPortAllocator(
+        &network_manager_, ServerAddresses(), rtc::SocketAddress(),
+        rtc::SocketAddress(), rtc::SocketAddress()));
+    allocator_->set_flags(allocator_->flags() |
+                          cricket::PORTALLOCATOR_DISABLE_STUN |
+                          cricket::PORTALLOCATOR_DISABLE_TCP);
+    cricket::RelayServerConfig config(cricket::RELAY_TURN);
+    config.credentials = kRelayCredentials;
+    config.ports.push_back(
+        cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+    allocator_->AddTurnServer(config);
+    allocator_->set_step_delay(kMinimumStepDelay);
+  }
+
+  cricket::P2PTransportChannel& StartTransportChannel(
+      bool prioritize_most_likely_to_work,
+      uint32_t max_strong_delay) {
+    channel_.reset(
+        new cricket::P2PTransportChannel("checks", 1, nullptr, allocator()));
+    cricket::IceConfig config = channel_->config();
+    config.prioritize_most_likely_candidate_pairs =
+        prioritize_most_likely_to_work;
+    config.max_strong_delay = max_strong_delay;
+    channel_->SetIceConfig(config);
+    PrepareChannel(channel_.get());
+    channel_->Connect();
+    channel_->MaybeStartGathering();
+    return *channel_.get();
+  }
+
+  cricket::BasicPortAllocator* allocator() { return allocator_.get(); }
+  cricket::TestTurnServer* turn_server() { return &turn_server_; }
+
+  // This verifies the next pingable connection has the expected candidates'
+  // types and, for relay local candidate, the expected relay protocol and ping
+  // it.
+  void VerifyNextPingableConnection(
+      const std::string& local_candidate_type,
+      const std::string& remote_candidate_type,
+      const std::string& relay_protocol_type = cricket::UDP_PROTOCOL_NAME) {
+    cricket::Connection* conn =
+        FindNextPingableConnectionAndPingIt(channel_.get());
+    EXPECT_EQ(conn->local_candidate().type(), local_candidate_type);
+    if (conn->local_candidate().type() == cricket::RELAY_PORT_TYPE) {
+      EXPECT_EQ(conn->local_candidate().relay_protocol(), relay_protocol_type);
+    }
+    EXPECT_EQ(conn->remote_candidate().type(), remote_candidate_type);
+  }
+
+  cricket::Candidate CreateRelayCandidate(const std::string& ip,
+                                          int port,
+                                          int priority,
+                                          const std::string& ufrag = "") {
+    cricket::Candidate c = CreateHostCandidate(ip, port, priority, ufrag);
+    c.set_type(cricket::RELAY_PORT_TYPE);
+    return c;
+  }
+
+ private:
+  rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;
+  rtc::FakeNetworkManager network_manager_;
+  cricket::TestTurnServer turn_server_;
+  rtc::scoped_ptr<cricket::P2PTransportChannel> channel_;
+};
+
+// Test that Relay/Relay connections will be pinged first when no other
+// connections have been pinged yet, unless we need to ping a trigger check or
+// we have a best connection.
+TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
+       TestRelayRelayFirstWhenNothingPingedYet) {
+  const uint32_t max_strong_delay = 100;
+  cricket::P2PTransportChannel& ch =
+      StartTransportChannel(true, max_strong_delay);
+  EXPECT_TRUE_WAIT(ch.ports().size() == 2, 5000);
+  EXPECT_EQ(ch.ports()[0]->Type(), cricket::LOCAL_PORT_TYPE);
+  EXPECT_EQ(ch.ports()[1]->Type(), cricket::RELAY_PORT_TYPE);
+
+  ch.AddRemoteCandidate(CreateRelayCandidate("1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 2));
+
+  EXPECT_TRUE_WAIT(ch.connections().size() == 4, 5000);
+
+  // Relay/Relay should be the first pingable connection.
+  cricket::Connection* conn = FindNextPingableConnectionAndPingIt(&ch);
+  EXPECT_EQ(conn->local_candidate().type(), cricket::RELAY_PORT_TYPE);
+  EXPECT_EQ(conn->remote_candidate().type(), cricket::RELAY_PORT_TYPE);
+
+  // Unless that we have a trigger check waiting to be pinged.
+  cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  EXPECT_EQ(conn2->local_candidate().type(), cricket::LOCAL_PORT_TYPE);
+  EXPECT_EQ(conn2->remote_candidate().type(), cricket::LOCAL_PORT_TYPE);
+  conn2->ReceivedPing();
+  EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
+
+  // Make conn3 the best connection.
+  cricket::Connection* conn3 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  EXPECT_EQ(conn3->local_candidate().type(), cricket::LOCAL_PORT_TYPE);
+  EXPECT_EQ(conn3->remote_candidate().type(), cricket::RELAY_PORT_TYPE);
+  conn3->ReceivedPingResponse();
+  ASSERT_TRUE(conn3->writable());
+  conn3->ReceivedPing();
+
+  // Verify that conn3 will be the "best connection" since it is readable and
+  // writable. After |MAX_CURRENT_STRONG_DELAY|, it should be the next pingable
+  // connection.
+  EXPECT_TRUE_WAIT(conn3 == ch.best_connection(), 5000);
+  WAIT(false, max_strong_delay + 100);
+  conn3->ReceivedPingResponse();
+  ASSERT_TRUE(conn3->writable());
+  EXPECT_EQ(conn3, FindNextPingableConnectionAndPingIt(&ch));
+}
+
+// Test that Relay/Relay connections will be pinged first when everything has
+// been pinged even if the Relay/Relay connection wasn't the first to be pinged
+// in the first round.
+TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
+       TestRelayRelayFirstWhenEverythingPinged) {
+  cricket::P2PTransportChannel& ch = StartTransportChannel(true, 100);
+  EXPECT_TRUE_WAIT(ch.ports().size() == 2, 5000);
+  EXPECT_EQ(ch.ports()[0]->Type(), cricket::LOCAL_PORT_TYPE);
+  EXPECT_EQ(ch.ports()[1]->Type(), cricket::RELAY_PORT_TYPE);
+
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 2, 5000);
+
+  // Initially, only have Local/Local and Local/Relay.
+  VerifyNextPingableConnection(cricket::LOCAL_PORT_TYPE,
+                               cricket::LOCAL_PORT_TYPE);
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::LOCAL_PORT_TYPE);
+
+  // Remote Relay candidate arrives.
+  ch.AddRemoteCandidate(CreateRelayCandidate("2.2.2.2", 2, 2));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 4, 5000);
+
+  // Relay/Relay should be the first since it hasn't been pinged before.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+
+  // Local/Relay is the final one.
+  VerifyNextPingableConnection(cricket::LOCAL_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+
+  // Now, every connection has been pinged once. The next one should be
+  // Relay/Relay.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+}
+
+// Test that when we receive a new remote candidate, they will be tried first
+// before we re-ping Relay/Relay connections again.
+TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
+       TestNoStarvationOnNonRelayConnection) {
+  cricket::P2PTransportChannel& ch = StartTransportChannel(true, 100);
+  EXPECT_TRUE_WAIT(ch.ports().size() == 2, 5000);
+  EXPECT_EQ(ch.ports()[0]->Type(), cricket::LOCAL_PORT_TYPE);
+  EXPECT_EQ(ch.ports()[1]->Type(), cricket::RELAY_PORT_TYPE);
+
+  ch.AddRemoteCandidate(CreateRelayCandidate("1.1.1.1", 1, 1));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 2, 5000);
+
+  // Initially, only have Relay/Relay and Local/Relay. Ping Relay/Relay first.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+
+  // Next, ping Local/Relay.
+  VerifyNextPingableConnection(cricket::LOCAL_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+
+  // Remote Local candidate arrives.
+  ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 2));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 4, 5000);
+
+  // Local/Local should be the first since it hasn't been pinged before.
+  VerifyNextPingableConnection(cricket::LOCAL_PORT_TYPE,
+                               cricket::LOCAL_PORT_TYPE);
+
+  // Relay/Local is the final one.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::LOCAL_PORT_TYPE);
+
+  // Now, every connection has been pinged once. The next one should be
+  // Relay/Relay.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+}
+
+// Test the ping sequence is UDP Relay/Relay followed by TCP Relay/Relay,
+// followed by the rest.
+TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
+  // Add a Tcp Turn server.
+  turn_server()->AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  cricket::RelayServerConfig config(cricket::RELAY_TURN);
+  config.credentials = kRelayCredentials;
+  config.ports.push_back(
+      cricket::ProtocolAddress(kTurnTcpIntAddr, cricket::PROTO_TCP, false));
+  allocator()->AddTurnServer(config);
+
+  cricket::P2PTransportChannel& ch = StartTransportChannel(true, 100);
+  EXPECT_TRUE_WAIT(ch.ports().size() == 3, 5000);
+  EXPECT_EQ(ch.ports()[0]->Type(), cricket::LOCAL_PORT_TYPE);
+  EXPECT_EQ(ch.ports()[1]->Type(), cricket::RELAY_PORT_TYPE);
+  EXPECT_EQ(ch.ports()[2]->Type(), cricket::RELAY_PORT_TYPE);
+
+  // Remote Relay candidate arrives.
+  ch.AddRemoteCandidate(CreateRelayCandidate("1.1.1.1", 1, 1));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 3, 5000);
+
+  // UDP Relay/Relay should be pinged first.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
+
+  // TCP Relay/Relay is the next.
+  VerifyNextPingableConnection(cricket::RELAY_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE,
+                               cricket::TCP_PROTOCOL_NAME);
+
+  // Finally, Local/Relay will be pinged.
+  VerifyNextPingableConnection(cricket::LOCAL_PORT_TYPE,
+                               cricket::RELAY_PORT_TYPE);
 }

@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
 
 #include <map>
-#include <vector>
 #include <set>
+#include <vector>
 
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -46,11 +46,8 @@ public:
 
     void SetSsrcs(uint32_t main_ssrc,
                   const std::set<uint32_t>& registered_ssrcs);
-    void SetRelaySSRC(uint32_t ssrc);
     void SetRemoteSSRC(uint32_t ssrc);
     uint32_t RemoteSSRC() const;
-
-    uint32_t RelaySSRC() const;
 
     int32_t IncomingRTCPPacket(
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
@@ -103,7 +100,7 @@ public:
 
     bool UpdateRTCPReceiveInformationTimers();
 
-    int32_t BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec);
+    int32_t BoundingSet(bool* tmmbrOwner, TMMBRSet* boundingSetRec);
 
     int32_t UpdateTMMBR();
 
@@ -302,8 +299,6 @@ protected:
       GUARDED_BY(_criticalSectionRTCPReceiver);
   ReceivedInfoMap _receivedInfoMap;
   std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _receivedCnameMap;
-
-  uint32_t _packetTimeOutMS;
 
   // The last time we received an RTCP RR.
   int64_t _lastReceivedRrMs;

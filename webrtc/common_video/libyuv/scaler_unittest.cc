@@ -11,11 +11,12 @@
 #include <math.h>
 #include <string.h>
 
+#include <memory>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -99,13 +100,14 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
                                 kI420, kI420,
                                 kScalePoint));
   VideoFrame test_frame2;
-  rtc::scoped_ptr<uint8_t[]> orig_buffer(new uint8_t[frame_length_]);
+  std::unique_ptr<uint8_t[]> orig_buffer(new uint8_t[frame_length_]);
   EXPECT_GT(fread(orig_buffer.get(), 1, frame_length_, source_file_), 0U);
   test_frame_.CreateFrame(orig_buffer.get(),
                           orig_buffer.get() + size_y_,
                           orig_buffer.get() + size_y_ + size_uv_,
                           width_, height_,
-                          width_, half_width_, half_width_);
+                          width_, half_width_, half_width_,
+                          kVideoRotation_0);
   EXPECT_EQ(0, test_scaler_.Scale(test_frame_, &test_frame2));
   EXPECT_GT(width_ * height_, test_frame2.allocated_size(kYPlane));
   EXPECT_GT(size_uv_, test_frame2.allocated_size(kUPlane));
@@ -114,8 +116,13 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
   EXPECT_EQ(half_height_, test_frame2.height());
 }
 
-//TODO (mikhal): Converge the test into one function that accepts the method.
-TEST_F(TestScaler, DISABLED_ON_ANDROID(PointScaleTest)) {
+// TODO(mikhal): Converge the test into one function that accepts the method.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_PointScaleTest DISABLED_PointScaleTest
+#else
+#define MAYBE_PointScaleTest PointScaleTest
+#endif
+TEST_F(TestScaler, MAYBE_PointScaleTest) {
   double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScalePoint;
@@ -182,7 +189,12 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(PointScaleTest)) {
   ASSERT_EQ(0, fclose(source_file2));
 }
 
-TEST_F(TestScaler, DISABLED_ON_ANDROID(BiLinearScaleTest)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_BilinearScaleTest DISABLED_BiLinearScaleTest
+#else
+#define MAYBE_BilinearScaleTest BiLinearScaleTest
+#endif
+TEST_F(TestScaler, MAYBE_BiLinearScaleTest) {
   double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScaleBilinear;
@@ -234,7 +246,12 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(BiLinearScaleTest)) {
                 400, 300);
 }
 
-TEST_F(TestScaler, DISABLED_ON_ANDROID(BoxScaleTest)) {
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_BoxScaleTest DISABLED_BoxScaleTest
+#else
+#define MAYBE_BoxScaleTest BoxScaleTest
+#endif
+TEST_F(TestScaler, MAYBE_BoxScaleTest) {
   double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScaleBox;
@@ -322,7 +339,7 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
   return avg_psnr;
 }
 
-// TODO (mikhal): Move part to a separate scale test.
+// TODO(mikhal): Move part to a separate scale test.
 void TestScaler::ScaleSequence(ScaleMethod method,
                    FILE* source_file, std::string out_name,
                    int src_width, int src_height,
@@ -343,7 +360,7 @@ void TestScaler::ScaleSequence(ScaleMethod method,
   total_clock = 0;
   int frame_count = 0;
   size_t src_required_size = CalcBufferSize(kI420, src_width, src_height);
-  rtc::scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[src_required_size]);
+  std::unique_ptr<uint8_t[]> frame_buffer(new uint8_t[src_required_size]);
   int size_y = src_width * src_height;
   int size_uv = ((src_width + 1) / 2) * ((src_height + 1) / 2);
 
@@ -358,7 +375,8 @@ void TestScaler::ScaleSequence(ScaleMethod method,
                             frame_buffer.get() + size_y + size_uv,
                             src_width, src_height,
                             src_width, (src_width + 1) / 2,
-                            (src_width + 1) / 2);
+                            (src_width + 1) / 2,
+                            kVideoRotation_0);
 
     start_clock = TickTime::MillisecondTimestamp();
     EXPECT_EQ(0, test_scaler_.Scale(input_frame, &output_frame));

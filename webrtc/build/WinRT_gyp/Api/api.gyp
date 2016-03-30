@@ -21,7 +21,7 @@
       'target_name': 'webrtc_winrt_api',
       'type': 'shared_library',
       'dependencies': [
-        '../../../../talk/libjingle.gyp:libjingle_peerconnection',
+        '../../../../webrtc/api/api.gyp:libjingle_peerconnection',
         '../../../../third_party/h264_winrt/h264_winrt.gyp:webrtc_h264_winrt',
         '../stats/stats.gyp:webrtc_stats_observer',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',

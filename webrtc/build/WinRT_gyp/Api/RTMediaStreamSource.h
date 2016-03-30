@@ -12,7 +12,7 @@
 
 #include "Media.h"
 #include "MediaSourceHelper.h"
-#include "talk/app/webrtc/mediastreaminterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 

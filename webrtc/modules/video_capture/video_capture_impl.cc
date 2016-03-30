@@ -93,7 +93,7 @@ int64_t VideoCaptureImpl::TimeUntilNextProcess()
 }
 
 // Process any pending tasks such as timeouts
-int32_t VideoCaptureImpl::Process()
+void VideoCaptureImpl::Process()
 {
     CriticalSectionScoped cs(&_callBackCs);
 
@@ -136,8 +136,6 @@ int32_t VideoCaptureImpl::Process()
     }
 
     _lastProcessFrameCount = _incomingFrameTimes[0];
-
-    return 0;
 }
 
 VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
@@ -280,16 +278,10 @@ int32_t VideoCaptureImpl::IncomingFrame(
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
-        int ret = _captureFrame.CreateEmptyFrame(target_width,
-                                                 abs(target_height),
-                                                 stride_y,
-                                                 stride_uv, stride_uv);
-        if (ret < 0)
-        {
-            LOG(LS_ERROR) << "Failed to create empty frame, this should only "
-                             "happen due to bad parameters.";
-            return -1;
-        }
+        _captureFrame.CreateEmptyFrame(target_width,
+                                       abs(target_height),
+                                       stride_y,
+                                       stride_uv, stride_uv);
         const int conversionResult = ConvertToI420(
             commonVideoType, videoFrame, 0, 0,  // No cropping
             width, height, videoFrameLength,

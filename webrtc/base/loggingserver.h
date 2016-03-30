@@ -9,15 +9,13 @@
 #include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/socketstream.h"
 
-namespace webrtc {
-class ThreadWrapper;
-}
-
 namespace rtc {
 class AsyncSocket;
 class SocketAddress;
 class SocketStream;
 class Thread;
+
+class PlatformThread;
 
 class LogSinkImpl
   : public LogSink {
@@ -61,7 +59,7 @@ class LoggingServer : public sigslot::has_slots<sigslot::multi_threaded_local> {
   scoped_ptr<AsyncSocket> listener_;
   std::list<std::pair<AsyncSocket*, LogSinkImpl*> > connections_;
   Thread* thread_;
-  scoped_ptr<webrtc::ThreadWrapper> tw_;
+  scoped_ptr<rtc::PlatformThread> tw_;
 };
 
 }  //  namespace rtc
