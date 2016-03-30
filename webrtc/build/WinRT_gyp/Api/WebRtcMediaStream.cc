@@ -211,7 +211,7 @@ HRESULT WebRtcMediaStream::CreateMediaType(
 }
 
 HRESULT WebRtcMediaStream::MakeSampleCallback(
-  cricket::VideoFrame* frame, IMFSample** sample) {
+  const cricket::VideoFrame* frame, IMFSample** sample) {
   ComPtr<IMFSample> spSample;
   RETURN_ON_FAIL(MFCreateSample(&spSample));
 
@@ -251,7 +251,6 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
     &destRawData, &pitch, &bufferStart, &destMediaBufferSize));
   AutoFunction autoUnlockBuffer([buffer2d]() {buffer2d->Unlock2D();});
 
-  frame->MakeExclusive();
   // Convert to NV12
   uint8* uvDest = destRawData + (pitch * frame->GetHeight());
   libyuv::I420ToNV12(frame->GetYPlane(), frame->GetYPitch(),

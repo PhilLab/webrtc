@@ -80,7 +80,7 @@ class WebRtcMediaStream :
 
   static HRESULT CreateMediaType(unsigned int width, unsigned int height,
     unsigned int rotation, IMFMediaType** ppType, bool isH264);
-  HRESULT MakeSampleCallback(cricket::VideoFrame* frame, IMFSample** sample);
+  HRESULT MakeSampleCallback(const cricket::VideoFrame* frame, IMFSample** sample);
   void FpsCallback(int fps);
 
   HRESULT ReplyToSampleRequest();
