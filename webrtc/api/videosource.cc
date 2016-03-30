@@ -403,15 +403,15 @@ void VideoSource::Restart() {
 }
 
 bool VideoSource::Suspend() {
-    return false;
+  return video_capturer_->Suspend();
 }
 
 bool VideoSource::Resume() {
-    return false;
+  return video_capturer_->Resume();
 }
 
 bool VideoSource::IsSuspended() {
-    return false;
+  return video_capturer_->IsSuspended();
 }
 
 void VideoSource::SetIsH264Source(bool isH264Source) {
