@@ -14,9 +14,9 @@
 
 #include <WinSock2.h>
 
-#include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/test/channel_transport/udp_socket_wrapper.h"
+#include "webrtc/system_wrappers/source/condition_variable_event_win.h"
 
 namespace webrtc {
 namespace test {
@@ -74,14 +74,14 @@ private:
 
     SOCKET _socket;
     UdpSocketManager* _mgr;
-    ConditionVariableWrapper* _closeBlockingCompletedCond;
-    ConditionVariableWrapper* _readyForDeletionCond;
+    ConditionVariableEventWin* _closeBlockingCompletedCond;
+    ConditionVariableEventWin* _readyForDeletionCond;
 
     bool _closeBlockingActive;
     bool _closeBlockingCompleted;
     bool _readyForDeletion;
 
-    CriticalSectionWrapper* _cs;
+    CRITICAL_SECTION _cs;
 };
 
 }  // namespace test

@@ -37,10 +37,10 @@ UdpSocketWinRT::UdpSocketWinRT(const int32_t id, UdpSocketManager* mgr,
 
     _obj = NULL;
     _incomingCb = NULL;
-    _readyForDeletionCond = ConditionVariableWrapper::CreateConditionVariable();
+    _readyForDeletionCond = new webrtc::ConditionVariableEventWin;
     _closeBlockingCompletedCond =
-        ConditionVariableWrapper::CreateConditionVariable();
-    _cs = CriticalSectionWrapper::CreateCriticalSection();
+        new webrtc::ConditionVariableEventWin;
+    InitializeCriticalSection(&_cs);
     _readyForDeletion = false;
     _closeBlockingActive = false;
     _closeBlockingCompleted= false;
@@ -85,10 +85,7 @@ UdpSocketWinRT::~UdpSocketWinRT()
         delete _closeBlockingCompletedCond;
     }
 
-    if(_cs)
-    {
-        delete _cs;
-    }
+    DeleteCriticalSection(&_cs);
 }
 
 bool UdpSocketWinRT::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
@@ -231,30 +228,30 @@ bool UdpSocketWinRT::WantsIncoming() { return _wantsIncoming; }
 
 void UdpSocketWinRT::CloseBlocking()
 {
-    _cs->Enter();
+    EnterCriticalSection(&_cs);
     _closeBlockingActive = true;
     if(!CleanUp())
     {
         _closeBlockingActive = false;
-        _cs->Leave();
+        LeaveCriticalSection(&_cs);
         return;
     }
 
     while(!_readyForDeletion)
     {
-        _readyForDeletionCond->SleepCS(*_cs);
+        _readyForDeletionCond->SleepCS(&_cs);
     }
     _closeBlockingCompleted = true;
     _closeBlockingCompletedCond->Wake();
-    _cs->Leave();
+    LeaveCriticalSection(&_cs);
 }
 
 void UdpSocketWinRT::ReadyForDeletion()
 {
-    _cs->Enter();
+    EnterCriticalSection(&_cs);
     if(!_closeBlockingActive)
     {
-        _cs->Leave();
+        LeaveCriticalSection(&_cs);
         return;
     }
     closesocket(_socket);
@@ -263,9 +260,9 @@ void UdpSocketWinRT::ReadyForDeletion()
     _readyForDeletionCond->Wake();
     while(!_closeBlockingCompleted)
     {
-        _closeBlockingCompletedCond->SleepCS(*_cs);
+        _closeBlockingCompletedCond->SleepCS(&_cs);
     }
-    _cs->Leave();
+    LeaveCriticalSection(&_cs);
 }
 
 bool UdpSocketWinRT::CleanUp()

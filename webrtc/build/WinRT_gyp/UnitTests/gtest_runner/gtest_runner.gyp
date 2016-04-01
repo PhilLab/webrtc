@@ -16,9 +16,9 @@
       'target_name': 'gtest_runner',
       'type': 'executable',
       'dependencies': [
-        #'../../../../../libjingle_tests.gyp:libjingle_media_unittest',
-        #'../../../../../libjingle_tests.gyp:libjingle_p2p_unittest',
-        #'../../../../../libjingle_tests.gyp:libjingle_peerconnection_unittest',
+        '../../../../../webrtc/media/media_tests.gypi:rtc_media_unittests',
+        '../../../../../webrtc/pc/pc_tests.gypi:rtc_pc_unittests',
+        '../../../../../webrtc/api/api_tests.gyp:peerconnection_unittests',
         # TODO(winrt) uncomment when the issue with microphone access is fixed
         #'../../../../../libjingle_tests.gyp:libjingle_peerconnection_unittest',
         '../../../../../webrtc/common_audio/common_audio.gyp:common_audio_unittests',
@@ -36,7 +36,7 @@
         '../../../../../webrtc/webrtc.gyp:rtc_unittests',
         '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
         '../../../../test/test.gyp:test_common',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+        #'<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',
@@ -185,7 +185,7 @@
               'AdditionalOptions': [
                 # Fixes linking for assembler opus source files 
                 '<(PRODUCT_DIR)/obj/opus/celt_pitch_xcorr_arm.obj',
-                '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx/*.obj',
+                '<(SHARED_INTERMEDIATE_DIR)/third_party/libvpx_new/*.obj',
                 '../../../../../third_party/libyuv/source/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_armv7/*.obj',
                 '<(PRODUCT_DIR)/obj/openmax_dl_neon/*.obj',

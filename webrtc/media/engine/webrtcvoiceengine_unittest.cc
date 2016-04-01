@@ -3148,7 +3148,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
   // Try resetting the default sink.
   channel_->SetRawAudioSink(0, nullptr);
   EXPECT_EQ(nullptr, GetRecvStream(0x01).sink());
-
+}
 // TODO(winrt): Enable when the known issue with the mic access is fixed
 #ifndef WINRT
   // Try setting the default sink while the default stream exists.

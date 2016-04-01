@@ -53,30 +53,6 @@
           }, {
             'videoprocessor_defines': [],
           }],
-          ['OS_RUNTIME=="winrt"', {
-            'dependencies': [
-              'webrtc_opus_fec_test',
-            ],
-            'dependencies!': [
-              'desktop_capture', # WinRT doesn't support desktop_capture
-              '<(webrtc_root)/modules/modules.gyp:video_capture',
-            ],
-            'sources!': [ # WinRT doesn't support desktop_capture
-              'desktop_capture/desktop_and_cursor_composer_unittest.cc',
-              'desktop_capture/desktop_region_unittest.cc',
-              'desktop_capture/differ_block_unittest.cc',
-              'desktop_capture/differ_unittest.cc',
-              'desktop_capture/mouse_cursor_monitor_unittest.cc',
-              'desktop_capture/screen_capturer_helper_unittest.cc',
-              'desktop_capture/screen_capturer_mac_unittest.cc',
-              'desktop_capture/screen_capturer_mock_objects.h',
-              'desktop_capture/screen_capturer_unittest.cc',
-              'desktop_capture/window_capturer_unittest.cc',
-              'desktop_capture/win/cursor_unittest.cc',
-              'desktop_capture/win/cursor_unittest_resources.h',
-              'desktop_capture/win/cursor_unittest_resources.rc',
-            ],
-          }],
         ],
       },
       'targets': [
@@ -408,7 +384,32 @@
             'video_processing/test/video_processing_unittest.h',
           ],
           'conditions': [
-            ['enable_bwe_test_logging==1', {
+            ['OS_RUNTIME=="winrt"', {
+              'dependencies': [
+                'webrtc_opus_fec_test',
+              ],
+              'dependencies!': [
+                'desktop_capture', # WinRT doesn't support desktop_capture
+                '<(webrtc_root)/modules/modules.gyp:video_capture',
+              ],
+              'sources!': [ # WinRT doesn't support desktop_capture
+                'desktop_capture/desktop_and_cursor_composer_unittest.cc',
+                'desktop_capture/desktop_region_unittest.cc',
+                'desktop_capture/differ_block_unittest.cc',
+                'desktop_capture/differ_unittest.cc',
+                'desktop_capture/differ_block_sse2.cc',
+                'desktop_capture/mouse_cursor_monitor_unittest.cc',
+                'desktop_capture/screen_capturer_helper_unittest.cc',
+                'desktop_capture/screen_capturer_mac_unittest.cc',
+                'desktop_capture/screen_capturer_mock_objects.h',
+                'desktop_capture/screen_capturer_unittest.cc',
+                'desktop_capture/window_capturer_unittest.cc',
+                'desktop_capture/win/cursor_unittest.cc',
+                'desktop_capture/win/cursor_unittest_resources.h',
+                'desktop_capture/win/cursor_unittest_resources.rc',
+              ],
+            }],
+              ['enable_bwe_test_logging==1', {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
             }, {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
