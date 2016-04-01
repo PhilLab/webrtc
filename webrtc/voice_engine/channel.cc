@@ -628,13 +628,14 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
         capture_start_ntp_time_ms_ =
             audioFrame->ntp_time_ms_ - audioFrame->elapsed_time_ms_;
 #ifdef WINRT
-          // /WINRT TODO:: this is only the point when we finish decoding, can we
-          // locate the point the real delay might be close to this
-          // endToEndDelay+ synccurrentAudioDelay
+
           int32_t endToEndDelay =
             static_cast<int32_t>(Clock::GetRealTimeClock()->CurrentNtpInMilliseconds()
               - audioFrame->ntp_time_ms_);
-          ///WINRT TODO: check if endToEndDelay is still possible be 'negative' after two rtcp
+
+          // In a slow testing network, where ntp clock sync margin between two testing devices
+          // might be greater than the audio processing time ( especially for a fast testing device)
+          // we shall ignore the negative value for this situation.
           if (endToEndDelay > 0) 
           {
             TRACE_COUNTER1("webrtc", "EndToEndAudioDecoded", endToEndDelay);

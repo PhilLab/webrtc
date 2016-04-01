@@ -3435,17 +3435,6 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
         clock->GetFrequency(&freq);
         playout_delay = ROUND((static_cast<double>(_writtenSamples) /
           _devicePlaySampleRate - static_cast<double>(pos) / freq) * 1000.0);
-
-        if (playout_delay < 0) {
-          // something wrong, reset to 0
-          // TODO(winrt) : for the second PCC call, e.g.: hangup, and make
-          // another call.
-          // we always got negative playout_delay, need to investigate more
-          // to see why. this would cause the estimated audio delay becomes
-          // inacurate, seems not impacting lipsync too much though
-          // a typical playout_delay is about 40-50ms
-          playout_delay = 0;
-        }
         _sndCardPlayDelay = playout_delay;
       }
 
