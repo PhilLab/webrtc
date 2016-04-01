@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/modules/video_capture/windows/video_capture_sink_winrt.h"
 #include "webrtc/base/Win32.h"
 #include "libyuv/planar_functions.h"
@@ -213,6 +214,7 @@ ref class CaptureDevice sealed {
 
   bool capture_started_;
   VideoCaptureCapability frame_info_;
+  std::unique_ptr<webrtc::EventWrapper> _stopped;
 };
 
 CaptureDevice::CaptureDevice(
@@ -222,6 +224,8 @@ CaptureDevice::CaptureDevice(
     media_sink_(nullptr),
     capture_device_listener_(capture_device_listener),
     capture_started_(false) {
+  _stopped.reset(webrtc::EventWrapper::Create());
+  _stopped->Set();
 }
 
 CaptureDevice::~CaptureDevice() {
@@ -261,33 +265,44 @@ void CaptureDevice::Cleanup() {
   if (media_capture == nullptr) {
     return;
   }
-
   if (capture_started_) {
-    Concurrency::create_task(
-      media_capture->StopRecordAsync()).
+    if (_stopped->Wait(5000) == kEventTimeout) {
+
+      Concurrency::create_task(
+        media_capture->StopRecordAsync()).
         then([this](Concurrency::task<void>& async_info) {
-      try {
-        async_info.get();
-        CleanupSink();
-        CleanupMediaCapture();
-      } catch (Platform::Exception^ e) {
-        CleanupSink();
-        CleanupMediaCapture();
-        throw;
-      }
-    }).wait();
+        try {
+          async_info.get();
+          CleanupSink();
+          CleanupMediaCapture();
+          device_id_ = nullptr;
+          _stopped->Set();
+        }
+        catch (Platform::Exception^ e) {
+          CleanupSink();
+          CleanupMediaCapture();
+          device_id_ = nullptr;
+          _stopped->Set();
+          throw;
+        }
+      }).wait();
+    }
   } else {
     CleanupSink();
     CleanupMediaCapture();
+    device_id_ = nullptr;
   }
-
-  device_id_ = nullptr;
 }
 
 void CaptureDevice::StartCapture(
   MediaEncodingProfile^ media_encoding_profile,
   IVideoEncodingProperties^ video_encoding_properties) {
   if (capture_started_) {
+    throw ref new Platform::Exception(
+      __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
+  }
+
+  if (_stopped->Wait(5000) == kEventTimeout) {
     throw ref new Platform::Exception(
       __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
   }
@@ -394,12 +409,14 @@ void CaptureDevice::StopCapture() {
       async_info.get();
       CleanupSink();
       CleanupMediaCapture();
+      _stopped->Set();
     } catch (Platform::Exception^ e) {
       CleanupSink();
       CleanupMediaCapture();
+      _stopped->Set();
       throw;
     }
-  }).wait();
+  });
 }
 
 void CaptureDevice::OnCaptureFailed(
