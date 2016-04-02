@@ -439,8 +439,8 @@ class AudioDeviceWindowsWasapi : public AudioDeviceGeneric {
 
     bool                                    _usingInputDeviceIndex;
     bool                                    _usingOutputDeviceIndex;
-    AudioDeviceModule::WindowsDeviceType    _inputDevice;
-    AudioDeviceModule::WindowsDeviceType    _outputDevice;
+    AudioDeviceRole                         _outputDeviceRole;
+    AudioDeviceRole                         _inputDeviceRole;
     uint16_t                                _inputDeviceIndex;
     uint16_t                                _outputDeviceIndex;
 

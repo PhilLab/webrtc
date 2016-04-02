@@ -334,45 +334,42 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
             << "VoEHardware API not available.";
         } else {
           if (_selectedAudioCapturerDevice.id != "") {
-              // Selected audio playout device is not the default device.
-              audioCaptureDeviceIndex = GetAudioCaptureDeviceIndex(voiceEngineHardware,
-                  _selectedAudioPlayoutDevice.name, _selectedAudioPlayoutDevice.id);
-              if (audioCaptureDeviceIndex >= 0) {
-                  useDefaultAudioRecordingDevice = false;
-              }
-              else {
-                  LOG(LS_WARNING) << "Audio capture device "
-                      << _selectedAudioCapturerDevice.name
-                      << " not found, using default device";
-              }
+            // Selected audio playout device is not the default device.
+            audioCaptureDeviceIndex = GetAudioCaptureDeviceIndex(voiceEngineHardware,
+              _selectedAudioCapturerDevice.name, _selectedAudioCapturerDevice.id);
+            if (audioCaptureDeviceIndex >= 0) {
+                useDefaultAudioRecordingDevice = false;
+            } else {
+              LOG(LS_WARNING) << "Audio capture device "
+                << _selectedAudioCapturerDevice.name
+                << " not found, using default device";
+            }
           }
           if (_selectedAudioPlayoutDevice.id != "") {
-              // Selected audio playout device is not the default device.
-              audioPlayoutDeviceIndex = GetAudioPlayoutDeviceIndex(voiceEngineHardware,
-                  _selectedAudioPlayoutDevice.name, _selectedAudioPlayoutDevice.id);
-              if (audioPlayoutDeviceIndex >= 0) {
-                  useDefaultAudioPlayoutDevice = false;
-              }
-              else {
-                  LOG(LS_WARNING) << "Audio playout device "
-                      << _selectedAudioPlayoutDevice.name
-                      << " not found, using default device";
-              }
+            // Selected audio playout device is not the default device.
+            audioPlayoutDeviceIndex = GetAudioPlayoutDeviceIndex(voiceEngineHardware,
+              _selectedAudioPlayoutDevice.name, _selectedAudioPlayoutDevice.id);
+            if (audioPlayoutDeviceIndex >= 0) {
+                useDefaultAudioPlayoutDevice = false;
+            } else {
+              LOG(LS_WARNING) << "Audio playout device "
+                << _selectedAudioPlayoutDevice.name
+                << " not found, using default device";
+            }
           }
         }
-
         int audioCaptureDeviceIndexSelected = useDefaultAudioRecordingDevice ?
-            0 : audioCaptureDeviceIndex;
+          -1 /*Default communication device*/ : audioCaptureDeviceIndex;
         int audioPlayoutDeviceIndexSelected = useDefaultAudioPlayoutDevice ?
-            0 : audioPlayoutDeviceIndex;
+          -1 /*Default communication device*/: audioPlayoutDeviceIndex;
 
         if (voiceEngineHardware->SetRecordingDevice(audioCaptureDeviceIndexSelected)
           != 0) {
           LOG(LS_ERROR) << "Failed to set audio recording devices.";
         }
         if(voiceEngineHardware->SetPlayoutDevice(audioPlayoutDeviceIndexSelected)
-            != 0) {
-            LOG(LS_ERROR) << "Failed to set audio playout devices.";
+          != 0) {
+          LOG(LS_ERROR) << "Failed to set audio playout devices.";
         }
 
         LOG(LS_INFO) << "Creating audio track.";
@@ -732,15 +729,15 @@ int Media::GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware,
     const std::string& name, const std::string& id) {
   int devices;
   if (voeHardware->GetNumOfPlayoutDevices(devices) != 0) {
-      LOG(LS_ERROR) << "Can't obtain audio playout devices.";
-      return 0;
+    LOG(LS_ERROR) << "Can't obtain audio playout devices.";
+    return 0;
   }
   int index = -1;
   char devname[128];
   char devid[128];
   for (int i = 0; i < devices; i++) {
     voeHardware->GetPlayoutDeviceName(i, devname, devid);
-    if (id.compare(id) == 0) {
+    if (id.compare(devid) == 0) {
       index = i;
       break;
     }
@@ -749,23 +746,23 @@ int Media::GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware,
 }
 
 int Media::GetAudioCaptureDeviceIndex(webrtc::VoEHardware* voeHardware,
-    const std::string& name, const std::string& id) {
-    int devices;
-    if (voeHardware->GetNumOfRecordingDevices(devices) != 0) {
-        LOG(LS_ERROR) << "Can't obtain audio capture devices.";
-        return 0;
+  const std::string& name, const std::string& id) {
+  int devices;
+  if (voeHardware->GetNumOfRecordingDevices(devices) != 0) {
+    LOG(LS_ERROR) << "Can't obtain audio capture devices.";
+    return 0;
+  }
+  int index = -1;
+  char devname[128];
+  char devid[128];
+  for (int i = 0; i < devices; i++) {
+    voeHardware->GetRecordingDeviceName(i, devname, devid);
+    if (id.compare(devid) == 0) {
+      index = i;
+      break;
     }
-    int index = -1;
-    char devname[128];
-    char devid[128];
-    for (int i = 0; i < devices; i++) {
-        voeHardware->GetRecordingDeviceName(i, devname, devid);
-        if (id.compare(id) == 0) {
-            index = i;
-            break;
-        }
-    }
-    return index;
+  }
+  return index;
 }
 
 }  // namespace webrtc_winrt_api
