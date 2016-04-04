@@ -100,7 +100,10 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   rtc::TraceLog gTraceLog;
   rtc::scoped_ptr<rtc::LoggingServer> gLoggingServer;
   rtc::scoped_ptr<FileLogSink> gLoggingFile;
-  cricket::VideoFormat gPreferredVideoCaptureFormat;
+  // Default resolution. If no preferred video capture format is specified,
+  // this is the resolution we will use.
+  cricket::VideoFormat gPreferredVideoCaptureFormat = cricket::VideoFormat(640, 480,
+    cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_ANY);
 
   // Helper function, this is to replace the webrtc macro TRACE_COUNTER1
   // as it is not working when it is directly called from background process

@@ -390,7 +390,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           // Select the first video device as the capturer.
           webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
           for (auto videoDev : g_videoDevices) {
-            cricket::Device dev(FromCx(videoDev->Id), FromCx(videoDev->Name));
+            cricket::Device dev(FromCx(videoDev->Name), FromCx(videoDev->Id));
             videoCapturer = _dev_manager->CreateVideoCapturer(dev);
             if (videoCapturer != NULL)
               break;
