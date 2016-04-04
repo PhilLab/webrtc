@@ -403,7 +403,6 @@ namespace webrtc_winrt_api {
   public ref class Media sealed {
   public:
     static Media^ CreateMedia();
-    static IAsyncOperation<Media^>^ CreateMediaAsync();
 
     virtual ~Media();
 
@@ -491,7 +490,7 @@ namespace webrtc_winrt_api {
     /// <param name="device">Microphone to be used for audio capturing.If null,
     /// default audio recording device will be used</param>
     /// <returns>True if the operation succeeded.</returns>
-    bool SelectAudioDevice(MediaDevice^ device);
+    bool SelectAudioCaptureDevice(MediaDevice^ device);
 
     /// <summary>
     /// Allows switching between audio playout devices (speakers).

@@ -281,22 +281,19 @@ Media::Media() :
     return;
   }
   SubscribeToMediaDeviceChanges();
+
+  // Warning, do not perform time consuming operation in this constructor
+  // such as audio/video device enumeration, which might cause threading issue
+  // for WinJS app on windows8.1
+
 }
 
 Media::~Media() {
   UnsubscribeFromMediaDeviceChanges();
 }
 
-// TODO(winrt): Remove this function and always use the async one.
 Media^ Media::CreateMedia() {
   return ref new Media();
-}
-
-IAsyncOperation<Media^>^ Media::CreateMediaAsync() {
-  IAsyncOperation<Media^>^ asyncOp = Concurrency::create_async([]()->Media^ {
-    return CreateMedia();
-  });
-  return asyncOp;
 }
 
 namespace globals {
@@ -542,8 +539,7 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
   }
 }
 
-// TODO(winrt): Consider renaming this method to SelectAudioCaptureDevice.
-bool Media::SelectAudioDevice(MediaDevice^ device) {
+bool Media::SelectAudioCaptureDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
   _selectedAudioCapturerDevice.id = "";
   _selectedAudioCapturerDevice.name =
