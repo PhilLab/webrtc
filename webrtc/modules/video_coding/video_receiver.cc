@@ -430,6 +430,8 @@ VideoCodecType VideoReceiver::ReceiveCodec() const {
   return _codecDataBase.ReceiveCodec();
 }
 
+bool globalRequestKeyFrame = false;
+
 // Incoming packet from network parsed and ready for decode, non blocking.
 int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
                                       size_t payloadLength,
@@ -449,12 +451,13 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
                                        rtpInfo.type.Video.height);
   // TODO(holmer): Investigate if this somehow should use the key frame
   // request scheduling to throttle the requests.
-  if (ret == VCM_FLUSH_INDICATOR) {
+  if (ret == VCM_FLUSH_INDICATOR || globalRequestKeyFrame) {
     {
       CriticalSectionScoped process_cs(process_crit_sect_.get());
       drop_frames_until_keyframe_ = true;
     }
     RequestKeyFrame();
+    globalRequestKeyFrame = false;
   } else if (ret < 0) {
     return ret;
   }

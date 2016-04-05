@@ -71,7 +71,6 @@ int H264WinRTEncoderImpl::InitEncode(const VideoCodec* inst,
   currentHeight_ = inst->height;
   currentBitrateBps_ = inst->targetBitrate > 0 ? inst->targetBitrate * 1024 : currentWidth_ * currentHeight_ * 2.0;
   currentFps_ = inst->maxFramerate;
-  // TODO: GoogleMerge - This needs to be tested
   quality_scaler_.Init(inst->qpMax / 2, 64, false, 0, currentWidth_, currentHeight_);
   return InitEncoderWithSettings(inst);
 }
@@ -313,6 +312,22 @@ int H264WinRTEncoderImpl::Encode(
     webrtc::CriticalSectionScoped csLock(_lock.get());
     if (!inited_) {
       return -1;
+    }
+  }
+
+
+  if (frame_types != nullptr) {
+    for (auto frameType : *frame_types) {
+      if (frameType == kVideoFrameKey) {
+        LOG(LS_INFO) << "Key frame requested in H264 encoder.";
+        ComPtr<IMFSinkWriterEncoderConfig> encoderConfig;
+        sinkWriter_.As(&encoderConfig);
+        ComPtr<IMFAttributes> encoderAttributes;
+        MFCreateAttributes(&encoderAttributes, 1);
+        encoderAttributes->SetUINT32(CODECAPI_AVEncVideoForceKeyFrame, TRUE);
+        encoderConfig->PlaceEncodingParameters(streamIndex_, encoderAttributes.Get());
+        break;
+      }
     }
   }
 

@@ -22,6 +22,18 @@
 using Microsoft::WRL::MakeAndInitialize;
 using Windows::System::Threading::TimerElapsedHandler;
 
+namespace webrtc {
+  namespace vcm {
+    // How we trigger a key frame request when
+    // registering an H264 renderer. We render
+    // encoded samples so we have to request a
+    // key frame as fast as possible otherwise
+    // we don't render anything until the next
+    // key frame.
+    extern bool globalRequestKeyFrame;
+  }
+}
+
 namespace webrtc_winrt_api_internal {
 
 #define MAX_FRAME_DELAY_MS 30
@@ -86,7 +98,9 @@ HRESULT WebRtcMediaStream::RuntimeClassInitialize(
   RETURN_ON_FAIL(mediaTypeHandler->SetCurrentMediaType(_mediaType.Get()));
 
   track->SetRenderer(this);
-
+  if (_isH264) {
+    webrtc::vcm::globalRequestKeyFrame = true;
+  }
   return S_OK;
 }
 
