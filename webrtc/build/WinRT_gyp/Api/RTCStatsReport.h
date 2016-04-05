@@ -203,6 +203,7 @@ namespace webrtc_winrt_api {
         RTCStatsValueName, Platform::Object^>();
     }
 
+    property Platform::String^ ReportId;
     property double Timestamp;  // Time since 1970-01-01T00:00:00Z
                                 // in milliseconds
     property RTCStatsType StatsType;

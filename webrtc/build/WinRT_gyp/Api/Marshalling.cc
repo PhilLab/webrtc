@@ -501,6 +501,9 @@ namespace webrtc_winrt_api_internal {
     webrtc_winrt_api::RTCStatsReport^* outObj) {
     (*outObj) = ref new webrtc_winrt_api::RTCStatsReport();
 
+    if (inObj->id() != nullptr) {
+      (*outObj)->ReportId = ToCx(inObj->id()->ToString());
+    }
     (*outObj)->Timestamp = inObj->timestamp();
 
     webrtc_winrt_api::RTCStatsType type;
