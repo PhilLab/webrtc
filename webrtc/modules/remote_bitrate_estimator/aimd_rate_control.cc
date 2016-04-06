@@ -105,7 +105,7 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
   // Set the initial bit rate value to what we're receiving the first half
   // second.
   if (!bitrate_is_initialized_) {
-    const int64_t kInitializationTimeMs = 15000;
+    const int64_t kInitializationTimeMs = 5000;
     RTC_DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
     if (time_first_incoming_estimate_ < 0) {
       if (input->incoming_bitrate > 0) {

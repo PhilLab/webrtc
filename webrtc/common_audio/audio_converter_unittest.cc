@@ -31,7 +31,7 @@ ScopedBuffer CreateBuffer(const std::vector<float>& data, size_t frames) {
   for (size_t i = 0; i < num_channels; ++i)
     for (size_t j = 0; j < frames; ++j)
       sb->channels()[i][j] = data[i] * j;
-  return sb.Pass();
+  return sb;
 }
 
 void VerifyParams(const ChannelBuffer<float>& ref,

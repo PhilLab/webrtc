@@ -190,6 +190,9 @@
             '<(DEPTH)/tools/xdisplaycheck/xdisplaycheck.gyp:xdisplaycheck',
           ],
         }],
+        ['OS == "win" and OS_RUNTIME == "winrt"', {
+          'dependencies!': [ '<(webrtc_root)/base/base.gyp:gtest_prod' ],
+        }],
       ],
     },
     {
@@ -244,7 +247,7 @@
         'channel_transport',
         'test_common',
         'test_support_main',
-        '<(webrtc_root)/modules/modules.gyp:video_capture',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
@@ -326,6 +329,11 @@
            'run_loop.cc',
          ],
        }],
+       ['OS=="win" and OS_RUNTIME=="winrt"', {
+          'sources!' :[
+            'win/run_loop_win.cc',
+          ],
+       }],
      ],
      'dependencies': [
        '<(DEPTH)/testing/gmock.gyp:gmock',
@@ -334,7 +342,7 @@
        '<(webrtc_root)/base/base.gyp:rtc_base',
        '<(webrtc_root)/common.gyp:webrtc_common',
        '<(webrtc_root)/modules/modules.gyp:media_file',
-       '<(webrtc_root)/modules/modules.gyp:video_render',
+       '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
        '<(webrtc_root)/webrtc.gyp:webrtc',
        'rtp_test_utils',
        'test_support',

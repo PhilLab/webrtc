@@ -30,13 +30,13 @@ void HistogramAdd(
 // The fact that metrics_defaults.cc doesn't define all functions
 // found in histogram.cc results in linking errors.
 #ifdef WINRT
-namespace test {
-  int LastHistogramSample(const std::string& name) { return 0; }
-
-  int NumHistogramSamples(const std::string& name) { return 0; }
-
-  void ClearHistograms() {}
-}  // namespace test
+//namespace test {
+//  int LastHistogramSample(const std::string& name) { return 0; }
+//
+//  int NumHistogramSamples(const std::string& name) { return 0; }
+//
+//  void ClearHistograms() {}
+//}  // namespace test
 #endif
 }  // namespace webrtc
 
