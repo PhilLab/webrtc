@@ -55,6 +55,7 @@
         'WebRtcMediaSource.cc',
         'WebRtcMediaStream.h',
         'WebRtcMediaStream.cc',
+        'RTCStatsReport.h',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and (winrt_platform=="win10" or winrt_platform=="win10_arm")', {
