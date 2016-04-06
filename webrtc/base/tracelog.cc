@@ -69,7 +69,7 @@ void TraceLog::Add(char phase,
   const unsigned char* arg_types,
   const unsigned long long* arg_values,
   unsigned char flags) {
-  if (!is_tracing_)
+  if (!IsTracing())
     return;
 
   std::ostringstream t;
@@ -127,8 +127,8 @@ void TraceLog::Add(char phase,
 }
 
 void TraceLog::StartTracing() {
+	CritScope lock(&critical_section_);
   if (!is_tracing_) {
-    CritScope lock(&critical_section_);
     oss_.clear();
     oss_.str("");
     oss_ << "{ \"traceEvents\": [";
@@ -141,8 +141,8 @@ void TraceLog::StartTracing() {
 }
 
 void TraceLog::StopTracing() {
+   CritScope lock(&critical_section_);
   if (is_tracing_) {
-    CritScope lock(&critical_section_);
     long pos = oss_.tellp();
     oss_.seekp(pos - 1);
     oss_ << "]}";
@@ -151,6 +151,7 @@ void TraceLog::StopTracing() {
 }
 
 bool TraceLog::IsTracing() {
+  CritScope lock(&critical_section_);
   return is_tracing_;
 }
 
