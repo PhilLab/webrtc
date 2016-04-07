@@ -658,8 +658,8 @@ void BlackFramesGenerator::StopCapture() {
 }
 
 void BlackFramesGenerator::Cleanup() {
+  capture_device_listener_ = nullptr;
   if (capture_started_) {
-    capture_device_listener_ = nullptr;
     StopCapture();
   }
 }
