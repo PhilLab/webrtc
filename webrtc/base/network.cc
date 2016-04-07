@@ -499,9 +499,15 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
     Windows::Networking::HostName^ hostname = hostnames->GetAt(i);
     // TODO(WINRT): Group networks instead of one-to-one mapping.
     if (hostname->Type == Windows::Networking::HostNameType::Ipv4) {
+
+      std::string addrStr = rtc::ToUtf8(hostname->CanonicalName->Data());
+      if (addrStr.substr(0, 7) == "169.254") {
+        LOG(LS_INFO) << "Ignoring private ip address: " << addrStr;
+        continue;
+      }
+
       struct in_addr addr;
-      rtc::inet_pton(AF_INET, rtc::ToUtf8(
-        hostname->CanonicalName->Data()).c_str(), &addr);
+      rtc::inet_pton(AF_INET, addrStr.c_str(), &addr);
       IPAddress ip(addr);
       int prefixLength = hostname->IPInformation->PrefixLength->Value;
       // TODO(WINRT): Meaningful network text.
