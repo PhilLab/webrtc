@@ -491,13 +491,21 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 
 #if defined(WINRT)
 bool BasicNetworkManager::CreateNetworks(bool include_ignored,
-    NetworkList* networks) const {
+                                         NetworkList* networks) const {
 
   auto hostnames =
     Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
   for (unsigned int i = 0; i < hostnames->Size; ++i) {
     Windows::Networking::HostName^ hostname = hostnames->GetAt(i);
-    // TODO(WINRT): Group networks instead of one-to-one mapping.
+
+    std::string networkInfterfaceId("unknown_interface");
+    if (hostname != nullptr && hostname->IPInformation != nullptr
+      && hostname->IPInformation->NetworkAdapter != nullptr) {
+
+      networkInfterfaceId = rtc::ToUtf8(
+        hostname->IPInformation->NetworkAdapter->NetworkAdapterId.ToString()->Data());
+    }
+
     if (hostname->Type == Windows::Networking::HostNameType::Ipv4) {
 
       std::string addrStr = rtc::ToUtf8(hostname->CanonicalName->Data());
@@ -510,8 +518,8 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
       rtc::inet_pton(AF_INET, addrStr.c_str(), &addr);
       IPAddress ip(addr);
       int prefixLength = hostname->IPInformation->PrefixLength->Value;
-      // TODO(WINRT): Meaningful network text.
-      auto network = new Network("NetworkNameV4", "NetworkDescriptionV4", ip,
+
+      auto network = new Network(networkInfterfaceId, networkInfterfaceId, ip,
         prefixLength);
       network->AddIP(InterfaceAddress(ip));
       networks->push_back(network);
@@ -521,8 +529,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
         hostname->CanonicalName->Data()).c_str(), &addr);
       IPAddress ip(addr);
       int prefixLength = hostname->IPInformation->PrefixLength->Value;
-      // TODO(WINRT): Meaningful network text.
-      auto network = new Network("NetworkNameV6", "NetworkDescriptionV6", ip,
+      auto network = new Network(networkInfterfaceId, networkInfterfaceId, ip,
         prefixLength);
       network->AddIP(InterfaceAddress(ip));
       networks->push_back(network);

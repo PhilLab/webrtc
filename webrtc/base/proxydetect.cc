@@ -606,7 +606,6 @@ bool GetWinRTProxySettings(const char* agent, const char* url, ProxyInfo* proxy)
     // TODO(winrt): Figure out how to do this
     //       auto action = NetworkInformation::GetProxyConfigurationAsync(ref new Uri(MkString(url)));
     //       Problem is this function is async which doesn't play well with the existing sync nature of our api.
-
     return false;
 }
 #elif defined(WEBRTC_WIN)  // Windows specific implementation for reading Internet

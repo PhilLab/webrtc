@@ -464,8 +464,8 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
 #endif
 
 #if defined(WINRT)
-// TODO(winrt): See if we can switch on the per_user flag.
 bool Win32Filesystem::GetAppDataFolder(Pathname* path, bool per_user) {
+  // For a winrt app, ApplicationData are always per-user
   auto folder = Windows::Storage::ApplicationData::Current->LocalFolder;
   TCHAR buffer[MAX_PATH + 1];
   wcsncpy_s(buffer, arraysize(buffer), folder->Path->Data(), _TRUNCATE);
