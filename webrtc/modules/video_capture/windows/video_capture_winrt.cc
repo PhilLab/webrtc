@@ -14,6 +14,7 @@
 
 #include <string>
 #include <vector>
+#include <Mferror.h>
 
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
@@ -398,8 +399,8 @@ void CaptureDevice::StartCapture(
 
 void CaptureDevice::StopCapture() {
   if (!capture_started_) {
-    throw ref new Platform::Exception(
-      __HRESULT_FROM_WIN32(ERROR_INVALID_STATE));
+    LOG(LS_INFO) << "CaptureDevice::StopCapture: called when never started";
+    return;
   }
 
   Concurrency::create_task(
@@ -414,7 +415,15 @@ void CaptureDevice::StopCapture() {
       CleanupSink();
       CleanupMediaCapture();
       _stopped->Set();
-      throw;
+      if ((e->HResult != MF_E_HW_MFT_FAILED_START_STREAMING) &&
+          (e->HResult != MF_E_INVALIDREQUEST)) {
+          throw;
+      }
+      else {
+        LOG(LS_INFO) <<
+          "CaptureDevice::StopCapture: Stop failed because capture device was not started. Ignoring error '" <<
+          rtc::ToUtf8(e->Message->Data()) << "'";
+      }
     }
   });
 }
