@@ -515,7 +515,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
         prefixLength);
       network->AddIP(InterfaceAddress(ip));
       networks->push_back(network);
-    } else if (hostname->Type == Windows::Networking::HostNameType::Ipv6) {
+    } else if (hostname->Type == Windows::Networking::HostNameType::Ipv6 && ipv6_enabled()) {
       struct in6_addr addr;
       rtc::inet_pton(AF_INET6, rtc::ToUtf8(
         hostname->CanonicalName->Data()).c_str(), &addr);
