@@ -56,6 +56,7 @@
             '../../../../../resources/',
             '../../../../../data/',
             '../../../../../resources/media/',
+            '../../../../../chromium/src/third_party/libjingle/source/talk/media/testdata/',
       ],
       'conditions': [
         ['OS_RUNTIME=="winrt" and winrt_platform=="win_phone"', {
@@ -132,6 +133,7 @@
             '../../../../../data/',
             '../../../../../resources/',
             '../../../../../resources/media/',
+            '../../../../../chromium/src/third_party/libjingle/source/talk/media/testdata/',
           ],
         },
         # Hack for MSVS to copy to the Appx folder
@@ -158,6 +160,7 @@
             '../../../../../data/',
             '../../../../../resources/',
             '../../../../../resources/media/',
+            '../../../../../chromium/src/third_party/libjingle/source/talk/media/testdata/',
           ],
         },
       ],

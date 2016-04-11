@@ -183,11 +183,14 @@ bool BitBuffer::ReadExponentialGolomb(uint32_t* val) {
 #ifdef WINRT
     // HACK(winrt): We sometimes get larger bit count numbers with the
     // Windows H264 encoder.  Try to continue as gracefully as possible.
-    ReadBits(val, 32);
-    ConsumeBits(value_bit_count - 32);
-    // Disable warning that these variables are not used.
-    original_byte_offset;
-    original_bit_offset;
+    if (value_bit_count > 32) {
+      ReadBits(val, 32);
+      ConsumeBits(value_bit_count - 32);
+    }
+    else {
+      RTC_CHECK(Seek(original_byte_offset, original_bit_offset));
+      return false;
+    }
 #else
     RTC_CHECK(Seek(original_byte_offset, original_bit_offset));
     return false;
