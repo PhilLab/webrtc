@@ -131,7 +131,8 @@ void GlobalObserver::OnRemoveStream(webrtc::MediaStreamInterface* stream) {
 void GlobalObserver::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   auto evt = ref new webrtc_winrt_api::RTCDataChannelEvent();
   evt->Channel = ref new webrtc_winrt_api::RTCDataChannel(data_channel);
-  // TODO(WINRT): Figure out when this observer can be deleted.
+  // This observer is deleted when the channel closes.
+  // See DataChannelObserver::OnStateChange().
   data_channel->RegisterObserver(new DataChannelObserver(evt->Channel));
   POST_PC_EVENT(OnDataChannel, evt);
 }
@@ -256,6 +257,8 @@ void DataChannelObserver::OnStateChange() {
     break;
   case webrtc::DataChannelInterface::kClosed:
     _channel->OnClose();
+    _channel->_impl->UnregisterObserver();
+    delete this;
     break;
   }
 }

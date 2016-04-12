@@ -51,6 +51,9 @@
 #if defined(WINRT)
 #include <xlocbuf>
 #include <codecvt>
+#include <ppltasks.h>
+using namespace Windows::Networking::Connectivity;
+using namespace Windows::Foundation;
 #endif
 
 // For all platforms try Firefox.
@@ -603,10 +606,20 @@ Platform::String^ MkString(const char* str) {
 }
 
 bool GetWinRTProxySettings(const char* agent, const char* url, ProxyInfo* proxy) {
-    // TODO(winrt): Figure out how to do this
-    //       auto action = NetworkInformation::GetProxyConfigurationAsync(ref new Uri(MkString(url)));
-    //       Problem is this function is async which doesn't play well with the existing sync nature of our api.
+#if 1
+  return false;
+#else
+  if (proxy == nullptr) {
     return false;
+  }
+  auto action = NetworkInformation::GetProxyConfigurationAsync(
+    ref new Uri(MkString(url)));
+  auto proxyConfig = Concurrency::create_task(action).get();
+  if (proxyConfig == nullptr) {
+    return false;
+  }
+  // TODO(winrt): populate the proxy object with data from proxyConfig.
+#endif
 }
 #elif defined(WEBRTC_WIN)  // Windows specific implementation for reading Internet
               // Explorer proxy settings.

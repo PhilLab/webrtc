@@ -150,7 +150,7 @@ WinPing::WinPing()
       create6_(0), send6_(0), data_(0), dlen_(0), reply_(0),
       rlen_(0), valid_(false) {
 
-  // TODO(winrt): Find way to do ICMP pings on WinRT.  Might need to use raw sockets.
+  // ICMP pings are not supported on WinRT.  Might need to use raw sockets.
   // However, raw sockets usually require elevation, currently not supported in WinRT yet.
 #if !defined(WINRT)
   dll_ = LoadLibraryA(ICMP_DLL_NAME);

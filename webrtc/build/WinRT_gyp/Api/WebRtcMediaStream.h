@@ -58,10 +58,7 @@ class WebRtcMediaStream :
   IFACEMETHOD(GetService)(REFGUID guidService, REFIID riid, LPVOID *ppvObject);
 
   // VideoRendererInterface
-  virtual void SetSize(uint32 width, uint32 height, uint32 reserved);
   virtual void RenderFrame(const cricket::VideoFrame *frame);
-  virtual bool CanApplyRotation() { return true; }
-
 
   STDMETHOD(Start)(IMFPresentationDescriptor *pPresentationDescriptor,
     const GUID *pguidTimeFormat, const PROPVARIANT *pvarStartPosition);

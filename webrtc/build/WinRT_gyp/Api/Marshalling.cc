@@ -415,7 +415,6 @@ namespace webrtc_winrt_api_internal {
     if (inObj->IceServers != nullptr) {
       FromCx(inObj->IceServers, &outObj->servers);
     }
-    // TODO(WINRT): Other fields once they are added.
   }
 
   void FromCx(
@@ -459,7 +458,6 @@ namespace webrtc_winrt_api_internal {
       return webrtc::SessionDescriptionInterface::kAnswer;
     if (inObj == webrtc_winrt_api::RTCSdpType::Pranswer)
       return webrtc::SessionDescriptionInterface::kPrAnswer;
-    // TODO(WINRT): Throw?
     return "";
   }
 
