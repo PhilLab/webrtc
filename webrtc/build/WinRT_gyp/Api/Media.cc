@@ -398,7 +398,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
         } else {
           webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
           // Make sure the selected video device is still connected
-          for (auto capturer : videoDevices) {
+          for (auto& capturer : videoDevices) {
             if (capturer.id == _selectedVideoDevice.id) {
               videoCaptureDevice = &capturer;
               break;
