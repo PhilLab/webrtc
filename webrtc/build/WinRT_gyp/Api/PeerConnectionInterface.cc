@@ -235,7 +235,7 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateOffer() {
 
     rtc::scoped_refptr<CreateSdpObserver> observer(
       new rtc::RefCountedObject<CreateSdpObserver>(tce));
-    // For now the callback is kept for the lifetime of the RTCPeerConnection.
+    // The callback is kept for the lifetime of the RTCPeerConnection.
     _createSdpObservers.push_back(observer);
 
     _impl->CreateOffer(observer, nullptr);
@@ -261,7 +261,7 @@ IAsyncOperation<RTCSessionDescription^>^ RTCPeerConnection::CreateAnswer() {
 
     rtc::scoped_refptr<CreateSdpObserver> observer(
       new rtc::RefCountedObject<CreateSdpObserver>(tce));
-    // For now the callback is kept for the lifetime of the RTCPeerConnection.
+    // The callback is kept for the lifetime of the RTCPeerConnection.
     _createSdpObservers.push_back(observer);
 
     _impl->CreateAnswer(observer, nullptr);
@@ -286,7 +286,7 @@ IAsyncAction^ RTCPeerConnection::SetLocalDescription(
 
     rtc::scoped_refptr<SetSdpObserver> observer(
       new rtc::RefCountedObject<SetSdpObserver>(tce));
-    // For now the callback is kept for the lifetime of the RTCPeerConnection.
+    // The callback is kept for the lifetime of the RTCPeerConnection.
     _setSdpObservers.push_back(observer);
 
     rtc::scoped_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
@@ -310,7 +310,7 @@ IAsyncAction^ RTCPeerConnection::SetRemoteDescription(
 
     rtc::scoped_refptr<SetSdpObserver> observer(
       new rtc::RefCountedObject<SetSdpObserver>(tce));
-    // For now the callback is kept for the lifetime of the RTCPeerConnection.
+    // The callback is kept for the lifetime of the RTCPeerConnection.
     _setSdpObservers.push_back(observer);
 
     rtc::scoped_ptr<webrtc::SessionDescriptionInterface> nativeDescription;
@@ -427,7 +427,7 @@ RTCDataChannel^ RTCPeerConnection::CreateDataChannel(
   auto ret = ref new RTCDataChannel(channel);
 
   auto observer = new webrtc_winrt_api_internal::DataChannelObserver(ret);
-  // TODO(WINRT): Figure out when to remove this observer.
+  // The callback is kept for the lifetime of the RTCPeerConnection.
   _dataChannelObservers.PushBack(observer);
   channel->RegisterObserver(observer);
   return ret;

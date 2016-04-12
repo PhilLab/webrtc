@@ -175,11 +175,6 @@ IFACEMETHODIMP WebRtcMediaStream::GetService(
   return MF_E_UNSUPPORTED_SERVICE;
 }
 
-void WebRtcMediaStream::SetSize(
-  uint32 width, uint32 height, uint32 reserved) {
-  // TODO(winrt): Dispatch a size changed
-}
-
 void WebRtcMediaStream::RenderFrame(
   const cricket::VideoFrame *frame) {
   auto frameCopy = frame->Copy();

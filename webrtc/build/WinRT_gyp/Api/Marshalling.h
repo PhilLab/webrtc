@@ -52,7 +52,6 @@ namespace webrtc_winrt_api_internal {
     IVector<I>^ inArray,
     std::vector<O>* outArray) {
     for (I inObj : inArray) {
-      // TODO(WINRT): Optimize with reference to object in vector.
       O outObj;
       FromCx(inObj, &outObj);
       outArray->push_back(outObj);
@@ -64,7 +63,6 @@ namespace webrtc_winrt_api_internal {
     std::vector<I>* inArray,
     IVector<O>^ outArray) {
     for (auto it = (*inArray).begin(); it != (*inArray).end(); ++it) {
-      // TODO(WINRT): Optimize with reference to object in vector.
       O outObj;
       ToCx((*it), &outObj);
       outArray->Append(outObj);
