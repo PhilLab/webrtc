@@ -364,7 +364,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           != 0) {
           LOG(LS_ERROR) << "Failed to set audio recording devices.";
         }
-        if(voiceEngineHardware->SetPlayoutDevice(audioPlayoutDeviceIndexSelected)
+        if (voiceEngineHardware->SetPlayoutDevice(audioPlayoutDeviceIndexSelected)
           != 0) {
           LOG(LS_ERROR) << "Failed to set audio playout devices.";
         }
@@ -383,19 +383,44 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
 
       if (mediaStreamConstraints->videoEnabled) {
         cricket::VideoCapturer* videoCapturer = NULL;
-        if (_selectedVideoDevice.id == "") {
-          // Select the first video device as the capturer.
-          webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
-          for (auto videoDev : g_videoDevices) {
-            cricket::Device dev(FromCx(videoDev->Name), FromCx(videoDev->Id));
-            videoCapturer = _dev_manager->CreateVideoCapturer(dev);
-            if (videoCapturer != NULL)
-              break;
+        cricket::Device* videoCaptureDevice = nullptr;
+
+        std::vector<cricket::Device> videoDevices;
+        globals::RunOnGlobalThread<void>([this, &videoDevices] {
+          if (!_dev_manager->GetVideoCaptureDevices(&videoDevices)) {
+            LOG(LS_ERROR) << "Can't get video capture devices list";
           }
+        });
+        if (_selectedVideoDevice.id == "") {
+          // No device selected by app, try to use the first video device as the capturer.
+          videoCaptureDevice = videoDevices.size() ? &(videoDevices[0])
+                                                   : nullptr;
         } else {
-          videoCapturer = _dev_manager->CreateVideoCapturer(
-                                                        _selectedVideoDevice);
+          webrtc::CriticalSectionScoped cs(&g_videoDevicesLock);
+          // Make sure the selected video device is still connected
+          for (auto& capturer : videoDevices) {
+            if (capturer.id == _selectedVideoDevice.id) {
+              videoCaptureDevice = &capturer;
+              break;
+            }
+          }
+          if (videoCaptureDevice == nullptr) {
+            // Selected device not connected anymore, try to use the first video device as the capturer.
+            LOG(LS_WARNING) << "Selected video capturer ("
+                            << _selectedVideoDevice.name << ") not found. ";
+            videoCaptureDevice = videoDevices.size() ? &(videoDevices[0])
+                                                     : nullptr;
+            if (videoCaptureDevice != nullptr) {
+              LOG(LS_WARNING) << "Using video capturer "
+                              << videoCaptureDevice->name;
+            }
+          }
         }
+        if (videoCaptureDevice != nullptr) {
+          videoCapturer = _dev_manager->CreateVideoCapturer(
+            *videoCaptureDevice);
+        }
+
         char videoLabel[32];
         _snprintf(videoLabel, sizeof(videoLabel), kVideoLabel,
           rtc::CreateRandomId64());
@@ -721,7 +746,7 @@ void Media::OnMediaDeviceRemoved(DeviceWatcher^ sender,
   }
 }
 
-int Media::GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware, 
+int Media::GetAudioPlayoutDeviceIndex(webrtc::VoEHardware* voeHardware,
     const std::string& name, const std::string& id) {
   int devices;
   if (voeHardware->GetNumOfPlayoutDevices(devices) != 0) {
