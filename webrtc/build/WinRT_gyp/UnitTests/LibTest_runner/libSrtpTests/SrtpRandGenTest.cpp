@@ -16,7 +16,7 @@ AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpRandGenTest);
 
 int libSrtpTests::CSrtpRandGenTest::InterchangeableExecute() {
   // TODO(winrt): configuration has to be handled
-  char* argv[] = { ".", "10" };
-  return srtp_test_rand_gen_main(2, argv);
+  char* argv[] = { ".", "-n", "10" };
+  return srtp_test_rand_gen_main(3, argv);
 }
 

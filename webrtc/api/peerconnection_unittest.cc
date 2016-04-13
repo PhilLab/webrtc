@@ -1361,9 +1361,6 @@ TEST_F(P2PTestConductor, DISABLED_LocalP2PTestTwoStreams) {
   EXPECT_EQ(2u, receiving_client()->number_of_remote_streams());
 }
 
-// TODO(winrt): These test cases cause a crash in gtest_runner
-// Needs to be investigated and fixed separately
-#if !defined WINRT
 // Test that we can receive the audio output level from a remote audio track.
 TEST_F(P2PTestConductor, GetAudioOutputLevelStats) {
   ASSERT_TRUE(CreateTestClients());
@@ -1563,7 +1560,6 @@ TEST_F(P2PTestConductor, GetDtls12Recv) {
             init_observer->GetEnumCounter(webrtc::kEnumCounterAudioSrtpCipher,
                                           kDefaultSrtpCryptoSuite));
 }
-#endif  // WINRT
 
 // This test sets up a call between two parties with audio, video and an RTP
 // data channel.

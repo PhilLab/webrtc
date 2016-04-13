@@ -3148,9 +3148,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkDefaultRecvStream) {
   // Try resetting the default sink.
   channel_->SetRawAudioSink(0, nullptr);
   EXPECT_EQ(nullptr, GetRecvStream(0x01).sink());
-}
-// TODO(winrt): Enable when the known issue with the mic access is fixed
-#ifndef WINRT
+
   // Try setting the default sink while the default stream exists.
   channel_->SetRawAudioSink(0, std::move(fake_sink_2));
   EXPECT_NE(nullptr, GetRecvStream(0x01).sink());
@@ -3177,7 +3175,6 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
   engine.Terminate();
 }
-#endif
 
 // Tests that the library is configured with the codecs we want.
 TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
@@ -3264,8 +3261,6 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   engine.Terminate();
 }
 
-// TODO(winrt): Enable when the known issue with the mic access is fixed
-#ifndef WINRT
 // Tests that VoE supports at least 32 channels
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::WebRtcVoiceEngine engine;
@@ -3304,6 +3299,4 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   parameters.codecs = engine.codecs();
   EXPECT_TRUE(channel.SetRecvParameters(parameters));
 }
-
-#endif
 

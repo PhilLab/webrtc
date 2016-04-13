@@ -148,11 +148,6 @@
             'sources': [
               'win32_unittest.cc',
             ],
-            'sources!': [
-              # TODO(winrt) enable when TestUdpReadyToSendIPv6 is fixed.
-              'physicalsocketserver_unittest.cc',
-              'socket_unittest.cc',
-            ],
           }],
           ['OS=="win" and clang==1', {
             'msvs_settings': {
