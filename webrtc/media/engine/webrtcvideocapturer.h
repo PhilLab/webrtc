@@ -88,8 +88,8 @@ class WebRtcVideoCapturer : public VideoCapturer,
 
   std::unique_ptr<rtc::AsyncInvoker> async_invoker_;
 
-  // TODO(WINRT): Find a nicer way of not overwhelming the
-  // memory with pending async frames.
+  // Flag so we're not overwhelming the memory with pending async frames.
+  // This can be a problem on low end machines.
   bool hasFramePending_;
 };
 
