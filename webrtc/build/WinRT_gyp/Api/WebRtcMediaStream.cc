@@ -196,6 +196,9 @@ HRESULT WebRtcMediaStream::CreateMediaType(
   unsigned int width, unsigned int height,
   unsigned int rotation, IMFMediaType** ppType, bool isH264) {
   // Create media type
+  // Make sure the dimensions are even
+  width &= ~((unsigned int)1);
+  height &= ~((unsigned int)1);
   ComPtr<IMFMediaType> mediaType;
   RETURN_ON_FAIL(MFCreateMediaType(&mediaType));
   RETURN_ON_FAIL(mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
@@ -224,14 +227,16 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
   ComPtr<IMFSample> spSample;
   RETURN_ON_FAIL(MFCreateSample(&spSample));
 
+  // Make sure the destination buffer in even. Crop one pixel if odd.
+  unsigned int destWidth = (unsigned int)(frame->GetWidth() & (~((size_t)1)));
+  unsigned int destHeight = (unsigned int)(frame->GetHeight() & (~((size_t)1)));
   // Make sure the buffers are the right size
   {
     unsigned int width, height;
     RETURN_ON_FAIL(MFGetAttributeSize(
       _mediaType.Get(), MF_MT_FRAME_SIZE, &width, &height));
-    if (frame->GetWidth() != width || frame->GetHeight() != height) {
-      RETURN_ON_FAIL(CreateMediaType((unsigned int)frame->GetWidth(),
-        (unsigned int)frame->GetHeight(),
+    if (destWidth != width || destHeight != height) {
+      RETURN_ON_FAIL(CreateMediaType(destWidth, destHeight,
         (unsigned int)frame->GetVideoRotation(), &_mediaType,
         _isH264));
       ResetMediaBuffers();
@@ -261,14 +266,14 @@ HRESULT WebRtcMediaStream::MakeSampleCallback(
   AutoFunction autoUnlockBuffer([buffer2d]() {buffer2d->Unlock2D();});
 
   // Convert to NV12
-  uint8* uvDest = destRawData + (pitch * frame->GetHeight());
+  uint8* uvDest = destRawData + (pitch * destHeight);
   libyuv::I420ToNV12(frame->GetYPlane(), frame->GetYPitch(),
     frame->GetUPlane(), frame->GetUPitch(),
     frame->GetVPlane(), frame->GetVPitch(),
     reinterpret_cast<uint8*>(destRawData), pitch,
     uvDest, pitch,
-    static_cast<int>(frame->GetWidth()),
-    static_cast<int>(frame->GetHeight()));
+    static_cast<int>(destWidth),
+    static_cast<int>(destHeight));
 
   *sample = spSample.Detach();
   return S_OK;
