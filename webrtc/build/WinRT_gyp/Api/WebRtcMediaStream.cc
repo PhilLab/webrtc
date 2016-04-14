@@ -326,7 +326,7 @@ HRESULT WebRtcMediaStream::ReplyToSampleRequest() {
     ResetMediaBuffers();
 
     webrtc_winrt_api::ResolutionHelper::FireEvent(
-      _id, sampleData->size.cx, sampleData->size.cy);
+      _id, width, height);
   }
 
   _eventQueue->QueueEventParamUnk(MEMediaSample,
