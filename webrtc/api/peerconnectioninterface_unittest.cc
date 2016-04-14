@@ -1229,9 +1229,6 @@ TEST_F(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
   EXPECT_NE(audio_ssrc, video_ssrc);
 }
 
-// TODO(winrt): These test cases cause a crash in gtest_runner
-// Needs to be investigated and fixed separately
-#if !defined WINRT
 // Test that it's possible to call AddTrack on a MediaStream after adding
 // the stream to a PeerConnection.
 // TODO(deadbeef): Remove this test once this behavior is no longer supported.
@@ -1332,7 +1329,6 @@ TEST_F(PeerConnectionInterfaceTest, DISABLED_GetStatsForInvalidTrack) {
       pc_factory_->CreateAudioTrack("unknown track", NULL));
   EXPECT_FALSE(DoGetStats(unknown_audio_track));
 }
-#endif  // WINRT
 
 // This test setup two RTP data channels in loop back.
 TEST_F(PeerConnectionInterfaceTest, TestDataChannel) {
@@ -1885,16 +1881,12 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestMethods) {
   EXPECT_FALSE(DoSetLocalDescription(local_offer));
 }
 
-// TODO(winrt): This test case causes a crash in gtest_runner
-// Needs to be investigated and fixed separately
-#if !defined WINRT
 // Test that GetStats can still be called after PeerConnection::Close.
 TEST_F(PeerConnectionInterfaceTest, CloseAndGetStats) {
   InitiateCall();
   pc_->Close();
   DoGetStats(NULL);
 }
-#endif  // WINRT
 
 // NOTE: The series of tests below come from what used to be
 // mediastreamsignaling_unittest.cc, and are mostly aimed at testing that

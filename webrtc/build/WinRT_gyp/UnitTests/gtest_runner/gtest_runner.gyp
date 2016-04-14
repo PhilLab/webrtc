@@ -19,12 +19,8 @@
         '<(webrtc_root)/webrtc.gyp:rtc_media_unittests',
         '<(webrtc_root)/webrtc.gyp:rtc_pc_unittests',
         '<(webrtc_root)/api/api_tests.gyp:peerconnection_unittests',
-        # TODO(winrt) uncomment when the issue with microphone access is fixed
-        #'../../../../../libjingle_tests.gyp:libjingle_peerconnection_unittest',
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio_unittests',
         '<(webrtc_root)/common_video/common_video_unittests.gyp:common_video_unittests',
-        # TODO(winrt) uncomment when the issue with microphone access is fixed
-        #'<(webrtc_root)/modules/modules.gyp:audio_device_tests',
         '<(webrtc_root)/modules/modules.gyp:modules_tests',
         '<(webrtc_root)/modules/modules.gyp:modules_unittests',
         '<(webrtc_root)/modules/modules.gyp:video_capture_tests',
@@ -36,7 +32,6 @@
         '<(webrtc_root)/webrtc.gyp:rtc_unittests',
         '../../../../../third_party/libyuv/libyuv_test.gyp:libyuv_unittest',
         '../../../../test/test.gyp:test_common',
-        #'<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',

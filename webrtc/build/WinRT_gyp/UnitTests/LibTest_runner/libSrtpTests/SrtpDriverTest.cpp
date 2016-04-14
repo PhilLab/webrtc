@@ -15,8 +15,7 @@ extern "C" int srtp_driver_main(int argc, char *argv[]);
 AUTO_ADD_TEST_IMPL(libSrtpTests::CSrtpDriverTest);
 
 int libSrtpTests::CSrtpDriverTest::InterchangeableExecute() {
-  // TODO(winrt): configuration has to be handled
-  char* argv[] = { ".", "-t" };
-  return srtp_driver_main(2, argv);
+  char* argv[] = { ".", "-trcv" };
+  return srtp_driver_main(2, new char*[2]{ ".", "-trcv" });
 }
 

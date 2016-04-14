@@ -592,10 +592,6 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
   rc_metrics[update_index].num_key_frames = num_key_frames;
 }
 
-// These tests are not supported in WinRt because gtest_runner hangs on them,
-// and debuggung breaks with unhandled exception
-// TODO(winrt): Fix these exceptions
-#ifndef WINRT
 #if defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
 
 // H264: Run with no packet loss and fixed bitrate. Quality should be very high.
@@ -941,7 +937,9 @@ TEST_F(VideoProcessorIntegrationTest,
 // Run with no packet loss, at low bitrate. During this time we should've
 // resized once. Expect 2 key frames generated (first and one for resize).
 // Too slow to finish before timeout on iOS. See webrtc:4755.
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+// On WinRT we tweaked the algorithm to work with CPU bound machines.
+// Disable the test until Google fixes for low end machines.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WINRT)
 #define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
   DISABLED_ProcessNoLossSpatialResizeFrameDropVP8
 #else
@@ -1004,5 +1002,4 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
                          rc_metrics);
 }
-#endif  // WINRT
 }  // namespace webrtc

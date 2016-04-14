@@ -12,7 +12,6 @@
 #define WEBRTC_BUILD_WINRT_GYP_UNITTESTS_LIBTEST_RUNNER_RTPPLAYERTESTS_RTPPLAYERTEST_H_
 
 namespace rtpPlayerTests {
-  // TODO(winrt) Add more test with different arguments when/if needed
 
   // class: CRtpPlayerTest
   // executes rtp_player_test project with default parameters
