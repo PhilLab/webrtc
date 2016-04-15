@@ -458,7 +458,8 @@ namespace webrtc_winrt_api_internal {
       return webrtc::SessionDescriptionInterface::kAnswer;
     if (inObj == webrtc_winrt_api::RTCSdpType::Pranswer)
       return webrtc::SessionDescriptionInterface::kPrAnswer;
-    return "";
+    
+    throw ref new Platform::NotImplementedException();
   }
 
   void ToCx(

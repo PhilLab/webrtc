@@ -234,10 +234,21 @@ void MediaStream::RemoveTrack(IMediaStreamTrack^ track) {
 }
 
 void MediaStream::Stop() {
-  // TODO(winrt): Investigate if this is the proper way
-  // to stop the stream. If something else holds
-  // a reference, the stream may not stop.
-  _impl = nullptr;
+
+  if (_impl != nullptr) {
+
+    auto tracks = GetTracks();
+
+    if (tracks != nullptr) {
+
+      for (auto aTrack : tracks) {
+
+        aTrack->Stop();
+      }
+    }
+
+    _impl = nullptr;
+  }
 }
 
 bool MediaStream::Active::get() {

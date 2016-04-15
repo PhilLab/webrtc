@@ -51,10 +51,12 @@ namespace webrtc_winrt_api_internal {
   void FromCx(
     IVector<I>^ inArray,
     std::vector<O>* outArray) {
+	  
+	outArray->resize(inArray->Size);
+	int index = 0;
     for (I inObj : inArray) {
-      O outObj;
-      FromCx(inObj, &outObj);
-      outArray->push_back(outObj);
+      FromCx(inObj, &(*outArray)[index]);
+      index++;
     }
   }
 
