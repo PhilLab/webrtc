@@ -313,8 +313,7 @@ namespace globals {
 
 IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
   RTCMediaStreamConstraints^ mediaStreamConstraints) {
-  // TODO(WINRT): error handling - no permissions, no device for media type...
-  // add to separate sets of constraints
+
   IAsyncOperation<MediaStream^>^ asyncOp = Concurrency::create_async(
     [this, mediaStreamConstraints]() -> MediaStream^ {
     return globals::RunOnGlobalThread<MediaStream^>([this,

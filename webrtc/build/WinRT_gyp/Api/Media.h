@@ -56,9 +56,7 @@ namespace webrtc_winrt_api {
     property bool Enabled { bool get(); void set(bool value); }
 
     /// <summary>
-    /// TODO(WINRT): check implementations, they may not be
-    /// conforming to the spec:
-    /// http://www.w3.org/TR/mediacapture-streams/#widl-MediaStreamTrack-stop-void
+    /// Stop the media track.
     /// </summary>
     void Stop();
   };
