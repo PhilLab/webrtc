@@ -660,7 +660,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.echo_cancellation = rtc::Optional<bool>(false);
   options.auto_gain_control = rtc::Optional<bool>(false);
   LOG(LS_INFO) << "Always disable AEC and AGC on iOS. Use built-in instead.";
-#elif defined(ANDROID)
+#elif defined(ANDROID) || (defined(WEBRTC_ARCH_ARM) && defined(WINRT))
   ec_mode = webrtc::kEcAecm;
 #endif
 
