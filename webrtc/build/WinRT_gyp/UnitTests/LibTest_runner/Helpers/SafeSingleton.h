@@ -20,6 +20,8 @@
 
 #include <assert.h>
 
+#include "webrtc/base/criticalsection.h"
+
 namespace LibTest_runner {
 
 //! declares the function prototype for callback of atexit CRT function
@@ -108,6 +110,14 @@ class CSafeSingletonT {
     static bool stDestroyed = false;
     return stDestroyed;
   }
+  
+
+  static rtc::CriticalSection& SingletonLock() {
+    static rtc::CriticalSection singleTonMutex;
+    return singleTonMutex;
+  }
+
+
 
   //===========================================================================
   //! \brief creates singleton through create policy.
@@ -117,7 +127,9 @@ class CSafeSingletonT {
   //! @return
   //===========================================================================
   static void CreateSingleton() {
-    // xpl::CMutexLock   lock(CXplLibrary::InitMutex());
+
+    rtc::CritScope cs(&SingletonLock());
+
     if (!InternalInstance()) {  // use double-check pattern
       if (Destroyed()) {
         LifetimePolicy::OnDeadReference();
@@ -132,12 +144,12 @@ class CSafeSingletonT {
   //===========================================================================
   //! \brief This static function is registered into lifetime policy.
   //! It could be called when lifetime of the singleton is finished.
-  //! TODO(winrt): Mutex not implemented so not thread safe !!!!!!
   //!
   //! @return
   //===========================================================================
   static void DestroySingleton() {
-    // TODO(winrt): implement locking to be thread safe
+
+    rtc::CritScope cs(&SingletonLock());
     assert(!Destroyed());
     CreationPolicy::Destroy(InternalInstance());
     InternalInstance() = NULL;

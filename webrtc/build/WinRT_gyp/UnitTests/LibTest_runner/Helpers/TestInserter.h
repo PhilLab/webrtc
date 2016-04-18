@@ -44,8 +44,6 @@ struct TestInserter {
 // Implementation part of AUTO_ADD_TEST macro. See AUTO_ADD_TEST for details
 // Usage, Must be placed in cpp file:
 //   AUTO_ADD_TEST_IMPL(CSomeTest);
-// TODO(winrt): there should be a compilation error when AUTO_ADD_TEST_IMPL
-// not defined
 #define AUTO_ADD_TEST_IMPL(clazz) \
     TestInserter<clazz::__TestSolutionProvider, \
     clazz::__Test> clazz::__inserter; \
