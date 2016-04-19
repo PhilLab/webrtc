@@ -253,12 +253,31 @@ DataChannelObserver::DataChannelObserver(
 void DataChannelObserver::OnStateChange() {
   switch (_channel->GetImpl()->state()) {
   case webrtc::DataChannelInterface::kOpen:
-    _channel->OnOpen();
+    if (g_windowDispatcher != nullptr) {
+      g_windowDispatcher->RunAsync(
+        Windows::UI::Core::CoreDispatcherPriority::Normal,
+        ref new Windows::UI::Core::DispatchedHandler([this] {
+        _channel->OnOpen();
+      }));
+    }
+    else {
+      _channel->OnOpen();
+    }
     break;
   case webrtc::DataChannelInterface::kClosed:
-    _channel->OnClose();
     _channel->_impl->UnregisterObserver();
-    delete this;
+    if (g_windowDispatcher != nullptr) {
+      g_windowDispatcher->RunAsync(
+        Windows::UI::Core::CoreDispatcherPriority::Normal,
+        ref new Windows::UI::Core::DispatchedHandler([this] {
+        _channel->OnClose();
+        delete this;
+      }));
+    }
+    else {
+      _channel->OnClose();
+      delete this;
+    }
     break;
   }
 }
