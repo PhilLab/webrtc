@@ -37,7 +37,7 @@
 
 namespace webrtc {
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || (defined(WEBRTC_ARCH_ARM) && defined(WINRT))
 static const EcModes kDefaultEcMode = kEcAecm;
 #else
 static const EcModes kDefaultEcMode = kEcAec;
@@ -522,6 +522,7 @@ int VoEAudioProcessingImpl::SetEcStatus(bool enable, EcModes mode) {
                             "SetEcStatus() failed to set AEC state");
       return -1;
     }
+
     if (mode == kEcConference) {
       if (_shared->audio_processing()
               ->echo_cancellation()
