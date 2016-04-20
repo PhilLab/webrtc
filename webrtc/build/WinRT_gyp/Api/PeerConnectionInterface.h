@@ -105,6 +105,7 @@ public:
   /// Gets permission from the OS to get access to a media capture device. If
   /// permissions are not enabled for the calling application, the OS will
   /// display a prompt asking the user for permission.
+  /// This function must be called from the UI thread.
   /// </summary>
   static IAsyncOperation<bool>^ RequestAccessForMediaCapture();
   /// <summary>
