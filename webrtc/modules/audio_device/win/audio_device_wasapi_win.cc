@@ -987,11 +987,11 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker() {
     if (_renderDevice == nullptr) {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
         "selected audio playout device not found %s, using default.",
-        rtc::ToUtf8(_deviceIdStringOut->Data()));
+        rtc::ToUtf8(_deviceIdStringOut->Data()).c_str());
     } else {
       WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
         "using selected audio playout device %s.",
-        rtc::ToUtf8(_renderDevice->Name->Data()));
+        rtc::ToUtf8(_renderDevice->Name->Data()).c_str());
     }
   } else {
     _renderDevice = _GetDefaultDevice(DeviceClass::AudioRender,
@@ -1009,7 +1009,7 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker() {
                                       AudioDeviceRole::Communications);
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
       "using default audio playout device: ",
-      rtc::ToUtf8(_renderDevice->Name->Data()));
+      rtc::ToUtf8(_renderDevice->Name->Data()).c_str());
   }
 
   if (ret != 0 || (_renderDevice == nullptr)) {
@@ -1024,12 +1024,12 @@ int32_t AudioDeviceWindowsWasapi::InitSpeaker() {
       t.get();
       WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
         "output audio device activated: %s",
-        rtc::ToUtf8(_renderDevice->Name->Data()));
+        rtc::ToUtf8(_renderDevice->Name->Data()).c_str());
     } catch(Platform::Exception^ ex) {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
         "failed to activate output audio device %s, ex=%s",
-        rtc::ToUtf8(_renderDevice->Name->Data()),
-        rtc::ToUtf8(ex->Message->Data()));
+        rtc::ToUtf8(_renderDevice->Name->Data()).c_str(),
+        rtc::ToUtf8(ex->Message->Data()).c_str());
     }
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
@@ -1084,11 +1084,11 @@ int32_t AudioDeviceWindowsWasapi::InitMicrophone() {
     if (_captureDevice == nullptr) {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
         "selected audio capture device not found %s, using default.",
-        rtc::ToUtf8(_deviceIdStringIn->Data()));
+        rtc::ToUtf8(_deviceIdStringIn->Data()).c_str());
     } else {
       WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
         "using selected audio capture device %s",
-        rtc::ToUtf8(_deviceIdStringIn->Data()));
+        rtc::ToUtf8(_deviceIdStringIn->Data()).c_str());
     }
   } else {
     _captureDevice = _GetDefaultDevice(DeviceClass::AudioCapture,
@@ -1118,14 +1118,14 @@ int32_t AudioDeviceWindowsWasapi::InitMicrophone() {
     try {
       t.get();
       WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-        "input audio device activated %s",
-        rtc::ToUtf8(_captureDevice->Name->Data()));
+        "input audio device activated: %s",
+        rtc::ToUtf8(_captureDevice->Name->Data()).c_str());
     }
     catch (Platform::Exception^ ex) {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
         "failed to activate input audio device %s, ex=%s",
-        rtc::ToUtf8(_captureDevice->Name->Data()),
-        rtc::ToUtf8(ex->Message->Data()));
+        rtc::ToUtf8(_captureDevice->Name->Data()).c_str(),
+        rtc::ToUtf8(ex->Message->Data()).c_str());
     }
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
@@ -3343,7 +3343,11 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
 
   // Start up the rendering audio stream.
   hr = _ptrClientOut->Start();
-  EXIT_ON_ERROR(hr);
+  if (FAILED(hr)) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "failed to start rendering client, hr = 0x%08X", hr);
+    goto Exit;
+  }
 
   _UnLock();
 
@@ -3387,7 +3391,11 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
       // endpoint buffer.
       UINT32 padding = 0;
       hr = _ptrClientOut->GetCurrentPadding(&padding);
-      EXIT_ON_ERROR(hr);
+      if (FAILED(hr)) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+          "rendering loop failed (GetCurrentPadding), hr = 0x%08X", hr);
+        goto Exit;
+      }
 
       // Derive the amount of available space in the output buffer
       uint32_t framesAvailable = bufferLength - padding;
@@ -3407,7 +3415,11 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
         // Get pointer (i.e., grab the buffer) to next space in the shared
         // render buffer.
         hr = _ptrRenderClient->GetBuffer(_playBlockSize, &pData);
-        EXIT_ON_ERROR(hr);
+        if (FAILED(hr)) {
+          WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "rendering loop failed (GetBuffer), hr = 0x%08X", hr);
+          goto Exit;
+        }
 
         QueryPerformanceCounter(&t1);    // measure time: START
 
@@ -3469,7 +3481,11 @@ DWORD AudioDeviceWindowsWasapi::DoRenderThread() {
         hr = _ptrRenderClient->ReleaseBuffer(_playBlockSize, dwFlags);
         // See http://msdn.microsoft.com/en-us/library/dd316605(VS.85).aspx
         // for more details regarding AUDCLNT_E_DEVICE_INVALIDATED.
-        EXIT_ON_ERROR(hr);
+        if (FAILED(hr)) {
+          WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "rendering loop failed (ReleaseBuffer), hr = 0x%08X", hr);
+          goto Exit;
+        }
 
         _writtenSamples += _playBlockSize;
       }
@@ -3504,6 +3520,8 @@ Exit:
   if (FAILED(hr)) {
     _ptrClientOut->Stop();
     _UnLock();
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "rendering terminated with error, hr = 0x%08X", hr);
     _TraceCOMError(hr);
   }
 
@@ -3523,10 +3541,12 @@ Exit:
     if (_ptrClientOut != NULL) {
       hr = _ptrClientOut->Stop();
       if (FAILED(hr)) {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "failed to stop rendering client, hr = 0x%08X", hr);
         _TraceCOMError(hr);
       }
       hr = _ptrClientOut->Reset();
       if (FAILED(hr)) {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "failed to reset rendering client, hr = 0x%08X", hr);
         _TraceCOMError(hr);
       }
     }
@@ -3659,7 +3679,11 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
 
   // Start up the capturing stream.
   hr = _ptrClientIn->Start();
-  EXIT_ON_ERROR(hr);
+  if (FAILED(hr)) {
+    WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+      "failed to start capture hr = %d", hr);
+    goto Exit;
+  }
 
   _UnLock();
 
@@ -3746,7 +3770,11 @@ DWORD AudioDeviceWindowsWasapi::DoCaptureThread() {
 
         // Release the capture buffer
         hr = _ptrCaptureClient->ReleaseBuffer(framesAvailable);
-        EXIT_ON_ERROR(hr);
+        if (FAILED(hr)) {
+          WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+            "failed fo release capture buffer hr = %d", hr);
+          goto Exit;
+        }
 
         _readSamples += framesAvailable;
         syncBufIndex += framesAvailable;
@@ -3861,6 +3889,8 @@ Exit:
   if (FAILED(hr)) {
     _ptrClientIn->Stop();
     _UnLock();
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+      "capturing terminated with error, hr = 0x%08X", hr);
     _TraceCOMError(hr);
   }
 
@@ -3875,10 +3905,14 @@ Exit:
     if (_ptrClientIn != NULL) {
       hr = _ptrClientIn->Stop();
       if (FAILED(hr)) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+          "failed to stop audio capturing, hr = 0x%08X", hr);
         _TraceCOMError(hr);
       }
       hr = _ptrClientIn->Reset();
       if (FAILED(hr)) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+          "failed to reset audio capturing, hr = 0x%08X", hr);
         _TraceCOMError(hr);
       }
     }
@@ -4007,6 +4041,8 @@ DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
       break;
     case WAIT_OBJECT_0 + 1: {      // _hRestartCaptureEvent
       CriticalSectionScoped critScoped(&_recordingControlMutex);
+      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+        "observer -> restart audio capture event detected");
       int32_t result = StopRecordingInternal();
       if (result == 0) {
         _recIsRecovering = true;
@@ -4057,6 +4093,7 @@ DWORD AudioDeviceWindowsWasapi::DoObserverThread() {
           "audio renderer restarted");
       }
       ResetEvent(_hRestartRenderEvent);
+      break;
     }
 
     default:                       // unexpected error
@@ -4175,7 +4212,7 @@ bool AudioDeviceWindowsWasapi::CheckBuiltInRenderCapability(Windows::Media::Effe
       deviceId, Category, Windows::Media::AudioProcessing::Default);
   } catch (Platform::Exception^ ex) {
     LOG(LS_ERROR) << "Failed to create audio render effects manager ("
-      << rtc::ToUtf8(ex->Message->Data()) << ")";
+      << rtc::ToUtf8(ex->Message->Data()).c_str() << ")";
     return false;
   }
 
@@ -4501,7 +4538,7 @@ int32_t AudioDeviceWindowsWasapi::_EnumerateEndpointDevicesAll() {
         _ptrCaptureCollection = getDevicesTask.get();
       } catch (Platform::Exception^ ex) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-          "Failed to enumerate audio capture devices, ex=%s", rtc::ToUtf8(ex->Message->Data()));
+          "Failed to enumerate audio capture devices, ex=%s", rtc::ToUtf8(ex->Message->Data()).c_str());
       }
     }, concurrency::task_continuation_context::use_arbitrary()).wait();
   }
@@ -4577,8 +4614,8 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceIn(Platform::String^ dev
       ex = e;
       WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
         "failed to activate input audio device id=%s ex=%s",
-        rtc::ToUtf8(deviceId->Data()),
-        rtc::ToUtf8(e->Message->Data()));
+        rtc::ToUtf8(deviceId->Data()).c_str(),
+        rtc::ToUtf8(e->Message->Data()).c_str());
     }
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
   if (ex != nullptr)
@@ -4613,8 +4650,8 @@ HRESULT AudioDeviceWindowsWasapi::_InitializeAudioDeviceOut(Platform::String^ de
       ex = e;
       WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
         "failed to activate output audio device id=%s ex=%s",
-        rtc::ToUtf8(deviceId->Data()),
-        rtc::ToUtf8(e->Message->Data()));
+        rtc::ToUtf8(deviceId->Data()).c_str(),
+        rtc::ToUtf8(e->Message->Data()).c_str());
     }
   }, concurrency::task_continuation_context::use_arbitrary()).wait();
 
@@ -4746,7 +4783,6 @@ template<typename T>void AudioDeviceWindowsWasapi::Upmix(
 // ----------------------------------------------------------------------------
 
 void AudioDeviceWindowsWasapi::_TraceCOMError(HRESULT hr) const {
-  TCHAR buf[MAXERRORLENGTH];
   TCHAR errorText[MAXERRORLENGTH];
 
   const DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM |
@@ -4772,10 +4808,12 @@ void AudioDeviceWindowsWasapi::_TraceCOMError(HRESULT hr) const {
   }
 
   WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-    "Core Audio method failed (hr=0x%x)", hr);
-  StringCchPrintf(buf, MAXERRORLENGTH, TEXT("Error details: "));
-  StringCchCat(buf, MAXERRORLENGTH, errorText);
-  WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "%s", WideToUTF8(buf));
+    "Core Audio method failed (hr=0x%08X)", hr);
+  if (messageLength) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "Error details (length=%d): %s", messageLength, rtc::ToUtf8(errorText, messageLength));
+  } else {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "Error details (length=%d): N/A", messageLength);
+  }
 }
 
 

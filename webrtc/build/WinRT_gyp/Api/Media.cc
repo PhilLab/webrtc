@@ -340,7 +340,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
           LOG(LS_ERROR) << "Can't validate audio devices: "
             << "VoEHardware API not available.";
         } else {
-          if (_selectedAudioCapturerDevice.id != "") {
+          if (_selectedAudioCapturerDevice.name != cricket::DeviceManagerInterface::kDefaultDeviceName) {
             // Selected audio playout device is not the default device.
             audioCaptureDeviceIndex = GetAudioCaptureDeviceIndex(voiceEngineHardware,
               _selectedAudioCapturerDevice.name, _selectedAudioCapturerDevice.id);
@@ -352,7 +352,7 @@ IAsyncOperation<MediaStream^>^ Media::GetUserMedia(
                 << " not found, using default device";
             }
           }
-          if (_selectedAudioPlayoutDevice.id != "") {
+          if (_selectedAudioPlayoutDevice.name != cricket::DeviceManagerInterface::kDefaultDeviceName) {
             // Selected audio playout device is not the default device.
             audioPlayoutDeviceIndex = GetAudioPlayoutDeviceIndex(voiceEngineHardware,
               _selectedAudioPlayoutDevice.name, _selectedAudioPlayoutDevice.id);
@@ -576,9 +576,8 @@ void Media::SelectVideoDevice(MediaDevice^ device) {
 
 bool Media::SelectAudioCaptureDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
-  _selectedAudioCapturerDevice.id = "";
-  _selectedAudioCapturerDevice.name =
-      cricket::DeviceManagerInterface::kDefaultDeviceName;
+  _selectedAudioCapturerDevice = cricket::Device(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0);
   if (device == nullptr) {
       // Default audio capture device will be used.
       return true;
@@ -595,9 +594,8 @@ bool Media::SelectAudioCaptureDevice(MediaDevice^ device) {
 
 bool Media::SelectAudioPlayoutDevice(MediaDevice^ device) {
   webrtc::CriticalSectionScoped cs(&g_audioCapturerDevicesLock);
-  _selectedAudioPlayoutDevice.id = "";
-  _selectedAudioPlayoutDevice.name =
-      cricket::DeviceManagerInterface::kDefaultDeviceName;
+  _selectedAudioPlayoutDevice = cricket::Device(
+    cricket::DeviceManagerInterface::kDefaultDeviceName, 0);
   if (device == nullptr) {
     // Default audio playout device will be used.
     return true;
