@@ -717,8 +717,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       LOG(LS_INFO) << "Echo control set to " << *options.echo_cancellation
                    << " with mode " << ec_mode;
     }
-#if !defined(ANDROID)
-    // TODO(ajm): Remove the error return on Android from webrtc.
+#if !defined(ANDROID) && !(defined(WEBRTC_ARCH_ARM) && defined(WINRT))
+    // TODO(ajm): Remove the error return on Android and Windows Phone from webrtc.
     if (voep->SetEcMetricsStatus(*options.echo_cancellation) == -1) {
       LOG_RTCERR1(SetEcMetricsStatus, *options.echo_cancellation);
       return false;
